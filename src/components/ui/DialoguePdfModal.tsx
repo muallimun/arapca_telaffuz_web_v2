@@ -1425,9 +1425,11 @@ export default function DialoguePdfModal({
             flex-shrink: 0;
           }
           .cover-img-compact {
-            width: 140px;
-            height: 95px;
-            object-fit: cover;
+            width: 88px;
+            height: 88px;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            background: #fff;
             border-radius: 10px;
             border: 1.5px solid #cbd5e1;
             display: block;

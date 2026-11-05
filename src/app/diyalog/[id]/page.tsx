@@ -34,10 +34,7 @@ import {
   getDialogueCoverUrl,
   getDialogueGrammarNote,
 } from "@/lib/data";
-import {
-  GrammarHapBilgiPanel,
-  GrammarHapBilgiModal,
-} from "@/components/ui/GrammarHapBilgiPanel";
+import { GrammarHapBilgiPanel } from "@/components/ui/GrammarHapBilgiPanel";
 import {
   loadAudioManifest,
   hasMp3,
@@ -211,7 +208,6 @@ export default function DialogueDetailPage({
   const [isHwReportModalOpen, setIsHwReportModalOpen] =
     useState<boolean>(false);
   const [isHwQuizModalOpen, setIsHwQuizModalOpen] = useState<boolean>(false);
-  const [isGrammarModalOpen, setIsGrammarModalOpen] = useState<boolean>(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -1917,16 +1913,6 @@ export default function DialogueDetailPage({
         />
       )}
 
-      {/* ODAK GRAMER & HAP BİLGİ HIZLI MODALI */}
-      {grammarNote && (
-        <GrammarHapBilgiModal
-          isOpen={isGrammarModalOpen}
-          onClose={() => setIsGrammarModalOpen(false)}
-          grammarNote={grammarNote}
-          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
-        />
-      )}
-
       {/* ÖĞRETMEN İÇİN "🎓 ÖDEV OLUŞTUR" MODALI */}
       <TeacherHomeworkModal
         isOpen={isTeacherHwModalOpen}
@@ -2538,22 +2524,6 @@ export default function DialogueDetailPage({
                 <FileText size={13} className="text-[#065F46] shrink-0" />
                 <span>PDF</span>
               </button>
-
-              {/* 5.5. Odak Gramer / Hap Bilgi Hızlı Butonu */}
-              {grammarNote && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsGrammarModalOpen(true);
-                  }}
-                  data-tooltip={`Odak Gramer Notu: ${grammarNote.konu_basligi}`}
-                  aria-label="Odak Gramer Hap Bilgi"
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-100/90 dark:bg-amber-950/60 border border-amber-400 hover:border-amber-600 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
-                >
-                  <span>📌 Hap Bilgi</span>
-                </button>
-              )}
 
               {/* 6. Öğretmen İçin "Ödev" Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
               <button

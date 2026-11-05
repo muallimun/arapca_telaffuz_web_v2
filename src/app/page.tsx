@@ -487,39 +487,43 @@ export default function HomePage() {
                 href={`/diyalog/${recommendedDialogue.id}`}
                 onClick={() => playClick()}
                 data-tooltip="Diyaloğu açmak, cümleleri dinlemek ve telaffuz çalışmak için tıklayın"
-                className="relative h-28 sm:h-32 w-full rounded-xl overflow-hidden border border-emerald-500/15 shadow-sm block group"
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] shadow-2xs group transition-colors"
               >
-                {!recImgFailed ? (
-                  <img
-                    src={recommendedCoverSrc}
-                    alt={recommendedDialogue.baslik_tr}
-                    referrerPolicy="no-referrer"
-                    onError={() => {
-                      setFailedCoverId(recommendedDialogueId);
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-700 via-teal-800 to-indigo-900 flex items-center justify-center">
-                    <BookOpen size={32} className="text-white/80" />
-                  </div>
-                )}
+                <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white relative">
+                  {!recImgFailed ? (
+                    <img
+                      src={recommendedCoverSrc}
+                      alt={recommendedDialogue.baslik_tr}
+                      referrerPolicy="no-referrer"
+                      onError={() => {
+                        setFailedCoverId(recommendedDialogueId);
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-700 via-teal-800 to-indigo-900 flex items-center justify-center">
+                      <BookOpen size={30} className="text-white/80" />
+                    </div>
+                  )}
+                </div>
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10 p-3 flex flex-col justify-between">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-xs sm:text-sm font-extrabold text-white drop-shadow-sm leading-snug line-clamp-2">
-                      #{recommendedDialogue.id.replace("dlg_", "")} —{" "}
-                      {recommendedDialogue.baslik_tr}
-                    </h3>
-                    <p
-                      dir="rtl"
-                      className="arabic text-base sm:text-lg font-bold text-emerald-200 drop-shadow-sm leading-none shrink-0"
-                    >
-                      {displayArabic(recommendedDialogue.baslik_ar)}
-                    </p>
-                  </div>
+                <div className="min-w-0 flex-1 flex flex-col justify-between gap-1.5">
+                  <span className="inline-block w-fit px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
+                    Diyalog #{recommendedDialogue.id.replace("dlg_", "")}
+                  </span>
 
-                  <span className="w-fit bg-black/60 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug line-clamp-2 group-hover:text-[#087F5B] transition-colors">
+                    {recommendedDialogue.baslik_tr}
+                  </h3>
+
+                  <p
+                    dir="rtl"
+                    className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-snug text-right truncate"
+                  >
+                    {displayArabic(recommendedDialogue.baslik_ar)}
+                  </p>
+
+                  <span className="w-fit bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
                     {recommendedSentenceCount} Cümle • Sesli Diyalog
                   </span>
                 </div>

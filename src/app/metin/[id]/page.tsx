@@ -41,10 +41,7 @@ import WordTooltip from "@/components/ui/WordTooltip";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import ShadowingButton from "@/components/ui/ShadowingButton";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
-import {
-  GrammarHapBilgiPanel,
-  GrammarHapBilgiModal,
-} from "@/components/ui/GrammarHapBilgiPanel";
+import { GrammarHapBilgiPanel } from "@/components/ui/GrammarHapBilgiPanel";
 import {
   getReadingTextVocabulary,
   DialogueVocabularyEntry,
@@ -108,7 +105,6 @@ export default function ReadingTextDetailPage({
   const [studyMode, setStudyMode] = useState<TextStudyMode>("listen");
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [isGrammarModalOpen, setIsGrammarModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [blindListeningMode, setBlindListeningMode] = useState(false);
   const [listenedLines, setListenedLines] = useState<Record<number, boolean>>({});
@@ -355,16 +351,6 @@ export default function ReadingTextDetailPage({
           forms={shadowingTarget.forms}
           level={readingText.seviye}
           onClose={() => setShadowingTarget(null)}
-        />
-      )}
-
-      {/* ODAK GRAMER & HAP BİLGİ HIZLI MODALI */}
-      {grammarNote && (
-        <GrammarHapBilgiModal
-          isOpen={isGrammarModalOpen}
-          onClose={() => setIsGrammarModalOpen(false)}
-          grammarNote={grammarNote}
-          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
         />
       )}
 
@@ -617,19 +603,6 @@ export default function ReadingTextDetailPage({
               <Headphones size={13} />
               <span>Kör Dinleme</span>
             </button>
-
-            {grammarNote && (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsGrammarModalOpen(true);
-                }}
-                className="px-2.5 py-1.5 rounded-xl bg-amber-100/90 dark:bg-amber-950/60 border border-amber-400 hover:border-amber-600 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer"
-              >
-                <span>📌 Hap Bilgi</span>
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-1.5">

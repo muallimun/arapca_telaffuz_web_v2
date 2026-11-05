@@ -1,5 +1,5 @@
-import sozlukRaw from "@/data/sozluk.json";
-import diyaloglarRaw from "@/data/diyaloglar.json";
+import sozlukRaw from "@/data/yeni_tum_sozluk.json";
+import diyaloglarRaw from "@/data/tum_diyaloglar_120.json";
 import { SUPPLEMENT_DICTIONARY } from "./supplementDict";
 import { Dialogue, DictionaryItem } from "@/types/data";
 
@@ -4693,7 +4693,14 @@ export function getDialogueVocabulary(
   dialogueId: string
 ): DialogueVocabularyEntry[] {
   const dialogues = diyaloglarRaw as Dialogue[];
-  const dlg = dialogues.find((d) => d.id === dialogueId);
+  const targetNum = parseInt((dialogueId || "").replace(/\D+/g, ""), 10);
+  const dlg =
+    dialogues.find((d) => d.id === dialogueId) ||
+    (!isNaN(targetNum) && targetNum > 0
+      ? dialogues.find(
+          (d) => parseInt(d.id.replace(/\D+/g, ""), 10) === targetNum
+        )
+      : undefined);
   if (!dlg) return [];
 
   const foundMap = new Map<string, DialogueVocabularyEntry>();

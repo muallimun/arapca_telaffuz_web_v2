@@ -81,7 +81,7 @@ function ExercisesPageContent() {
   );
   const [singleDialogueId, setSingleDialogueId] = useState<string>("all");
   const [startNum, setStartNum] = useState(1);
-  const [endNum, setEndNum] = useState(60);
+  const [endNum, setEndNum] = useState(diyaloglar.length);
   const [contentType, setContentType] = useState<QuizContentType>("words");
   const [questionCount, setQuestionCount] = useState<10 | 20 | 30>(10);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
@@ -145,8 +145,18 @@ function ExercisesPageContent() {
       } else if (sourceParam === "mistakes") {
         setRangePreset("mistakes");
       }
-      if (dlgParam && diyaloglar.some((d) => d.id === dlgParam)) {
-        setSingleDialogueId(dlgParam);
+      if (dlgParam) {
+        const targetNum = parseInt(dlgParam.replace(/\D+/g, ""), 10);
+        const foundDlg =
+          diyaloglar.find((d) => d.id === dlgParam) ||
+          (!isNaN(targetNum) && targetNum > 0
+            ? diyaloglar.find(
+                (d) => parseInt(d.id.replace(/\D+/g, ""), 10) === targetNum
+              )
+            : undefined);
+        if (foundDlg) {
+          setSingleDialogueId(foundDlg.id);
+        }
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -453,34 +463,34 @@ function ExercisesPageContent() {
       id: "all-dict",
       label: `Tüm Sözlük (${nonProperCount.toLocaleString("tr-TR")} alıştırma kelimesi — özel isimler hariç)`,
       s: 1,
-      e: 60,
+      e: diyaloglar.length,
     },
     {
       id: "srs-daily",
       label: `⏰ Bugün Tekrar Edilecekler (${dailyPackage.dueReviewPool.totalDueCount})`,
       s: 1,
-      e: 60,
+      e: diyaloglar.length,
     },
     {
       id: "mistakes",
       label: `⚡ Zorlandıklarım / Hata Defteri (${mistakeIds.length})`,
       s: 1,
-      e: 60,
+      e: diyaloglar.length,
     },
     { id: "1-15", label: "Başlangıç Kuru (1-15)", s: 1, e: 15 },
     { id: "16-35", label: "Orta Kur (16-35)", s: 16, e: 35 },
-    { id: "36-60", label: "İleri Kur (36-60)", s: 36, e: 60 },
+    { id: "36-60", label: `İleri Kur (36-${diyaloglar.length})`, s: 36, e: diyaloglar.length },
     {
       id: "favorites",
       label: `Favorilerim / Kaydedilenler (${favoriteWords.length})`,
       s: 1,
-      e: 60,
+      e: diyaloglar.length,
     },
     {
       id: "weak-words",
       label: `Mahreç Tekrarı (${weakWords.length})`,
       s: 1,
-      e: 60,
+      e: diyaloglar.length,
     },
   ];
 

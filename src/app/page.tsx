@@ -119,13 +119,10 @@ export default function HomePage() {
   ]);
 
   const recommendedDialogue = dailyPackage.dailyDialogue.dialogue;
-  const recommendedDialogueId = recommendedDialogue.id || "dlg_01";
-  const recRawNum =
-    parseInt(recommendedDialogueId.replace("dlg_", ""), 10) || 1;
-  const recImgIndex = ((recRawNum - 1) % 60) + 1;
+  const recommendedDialogueId = recommendedDialogue.id || "dlg_001";
   const recommendedCoverSrc =
     (recommendedDialogue as unknown as { gorsel?: string }).gorsel ||
-    `/gorseller/${String(recImgIndex).padStart(3, "0")}.jpg`;
+    "/gorseller/diyaloglar/dlg_001.webp";
   const recommendedSentenceCount =
     (recommendedDialogue as unknown as { cumleler?: unknown[] }).cumleler
       ?.length ?? recommendedDialogue.satirlar.length;

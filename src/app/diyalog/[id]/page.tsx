@@ -749,10 +749,9 @@ export default function DialogueDetailPage({
     return "ar-SA-HamedNeural";
   };
 
-  // Kapak görseli (001.jpg - 060.jpg)
+  // Kapak görseli
   const rawNum = parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
-  const mappedImgIndex = ((rawNum - 1) % 60) + 1;
-  const imagePath = `/gorseller/${String(mappedImgIndex).padStart(3, "0")}.jpg`;
+  const imagePath = "/gorseller/diyaloglar/dlg_001.webp";
 
   const getDisplayText = (text: string) =>
     formatArabicText(text, !mounted || showHareke, arabicFont);

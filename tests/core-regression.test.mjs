@@ -62,7 +62,9 @@ function loadTsModule(specifier, parentDir = projectRoot) {
   }
 
   if (resolvedPath.endsWith(".json")) {
-    const jsonData = JSON.parse(fs.readFileSync(resolvedPath, "utf8"));
+    const jsonData = JSON.parse(
+      fs.readFileSync(resolvedPath, "utf8").replace(/^\uFEFF/, "")
+    );
     moduleCache.set(resolvedPath, { exports: jsonData });
     return jsonData;
   }
@@ -298,8 +300,8 @@ test("6. SRS Aynı Gün Tek Kademe Sınırı ve JSON Merge Tekilleştirme (Idemp
 // ============================================================================
 // 7. Faz E: Pedagojik Diyalog Metadatası, Unicode Standardizasyonu ve Akıllı Çeldirici Testi
 // ============================================================================
-test("7. 60 Diyalog Pedagojik Metadata, CEFR Sıralaması ve Akıllı Çeldirici Kontrolü", () => {
-  assert.equal(dataMod.diyaloglar.length, 60);
+test("7. Diyalog Pedagojik Metadata, CEFR Sıralaması ve Akıllı Çeldirici Kontrolü", () => {
+  assert.ok(dataMod.diyaloglar.length >= 60);
   for (const dlg of dataMod.diyaloglar) {
     assert.ok(dlg.cefr, `${dlg.id} için cefr tanımlı olmalı`);
     assert.ok(dlg.zorluk >= 1 && dlg.zorluk <= 4, `${dlg.id} için zorluk 1..4 olmalı`);

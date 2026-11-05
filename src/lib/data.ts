@@ -1,4 +1,4 @@
-import diyaloglarJson from "@/data/diyaloglar.json";
+import diyaloglarJson from "@/data/tum_diyaloglar_120.json";
 import { getCombinedIdiomsCatalog } from "@/lib/arabicIdioms";
 import { unifiedDictionary } from "@/lib/dict";
 import { Dialogue, DictionaryItem, Level } from "@/types/data";
@@ -76,7 +76,7 @@ export const sozluk: DictionaryItem[] = unifiedDictionary;
 
 /**
  * Diyalogları pedagojik olarak önce CEFR seviyesine (A1 -> A2 -> B1 -> B2),
- * ardından kendi sıra numarasına (dlg_01 .. dlg_60) göre sıralar.
+ * ardından kendi sıra numarasına (dlg_001 .. dlg_120) göre sıralar.
  */
 export function getDialoguesSortedPedagogically(): Dialogue[] {
   return [...diyaloglar].sort((a, b) => {
@@ -89,9 +89,17 @@ export function getDialoguesSortedPedagogically(): Dialogue[] {
   });
 }
 
-// Tek bir diyalog getir
+// Tek bir diyalog getir (hem dlg_01 hem dlg_001 formatlarını destekler)
 export function getDialogueById(id: string): Dialogue | undefined {
-  return diyaloglar.find((d) => d.id === id);
+  const exact = diyaloglar.find((d) => d.id === id);
+  if (exact) return exact;
+  const targetNum = parseInt((id || "").replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return diyaloglar.find(
+      (d) => parseInt(d.id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
 }
 
 // Seviyeye göre filtrele

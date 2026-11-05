@@ -178,11 +178,8 @@ export default function LibraryPage() {
     }
   };
 
-  // 001.jpg - 060.jpg arasında özel kapak görseli eşleştirme
-  const getCoverImage = (dlgId: string) => {
-    const rawNum = parseInt(dlgId.replace("dlg_", ""), 10) || 1;
-    const mappedIndex = ((rawNum - 1) % 60) + 1;
-    return `/gorseller/${String(mappedIndex).padStart(3, "0")}.jpg`;
+  const getCoverImage = (_dlgId: string) => {
+    return "/gorseller/diyaloglar/dlg_001.webp";
   };
 
   const hasActiveFilter = statusFilter !== "all" || levelFilter !== "all";

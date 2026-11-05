@@ -1225,7 +1225,14 @@ function inferPedagogicalIdiomLevel(
     const dlgMatches = Array.from(usageNote.matchAll(/dlg_(\d+)/g));
     if (dlgMatches.length > 0) {
       const matchedDlgs = dlgMatches
-        .map((m) => diyaloglar.find((d) => d.id === `dlg_${m[1]}`))
+        .map((m) => {
+          const num = parseInt(m[1], 10);
+          return diyaloglar.find(
+            (d) =>
+              d.id === `dlg_${m[1]}` ||
+              parseInt(d.id.replace(/\D+/g, ""), 10) === num
+          );
+        })
         .filter((d): d is Dialogue => Boolean(d));
       if (matchedDlgs.length > 0) {
         return mapDialogueSeviyeToIdiomLevel(matchedDlgs[0].seviye);

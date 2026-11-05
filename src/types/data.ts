@@ -99,6 +99,9 @@ export interface DictionaryItem extends PedagogicalMeta {
   masdar?: string;
   gorsel?: string;
   ornek_ar?: string;
+  ornek_tr?: string;
+  ornek_ses_erkek?: string;
+  ornek_ses_kadin?: string;
   soru_kalibi?: string;
   kategori_tr?: string;
   ses_erkek?: string;
@@ -125,6 +128,8 @@ export interface ResimliKelime extends PedagogicalMeta {
   gorsel: string;
   ornek_ar: string;
   ornek_tr?: string;
+  ornek_ses_erkek?: string;
+  ornek_ses_kadin?: string;
   ses_erkek: string;
   ses_kadin: string;
 }

@@ -19,12 +19,17 @@ import {
 import { playClick } from "@/lib/sfxManager";
 import {
   diyaloglar,
+  metinler,
   sozluk,
   cumleler1111,
   atasozleri,
   gorselKelimeler,
 } from "@/lib/data";
-import { getDialogueVocabulary, isProperNounItem } from "@/lib/dict";
+import {
+  getDialogueVocabulary,
+  getReadingTextVocabulary,
+  isProperNounItem,
+} from "@/lib/dict";
 import { Dialogue, DictionaryItem } from "@/types/data";
 import { useUserStore } from "@/store/userStore";
 import { useSettings } from "@/store/settings";
@@ -206,6 +211,29 @@ function ExercisesPageContent() {
         })),
       };
       return [syntheticDlg];
+    }
+    if (rangePreset === "metinler-60") {
+      const list =
+        cefrFilter === "all"
+          ? metinler
+          : metinler.filter((m) => m.seviye === cefrFilter);
+      return list.map(
+        (m): Dialogue => ({
+          id: m.id,
+          seviye: m.seviye,
+          baslik_tr: m.baslik_tr,
+          baslik_ar: m.baslik_ar,
+          satirlar: m.satirlar.map((s) => ({
+            sira: s.sira,
+            konusmaci: m.baslik_tr,
+            konusmaci_ar: m.baslik_ar,
+            cinsiyet: "E",
+            arapca: s.arapca,
+            turkce: s.turkce,
+            ses_dosyasi: s.ses_dosyasi,
+          })),
+        })
+      );
     }
     if (rangePreset === "atasozleri-508") {
       const list =
@@ -446,6 +474,26 @@ function ExercisesPageContent() {
       };
     }
 
+    if (rangePreset === "metinler-60") {
+      const textVocabMap = new Map<string, DictionaryItem>();
+      const targetTexts =
+        cefrFilter === "all"
+          ? metinler
+          : metinler.filter((m) => m.seviye === cefrFilter);
+      targetTexts.forEach((m) => {
+        getReadingTextVocabulary(m.id).forEach((entry) => {
+          if (!isProperNounItem(entry.item)) {
+            textVocabMap.set(entry.item.id, entry.item);
+          }
+        });
+      });
+      const list = Array.from(textVocabMap.values());
+      return {
+        combinedVocabulary: list.length >= 4 ? list : nonProperSozluk,
+        poolNotice: `📖 60 Okuma Metni havuzundan ${targetTexts.length} metin, ${sentenceCountInPool} cümle ve ${list.length} kelime seçildi.`,
+      };
+    }
+
     const allVocabMap = new Map<string, DictionaryItem>();
     selectedDialogues.forEach((dlg) => {
       const entries = getDialogueVocabulary(dlg.id);
@@ -467,6 +515,7 @@ function ExercisesPageContent() {
     rangePreset,
     cefrFilter,
     selectedDialogues,
+    sentenceCountInPool,
     favoriteWords,
     weakWords,
     mistakeIds.length,
@@ -539,6 +588,12 @@ function ExercisesPageContent() {
     {
       id: "mistakes",
       label: `⚡ Zorlandıklarım / Hata Defteri (${mistakeIds.length})`,
+      s: 1,
+      e: diyaloglar.length,
+    },
+    {
+      id: "metinler-60",
+      label: `📖 60 Okuma Metni (${metinler.length} metin)`,
       s: 1,
       e: diyaloglar.length,
     },

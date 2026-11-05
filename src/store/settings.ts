@@ -6,7 +6,7 @@ import {
   ARABIC_FONT_SIZE_PRESETS,
 } from "@/lib/arabicTextUtils";
 
-export type ViewMode = "stacked" | "columns" | "arabic-only" | "turkish-only";
+export type ViewMode = "stacked" | "columns" | "arabic-only" | "turkish-only" | "click-reveal";
 export type PreferredLevel = "Başlangıç" | "Orta" | "İleri";
 export type SpeechRate = 0.5 | 0.75 | 1 | 1.25 | 1.5;
 export type SttEngine = "whisper" | "webspeech";

@@ -75,20 +75,12 @@ export function buildDialogueQrUrl(
   normalizedSlug: string;
 } {
   const rawStr = String(id ?? "").trim();
-  let normalizedSlug = "";
-
-  // Eğer zaten "dlg_02" veya "dlg_59" gibi en az 2 haneli dlg_XX formatındaysa doğrudan kullan
-  if (/^dlg_\d{2,}$/i.test(rawStr)) {
-    normalizedSlug = rawStr.toLowerCase();
-  } else {
-    // "dlg_2", "2", 2, 59 vb. durumlarda sayı kısmını ayıklayıp padStart(2, '0') ile tamamla
-    const digitsMatch = rawStr.match(/\d+/);
-    const num = digitsMatch
-      ? parseInt(digitsMatch[0], 10)
-      : fallbackRawNum || 1;
-    const padded = String(Math.max(1, num)).padStart(2, "0");
-    normalizedSlug = `dlg_${padded}`;
-  }
+  const digitsMatch = rawStr.match(/\d+/);
+  const num = digitsMatch
+    ? parseInt(digitsMatch[0], 10)
+    : fallbackRawNum || 1;
+  const padded = String(Math.max(1, num)).padStart(3, "0");
+  const normalizedSlug = `dlg_${padded}`;
 
   return {
     dialogueUrl: `https://app.muallimun.net/diyalog/${normalizedSlug}`,

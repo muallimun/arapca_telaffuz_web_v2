@@ -44,6 +44,7 @@ const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   columns: "İki Sütun (Yan Yana)",
   "arabic-only": "Sadece Arapça",
   "turkish-only": "Sadece Türkçe (Kendini Sına)",
+  "click-reveal": "Tıkla-Gör (Çeviri Gizli)",
 };
 
 const emptySubscribe = () => () => {};

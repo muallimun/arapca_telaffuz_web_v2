@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -17,6 +17,9 @@ import {
   Download,
   Volume2,
   UserCheck,
+  Play,
+  Square,
+  Maximize2,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -40,6 +43,7 @@ import {
   playDualGenderAudio,
   getDualGenderAudioUrl,
   speakHybrid,
+  stopAllAudio,
 } from "@/lib/audio";
 import {
   getDownloadedDialogueIds,
@@ -86,6 +90,18 @@ export default function LibraryPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(36);
   const [playingItemId, setPlayingItemId] = useState<string | null>(null);
+  const [isSequentialPlaying, setIsSequentialPlaying] = useState<boolean>(false);
+  const sequentialTokenRef = useRef<number>(0);
+  const itemCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const [lightboxPreview, setLightboxPreview] = useState<{
+    imageUrl: string;
+    fallbackUrl: string;
+    badge: string;
+    titleTr: string;
+    titleAr: string;
+    subtitle?: string;
+  } | null>(null);
 
   const [shadowingTarget, setShadowingTarget] = useState<{
     text: string;
@@ -132,11 +148,23 @@ export default function LibraryPage() {
         }
       }
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      sequentialTokenRef.current += 1;
+      stopAllAudio();
+    };
   }, []);
+
+  const stopSequentialPlay = () => {
+    sequentialTokenRef.current += 1;
+    setIsSequentialPlaying(false);
+    setPlayingItemId(null);
+    stopAllAudio();
+  };
 
   const handleSwitchSection = (sec: ViewSection) => {
     playClick();
+    stopSequentialPlay();
     setActiveSection(sec);
     setCategoryFilter("all");
     setVisibleCount(36);
@@ -275,16 +303,20 @@ export default function LibraryPage() {
     const normQ = normalizeArabicText(search.trim());
 
     return cumleler1111.filter((c) => {
-      if (levelFilter !== "all" && c.cefr !== levelFilter) return false;
+      const itemLevel = c.seviye || c.cefr;
+      if (levelFilter !== "all" && itemLevel !== levelFilter) return false;
       if (categoryFilter !== "all" && c.tema !== categoryFilter) return false;
       if (q) {
         const matchTr = c.turkce.toLowerCase().includes(q);
-        const matchTema = c.tema?.toLowerCase().includes(q);
+        const matchTema =
+          c.tema?.toLowerCase().includes(q) ||
+          c.tema?.replace(/_/g, " ").toLowerCase().includes(q);
+        const matchKalip = c.odak_kalip?.toLowerCase().includes(q);
         const matchAr =
           c.arapca.includes(search.trim()) ||
           (cleanQ.length > 0 && cleanArabicText(c.arapca).includes(cleanQ)) ||
           (normQ.length > 0 && normalizeArabicText(c.arapca).includes(normQ));
-        if (!matchTr && !matchTema && !matchAr) return false;
+        if (!matchTr && !matchTema && !matchKalip && !matchAr) return false;
       }
       return true;
     });
@@ -380,6 +412,14 @@ export default function LibraryPage() {
     ses_kadin?: string;
   }) => {
     playClick();
+    if (isSequentialPlaying) {
+      stopSequentialPlay();
+    }
+    if (playingItemId === item.id) {
+      stopAllAudio();
+      setPlayingItemId(null);
+      return;
+    }
     setPlayingItemId(item.id);
     try {
       await playDualGenderAudio({
@@ -392,6 +432,54 @@ export default function LibraryPage() {
       });
     } finally {
       setPlayingItemId((prev) => (prev === item.id ? null : prev));
+    }
+  };
+
+  const handleToggleSequentialPlay = async (
+    items: {
+      id: string;
+      arapca: string;
+      ses_erkek?: string;
+      ses_kadin?: string;
+    }[]
+  ) => {
+    playClick();
+    if (isSequentialPlaying) {
+      stopSequentialPlay();
+      return;
+    }
+    const visibleItems = items.slice(0, visibleCount);
+    if (visibleItems.length === 0) return;
+
+    const myToken = ++sequentialTokenRef.current;
+    setIsSequentialPlaying(true);
+
+    for (const item of visibleItems) {
+      if (sequentialTokenRef.current !== myToken) break;
+      setPlayingItemId(item.id);
+      const cardEl = itemCardRefs.current[item.id];
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      try {
+        await playDualGenderAudio({
+          text: item.arapca,
+          id: item.id,
+          ses_erkek: item.ses_erkek,
+          ses_kadin: item.ses_kadin,
+          rate: speechRate,
+          gender: useSettings.getState().preferredVoiceGender,
+        });
+      } catch {
+        // continue
+      }
+      if (sequentialTokenRef.current !== myToken) break;
+      await new Promise((r) => setTimeout(r, 380));
+    }
+
+    if (sequentialTokenRef.current === myToken) {
+      setIsSequentialPlaying(false);
+      setPlayingItemId(null);
     }
   };
 
@@ -415,6 +503,63 @@ export default function LibraryPage() {
           forms={shadowingTarget.forms}
           onClose={() => setShadowingTarget(null)}
         />
+      )}
+
+      {/* BÜYÜTÜLMÜŞ GÖRSEL LIGHTBOX MODALI (508 Atasözü & 999 Görsel Kelime) */}
+      {lightboxPreview && (
+        <div
+          className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxPreview(null)}
+        >
+          <div
+            className="relative max-w-xl w-full bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] border-b-4 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative bg-white dark:bg-slate-900 flex items-center justify-center p-3">
+              <img
+                src={lightboxPreview.imageUrl}
+                alt={lightboxPreview.titleTr}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (!img.src.endsWith(lightboxPreview.fallbackUrl)) {
+                    img.src = lightboxPreview.fallbackUrl;
+                  }
+                }}
+                className="w-full max-h-[65vh] object-contain rounded-2xl"
+              />
+              <button
+                type="button"
+                onClick={() => setLightboxPreview(null)}
+                className="absolute top-4 right-4 h-9 px-3.5 rounded-xl bg-black/75 hover:bg-black text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+              >
+                <X size={15} />
+                <span>Kapat</span>
+              </button>
+            </div>
+            <div className="p-4 sm:p-5 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
+                  {lightboxPreview.badge}
+                </span>
+                <span
+                  dir="rtl"
+                  className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400"
+                >
+                  {getDisplayArabic(lightboxPreview.titleAr)}
+                </span>
+              </div>
+              <p className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                {lightboxPreview.titleTr}
+              </p>
+              {lightboxPreview.subtitle && (
+                <p className="text-xs font-semibold text-[var(--muted)]">
+                  {lightboxPreview.subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ÜST BAŞLIK & V2 MODÜL SEÇİCİ */}
@@ -704,7 +849,7 @@ export default function LibraryPage() {
                         : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] font-medium hover:text-[var(--foreground)]"
                     }`}
                   >
-                    {cat}
+                    {cat.replace(/_/g, " ")}
                   </button>
                 );
               })}
@@ -1133,39 +1278,78 @@ export default function LibraryPage() {
       {/* 3. SEKME: 1111 CÜMLE */}
       {activeSection === "cumleler" && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-bold text-[var(--muted)] px-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">
             <span>
               Toplam <strong>{filteredSentences.length}</strong> kalıp ve günlük
               cümle listeleniyor
             </span>
-            <span>
-              Aktif Ses:{" "}
-              <strong className="text-[#087F5B]">
-                {mounted && preferredVoiceGender === "kadin"
-                  ? "👩 Kadın (kadin/)"
-                  : "👨 Erkek (erkek/)"}
-              </strong>
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void handleToggleSequentialPlay(filteredSentences)
+                }
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isSequentialPlaying
+                    ? "bg-red-600 hover:bg-red-700 text-white border-red-800"
+                    : "bg-[#087F5B] hover:bg-[#065F46] text-white border-[#065F46]"
+                }`}
+              >
+                {isSequentialPlaying ? (
+                  <>
+                    <Square size={11} fill="currentColor" />
+                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={11} fill="currentColor" />
+                    <span>
+                      ▶ Sıralı Dinle (
+                      {mounted && preferredVoiceGender === "kadin"
+                        ? "👩 Kadın"
+                        : "👨 Erkek"}
+                      )
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredSentences.slice(0, visibleCount).map((item) => {
               const isPlaying = playingItemId === item.id;
+              const itemLevel = item.seviye || item.cefr || "A1";
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 flex flex-col justify-between gap-3"
+                  ref={(el) => {
+                    itemCardRefs.current[item.id] = el;
+                  }}
+                  className={`rounded-2xl border-2 border-b-4 p-4 flex flex-col justify-between gap-3 transition-all ${
+                    isPlaying
+                      ? "bg-emerald-50/95 dark:bg-emerald-950/60 border-[#087F5B] ring-2 ring-[#087F5B]"
+                      : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
+                  }`}
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
-                        #{item.sira || item.id.replace("cumle_", "")} • {item.cefr}
+                        #{item.sira || item.id.replace("cumle_", "")} •{" "}
+                        {itemLevel}
                       </span>
-                      {item.tema && (
-                        <span className="px-2 py-0.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
-                          {item.tema}
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1">
+                        {item.odak_kalip && (
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold">
+                            📌 {item.odak_kalip}
+                          </span>
+                        )}
+                        {item.tema && (
+                          <span className="px-2 py-0.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
+                            {item.tema.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div
@@ -1193,7 +1377,10 @@ export default function LibraryPage() {
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
                       }`}
                     >
-                      <Volume2 size={14} className={isPlaying ? "text-white" : "text-[#065F46]"} />
+                      <Volume2
+                        size={14}
+                        className={isPlaying ? "text-white" : "text-[#065F46]"}
+                      />
                       <span>
                         {isPlaying
                           ? "Dinleniyor..."
@@ -1238,7 +1425,8 @@ export default function LibraryPage() {
                 }}
                 className="px-6 py-3 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs sm:text-sm font-extrabold border-b-4 border-[#065F46] cursor-pointer"
               >
-                Daha Fazla Cümle Göster ({visibleCount} / {filteredSentences.length})
+                Daha Fazla Cümle Göster ({visibleCount} /{" "}
+                {filteredSentences.length})
               </button>
             </div>
           )}
@@ -1248,19 +1436,42 @@ export default function LibraryPage() {
       {/* 4. SEKME: 508 ATASÖZÜ VE HİKMETLİ SÖZ */}
       {activeSection === "atasozleri" && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-bold text-[var(--muted)] px-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">
             <span>
               Toplam <strong>{filteredProverbs.length}</strong> Arapça atasözü
               ve hikmetli söz
             </span>
-            <span>
-              Aktif Ses:{" "}
-              <strong className="text-[#087F5B]">
-                {mounted && preferredVoiceGender === "kadin"
-                  ? "👩 Kadın (kadin/)"
-                  : "👨 Erkek (erkek/)"}
-              </strong>
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void handleToggleSequentialPlay(filteredProverbs)
+                }
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isSequentialPlaying
+                    ? "bg-red-600 hover:bg-red-700 text-white border-red-800"
+                    : "bg-[#087F5B] hover:bg-[#065F46] text-white border-[#065F46]"
+                }`}
+              >
+                {isSequentialPlaying ? (
+                  <>
+                    <Square size={11} fill="currentColor" />
+                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={11} fill="currentColor" />
+                    <span>
+                      ▶ Sıralı Dinle (
+                      {mounted && preferredVoiceGender === "kadin"
+                        ? "👩 Kadın"
+                        : "👨 Erkek"}
+                      )
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1270,38 +1481,79 @@ export default function LibraryPage() {
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 flex flex-col justify-between gap-3"
+                  ref={(el) => {
+                    itemCardRefs.current[item.id] = el;
+                  }}
+                  className={`rounded-2xl border-2 border-b-4 p-4 flex flex-col justify-between gap-3 transition-all ${
+                    isPlaying
+                      ? "bg-emerald-50/95 dark:bg-emerald-950/60 border-[#087F5B] ring-2 ring-[#087F5B]"
+                      : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
+                  }`}
                 >
                   <div className="space-y-2.5">
-                    <div className="flex items-start gap-3">
-                      <img
-                        src={imgUrl}
-                        alt={item.turkce}
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          if (
-                            !img.src.endsWith("/gorseller/atasozleri/ata_0001.webp")
-                          ) {
-                            img.src = "/gorseller/atasozleri/ata_0001.webp";
-                          }
+                    <div className="flex items-start gap-3.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setLightboxPreview({
+                            imageUrl: imgUrl,
+                            fallbackUrl: "/gorseller/atasozleri/ata_0001.webp",
+                            badge: `Atasözü #${
+                              item.sira || item.id.replace("ata_", "")
+                            } • ${item.cefr}`,
+                            titleTr: item.turkce,
+                            titleAr: item.arapca,
+                            subtitle: item.kullanim_baglami,
+                          });
                         }}
-                        className="w-16 h-16 rounded-xl object-cover border-2 border-[#E6D7BE] shrink-0"
-                      />
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
+                        title="Görseli Büyüt (600x600)"
+                        className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-[#E6D7BE] shrink-0 group cursor-pointer bg-white"
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={item.turkce}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            if (
+                              !img.src.endsWith(
+                                "/gorseller/atasozleri/ata_0001.webp"
+                              )
+                            ) {
+                              img.src = "/gorseller/atasozleri/ata_0001.webp";
+                            }
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="absolute bottom-1 right-1 p-1 rounded-md bg-black/65 text-white">
+                          <Maximize2 size={10} />
+                        </span>
+                      </button>
+
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5">
                           <span className="px-2 py-0.5 rounded-lg bg-amber-600 text-white text-[10px] font-extrabold tabular-nums">
-                            #{item.sira || item.id.replace("ata_", "")} • {item.cefr}
+                            #{item.sira || item.id.replace("ata_", "")} •{" "}
+                            {item.cefr}
                           </span>
                           {item.tema && (
                             <span className="px-2 py-0.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
-                              {item.tema}
+                              {item.tema.replace(/_/g, " ")}
                             </span>
                           )}
                         </div>
                         <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
                           “{item.turkce}”
                         </p>
+                        {item.lafzi_ceviri && (
+                          <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
+                            <strong className="text-[var(--foreground)]">
+                              Lafzî Çeviri:
+                            </strong>{" "}
+                            {item.lafzi_ceviri}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1314,15 +1566,6 @@ export default function LibraryPage() {
                         contextSentenceTr={item.turkce}
                       />
                     </div>
-
-                    {item.lafzi_ceviri && (
-                      <p className="text-[11px] font-semibold text-[var(--muted)]">
-                        <strong className="text-[var(--foreground)]">
-                          Lafzî Çeviri:
-                        </strong>{" "}
-                        {item.lafzi_ceviri}
-                      </p>
-                    )}
 
                     {item.kullanim_baglami && (
                       <div className="rounded-xl bg-white/75 dark:bg-[var(--background)] px-3 py-2 border border-[#E6D7BE] text-[11px] font-semibold text-slate-700 dark:text-slate-300">
@@ -1341,7 +1584,10 @@ export default function LibraryPage() {
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
                       }`}
                     >
-                      <Volume2 size={14} className={isPlaying ? "text-white" : "text-[#065F46]"} />
+                      <Volume2
+                        size={14}
+                        className={isPlaying ? "text-white" : "text-[#065F46]"}
+                      />
                       <span>
                         {isPlaying
                           ? "Dinleniyor..."
@@ -1386,7 +1632,8 @@ export default function LibraryPage() {
                 }}
                 className="px-6 py-3 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs sm:text-sm font-extrabold border-b-4 border-[#065F46] cursor-pointer"
               >
-                Daha Fazla Atasözü Göster ({visibleCount} / {filteredProverbs.length})
+                Daha Fazla Atasözü Göster ({visibleCount} /{" "}
+                {filteredProverbs.length})
               </button>
             </div>
           )}
@@ -1396,19 +1643,42 @@ export default function LibraryPage() {
       {/* 5. SEKME: 999 GÖRSEL KELİME */}
       {activeSection === "gorsel-kelimeler" && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-bold text-[var(--muted)] px-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">
             <span>
               Toplam <strong>{filteredVisualWords.length}</strong> resimli
               kelime kartı
             </span>
-            <span>
-              Aktif Ses:{" "}
-              <strong className="text-[#087F5B]">
-                {mounted && preferredVoiceGender === "kadin"
-                  ? "👩 Kadın (kadin/)"
-                  : "👨 Erkek (erkek/)"}
-              </strong>
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void handleToggleSequentialPlay(filteredVisualWords)
+                }
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isSequentialPlaying
+                    ? "bg-red-600 hover:bg-red-700 text-white border-red-800"
+                    : "bg-[#087F5B] hover:bg-[#065F46] text-white border-[#065F46]"
+                }`}
+              >
+                {isSequentialPlaying ? (
+                  <>
+                    <Square size={11} fill="currentColor" />
+                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={11} fill="currentColor" />
+                    <span>
+                      ▶ Sıralı Dinle (
+                      {mounted && preferredVoiceGender === "kadin"
+                        ? "👩 Kadın"
+                        : "👨 Erkek"}
+                      )
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1431,9 +1701,31 @@ export default function LibraryPage() {
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 overflow-hidden flex flex-col justify-between"
+                  ref={(el) => {
+                    itemCardRefs.current[item.id] = el;
+                  }}
+                  className={`rounded-2xl border-2 border-b-4 overflow-hidden flex flex-col justify-between transition-all ${
+                    isPlaying
+                      ? "bg-emerald-50/95 dark:bg-emerald-950/60 border-[#087F5B] ring-2 ring-[#087F5B]"
+                      : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
+                  }`}
                 >
-                  <div className="relative h-36 bg-[#E6D7BE] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setLightboxPreview({
+                        imageUrl: imgUrl,
+                        fallbackUrl: "/gorseller/kelimeler/gorsel_0001.webp",
+                        badge: `${item.cefr} • ${item.kategori_tr}`,
+                        titleTr: item.turkce,
+                        titleAr: item.arapca,
+                        subtitle: item.ornek_tr || item.ornek_ar,
+                      });
+                    }}
+                    title="Görseli Büyüt"
+                    className="relative h-40 w-full bg-white overflow-hidden group cursor-pointer text-left"
+                  >
                     <img
                       src={imgUrl}
                       alt={item.turkce}
@@ -1441,12 +1733,14 @@ export default function LibraryPage() {
                       onError={(e) => {
                         const img = e.currentTarget as HTMLImageElement;
                         if (
-                          !img.src.endsWith("/gorseller/kelimeler/gorsel_0001.webp")
+                          !img.src.endsWith(
+                            "/gorseller/kelimeler/gorsel_0001.webp"
+                          )
                         ) {
                           img.src = "/gorseller/kelimeler/gorsel_0001.webp";
                         }
                       }}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-2 left-2 flex items-center gap-1.5">
                       <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold">
@@ -1456,7 +1750,10 @@ export default function LibraryPage() {
                         {item.kategori_tr}
                       </span>
                     </div>
-                  </div>
+                    <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/65 text-white">
+                      <Maximize2 size={11} />
+                    </span>
+                  </button>
 
                   <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div className="space-y-2">
@@ -1514,10 +1811,24 @@ export default function LibraryPage() {
                               type="button"
                               onClick={() => {
                                 playClick();
-                                void speakHybrid({
-                                  text: item.ornek_ar,
-                                  rate: speechRate,
-                                });
+                                if (
+                                  item.ornek_ses_erkek ||
+                                  item.ornek_ses_kadin
+                                ) {
+                                  void playDualGenderAudio({
+                                    text: item.ornek_ar,
+                                    ses_erkek: item.ornek_ses_erkek,
+                                    ses_kadin: item.ornek_ses_kadin,
+                                    rate: speechRate,
+                                    gender: preferredVoiceGender,
+                                  });
+                                } else {
+                                  void speakHybrid({
+                                    text: item.ornek_ar,
+                                    rate: speechRate,
+                                    voice: preferredVoiceGender,
+                                  });
+                                }
                               }}
                               className="text-[10px] font-extrabold text-[#065F46] hover:underline flex items-center gap-1 cursor-pointer"
                             >
@@ -1531,9 +1842,14 @@ export default function LibraryPage() {
                           >
                             <WordTooltip
                               text={item.ornek_ar}
-                              contextSentenceTr={item.turkce}
+                              contextSentenceTr={item.ornek_tr || item.turkce}
                             />
                           </div>
+                          {item.ornek_tr && (
+                            <p className="text-[11px] font-semibold text-[var(--muted)]">
+                              {item.ornek_tr}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1550,7 +1866,9 @@ export default function LibraryPage() {
                       >
                         <Volume2
                           size={14}
-                          className={isPlaying ? "text-white" : "text-[#065F46]"}
+                          className={
+                            isPlaying ? "text-white" : "text-[#065F46]"
+                          }
                         />
                         <span>
                           {isPlaying

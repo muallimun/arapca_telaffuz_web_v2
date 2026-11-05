@@ -20,6 +20,26 @@ const nextConfig: NextConfig = {
     },
   },
   
+  async rewrites() {
+    const mediaCdnBase = (
+      process.env.NEXT_PUBLIC_MEDIA_CDN_BASE ||
+      "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main"
+    ).replace(/\/+$/, "");
+
+    return {
+      fallback: [
+        {
+          source: "/gorseller/:path*",
+          destination: `${mediaCdnBase}/gorseller/:path*`,
+        },
+        {
+          source: "/sesler/:path*",
+          destination: `${mediaCdnBase}/sesler/:path*`,
+        },
+      ],
+    };
+  },
+
   async headers() {
     return [
       {
@@ -39,7 +59,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdn.jsdelivr.net; worker-src 'self' blob: data:; connect-src 'self' blob: data: https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdn.jsdelivr.net; worker-src 'self' blob: data:; connect-src 'self' blob: data: https://raw.githubusercontent.com https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; media-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
           },
         ],
       },

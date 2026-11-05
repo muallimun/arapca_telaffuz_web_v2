@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import {
@@ -16,9 +16,11 @@ import {
   Maximize2,
   X,
   HelpCircle,
-  BookOpen,
   Eye,
-  EyeOff,
+  Headphones,
+  Share2,
+  Check,
+  XCircle,
 } from "lucide-react";
 import {
   metinler,
@@ -34,9 +36,11 @@ import {
 import { useAudioStore } from "@/store/audioStore";
 import { useSettings, ViewMode } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
-import { playClick, playSuccess } from "@/lib/sfxManager";
+import { playClick, playSuccess, playError } from "@/lib/sfxManager";
 import WordTooltip from "@/components/ui/WordTooltip";
 import ShadowingModal from "@/components/ui/ShadowingModal";
+import ShadowingButton from "@/components/ui/ShadowingButton";
+import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import {
   GrammarHapBilgiPanel,
   GrammarHapBilgiModal,
@@ -49,7 +53,12 @@ import {
 import { ReadingTextLine, DictionaryItem } from "@/types/data";
 import { formatArabicText, splitMixedBidiText } from "@/lib/arabicTextUtils";
 
-type TextStudyMode = "listen" | "shadowing" | "questions" | "gramer" | "vocabulary";
+type TextStudyMode =
+  | "listen"
+  | "shadowing"
+  | "questions"
+  | "gramer"
+  | "vocabulary";
 
 export default function ReadingTextDetailPage({
   params,
@@ -100,7 +109,15 @@ export default function ReadingTextDetailPage({
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isGrammarModalOpen, setIsGrammarModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [blindListeningMode, setBlindListeningMode] = useState(false);
+  const [listenedLines, setListenedLines] = useState<Record<number, boolean>>({});
+  const [revealedLines, setRevealedLines] = useState<Record<number, boolean>>({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
+  const [selectedQuestionChoice, setSelectedQuestionChoice] = useState<
+    Record<number, number>
+  >({});
+
   const [shadowingTarget, setShadowingTarget] = useState<{
     text: string;
     itemId?: string;
@@ -129,8 +146,6 @@ export default function ReadingTextDetailPage({
     }
   }, [playingLineId]);
 
-  if (!rawText) return notFound();
-
   const currentIndex = metinler.findIndex((m) => m.id === readingText.id);
   const prevText = currentIndex > 0 ? metinler[currentIndex - 1] : null;
   const nextText =
@@ -139,9 +154,55 @@ export default function ReadingTextDetailPage({
   const rawNum = parseInt(readingText.id.replace(/\D+/g, ""), 10) || 1;
   const imagePath = getReadingTextCoverUrl(readingText.id);
   const grammarNote = getReadingTextGrammarNote(readingText.id);
-  const vocabEntries: DialogueVocabularyEntry[] = getReadingTextVocabulary(
-    readingText.id
+  const vocabEntries: DialogueVocabularyEntry[] = useMemo(
+    () => getReadingTextVocabulary(readingText.id),
+    [readingText.id]
   );
+
+  // Çoktan seçmeli anlama soruları için deterministik 4 şık üretimi
+  const questionChoicesList = useMemo(() => {
+    const questions = readingText.sorular || [];
+    const fallbackPool = metinler
+      .flatMap((m) => m.sorular || [])
+      .filter((q) => q.cevap_ar && q.cevap_tr);
+
+    return questions.map((q, qIdx) => {
+      const otherAnswers = [
+        ...questions.filter((_, i) => i !== qIdx),
+        ...fallbackPool.filter((fq) => fq.cevap_ar !== q.cevap_ar),
+      ];
+      const distractors: { ar: string; tr: string; isCorrect: boolean }[] = [];
+      const seen = new Set<string>([q.cevap_ar]);
+      const startOffset = (rawNum * 3 + qIdx * 5) % Math.max(1, otherAnswers.length);
+
+      for (let i = 0; i < otherAnswers.length && distractors.length < 3; i++) {
+        const cand = otherAnswers[(startOffset + i) % otherAnswers.length];
+        if (cand && !seen.has(cand.cevap_ar)) {
+          seen.add(cand.cevap_ar);
+          distractors.push({
+            ar: cand.cevap_ar,
+            tr: cand.cevap_tr,
+            isCorrect: false,
+          });
+        }
+      }
+
+      const rawChoices = [
+        { ar: q.cevap_ar, tr: q.cevap_tr, isCorrect: true },
+        ...distractors,
+      ];
+
+      // Deterministik karıştırma
+      const rotated: typeof rawChoices = [];
+      const shift = (rawNum + qIdx) % rawChoices.length;
+      for (let i = 0; i < rawChoices.length; i++) {
+        rotated.push(rawChoices[(i + shift) % rawChoices.length]);
+      }
+      return rotated;
+    });
+  }, [readingText.sorular, rawNum]);
+
+  if (!rawText) return notFound();
 
   const isFav = mounted ? isDialogueFavorite(readingText.id) : false;
   const isCompleted = mounted ? isDialogueCompleted(readingText.id) : false;
@@ -152,6 +213,7 @@ export default function ReadingTextDetailPage({
 
   const playLine = async (line: ReadingTextLine, autoAdvance = false) => {
     const currentToken = playToken.current;
+    setListenedLines((prev) => ({ ...prev, [line.sira]: true }));
     const lineHasMp3 = hasMp3(readingText.id, line.sira);
     const lineAudioUrl = lineHasMp3
       ? getMp3Path(readingText.id, line.sira)
@@ -164,14 +226,18 @@ export default function ReadingTextDetailPage({
         line.arapca,
         line.sira,
         speechRate,
-        preferredVoiceGender === "kadin" ? "ar-SA-ZariyahNeural" : "ar-SA-HamedNeural"
+        preferredVoiceGender === "kadin"
+          ? "ar-SA-ZariyahNeural"
+          : "ar-SA-HamedNeural"
       );
     }
 
     if (playToken.current !== currentToken) return;
 
     if (autoAdvance) {
-      const nextLine = readingText.satirlar.find((s) => s.sira === line.sira + 1);
+      const nextLine = readingText.satirlar.find(
+        (s) => s.sira === line.sira + 1
+      );
       if (nextLine) {
         await new Promise((r) => setTimeout(r, 320));
         if (playToken.current !== currentToken) return;
@@ -270,6 +336,14 @@ export default function ReadingTextDetailPage({
     }
   };
 
+  const viewModeOptions: { id: ViewMode; label: string }[] = [
+    { id: "stacked", label: "Alt Alta" },
+    { id: "columns", label: "İki Sütun" },
+    { id: "arabic-only", label: "Sadece Arapça" },
+    { id: "turkish-only", label: "Sadece Türkçe" },
+    { id: "click-reveal", label: "Tıkla-Gör" },
+  ];
+
   return (
     <div className="space-y-3 pb-28 md:pb-10">
       {/* GÖLGELEME VE TELAFFUZ KOÇU MODALI */}
@@ -293,6 +367,20 @@ export default function ReadingTextDetailPage({
           onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
         />
       )}
+
+      {/* BAŞARI KARTI PAYLAŞIM MODALI */}
+      <ShareAchievementModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title={readingText.baslik_tr}
+        arabicTitle={readingText.baslik_ar}
+        subtitle={`Okuma Metni #${String(rawNum).padStart(2, "0")} Tamamlandı`}
+        levelLabel={`Seviye ${readingText.seviye}`}
+        scorePercent={100}
+        wordsCount={vocabEntries.length}
+        badgeType="dialogue"
+        dialogueId={readingText.id}
+      />
 
       {/* LIGHTBOX KAPAK GÖRSELİ */}
       {isLightboxOpen && (
@@ -379,9 +467,12 @@ export default function ReadingTextDetailPage({
                 </span>
               </div>
               <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 leading-tight mt-0.5 truncate">
-                {readingText.tema ? `${readingText.tema} • ` : ""}
-                {readingText.satirlar.length} Cümle • {readingText.sorular?.length || 0} Soru •{" "}
-                {vocabEntries.length} Kelime
+                {readingText.tema
+                  ? `${readingText.tema.replace(/_/g, " ")} • `
+                  : ""}
+                {readingText.satirlar.length} Cümle •{" "}
+                {readingText.sorular?.length || 0} Soru • {vocabEntries.length}{" "}
+                Kelime
               </p>
             </div>
           </div>
@@ -417,8 +508,8 @@ export default function ReadingTextDetailPage({
         <div className="w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
           {(
             [
-              { id: "listen", label: "📖 Okuma & Dinleme" },
-              { id: "shadowing", label: "🎙️ Telaffuz" },
+              { id: "listen", label: "📖 Metni Oku & Dinle" },
+              { id: "shadowing", label: "🎙️ Telaffuz Stüdyosu" },
               {
                 id: "questions",
                 label: `❓ Sorular (${readingText.sorular?.length || 0})`,
@@ -506,31 +597,37 @@ export default function ReadingTextDetailPage({
               <span>Hareke</span>
             </button>
 
+            <select
+              value={currentViewMode}
+              onChange={(e) => {
+                playClick();
+                setViewMode(e.target.value as ViewMode);
+              }}
+              aria-label="Görünüm Modu"
+              className="px-2.5 py-1.5 rounded-xl border bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] cursor-pointer"
+            >
+              {viewModeOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  👁️ {opt.label}
+                </option>
+              ))}
+            </select>
+
             <button
               type="button"
               onClick={() => {
                 playClick();
-                setViewMode(
-                  currentViewMode === "arabic-only" ? "stacked" : "arabic-only"
-                );
+                setBlindListeningMode((v) => !v);
               }}
               className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer ${
-                currentViewMode === "arabic-only"
+                blindListeningMode
                   ? "bg-[#6741D9] border-[#5230B5] text-white"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
               }`}
+              title="Kör Dinleme Modu: Cümle dinlenene kadar metin bulanık kalır"
             >
-              {currentViewMode === "arabic-only" ? (
-                <>
-                  <Eye size={13} />
-                  <span>Türkçeleri Göster</span>
-                </>
-              ) : (
-                <>
-                  <EyeOff size={13} />
-                  <span>Sadece Arapça</span>
-                </>
-              )}
+              <Headphones size={13} />
+              <span>Kör Dinleme</span>
             </button>
 
             {grammarNote && (
@@ -561,7 +658,9 @@ export default function ReadingTextDetailPage({
               }`}
             >
               <Heart size={13} fill={isFav ? "currentColor" : "none"} />
-              <span className="hidden sm:inline">{isFav ? "Favoride" : "Favori"}</span>
+              <span className="hidden sm:inline">
+                {isFav ? "Favoride" : "Favori"}
+              </span>
             </button>
 
             <button
@@ -580,6 +679,19 @@ export default function ReadingTextDetailPage({
               <span className="hidden sm:inline">
                 {isCompleted ? "Tamamlandı" : "Tamamla"}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsShareModalOpen(true);
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] flex items-center gap-1 transition-all cursor-pointer"
+              title="Başarı Kartı Paylaş"
+            >
+              <Share2 size={13} />
+              <span className="hidden sm:inline">Paylaş</span>
             </button>
           </div>
         </div>
@@ -603,19 +715,23 @@ export default function ReadingTextDetailPage({
                   Okuduğunu Anlama Soruları (أسئلة الفهم والاستيعاب)
                 </h2>
                 <p className="text-xs font-semibold text-[var(--muted)]">
-                  Soruları sesli dinleyin, kelimelerin üzerine tıklayarak kök analizini inceleyin ve cevabı kontrol edin.
+                  Soruları sesli dinleyin, doğru şıkkı seçerek kendinizi test edin veya kelimelerin üzerine tıklayarak kök analizini inceleyin.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {(readingText.sorular || []).map((q, idx) => {
               const isRevealed = Boolean(revealedAnswers[idx]);
+              const choices = questionChoicesList[idx] || [];
+              const selectedChoiceIdx = selectedQuestionChoice[idx];
+              const hasSelected = selectedChoiceIdx !== undefined;
+
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-5 space-y-3"
+                  className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-5 space-y-3.5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-xs font-extrabold">
@@ -653,7 +769,9 @@ export default function ReadingTextDetailPage({
                   <div
                     dir="rtl"
                     className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[2.1] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE]"
-                    style={{ fontSize: `${Math.max(1.35, arabicFontSize * 0.85)}rem` }}
+                    style={{
+                      fontSize: `${Math.max(1.35, arabicFontSize * 0.85)}rem`,
+                    }}
                   >
                     <WordTooltip
                       text={q.soru_ar}
@@ -665,24 +783,96 @@ export default function ReadingTextDetailPage({
                     🇹🇷 {q.soru_tr}
                   </p>
 
+                  {/* İnteraktif Çoktan Seçmeli Şıklar */}
+                  {choices.length > 1 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      {choices.map((choice, cIdx) => {
+                        const isPicked = selectedChoiceIdx === cIdx;
+                        let btnStyle =
+                          "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]";
+                        if (hasSelected) {
+                          if (choice.isCorrect) {
+                            btnStyle =
+                              "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-900 dark:text-emerald-200";
+                          } else if (isPicked && !choice.isCorrect) {
+                            btnStyle =
+                              "bg-rose-50 dark:bg-rose-950/60 border-rose-500 text-rose-900 dark:text-rose-200";
+                          }
+                        }
+                        return (
+                          <button
+                            key={cIdx}
+                            type="button"
+                            onClick={() => {
+                              setSelectedQuestionChoice((prev) => ({
+                                ...prev,
+                                [idx]: cIdx,
+                              }));
+                              if (choice.isCorrect) {
+                                playSuccess();
+                                setRevealedAnswers((prev) => ({
+                                  ...prev,
+                                  [idx]: true,
+                                }));
+                              } else {
+                                playError();
+                              }
+                            }}
+                            className={`p-3 rounded-xl border-2 border-b-3 text-left transition-all flex flex-col justify-between gap-1.5 cursor-pointer ${btnStyle}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-slate-800 text-[11px] font-black flex items-center justify-center shrink-0">
+                                {["A", "B", "C", "D"][cIdx]}
+                              </span>
+                              {hasSelected && choice.isCorrect && (
+                                <Check
+                                  size={15}
+                                  className="text-emerald-600 shrink-0"
+                                />
+                              )}
+                              {hasSelected && isPicked && !choice.isCorrect && (
+                                <XCircle
+                                  size={15}
+                                  className="text-rose-600 shrink-0"
+                                />
+                              )}
+                            </div>
+                            <div
+                              dir="rtl"
+                              className="arabic font-arabic text-lg sm:text-xl font-bold text-right w-full text-[var(--foreground)]"
+                            >
+                              {getDisplayText(choice.ar)}
+                            </div>
+                            <span className="text-xs font-semibold text-[var(--muted)]">
+                              {choice.tr}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   <div className="pt-1">
                     {!isRevealed ? (
                       <button
                         type="button"
                         onClick={() => {
                           playClick();
-                          setRevealedAnswers((prev) => ({ ...prev, [idx]: true }));
+                          setRevealedAnswers((prev) => ({
+                            ...prev,
+                            [idx]: true,
+                          }));
                         }}
                         className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold border-b-2 border-emerald-800 flex items-center gap-1.5 cursor-pointer"
                       >
                         <Eye size={14} />
-                        <span>Cevabı Göster</span>
+                        <span>Cevap Analizini Göster</span>
                       </button>
                     ) : (
                       <div className="rounded-xl bg-emerald-50/90 dark:bg-emerald-950/50 border-2 border-emerald-500/60 p-3.5 space-y-2 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                            ✓ Doğru Cevap
+                            ✓ Doğru Cevap & Kök Analizi
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button
@@ -716,7 +906,9 @@ export default function ReadingTextDetailPage({
                         <div
                           dir="rtl"
                           className="arabic font-arabic font-bold text-[#1C1E21] dark:text-white text-right leading-[2]"
-                          style={{ fontSize: `${Math.max(1.3, arabicFontSize * 0.8)}rem` }}
+                          style={{
+                            fontSize: `${Math.max(1.3, arabicFontSize * 0.8)}rem`,
+                          }}
                         >
                           <WordTooltip
                             text={q.cevap_ar}
@@ -824,6 +1016,7 @@ export default function ReadingTextDetailPage({
                       const forms = prepareWordForms(word);
                       openShadowingCoach({
                         text: forms?.[0]?.arabic || mainAr.split("/")[0].trim(),
+                        itemId: word.id,
                         forms,
                       });
                     }}
@@ -868,11 +1061,17 @@ export default function ReadingTextDetailPage({
           })}
         </section>
       ) : (
-        /* OKUMA METNİ CÜMLELERİ */
+        /* OKUMA METNİ CÜMLELERİ (listen & shadowing modları) */
         <section className="space-y-2.5">
           {readingText.satirlar.map((line) => {
             const isPlaying = playingLineId === line.sira;
             const lineAudioUrl = getMp3Path(readingText.id, line.sira);
+            const isBlindHidden =
+              blindListeningMode &&
+              !listenedLines[line.sira] &&
+              !revealedLines[line.sira];
+            const isClickRevealHidden =
+              currentViewMode === "click-reveal" && !revealedLines[line.sira];
 
             return (
               <div
@@ -931,34 +1130,99 @@ export default function ReadingTextDetailPage({
                       className="px-3 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 hover:bg-[#e8e2ff] border border-[#6741D9]/50 text-[#6741D9] dark:text-indigo-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
                     >
                       <Mic size={13} />
-                      <span>Telaffuz Et</span>
+                      <span>Mahreç Koçu</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Arapça Metin */}
+                {/* Cümle Gövdesi (Alt Alta veya İki Sütun) */}
                 <div
-                  dir="rtl"
-                  style={{ fontSize: `${arabicFontSize}px` }}
-                  className="arabic font-arabic font-bold text-[#1C1E21] dark:text-white text-right leading-[2.1] bg-white/80 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE] dark:border-[var(--border)]"
+                  className={
+                    currentViewMode === "columns"
+                      ? "grid grid-cols-1 md:grid-cols-2 gap-3 items-start"
+                      : "space-y-2.5"
+                  }
                 >
-                  <WordTooltip
-                    text={line.arapca}
-                    contextSentenceTr={line.turkce}
-                    isLineSpeaking={isPlaying}
-                    activeWordIndex={activeWordIndex}
-                    activeWordProgress={activeWordProgress}
-                  />
+                  {/* Arapça Metin */}
+                  {currentViewMode !== "turkish-only" && (
+                    <div
+                      dir="rtl"
+                      onClick={() => {
+                        if (isBlindHidden) {
+                          setRevealedLines((prev) => ({
+                            ...prev,
+                            [line.sira]: true,
+                          }));
+                        }
+                      }}
+                      style={{ fontSize: `${arabicFontSize}px` }}
+                      className={`arabic font-arabic font-bold text-[#1C1E21] dark:text-white text-right leading-[2.1] bg-white/80 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE] dark:border-[var(--border)] transition-all ${
+                        isBlindHidden
+                          ? "blur-sm select-none cursor-pointer"
+                          : ""
+                      }`}
+                    >
+                      <WordTooltip
+                        text={line.arapca}
+                        contextSentenceTr={line.turkce}
+                        isLineSpeaking={isPlaying}
+                        activeWordIndex={activeWordIndex}
+                        activeWordProgress={activeWordProgress}
+                      />
+                    </div>
+                  )}
+
+                  {/* Türkçe Çeviri */}
+                  {currentViewMode !== "arabic-only" && (
+                    <div
+                      onClick={() => {
+                        if (isClickRevealHidden || isBlindHidden) {
+                          playClick();
+                          setRevealedLines((prev) => ({
+                            ...prev,
+                            [line.sira]: true,
+                          }));
+                        }
+                      }}
+                      className={
+                        currentViewMode === "columns"
+                          ? "bg-white/60 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE] dark:border-[var(--border)]"
+                          : "pl-1"
+                      }
+                    >
+                      {isClickRevealHidden || isBlindHidden ? (
+                        <button
+                          type="button"
+                          className="text-xs font-extrabold text-[#6741D9] underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye size={13} />
+                          <span>Türkçe Çeviriyi Görmek İçin Tıklayın</span>
+                        </button>
+                      ) : (
+                        <p
+                          style={{ fontSize: `${turkishFontSize}px` }}
+                          className="font-semibold text-slate-700 dark:text-slate-200 leading-relaxed"
+                        >
+                          {line.turkce}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Türkçe Çeviri */}
-                {currentViewMode !== "arabic-only" && (
-                  <p
-                    style={{ fontSize: `${turkishFontSize}px` }}
-                    className="mt-2.5 font-semibold text-slate-700 dark:text-slate-200 leading-relaxed pl-1"
-                  >
-                    {line.turkce}
-                  </p>
+                {/* Telaffuz Stüdyosu Modunda Hızlı 16kHz Kayıt & Karşılaştırma Barı */}
+                {studyMode === "shadowing" && (
+                  <div className="mt-3 pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                    <ShadowingButton
+                      text={line.arapca}
+                      onOpenCoach={() =>
+                        openShadowingCoach({
+                          text: line.arapca,
+                          audioUrl: lineAudioUrl,
+                        })
+                      }
+                    />
+                  </div>
                 )}
               </div>
             );
@@ -968,11 +1232,11 @@ export default function ReadingTextDetailPage({
 
       {/* ALT TAMAMLAMA VE ÖNCEKİ / SONRAKİ METİN GEÇİŞİ */}
       <section className="space-y-3 pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <button
             type="button"
             onClick={handleCompleteAndContinue}
-            className="py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2.5 shadow-sm cursor-pointer"
+            className="sm:col-span-2 py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2.5 shadow-sm cursor-pointer"
           >
             <CheckCircle2 size={20} className="shrink-0" />
             <span>
@@ -990,16 +1254,12 @@ export default function ReadingTextDetailPage({
             type="button"
             onClick={() => {
               playClick();
-              setStudyMode(studyMode === "questions" ? "listen" : "questions");
+              setIsShareModalOpen(true);
             }}
             className="py-3.5 px-4 bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-indigo-900 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
-            <BookOpen size={17} />
-            <span>
-              {studyMode === "questions"
-                ? "📖 Metin Cümlelerine Dön"
-                : `❓ Anlama Sorularını Çöz (${readingText.sorular?.length || 0} Soru)`}
-            </span>
+            <Share2 size={17} />
+            <span>🏆 Başarı Kartı Paylaş</span>
           </button>
         </div>
 

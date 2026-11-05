@@ -88,7 +88,7 @@ self.addEventListener("fetch", (event) => {
           if (
             networkResponse &&
             networkResponse.status === 200 &&
-            networkResponse.type === "basic"
+            (networkResponse.type === "basic" || networkResponse.type === "cors")
           ) {
             const responseClone = networkResponse.clone();
             caches
@@ -135,7 +135,7 @@ self.addEventListener("fetch", (event) => {
           if (
             networkResponse &&
             networkResponse.status === 200 &&
-            networkResponse.type === "basic"
+            (networkResponse.type === "basic" || networkResponse.type === "cors")
           ) {
             const responseClone = networkResponse.clone();
             caches
@@ -171,7 +171,7 @@ self.addEventListener("fetch", (event) => {
         if (
           networkResponse &&
           networkResponse.status === 200 &&
-          networkResponse.type === "basic"
+          (networkResponse.type === "basic" || networkResponse.type === "cors")
         ) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {

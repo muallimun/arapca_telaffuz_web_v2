@@ -122,6 +122,7 @@ export default function WordTooltip({
     speechRate,
     arabicFont,
     wordTrackingStyle,
+    preferredVoiceGender,
   } = useSettings();
   const {
     toggleFavoriteWord,
@@ -441,7 +442,7 @@ export default function WordTooltip({
                 text: (arabicToSpeak || primaryAr).split("/")[0].trim(),
                 wordId: arabicToSpeak ? undefined : dictItem.id,
                 rate: speechRate,
-                voice: "male",
+                voice: preferredVoiceGender,
               });
             } finally {
               setIsSpeaking(false);

@@ -64,6 +64,33 @@ function buildDialogueTags(baslikTr: string, seviye: Level): string[] {
   return Array.from(new Set([seviye.toLowerCase(), baseTag, ...cleaned]));
 }
 
+export const MEDIA_CDN_PUBLIC_BASE =
+  "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/public";
+
+export function resolveImageUrl(path?: string): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  let cleanPath = path.replace(/^\/+/, "").replace(/^public\//, "");
+  // gorselKelimeler_guncel.json icindeki "gorseller/kelimeler/0002_01_arap.webp" yolunu
+  // GitHub medya deposundaki gercek dosya adina ("gorseller/kelimeler/gorsel_0002.webp") donustur
+  cleanPath = cleanPath.replace(
+    /^gorseller\/kelimeler\/(?:gorsel_)?(\d{4})(?:_[^/]*)?\.webp$/i,
+    "gorseller/kelimeler/gorsel_$1.webp"
+  );
+  return `${MEDIA_CDN_PUBLIC_BASE}/${cleanPath}`;
+}
+
+export function resolveAudioUrl(path?: string): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const cleanPath = path.replace(/^\/+/, "").replace(/^public\//, "");
+  return `${MEDIA_CDN_PUBLIC_BASE}/${cleanPath}`;
+}
+
 export const diyalogGramerNotlari: GramerHapBilgi[] =
   diyalogGramerJson as GramerHapBilgi[];
 
@@ -74,8 +101,14 @@ export const metinGramerNotlari: GramerHapBilgi[] =
 export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
   (d): Dialogue => {
     const lvl: Level = d.seviye || "A1";
+    const num3 = String(
+      parseInt((d.id || "").replace(/\D+/g, ""), 10) || 1
+    ).padStart(3, "0");
     return {
       ...d,
+      gorsel: resolveImageUrl(
+        d.gorsel || `/gorseller/diyaloglar/dlg_${num3}.webp`
+      ),
       cefr: d.cefr || lvl,
       zorluk: d.zorluk || LEVEL_ZORLUK_MAP[lvl] || 1,
       etiketler:
@@ -98,9 +131,15 @@ export const metinler: ReadingText[] = (metinlerJson as ReadingText[]).map(
   (m, idx): ReadingText => {
     const lvl: Level = m.seviye || "A1";
     const gramerNote = metinGramerNotlari.find((g) => g.bagli_id === m.id);
+    const num2 = String(
+      parseInt((m.id || "").replace(/\D+/g, ""), 10) || idx + 1
+    ).padStart(2, "0");
     return {
       ...m,
       sira: m.sira || idx + 1,
+      gorsel: resolveImageUrl(
+        m.gorsel || `/gorseller/metinler/metin_${num2}.webp`
+      ),
       odak_gramer: m.odak_gramer || gramerNote?.konu_basligi,
       cefr: m.cefr || lvl,
       zorluk: m.zorluk || LEVEL_ZORLUK_MAP[lvl] || 1,
@@ -133,31 +172,37 @@ export const cumleler1111: AnahtarCumle[] = (
 export const atasozleri: AtasozuDeyim[] = (
   atasozleriJson as AtasozuDeyim[]
 ).map((a) => {
-  const num4 = String(a.sira || parseInt(a.id.replace(/\D+/g, ""), 10) || 1).padStart(
-    4,
-    "0"
-  );
+  const num4 = String(
+    a.sira || parseInt(a.id.replace(/\D+/g, ""), 10) || 1
+  ).padStart(4, "0");
   return {
     ...a,
     arapca: normalizeCanonicalArabicLine(a.arapca),
-    gorsel: a.gorsel || `/gorseller/atasozleri/ata_${num4}.webp`,
-    ses_erkek: (
-      a.ses_erkek || `/sesler/atasozleri/erkek/ata_${num4}.mp3`
-    ).replace(/\.wav$/i, ".mp3"),
-    ses_kadin: (
-      a.ses_kadin || `/sesler/atasozleri/kadin/ata_${num4}.mp3`
-    ).replace(/\.wav$/i, ".mp3"),
+    gorsel: resolveImageUrl(
+      a.gorsel || `/gorseller/atasozleri/ata_${num4}.webp`
+    ),
+    ses_erkek: a.ses_erkek || `/sesler/atasozleri/erkek/ata_${num4}.wav`,
+    ses_kadin: a.ses_kadin || `/sesler/atasozleri/kadin/ata_${num4}.wav`,
   };
 });
 
 // 5. Görsel Kelimeler (gorselKelimeler_guncel.json)
 export const gorselKelimeler: ResimliKelime[] = (
   gorselKelimelerJson as ResimliKelime[]
-).map((gk) => ({
-  ...gk,
-  arapca: normalizeCanonicalArabicLine(gk.arapca),
-  ornek_ar: normalizeCanonicalArabicLine(gk.ornek_ar || ""),
-}));
+).map((gk, idx) => {
+  const prefix = (gk.id || "").split("_")[0];
+  const num4 = String(
+    gk.sira || parseInt(prefix.replace(/\D+/g, ""), 10) || idx + 1
+  ).padStart(4, "0");
+  return {
+    ...gk,
+    arapca: normalizeCanonicalArabicLine(gk.arapca),
+    ornek_ar: normalizeCanonicalArabicLine(gk.ornek_ar || ""),
+    gorsel: resolveImageUrl(
+      gk.gorsel || `/gorseller/kelimeler/gorsel_${num4}.webp`
+    ),
+  };
+});
 
 // 6. Birleştirilmiş Kapsamlı Sözlük
 export const sozluk: DictionaryItem[] = unifiedDictionary;
@@ -168,26 +213,37 @@ export const sozluk: DictionaryItem[] = unifiedDictionary;
 
 export function getDialogueCoverUrl(dialogueId: string): string {
   const num = parseInt((dialogueId || "").replace(/\D+/g, ""), 10) || 1;
-  return `/gorseller/diyaloglar/dlg_${String(num).padStart(3, "0")}.webp`;
+  return resolveImageUrl(
+    `/gorseller/diyaloglar/dlg_${String(num).padStart(3, "0")}.webp`
+  );
 }
 
 export function getReadingTextCoverUrl(metinId: string): string {
   const num = parseInt((metinId || "").replace(/\D+/g, ""), 10) || 1;
-  return `/gorseller/metinler/metin_${String(num).padStart(2, "0")}.webp`;
+  return resolveImageUrl(
+    `/gorseller/metinler/metin_${String(num).padStart(2, "0")}.webp`
+  );
 }
 
 export function getProverbCoverUrl(ataId: string): string {
   const num = parseInt((ataId || "").replace(/\D+/g, ""), 10) || 1;
-  return `/gorseller/atasozleri/ata_${String(num).padStart(4, "0")}.webp`;
+  return resolveImageUrl(
+    `/gorseller/atasozleri/ata_${String(num).padStart(4, "0")}.webp`
+  );
 }
 
 export function getVisualWordCoverUrl(
   itemOrId: ResimliKelime | DictionaryItem | string
 ): string {
-  const rawId = typeof itemOrId === "string" ? itemOrId : itemOrId.id || "";
+  if (typeof itemOrId !== "string" && itemOrId?.gorsel) {
+    return resolveImageUrl(itemOrId.gorsel);
+  }
+  const rawId = typeof itemOrId === "string" ? itemOrId : itemOrId?.id || "";
   const prefix = rawId.split("_")[0];
   const num = parseInt(prefix.replace(/\D+/g, ""), 10) || 1;
-  return `/gorseller/kelimeler/gorsel_${String(num).padStart(4, "0")}.webp`;
+  return resolveImageUrl(
+    `/gorseller/kelimeler/gorsel_${String(num).padStart(4, "0")}.webp`
+  );
 }
 
 // ============================================================================

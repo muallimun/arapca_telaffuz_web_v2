@@ -4,7 +4,12 @@
 // Katman 2: Sunucu Destekli Neural TTS API (/api/tts - HamedNeural / ZariyahNeural + Google TTS Fallback) + Bellek/CacheStorage Önbelleği
 // Katman 3: Akıllı Web Speech API (Offline Fallback - en kaliteli Arapça sistem sesini seçer)
 
-import { getDialogueById, getReadingTextById, sozluk } from "@/lib/data";
+import {
+  getDialogueById,
+  getReadingTextById,
+  resolveAudioUrl,
+  sozluk,
+} from "@/lib/data";
 import { useSettings, VoiceGender } from "@/store/settings";
 
 export type VoiceOption =
@@ -70,21 +75,21 @@ export function getMp3Path(
     const txt = getReadingTextById(contentId);
     const line = txt?.satirlar?.find((l) => l.sira === sira);
     if (line?.ses_dosyasi) {
-      return line.ses_dosyasi;
+      return resolveAudioUrl(line.ses_dosyasi);
     }
     const num2 = String(parseInt(contentId.replace(/\D+/g, ""), 10) || 1).padStart(
       2,
       "0"
     );
     const sira2 = String(sira).padStart(2, "0");
-    return `/sesler/metinler/metin_${num2}/satir_${sira2}.mp3`;
+    return resolveAudioUrl(`/sesler/metinler/metin_${num2}/satir_${sira2}.mp3`);
   }
 
   // 2. Diyalog ise (dlg_001 .. dlg_120)
   const dlg = getDialogueById(contentId);
   const line = dlg?.satirlar?.find((l) => l.sira === sira);
   if (line?.ses_dosyasi) {
-    return line.ses_dosyasi;
+    return resolveAudioUrl(line.ses_dosyasi);
   }
 
   const num3 = String(parseInt(contentId.replace(/\D+/g, ""), 10) || 1).padStart(
@@ -93,7 +98,9 @@ export function getMp3Path(
   );
   const sira2 = String(sira).padStart(2, "0");
   const genderCode = speakerGender || line?.cinsiyet || "E";
-  return `/sesler/diyaloglar/dlg_${num3}/satir_${sira2}_${genderCode}.mp3`;
+  return resolveAudioUrl(
+    `/sesler/diyaloglar/dlg_${num3}/satir_${sira2}_${genderCode}.mp3`
+  );
 }
 
 export function getFallbackMp3Path(contentId: string, sira: number): string {
@@ -102,7 +109,7 @@ export function getFallbackMp3Path(contentId: string, sira: number): string {
 
 /**
  * Çift cinsiyetli (erkek/ ve kadin/) ses dosyası bulunan öğeler (Kelime, 1111 Cümle, 508 Atasözü)
- * için aktif veya belirtilen cinsiyete uygun .mp3 yolunu döndürür.
+ * için aktif veya belirtilen cinsiyete uygun ses URL'sini döndürür.
  */
 export function getDualGenderAudioUrl(
   item: {
@@ -115,17 +122,25 @@ export function getDualGenderAudioUrl(
   const gender = genderOverride || getPreferredVoiceGender();
   const rawPath = gender === "kadin" ? item.ses_kadin : item.ses_erkek;
   if (rawPath) {
-    return rawPath.replace(/\.wav$/i, ".mp3");
+    // Kelimeler ve Atasözleri GitHub medya deposunda .wav formatındadır
+    if (
+      rawPath.includes("/kelimeler/") ||
+      rawPath.includes("/atasozleri/") ||
+      (item.id && (item.id.startsWith("ata_") || /^\d{4}_/.test(item.id)))
+    ) {
+      return resolveAudioUrl(rawPath.replace(/\.mp3$/i, ".wav"));
+    }
+    return resolveAudioUrl(rawPath);
   }
   if (item.id) {
     if (item.id.startsWith("cumle_")) {
-      return `/sesler/cumleler/${gender}/${item.id}.mp3`;
+      return resolveAudioUrl(`/sesler/cumleler/${gender}/${item.id}.mp3`);
     }
     if (item.id.startsWith("ata_")) {
-      return `/sesler/atasozleri/${gender}/${item.id}.mp3`;
+      return resolveAudioUrl(`/sesler/atasozleri/${gender}/${item.id}.wav`);
     }
     if (/^\d{4}_/.test(item.id)) {
-      return `/sesler/kelimeler/${gender}/${item.id}.mp3`;
+      return resolveAudioUrl(`/sesler/kelimeler/${gender}/${item.id}.wav`);
     }
   }
   return undefined;

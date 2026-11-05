@@ -152,7 +152,7 @@ export default function ReadingTextDetailPage({
     currentIndex < metinler.length - 1 ? metinler[currentIndex + 1] : null;
 
   const rawNum = parseInt(readingText.id.replace(/\D+/g, ""), 10) || 1;
-  const imagePath = getReadingTextCoverUrl(readingText.id);
+  const imagePath = readingText.gorsel || getReadingTextCoverUrl(readingText.id);
   const grammarNote = getReadingTextGrammarNote(readingText.id);
   const vocabEntries: DialogueVocabularyEntry[] = useMemo(
     () => getReadingTextVocabulary(readingText.id),
@@ -397,12 +397,6 @@ export default function ReadingTextDetailPage({
                 src={imagePath}
                 alt={readingText.baslik_tr}
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const img = e.currentTarget as HTMLImageElement;
-                  if (!img.src.endsWith("/gorseller/metinler/metin_01.webp")) {
-                    img.src = "/gorseller/metinler/metin_01.webp";
-                  }
-                }}
                 className="w-full max-h-[70vh] object-contain mx-auto"
               />
               <button
@@ -490,12 +484,6 @@ export default function ReadingTextDetailPage({
               src={imagePath}
               alt={readingText.baslik_tr}
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                const img = e.currentTarget as HTMLImageElement;
-                if (!img.src.endsWith("/gorseller/metinler/metin_01.webp")) {
-                  img.src = "/gorseller/metinler/metin_01.webp";
-                }
-              }}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <span className="absolute bottom-0.5 right-0.5 p-1 rounded-md bg-black/65 text-white flex items-center justify-center">
@@ -768,10 +756,7 @@ export default function ReadingTextDetailPage({
 
                   <div
                     dir="rtl"
-                    className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[2.1] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE]"
-                    style={{
-                      fontSize: `${Math.max(1.35, arabicFontSize * 0.85)}rem`,
-                    }}
+                    className="arabic font-arabic text-xl sm:text-2xl md:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[2.1] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3.5 border border-[#E6D7BE]"
                   >
                     <WordTooltip
                       text={q.soru_ar}
@@ -905,10 +890,7 @@ export default function ReadingTextDetailPage({
 
                         <div
                           dir="rtl"
-                          className="arabic font-arabic font-bold text-[#1C1E21] dark:text-white text-right leading-[2]"
-                          style={{
-                            fontSize: `${Math.max(1.3, arabicFontSize * 0.8)}rem`,
-                          }}
+                          className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#1C1E21] dark:text-white text-right leading-[2]"
                         >
                           <WordTooltip
                             text={q.cevap_ar}

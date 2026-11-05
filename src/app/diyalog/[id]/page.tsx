@@ -761,7 +761,7 @@ export default function DialogueDetailPage({
 
   // Kapak görseli ve Odak Gramer Notu (V2)
   const rawNum = parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
-  const imagePath = getDialogueCoverUrl(dialogue.id);
+  const imagePath = dialogue.gorsel || getDialogueCoverUrl(dialogue.id);
   const grammarNote = getDialogueGrammarNote(dialogue.id);
 
   const getDisplayText = (text: string) =>
@@ -2262,12 +2262,6 @@ export default function DialogueDetailPage({
                 src={imagePath}
                 alt={dialogue.baslik_tr}
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const img = e.currentTarget as HTMLImageElement;
-                  if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
-                    img.src = "/gorseller/diyaloglar/dlg_001.webp";
-                  }
-                }}
                 className="w-full max-h-[70vh] object-contain mx-auto"
               />
               <button
@@ -2363,12 +2357,6 @@ export default function DialogueDetailPage({
               src={imagePath}
               alt={dialogue.baslik_tr}
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                const img = e.currentTarget as HTMLImageElement;
-                if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
-                  img.src = "/gorseller/diyaloglar/dlg_001.webp";
-                }
-              }}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <span className="absolute bottom-0.5 right-0.5 p-1 rounded-md bg-black/65 text-white flex items-center justify-center">

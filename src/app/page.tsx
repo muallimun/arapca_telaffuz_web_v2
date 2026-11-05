@@ -125,7 +125,8 @@ export default function HomePage() {
 
   const recommendedDialogue = dailyPackage.dailyDialogue.dialogue;
   const recommendedDialogueId = recommendedDialogue.id || "dlg_001";
-  const recommendedCoverSrc = getDialogueCoverUrl(recommendedDialogueId);
+  const recommendedCoverSrc =
+    recommendedDialogue.gorsel || getDialogueCoverUrl(recommendedDialogueId);
   const recommendedSentenceCount =
     (recommendedDialogue as unknown as { cumleler?: unknown[] }).cumleler
       ?.length ?? recommendedDialogue.satirlar.length;
@@ -492,13 +493,9 @@ export default function HomePage() {
                   <img
                     src={recommendedCoverSrc}
                     alt={recommendedDialogue.baslik_tr}
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
-                        img.src = "/gorseller/diyaloglar/dlg_001.webp";
-                      } else {
-                        setFailedCoverId(recommendedDialogueId);
-                      }
+                    referrerPolicy="no-referrer"
+                    onError={() => {
+                      setFailedCoverId(recommendedDialogueId);
                     }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

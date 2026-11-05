@@ -21,10 +21,13 @@ const nextConfig: NextConfig = {
   },
   
   async rewrites() {
-    const mediaCdnBase = (
+    const rawBase = (
       process.env.NEXT_PUBLIC_MEDIA_CDN_BASE ||
-      "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main"
+      "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/public"
     ).replace(/\/+$/, "");
+    const mediaCdnBase = rawBase.endsWith("/main")
+      ? `${rawBase}/public`
+      : rawBase;
 
     return {
       fallback: [

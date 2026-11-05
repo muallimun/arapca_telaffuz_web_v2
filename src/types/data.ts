@@ -35,6 +35,7 @@ export interface Dialogue extends PedagogicalMeta {
   odak_gramer?: string;
   baslik_ar: string;
   baslik_tr: string;
+  gorsel?: string;
   konusmacilar?: DialogueSpeaker[];
   satirlar: DialogueLine[];
 }
@@ -83,6 +84,7 @@ export interface ReadingText extends PedagogicalMeta {
   odak_gramer?: string;
   baslik_ar: string;
   baslik_tr: string;
+  gorsel?: string;
   satirlar: ReadingTextLine[];
   sorular: ReadingTextQuestion[];
 }
@@ -110,6 +112,7 @@ export interface DictionaryItem extends PedagogicalMeta {
 
 export interface ResimliKelime extends PedagogicalMeta {
   id: string;
+  sira?: number;
   gridId?: string;
   grupNo?: number;
   cellIndex?: number;

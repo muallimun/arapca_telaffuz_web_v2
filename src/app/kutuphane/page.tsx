@@ -23,6 +23,9 @@ import {
   ChevronRight,
   ChevronDown,
   FolderOpen,
+  Eye,
+  EyeOff,
+  Sparkles,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -79,6 +82,7 @@ export default function LibraryPage() {
 
   const {
     showHareke,
+    toggleHareke,
     speechRate,
     preferredVoiceGender,
     setPreferredVoiceGender,
@@ -94,6 +98,14 @@ export default function LibraryPage() {
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(
     null
   );
+  const [showArabic, setShowArabic] = useState<boolean>(true);
+  const [showTurkish, setShowTurkish] = useState<boolean>(true);
+  const [revealedArabicIds, setRevealedArabicIds] = useState<
+    Record<string, boolean>
+  >({});
+  const [revealedTurkishIds, setRevealedTurkishIds] = useState<
+    Record<string, boolean>
+  >({});
   const touchStartXRef = useRef<number | null>(null);
   const [activeSection, setActiveSection] = useState<ViewSection>("dialogues");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -190,6 +202,28 @@ export default function LibraryPage() {
   const removeTashkeel = (text: string) => text.replace(/[\u064B-\u0652]/g, "");
   const getDisplayArabic = (text: string) =>
     !mounted || showHareke ? text : removeTashkeel(text);
+
+  const toggleBulkArabic = () => {
+    playClick();
+    setShowArabic((prev) => !prev);
+    setRevealedArabicIds({});
+  };
+
+  const toggleBulkTurkish = () => {
+    playClick();
+    setShowTurkish((prev) => !prev);
+    setRevealedTurkishIds({});
+  };
+
+  const toggleCardArabicReveal = (id: string) => {
+    playClick();
+    setRevealedArabicIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleCardTurkishReveal = (id: string) => {
+    playClick();
+    setRevealedTurkishIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // 1. Diyalog Filtreleme (120 Diyalog)
   const filteredDialogues = useMemo(() => {
@@ -598,14 +632,15 @@ export default function LibraryPage() {
           if (!activeItem) return null;
 
           const isItemPlaying = playingItemId === activeItem.id;
+          const isModalArVisible =
+            showArabic || Boolean(revealedArabicIds[activeItem.id]);
+          const isModalTrVisible =
+            showTurkish || Boolean(revealedTurkishIds[activeItem.id]);
           const imageUrl = currentVisual
-            ? getVisualWordCoverUrl(currentVisual)
+            ? currentVisual.gorsel || getVisualWordCoverUrl(currentVisual)
             : currentProverb
-            ? getProverbCoverUrl(currentProverb.id)
+            ? currentProverb.gorsel || getProverbCoverUrl(currentProverb.id)
             : null;
-          const fallbackUrl = currentVisual
-            ? "/gorseller/kelimeler/gorsel_0001.webp"
-            : "/gorseller/atasozleri/ata_0001.webp";
 
           const headerBadge = currentVisual
             ? `#${currentVisual.id.replace("gorsel_", "")} • ${
@@ -678,7 +713,8 @@ export default function LibraryPage() {
                 }}
                 onTouchEnd={(e) => {
                   if (touchStartXRef.current === null) return;
-                  const endX = e.changedTouches[0]?.clientX ?? touchStartXRef.current;
+                  const endX =
+                    e.changedTouches[0]?.clientX ?? touchStartXRef.current;
                   const deltaX = endX - touchStartXRef.current;
                   touchStartXRef.current = null;
                   if (deltaX > 50) {
@@ -688,25 +724,74 @@ export default function LibraryPage() {
                   }
                 }}
               >
-                {/* 1. Üst Başlık Barı */}
-                <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
-                  <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white text-[11px] font-extrabold truncate">
-                    {headerBadge}
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold tabular-nums text-[var(--foreground)]">
-                      {safeIndex + 1} / {activeModalListLength}
+                {/* 1. Üst Başlık Barı + Arapça / Türkçe / Hareke Görünürlük Kontrolleri */}
+                <div className="px-3.5 py-2.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white text-[11px] font-extrabold truncate">
+                      {headerBadge}
                     </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold tabular-nums text-[var(--foreground)]">
+                        {safeIndex + 1} / {activeModalListLength}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setSelectedCardIndex(null);
+                        }}
+                        className="min-h-[38px] px-3 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-rose-50 border-2 border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+                      >
+                        <X size={15} />
+                        <span>Kapat</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Modal İçi Görünürlük Anahtarları (İleri/Geri gezinirken korunur) */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={toggleBulkArabic}
+                      className={`min-h-[34px] px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                        showArabic
+                          ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                          : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                      }`}
+                    >
+                      {showArabic ? <Eye size={12} /> : <EyeOff size={12} />}
+                      <span>🇸🇦 Arapça: {showArabic ? "Açık" : "Gizli"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={toggleBulkTurkish}
+                      className={`min-h-[34px] px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                        showTurkish
+                          ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                          : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                      }`}
+                    >
+                      {showTurkish ? <Eye size={12} /> : <EyeOff size={12} />}
+                      <span>🇹🇷 Türkçe: {showTurkish ? "Açık" : "Gizli"}</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setSelectedCardIndex(null);
+                        toggleHareke();
                       }}
-                      className="min-h-[40px] px-3 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-rose-50 border-2 border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+                      className={`min-h-[34px] px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                        !mounted || showHareke
+                          ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
+                          : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                      }`}
                     >
-                      <X size={15} />
-                      <span>Kapat</span>
+                      <Sparkles size={12} />
+                      <span>
+                        ✨ Hareke: {!mounted || showHareke ? "Açık" : "Kapalı"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -719,12 +804,6 @@ export default function LibraryPage() {
                         src={imageUrl}
                         alt={activeItem.turkce}
                         referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          if (!img.src.endsWith(fallbackUrl)) {
-                            img.src = fallbackUrl;
-                          }
-                        }}
                         className="w-full h-full object-cover"
                       />
                       {currentVisual && (
@@ -741,31 +820,104 @@ export default function LibraryPage() {
                     </div>
                   )}
 
-                  {/* Harekeli Arapça Odak Kutusu */}
-                  <div
-                    dir="rtl"
-                    className="arabic font-arabic text-3xl sm:text-4xl font-bold text-[#065F46] dark:text-emerald-400 text-center leading-[1.95] bg-white dark:bg-[var(--background)] rounded-2xl p-3.5 border-2 border-[#E6D7BE] shadow-2xs"
-                  >
-                    <WordTooltip
-                      text={activeItem.arapca}
-                      contextSentenceTr={activeItem.turkce}
-                    />
-                  </div>
+                  {/* Harekeli Arapça Odak Kutusu (Gizliyken Tıkla-Gör) */}
+                  {isModalArVisible ? (
+                    <div
+                      dir="rtl"
+                      className="arabic font-arabic text-3xl sm:text-4xl font-bold text-[#065F46] dark:text-emerald-400 text-center leading-[1.95] bg-white dark:bg-[var(--background)] rounded-2xl p-3.5 border-2 border-[#E6D7BE] shadow-2xs relative"
+                    >
+                      <WordTooltip
+                        text={activeItem.arapca}
+                        contextSentenceTr={activeItem.turkce}
+                      />
+                      {!showArabic && (
+                        <button
+                          type="button"
+                          onClick={() => toggleCardArabicReveal(activeItem.id)}
+                          className="mt-2 mx-auto px-2.5 py-1 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-sans font-extrabold text-[var(--muted)] flex items-center gap-1 cursor-pointer"
+                        >
+                          <EyeOff size={11} />
+                          <span>Arapçayı Tekrar Gizle</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toggleCardArabicReveal(activeItem.id)}
+                      className="w-full min-h-[76px] rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-dashed border-[#087F5B]/60 p-3.5 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-emerald-50/40 transition-all"
+                    >
+                      <span
+                        dir="rtl"
+                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46]/40 blur-md select-none"
+                      >
+                        {getDisplayArabic(activeItem.arapca)}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-xs font-extrabold">
+                        <Eye size={13} />
+                        <span>👁️ Arapçayı görmek için dokun</span>
+                      </span>
+                    </button>
+                  )}
 
                   {/* Türkçe Anlam ve Modüle Özel Pedagojik Bilgiler */}
                   <div className="bg-[#F7EFE1] dark:bg-[var(--background)] rounded-2xl p-3.5 border border-[#E6D7BE] space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
-                        {activeItem.turkce}
-                      </p>
-                      {currentSentence?.odak_kalip && (
-                        <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-extrabold">
-                          📌 {currentSentence.odak_kalip}
-                        </span>
-                      )}
-                    </div>
+                    {isModalTrVisible ? (
+                      <>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
+                            {activeItem.turkce}
+                          </p>
+                          <div className="flex items-center gap-1.5">
+                            {currentSentence?.odak_kalip && (
+                              <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-extrabold">
+                                📌 {currentSentence.odak_kalip}
+                              </span>
+                            )}
+                            {!showTurkish && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleCardTurkishReveal(activeItem.id)
+                                }
+                                className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] flex items-center gap-1 cursor-pointer"
+                              >
+                                <EyeOff size={11} />
+                                <span>Gizle</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
 
-                    {currentVisual &&
+                        {currentProverb?.lafzi_ceviri && (
+                          <p className="text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-2">
+                            <strong className="text-[var(--foreground)]">
+                              Lafzî Çeviri:
+                            </strong>{" "}
+                            {currentProverb.lafzi_ceviri}
+                          </p>
+                        )}
+
+                        {currentProverb?.kullanim_baglami && (
+                          <div className="rounded-xl bg-white/85 dark:bg-[var(--surface)] px-3 py-2 border border-[#E6D7BE] text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            💡 <strong>Kullanım Bağlamı:</strong>{" "}
+                            {currentProverb.kullanim_baglami}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleCardTurkishReveal(activeItem.id)}
+                        className="w-full min-h-[52px] rounded-xl bg-white/80 dark:bg-[var(--surface)] border-2 border-dashed border-[#6741D9]/50 p-3 flex items-center justify-center gap-1.5 text-xs font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
+                      >
+                        <Eye size={14} />
+                        <span>👁️ Türkçeyi görmek için dokun</span>
+                      </button>
+                    )}
+
+                    {isModalArVisible &&
+                      currentVisual &&
                       (currentVisual.ikincil_form ||
                         currentVisual.ucuncul_form) && (
                         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-2">
@@ -797,22 +949,6 @@ export default function LibraryPage() {
                             )}
                         </div>
                       )}
-
-                    {currentProverb?.lafzi_ceviri && (
-                      <p className="text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-2">
-                        <strong className="text-[var(--foreground)]">
-                          Lafzî Çeviri:
-                        </strong>{" "}
-                        {currentProverb.lafzi_ceviri}
-                      </p>
-                    )}
-
-                    {currentProverb?.kullanim_baglami && (
-                      <div className="rounded-xl bg-white/85 dark:bg-[var(--surface)] px-3 py-2 border border-[#E6D7BE] text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        💡 <strong>Kullanım Bağlamı:</strong>{" "}
-                        {currentProverb.kullanim_baglami}
-                      </div>
-                    )}
 
                     {currentVisual?.ornek_ar && (
                       <div className="bg-white dark:bg-[var(--surface)] rounded-xl p-3 border border-[#E6D7BE] space-y-1.5 mt-1">
@@ -849,18 +985,30 @@ export default function LibraryPage() {
                             <span>🔊 Örnek Cümleyi Dinle</span>
                           </button>
                         </div>
-                        <div
-                          dir="rtl"
-                          className="arabic font-arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
-                        >
-                          <WordTooltip
-                            text={currentVisual.ornek_ar}
-                            contextSentenceTr={
-                              currentVisual.ornek_tr || currentVisual.turkce
+                        {isModalArVisible ? (
+                          <div
+                            dir="rtl"
+                            className="arabic font-arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
+                          >
+                            <WordTooltip
+                              text={currentVisual.ornek_ar}
+                              contextSentenceTr={
+                                currentVisual.ornek_tr || currentVisual.turkce
+                              }
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleCardArabicReveal(activeItem.id)
                             }
-                          />
-                        </div>
-                        {currentVisual.ornek_tr && (
+                            className="w-full py-1.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 cursor-pointer"
+                          >
+                            👁️ Örnek Arapça cümleyi gör
+                          </button>
+                        )}
+                        {currentVisual.ornek_tr && isModalTrVisible && (
                           <p className="text-xs font-semibold text-[var(--muted)]">
                             {currentVisual.ornek_tr}
                           </p>
@@ -1367,6 +1515,69 @@ export default function LibraryPage() {
                       })}
                     </div>
                   )}
+
+                  {/* Toplu Arapça / Türkçe / Hareke Görünürlük Kontrolleri */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={toggleBulkArabic}
+                        className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          showArabic
+                            ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {showArabic ? <Eye size={13} /> : <EyeOff size={13} />}
+                        <span>
+                          🇸🇦 Arapça: {showArabic ? "Açık" : "Kapalı"}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={toggleBulkTurkish}
+                        className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          showTurkish
+                            ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {showTurkish ? (
+                          <Eye size={13} />
+                        ) : (
+                          <EyeOff size={13} />
+                        )}
+                        <span>
+                          🇹🇷 Türkçe: {showTurkish ? "Açık" : "Kapalı"}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          toggleHareke();
+                        }}
+                        className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          !mounted || showHareke
+                            ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                        }`}
+                      >
+                        <Sparkles size={13} />
+                        <span>
+                          ✨ Hareke: {!mounted || showHareke ? "Açık" : "Kapalı"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {!showArabic && !showTurkish && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 border border-amber-300 text-amber-900 dark:text-amber-200 text-[11px] font-extrabold">
+                        🎧 Kör Dinleme Modu Aktif
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })()}
@@ -1444,7 +1655,7 @@ export default function LibraryPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDialogues.map((dlg) => {
                 const dlgNo = dlg.id.replace("dlg_", "");
-                const imagePath = getDialogueCoverUrl(dlg.id);
+                const imagePath = dlg.gorsel || getDialogueCoverUrl(dlg.id);
                 const wordCount = extractDialogueVocabulary(
                   dlg.satirlar.map((s) => s.arapca)
                 ).length;
@@ -1473,14 +1684,6 @@ export default function LibraryPage() {
                         src={imagePath}
                         alt={dlg.baslik_tr}
                         referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          if (
-                            !img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")
-                          ) {
-                            img.src = "/gorseller/diyaloglar/dlg_001.webp";
-                          }
-                        }}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -1656,7 +1859,7 @@ export default function LibraryPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTexts.map((txt) => {
                 const txtNo = txt.id.replace("metin_", "");
-                const imagePath = getReadingTextCoverUrl(txt.id);
+                const imagePath = txt.gorsel || getReadingTextCoverUrl(txt.id);
                 const isComp = mounted && completedDialogues.includes(txt.id);
                 const isFav = mounted && favoriteDialogues.includes(txt.id);
 
@@ -1678,14 +1881,6 @@ export default function LibraryPage() {
                         src={imagePath}
                         alt={txt.baslik_tr}
                         referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          if (
-                            !img.src.endsWith("/gorseller/metinler/metin_01.webp")
-                          ) {
-                            img.src = "/gorseller/metinler/metin_01.webp";
-                          }
-                        }}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -1835,6 +2030,10 @@ export default function LibraryPage() {
             {filteredSentences.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const itemLevel = item.seviye || item.cefr || "A1";
+              const isArVisible =
+                showArabic || Boolean(revealedArabicIds[item.id]);
+              const isTrVisible =
+                showTurkish || Boolean(revealedTurkishIds[item.id]);
               return (
                 <div
                   key={item.id}
@@ -1854,7 +2053,7 @@ export default function LibraryPage() {
                         {itemLevel}
                       </span>
                       <div className="flex flex-wrap items-center gap-1">
-                        {item.odak_kalip && (
+                        {item.odak_kalip && isTrVisible && (
                           <span className="px-2 py-0.5 rounded-lg bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold">
                             📌 {item.odak_kalip}
                           </span>
@@ -1867,21 +2066,70 @@ export default function LibraryPage() {
                       </div>
                     </div>
 
-                    <div
-                      dir="rtl"
-                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
-                    >
-                      <WordTooltip
-                        text={item.arapca}
-                        contextSentenceTr={item.turkce}
-                      />
-                    </div>
+                    {isArVisible ? (
+                      <div
+                        dir="rtl"
+                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                      >
+                        <WordTooltip
+                          text={item.arapca}
+                          contextSentenceTr={item.turkce}
+                        />
+                        {!showArabic && (
+                          <button
+                            type="button"
+                            onClick={() => toggleCardArabicReveal(item.id)}
+                            className="mt-1.5 px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-sans font-extrabold text-[var(--muted)] flex items-center gap-1 cursor-pointer"
+                          >
+                            <EyeOff size={10} />
+                            <span>Gizle</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleCardArabicReveal(item.id)}
+                        className="w-full min-h-[60px] rounded-xl bg-white/85 dark:bg-[var(--background)] border-2 border-dashed border-[#087F5B]/55 p-3 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-emerald-50/40 transition-all"
+                      >
+                        <span
+                          dir="rtl"
+                          className="arabic font-arabic text-xl font-bold text-[#065F46]/40 blur-md select-none line-clamp-1"
+                        >
+                          {getDisplayArabic(item.arapca)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+                          <Eye size={12} />
+                          <span>👁️ Arapçayı görmek için dokun</span>
+                        </span>
+                      </button>
+                    )}
 
-                    <div className="border-l-4 border-[#087F5B] bg-white/75 dark:bg-[var(--background)] rounded-r-xl px-3 py-2 border border-[#E6D7BE]">
-                      <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
-                        {item.turkce}
-                      </p>
-                    </div>
+                    {isTrVisible ? (
+                      <div className="border-l-4 border-[#087F5B] bg-white/75 dark:bg-[var(--background)] rounded-r-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
+                        <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
+                          {item.turkce}
+                        </p>
+                        {!showTurkish && (
+                          <button
+                            type="button"
+                            onClick={() => toggleCardTurkishReveal(item.id)}
+                            className="px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] shrink-0 cursor-pointer"
+                          >
+                            Gizle
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleCardTurkishReveal(item.id)}
+                        className="w-full min-h-[42px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-3 py-2 flex items-center justify-center gap-1.5 text-xs font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
+                      >
+                        <Eye size={13} />
+                        <span>👁️ Türkçeyi görmek için dokun</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
@@ -2007,7 +2255,11 @@ export default function LibraryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProverbs.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
-              const imgUrl = getProverbCoverUrl(item.id);
+              const imgUrl = item.gorsel || getProverbCoverUrl(item.id);
+              const isArVisible =
+                showArabic || Boolean(revealedArabicIds[item.id]);
+              const isTrVisible =
+                showTurkish || Boolean(revealedTurkishIds[item.id]);
               return (
                 <div
                   key={item.id}
@@ -2035,16 +2287,6 @@ export default function LibraryPage() {
                           src={imgUrl}
                           alt={item.turkce}
                           referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            const img = e.currentTarget as HTMLImageElement;
-                            if (
-                              !img.src.endsWith(
-                                "/gorseller/atasozleri/ata_0001.webp"
-                              )
-                            ) {
-                              img.src = "/gorseller/atasozleri/ata_0001.webp";
-                            }
-                          }}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <span className="absolute bottom-1 right-1 p-1 rounded-md bg-black/65 text-white">
@@ -2064,31 +2306,82 @@ export default function LibraryPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
-                          “{item.turkce}”
-                        </p>
-                        {item.lafzi_ceviri && (
-                          <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
-                            <strong className="text-[var(--foreground)]">
-                              Lafzî Çeviri:
-                            </strong>{" "}
-                            {item.lafzi_ceviri}
-                          </p>
+                        {isTrVisible ? (
+                          <div className="space-y-1">
+                            <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
+                              “{item.turkce}”
+                            </p>
+                            {item.lafzi_ceviri && (
+                              <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
+                                <strong className="text-[var(--foreground)]">
+                                  Lafzî Çeviri:
+                                </strong>{" "}
+                                {item.lafzi_ceviri}
+                              </p>
+                            )}
+                            {!showTurkish && (
+                              <button
+                                type="button"
+                                onClick={() => toggleCardTurkishReveal(item.id)}
+                                className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] cursor-pointer"
+                              >
+                                Türkçeyi Gizle
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toggleCardTurkishReveal(item.id)}
+                            className="w-full min-h-[44px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-2.5 py-1.5 flex items-center justify-center gap-1 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
+                          >
+                            <Eye size={12} />
+                            <span>👁️ Türkçeyi görmek için dokun</span>
+                          </button>
                         )}
                       </div>
                     </div>
 
-                    <div
-                      dir="rtl"
-                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
-                    >
-                      <WordTooltip
-                        text={item.arapca}
-                        contextSentenceTr={item.turkce}
-                      />
-                    </div>
+                    {isArVisible ? (
+                      <div
+                        dir="rtl"
+                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                      >
+                        <WordTooltip
+                          text={item.arapca}
+                          contextSentenceTr={item.turkce}
+                        />
+                        {!showArabic && (
+                          <button
+                            type="button"
+                            onClick={() => toggleCardArabicReveal(item.id)}
+                            className="mt-1.5 px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-sans font-extrabold text-[var(--muted)] flex items-center gap-1 cursor-pointer"
+                          >
+                            <EyeOff size={10} />
+                            <span>Gizle</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleCardArabicReveal(item.id)}
+                        className="w-full min-h-[60px] rounded-xl bg-white/85 dark:bg-[var(--background)] border-2 border-dashed border-[#087F5B]/55 p-3 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-emerald-50/40 transition-all"
+                      >
+                        <span
+                          dir="rtl"
+                          className="arabic font-arabic text-xl font-bold text-[#065F46]/40 blur-md select-none line-clamp-1"
+                        >
+                          {getDisplayArabic(item.arapca)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+                          <Eye size={12} />
+                          <span>👁️ Arapçayı görmek için dokun</span>
+                        </span>
+                      </button>
+                    )}
 
-                    {item.kullanim_baglami && (
+                    {item.kullanim_baglami && isTrVisible && (
                       <div className="rounded-xl bg-white/75 dark:bg-[var(--background)] px-3 py-2 border border-[#E6D7BE] text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                         💡 <strong>Bağlam:</strong> {item.kullanim_baglami}
                       </div>
@@ -2218,7 +2511,11 @@ export default function LibraryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredVisualWords.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
-              const imgUrl = getVisualWordCoverUrl(item);
+              const imgUrl = item.gorsel || getVisualWordCoverUrl(item);
+              const isArVisible =
+                showArabic || Boolean(revealedArabicIds[item.id]);
+              const isTrVisible =
+                showTurkish || Boolean(revealedTurkishIds[item.id]);
               const forms: { label: string; arabic: string }[] = [
                 { label: "Temel Form", arabic: item.arapca },
               ];
@@ -2260,16 +2557,6 @@ export default function LibraryPage() {
                           src={imgUrl}
                           alt={item.turkce}
                           referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            const img = e.currentTarget as HTMLImageElement;
-                            if (
-                              !img.src.endsWith(
-                                "/gorseller/kelimeler/gorsel_0001.webp"
-                              )
-                            ) {
-                              img.src = "/gorseller/kelimeler/gorsel_0001.webp";
-                            }
-                          }}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <span className="absolute bottom-1 right-1 p-1 rounded-md bg-black/65 text-white">
@@ -2296,50 +2583,106 @@ export default function LibraryPage() {
                           </span>
                         </div>
 
-                        <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
-                          {item.turkce}
-                        </h3>
-
-                        {(item.ikincil_form || item.ucuncul_form) && (
-                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[var(--muted)] pt-0.5">
-                            {item.ikincil_form && item.ikincil_form !== "-" && (
-                              <span>
-                                {item.tur === "fiil" ? "Muzâri:" : "Çoğul:"}{" "}
-                                <strong
-                                  dir="rtl"
-                                  className="arabic font-arabic text-sm text-[var(--foreground)]"
-                                >
-                                  {getDisplayArabic(item.ikincil_form)}
-                                </strong>
-                              </span>
-                            )}
-                            {item.ucuncul_form && item.ucuncul_form !== "-" && (
-                              <span>
-                                Masdar:{" "}
-                                <strong
-                                  dir="rtl"
-                                  className="arabic font-arabic text-sm text-[var(--foreground)]"
-                                >
-                                  {getDisplayArabic(item.ucuncul_form)}
-                                </strong>
-                              </span>
+                        {isTrVisible ? (
+                          <div className="flex items-center justify-between gap-1.5">
+                            <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
+                              {item.turkce}
+                            </h3>
+                            {!showTurkish && (
+                              <button
+                                type="button"
+                                onClick={() => toggleCardTurkishReveal(item.id)}
+                                className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] shrink-0 cursor-pointer"
+                              >
+                                Gizle
+                              </button>
                             )}
                           </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toggleCardTurkishReveal(item.id)}
+                            className="w-full min-h-[38px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-2.5 py-1 flex items-center justify-center gap-1 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
+                          >
+                            <Eye size={12} />
+                            <span>👁️ Türkçeyi görmek için dokun</span>
+                          </button>
                         )}
+
+                        {isArVisible &&
+                          (item.ikincil_form || item.ucuncul_form) && (
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[var(--muted)] pt-0.5">
+                              {item.ikincil_form &&
+                                item.ikincil_form !== "-" && (
+                                  <span>
+                                    {item.tur === "fiil" ? "Muzâri:" : "Çoğul:"}{" "}
+                                    <strong
+                                      dir="rtl"
+                                      className="arabic font-arabic text-sm text-[var(--foreground)]"
+                                    >
+                                      {getDisplayArabic(item.ikincil_form)}
+                                    </strong>
+                                  </span>
+                                )}
+                              {item.ucuncul_form &&
+                                item.ucuncul_form !== "-" && (
+                                  <span>
+                                    Masdar:{" "}
+                                    <strong
+                                      dir="rtl"
+                                      className="arabic font-arabic text-sm text-[var(--foreground)]"
+                                    >
+                                      {getDisplayArabic(item.ucuncul_form)}
+                                    </strong>
+                                  </span>
+                                )}
+                            </div>
+                          )}
                       </div>
                     </div>
 
                     {/* Orta Kutu: Sağa Hizalı İri Harekeli Arapça Kelime + Örnek Cümle */}
                     <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE] space-y-2">
-                      <div
-                        dir="rtl"
-                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
-                      >
-                        <WordTooltip
-                          text={item.arapca}
-                          contextSentenceTr={item.turkce}
-                        />
-                      </div>
+                      {isArVisible ? (
+                        <div>
+                          <div
+                            dir="rtl"
+                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
+                          >
+                            <WordTooltip
+                              text={item.arapca}
+                              contextSentenceTr={item.turkce}
+                            />
+                          </div>
+                          {!showArabic && (
+                            <button
+                              type="button"
+                              onClick={() => toggleCardArabicReveal(item.id)}
+                              className="mt-1 px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] text-[10px] font-sans font-extrabold text-[var(--muted)] flex items-center gap-1 cursor-pointer"
+                            >
+                              <EyeOff size={10} />
+                              <span>Arapçayı Gizle</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => toggleCardArabicReveal(item.id)}
+                          className="w-full min-h-[54px] rounded-xl bg-[#F7EFE1]/60 dark:bg-[var(--surface)] border-2 border-dashed border-[#087F5B]/55 p-2.5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-emerald-50/40 transition-all"
+                        >
+                          <span
+                            dir="rtl"
+                            className="arabic font-arabic text-xl font-bold text-[#065F46]/40 blur-md select-none"
+                          >
+                            {getDisplayArabic(item.arapca)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+                            <Eye size={12} />
+                            <span>👁️ Arapçayı görmek için dokun</span>
+                          </span>
+                        </button>
+                      )}
 
                       {item.ornek_ar && (
                         <div className="border-t border-dashed border-[#E2D3B8] pt-2 space-y-1">
@@ -2376,16 +2719,26 @@ export default function LibraryPage() {
                               <span>Cümleyi Dinle</span>
                             </button>
                           </div>
-                          <div
-                            dir="rtl"
-                            className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
-                          >
-                            <WordTooltip
-                              text={item.ornek_ar}
-                              contextSentenceTr={item.ornek_tr || item.turkce}
-                            />
-                          </div>
-                          {item.ornek_tr && (
+                          {isArVisible ? (
+                            <div
+                              dir="rtl"
+                              className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
+                            >
+                              <WordTooltip
+                                text={item.ornek_ar}
+                                contextSentenceTr={item.ornek_tr || item.turkce}
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => toggleCardArabicReveal(item.id)}
+                              className="w-full py-1 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 cursor-pointer"
+                            >
+                              👁️ Örnek Arapça cümleyi gör
+                            </button>
+                          )}
+                          {item.ornek_tr && isTrVisible && (
                             <p className="text-[11px] font-semibold text-[var(--muted)]">
                               {item.ornek_tr}
                             </p>

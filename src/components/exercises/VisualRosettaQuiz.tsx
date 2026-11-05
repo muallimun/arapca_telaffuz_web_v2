@@ -313,16 +313,6 @@ export default function VisualRosettaQuiz({
                     src={getVisualWordCoverUrl(item)}
                     alt={item.turkce}
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      if (
-                        !img.src.endsWith(
-                          "/gorseller/kelimeler/gorsel_0001.webp"
-                        )
-                      ) {
-                        img.src = "/gorseller/kelimeler/gorsel_0001.webp";
-                      }
-                    }}
                     className="w-11 h-11 aspect-square rounded-lg object-cover border border-[#E6D7BE] bg-white shrink-0"
                   />
                   <div className="min-w-0 flex-1">
@@ -582,14 +572,6 @@ export default function VisualRosettaQuiz({
                 src={getVisualWordCoverUrl(target)}
                 alt="Görsel Soru"
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const img = e.currentTarget as HTMLImageElement;
-                  if (
-                    !img.src.endsWith("/gorseller/kelimeler/gorsel_0001.webp")
-                  ) {
-                    img.src = "/gorseller/kelimeler/gorsel_0001.webp";
-                  }
-                }}
                 className="w-full h-full object-cover"
               />
               <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold">
@@ -638,16 +620,6 @@ export default function VisualRosettaQuiz({
                     src={getVisualWordCoverUrl(opt.item)}
                     alt={`Seçenek ${idx + 1}`}
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      if (
-                        !img.src.endsWith(
-                          "/gorseller/kelimeler/gorsel_0001.webp"
-                        )
-                      ) {
-                        img.src = "/gorseller/kelimeler/gorsel_0001.webp";
-                      }
-                    }}
                     className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200"
                   />
                   <span className="absolute top-2 left-2 w-7 h-7 rounded-lg bg-black/65 text-white text-xs font-black flex items-center justify-center">

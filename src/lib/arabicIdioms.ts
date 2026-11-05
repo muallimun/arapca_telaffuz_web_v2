@@ -1,0 +1,1456 @@
+import { Dialogue, DialogueLine } from "@/types/data";
+import { sozluk, diyaloglar } from "@/lib/data";
+import { SUPPLEMENT_DICTIONARY } from "@/lib/supplementDict";
+import { mergeTurkishMeanings } from "@/lib/dict";
+
+export interface ArabicIdiom {
+  id: string;
+  arabic: string;
+  meaningTr: string;
+  literalTr: string;
+  usageNote: string;
+  variants?: string[];
+  level?: string;
+}
+
+export interface ExtractedDialogueIdiom extends ArabicIdiom {
+  lineNumber: number;
+  matchedPhrase?: string;
+  lineArabic: string;
+  lineTurkish: string;
+  level: string;
+}
+
+/**
+ * Diyaloglarda sık geçen 75+ Arapça Kalıp İfade ve Deyim Kütüphanesi (التعبيرات الاصطلاحية)
+ */
+export const ARABIC_IDIOMS_LIBRARY: ArabicIdiom[] = [
+  {
+    id: "idm_001",
+    arabic: "أَهْلًا وَسَهْلًا",
+    meaningTr: "Hoş geldiniz / Merhaba",
+    literalTr: "Aileye (dostların arasına) geldin ve düzlüğe (rahatlığa) kavuştun",
+    usageNote: "Karşılama ve tanışma anlarında en sık kullanılan samimi hoş geldiniz ifadesidir.",
+    variants: ["أهلا وسهلا", "أهلاً وسهلاً", "أهلا بك", "أهلا بكم"],
+  },
+  {
+    id: "idm_002",
+    arabic: "أَهْلًا بِكَ",
+    meaningTr: "Hoş bulduk / Sana da merhaba",
+    literalTr: "Seninle de (hoşluk olsun)",
+    usageNote: "«أَهْلًا وَسَهْلًا» diyen kişiye karşılık olarak söylenir (kadın için: أَهْلًا بِكِ).",
+    variants: ["أهلا بك", "أهلا بكما", "أهلا بكم"],
+  },
+  {
+    id: "idm_003",
+    arabic: "السَّلَامُ عَلَيْكُمْ",
+    meaningTr: "Selâmün aleyküm (Esenlik üzerinize olsun)",
+    literalTr: "Barış ve esenlik sizin üzerinize olsun",
+    usageNote: "Günün her saatinde kullanılan temel İslam ve Arap dünyası selamlamasıdır.",
+    variants: ["السلام عليكم", "سلام عليكم"],
+  },
+  {
+    id: "idm_004",
+    arabic: "وَعَلَيْكُمُ السَّلَامُ",
+    meaningTr: "Ve aleyküm selâm (Sizin de üzerinize esenlik olsun)",
+    literalTr: "Ve sizin üzerinize de barış ve esenlik olsun",
+    usageNote: "Selam veren kişiye verilen mukabele (karşılık) ifadesidir.",
+    variants: ["وعليكم السلام"],
+  },
+  {
+    id: "idm_005",
+    arabic: "صَبَاحُ الْخَيْرِ",
+    meaningTr: "Günaydın / Hayırlı sabahlar",
+    literalTr: "İyilik sabahı",
+    usageNote: "Sabah vakti karşılaşmalarda kullanılır; cevabı «صَبَاحُ النُّورِ» (Nurlu sabahlar) şeklindedir.",
+    variants: ["صباح الخير"],
+  },
+  {
+    id: "idm_006",
+    arabic: "صَبَاحُ النُّورِ",
+    meaningTr: "Günaydın (Nurlu sabahlar)",
+    literalTr: "Nur / aydınlık sabahı",
+    usageNote: "«صَبَاحُ الْخَيْرِ» selamına verilen en yaygın ve zarif cevaptır.",
+    variants: ["صباح النور", "صباح الورد", "صباح السرور"],
+  },
+  {
+    id: "idm_007",
+    arabic: "مَسَاءُ الْخَيْرِ",
+    meaningTr: "İyi akşamlar / Hayırlı akşamlar",
+    literalTr: "İyilik akşamı",
+    usageNote: "Öğleden sonra ve akşam saatlerinde selamlaşmak için kullanılır.",
+    variants: ["مساء الخير"],
+  },
+  {
+    id: "idm_008",
+    arabic: "مَسَاءُ النُّورِ",
+    meaningTr: "İyi akşamlar (Nurlu akşamlar)",
+    literalTr: "Nur / aydınlık akşamı",
+    usageNote: "«مَسَاءُ الْخَيْرِ» ifadesine karşılık olarak söylenir.",
+    variants: ["مساء النور"],
+  },
+  {
+    id: "idm_009",
+    arabic: "كَيْفَ حَالُكَ؟",
+    meaningTr: "Nasılsın? / Nasılsınız?",
+    literalTr: "Hâlin / durumun nasıl?",
+    usageNote: "Muhatabın hatırını sormak için kullanılır (kadın için: كَيْفَ حَالُكِ؟).",
+    variants: ["كيف حالك", "كيف حالكم", "كيف الحال"],
+  },
+  {
+    id: "idm_010",
+    arabic: "بِخَيْرٍ وَالْحَمْدُ لِلَّهِ",
+    meaningTr: "İyiyim, Allah'a şükür",
+    literalTr: "İyilik içindeyim ve hamd Allah'adır",
+    usageNote: "«Nasılsın?» sorusuna verilen en yaygın ve kibar cevaptır.",
+    variants: ["بخير والحمد لله", "أَنَا بِخَيْرٍ", "بخير شكرا"],
+  },
+  {
+    id: "idm_011",
+    arabic: "تَشَرَّفْنَا",
+    meaningTr: "Memnun oldum (Şeref duyduk)",
+    literalTr: "Şereflendik / onur duyduk",
+    usageNote: "Yeni biriyle tanışıldığında memnuniyet bildirmek için söylenir.",
+    variants: ["تشرفنا", "تشرفت بمعرفتك", "تشرفت بلقائك", "تشرفنا بمعرفتك"],
+  },
+  {
+    id: "idm_012",
+    arabic: "فُرْصَةٌ سَعِيدَةٌ",
+    meaningTr: "Tanıştığımıza memnun oldum (Mutlu bir fırsat)",
+    literalTr: "Mutlu bir fırsat",
+    usageNote: "Tanışma sonunda veya ilk karşılaşmada kullanılan çok yaygın bir nezaket kalıbıdır.",
+    variants: ["فرصة سعيدة"],
+  },
+  {
+    id: "idm_013_marifa",
+    arabic: "سُرِرْتُ بِمَعْرِفَتِكَ / سُرِرْتُ بِمَعْرِفَتِكِ",
+    meaningTr: "Tanıştığımıza memnun oldum.",
+    literalTr: "Seni tanıdığıma sevindim / mutlu oldum.",
+    usageNote: "İlk kez tanışılan bir kişiye memnuniyet bildirmek için kullanılır. Cevaben 'وَأَنَا أَيْضاً' (Ben de) denir.",
+    variants: ["سررت بمعرفتك", "سررت بمعرفتكم"],
+    level: "A1-A2",
+  },
+  {
+    id: "idm_013",
+    arabic: "سُرِرْتُ بِلِقَائِكَ",
+    meaningTr: "Seninle karşılaştığıma / buluştuğuma memnun oldum",
+    literalTr: "Seninle buluşmaktan sevinç duydum",
+    usageNote: "Resmî ve kibar tanışma veya görüşme diyaloglarında tercih edilir.",
+    variants: ["سررت بلقائك", "أنا مسرور بلقائك"],
+    level: "A1-A2",
+  },
+  {
+    id: "idm_014",
+    arabic: "مِنْ فَضْلِكَ",
+    meaningTr: "Lütfen / Rica ederim",
+    literalTr: "Senin lütfundan / ihsanından olarak",
+    usageNote: "Bir şey isterken veya soru sorarken cümlenin başında ya da sonunda kullanılır.",
+    variants: ["من فضلك", "من فضلكم"],
+  },
+  {
+    id: "idm_015",
+    arabic: "لَوْ سَمَحْتَ",
+    meaningTr: "Affedersiniz / Müsaadenizle / Lütfen",
+    literalTr: "Eğer izin verirsen / müsamaha gösterirsen",
+    usageNote: "Dikkat çekmek, soru sormak veya kibarca bir talepte bulunmak için kullanılır.",
+    variants: ["لو سمحت", "لو سمحتم"],
+  },
+  {
+    id: "idm_016",
+    arabic: "عَلَى الرَّحْبِ وَالسَّعَةِ",
+    meaningTr: "Baş üstüne / Memnuniyetle / Ne demek, her zaman",
+    literalTr: "Genişlik ve ferahlık üzerine",
+    usageNote: "Teşekkür eden veya bir ricada bulunan kişiye büyük bir memnuniyetle cevap verirken kullanılır.",
+    variants: ["على الرحب والسعة"],
+  },
+  {
+    id: "idm_017",
+    arabic: "بِكُلِّ سُرُورٍ",
+    meaningTr: "Büyük bir memnuniyetle / Seve seve",
+    literalTr: "Tüm sevinçle / mutlulukla",
+    usageNote: "Bir isteği veya daveti içtenlikle kabul ederken söylenir.",
+    variants: ["بكل سرور", "بكل فرح"],
+  },
+  {
+    id: "idm_018",
+    arabic: "شُكْرًا جَزِيلًا",
+    meaningTr: "Çok teşekkür ederim",
+    literalTr: "Bol / çok teşekkür",
+    usageNote: "Yapılan bir iyiliğe veya yardıma güçlü şekilde teşekkür etmek için kullanılır.",
+    variants: ["شكرا جزيلا", "شكراً جزيلاً", "أشكرك جزيلا"],
+  },
+  {
+    id: "idm_019",
+    arabic: "لَا شُكْرَ عَلَى وَاجِبٍ",
+    meaningTr: "Rica ederim, görevimiz (Ne demek, vazifemiz)",
+    literalTr: "Vazife / görev üzerine teşekkür gerekmez",
+    usageNote: "«شُكْرًا» diyen birine alçakgönüllülükle karşılık verirken kullanılır.",
+    variants: ["لا شكر على واجب"],
+  },
+  {
+    id: "idm_020",
+    arabic: "عَفْوًا",
+    meaningTr: "Rica ederim / Bir şey değil / Affedersiniz",
+    literalTr: "Af / bağışlama dilerim",
+    usageNote: "Hem teşekkür edene «Bir şey değil» anlamında hem de «Pardon/Affedersiniz» anlamında kullanılır.",
+    variants: ["عفوا", "عفواً", "العفو"],
+  },
+  {
+    id: "idm_021",
+    arabic: "جَزَاكَ اللَّهُ خَيْرًا",
+    meaningTr: "Allah razı olsun (Allah seni hayırla mükâfatlandırsın)",
+    literalTr: "Allah sana hayır karşılığı versin",
+    usageNote: "Teşekkürün en samimi ve geleneksel ifade biçimidir.",
+    variants: ["جزاك الله خيرا", "جزاكم الله خيرا", "بارك الله فيك"],
+  },
+  {
+    id: "idm_022",
+    arabic: "سَلِمَتْ يَدَاكَ",
+    meaningTr: "Ellerine sağlık",
+    literalTr: "İki elin selamette olsun / dert görmesin",
+    usageNote: "Yemek hazırlayan, ikramda bulunan veya güzel bir iş yapan kişiye söylenir.",
+    variants: ["سلمت يداك", "سلمت يدك", "يسلموا"],
+  },
+  {
+    id: "idm_023",
+    arabic: "بِالْهَنَاءِ وَالشِّفَاءِ",
+    meaningTr: "Afiyet olsun (Mutluluk ve şifa ile)",
+    literalTr: "Afiyet/mutluluk ve şifa ile",
+    usageNote: "Yemek yiyen veya içecek içen kişiye «Afiyet olsun» demek için kullanılır.",
+    variants: ["بالهناء والشفاء", "صحة وعافية", "بالصحة والعافية", "هنيئا مريئا"],
+  },
+  {
+    id: "idm_024",
+    arabic: "شَفَاكَ اللَّهُ",
+    meaningTr: "Geçmiş olsun (Allah şifa versin)",
+    literalTr: "Allah sana şifa versin",
+    usageNote: "Hasta veya rahatsız olan birine geçmiş olsun dileği olarak söylenir.",
+    variants: ["شفاك الله", "شافاك الله", "ألف سلامة", "سلامتك", "لا بأس طهور"],
+  },
+  {
+    id: "idm_025",
+    arabic: "لَا بَأْسَ",
+    meaningTr: "Sorun değil / Zararı yok / Geçmiş olsun",
+    literalTr: "Bir sakınca / sıkıntı yok",
+    usageNote: "Hem özür dileyen birini rahatlatmak hem de hastaya teselli vermek için kullanılır.",
+    variants: ["لا بأس", "لا بأس عليك", "لا مشكلة", "ليس هناك مشكلة"],
+  },
+  {
+    id: "idm_026",
+    arabic: "مَعَ السَّلَامَةِ",
+    meaningTr: "Güle güle / Hoşça kalın (Selametle)",
+    literalTr: "Selamet / esenlik ile beraber",
+    usageNote: "Ayrılırken kullanılan en yaygın vedalaşma ifadesidir.",
+    variants: ["مع السلامة"],
+  },
+  {
+    id: "idm_027",
+    arabic: "إِلَى اللِّقَاءِ",
+    meaningTr: "Görüşmek üzere",
+    literalTr: "Buluşmaya / kavuşmaya kadar",
+    usageNote: "Vedalaşırken tekrar görüşme dileğini ifade eder.",
+    variants: ["إلى اللقاء", "أراك لاحقا", "أراك قريبا"],
+  },
+  {
+    id: "idm_028",
+    arabic: "فِي أَمَانِ اللَّهِ",
+    meaningTr: "Allah'a emanet olun",
+    literalTr: "Allah'ın güvencesinde / korumasında",
+    usageNote: "Vedalaşırken veya yolculuğa çıkan birini uğurlarken söylenir.",
+    variants: ["في أمان الله", "في رعاية الله", "حفظك الله"],
+  },
+  {
+    id: "idm_029",
+    arabic: "طَابَ يَوْمُكَ",
+    meaningTr: "İyi günler (Günün güzel olsun)",
+    literalTr: "Günün hoş / güzel oldu",
+    usageNote: "Gün içinde selamlaşırken veya ayrılırken kullanılan kibar bir iyi dilektir.",
+    variants: ["طاب يومك", "يوم سعيد", "نهارك سعيد"],
+  },
+  {
+    id: "idm_030",
+    arabic: "لَيْلَةٌ سَعِيدَةٌ",
+    meaningTr: "İyi geceler",
+    literalTr: "Mutlu bir gece",
+    usageNote: "Gece vakti ayrılırken veya uyumadan önce söylenir.",
+    variants: ["ليلة سعيدة", "تصبح على خير"],
+  },
+  {
+    id: "idm_031",
+    arabic: "إِنْ شَاءَ اللَّهُ",
+    meaningTr: "İnşallah (Allah dilerse)",
+    literalTr: "Eğer Allah dilerse",
+    usageNote: "Geleceğe yönelik her türlü plan, niyet ve temenni cümlesinde kullanılır.",
+    variants: ["إن شاء الله", "بإذن الله"],
+  },
+  {
+    id: "idm_032",
+    arabic: "الْحَمْدُ لِلَّهِ",
+    meaningTr: "Elhamdülillah (Allah'a şükürler olsun)",
+    literalTr: "Övgü ve şükür Allah'a mahsustur",
+    usageNote: "İyi bir haber alındığında, yemek sonrasında veya hâl sorulduğunda şükür için söylenir.",
+    variants: ["الحمد لله", "لله الحمد"],
+  },
+  {
+    id: "idm_033",
+    arabic: "مَا شَاءَ اللَّهُ",
+    meaningTr: "Maşallah (Ne güzel, Allah nazardan korusun)",
+    literalTr: "Allah'ın dilediği şey (ne güzel oldu)",
+    usageNote: "Beğeni, takdir ve hayranlık ifade ederken kullanılır.",
+    variants: ["ما شاء الله", "تبارك الله"],
+  },
+  {
+    id: "idm_034",
+    arabic: "بِالتَّوْفِيقِ",
+    meaningTr: "Başarılar dilerim / Kolay gelsin",
+    literalTr: "Başarı / muvaffakiyet ile",
+    usageNote: "Sınava girecek, işe başlayacak veya çalışan birine başarı dilemek için söylenir.",
+    variants: ["بالتوفيق", "أتمنى لك التوفيق", "وفقك الله"],
+  },
+  {
+    id: "idm_035",
+    arabic: "مُبَارَكٌ",
+    meaningTr: "Tebrikler / Hayırlı olsun",
+    literalTr: "Bereketli / kutlu olsun",
+    usageNote: "Mezuniyet, yeni iş, evlilik veya başarı durumlarında tebrik için kullanılır.",
+    variants: ["مبارك", "مبروك", "ألف مبروك", "ألف مبارك"],
+  },
+  {
+    id: "idm_036",
+    arabic: "كُلُّ عَامٍ وَأَنْتُمْ بِخَيْرٍ",
+    meaningTr: "Bayramınız / Yeni yılınız kutlu olsun (Nice mutlu yıllara)",
+    literalTr: "Her yıl siz iyilik içinde olasınız",
+    usageNote: "Bayramlarda ve özel günlerde kullanılan en yaygın kutlama kalıbıdır.",
+    variants: ["كل عام وأنتم بخير", "كل عام وأنت بخير", "عيد مبارك", "عيد سعيد"],
+  },
+  {
+    id: "idm_037",
+    arabic: "تَفَضَّلْ",
+    meaningTr: "Buyurun / Lütfen geçin / Alın",
+    literalTr: "Lütfet / buyur",
+    usageNote: "Birine yer gösterirken, bir şey ikram ederken veya söz hakkı verirken kullanılır.",
+    variants: ["تفضل", "تفضلي", "تفضلوا"],
+  },
+  {
+    id: "idm_038",
+    arabic: "حَسَنًا",
+    meaningTr: "Tamam / Pekâlâ / Güzel",
+    literalTr: "Güzel olarak / iyi",
+    usageNote: "Onay vermek veya konuyu kabul etmek için diyaloglarda çok sık kullanılır.",
+    variants: ["حسنا", "حسناً", "طيب", "تمام"],
+  },
+  {
+    id: "idm_039",
+    arabic: "بِالطَّبْعِ",
+    meaningTr: "Elbette / Tabii ki",
+    literalTr: "Doğası gereği / tabiatıyla",
+    usageNote: "Kesin onay ve memnuniyetle kabul bildiren ifadedir.",
+    variants: ["بالطبع", "طبعا", "طبعاً", "بالتأكيد", "أكيد"],
+  },
+  {
+    id: "idm_040",
+    arabic: "عَلَى عَيْنِي وَرَأْسِي",
+    meaningTr: "Gözüm üstüne / Başım üstüne",
+    literalTr: "Gözümün ve başımın üzerine",
+    usageNote: "Bir ricayı büyük bir saygı ve sevgiyle yerine getireceğini belirtir.",
+    variants: ["على عيني ورأسي", "على رأسي", "تكرم عينك"],
+  },
+  {
+    id: "idm_041",
+    arabic: "آسِفٌ جِدًّا",
+    meaningTr: "Çok özür dilerim / Çok üzgünüm",
+    literalTr: "Çok üzgün / müteessif",
+    usageNote: "Bir hata, gecikme veya aksaklık durumunda özür dilemek için kullanılır.",
+    variants: ["آسف جدا", "أنا آسف", "أعتذر", "معذرة"],
+  },
+  {
+    id: "idm_042",
+    arabic: "لَا دَاعِيَ لِلْقَلَقِ",
+    meaningTr: "Endişelenmeye gerek yok / Merak etmeyin",
+    literalTr: "Endişe için bir sebep/çağrı yok",
+    usageNote: "Karşı tarafı sakinleştirmek ve güven vermek için kullanılır.",
+    variants: ["لا داعي للقلق", "لا تقلق", "اطمئن"],
+  },
+  {
+    id: "idm_043",
+    arabic: "أَيُّ خِدْمَةٍ؟",
+    meaningTr: "Nasıl yardımcı olabilirim? / Bir isteğiniz var mı?",
+    literalTr: "Hangi hizmet?",
+    usageNote: "Mağaza, restoran, otel veya gişe görevlilerinin müşteriye hitabıdır.",
+    variants: ["أي خدمة", "كيف أساعدك", "كيف يمكنني مساعدتك", "تحت أمرك"],
+  },
+  {
+    id: "idm_044",
+    arabic: "كَمِ السِّعْرُ؟",
+    meaningTr: "Fiyatı ne kadar? / Kaç para?",
+    literalTr: "Fiyat kaç?",
+    usageNote: "Alışveriş ve çarşı-pazar diyaloglarının temel soru kalıbıdır.",
+    variants: ["كم السعر", "بكم هذا", "كم ثمنه", "كم الحساب"],
+  },
+  {
+    id: "idm_045",
+    arabic: "الْحِسَابَ مِنْ فَضْلِكَ",
+    meaningTr: "Hesabı alabilir miyim lütfen?",
+    literalTr: "Hesap, lütfen",
+    usageNote: "Restoran ve kafede yemek sonunda hesabı isterken kullanılır.",
+    variants: ["الحساب من فضلك", "الفاتورة من فضلك"],
+  },
+  {
+    id: "idm_046",
+    arabic: "لَحْظَةً مِنْ فَضْلِكَ",
+    meaningTr: "Bir saniye lütfen / Bir dakika lütfen",
+    literalTr: "Lütfen bir an / bakış",
+    usageNote: "Telefonda veya yüz yüze kısa süre bekletirken söylenir.",
+    variants: ["لحظة من فضلك", "دقيقة من فضلك", "انتظر لحظة"],
+  },
+  {
+    id: "idm_047",
+    arabic: "عَلَى حَسَبِ عِلْمِي",
+    meaningTr: "Bildiğim kadarıyla",
+    literalTr: "Bilgimin ölçüsüne göre",
+    usageNote: "Kesin olmayan ama tahmin edilen bir bilgiyi aktarırken kullanılır.",
+    variants: ["على حسب علمي", "حسب علمي", "على ما أعتقد", "أظن أن"],
+  },
+  {
+    id: "idm_048",
+    arabic: "مَعَ الْأَسَفِ",
+    meaningTr: "Maalesef / Ne yazık ki",
+    literalTr: "Üzüntü ile beraber",
+    usageNote: "Olumsuz bir durumu kibarca bildirirken cümlenin başında kullanılır.",
+    variants: ["مع الأسف", "للأسف", "للأسف الشديد"],
+  },
+  {
+    id: "idm_049",
+    arabic: "بِصَرَاحَةٍ",
+    meaningTr: "Açıkçası / Doğrusu",
+    literalTr: "Açıklıkla / samimiyetle",
+    usageNote: "Kişisel fikri veya gerçeği doğrudan ifade ederken kullanılır.",
+    variants: ["بصراحة", "في الحقيقة", "الحقيقة أن"],
+  },
+  {
+    id: "idm_050",
+    arabic: "عَلَى فِكْرَةٍ",
+    meaningTr: "Bu arada / Aklıma gelmişken",
+    literalTr: "Bir fikir üzerine",
+    usageNote: "Sohbet esnasında yeni bir konuya veya hatırlatmaya geçiş yaparken söylenir.",
+    variants: ["على فكرة"],
+  },
+  {
+    id: "idm_051",
+    arabic: "يَا لَهَا مِنْ مُفَاجَأَةٍ!",
+    meaningTr: "Ne güzel bir sürpriz!",
+    literalTr: "Ey onun sürprizliği!",
+    usageNote: "Beklenmedik güzel bir karşılaşma veya haber karşısında şaşkınlık ve sevinç bildirir.",
+    variants: ["يا لها من مفاجأة", "مفاجأة سارة", "يا للروعة"],
+  },
+  {
+    id: "idm_052",
+    arabic: "لَا أَدْرِي",
+    meaningTr: "Bilmiyorum / Haberim yok",
+    literalTr: "Farkında değilim / bilmiyorum",
+    usageNote: "Günlük konuşmada «لَا أَعْرِفُ» ile birlikte en sık kullanılan bilmeme ifadesidir.",
+    variants: ["لا أدري", "لا أعرف", "لست متأكدا"],
+  },
+  {
+    id: "idm_053",
+    arabic: "أَنَا مُتَأَكِّدٌ",
+    meaningTr: "Eminim / Kesin biliyorum",
+    literalTr: "Ben eminim / teyit etmiş durumdayım",
+    usageNote: "Bir bilginin doğruluğundan şüphe duyulmadığını vurgular.",
+    variants: ["أنا متأكد", "متأكد تماما"],
+  },
+  {
+    id: "idm_054",
+    arabic: "أَتَمَنَّى لَكَ الشِّفَاءَ الْعَاجِلَ",
+    meaningTr: "Acil şifalar dilerim",
+    literalTr: "Sana hızlı şifa temenni ederim",
+    usageNote: "Hastane, doktor veya hasta ziyareti diyaloglarında kullanılır.",
+    variants: ["أتمنى لك الشفاء العاجل", "بالشفاء العاجل"],
+  },
+  {
+    id: "idm_055",
+    arabic: "رِحْلَةٌ سَعِيدَةٌ",
+    meaningTr: "İyi yolculuklar",
+    literalTr: "Mutlu bir yolculuk",
+    usageNote: "Havaalanı, otogar veya seyahat diyaloglarında yolcuyu uğurlarken söylenir.",
+    variants: ["رحلة سعيدة", "رحلة موفقة", "تصل بالسلامة", "الحمد لله على السلامة"],
+  },
+  {
+    id: "idm_056",
+    arabic: "الْحَمْدُ لِلَّهِ عَلَى السَّلَامَةِ",
+    meaningTr: "Hoş geldiniz (Yolculuktan sağ salim döndünüz) / Geçmiş olsun",
+    literalTr: "Selamet/kurtuluş üzerine Allah'a hamd olsun",
+    usageNote: "Yolculuktan dönen veya bir tehlike/hastalık atlatan kişiye söylenir.",
+    variants: ["الحمد لله على السلامة", "حمدا لله على السلامة"],
+  },
+  {
+    id: "idm_057",
+    arabic: "مَا اسْمُكَ؟ / مَا اسْمُكِ؟",
+    meaningTr: "Adınız ne? / Senin adın ne?",
+    literalTr: "Senin ismin nedir?",
+    usageNote: "Kibar kullanım olarak 'مَا اسْمُكَ الْكَرِيمُ؟' şeklinde de kullanılır.",
+    variants: ["ما اسمك", "ما اسمك الكريم", "ما اسمكم"],
+    level: "A1-A2",
+  },
+  {
+    id: "idm_058",
+    arabic: "مِنْ أَيْنَ أَنْتَ؟",
+    meaningTr: "Nerelisiniz? / Nereden geliyorsunuz?",
+    literalTr: "Sen neredensin?",
+    usageNote: "Tanışma diyaloglarında memleket veya ülke sormak için kullanılır.",
+    variants: ["من أين أنت", "من أين أنتم"],
+  },
+  {
+    id: "idm_059",
+    arabic: "أَنَا فِي خِدْمَتِكَ",
+    meaningTr: "Hizmetinizdeyim / Emrinizdeyim",
+    literalTr: "Ben senin hizmetindeyim",
+    usageNote: "Yardımseverlik ve nezaket göstermek amacıyla kullanılır.",
+    variants: ["أنا في خدمتك", "في الخدمة", "يسعدني خدمتك"],
+  },
+  {
+    id: "idm_060",
+    arabic: "عَلَى بَرَكَةِ اللَّهِ",
+    meaningTr: "Haydi bismillah / Allah'ın bereketiyle başlayalım",
+    literalTr: "Allah'ın bereketi üzerine",
+    usageNote: "Bir anlaşmaya, işe veya yolculuğa başlarken kararlılık ve hayır dilemek için söylenir.",
+    variants: ["على بركة الله", "توكلنا على الله", "بسم الله"],
+  },
+  {
+    id: "idm_061",
+    arabic: "مَا رَأْيُكَ؟",
+    meaningTr: "Ne dersin? / Senin fikrin nedir?",
+    literalTr: "Senin görüşün nedir?",
+    usageNote: "Karşı tarafın fikrini veya onayını almak için sorulur.",
+    variants: ["ما رأيك", "ما رأيكم", "فكرة جيدة", "فكرة رائعة"],
+  },
+  {
+    id: "idm_062",
+    arabic: "فِكْرَةٌ رَائِعَةٌ",
+    meaningTr: "Harika bir fikir!",
+    literalTr: "Muhteşem bir fikir",
+    usageNote: "Önerilen bir planı veya teklifi coşkuyla onaylarken kullanılır.",
+    variants: ["فكرة رائعة", "فكرة ممتازة", "فكرة جيدة", "هذا رائع"],
+  },
+  {
+    id: "idm_063",
+    arabic: "بِالتَّأْكِيدِ",
+    meaningTr: "Kesinlikle, elbette",
+    literalTr: "Kesinlik ve teyit ile",
+    usageNote: "Bir soruya veya ricaya tereddütsüz olumlu yanıt verirken kullanılır.",
+    variants: ["بالتأكيد"],
+  },
+  {
+    id: "idm_065",
+    arabic: "مَعَكَ حَقٌّ",
+    meaningTr: "Haklısın (Erkek için)",
+    literalTr: "Seninle birlikte hak vardır",
+    usageNote: "Karşıdaki kişinin görüşüne veya uyarısına tamamen katıldığını ifade eder.",
+    variants: ["معك حق", "معكم حق"],
+  },
+  {
+    id: "idm_067",
+    arabic: "بِالْمُنَاسَبَةِ",
+    meaningTr: "Bu arada, yeri gelmişken, sırası gelmişken",
+    literalTr: "Vesile / münasebet ile",
+    usageNote: "Konuşma esnasında konuyla bağlantılı yeni bir noktaya veya hatırlatmaya değinirken kullanılır.",
+    variants: ["بالمناسبة", "وبالمناسبة"],
+  },
+  {
+    id: "idm_070",
+    arabic: "أَسْتَوْدِعُكَ اللّٰهَ",
+    meaningTr: "Seni Allah'a emanet ediyorum",
+    literalTr: "Seni Allah'ın emanetine bırakıyorum",
+    usageNote: "Yolculuğa çıkan veya ayrılan birine söylenen nebevî vedalaşma duasıdır.",
+    variants: ["أستودعك الله", "أستودعكم الله", "استودعك الله"],
+  },
+  {
+    id: "idm_071",
+    arabic: "حَظّاً سَعِيداً",
+    meaningTr: "İyi şanslar, başarılar!",
+    literalTr: "Mutlu/uğurlu bir talih ile",
+    usageNote: "Sınava, mülakata veya önemli bir işe girecek kişiye başarı dilemek için kullanılır.",
+    variants: ["حظا سعيدا", "حظاً سعيداً", "حظ سعيد"],
+  },
+  {
+    id: "idm_076",
+    arabic: "عُسْرُ الْهَضْمِ",
+    meaningTr: "Hazımsızlık (mide rahatsızlığı)",
+    literalTr: "Sindirim güçlüğü",
+    usageNote: "Doktor ve eczane diyaloglarında mide/sindirim şikayetini ifade etmek için kullanılır.",
+    variants: ["عسر الهضم", "بعسر الهضم"],
+  },
+  {
+    id: "idm_077",
+    arabic: "ذَهَاباً وَإِيَاباً",
+    meaningTr: "Gidiş-dönüş (bilet vb.)",
+    literalTr: "Gidiş ve dönüş olarak",
+    usageNote: "Uçak, tren veya otobüs bileti alırken gidiş-dönüş tercihini belirtmek için kullanılır.",
+    variants: ["ذهابا وإيابا", "ذهاباً وإياباً", "ذهاب وإياب"],
+  },
+  {
+    id: "idm_078",
+    arabic: "الْخُطُوطُ الْجَوِّيَّةُ",
+    meaningTr: "Hava yolları",
+    literalTr: "Hava hatları",
+    usageNote: "Havalimanı ve seyahat diyaloglarında havayolu şirketlerini ifade etmek için kullanılır.",
+    variants: ["الخطوط الجوية", "بالخطوط الجوية"],
+  },
+  {
+    id: "idm_079",
+    arabic: "جَوَازُ السَّفَرِ",
+    meaningTr: "Pasaport",
+    literalTr: "Yolculuk geçiş belgesi",
+    usageNote: "Havalimanı, vize ve otel kayıt diyaloglarında pasaport anlamında kullanılır.",
+    variants: ["جواز السفر", "جواز سفرك", "جواز سفري"],
+  },
+  {
+    id: "idm_080",
+    arabic: "بِطَاقَةُ الصُّعُودِ",
+    meaningTr: "Biniş kartı (Boarding pass)",
+    literalTr: "Uçağa biniş/yükseliş kartı",
+    usageNote: "Havalimanında check-in ve uçağa biniş işlemlerinde kullanılır.",
+    variants: ["بطاقة الصعود", "بطاقة صعود"],
+  },
+  {
+    id: "idm_081",
+    arabic: "مَحَطَّةُ الْحَافِلَاتِ",
+    meaningTr: "Otobüs durağı / Otogar",
+    literalTr: "Otobüsler istasyonu",
+    usageNote: "Şehir içi ulaşım ve adres sorma diyaloglarında otobüs durağını ifade eder.",
+    variants: ["محطة الحافلات", "موقف الحافلات"],
+  },
+  {
+    id: "idm_082",
+    arabic: "كِيسُ النَّوْمِ",
+    meaningTr: "Uyku tulumu",
+    literalTr: "Uyku torbası/kesesi",
+    usageNote: "Kamp, doğa yürüyüşü ve seyahat hazırlığı diyaloglarında kullanılır.",
+    variants: ["كيس النوم", "أكياس النوم"],
+  },
+  {
+    id: "idm_083",
+    arabic: "حَوْضُ سِبَاحَةٍ",
+    meaningTr: "Yüzme havuzu",
+    literalTr: "Yüzme havuzu",
+    usageNote: "Spor merkezi, otel ve tatil diyaloglarında yüzme havuzunu ifade eder.",
+    variants: ["حوض سباحة", "حوض السباحة", "مسبح"],
+  },
+  {
+    id: "idm_084",
+    arabic: "لَا قَدَّرَ اللّٰهُ",
+    meaningTr: "Allah korusun! / Allah göstermesin!",
+    literalTr: "Allah takdir etmesin",
+    usageNote: "Kötü bir ihtimalden veya kazadan bahsederken 'Allah korusun' anlamında kullanılır.",
+    variants: ["لا قدر الله", "لا سمح الله"],
+  },
+  {
+    id: "idm_085",
+    arabic: "فِي الْحَالِ",
+    meaningTr: "Derhal, hemen şimdi",
+    literalTr: "Bu hal/an içinde",
+    usageNote: "Bir işin gecikmeden, anında yapılacağını belirtmek için kullanılır.",
+    variants: ["في الحال", "حالا", "حالاً"],
+  },
+  {
+    id: "idm_086",
+    arabic: "مِنْ حُسنِ الْحَظِّ",
+    meaningTr: "Şans eseri, neyse ki, iyi ki",
+    literalTr: "Talihin güzelliğinden",
+    usageNote: "Olumlu bir tesadüfü veya sevindirici bir durumu anlatırken kullanılır.",
+    variants: ["من حسن الحظ", "لحسن الحظ"],
+  },
+  {
+    id: "idm_087",
+    arabic: "لِسُوءِ الْحَظِّ",
+    meaningTr: "Maalesef, ne yazık ki, şanssızlık eseri",
+    literalTr: "Talihin kötülüğünden",
+    usageNote: "İstenmeyen bir aksiliği veya üzücü bir durumu ifade ederken kullanılır.",
+    variants: ["لسوء الحظ", "من سوء الحظ"],
+  },
+  {
+    id: "idm_088",
+    arabic: "عَلَى وَشْكِ",
+    meaningTr: "Neredeyse, ...-mak üzere",
+    literalTr: "Eşiğinde / yakınında",
+    usageNote: "Bir olayın gerçekleşmesine çok az zaman kaldığını belirtirken kullanılır.",
+    variants: ["على وشك"],
+  },
+  {
+    id: "idm_089",
+    arabic: "عِيدٌ مُبَارَكٌ",
+    meaningTr: "İyi bayramlar! / Bayramınız mübarek olsun!",
+    literalTr: "Mübarek / kutlu bayram",
+    usageNote: "Ramazan ve Kurban bayramlarında tebrikleşirken kullanılan en yaygın kutlama ifadesidir.",
+    variants: ["عيد مبارك", "عيدك مبارك", "عيدكم مبارك", "وعيدك مبارك", "وعيدكم مبارك"],
+  },
+  {
+    id: "idm_090",
+    arabic: "أَعَادَهُ اللَّهُ عَلَيْكَ بِالْخَيْرِ",
+    meaningTr: "Allah nice mutlu/sağlıklı bayramlara kavuşturtsun.",
+    literalTr: "Allah onu senin üzerine hayırla tekrar döndürsün",
+    usageNote: "Bayram tebriğine karşılık olarak sağlık, mutluluk ve afiyetle nice bayramlara erişme duasıdır.",
+    variants: [
+      "أعاده الله عليك بالخير",
+      "أعاده الله عليك بالسعادة",
+      "أعاده الله عليك بالصحة والعافية",
+      "أعاده الله علينا وعليكم بالخير",
+      "أعاده الله علينا بالخير",
+      "أعاده الله عليك",
+    ],
+  },
+  {
+    id: "idm_091",
+    arabic: "تَقَبَّلَ اللَّهُ مِنَّا وَمِنْكُمْ",
+    meaningTr: "Allah bizden de sizden de kabul etsin (Allah razı olsun).",
+    literalTr: "Allah bizden ve sizden kabul buyursun",
+    usageNote: "Bayramlaşma ve ibadetler sonrasında yapılan geleneksel kabul ve hayır duasıdır.",
+    variants: ["تقبل الله منا ومنكم", "تقبل الله منا ومنك"],
+  },
+  {
+    id: "idm_092",
+    arabic: "لِهَذَا السَّبَبِ",
+    meaningTr: "Bu yüzden, bu sebeple",
+    literalTr: "Bu sebep için",
+    usageNote: "Önceki cümlede belirtilen durumun sonucunu veya gerekçesini açıklarken kullanılır.",
+    variants: ["لهذا السبب", "ولهذا السبب"],
+  },
+  {
+    id: "idm_093",
+    arabic: "فِي الْغَالِبِ",
+    meaningTr: "Genellikle, çoğunlukla",
+    literalTr: "Baskın / çoğunluk olan durumda",
+    usageNote: "Alışkanlıkları veya çoğunlukla gerçekleşen durumları ifade ederken kullanılır.",
+    variants: ["في الغالب", "غالبا", "غالباً"],
+  },
+  {
+    id: "idm_094",
+    arabic: "مُنْذُ زَمَنٍ طَوِيلٍ",
+    meaningTr: "Uzun zamandır, uzun süredir",
+    literalTr: "Uzun bir zamandan beri",
+    usageNote: "Uzun süredir devam eden veya yapılmayan bir durumu vurgulamak için kullanılır.",
+    variants: ["منذ زمن طويل", "منذ وقت طويل", "منذ مدة طويلة"],
+  },
+  {
+    id: "idm_095",
+    arabic: "فِي الْأَصْلِ",
+    meaningTr: "Aslında, zaten",
+    literalTr: "Aslında / kökeninde",
+    usageNote: "Bir işin veya durumun gerçek/asıl halini belirtirken kullanılır.",
+    variants: ["في الأصل", "في الاصل"],
+  },
+  {
+    id: "idm_096",
+    arabic: "بِالضَّبْطِ",
+    meaningTr: "Tam olarak, aynen öyle, kesinlikle",
+    literalTr: "Tam ölçü ve kesinlik ile",
+    usageNote: "Karşı tarafın söylediği bir sözü veya saati/bilgiyi 'tam üstüne bastın, aynen öyle' anlamında onaylarken kullanılır.",
+    variants: ["بالضبط", "وبالضبط"],
+  },
+  {
+    id: "idm_097",
+    arabic: "نَحْنُ بِالِانْتِظَارِ",
+    meaningTr: "Bekliyoruz / Sabırsızlıkla bekliyoruz",
+    literalTr: "Biz bekleyiş içindeyiz",
+    usageNote: "Gelecek bir misafiri, haberi veya buluşmayı memnuniyetle beklediğini ifade etmek için kullanılır.",
+    variants: [
+      "نحن بالانتظار",
+      "نحن في الانتظار",
+      "أنا بالانتظار",
+      "أنا في انتظارك",
+      "نحن في انتظارك",
+    ],
+  },
+  {
+    id: "idm_098",
+    arabic: "أَلَيْسَ كَذَلِكَ؟",
+    meaningTr: "Öyle değil mi? / Değil mi?",
+    literalTr: "Öyle / bunun gibi değil mi?",
+    usageNote: "Cümlenin sonunda muhataptan onay veya tasdik almak için kullanılan en yaygın soru kalıbıdır.",
+    variants: ["أليس كذلك", "اليس كذلك"],
+  },
+  {
+    id: "idm_099",
+    arabic: "مَا شَكْوَاكَ؟ / مِمَّ تَشْكُو؟",
+    meaningTr: "Şikâyetin nedir? / Neyin var?",
+    literalTr: "Şikâyetin nedir? / Neden yakınmaktasın?",
+    usageNote: "Doktor ve hastane diyaloglarında hastanın rahatsızlığını sormak için kullanılır.",
+    variants: [
+      "ما شكواك",
+      "ما شكواك؟",
+      "مم تشكو",
+      "مم تشكين",
+      "مما تشكو",
+      "ما هي شكواك",
+    ],
+  },
+  {
+    id: "idm_100",
+    arabic: "بِالنِّسْبَةِ لَكَ / بِالنِّسْبَةِ لِي",
+    meaningTr: "Senin açından, sana göre / Bana göre, benim açımdan",
+    literalTr: "Sana / bana nispetle (oranla)",
+    usageNote: "Bir konuyu belirli bir kişinin bakış açısına veya durumuna göre değerlendirirken kullanılır.",
+    variants: [
+      "بالنسبة لك",
+      "بالنسبة لي",
+      "بالنسبة له",
+      "بالنسبة لها",
+      "بالنسبة لنا",
+      "بالنسبة لكم",
+      "وبالنسبة لي",
+      "وبالنسبة لك",
+      "بالنسبة إلى",
+    ],
+  },
+  {
+    id: "idm_101",
+    arabic: "طَاعِنٌ فِي السِّنِّ",
+    meaningTr: "Yaşı ilerlemiş, oldukça yaşlı",
+    literalTr: "Yaşta ilerlemiş / derinleşmiş",
+    usageNote: "Bir kişinin yaşça çok büyük ve pirüfani olduğunu saygılı ve edebi bir dille ifade ederken kullanılır.",
+    variants: ["طاعن في السن", "طاعنة في السن", "متقدم في السن"],
+  },
+  {
+    id: "idm_102",
+    arabic: "بَيْنَ الْحِينِ وَالْآخَرِ",
+    meaningTr: "Zaman zaman, ara sıra",
+    literalTr: "Bir vakit ile diğeri arasında",
+    usageNote: "Belirli aralıklarla tekrarlanan alışkanlık veya durumları anlatırken kullanılır.",
+    variants: ["بين الحين والآخر", "وبين الحين والآخر", "بين حين وآخر"],
+  },
+  {
+    id: "idm_103",
+    arabic: "كَمْ أَنْتُمْ لُطَفَاءُ!",
+    meaningTr: "Ne kadar naziksiniz! / Çok kibarsınız!",
+    literalTr: "Siz ne kadar lütuflusunuz!",
+    usageNote: "Muhatabın nezaketine, misafirperverliğine veya ince düşüncesine teşekkür ederken kullanılır.",
+    variants: ["كم أنتم لطفاء", "كم أنت لطيف", "كم أنت لطيفة", "كم هم لطفاء"],
+  },
+  {
+    id: "idm_104",
+    arabic: "أَوَلَا أَعْرِفُ؟! / أَلَا أَعْرِفُ؟!",
+    meaningTr: "Bilmez miyim hiç?! / Tabii ki biliyorum!",
+    literalTr: "Ben bilmez miyim?!",
+    usageNote: "Çok iyi bilinen bir şeyi vurgulamak için kullanılan samimi istifham-ı inkârî (retorik soru) kalıbıdır.",
+    variants: ["أولا أعرف", "ألا أعرف", "أولا تعرف", "ألا تعرف"],
+  },
+  {
+    id: "idm_105",
+    arabic: "تَلْبَسَانِهَا بِالْهَنَاءِ وَالْعَافِيَةِ",
+    meaningTr: "Güle güle giyin! / Sağlık ve mutlulukla kullanın!",
+    literalTr: "Onu mutluluk ve afiyetle giyesiniz",
+    usageNote: "Yeni bir kıyafet, ayakkabı veya eşya alan kişilere iyi dilekte bulunurken kullanılır.",
+    variants: [
+      "تلبسانها بالهناء والعافية",
+      "تلبسها بالهناء والعافية",
+      "تلبسينها بالهناء والعافية",
+      "تلبسونها بالهناء والعافية",
+      "بالهناء والعافية",
+      "بالهناء والشفاء",
+    ],
+  },
+  {
+    id: "idm_106",
+    arabic: "فِي الْوَاقِعِ",
+    meaningTr: "Aslında, doğrusu, gerçekte",
+    literalTr: "Gerçekte / vakıada",
+    usageNote: "Bir konunun perde arkasını, asıl sebebini veya samimi düşünceyi açıklarken cümle başında kullanılır.",
+    variants: ["في الواقع", "وفي الواقع", "في الحقيقة"],
+  },
+  {
+    id: "idm_107",
+    arabic: "بِهَذَا النَّحْوِ",
+    meaningTr: "Bu şekilde, böylece, bu tarzda",
+    literalTr: "Bu yön / tarz ile",
+    usageNote: "Bir işin nasıl yapılacağını veya bir durumun nasıl devam edeceğini özetlerken kullanılır.",
+    variants: ["بهذا النحو", "وبهذا النحو", "على هذا النحو"],
+  },
+  {
+    id: "idm_108",
+    arabic: "وَخِلَافَ ذَلِكَ",
+    meaningTr: "Aksi takdirde, bunun dışında, yoksa",
+    literalTr: "Ve bunun hilafında (aksinde)",
+    usageNote: "Belirtilen şart yerine getirilmediğinde ortaya çıkacak olumsuz sonucu bildirmek için kullanılır.",
+    variants: ["وخلاف ذلك", "خلاف ذلك", "وبخلاف ذلك"],
+  },
+  {
+    id: "idm_109",
+    arabic: "مُثِيرٌ لِلِاهْتِمَامِ",
+    meaningTr: "Çok ilginç, ilgi çekici",
+    literalTr: "İlgi / merak uyandırıcı",
+    usageNote: "Yeni duyulan bir bilgi, yer veya olay karşısında hayranlık ve merak ifade etmek için kullanılır.",
+    variants: ["مثير للاهتمام", "مثيرة للاهتمام", "هذا مثير للاهتمام"],
+  },
+  {
+    id: "idm_110",
+    arabic: "عَلَى مَسَافَةِ ...",
+    meaningTr: "... mesafede / ... uzaklıkta",
+    literalTr: "... mesafesi üzerinde",
+    usageNote: "Bir yerin zaman veya uzaklık olarak ne kadar mesafede bulunduğunu tarif ederken kullanılır.",
+    variants: [
+      "على مسافة",
+      "على مسافة خمس دقائق",
+      "على مسافة قريبة",
+      "على بعد",
+    ],
+  },
+  {
+    id: "idm_111",
+    arabic: "كَيْفَ يَعْنِي؟ / هَذَا لَا يَنْفَعُ",
+    meaningTr: "Nasıl yani? / Bu olmaz (işe yaramaz)!",
+    literalTr: "Nasıl kastediyor? / Bu fayda vermez",
+    usageNote: "Günlük konuşmada şaşkınlık belirterek açıklama istemek veya bir durumu reddetmek için kullanılır.",
+    variants: ["كيف يعني", "هذا لا ينفع", "لا ينفع"],
+  },
+  {
+    id: "idm_112",
+    arabic: "لِمَاذَا أَتْعَبَتْ نَفْسَهَا؟",
+    meaningTr: "Niye zahmet etti?",
+    literalTr: "Neden kendisini yordu?",
+    usageNote: "Nezaket gösterip hediye veya ikram hazırlayan bir kişi hakkında teşekkür ve mahcubiyet ifade etmek için kullanılır.",
+    variants: [
+      "لماذا اتعبت نفسها",
+      "لماذا اتعبت نفسك",
+      "اتعبت نفسها",
+      "اتعبت نفسك",
+    ],
+  },
+  {
+    id: "idm_113",
+    arabic: "لَابُدَّ مِنْ أَنْ نَتَوَخَّى الْحَذَرَ",
+    meaningTr: "Tedbirli (dikkatli) olmak lazım.",
+    literalTr: "Dikkat ve tedbiri gözetmemiz kaçınılmazdır.",
+    usageNote: "Olası bir tehlike veya olumsuz duruma karşı önceden önlem alınması gerektiğini vurgularken kullanılır.",
+    variants: [
+      "لابد من ان نتوخي الحذر",
+      "لا بد من ان نتوخي الحذر",
+      "نتوخي الحذر",
+      "توخي الحذر",
+    ],
+  },
+  {
+    id: "idm_114",
+    arabic: "طَوِيلَةُ الْأَمَدِ",
+    meaningTr: "Uzun vadeli",
+    literalTr: "Uzun süreli / vadeli",
+    usageNote: "Taksit, kredi, plan veya projelerin uzun bir zamana yayıldığını belirtmek için kullanılır.",
+    variants: ["طويله الامد", "طويل الامد"],
+  },
+  {
+    id: "idm_115",
+    arabic: "لَا تَنْتَهِي دُيُونُنَا بِالدَّفْعِ",
+    meaningTr: "Borcumuz öde öde bitmiyor.",
+    literalTr: "Borçlarımız ödemekle sona ermiyor.",
+    usageNote: "Biriken borçların veya taksitlerin ödenmesine rağmen bir türlü tükenmediğinden yakınırken kullanılır.",
+    variants: ["لا تنتهي ديوننا بالدفع", "لا تنتهي ديوننا"],
+  },
+  {
+    id: "idm_116",
+    arabic: "كَمْ هُوَ جَمِيلٌ!",
+    meaningTr: "Ne kadar güzel!",
+    literalTr: "O ne kadar güzeldir!",
+    usageNote: "Bir manzarayı, eşyayı veya durumu beğenirken hayranlık bildirmek için kullanılır (dlg_49, dlg_55).",
+    variants: ["كم هو جميل", "كم هي جميله"],
+  },
+  {
+    id: "idm_117",
+    arabic: "آهْ لَا أُصَدِّقُ! / لَا أُصَدِّقُ!",
+    meaningTr: "Aaa! İnanmıyorum!",
+    literalTr: "Ah, doğrulamıyorum / inanamıyorum!",
+    usageNote: "Beklenmedik, şaşırtıcı veya sevindirici bir durum karşısında hayret bildirmek için kullanılır (dlg_40, dlg_49).",
+    variants: ["اه لا اصدق", "لا اصدق"],
+  },
+  {
+    id: "idm_118",
+    arabic: "مِنْ أَجْلِ ...",
+    meaningTr: "... için, ... amacıyla, ... uğruna",
+    literalTr: "... sebebiyle / ...-den dolayı",
+    usageNote: "Bir eylemin amacını, sebebini veya kimin/neyin uğruna yapıldığını belirtmek için kullanılır (dlg_49, dlg_51).",
+    variants: ["من اجل", "من اجلك", "من اجلي", "من اجلنا"],
+  },
+  {
+    id: "idm_119",
+    arabic: "آهِ كَمْ أَنْتَ جَافٌّ!",
+    meaningTr: "Ay ne kadar kabasınız! / Ne kadar soğuksun!",
+    literalTr: "Ah, sen ne kadar kurusun / katısın!",
+    usageNote: "Karşı tarafın ilgisiz, duygusuz veya kaba tavrına sitem etmek için kullanılır (dlg_44).",
+    variants: ["اه كم انت جاف", "كم انت جاف"],
+  },
+  {
+    id: "idm_120",
+    arabic: "يَا لَكَ مِنْ رَجُلٍ!",
+    meaningTr: "Bre adam! / Ne adamsın!",
+    literalTr: "Sen ne biçim bir adamsın!",
+    usageNote: "Taaccüp (şaşkınlık, sitem veya hayret) bildiren ünlem kalıbıdır (dlg_41).",
+    variants: ["يا لك من رجل"],
+  },
+  {
+    id: "idm_121",
+    arabic: "لَا كَانَ طَبِيبٌ مِثْلُكَ!",
+    meaningTr: "Senin gibi doktor olmaz olsun!",
+    literalTr: "Senin gibi bir doktor var olmasın!",
+    usageNote: "Bir meslek sahibinin ilgisizliğine veya hatasına tepki gösterirken kullanılan sitem/beddua kalıbıdır (dlg_41).",
+    variants: ["لا كان طبيب مثلك"],
+  },
+  {
+    id: "idm_122",
+    arabic: "سُرِرْتُ لِمَعْرِفَتِكِ / سُرِرْتُ لِمَعْرِفَتِكَ",
+    meaningTr: "Seninle tanıştığıma memnun oldum.",
+    literalTr: "Seni tanımaktan dolayı sevindim / mutlu oldum.",
+    usageNote: "Tanışma diyaloglarında 'تَشَرَّفْنَا' veya 'فُرْصَةٌ سَعِيدَةٌ' ifadeleriyle eş anlamlı olarak kullanılan kibar tanışma kalıbıdır (dlg_03).",
+    variants: [
+      "سُرِرْتُ لِمَعْرِفَتِكِ",
+      "سُرِرْتُ لِمَعْرِفَتِكَ",
+      "سُرِرْتُ بِمَعْرِفَتِكَ",
+      "سُرِرْتُ بِمَعْرِفَتِكِ",
+      "سررت لمعرفتك",
+      "سررت بمعرفتك",
+    ],
+  },
+  {
+    id: "idm_123",
+    arabic: "أَعْمَالاً مُوَفَّقَةً / عَمَلاً مُوَفَّقاً",
+    meaningTr: "Hayırlı işler / Kolay gelsin.",
+    literalTr: "Başarılı (muvaffak) işler (dilerim).",
+    usageNote: "Çalışan birine veya iş yerine girerken/çıkarken söylenen 'Hayırlı işler, kolay gelsin' temennisidir (dlg_11, dlg_13).",
+    variants: [
+      "أَعْمَالاً مُوَفَّقَةً",
+      "عَمَلاً مُوَفَّقاً",
+      "أَعْمَالٌ مُوَفَّقَةٌ",
+      "اعمالا موفقه",
+      "عملا موفقا",
+    ],
+  },
+  {
+    id: "idm_124",
+    arabic: "سَهَّلَ اللَّهُ عَمَلَكَ",
+    meaningTr: "Allah işini kolaylaştırsın / Kolay gelsin.",
+    literalTr: "Allah senin işini kolay kılsın.",
+    usageNote: "Çalışmakta olan bir kimseye 'Kolay gelsin' anlamında söylenen geleneksel dua ve nezaket ifadesidir (dlg_11, dlg_22).",
+    variants: [
+      "سَهَّلَ اللَّهُ عَمَلَكَ",
+      "سَهَّلَ اللّٰهُ عَمَلَكَ",
+      "سَهَّلَ اللَّهُ عَمَلَكِ",
+      "سَهَّلَ اللّٰهُ عَمَلَكِ",
+      "سَهَّلَ اللَّهُ عَمَلَكُمْ",
+      "سهل الله عملك",
+      "سهل الله عملكم",
+    ],
+  },
+  {
+    id: "idm_125",
+    arabic: "طَهُورٌ إِنْ شَاءَ اللَّهُ",
+    meaningTr: "Geçmiş olsun (Allah şifa versin / günahlara kefaret olsun).",
+    literalTr: "İnşallah arındırıcıdır (temizleyicidir).",
+    usageNote: "Hasta ziyaretinde veya bir rahatsızlık geçiren kişiye 'Geçmiş olsun, şifa olsun' anlamında söylenen nebevi dua kalıbıdır (dlg_21).",
+    variants: [
+      "طَهُورٌ إِنْ شَاءَ اللَّهُ",
+      "طَهُورٌ إِنْ شَاءَ اللّٰهُ",
+      "طهور ان شاء الله",
+    ],
+  },
+  {
+    id: "idm_126",
+    arabic: "لَاقَ بِكِ كَثِيراً",
+    meaningTr: "Size çok yakıştı.",
+    literalTr: "Sana çok uygun düştü / yakıştı.",
+    usageNote: "Yeni bir kıyafet, eşya veya görünüm için karşı tarafa söylenen 'Üzerinizde çok güzel durdu / size çok yakıştı' iltifat kalıbıdır (dlg_22).",
+    variants: [
+      "لَاقَ بِكِ كَثِيراً",
+      "لَاقَ بِكَ كَثِيراً",
+      "يَلِيقُ بِكِ كَثِيراً",
+      "يَلِيقُ بِكَ كَثِيراً",
+      "لاق بك كثيرا",
+      "يليق بك كثيرا",
+    ],
+  },
+  {
+    id: "idm_127",
+    arabic: "بَارَكَ اللَّهُ لَكُمْ",
+    meaningTr: "Bereket versin / Allah bereket versin.",
+    literalTr: "Allah sizin için mübarek ve bereketli kılsın.",
+    usageNote: "Alışveriş sonrasında, ikramda veya tebrik makamında 'Allah bereket versin, hayırlı-mübarek olsun' anlamında kullanılan dua ifadesidir (dlg_22).",
+    variants: [
+      "بَارَكَ اللَّهُ لَكُمْ",
+      "بَارَكَ اللّٰهُ لَكُمْ",
+      "بَارَكَ اللَّهُ لَكَ",
+      "بَارَكَ اللّٰهُ لَكَ",
+      "بَارَكَ اللَّهُ لَكِ",
+      "بَارَكَ اللّٰهُ لَكِ",
+      "بارك الله لكم",
+      "بارك الله لك",
+    ],
+  },
+  {
+    id: "idm_128",
+    arabic: "بِحَاجَةٍ إِلَى ...",
+    meaningTr: "...-e ihtiyacı olmak (بِحَاجَةٍ إِلَى الرَّاحَةِ: dinlenmeye ihtiyacım var).",
+    literalTr: "...-e ihtiyaç içinde.",
+    usageNote: "Bir şeye duyulan ihtiyacı ifade etmek için 'بِحَاجَةٍ' kelimesinin her zaman 'إِلَى' harf-i cerri ile birlikte kullanıldığı yaygın kalıptır (dlg_24).",
+    variants: [
+      "بِحَاجَةٍ إِلَى",
+      "بِحَاجَةٍ إِلَى الرَّاحَةِ",
+      "أَنَا بِحَاجَةٍ إِلَى",
+      "بحاجه الي",
+      "بحاجه الي الراحه",
+    ],
+  },
+];
+
+
+/**
+ * Hareke, tatweel ve noktalama işaretlerini temizleyip hemze/elif varyasyonlarını
+ * standartlaştıran normalize fonksiyonu.
+ */
+export function normalizeForIdiomMatch(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "") // Harekeler (\u0670 dahil) ve tatweel
+    .replace(/[.,،؛؟?!()"'«»\-–—:]/g, " ")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const A1_A2_NORMALIZED_GREETINGS = new Set([
+  "اهلا وسهلا",
+  "اهلا بك",
+  "السلام عليكم",
+  "وعليكم السلام",
+  "صباح الخير",
+  "صباح النور",
+  "مساء الخير",
+  "مساء النور",
+  "تصبح علي خير",
+  "وانت من اهل الخير",
+  "مع السلامه",
+  "الي اللقاء",
+  "في امان الله",
+  "فرصه سعيده",
+  "تشرفنا",
+  "سررت لمعرفتك",
+  "سررت بمعرفتك",
+  "انرتم",
+  "انرت",
+  "كيف حالك",
+  "الحمد لله",
+  "شكرا",
+  "شكرا جزيلا",
+  "عفوا",
+  "من فضلك",
+  "لو سمحت",
+  "تفضل",
+  "تفضلي",
+  "نعم بالطبع",
+  "بكل سرور",
+  "علي الرحب والسعه",
+  "ان شاء الله",
+  "ما شاء الله",
+  "بارك الله فيك",
+  "حسنا",
+  "تماما",
+  "بالضبط",
+]);
+
+let normalizedDialogueLinesCache:
+  | { id: string; seviye: string; normText: string }[]
+  | null = null;
+
+function getNormalizedDialogueLines() {
+  if (normalizedDialogueLinesCache) return normalizedDialogueLinesCache;
+  const list: { id: string; seviye: string; normText: string }[] = [];
+  for (const dlg of diyaloglar) {
+    const joined = dlg.satirlar
+      .map((s) => normalizeForIdiomMatch(s.arapca))
+      .join("   ");
+    list.push({
+      id: dlg.id,
+      seviye: dlg.seviye,
+      normText: ` ${joined} `,
+    });
+  }
+  normalizedDialogueLinesCache = list;
+  return list;
+}
+
+function mapDialogueSeviyeToIdiomLevel(seviye?: string): "A1-A2" | "B1" | "B2" {
+  if (!seviye) return "A1-A2";
+  const upper = seviye.toUpperCase();
+  if (upper.includes("A1") || upper.includes("A2")) return "A1-A2";
+  if (upper.includes("B1")) return "B1";
+  if (upper.includes("B2") || upper.includes("C1")) return "B2";
+  return "A1-A2";
+}
+
+function inferPedagogicalIdiomLevel(
+  arabic: string,
+  meaningTr: string,
+  usageNote?: string,
+  variants?: string[],
+  explicitLevel?: string
+): "A1-A2" | "B1" | "B2" {
+  if (explicitLevel) {
+    return mapDialogueSeviyeToIdiomLevel(explicitLevel);
+  }
+
+  const candidatePhrases = [
+    ...arabic
+      .split("/")
+      .map((s) => s.replace(/\.\.\./g, "").trim())
+      .filter(Boolean),
+    ...(variants || []).map((v) => v.replace(/\.\.\./g, "").trim()).filter(Boolean),
+  ];
+
+  // 1. Temel tanışma, selamlaşma ve nezaket kalıpları her zaman A1-A2'dir (ör. سُرِرْتُ لِمَعْرِفَتِكَ)
+  for (const cand of candidatePhrases) {
+    const norm = normalizeForIdiomMatch(cand);
+    if (A1_A2_NORMALIZED_GREETINGS.has(norm)) {
+      return "A1-A2";
+    }
+  }
+
+  const trLower = `${meaningTr} ${usageNote || ""}`.toLocaleLowerCase("tr-TR");
+  if (
+    /hoş geldin|hoş bulduk|memnun oldum|tanıştığıma|merhaba|selam|günaydın|iyi akşamlar|iyi geceler|güle güle|teşekkür|rica ederim|lütfen|afiyet olsun|buyurun/.test(
+      trLower
+    )
+  ) {
+    return "A1-A2";
+  }
+
+  // 2. usageNote içinde açık diyalog referansı varsa (ör. dlg_03, dlg_22) o diyaloğun gerçek CEFR seviyesini kullan
+  if (usageNote) {
+    const dlgMatches = Array.from(usageNote.matchAll(/dlg_(\d+)/g));
+    if (dlgMatches.length > 0) {
+      const matchedDlgs = dlgMatches
+        .map((m) => diyaloglar.find((d) => d.id === `dlg_${m[1]}`))
+        .filter((d): d is Dialogue => Boolean(d));
+      if (matchedDlgs.length > 0) {
+        return mapDialogueSeviyeToIdiomLevel(matchedDlgs[0].seviye);
+      }
+    }
+  }
+
+  // 3. Diyalog metinlerinde doğrudan geçiyorsa geçtiği ilk diyaloğun CEFR seviyesini kullan
+  const dlgLines = getNormalizedDialogueLines();
+  for (const dlg of dlgLines) {
+    for (const cand of candidatePhrases) {
+      const normCand = normalizeForIdiomMatch(cand);
+      if (normCand.length >= 3 && dlg.normText.includes(` ${normCand} `)) {
+        return mapDialogueSeviyeToIdiomLevel(dlg.seviye);
+      }
+    }
+  }
+
+  // 4. Diyalog dışı kalıplar için pedagojik kategori ve yapısal karmaşıklık analizi
+  if (
+    /atasözü|deyim|mecaz|olmaz olsun|sitem|beddua|hikmet|ibret/.test(trLower)
+  ) {
+    return "B2";
+  }
+
+  const wordCount = normalizeForIdiomMatch(candidatePhrases[0] || arabic)
+    .split(/\s+/)
+    .filter(Boolean).length;
+  if (wordCount <= 2) {
+    return "A1-A2";
+  }
+  if (wordCount >= 5) {
+    return "B2";
+  }
+  return "B1";
+}
+
+let cachedCombinedIdiomsCatalog: ArabicIdiom[] | null = null;
+
+/**
+ * sozluk.json ve supplementDict.ts içindeki 'ifade' türündeki kayıtları da
+ * ana kütüphaneyle birleştirir (normalizeForIdiomMatch ile kesin tekilleştirilmiş
+ * ve pedagojik CEFR seviyeleri gerçek diyalog/kategori verisiyle eşleştirilmiş).
+ */
+export function getCombinedIdiomsCatalog(): ArabicIdiom[] {
+  if (cachedCombinedIdiomsCatalog) {
+    return cachedCombinedIdiomsCatalog;
+  }
+  const catalog: ArabicIdiom[] = [];
+  const seenNormalizedMap = new Map<string, ArabicIdiom>();
+
+  for (let idx = 0; idx < ARABIC_IDIOMS_LIBRARY.length; idx++) {
+    const item = ARABIC_IDIOMS_LIBRARY[idx];
+    const normTitle = normalizeForIdiomMatch(item.arabic);
+    if (!normTitle) continue;
+    const existing = seenNormalizedMap.get(normTitle);
+    if (existing) {
+      existing.meaningTr = mergeTurkishMeanings(
+        existing.meaningTr,
+        item.meaningTr
+      );
+      continue;
+    }
+
+    const catalogEntry: ArabicIdiom = {
+      ...item,
+      level: inferPedagogicalIdiomLevel(
+        item.arabic,
+        item.meaningTr,
+        item.usageNote,
+        item.variants,
+        item.level
+      ),
+    };
+    seenNormalizedMap.set(normTitle, catalogEntry);
+    item.arabic
+      .split("/")
+      .map((s) => s.replace(/\.\.\./g, "").trim())
+      .filter(Boolean)
+      .forEach((part) => {
+        const np = normalizeForIdiomMatch(part);
+        if (np && !seenNormalizedMap.has(np)) {
+          seenNormalizedMap.set(np, catalogEntry);
+        }
+      });
+    item.variants?.forEach((v) => {
+      const nv = normalizeForIdiomMatch(v);
+      if (nv && !seenNormalizedMap.has(nv)) {
+        seenNormalizedMap.set(nv, catalogEntry);
+      }
+    });
+    catalog.push(catalogEntry);
+  }
+
+  const dictSources = [...sozluk, ...SUPPLEMENT_DICTIONARY];
+  for (const entry of dictSources) {
+    if (entry.tur !== "ifade") continue;
+    const allParts = (entry.mufret || entry.mazi || "")
+      .split("/")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const rawAr = allParts[0] || "";
+    if (!rawAr) continue;
+    const norm = normalizeForIdiomMatch(rawAr);
+    if (!norm) continue;
+    const existing = seenNormalizedMap.get(norm);
+    if (existing) {
+      existing.meaningTr = mergeTurkishMeanings(
+        existing.meaningTr,
+        entry.anlam_tr
+      );
+      continue;
+    }
+
+    const assignedLevel = inferPedagogicalIdiomLevel(
+      rawAr,
+      entry.anlam_tr,
+      undefined,
+      allParts,
+      entry.cefr
+    );
+    const catalogEntry: ArabicIdiom = {
+      id: `dict_idm_${entry.id}`,
+      arabic: rawAr,
+      meaningTr: entry.anlam_tr,
+      literalTr:
+        entry.kok && entry.kok !== "-" ? `Kök: ${entry.kok}` : "Kalıp İfade",
+      usageNote:
+        "Günlük konuşma ve diyaloglarda kalıplaşmış ifade olarak kullanılır.",
+      variants: allParts,
+      level: assignedLevel,
+    };
+    seenNormalizedMap.set(norm, catalogEntry);
+    allParts.forEach((p) => {
+      const np = normalizeForIdiomMatch(p);
+      if (np && !seenNormalizedMap.has(np)) {
+        seenNormalizedMap.set(np, catalogEntry);
+      }
+    });
+    catalog.push(catalogEntry);
+  }
+
+  cachedCombinedIdiomsCatalog = catalog;
+  return catalog;
+}
+
+/**
+ * Verilen diyalog satırlarında geçen kalıp ifadeleri otomatik tespit eder.
+ * Aynı normalize Arapça başlığa sahip kalıp ifadeler kesin olarak tekilleştirilir (deduplicate).
+ */
+export function extractDialogueIdioms(
+  dialogueLines: DialogueLine[],
+  dialogueLevel?: string
+): ExtractedDialogueIdiom[] {
+  if (!dialogueLines || dialogueLines.length === 0) return [];
+
+  const catalog = getCombinedIdiomsCatalog();
+  const foundByNormKey = new Map<string, ExtractedDialogueIdiom>();
+
+  const normalizedLines = dialogueLines.map((line) => ({
+    sira: line.sira,
+    original: line.arapca,
+    turkce: line.turkce,
+    normalized: ` ${normalizeForIdiomMatch(line.arapca)} `,
+  }));
+
+  for (const idiom of catalog) {
+    const normIdiomTitle = normalizeForIdiomMatch(idiom.arabic);
+    if (!normIdiomTitle || foundByNormKey.has(normIdiomTitle)) continue;
+
+    const slashParts = idiom.arabic
+      .split("/")
+      .map((s) => s.replace(/\.\.\./g, "").trim())
+      .filter(Boolean);
+    const candidates = [
+      ...slashParts,
+      ...(idiom.variants || []).map((v) => v.replace(/\.\.\./g, "").trim()),
+    ];
+    for (const candidate of candidates) {
+      const normCand = normalizeForIdiomMatch(candidate);
+      if (!normCand || normCand.length < 3) continue;
+
+      const matchedLine = normalizedLines.find((nl) =>
+        nl.normalized.includes(` ${normCand} `)
+      );
+
+      if (matchedLine) {
+        foundByNormKey.set(normIdiomTitle, {
+          ...idiom,
+          level: dialogueLevel || idiom.level || "A1-A2",
+          lineNumber: matchedLine.sira,
+          matchedPhrase: candidate,
+          lineArabic: matchedLine.original,
+          lineTurkish: matchedLine.turkce,
+        });
+        break;
+      }
+    }
+  }
+
+  return Array.from(foundByNormKey.values()).sort(
+    (a, b) => a.lineNumber - b.lineNumber
+  );
+}
+
+/**
+ * Birden fazla diyalogda geçen tekil kalıp ifadeleri çıkarır.
+ */
+export function extractDialoguesIdioms(
+  dialogues: Dialogue[]
+): ExtractedDialogueIdiom[] {
+  if (!dialogues || dialogues.length === 0) return [];
+  const uniqueMap = new Map<string, ExtractedDialogueIdiom>();
+  for (const dlg of dialogues) {
+    const extracted = extractDialogueIdioms(dlg.satirlar, dlg.seviye);
+    for (const item of extracted) {
+      const normKey = normalizeForIdiomMatch(item.arabic);
+      if (normKey && !uniqueMap.has(normKey)) {
+        uniqueMap.set(normKey, {
+          ...item,
+          level: dlg.seviye || item.level || "A1-A2",
+        });
+      }
+    }
+  }
+  return Array.from(uniqueMap.values());
+}
+

@@ -15,6 +15,7 @@ import {
   Layers,
   Timer,
   ListOrdered,
+  Image as ImageIcon,
 } from "lucide-react";
 import { playClick } from "@/lib/sfxManager";
 import {
@@ -55,13 +56,15 @@ import FillInBlanks, {
 } from "@/components/exercises/FillInBlanks";
 import MatchingGame from "@/components/exercises/MatchingGame";
 import SentenceBuilder from "@/components/exercises/SentenceBuilder";
+import VisualRosettaQuiz from "@/components/exercises/VisualRosettaQuiz";
 
 type ExerciseType =
   | "flashcard"
   | "multiple-choice"
   | "fill-in-blanks"
   | "matching"
-  | "sentence-builder";
+  | "sentence-builder"
+  | "visual-rosetta";
 
 function ExercisesPageContent() {
   const searchParams = useSearchParams();
@@ -565,6 +568,13 @@ function ExercisesPageContent() {
       subtitle: "Dinlediğiniz cümle veya kalıp ifadenin kelimelerini sağdan sola sıralayın",
       icon: ListOrdered,
     },
+    {
+      id: "visual-rosetta",
+      title: "Görsel Eşleştirme (Rosetta)",
+      arabicBadge: "الصُّوَرُ وَالصَّوْت",
+      subtitle: "999 kare görsel ve çift cinsiyetli sesle Rosetta Stone usulü eşleştirme",
+      icon: ImageIcon,
+    },
   ];
 
   const nonProperCount = useMemo(
@@ -683,7 +693,13 @@ function ExercisesPageContent() {
       : sentenceCountInPool;
 
   const activePoolCountLabel =
-    contentType === "idioms"
+    selectedType === "visual-rosetta"
+      ? `${
+          cefrFilter === "all"
+            ? gorselKelimeler.length
+            : gorselKelimeler.filter((w) => w.cefr === cefrFilter).length
+        } Görsel Kelime`
+      : contentType === "idioms"
       ? `${idiomsPool.length} Kalıp İfade`
       : selectedType === "fill-in-blanks" || selectedType === "sentence-builder"
       ? `${sentenceCountInPool} Cümle`
@@ -756,9 +772,9 @@ function ExercisesPageContent() {
 
       {!isPlaying ? (
         <>
-          {/* 1. ÜSTTE 2 SÜTUNLU (MOBİL) / 5'Lİ (MASAÜSTÜ) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
+          {/* 1. ÜSTTE 2 SÜTUNLU (MOBİL) / 6'LI (MASAÜSTÜ) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
           <section aria-label="Alıştırma Türü Seçimi">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
               {exerciseCards.map((card) => {
                 const isSelected = selectedType === card.id;
                 const Icon = card.icon;
@@ -775,13 +791,12 @@ function ExercisesPageContent() {
                         card.id === "fill-in-blanks"
                       ) {
                         setContentType("sentences");
+                      } else if (card.id === "visual-rosetta") {
+                        setRangePreset("gorsel-kelimeler");
+                        setContentType("words");
                       }
                     }}
                     className={`text-left p-2.5 sm:p-3 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
-                      card.id === "sentence-builder"
-                        ? "col-span-2 sm:col-span-1"
-                        : ""
-                    } ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
@@ -1271,6 +1286,13 @@ function ExercisesPageContent() {
               isMistakesMode={
                 frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
               }
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "visual-rosetta" && (
+            <VisualRosettaQuiz
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
               onClose={handleCloseExercise}
             />
           )}

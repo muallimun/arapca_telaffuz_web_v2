@@ -20,6 +20,9 @@ import {
   Play,
   Square,
   Maximize2,
+  ChevronRight,
+  ChevronDown,
+  FolderOpen,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -86,6 +89,12 @@ export default function LibraryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [levelFilter, setLevelFilter] = useState<Level | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [isCategoryPanelOpen, setIsCategoryPanelOpen] =
+    useState<boolean>(false);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(
+    null
+  );
+  const touchStartXRef = useRef<number | null>(null);
   const [activeSection, setActiveSection] = useState<ViewSection>("dialogues");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(36);
@@ -93,15 +102,6 @@ export default function LibraryPage() {
   const [isSequentialPlaying, setIsSequentialPlaying] = useState<boolean>(false);
   const sequentialTokenRef = useRef<number>(0);
   const itemCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  const [lightboxPreview, setLightboxPreview] = useState<{
-    imageUrl: string;
-    fallbackUrl: string;
-    badge: string;
-    titleTr: string;
-    titleAr: string;
-    subtitle?: string;
-  } | null>(null);
 
   const [shadowingTarget, setShadowingTarget] = useState<{
     text: string;
@@ -167,6 +167,8 @@ export default function LibraryPage() {
     stopSequentialPlay();
     setActiveSection(sec);
     setCategoryFilter("all");
+    setIsCategoryPanelOpen(false);
+    setSelectedCardIndex(null);
     setVisibleCount(36);
   };
 
@@ -358,6 +360,34 @@ export default function LibraryPage() {
     );
   }, []);
 
+  const categoryCountsMap = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (activeSection === "cumleler") {
+      cumleler1111.forEach((c) => {
+        const itemLevel = c.seviye || c.cefr;
+        if (levelFilter !== "all" && itemLevel !== levelFilter) return;
+        if (c.tema) {
+          counts[c.tema] = (counts[c.tema] || 0) + 1;
+        }
+      });
+    } else if (activeSection === "atasozleri") {
+      atasozleri.forEach((a) => {
+        if (levelFilter !== "all" && a.cefr !== levelFilter) return;
+        if (a.tema) {
+          counts[a.tema] = (counts[a.tema] || 0) + 1;
+        }
+      });
+    } else if (activeSection === "gorsel-kelimeler") {
+      gorselKelimeler.forEach((g) => {
+        if (levelFilter !== "all" && g.cefr !== levelFilter) return;
+        if (g.kategori_tr) {
+          counts[g.kategori_tr] = (counts[g.kategori_tr] || 0) + 1;
+        }
+      });
+    }
+    return counts;
+  }, [activeSection, levelFilter]);
+
   const filteredVisualWords = useMemo(() => {
     const q = search.trim().toLowerCase();
     const cleanQ = cleanArabicText(search.trim());
@@ -379,6 +409,41 @@ export default function LibraryPage() {
       return true;
     });
   }, [search, levelFilter, categoryFilter]);
+
+  const activeModalListLength =
+    activeSection === "cumleler"
+      ? filteredSentences.length
+      : activeSection === "atasozleri"
+      ? filteredProverbs.length
+      : activeSection === "gorsel-kelimeler"
+      ? filteredVisualWords.length
+      : 0;
+
+  useEffect(() => {
+    if (selectedCardIndex === null || activeModalListLength === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        playClick();
+        setSelectedCardIndex((prev) =>
+          prev === null
+            ? null
+            : (prev - 1 + activeModalListLength) % activeModalListLength
+        );
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        playClick();
+        setSelectedCardIndex((prev) =>
+          prev === null ? null : (prev + 1) % activeModalListLength
+        );
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedCardIndex(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedCardIndex, activeModalListLength]);
 
   const prepareForms = (word: DictionaryItem) => {
     const forms: { label: string; arabic: string }[] = [];
@@ -505,62 +570,416 @@ export default function LibraryPage() {
         />
       )}
 
-      {/* BÜYÜTÜLMÜŞ GÖRSEL LIGHTBOX MODALI (508 Atasözü & 999 Görsel Kelime) */}
-      {lightboxPreview && (
-        <div
-          className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setLightboxPreview(null)}
-        >
-          <div
-            className="relative max-w-xl w-full bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] border-b-4 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative bg-white dark:bg-slate-900 flex items-center justify-center p-3">
-              <img
-                src={lightboxPreview.imageUrl}
-                alt={lightboxPreview.titleTr}
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const img = e.currentTarget as HTMLImageElement;
-                  if (!img.src.endsWith(lightboxPreview.fallbackUrl)) {
-                    img.src = lightboxPreview.fallbackUrl;
+      {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 999 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
+      {selectedCardIndex !== null &&
+        isDualGenderSection &&
+        activeModalListLength > 0 &&
+        (() => {
+          const safeIndex =
+            ((selectedCardIndex % activeModalListLength) +
+              activeModalListLength) %
+            activeModalListLength;
+
+          const currentVisual =
+            activeSection === "gorsel-kelimeler"
+              ? filteredVisualWords[safeIndex]
+              : null;
+          const currentProverb =
+            activeSection === "atasozleri"
+              ? filteredProverbs[safeIndex]
+              : null;
+          const currentSentence =
+            activeSection === "cumleler"
+              ? filteredSentences[safeIndex]
+              : null;
+
+          const activeItem =
+            currentVisual || currentProverb || currentSentence;
+          if (!activeItem) return null;
+
+          const isItemPlaying = playingItemId === activeItem.id;
+          const imageUrl = currentVisual
+            ? getVisualWordCoverUrl(currentVisual)
+            : currentProverb
+            ? getProverbCoverUrl(currentProverb.id)
+            : null;
+          const fallbackUrl = currentVisual
+            ? "/gorseller/kelimeler/gorsel_0001.webp"
+            : "/gorseller/atasozleri/ata_0001.webp";
+
+          const headerBadge = currentVisual
+            ? `#${currentVisual.id.replace("gorsel_", "")} • ${
+                currentVisual.cefr
+              } • ${currentVisual.kategori_tr}`
+            : currentProverb
+            ? `#${
+                currentProverb.sira || currentProverb.id.replace("ata_", "")
+              } • ${currentProverb.cefr} • ${(
+                currentProverb.tema || "Atasözü"
+              ).replace(/_/g, " ")}`
+            : currentSentence
+            ? `#${
+                currentSentence.sira || currentSentence.id.replace("cumle_", "")
+              } • ${currentSentence.seviye || currentSentence.cefr || "A1"} • ${(
+                currentSentence.tema || "Günlük Cümle"
+              ).replace(/_/g, " ")}`
+            : "";
+
+          const modalForms: { label: string; arabic: string }[] | undefined =
+            currentVisual
+              ? [
+                  { label: "Temel Form", arabic: currentVisual.arapca },
+                  ...(currentVisual.ikincil_form &&
+                  currentVisual.ikincil_form !== "-"
+                    ? [
+                        {
+                          label:
+                            currentVisual.tur === "fiil"
+                              ? "Muzâri (Şimdiki)"
+                              : "Cemî (Çoğul)",
+                          arabic: currentVisual.ikincil_form,
+                        },
+                      ]
+                    : []),
+                  ...(currentVisual.ucuncul_form &&
+                  currentVisual.ucuncul_form !== "-"
+                    ? [
+                        {
+                          label: "Masdar",
+                          arabic: currentVisual.ucuncul_form,
+                        },
+                      ]
+                    : []),
+                ]
+              : undefined;
+
+          const goPrev = () => {
+            playClick();
+            setSelectedCardIndex(
+              (safeIndex - 1 + activeModalListLength) % activeModalListLength
+            );
+          };
+
+          const goNext = () => {
+            playClick();
+            setSelectedCardIndex((safeIndex + 1) % activeModalListLength);
+          };
+
+          return (
+            <div
+              className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4"
+              onClick={() => setSelectedCardIndex(null)}
+            >
+              <div
+                className="relative max-w-lg w-full max-h-[92vh] flex flex-col bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => {
+                  touchStartXRef.current = e.touches[0]?.clientX ?? null;
+                }}
+                onTouchEnd={(e) => {
+                  if (touchStartXRef.current === null) return;
+                  const endX = e.changedTouches[0]?.clientX ?? touchStartXRef.current;
+                  const deltaX = endX - touchStartXRef.current;
+                  touchStartXRef.current = null;
+                  if (deltaX > 50) {
+                    goPrev();
+                  } else if (deltaX < -50) {
+                    goNext();
                   }
                 }}
-                className="w-full max-h-[65vh] object-contain rounded-2xl"
-              />
-              <button
-                type="button"
-                onClick={() => setLightboxPreview(null)}
-                className="absolute top-4 right-4 h-9 px-3.5 rounded-xl bg-black/75 hover:bg-black text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
               >
-                <X size={15} />
-                <span>Kapat</span>
-              </button>
-            </div>
-            <div className="p-4 sm:p-5 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
-                  {lightboxPreview.badge}
-                </span>
-                <span
-                  dir="rtl"
-                  className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400"
-                >
-                  {getDisplayArabic(lightboxPreview.titleAr)}
-                </span>
+                {/* 1. Üst Başlık Barı */}
+                <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                  <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white text-[11px] font-extrabold truncate">
+                    {headerBadge}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold tabular-nums text-[var(--foreground)]">
+                      {safeIndex + 1} / {activeModalListLength}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedCardIndex(null);
+                      }}
+                      className="min-h-[40px] px-3 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-rose-50 border-2 border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+                    >
+                      <X size={15} />
+                      <span>Kapat</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2 & 3. Kaydırılabilir Orta İçerik: 1:1 Kare Görsel + Pedagojik Detaylar */}
+                <div className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 flex-1">
+                  {imageUrl && (
+                    <div className="aspect-square w-full max-w-[260px] sm:max-w-[320px] mx-auto rounded-2xl overflow-hidden border-2 border-[#E6D7BE] bg-white shadow-sm relative">
+                      <img
+                        src={imageUrl}
+                        alt={activeItem.turkce}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const img = e.currentTarget as HTMLImageElement;
+                          if (!img.src.endsWith(fallbackUrl)) {
+                            img.src = fallbackUrl;
+                          }
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      {currentVisual && (
+                        <span
+                          className={`absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold uppercase shadow-xs ${
+                            currentVisual.tur === "fiil"
+                              ? "bg-[#6741D9] text-white"
+                              : "bg-[#087F5B] text-white"
+                          }`}
+                        >
+                          {currentVisual.tur === "fiil" ? "Fiil" : "İsim"}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Harekeli Arapça Odak Kutusu */}
+                  <div
+                    dir="rtl"
+                    className="arabic font-arabic text-3xl sm:text-4xl font-bold text-[#065F46] dark:text-emerald-400 text-center leading-[1.95] bg-white dark:bg-[var(--background)] rounded-2xl p-3.5 border-2 border-[#E6D7BE] shadow-2xs"
+                  >
+                    <WordTooltip
+                      text={activeItem.arapca}
+                      contextSentenceTr={activeItem.turkce}
+                    />
+                  </div>
+
+                  {/* Türkçe Anlam ve Modüle Özel Pedagojik Bilgiler */}
+                  <div className="bg-[#F7EFE1] dark:bg-[var(--background)] rounded-2xl p-3.5 border border-[#E6D7BE] space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
+                        {activeItem.turkce}
+                      </p>
+                      {currentSentence?.odak_kalip && (
+                        <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-extrabold">
+                          📌 {currentSentence.odak_kalip}
+                        </span>
+                      )}
+                    </div>
+
+                    {currentVisual &&
+                      (currentVisual.ikincil_form ||
+                        currentVisual.ucuncul_form) && (
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-2">
+                          {currentVisual.ikincil_form &&
+                            currentVisual.ikincil_form !== "-" && (
+                              <span>
+                                {currentVisual.tur === "fiil"
+                                  ? "Muzâri:"
+                                  : "Çoğul:"}{" "}
+                                <strong
+                                  dir="rtl"
+                                  className="arabic font-arabic text-base text-[var(--foreground)]"
+                                >
+                                  {getDisplayArabic(currentVisual.ikincil_form)}
+                                </strong>
+                              </span>
+                            )}
+                          {currentVisual.ucuncul_form &&
+                            currentVisual.ucuncul_form !== "-" && (
+                              <span>
+                                Masdar:{" "}
+                                <strong
+                                  dir="rtl"
+                                  className="arabic font-arabic text-base text-[var(--foreground)]"
+                                >
+                                  {getDisplayArabic(currentVisual.ucuncul_form)}
+                                </strong>
+                              </span>
+                            )}
+                        </div>
+                      )}
+
+                    {currentProverb?.lafzi_ceviri && (
+                      <p className="text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-2">
+                        <strong className="text-[var(--foreground)]">
+                          Lafzî Çeviri:
+                        </strong>{" "}
+                        {currentProverb.lafzi_ceviri}
+                      </p>
+                    )}
+
+                    {currentProverb?.kullanim_baglami && (
+                      <div className="rounded-xl bg-white/85 dark:bg-[var(--surface)] px-3 py-2 border border-[#E6D7BE] text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        💡 <strong>Kullanım Bağlamı:</strong>{" "}
+                        {currentProverb.kullanim_baglami}
+                      </div>
+                    )}
+
+                    {currentVisual?.ornek_ar && (
+                      <div className="bg-white dark:bg-[var(--surface)] rounded-xl p-3 border border-[#E6D7BE] space-y-1.5 mt-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-extrabold uppercase text-[#6741D9]">
+                            Örnek Cümle
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              if (
+                                currentVisual.ornek_ses_erkek ||
+                                currentVisual.ornek_ses_kadin
+                              ) {
+                                void playDualGenderAudio({
+                                  text: currentVisual.ornek_ar,
+                                  ses_erkek: currentVisual.ornek_ses_erkek,
+                                  ses_kadin: currentVisual.ornek_ses_kadin,
+                                  rate: speechRate,
+                                  gender: preferredVoiceGender,
+                                });
+                              } else {
+                                void speakHybrid({
+                                  text: currentVisual.ornek_ar,
+                                  rate: speechRate,
+                                  voice: preferredVoiceGender,
+                                });
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-[#087F5B]/40 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Volume2 size={12} />
+                            <span>🔊 Örnek Cümleyi Dinle</span>
+                          </button>
+                        </div>
+                        <div
+                          dir="rtl"
+                          className="arabic font-arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
+                        >
+                          <WordTooltip
+                            text={currentVisual.ornek_ar}
+                            contextSentenceTr={
+                              currentVisual.ornek_tr || currentVisual.turkce
+                            }
+                          />
+                        </div>
+                        {currentVisual.ornek_tr && (
+                          <p className="text-xs font-semibold text-[var(--muted)]">
+                            {currentVisual.ornek_tr}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. Ses ve Telaffuz Aksiyon Satırı */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleListenDualGender(activeItem)}
+                      className={`flex-1 min-h-[44px] px-3.5 rounded-xl border-2 border-b-3 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        isItemPlaying
+                          ? "bg-[#087F5B] border-[#065F46] text-white"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
+                      }`}
+                    >
+                      <Volume2
+                        size={16}
+                        className={
+                          isItemPlaying ? "text-white" : "text-[#065F46]"
+                        }
+                      />
+                      <span>
+                        {isItemPlaying
+                          ? "Dinleniyor..."
+                          : `🔊 Dinle (${
+                              mounted && preferredVoiceGender === "kadin"
+                                ? "👩 Kadın"
+                                : "👨 Erkek"
+                            })`}
+                      </span>
+                    </button>
+
+                    <div className="flex items-center bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border-2 border-[#E6D7BE] shrink-0">
+                      {(
+                        [
+                          { id: "erkek", label: "👨" },
+                          { id: "kadin", label: "👩" },
+                        ] as { id: VoiceGender; label: string }[]
+                      ).map((g) => {
+                        const active =
+                          (mounted ? preferredVoiceGender : "erkek") === g.id;
+                        return (
+                          <button
+                            key={g.id}
+                            type="button"
+                            title={
+                              g.id === "erkek"
+                                ? "Erkek Seslendirici"
+                                : "Kadın Seslendirici"
+                            }
+                            onClick={() => {
+                              playClick();
+                              setPreferredVoiceGender(g.id);
+                            }}
+                            className={`min-h-[34px] px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                              active
+                                ? "bg-[#087F5B] text-white"
+                                : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                            }`}
+                          >
+                            {g.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShadowingTarget({
+                          text: activeItem.arapca,
+                          refAudioUrl: getDualGenderAudioUrl(
+                            activeItem,
+                            preferredVoiceGender
+                          ),
+                          forms: modalForms,
+                        });
+                      }}
+                      className="min-h-[44px] px-4 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs sm:text-sm font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Mic size={16} />
+                      <span>🎙️ Telaffuz Et</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. Alt İleri / Geri Navigasyon Barı (Başparmak Ergonomisi) */}
+                <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    className="min-h-[44px] px-4 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-[#EFE3CE] border-2 border-[#E6D7BE] border-b-3 text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Önceki</span>
+                  </button>
+
+                  <span className="text-xs sm:text-sm font-extrabold tabular-nums text-[var(--muted)]">
+                    {safeIndex + 1} / {activeModalListLength}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="min-h-[44px] px-4 rounded-xl bg-[#087F5B] hover:bg-[#065F46] border-2 border-[#065F46] border-b-3 text-xs sm:text-sm font-extrabold text-white flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                  >
+                    <span>Sonraki</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
-              <p className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
-                {lightboxPreview.titleTr}
-              </p>
-              {lightboxPreview.subtitle && (
-                <p className="text-xs font-semibold text-[var(--muted)]">
-                  {lightboxPreview.subtitle}
-                </p>
-              )}
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })()}
 
       {/* ÜST BAŞLIK & V2 MODÜL SEÇİCİ */}
       <div className="space-y-2.5">
@@ -807,54 +1226,150 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* 1111 Cümle / Atasözleri / Görsel Kelimeler Kategori Şeridi */}
+          {/* 1111 Cümle / Atasözleri / Görsel Kelimeler Açılır Çok Sütunlu Kategori Seçici (Category Bento Grid) */}
           {(activeSection === "cumleler" ||
             activeSection === "atasozleri" ||
-            activeSection === "gorsel-kelimeler") && (
-            <div className="flex overflow-x-auto no-scrollbar items-center gap-1.5 py-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setCategoryFilter("all");
-                  setVisibleCount(36);
-                }}
-                className={`px-2.5 py-1 text-xs rounded-lg border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                  categoryFilter === "all"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white font-bold"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] font-medium"
-                }`}
-              >
-                Tüm Kategoriler
-              </button>
-              {(activeSection === "cumleler"
-                ? cumleThemes
-                : activeSection === "atasozleri"
-                ? proverbThemes
-                : visualCategories
-              ).map((cat) => {
-                const active = categoryFilter === cat;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setCategoryFilter(cat);
-                      setVisibleCount(36);
-                    }}
-                    className={`px-2.5 py-1 text-xs rounded-lg border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                      active
-                        ? "bg-[#6741D9] border-[#5230B5] text-white font-bold"
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] font-medium hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    {cat.replace(/_/g, " ")}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            activeSection === "gorsel-kelimeler") &&
+            (() => {
+              const activeCategoryList =
+                activeSection === "cumleler"
+                  ? cumleThemes
+                  : activeSection === "atasozleri"
+                  ? proverbThemes
+                  : visualCategories;
+
+              return (
+                <div className="space-y-2 pt-0.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] truncate">
+                        <FolderOpen
+                          size={14}
+                          className="text-[#6741D9] shrink-0"
+                        />
+                        <span className="truncate">
+                          📂 Kategori:{" "}
+                          <strong className="text-[#6741D9] dark:text-indigo-300">
+                            {categoryFilter === "all"
+                              ? "Tüm Kategoriler"
+                              : categoryFilter.replace(/_/g, " ")}
+                          </strong>
+                        </span>
+                      </span>
+
+                      {categoryFilter !== "all" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setCategoryFilter("all");
+                            setSelectedCardIndex(null);
+                            setVisibleCount(36);
+                          }}
+                          className="min-h-[36px] px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 text-rose-700 dark:text-rose-300 text-xs font-extrabold flex items-center gap-1 cursor-pointer hover:bg-rose-100"
+                        >
+                          <X size={13} />
+                          <span>Tümü</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsCategoryPanelOpen((prev) => !prev);
+                      }}
+                      className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                        isCategoryPanelOpen || categoryFilter !== "all"
+                          ? "bg-[#6741D9] border-[#5230B5] text-white"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+                      }`}
+                    >
+                      <span>
+                        🗂️ Kategori Seç ({activeCategoryList.length})
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${
+                          isCategoryPanelOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {isCategoryPanelOpen && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-64 sm:max-h-80 overflow-y-auto p-2.5 bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-inner">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setCategoryFilter("all");
+                          setSelectedCardIndex(null);
+                          setVisibleCount(36);
+                          setIsCategoryPanelOpen(false);
+                        }}
+                        className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all cursor-pointer ${
+                          categoryFilter === "all"
+                            ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                            : "bg-[#F7EFE1]/70 dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+                        }`}
+                      >
+                        <span className="truncate">Tüm Kategoriler</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold tabular-nums shrink-0 ${
+                            categoryFilter === "all"
+                              ? "bg-white/20 text-white"
+                              : "bg-white dark:bg-[var(--background)] text-[#6741D9]"
+                          }`}
+                        >
+                          {Object.values(categoryCountsMap).reduce(
+                            (a, b) => a + b,
+                            0
+                          )}
+                        </span>
+                      </button>
+
+                      {activeCategoryList.map((cat) => {
+                        const active = categoryFilter === cat;
+                        const count = categoryCountsMap[cat] || 0;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setCategoryFilter(cat);
+                              setSelectedCardIndex(null);
+                              setVisibleCount(36);
+                              setIsCategoryPanelOpen(false);
+                            }}
+                            className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between gap-1.5 text-left transition-all cursor-pointer ${
+                              active
+                                ? "bg-[#6741D9] border-[#5230B5] text-white font-extrabold shadow-2xs"
+                                : "bg-[#F7EFE1]/50 dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+                            }`}
+                          >
+                            <span className="line-clamp-2 leading-tight">
+                              {cat.replace(/_/g, " ")}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold tabular-nums shrink-0 ${
+                                active
+                                  ? "bg-white/20 text-white"
+                                  : "bg-white dark:bg-[var(--background)] text-[var(--muted)]"
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           {mobileFiltersOpen && (
             <div className="sm:hidden pt-1.5 border-t border-dashed border-[#E2D3B8] flex flex-wrap items-center justify-between gap-1.5">
@@ -1317,7 +1832,7 @@ export default function LibraryPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {filteredSentences.slice(0, visibleCount).map((item) => {
+            {filteredSentences.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const itemLevel = item.seviye || item.cefr || "A1";
               return (
@@ -1332,7 +1847,7 @@ export default function LibraryPage() {
                       : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
                   }`}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
                         #{item.sira || item.id.replace("cumle_", "")} •{" "}
@@ -1354,7 +1869,7 @@ export default function LibraryPage() {
 
                     <div
                       dir="rtl"
-                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/80 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
                     >
                       <WordTooltip
                         text={item.arapca}
@@ -1362,16 +1877,18 @@ export default function LibraryPage() {
                       />
                     </div>
 
-                    <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                      {item.turkce}
-                    </p>
+                    <div className="border-l-4 border-[#087F5B] bg-white/75 dark:bg-[var(--background)] rounded-r-xl px-3 py-2 border border-[#E6D7BE]">
+                      <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
+                        {item.turkce}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => void handleListenDualGender(item)}
-                      className={`flex-1 h-9 px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 min-h-[40px] px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         isPlaying
                           ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
@@ -1404,10 +1921,23 @@ export default function LibraryPage() {
                           ),
                         });
                       }}
-                      className="h-9 px-3.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="min-h-[40px] px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Mic size={14} />
                       <span>Telaffuz</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedCardIndex(idx);
+                      }}
+                      title="Tekil Kart Görünümünde Aç"
+                      className="min-h-[40px] px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Maximize2 size={13} className="text-[#087F5B]" />
+                      <span className="hidden sm:inline">Kartı Aç</span>
                     </button>
                   </div>
                 </div>
@@ -1475,7 +2005,7 @@ export default function LibraryPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredProverbs.slice(0, visibleCount).map((item) => {
+            {filteredProverbs.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const imgUrl = getProverbCoverUrl(item.id);
               return (
@@ -1496,19 +2026,10 @@ export default function LibraryPage() {
                         type="button"
                         onClick={() => {
                           playClick();
-                          setLightboxPreview({
-                            imageUrl: imgUrl,
-                            fallbackUrl: "/gorseller/atasozleri/ata_0001.webp",
-                            badge: `Atasözü #${
-                              item.sira || item.id.replace("ata_", "")
-                            } • ${item.cefr}`,
-                            titleTr: item.turkce,
-                            titleAr: item.arapca,
-                            subtitle: item.kullanim_baglami,
-                          });
+                          setSelectedCardIndex(idx);
                         }}
-                        title="Görseli Büyüt (600x600)"
-                        className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-[#E6D7BE] shrink-0 group cursor-pointer bg-white"
+                        title="Tekil Kart Görünümünde Aç (1:1 Kare Görsel)"
+                        className="relative w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden border-2 border-[#E6D7BE] shrink-0 group cursor-pointer bg-white"
                       >
                         <img
                           src={imgUrl}
@@ -1559,7 +2080,7 @@ export default function LibraryPage() {
 
                     <div
                       dir="rtl"
-                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/80 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
                     >
                       <WordTooltip
                         text={item.arapca}
@@ -1578,7 +2099,7 @@ export default function LibraryPage() {
                     <button
                       type="button"
                       onClick={() => void handleListenDualGender(item)}
-                      className={`flex-1 h-9 px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 min-h-[40px] px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         isPlaying
                           ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
@@ -1611,10 +2132,23 @@ export default function LibraryPage() {
                           ),
                         });
                       }}
-                      className="h-9 px-3.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="min-h-[40px] px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Mic size={14} />
                       <span>Telaffuz</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedCardIndex(idx);
+                      }}
+                      title="Tekil Kart Görünümünde Aç"
+                      className="min-h-[40px] px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Maximize2 size={13} className="text-[#087F5B]" />
+                      <span className="hidden sm:inline">Kartı Aç</span>
                     </button>
                   </div>
                 </div>
@@ -1640,7 +2174,7 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {/* 5. SEKME: 999 GÖRSEL KELİME */}
+      {/* 5. SEKME: 999 GÖRSEL KELİME (1:1 KARE GÖRSEL & BÜTÜNCÜL KART MİMARİSİ) */}
       {activeSection === "gorsel-kelimeler" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">
@@ -1681,8 +2215,8 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredVisualWords.slice(0, visibleCount).map((item) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredVisualWords.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const imgUrl = getVisualWordCoverUrl(item);
               const forms: { label: string; arabic: string }[] = [
@@ -1704,106 +2238,112 @@ export default function LibraryPage() {
                   ref={(el) => {
                     itemCardRefs.current[item.id] = el;
                   }}
-                  className={`rounded-2xl border-2 border-b-4 overflow-hidden flex flex-col justify-between transition-all ${
+                  className={`rounded-2xl border-2 border-b-4 p-4 flex flex-col justify-between gap-3 transition-all ${
                     isPlaying
                       ? "bg-emerald-50/95 dark:bg-emerald-950/60 border-[#087F5B] ring-2 ring-[#087F5B]"
                       : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setLightboxPreview({
-                        imageUrl: imgUrl,
-                        fallbackUrl: "/gorseller/kelimeler/gorsel_0001.webp",
-                        badge: `${item.cefr} • ${item.kategori_tr}`,
-                        titleTr: item.turkce,
-                        titleAr: item.arapca,
-                        subtitle: item.ornek_tr || item.ornek_ar,
-                      });
-                    }}
-                    title="Görseli Büyüt"
-                    className="relative h-40 w-full bg-white overflow-hidden group cursor-pointer text-left"
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={item.turkce}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        const img = e.currentTarget as HTMLImageElement;
-                        if (
-                          !img.src.endsWith(
-                            "/gorseller/kelimeler/gorsel_0001.webp"
-                          )
-                        ) {
-                          img.src = "/gorseller/kelimeler/gorsel_0001.webp";
-                        }
-                      }}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold">
-                        {item.cefr}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-white/95 text-[#2b241d] text-[10px] font-extrabold border border-[#E6D7BE]">
-                        {item.kategori_tr}
-                      </span>
-                    </div>
-                    <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/65 text-white">
-                      <Maximize2 size={11} />
-                    </span>
-                  </button>
-
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase text-[var(--muted)]">
-                            {item.tur}
-                          </span>
-                          <h3 className="text-base font-extrabold text-[var(--foreground)]">
-                            {item.turkce}
-                          </h3>
-                        </div>
-                        <span
-                          dir="rtl"
-                          className="arabic font-arabic text-3xl font-bold text-[#065F46] dark:text-emerald-400"
-                        >
-                          {getDisplayArabic(item.arapca)}
+                  <div className="space-y-2.5">
+                    {/* Üst Satır: Sol 1:1 Kare Görsel Kutusu + Sağ Meta Bilgileri */}
+                    <div className="flex items-start gap-3.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setSelectedCardIndex(idx);
+                        }}
+                        title="Tekil Kart Görünümünde Aç (1:1 Kare Görsel)"
+                        className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden border-2 border-[#E6D7BE] bg-white shrink-0 relative group cursor-pointer"
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={item.turkce}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            if (
+                              !img.src.endsWith(
+                                "/gorseller/kelimeler/gorsel_0001.webp"
+                              )
+                            ) {
+                              img.src = "/gorseller/kelimeler/gorsel_0001.webp";
+                            }
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="absolute bottom-1 right-1 p-1 rounded-md bg-black/65 text-white">
+                          <Maximize2 size={10} />
                         </span>
+                      </button>
+
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
+                            {item.cefr}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] truncate">
+                            {item.kategori_tr}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase ${
+                              item.tur === "fiil"
+                                ? "bg-indigo-100 dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-300 border border-indigo-300"
+                                : "bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 border border-emerald-300"
+                            }`}
+                          >
+                            {item.tur === "fiil" ? "Fiil" : "İsim"}
+                          </span>
+                        </div>
+
+                        <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
+                          {item.turkce}
+                        </h3>
+
+                        {(item.ikincil_form || item.ucuncul_form) && (
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[var(--muted)] pt-0.5">
+                            {item.ikincil_form && item.ikincil_form !== "-" && (
+                              <span>
+                                {item.tur === "fiil" ? "Muzâri:" : "Çoğul:"}{" "}
+                                <strong
+                                  dir="rtl"
+                                  className="arabic font-arabic text-sm text-[var(--foreground)]"
+                                >
+                                  {getDisplayArabic(item.ikincil_form)}
+                                </strong>
+                              </span>
+                            )}
+                            {item.ucuncul_form && item.ucuncul_form !== "-" && (
+                              <span>
+                                Masdar:{" "}
+                                <strong
+                                  dir="rtl"
+                                  className="arabic font-arabic text-sm text-[var(--foreground)]"
+                                >
+                                  {getDisplayArabic(item.ucuncul_form)}
+                                </strong>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Orta Kutu: Sağa Hizalı İri Harekeli Arapça Kelime + Örnek Cümle */}
+                    <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE] space-y-2">
+                      <div
+                        dir="rtl"
+                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
+                      >
+                        <WordTooltip
+                          text={item.arapca}
+                          contextSentenceTr={item.turkce}
+                        />
                       </div>
 
-                      {(item.ikincil_form || item.ucuncul_form) && (
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)] border-t border-dashed border-[#E2D3B8] pt-1.5">
-                          {item.ikincil_form && item.ikincil_form !== "-" && (
-                            <span>
-                              2. Form:{" "}
-                              <strong
-                                dir="rtl"
-                                className="arabic font-arabic text-sm text-[var(--foreground)]"
-                              >
-                                {getDisplayArabic(item.ikincil_form)}
-                              </strong>
-                            </span>
-                          )}
-                          {item.ucuncul_form && item.ucuncul_form !== "-" && (
-                            <span>
-                              Masdar:{" "}
-                              <strong
-                                dir="rtl"
-                                className="arabic font-arabic text-sm text-[var(--foreground)]"
-                              >
-                                {getDisplayArabic(item.ucuncul_form)}
-                              </strong>
-                            </span>
-                          )}
-                        </div>
-                      )}
-
                       {item.ornek_ar && (
-                        <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl p-2.5 border border-[#E6D7BE] space-y-1">
-                          <div className="flex items-center justify-between">
+                        <div className="border-t border-dashed border-[#E2D3B8] pt-2 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="text-[10px] font-extrabold uppercase text-[#6741D9]">
                               Örnek Cümle
                             </span>
@@ -1830,7 +2370,7 @@ export default function LibraryPage() {
                                   });
                                 }
                               }}
-                              className="text-[10px] font-extrabold text-[#065F46] hover:underline flex items-center gap-1 cursor-pointer"
+                              className="text-[10px] font-extrabold text-[#065F46] dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
                             >
                               <Volume2 size={11} />
                               <span>Cümleyi Dinle</span>
@@ -1838,7 +2378,7 @@ export default function LibraryPage() {
                           </div>
                           <div
                             dir="rtl"
-                            className="arabic font-arabic text-lg font-bold text-[var(--foreground)] text-right leading-[1.9]"
+                            className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
                           >
                             <WordTooltip
                               text={item.ornek_ar}
@@ -1853,53 +2393,65 @@ export default function LibraryPage() {
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => void handleListenDualGender(item)}
-                        className={`flex-1 h-9 px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isPlaying
-                            ? "bg-[#087F5B] border-[#065F46] text-white"
-                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
-                        }`}
-                      >
-                        <Volume2
-                          size={14}
-                          className={
-                            isPlaying ? "text-white" : "text-[#065F46]"
-                          }
-                        />
-                        <span>
-                          {isPlaying
-                            ? "Dinleniyor..."
-                            : `Dinle (${
-                                mounted && preferredVoiceGender === "kadin"
-                                  ? "Kadın"
-                                  : "Erkek"
-                              })`}
-                        </span>
-                      </button>
+                  {/* Alt Aksiyon Satırı */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleListenDualGender(item)}
+                      className={`flex-1 min-h-[40px] px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        isPlaying
+                          ? "bg-[#087F5B] border-[#065F46] text-white"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
+                      }`}
+                    >
+                      <Volume2
+                        size={14}
+                        className={isPlaying ? "text-white" : "text-[#065F46]"}
+                      />
+                      <span>
+                        {isPlaying
+                          ? "Dinleniyor..."
+                          : `Dinle (${
+                              mounted && preferredVoiceGender === "kadin"
+                                ? "Kadın"
+                                : "Erkek"
+                            })`}
+                      </span>
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShadowingTarget({
-                            text: item.arapca,
-                            refAudioUrl: getDualGenderAudioUrl(
-                              item,
-                              preferredVoiceGender
-                            ),
-                            forms,
-                          });
-                        }}
-                        className="h-9 px-3.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <Mic size={14} />
-                        <span>Telaffuz</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShadowingTarget({
+                          text: item.arapca,
+                          refAudioUrl: getDualGenderAudioUrl(
+                            item,
+                            preferredVoiceGender
+                          ),
+                          forms,
+                        });
+                      }}
+                      className="min-h-[40px] px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Mic size={14} />
+                      <span>Telaffuz</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedCardIndex(idx);
+                      }}
+                      title="Tekil Kart Görünümünde Aç"
+                      className="min-h-[40px] px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Maximize2 size={13} className="text-[#087F5B]" />
+                      <span className="hidden sm:inline">Kartı Aç</span>
+                    </button>
                   </div>
                 </div>
               );

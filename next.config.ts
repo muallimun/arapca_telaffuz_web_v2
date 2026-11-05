@@ -1,49 +1,39 @@
 import type { NextConfig } from "next";
 
+// Medya deposu adresi (GitHub'a yüklenir yüklenmez anında çalışır)
+const MEDIA_CDN_URL =
+  process.env.NEXT_PUBLIC_MEDIA_BASE_URL ||
+  "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/public";
+
 const nextConfig: NextConfig = {
-  // YENİ: Uygulamayı kendi sunucunda çalıştırmak için gerekli olan "standalone" modu
-  output: "standalone", 
-  
-  experimental: {
-    agentFeedback: false,
-  },
-  
-  // Transformers paketini sunucu tarafında paketleme
-  serverExternalPackages: ["@huggingface/transformers"],
-  
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
-  
-  async headers() {
-    return [
+  reactStrictMode: true,
+  images: {
+    unoptimized: true,
+    remotePatterns: [
       {
-        source: "/(.*)",
-        headers: [
-          // Whisper (WASM) yapay zekasının çalışması için gerekli güvenlik başlıkları
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
-          // Ek Güvenlik Başlıkları (Clickjacking, MIME Sniffing, Referrer, Mikrofon ve CSP)
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          { key: "Permissions-Policy", value: "microphone=(self)" },
-          {
-            key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdn.jsdelivr.net; worker-src 'self' blob: data:; connect-src 'self' blob: data: https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
-          },
-        ],
+        protocol: "https",
+        hostname: "raw.githubusercontent.com",
       },
-    ];
+      {
+        protocol: "https",
+        hostname: "muallimun.github.io",
+      },
+    ],
+  },
+  async rewrites() {
+    return {
+      // Önce yerel public/ klasörüne bakar; dosya yoksa otomatik olarak medya deposundan (CDN) çeker
+      fallback: [
+        {
+          source: "/sesler/:path*",
+          destination: `${MEDIA_CDN_URL}/sesler/:path*`,
+        },
+        {
+          source: "/gorseller/:path*",
+          destination: `${MEDIA_CDN_URL}/gorseller/:path*`,
+        },
+      ],
+    };
   },
 };
 

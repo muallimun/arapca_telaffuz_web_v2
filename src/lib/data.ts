@@ -1,7 +1,22 @@
 import diyaloglarJson from "@/data/tum_diyaloglar_120.json";
+import diyalogGramerJson from "@/data/diyaloglar_gramer_hap_bilgi.json";
+import metinlerJson from "@/data/tum_metinler_60.json";
+import metinGramerJson from "@/data/metinler_gramer_hap_bilgi.json";
+import cumlelerJson from "@/data/1111_cumle.json";
+import atasozleriJson from "@/data/atasozleri.json";
+import gorselKelimelerJson from "@/data/gorselKelimeler_guncel.json";
 import { getCombinedIdiomsCatalog } from "@/lib/arabicIdioms";
 import { unifiedDictionary } from "@/lib/dict";
-import { Dialogue, DictionaryItem, Level } from "@/types/data";
+import {
+  AnahtarCumle,
+  AtasozuDeyim,
+  Dialogue,
+  DictionaryItem,
+  GramerHapBilgi,
+  Level,
+  ReadingText,
+  ResimliKelime,
+} from "@/types/data";
 
 const LEVEL_UNITE_MAP: Record<Level, string> = {
   A1: "Ünite 1: Temel İletişim",
@@ -49,7 +64,13 @@ function buildDialogueTags(baslikTr: string, seviye: Level): string[] {
   return Array.from(new Set([seviye.toLowerCase(), baseTag, ...cleaned]));
 }
 
-// JSON verilerini pedagojik üst verilerle (cefr, zorluk, etiketler, kaynak_unite) zenginleştiriyoruz
+export const diyalogGramerNotlari: GramerHapBilgi[] =
+  diyalogGramerJson as GramerHapBilgi[];
+
+export const metinGramerNotlari: GramerHapBilgi[] =
+  metinGramerJson as GramerHapBilgi[];
+
+// 1. 120 Diyalog (tum_diyaloglar_120.json)
 export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
   (d): Dialogue => {
     const lvl: Level = d.seviye || "A1";
@@ -72,12 +93,107 @@ export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
   }
 );
 
+// 2. 60 Okuma Metni (tum_metinler_60.json)
+export const metinler: ReadingText[] = (metinlerJson as ReadingText[]).map(
+  (m, idx): ReadingText => {
+    const lvl: Level = m.seviye || "A1";
+    const gramerNote = metinGramerNotlari.find((g) => g.bagli_id === m.id);
+    return {
+      ...m,
+      sira: m.sira || idx + 1,
+      odak_gramer: m.odak_gramer || gramerNote?.konu_basligi,
+      cefr: m.cefr || lvl,
+      zorluk: m.zorluk || LEVEL_ZORLUK_MAP[lvl] || 1,
+      etiketler:
+        Array.isArray(m.etiketler) && m.etiketler.length > 0
+          ? m.etiketler
+          : buildDialogueTags(m.baslik_tr, lvl),
+      kaynak_unite: m.kaynak_unite || LEVEL_UNITE_MAP[lvl],
+      satirlar: Array.isArray(m.satirlar)
+        ? m.satirlar.map((line) => ({
+            ...line,
+            arapca: normalizeCanonicalArabicLine(line.arapca),
+          }))
+        : [],
+      sorular: Array.isArray(m.sorular) ? m.sorular : [],
+    };
+  }
+);
+
+// 3. 1111 Cümle (1111_cumle.json)
+export const cumleler1111: AnahtarCumle[] = (
+  cumlelerJson as AnahtarCumle[]
+).map((c) => ({
+  ...c,
+  cefr: c.cefr || c.seviye || "A1",
+  arapca: normalizeCanonicalArabicLine(c.arapca),
+}));
+
+// 4. 508 Atasözü ve Hikmetli Söz (atasozleri.json)
+export const atasozleri: AtasozuDeyim[] = (
+  atasozleriJson as AtasozuDeyim[]
+).map((a) => {
+  const num4 = String(a.sira || parseInt(a.id.replace(/\D+/g, ""), 10) || 1).padStart(
+    4,
+    "0"
+  );
+  return {
+    ...a,
+    arapca: normalizeCanonicalArabicLine(a.arapca),
+    gorsel: a.gorsel || `/gorseller/atasozleri/ata_${num4}.webp`,
+    ses_erkek: (
+      a.ses_erkek || `/sesler/atasozleri/erkek/ata_${num4}.mp3`
+    ).replace(/\.wav$/i, ".mp3"),
+    ses_kadin: (
+      a.ses_kadin || `/sesler/atasozleri/kadin/ata_${num4}.mp3`
+    ).replace(/\.wav$/i, ".mp3"),
+  };
+});
+
+// 5. Görsel Kelimeler (gorselKelimeler_guncel.json)
+export const gorselKelimeler: ResimliKelime[] = (
+  gorselKelimelerJson as ResimliKelime[]
+).map((gk) => ({
+  ...gk,
+  arapca: normalizeCanonicalArabicLine(gk.arapca),
+  ornek_ar: normalizeCanonicalArabicLine(gk.ornek_ar || ""),
+}));
+
+// 6. Birleştirilmiş Kapsamlı Sözlük
 export const sozluk: DictionaryItem[] = unifiedDictionary;
 
-/**
- * Diyalogları pedagojik olarak önce CEFR seviyesine (A1 -> A2 -> B1 -> B2),
- * ardından kendi sıra numarasına (dlg_001 .. dlg_120) göre sıralar.
- */
+// ============================================================================
+// STANDART MEDYA YOLU YARDIMCILARI (/gorseller/... ve /sesler/...)
+// ============================================================================
+
+export function getDialogueCoverUrl(dialogueId: string): string {
+  const num = parseInt((dialogueId || "").replace(/\D+/g, ""), 10) || 1;
+  return `/gorseller/diyaloglar/dlg_${String(num).padStart(3, "0")}.webp`;
+}
+
+export function getReadingTextCoverUrl(metinId: string): string {
+  const num = parseInt((metinId || "").replace(/\D+/g, ""), 10) || 1;
+  return `/gorseller/metinler/metin_${String(num).padStart(2, "0")}.webp`;
+}
+
+export function getProverbCoverUrl(ataId: string): string {
+  const num = parseInt((ataId || "").replace(/\D+/g, ""), 10) || 1;
+  return `/gorseller/atasozleri/ata_${String(num).padStart(4, "0")}.webp`;
+}
+
+export function getVisualWordCoverUrl(
+  itemOrId: ResimliKelime | DictionaryItem | string
+): string {
+  const rawId = typeof itemOrId === "string" ? itemOrId : itemOrId.id || "";
+  const prefix = rawId.split("_")[0];
+  const num = parseInt(prefix.replace(/\D+/g, ""), 10) || 1;
+  return `/gorseller/kelimeler/gorsel_${String(num).padStart(4, "0")}.webp`;
+}
+
+// ============================================================================
+// SORGULAMA VE SIRALAMA YARDIMCILARI
+// ============================================================================
+
 export function getDialoguesSortedPedagogically(): Dialogue[] {
   return [...diyaloglar].sort((a, b) => {
     const rankA = CEFR_RANK[a.seviye] ?? 99;
@@ -89,7 +205,17 @@ export function getDialoguesSortedPedagogically(): Dialogue[] {
   });
 }
 
-// Tek bir diyalog getir (hem dlg_01 hem dlg_001 formatlarını destekler)
+export function getReadingTextsSortedPedagogically(): ReadingText[] {
+  return [...metinler].sort((a, b) => {
+    const rankA = CEFR_RANK[a.seviye] ?? 99;
+    const rankB = CEFR_RANK[b.seviye] ?? 99;
+    if (rankA !== rankB) return rankA - rankB;
+    const numA = parseInt(a.id.replace(/\D+/g, ""), 10) || 0;
+    const numB = parseInt(b.id.replace(/\D+/g, ""), 10) || 0;
+    return numA - numB;
+  });
+}
+
 export function getDialogueById(id: string): Dialogue | undefined {
   const exact = diyaloglar.find((d) => d.id === id);
   if (exact) return exact;
@@ -102,21 +228,68 @@ export function getDialogueById(id: string): Dialogue | undefined {
   return undefined;
 }
 
-// Seviyeye göre filtrele
+export function getReadingTextById(id: string): ReadingText | undefined {
+  const exact = metinler.find((m) => m.id === id);
+  if (exact) return exact;
+  const targetNum = parseInt((id || "").replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return metinler.find(
+      (m) => parseInt(m.id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
+}
+
+export function getDialogueGrammarNote(
+  dialogueId: string
+): GramerHapBilgi | undefined {
+  const exact = diyalogGramerNotlari.find((g) => g.bagli_id === dialogueId);
+  if (exact) return exact;
+  const targetNum = parseInt((dialogueId || "").replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return diyalogGramerNotlari.find(
+      (g) => parseInt(g.bagli_id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
+}
+
+export function getReadingTextGrammarNote(
+  metinId: string
+): GramerHapBilgi | undefined {
+  const exact = metinGramerNotlari.find((g) => g.bagli_id === metinId);
+  if (exact) return exact;
+  const targetNum = parseInt((metinId || "").replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return metinGramerNotlari.find(
+      (g) => parseInt(g.bagli_id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
+}
+
 export function getDialoguesByLevel(level: Level | "all"): Dialogue[] {
   if (level === "all") return diyaloglar;
   return diyaloglar.filter((d) => d.seviye === level);
 }
 
+export function getReadingTextsByLevel(level: Level | "all"): ReadingText[] {
+  if (level === "all") return metinler;
+  return metinler.filter((m) => m.seviye === level);
+}
+
 export interface ContentCatalogStats {
   totalDialogues: number;
   totalSentences: number;
+  totalReadingTexts: number;
+  totalSentences1111: number;
+  totalProverbs: number;
+  totalVisualWords: number;
   totalDictionaryWords: number;
   totalIdioms: number;
   byLevel: Record<Level, { dialogues: number; sentences: number }>;
 }
 
-// Tüm içerik kataloğu istatistiklerini tek merkezden hesapla
 export function getContentCatalogStats(): ContentCatalogStats {
   const byLevel: Record<Level, { dialogues: number; sentences: number }> = {
     A1: { dialogues: 0, sentences: 0 },
@@ -139,6 +312,10 @@ export function getContentCatalogStats(): ContentCatalogStats {
   return {
     totalDialogues: diyaloglar.length,
     totalSentences,
+    totalReadingTexts: metinler.length,
+    totalSentences1111: cumleler1111.length,
+    totalProverbs: atasozleri.length,
+    totalVisualWords: gorselKelimeler.length,
     totalDictionaryWords: sozluk.length,
     totalIdioms: getCombinedIdiomsCatalog().length,
     byLevel,

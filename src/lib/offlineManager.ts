@@ -1,8 +1,8 @@
 // src/lib/offlineManager.ts
 // İndirilebilir Çevrimdışı Ders Paketleri (Cache API: "muallimun-offline-audio-v1")
 
-import { diyaloglar } from "@/lib/data";
-import { loadAudioManifest, getMp3Path } from "@/lib/audio";
+import { diyaloglar, getDialogueById, getReadingTextById } from "@/lib/data";
+import { getMp3Path } from "@/lib/audio";
 
 export const OFFLINE_AUDIO_CACHE_NAME = "muallimun-offline-audio-v1";
 export const OFFLINE_PWA_CACHE_NAME = "muallimun-arapca-pwa-v2.1";
@@ -35,48 +35,34 @@ function writeStoredOfflineList(ids: string[]): void {
 }
 
 /**
- * manifest.json (hem manifest.dialogues[dialogueId] hem de üst seviye manifest[dialogueId])
- * ve diyalog satırlarını kullanarak ilgili diyaloğun tüm MP3 dosya yollarını döndürür.
+ * Diyalog (dlg_001 .. dlg_120) veya Okuma Metni (metin_01 .. metin_60) satırlarını kullanarak
+ * ilgili içeriğin tüm /sesler/... MP3 dosya yollarını döndürür.
  */
 export async function getDialogueAudioUrls(dialogueId: string): Promise<{
   urls: string[];
   estimatedSizeMb: number;
 }> {
-  const manifest = await loadAudioManifest();
-  const dlg = diyaloglar.find((d) => d.id === dialogueId);
   const urlsSet = new Set<string>();
 
-  // 1. manifest.dialogues?.[dialogueId] veya manifest[dialogueId] kontrolü
-  const dialoguesMap =
-    (manifest as unknown as { dialogues?: Record<string, string[]> }).dialogues ||
-    manifest;
-  const manifestEntry = dialoguesMap?.[dialogueId];
-
-  if (Array.isArray(manifestEntry)) {
-    for (const item of manifestEntry) {
-      const str = String(item).trim();
-      if (!str) continue;
-      if (str.startsWith("/")) {
-        urlsSet.add(str);
-      } else {
-        const siraNum = parseInt(str, 10);
-        if (!Number.isNaN(siraNum) && siraNum > 0) {
-          urlsSet.add(getMp3Path(dialogueId, siraNum));
-        } else {
-          urlsSet.add(`/audio/dialogues/${dialogueId}/${str}.mp3`);
-        }
+  if (dialogueId.startsWith("metin_")) {
+    const txt = getReadingTextById(dialogueId);
+    if (txt && Array.isArray(txt.satirlar)) {
+      for (const line of txt.satirlar) {
+        urlsSet.add(line.ses_dosyasi || getMp3Path(txt.id, line.sira));
+      }
+    }
+  } else {
+    const dlg = getDialogueById(dialogueId);
+    if (dlg && Array.isArray(dlg.satirlar)) {
+      for (const line of dlg.satirlar) {
+        urlsSet.add(
+          line.ses_dosyasi || getMp3Path(dlg.id, line.sira, line.cinsiyet)
+        );
       }
     }
   }
 
-  // 2. Diyalog satırlarından tamamlayıcı kontrol
-  if (dlg && Array.isArray(dlg.satirlar)) {
-    for (const line of dlg.satirlar) {
-      urlsSet.add(getMp3Path(dialogueId, line.sira));
-    }
-  }
-
-  const urls = Array.from(urlsSet);
+  const urls = Array.from(urlsSet).filter(Boolean);
   const estimatedSizeMb = Number(
     Math.max(0.4, (urls.length * ESTIMATED_KB_PER_SENTENCE) / 1024).toFixed(1)
   );
@@ -183,8 +169,9 @@ export async function downloadDialogueOfflinePack(
     const cache = await caches.open(OFFLINE_AUDIO_CACHE_NAME);
     const pwaCache = await caches.open(OFFLINE_PWA_CACHE_NAME);
 
-    // Diyalog sayfasını (/diyalog/${dialogueId}) da önbelleğe al ki daha önce çevrimiçi ziyaret edilmemiş olsa bile internetsiz açılsın
-    const dialoguePageUrl = `/diyalog/${dialogueId}`;
+    const dialoguePageUrl = dialogueId.startsWith("metin_")
+      ? `/metin/${dialogueId}`
+      : `/diyalog/${dialogueId}`;
     try {
       const pageRes = await fetch(dialoguePageUrl, { cache: "no-cache" });
       if (pageRes.ok) {

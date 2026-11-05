@@ -14,6 +14,7 @@ export type WordTrackingStyle = "both" | "highlight" | "arrow" | "off";
 export type DialogueLoopCount = 1 | 2 | 3 | 5 | "infinite";
 export type SentenceLoopCount = 2 | 3 | 5 | "infinite";
 export type PauseBetweenLines = 0 | 2 | "auto";
+export type VoiceGender = "erkek" | "kadin";
 export type { ArabicFontId, ArabicFontSizePreset };
 
 interface SettingsState {
@@ -28,6 +29,7 @@ interface SettingsState {
   turkishFontSize: number;
   speechRate: SpeechRate;
   preferredLevel: PreferredLevel;
+  preferredVoiceGender: VoiceGender;
   sttEngine: SttEngine;
   localSttOnly: boolean;
   micNoiseSuppression: boolean;
@@ -52,6 +54,8 @@ interface SettingsState {
   setSpeechRate: (rate: SpeechRate) => void;
   cycleSpeechRate: () => void;
   setPreferredLevel: (level: PreferredLevel) => void;
+  setPreferredVoiceGender: (gender: VoiceGender) => void;
+  togglePreferredVoiceGender: () => void;
   setSttEngine: (engine: SttEngine) => void;
   setLocalSttOnly: (val: boolean) => void;
   toggleLocalSttOnly: () => void;
@@ -119,6 +123,7 @@ export const useSettings = create<SettingsState>()(
       turkishFontSize: 16,
       speechRate: 1,
       preferredLevel: "Başlangıç",
+      preferredVoiceGender: "erkek",
       sttEngine: detectIsMobileOrLowMem() ? "webspeech" : "whisper",
       localSttOnly: false,
       micNoiseSuppression: false,
@@ -171,6 +176,13 @@ export const useSettings = create<SettingsState>()(
           return { speechRate: next };
         }),
       setPreferredLevel: (level) => set({ preferredLevel: level }),
+      setPreferredVoiceGender: (gender) =>
+        set({ preferredVoiceGender: gender }),
+      togglePreferredVoiceGender: () =>
+        set((state) => ({
+          preferredVoiceGender:
+            state.preferredVoiceGender === "kadin" ? "erkek" : "kadin",
+        })),
       setSttEngine: (engine) =>
         set((state) => ({
           sttEngine: engine,

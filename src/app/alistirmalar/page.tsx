@@ -17,7 +17,13 @@ import {
   ListOrdered,
 } from "lucide-react";
 import { playClick } from "@/lib/sfxManager";
-import { diyaloglar, sozluk } from "@/lib/data";
+import {
+  diyaloglar,
+  sozluk,
+  cumleler1111,
+  atasozleri,
+  gorselKelimeler,
+} from "@/lib/data";
 import { getDialogueVocabulary, isProperNounItem } from "@/lib/dict";
 import { Dialogue, DictionaryItem } from "@/types/data";
 import { useUserStore } from "@/store/userStore";
@@ -178,6 +184,50 @@ function ExercisesPageContent() {
     }
     if (rangePreset === "mistakes" && mistakesResolved.dialogues.length > 0) {
       return mistakesResolved.dialogues;
+    }
+    if (rangePreset === "cumleler-1111") {
+      const list =
+        cefrFilter === "all"
+          ? cumleler1111
+          : cumleler1111.filter((c) => c.cefr === cefrFilter);
+      const syntheticDlg: Dialogue = {
+        id: "dlg_001",
+        seviye: cefrFilter === "all" ? "A1" : cefrFilter,
+        baslik_tr: "1111 Günlük Kalıp Cümle",
+        baslik_ar: "١١١١ جُمْلَة يَوْمِيَّة",
+        satirlar: list.slice(0, 120).map((c, idx) => ({
+          sira: idx + 1,
+          konusmaci: c.tema || "Cümle",
+          konusmaci_ar: "جُمْلَة",
+          cinsiyet: "E",
+          arapca: c.arapca,
+          turkce: c.turkce,
+          ses_dosyasi: c.ses_erkek,
+        })),
+      };
+      return [syntheticDlg];
+    }
+    if (rangePreset === "atasozleri-508") {
+      const list =
+        cefrFilter === "all"
+          ? atasozleri
+          : atasozleri.filter((a) => a.cefr === cefrFilter);
+      const syntheticDlg: Dialogue = {
+        id: "dlg_001",
+        seviye: cefrFilter === "all" ? "B1" : cefrFilter,
+        baslik_tr: "508 Arapça Atasözü ve Hikmet",
+        baslik_ar: "٥٠٨ أَمْثَال وَحِكَم",
+        satirlar: list.slice(0, 120).map((a, idx) => ({
+          sira: idx + 1,
+          konusmaci: a.tema || "Atasözü",
+          konusmaci_ar: "مَثَل",
+          cinsiyet: "E",
+          arapca: a.arapca,
+          turkce: a.turkce,
+          ses_dosyasi: a.ses_erkek,
+        })),
+      };
+      return [syntheticDlg];
     }
     const rangeFiltered = diyaloglar.filter((dlg) => {
       const num = parseInt(dlg.id.replace("dlg_", ""), 10);
@@ -369,6 +419,21 @@ function ExercisesPageContent() {
       };
     }
 
+    if (rangePreset === "gorsel-kelimeler") {
+      const visualWords = nonProperSozluk.filter((w) => Boolean(w.gorsel));
+      const filteredByLevel =
+        cefrFilter === "all"
+          ? visualWords
+          : visualWords.filter((w) => w.cefr === cefrFilter);
+      return {
+        combinedVocabulary:
+          filteredByLevel.length >= 4 ? filteredByLevel : visualWords,
+        poolNotice: `🖼️ 999 Görsel Kelime havuzundan ${
+          (filteredByLevel.length >= 4 ? filteredByLevel : visualWords).length
+        } resimli kelime seçildi.`,
+      };
+    }
+
     if (rangePreset === "all-dict") {
       const filteredByLevel =
         cefrFilter === "all"
@@ -477,9 +542,27 @@ function ExercisesPageContent() {
       s: 1,
       e: diyaloglar.length,
     },
-    { id: "1-15", label: "Başlangıç Kuru (1-15)", s: 1, e: 15 },
-    { id: "16-35", label: "Orta Kur (16-35)", s: 16, e: 35 },
-    { id: "36-60", label: `İleri Kur (36-${diyaloglar.length})`, s: 36, e: diyaloglar.length },
+    {
+      id: "gorsel-kelimeler",
+      label: `🖼️ Görsel Kelimeler (${gorselKelimeler.length} resimli kelime)`,
+      s: 1,
+      e: diyaloglar.length,
+    },
+    {
+      id: "cumleler-1111",
+      label: `🗣️ 1111 Günlük Cümle (${cumleler1111.length} cümle)`,
+      s: 1,
+      e: diyaloglar.length,
+    },
+    {
+      id: "atasozleri-508",
+      label: `📜 508 Atasözü & Hikmet (${atasozleri.length} atasözü)`,
+      s: 1,
+      e: diyaloglar.length,
+    },
+    { id: "1-15", label: "Başlangıç Kuru (1-30)", s: 1, e: 30 },
+    { id: "16-35", label: "Orta Kur (31-75)", s: 31, e: 75 },
+    { id: "36-60", label: `İleri Kur (76-${diyaloglar.length})`, s: 76, e: diyaloglar.length },
     {
       id: "favorites",
       label: `Favorilerim / Kaydedilenler (${favoriteWords.length})`,
@@ -504,6 +587,11 @@ function ExercisesPageContent() {
     const found = rangeOptions.find((r) => r.id === presetId);
     setSingleDialogueId("all");
     setRangePreset(presetId);
+    if (presetId === "cumleler-1111" || presetId === "atasozleri-508") {
+      setContentType("sentences");
+    } else if (presetId === "gorsel-kelimeler") {
+      setContentType("words");
+    }
     if (found) {
       setStartNum(found.s);
       setEndNum(found.e);

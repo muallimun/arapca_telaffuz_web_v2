@@ -36,6 +36,7 @@ import {
   DialogueLoopCount,
   SentenceLoopCount,
   PauseBetweenLines,
+  VoiceGender,
 } from "@/store/settings";
 import { useSfxStore } from "@/store/sfxStore";
 import { useUserStore } from "@/store/userStore";
@@ -91,6 +92,8 @@ export default function SettingsPage() {
     setPauseBetweenLines,
     micNoiseSuppression,
     setMicNoiseSuppression,
+    preferredVoiceGender,
+    setPreferredVoiceGender,
   } = useSettings();
 
   const { enabled: sfxEnabled, setEnabled: setSfxEnabled } = useSfxStore();
@@ -1045,6 +1048,46 @@ export default function SettingsPage() {
                     }`}
                   >
                     {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 1.5. Seslendirici Cinsiyeti (Erkek / Kadın - V2 Çift Cinsiyet Ses Desteği) */}
+            <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <Volume2 size={17} className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                    Seslendirici Tercihi (Erkek / Kadın)
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Kelimeler, 1111 Cümle, 508 Atasözü ve Sözlük seslendirmeleri için varsayılan ses
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                {(
+                  [
+                    { id: "erkek", label: "👨 Erkek Sesi (erkek/)" },
+                    { id: "kadin", label: "👩 Kadın Sesi (kadin/)" },
+                  ] as { id: VoiceGender; label: string }[]
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setPreferredVoiceGender(opt.id);
+                    }}
+                    className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      preferredVoiceGender === opt.id
+                        ? "bg-[#087F5B] text-white font-bold"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {opt.label}
                   </button>
                 ))}
               </div>

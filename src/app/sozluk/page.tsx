@@ -29,10 +29,17 @@ import {
   ExampleSentenceMatch,
   mergeTurkishMeanings,
 } from "@/lib/dict";
-import { loadAudioManifest, playTTS, hasMp3, getMp3Path } from "@/lib/audio";
+import {
+  loadAudioManifest,
+  playTTS,
+  hasMp3,
+  getMp3Path,
+  playDualGenderAudio,
+  getDualGenderAudioUrl,
+} from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
 import { useUserStore } from "@/store/userStore";
-import { useSettings } from "@/store/settings";
+import { useSettings, VoiceGender } from "@/store/settings";
 import { playClick } from "@/lib/sfxManager";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import {
@@ -118,6 +125,7 @@ export default function DictionaryPage() {
   const [shadowingTarget, setShadowingTarget] = useState<{
     text: string;
     itemId?: string;
+    refAudioUrl?: string;
     forms: { label: string; arabic: string }[];
   } | null>(null);
 
@@ -134,7 +142,13 @@ export default function DictionaryPage() {
     getSrsRecord,
   } = useUserStore();
 
-  const { speechRate, showHareke, arabicFont } = useSettings();
+  const {
+    speechRate,
+    showHareke,
+    arabicFont,
+    preferredVoiceGender,
+    setPreferredVoiceGender,
+  } = useSettings();
   const { playAudio } = useAudioStore();
 
   useEffect(() => {
@@ -518,7 +532,7 @@ export default function DictionaryPage() {
     return () => observer.disconnect();
   }, [visibleCount, filteredWords.length]);
 
-  // Kelimeyi sesli dinle (MP3 varsa MP3, yoksa TTS)
+  // Kelimeyi sesli dinle (Çift Cinsiyetli MP3 varsa MP3, yoksa seçili cinsiyette TTS)
   const handleListenWord = async (
     word: DictionaryItem,
     customArabic?: string
@@ -533,13 +547,34 @@ export default function DictionaryPage() {
     setSpeakingWordId(word.id);
 
     try {
-      if (manifest.words && manifest.words.includes(word.id) && !customArabic) {
+      if (!customArabic && (word.ses_erkek || word.ses_kadin)) {
+        await playDualGenderAudio({
+          text: primaryArabic,
+          id: word.id,
+          ses_erkek: word.ses_erkek,
+          ses_kadin: word.ses_kadin,
+          rate,
+          gender: preferredVoiceGender,
+        });
+      } else if (
+        manifest.words &&
+        manifest.words.includes(word.id) &&
+        !customArabic
+      ) {
         await playAudio(`/audio/words/${word.id}.mp3`, 0, rate);
       } else {
-        await playTTS(primaryArabic, rate);
+        await playTTS(
+          primaryArabic,
+          rate,
+          preferredVoiceGender === "kadin" ? "kadin" : "erkek"
+        );
       }
     } catch {
-      await playTTS(primaryArabic, rate);
+      await playTTS(
+        primaryArabic,
+        rate,
+        preferredVoiceGender === "kadin" ? "kadin" : "erkek"
+      );
     } finally {
       setSpeakingWordId(null);
     }
@@ -571,7 +606,12 @@ export default function DictionaryPage() {
     playClick();
     const forms = prepareForms(word);
     if (forms && forms.length > 0) {
-      setShadowingTarget({ text: forms[0].arabic, itemId: word.id, forms });
+      setShadowingTarget({
+        text: forms[0].arabic,
+        itemId: word.id,
+        refAudioUrl: getDualGenderAudioUrl(word, preferredVoiceGender),
+        forms,
+      });
     }
   };
 
@@ -606,13 +646,14 @@ export default function DictionaryPage() {
         <ShadowingModal
           text={shadowingTarget.text}
           itemId={shadowingTarget.itemId}
+          refAudioUrl={shadowingTarget.refAudioUrl}
           forms={shadowingTarget.forms}
           onClose={() => setShadowingTarget(null)}
         />
       )}
 
-      {/* ÜST BAŞLIK */}
-      <div className="flex items-center justify-between gap-2.5">
+      {/* ÜST BAŞLIK & SESLENDİRİCİ CİNSİYET SEÇİCİ */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href="/"
@@ -632,8 +673,42 @@ export default function DictionaryPage() {
           </div>
         </div>
 
-        <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-extrabold text-[var(--foreground)] tabular-nums shrink-0">
-          {filteredWords.length} / {basePool.length}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--surface)] p-1 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+            <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 hidden sm:inline">
+              Ses:
+            </span>
+            {(
+              [
+                { id: "erkek", label: "👨 Erkek" },
+                { id: "kadin", label: "👩 Kadın" },
+              ] as { id: VoiceGender; label: string }[]
+            ).map((g) => {
+              const active =
+                (mounted ? preferredVoiceGender : "erkek") === g.id;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setPreferredVoiceGender(g.id);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                    active
+                      ? "bg-[#087F5B] text-white shadow-2xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-extrabold text-[var(--foreground)] tabular-nums shrink-0">
+            {filteredWords.length} / {basePool.length}
+          </div>
         </div>
       </div>
 

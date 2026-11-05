@@ -21,8 +21,13 @@ import {
 } from "lucide-react";
 import {
   diyaloglar,
+  metinler,
+  cumleler1111,
+  atasozleri,
+  gorselKelimeler,
   sozluk,
   getDialoguesSortedPedagogically,
+  getDialogueCoverUrl,
 } from "@/lib/data";
 import {
   useUserStore,
@@ -120,9 +125,7 @@ export default function HomePage() {
 
   const recommendedDialogue = dailyPackage.dailyDialogue.dialogue;
   const recommendedDialogueId = recommendedDialogue.id || "dlg_001";
-  const recommendedCoverSrc =
-    (recommendedDialogue as unknown as { gorsel?: string }).gorsel ||
-    "/gorseller/diyaloglar/dlg_001.webp";
+  const recommendedCoverSrc = getDialogueCoverUrl(recommendedDialogueId);
   const recommendedSentenceCount =
     (recommendedDialogue as unknown as { cumleler?: unknown[] }).cumleler
       ?.length ?? recommendedDialogue.satirlar.length;
@@ -133,11 +136,11 @@ export default function HomePage() {
     () => [
       {
         id: "kutuphane",
-        title: "Diyalog Kütüphanesi",
-        arabicBadge: "الحِوَارَات",
-        subtitle: "Günlük hayattan sesli Arapça konuşma metinleri",
-        meta: `${diyaloglar.length} Diyalog · A1-B2`,
-        tooltip: "A1'den B2'ye 60 sesli Arapça diyaloğu inceleyin ve dinleyin",
+        title: "Eğitim Kütüphanesi (V2)",
+        arabicBadge: "المَكْتَبَة",
+        subtitle: "120 Diyalog, 60 Metin, 1111 Cümle, 508 Atasözü ve 999 Görsel Kelime",
+        meta: `${diyaloglar.length} Diyalog · ${metinler.length} Metin`,
+        tooltip: "A1'den B2'ye 120 diyalog, 60 okuma metni, 1111 cümle ve 508 atasözünü inceleyin",
         icon: BookOpen,
         targetHref: "/kutuphane",
         accentColor: "emerald",
@@ -364,6 +367,61 @@ export default function HomePage() {
             );
           })}
         </div>
+
+        {/* V2 HIZLI MODÜL GEÇİŞ ŞERİDİ */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+          {[
+            {
+              label: `💬 ${diyaloglar.length} Diyalog`,
+              sub: "Odak Gramer Notlu",
+              href: "/kutuphane?tab=diyaloglar",
+              badge: "A1-B2",
+            },
+            {
+              label: `📖 ${metinler.length} Okuma Metni`,
+              sub: "Sorulu & Gramerli",
+              href: "/kutuphane?tab=metinler",
+              badge: "Yeni",
+            },
+            {
+              label: `🗣️ ${cumleler1111.length} Günlük Cümle`,
+              sub: "Çift Cinsiyet Sesli",
+              href: "/kutuphane?tab=cumleler",
+              badge: "E/K Ses",
+            },
+            {
+              label: `📜 ${atasozleri.length} Atasözü`,
+              sub: "Lafzî & Bağlam Notlu",
+              href: "/kutuphane?tab=atasozleri",
+              badge: "Hikmet",
+            },
+            {
+              label: `🖼️ ${gorselKelimeler.length} Görsel Kelime`,
+              sub: "Resimli & Örnekli",
+              href: "/kutuphane?tab=gorsel-kelimeler",
+              badge: "Resimli",
+            },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => playClick()}
+              className="p-2.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] flex flex-col justify-between gap-1 transition-all group"
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] truncate">
+                  {item.label}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-[9px] font-black shrink-0">
+                  {item.badge}
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-[var(--muted)] truncate">
+                {item.sub}
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* BÖLÜM 1.5: BUGÜN NE ÇALIŞMALIYIM? (~12 DAKİKALIK AKILLI PAKET) */}
@@ -434,7 +492,14 @@ export default function HomePage() {
                   <img
                     src={recommendedCoverSrc}
                     alt={recommendedDialogue.baslik_tr}
-                    onError={() => setFailedCoverId(recommendedDialogueId)}
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
+                        img.src = "/gorseller/diyaloglar/dlg_001.webp";
+                      } else {
+                        setFailedCoverId(recommendedDialogueId);
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (

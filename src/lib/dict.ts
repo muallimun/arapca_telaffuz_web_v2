@@ -1,7 +1,14 @@
 import sozlukRaw from "@/data/yeni_tum_sozluk.json";
+import gorselKelimelerRaw from "@/data/gorselKelimeler_guncel.json";
 import diyaloglarRaw from "@/data/tum_diyaloglar_120.json";
+import metinlerRaw from "@/data/tum_metinler_60.json";
 import { SUPPLEMENT_DICTIONARY } from "./supplementDict";
-import { Dialogue, DictionaryItem } from "@/types/data";
+import {
+  Dialogue,
+  DictionaryItem,
+  ReadingText,
+  ResimliKelime,
+} from "@/types/data";
 
 export type WordCategory = "fiil" | "isim" | "edat" | "ozel-isim";
 
@@ -343,10 +350,37 @@ export function mergeTurkishMeanings(m1: string, m2: string): string {
   return joined;
 }
 
-// Sözlük + Tamamlayıcı Sözlük Yamasını birleştir ve mükerrerleri (aynı kelime + aynı tür) kesin olarak tekilleştir
+const gorselAsDictionaryItems: DictionaryItem[] = (
+  gorselKelimelerRaw as ResimliKelime[]
+).map((gk): DictionaryItem => {
+  const isVerb = (gk.tur || "").toLowerCase().trim() === "fiil";
+  const prefix4 = (gk.id || "").split("_")[0] || "0001";
+  const standardGorsel = `/gorseller/kelimeler/gorsel_${prefix4.padStart(4, "0")}.webp`;
+  return {
+    id: gk.id,
+    tur: isVerb ? "fiil" : "isim",
+    kok: gk.kok || "-",
+    cefr: gk.cefr || "A1",
+    anlam_tr: gk.turkce || "",
+    mufret: isVerb ? undefined : gk.arapca,
+    cemi: isVerb ? undefined : gk.ikincil_form || "-",
+    mazi: isVerb ? gk.arapca : undefined,
+    muzari: isVerb ? gk.ikincil_form || "-" : undefined,
+    masdar: isVerb ? gk.ucuncul_form || "-" : undefined,
+    gorsel: gk.gorsel || standardGorsel,
+    ornek_ar: gk.ornek_ar,
+    soru_kalibi: gk.soru_kalibi,
+    kategori_tr: gk.kategori_tr,
+    ses_erkek: gk.ses_erkek,
+    ses_kadin: gk.ses_kadin,
+  };
+});
+
+// Sözlük + Görsel Kelimeler + Tamamlayıcı Sözlük Yamasını birleştir ve mükerrerleri (aynı kelime + aynı tür) kesin olarak tekilleştir
 function buildUnifiedDictionary(): DictionaryItem[] {
   const combined = [
     ...SUPPLEMENT_DICTIONARY,
+    ...gorselAsDictionaryItems,
     ...(sozlukRaw as DictionaryItem[]),
   ];
   const seenByKey = new Map<string, DictionaryItem>();
@@ -401,6 +435,24 @@ function buildUnifiedDictionary(): DictionaryItem[] {
       }
       if ((!existing.kok || existing.kok === "-") && item.kok && item.kok !== "-") {
         existing.kok = item.kok;
+      }
+      if (!existing.gorsel && item.gorsel) {
+        existing.gorsel = item.gorsel;
+      }
+      if (!existing.ses_erkek && item.ses_erkek) {
+        existing.ses_erkek = item.ses_erkek;
+      }
+      if (!existing.ses_kadin && item.ses_kadin) {
+        existing.ses_kadin = item.ses_kadin;
+      }
+      if (!existing.ornek_ar && item.ornek_ar) {
+        existing.ornek_ar = item.ornek_ar;
+      }
+      if (!existing.soru_kalibi && item.soru_kalibi) {
+        existing.soru_kalibi = item.soru_kalibi;
+      }
+      if (!existing.kategori_tr && item.kategori_tr) {
+        existing.kategori_tr = item.kategori_tr;
       }
     }
   }
@@ -549,8 +601,9 @@ function indexDictionaryItem(item: DictionaryItem) {
   }
 }
 
-// Önce tamamlayıcı sözlüğü (öncelikli 60 diyalog kayıtları dahil), sonra ana sözlüğü indeksle
+// Önce tamamlayıcı sözlüğü, sonra görsel kelimeleri ve ana sözlüğü indeksle
 SUPPLEMENT_DICTIONARY.forEach(indexDictionaryItem);
+gorselAsDictionaryItems.forEach(indexDictionaryItem);
 (sozlukRaw as DictionaryItem[]).forEach(indexDictionaryItem);
 
 // ==============================================================================
@@ -4707,6 +4760,59 @@ export function getDialogueVocabulary(
   const seenLemmaKeys = new Set<string>();
 
   for (const line of dlg.satirlar) {
+    const tokens = line.arapca
+      .replace(/[.,!?؟،;؛:"'()\[\]{}\d]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+
+    for (let idx = 0; idx < tokens.length; idx++) {
+      const token = tokens[idx];
+      const prevToken = idx > 0 ? tokens[idx - 1] : undefined;
+      const match = analyzeAndMatchWord(token, line.turkce, prevToken);
+      if (!match) continue;
+
+      const lemmaKey = `${getWordCategory(match.item)}_${cleanArabicText(
+        formatPrimaryWord(match.item)
+      )}`;
+      if (!foundMap.has(match.item.id) && !seenLemmaKeys.has(lemmaKey)) {
+        seenLemmaKeys.add(lemmaKey);
+        foundMap.set(match.item.id, {
+          item: match.item,
+          contextWord: match.originalWord,
+          contextSentence: line.arapca,
+          contextTranslation: line.turkce,
+          morphologyNote: match.morphologyNote,
+          lineNumber: line.sira,
+        });
+      }
+    }
+  }
+
+  return Array.from(foundMap.values());
+}
+
+/**
+ * Seçilen okuma metninin (metin_01 .. metin_60) tüm satırlarını tarayarak o metinde geçen
+ * sözlük kelimelerini orijinal çekimli cümle örneği ve morfolojik notuyla çıkarır.
+ */
+export function getReadingTextVocabulary(
+  metinId: string
+): DialogueVocabularyEntry[] {
+  const texts = metinlerRaw as ReadingText[];
+  const targetNum = parseInt((metinId || "").replace(/\D+/g, ""), 10);
+  const txt =
+    texts.find((t) => t.id === metinId) ||
+    (!isNaN(targetNum) && targetNum > 0
+      ? texts.find(
+          (t) => parseInt(t.id.replace(/\D+/g, ""), 10) === targetNum
+        )
+      : undefined);
+  if (!txt) return [];
+
+  const foundMap = new Map<string, DialogueVocabularyEntry>();
+  const seenLemmaKeys = new Set<string>();
+
+  for (const line of txt.satirlar) {
     const tokens = line.arapca
       .replace(/[.,!?؟،;؛:"'()\[\]{}\d]/g, " ")
       .split(/\s+/)

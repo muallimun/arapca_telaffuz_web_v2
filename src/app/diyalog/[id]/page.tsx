@@ -28,7 +28,16 @@ import {
   GraduationCap,
   ClipboardCheck,
 } from "lucide-react";
-import { diyaloglar, getDialogueById } from "@/lib/data";
+import {
+  diyaloglar,
+  getDialogueById,
+  getDialogueCoverUrl,
+  getDialogueGrammarNote,
+} from "@/lib/data";
+import {
+  GrammarHapBilgiPanel,
+  GrammarHapBilgiModal,
+} from "@/components/ui/GrammarHapBilgiPanel";
 import {
   loadAudioManifest,
   hasMp3,
@@ -89,7 +98,7 @@ import {
   releaseAllWakeLocks,
 } from "@/lib/wakeLock";
 
-type StudyMode = "listen" | "shadowing" | "roleplay" | "vocabulary";
+type StudyMode = "listen" | "shadowing" | "roleplay" | "vocabulary" | "gramer";
 type FlowMode = "single" | "sequential";
 
 export default function DialogueDetailPage({
@@ -202,6 +211,7 @@ export default function DialogueDetailPage({
   const [isHwReportModalOpen, setIsHwReportModalOpen] =
     useState<boolean>(false);
   const [isHwQuizModalOpen, setIsHwQuizModalOpen] = useState<boolean>(false);
+  const [isGrammarModalOpen, setIsGrammarModalOpen] = useState<boolean>(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -749,9 +759,10 @@ export default function DialogueDetailPage({
     return "ar-SA-HamedNeural";
   };
 
-  // Kapak görseli
+  // Kapak görseli ve Odak Gramer Notu (V2)
   const rawNum = parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
-  const imagePath = "/gorseller/diyaloglar/dlg_001.webp";
+  const imagePath = getDialogueCoverUrl(dialogue.id);
+  const grammarNote = getDialogueGrammarNote(dialogue.id);
 
   const getDisplayText = (text: string) =>
     formatArabicText(text, !mounted || showHareke, arabicFont);
@@ -1906,6 +1917,16 @@ export default function DialogueDetailPage({
         />
       )}
 
+      {/* ODAK GRAMER & HAP BİLGİ HIZLI MODALI */}
+      {grammarNote && (
+        <GrammarHapBilgiModal
+          isOpen={isGrammarModalOpen}
+          onClose={() => setIsGrammarModalOpen(false)}
+          grammarNote={grammarNote}
+          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+        />
+      )}
+
       {/* ÖĞRETMEN İÇİN "🎓 ÖDEV OLUŞTUR" MODALI */}
       <TeacherHomeworkModal
         isOpen={isTeacherHwModalOpen}
@@ -2241,6 +2262,12 @@ export default function DialogueDetailPage({
                 src={imagePath}
                 alt={dialogue.baslik_tr}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
+                    img.src = "/gorseller/diyaloglar/dlg_001.webp";
+                  }
+                }}
                 className="w-full max-h-[70vh] object-contain mx-auto"
               />
               <button
@@ -2336,6 +2363,12 @@ export default function DialogueDetailPage({
               src={imagePath}
               alt={dialogue.baslik_tr}
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                if (!img.src.endsWith("/gorseller/diyaloglar/dlg_001.webp")) {
+                  img.src = "/gorseller/diyaloglar/dlg_001.webp";
+                }
+              }}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <span className="absolute bottom-0.5 right-0.5 p-1 rounded-md bg-black/65 text-white flex items-center justify-center">
@@ -2344,8 +2377,8 @@ export default function DialogueDetailPage({
           </button>
         </div>
 
-        {/* 2. SATIR: Mobilde 2x2, Masaüstünde 4 Sütunlu Mod Sekmeleri */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+        {/* 2. SATIR: Mobilde 2-3 Sütun, Masaüstünde 5 Sütunlu Mod Sekmeleri */}
+        <div className="w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
           {(
             [
               { id: "listen", label: "📖 Dinle & İncele" },
@@ -2355,6 +2388,9 @@ export default function DialogueDetailPage({
                 id: "vocabulary",
                 label: `📚 Sözlük (${dialogueVocabEntries.length})`,
               },
+              ...(grammarNote
+                ? [{ id: "gramer" as StudyMode, label: "📌 Odak Gramer" }]
+                : []),
             ] as { id: StudyMode; label: string }[]
           ).map((tab) => {
             const isSelected = studyMode === tab.id;
@@ -2514,6 +2550,22 @@ export default function DialogueDetailPage({
                 <FileText size={13} className="text-[#065F46] shrink-0" />
                 <span>PDF</span>
               </button>
+
+              {/* 5.5. Odak Gramer / Hap Bilgi Hızlı Butonu */}
+              {grammarNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsGrammarModalOpen(true);
+                  }}
+                  data-tooltip={`Odak Gramer Notu: ${grammarNote.konu_basligi}`}
+                  aria-label="Odak Gramer Hap Bilgi"
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-100/90 dark:bg-amber-950/60 border border-amber-400 hover:border-amber-600 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+                >
+                  <span>📌 Hap Bilgi</span>
+                </button>
+              )}
 
               {/* 6. Öğretmen İçin "Ödev" Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
               <button
@@ -3298,8 +3350,13 @@ export default function DialogueDetailPage({
         </section>
       )}
 
-      {/* DİYALOG SATIRLARI VEYA MORFOLOJİK DİYALOG SÖZLÜĞÜ */}
-      {studyMode === "vocabulary" ? (
+      {/* DİYALOG SATIRLARI, ODAK GRAMER HAP BİLGİ VEYA MORFOLOJİK DİYALOG SÖZLÜĞÜ */}
+      {studyMode === "gramer" && grammarNote ? (
+        <GrammarHapBilgiPanel
+          grammarNote={grammarNote}
+          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+        />
+      ) : studyMode === "vocabulary" ? (
         <div className="space-y-4">
           {/* BU DİYALOGDAKİ KALIP İFADELER (التعبيرات الاصطلاحية) BÖLÜMÜ */}
           {dialogueIdioms.length > 0 && (

@@ -16,11 +16,11 @@ import {
   Clock,
   Flame,
   Target,
-  Sparkles,
   Play,
 } from "lucide-react";
 import {
   diyaloglar,
+  diyalogGramerNotlari,
   metinler,
   cumleler1111,
   atasozleri,
@@ -48,6 +48,45 @@ import { useAudioStore } from "@/store/audioStore";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+
+const SENTENCE_THEME_LABELS: Record<string, string> = {
+  selamlasma_ve_nezaket: "Selamlaşma ve Nezaket",
+  tanisma_ve_kisisel_bilgiler: "Tanışma ve Kişisel Bilgiler",
+  aile_ve_akrabalik: "Aile ve Akrabalık",
+  ev_ve_gunluk_rutin: "Ev ve Günlük Rutin",
+  gunluk_rutin_ve_ev: "Günlük Rutin ve Ev",
+  zaman_saat_ve_takvim: "Zaman, Saat ve Takvim",
+  yemek_mutfak_ve_restoran: "Yemek, Mutfak ve Restoran",
+  alisveris_carsi_ve_fiyat: "Alışveriş, Çarşı ve Fiyat",
+  ulasim_adres_ve_yon: "Ulaşım, Adres ve Yön",
+  hava_durumu_ve_mevsimler: "Hava Durumu ve Mevsimler",
+  okul_egitim_ve_sinif: "Okul, Eğitim ve Sınıf",
+  okul_ve_egitim: "Okul ve Eğitim",
+  saglik_hastane_ve_eczane: "Sağlık, Hastane ve Eczane",
+  seyahat_havaalani_ve_otel: "Seyahat, Havaalanı ve Otel",
+  is_meslek_ve_ofis: "İş, Meslek ve Ofis",
+  duygular_fikirler_ve_tercihler: "Duygular ve Tercihler",
+  teknoloji_iletisim_ve_internet: "Teknoloji ve İletişim",
+  hobiler_spor_ve_bos_zaman: "Hobiler ve Spor",
+  kisisel_gelisim_ve_hedefler: "Kişisel Gelişim ve Hedefler",
+  toplum_kultur_ve_gelenekler: "Toplum ve Kültür",
+  cevre_doga_ve_ekoloji: "Çevre ve Doğa",
+  ekonomi_finans_ve_ticaret: "Ekonomi ve Ticaret",
+  bilim_sanat_ve_edebiyat: "Bilim, Sanat ve Edebiyat",
+  hukuk_adalet_ve_haklar: "Hukuk ve Adalet",
+  medya_haber_ve_gundem: "Medya ve Gündem",
+  tartisma_ikna_ve_muzakere: "Tartışma ve Müzakere",
+  felsefe_hikmet_ve_etik: "Hikmet ve Etik",
+};
+
+function formatSentenceThemeLabel(raw?: string): string {
+  if (!raw) return "Günlük İletişim";
+  const key = raw.trim().toLowerCase();
+  if (SENTENCE_THEME_LABELS[key]) return SENTENCE_THEME_LABELS[key];
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (ch) => ch.toLocaleUpperCase("tr-TR"));
+}
 
 type ModuleKey = "kutuphane" | "telaffuz" | "alistirmalar" | "sozluk";
 
@@ -559,121 +598,144 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch">
-          {/* 1. Günün Diyaloğu & Okuma Metni (1:1 Kare Görselli) */}
+          {/* 1. SÜTUN: 📖 1. DİYALOG & METİN */}
           <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-1.5">
-                <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide truncate">
-                  📖 1. Günün Diyaloğu & Metni
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-xs font-semibold whitespace-nowrap shrink-0">
-                  Seviye {recommendedDialogue.seviye}
-                </span>
-              </div>
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide whitespace-nowrap">
+                📖 1. DİYALOG &amp; METİN
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-xs font-semibold whitespace-nowrap shrink-0">
+                Seviye {recommendedDialogue.seviye}
+              </span>
+            </div>
 
-              {/* Günün Diyaloğu (1:1 Kare Görsel) */}
+            <div className="flex-1 flex flex-col gap-3 justify-between">
+              {/* 1. Diyalog Kartı (flex-1) */}
               <Link
                 href={`/diyalog/${recommendedDialogue.id}`}
                 onClick={() => playClick()}
                 data-tooltip="Diyaloğu açmak, cümleleri dinlemek ve telaffuz çalışmak için tıklayın"
-                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] shadow-2xs group transition-colors"
+                className="flex-1 flex flex-col justify-between p-3.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] shadow-2xs group transition-colors"
               >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white relative flex items-center justify-center">
-                  {!recImgFailed ? (
-                    <img
-                      src={recommendedCoverSrc}
-                      alt={recommendedDialogue.baslik_tr}
-                      referrerPolicy="no-referrer"
-                      onError={() => {
-                        setFailedCoverId(recommendedDialogueId);
-                      }}
-                      className="w-14 h-14 sm:w-16 sm:h-16 aspect-square object-contain rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-emerald-700 via-teal-800 to-indigo-900 flex items-center justify-center">
-                      <BookOpen size={24} className="text-white/80" />
-                    </div>
-                  )}
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] aspect-square rounded-xl overflow-hidden shrink-0 border border-[#E6D7BE] dark:border-[var(--border)] bg-white relative flex items-center justify-center">
+                    {!recImgFailed ? (
+                      <img
+                        src={recommendedCoverSrc}
+                        alt={recommendedDialogue.baslik_tr}
+                        referrerPolicy="no-referrer"
+                        onError={() => {
+                          setFailedCoverId(recommendedDialogueId);
+                        }}
+                        className="w-16 h-16 sm:w-[72px] sm:h-[72px] aspect-square object-contain rounded-xl bg-white shrink-0 group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-emerald-700 via-teal-800 to-indigo-900 flex items-center justify-center">
+                        <BookOpen size={24} className="text-white/80" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 flex flex-col justify-between gap-1">
+                    <span className="inline-block w-fit px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
+                      Diyalog #{recommendedDialogue.id.replace("dlg_", "")} • {recommendedSentenceCount} Cümle
+                    </span>
+
+                    <h3 className="font-bold text-sm text-[var(--foreground)] leading-snug line-clamp-2 group-hover:text-[#087F5B] transition-colors">
+                      {recommendedDialogue.baslik_tr}
+                    </h3>
+
+                    <p
+                      dir="rtl"
+                      className="arabic font-arabic text-lg font-bold text-emerald-900 dark:text-emerald-300 leading-snug text-right truncate"
+                    >
+                      {displayArabic(recommendedDialogue.baslik_ar)}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="min-w-0 flex-1 flex flex-col justify-between gap-1">
-                  <span className="inline-block w-fit px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
-                    Diyalog #{recommendedDialogue.id.replace("dlg_", "")} • {recommendedSentenceCount} Cümle
+                <div className="mt-2 pt-1.5 border-t border-dashed border-[#E2D3B8]/80 dark:border-[var(--border-dashed)]">
+                  <span className="block text-[11px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1">
+                    📌{" "}
+                    {recommendedDialogue.odak_gramer ||
+                      diyalogGramerNotlari.find(
+                        (g) => g.bagli_id === recommendedDialogue.id
+                      )?.konu_basligi ||
+                      recommendedDialogue.satirlar?.[0]?.odak_kalip ||
+                      "Günlük Konuşma"}
                   </span>
-
-                  <h3 className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-2 group-hover:text-[#087F5B] transition-colors">
-                    {recommendedDialogue.baslik_tr}
-                  </h3>
-
-                  <p
-                    dir="rtl"
-                    className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 leading-snug text-right truncate"
-                  >
-                    {displayArabic(recommendedDialogue.baslik_ar)}
-                  </p>
                 </div>
               </Link>
 
-              {/* Günün Okuma Metni (1:1 Kare Görselli Hızlı Geçiş Kartı) */}
+              {/* 2. Okuma Metni Kartı (flex-1) */}
               <Link
                 href={`/metin/${recommendedReading.id}`}
                 onClick={() => playClick()}
                 data-tooltip="Günün okuma metnini (paragraf/cümle görünümü ve sorularla) açmak için tıklayın"
-                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#F3F0FF]/65 dark:bg-[var(--lavender-bg)] border border-[#6741D9]/35 hover:border-[#6741D9] shadow-2xs group transition-colors"
+                className="flex-1 flex flex-col justify-between p-3.5 rounded-xl bg-[#F3F0FF]/65 dark:bg-[var(--lavender-bg)] border border-[#6741D9]/35 hover:border-[#6741D9] shadow-2xs group transition-colors"
               >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white flex items-center justify-center">
-                  <img
-                    src={recommendedReadingCoverSrc}
-                    alt={recommendedReading.baslik_tr}
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-14 sm:w-16 sm:h-16 aspect-square object-contain rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="px-1.5 py-0.5 rounded bg-[#6741D9] text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] aspect-square rounded-xl overflow-hidden shrink-0 border border-[#E6D7BE] dark:border-[var(--border)] bg-white flex items-center justify-center">
+                    <img
+                      src={recommendedReadingCoverSrc}
+                      alt={recommendedReading.baslik_tr}
+                      referrerPolicy="no-referrer"
+                      className="w-16 h-16 sm:w-[72px] sm:h-[72px] aspect-square object-contain rounded-xl bg-white shrink-0 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1 flex flex-col justify-between gap-1">
+                    <span className="inline-block w-fit px-1.5 py-0.5 rounded-md bg-[#6741D9] text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
                       Okuma Metni #{String(recommendedReading.sira || 1).padStart(2, "0")} ({recommendedReading.seviye})
                     </span>
-                    <ArrowRight size={11} className="text-[#6741D9] shrink-0" />
+
+                    <h3 className="font-bold text-sm text-[var(--foreground)] group-hover:text-[#6741D9] leading-snug line-clamp-2 transition-colors">
+                      {recommendedReading.baslik_tr}
+                    </h3>
+
+                    <p
+                      dir="rtl"
+                      className="arabic font-arabic text-lg font-bold text-[#6741D9] dark:text-[#d0bfff] leading-snug text-right truncate"
+                    >
+                      {displayArabic(recommendedReading.baslik_ar)}
+                    </p>
                   </div>
-                  <p className="text-xs font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] leading-snug line-clamp-2">
-                    {recommendedReading.baslik_tr}
-                  </p>
-                  <p
-                    dir="rtl"
-                    className="arabic text-sm sm:text-base font-bold text-[#6741D9] dark:text-[#d0bfff] text-right truncate"
-                  >
-                    {displayArabic(recommendedReading.baslik_ar)}
-                  </p>
+                </div>
+
+                <div className="mt-2 pt-1.5 border-t border-dashed border-[#6741D9]/25">
+                  <span className="block text-[11px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1">
+                    📌{" "}
+                    {recommendedReading.odak_gramer ||
+                      `${recommendedReading.satirlar?.length || 6} Cümle • Sorulu`}
+                  </span>
                 </div>
               </Link>
             </div>
 
-            <div className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-300/80 dark:border-amber-700/60 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 truncate">
-                <Sparkles size={11} className="shrink-0" />
-                <span className="truncate">{dailyPackage.dailyDialogue.reasonBadge}</span>
-              </span>
+            {/* Alt Aksiyon Satırı: 💬 Diyaloğu Aç ve 📖 Metni Oku → */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Link
+                href={`/diyalog/${recommendedDialogue.id}`}
+                onClick={() => playClick()}
+                className="flex-1 py-2 px-2.5 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold flex items-center justify-center gap-1 whitespace-nowrap transition-colors"
+              >
+                <span>💬 Diyaloğu Aç</span>
+              </Link>
               <Link
                 href={`/metin/${recommendedReading.id}`}
                 onClick={() => playClick()}
-                className="text-xs font-semibold text-[#6741D9] dark:text-[#d0bfff] inline-flex items-center gap-0.5 hover:underline whitespace-nowrap shrink-0"
+                className="flex-1 py-2 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#6741D9] text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff] flex items-center justify-center gap-1 whitespace-nowrap transition-colors"
               >
-                <span>Metni Oku</span>
-                <ArrowRight size={11} />
+                <span>📖 Metni Oku →</span>
               </Link>
             </div>
           </div>
 
-          {/* 2. Zamanı Gelen veya Bugün Öğrenilecek 6 Kelime (3 Satır x 2 Sütun Ferah Düzen) */}
+          {/* 2. SÜTUN: 🧠 2. GÜNÜN 6 KELİMESİ */}
           <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
             <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff] uppercase tracking-wide truncate">
-                {dailyPackage.dailyWords.some(
-                  (dw) => dw.badgeTone === "due" || dw.badgeTone === "mistake"
-                )
-                  ? "🔄 2. Zamanı Gelen 6 Kelime"
-                  : "🌱 2. Günün 6 Kelimesi"}
+              <span className="text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff] uppercase tracking-wide whitespace-nowrap">
+                🧠 2. GÜNÜN 6 KELİMESİ
               </span>
               <Link
                 href="/alistirmalar?plan=daily"
@@ -684,7 +746,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="flex-1 grid grid-cols-2 gap-2 content-stretch">
+            <div className="flex-1 grid grid-cols-2 grid-rows-3 gap-2">
               {dailyPackage.dailyWords.map((dw) => {
                 const ar = (dw.item.mufret || dw.item.mazi || "")
                   .split("/")[0]
@@ -712,32 +774,32 @@ export default function HomePage() {
                       playTTS(ar, mounted ? speechRate : 1);
                     }}
                     data-tooltip="Kelimeyi sesli dinlemek için tıklayın"
-                    className="p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-left flex flex-col justify-between gap-1.5 transition-colors cursor-pointer"
+                    className="flex flex-col justify-between p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-left gap-1.5 transition-colors cursor-pointer"
                   >
-                    {/* Üst Satır: Solda küçük ses ikonu, sağda Arapça kelime */}
-                    <div className="flex items-center justify-between gap-1.5 w-full">
-                      <Volume2
-                        size={13}
-                        className="text-[#065F46] dark:text-emerald-400 shrink-0"
-                      />
+                    {/* Üst Satır: Sol tarafta hoparlör + yanında ✨ Yeni / ⏰ Tekrar rozeti; sağ tarafta belirgin Arapça kelime */}
+                    <div className="flex items-center justify-between gap-1 w-full">
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Volume2
+                          size={13}
+                          className="text-[#065F46] dark:text-emerald-400 shrink-0"
+                        />
+                        <span
+                          className={`inline-block whitespace-nowrap text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${badgeCls}`}
+                        >
+                          {compactStatusText}
+                        </span>
+                      </div>
                       <span
                         dir="rtl"
-                        className="arabic font-arabic text-lg font-bold text-emerald-950 dark:text-emerald-300 leading-none"
+                        className="arabic font-arabic text-xl font-bold text-emerald-950 dark:text-emerald-300 leading-none truncate"
                       >
                         {displayArabic(ar)}
                       </span>
                     </div>
 
-                    {/* Orta Satır: Kesilmeyen 1-2 satır Türkçe anlam */}
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug">
+                    {/* Alt Satır: Türkçe anlam */}
+                    <span className="text-xs text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug font-medium">
                       {dw.item.anlam_tr}
-                    </span>
-
-                    {/* Alt Satır: Kesilmeyen kompakt durum etiketi */}
-                    <span
-                      className={`inline-block w-fit whitespace-nowrap text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${badgeCls}`}
-                    >
-                      {compactStatusText}
                     </span>
                   </button>
                 );
@@ -745,11 +807,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 3. Günün Kalıp Cümlesi (1111 Günlük Cümle — Ferah Kart + Dinle/Telaffuz Butonları) */}
+          {/* 3. SÜTUN: 🗣️ 3. KALIP CÜMLE */}
           <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
             <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide truncate">
-                🗣️ 3. Günün Kalıp Cümlesi
+              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide whitespace-nowrap">
+                🗣️ 3. KALIP CÜMLE
               </span>
               <Link
                 href="/kutuphane?tab=cumleler"
@@ -761,36 +823,39 @@ export default function HomePage() {
             </div>
 
             <div className="flex-1 flex flex-col justify-between gap-2.5 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)]">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
-                    Kalıp Cümle #{dailySentenceItem.sira || dailySentenceItem.id.replace("cumle_", "")} • {dailySentenceItem.seviye || dailySentenceItem.cefr || "A1"}
-                  </span>
-                  {dailySentenceItem.tema && (
-                    <span className="px-2 py-0.5 rounded bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
-                      {dailySentenceItem.tema.replace(/_/g, " ")}
-                    </span>
-                  )}
-                </div>
+              {/* 1. Üst Bilgi Satırı */}
+              <div className="flex items-center justify-between gap-1.5">
+                <span className="px-2 py-0.5 rounded bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums whitespace-nowrap shrink-0">
+                  Kalıp Cümle #{dailySentenceItem.sira || dailySentenceItem.id.replace("cumle_", "")} • {dailySentenceItem.seviye || dailySentenceItem.cefr || "A1"}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
+                  {formatSentenceThemeLabel(dailySentenceItem.tema || dailySentenceItem.kategori)}
+                </span>
+              </div>
 
+              {/* 2. Arapça Cümle Kutusu (flex-1 flex items-center justify-center) */}
+              <div className="flex-1 min-h-[96px] flex items-center justify-center p-4 rounded-xl border border-[#E6D7BE] bg-white dark:bg-[var(--background)] shadow-2xs">
                 <p
                   dir="rtl"
-                  className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed bg-white/85 dark:bg-[var(--background)] rounded-lg px-3 py-2 border border-[#E6D7BE]"
+                  className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-center leading-relaxed"
                 >
                   {displayArabic(dailySentenceItem.arapca)}
                 </p>
+              </div>
 
-                <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
+              {/* 3. Türkçe Çeviri & Gramer Analiz Kartı */}
+              <div className="rounded-xl bg-[#F7F2E7] dark:bg-[var(--background)] border border-[#E6D7BE]/80 p-3 flex flex-col gap-1.5">
+                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug">
                   “{dailySentenceItem.turkce}”
                 </p>
-
                 {dailySentenceItem.odak_kalip && (
-                  <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300 leading-snug">
+                  <p className="text-[11px] font-bold text-amber-900 dark:text-amber-300 leading-snug">
                     📌 {dailySentenceItem.odak_kalip}
                   </p>
                 )}
               </div>
 
+              {/* 4. Alt Butonlar */}
               <div className="flex items-center justify-between gap-2 pt-1">
                 <button
                   type="button"
@@ -833,11 +898,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 4. Günün Atasözü & Hikmeti (508 Atasözü — 1:1 Kare Görselli) */}
+          {/* 4. SÜTUN: 📜 4. GÜNÜN ATASÖZÜ */}
           <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
             <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide truncate">
-                📜 4. Günün Atasözü & Hikmeti
+              <span className="text-[11px] font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide whitespace-nowrap">
+                📜 4. GÜNÜN ATASÖZÜ
               </span>
               <Link
                 href="/kutuphane?tab=atasozleri"
@@ -849,40 +914,54 @@ export default function HomePage() {
             </div>
 
             <div className="flex-1 flex flex-col justify-between gap-2.5 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)]">
-              <div className="space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white flex items-center justify-center">
-                    <img
-                      src={dailyProverbCoverSrc}
-                      alt={dailyProverbItem.turkce}
-                      referrerPolicy="no-referrer"
-                      className="aspect-square w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl shrink-0"
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-amber-600 text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
-                      Atasözü #{dailyProverbItem.sira || dailyProverbItem.id.replace("ata_", "")} • {dailyProverbItem.cefr}
-                    </span>
-                    <p className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
-                      “{dailyProverbItem.turkce}”
-                    </p>
-                    {dailyProverbItem.lafzi_ceviri && (
-                      <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug line-clamp-2">
-                        <strong>Lafzî:</strong> {dailyProverbItem.lafzi_ceviri}
-                      </p>
-                    )}
-                  </div>
+              {/* 1. Üst Görsel & Başlık Alanı */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-20 h-20 aspect-square rounded-xl overflow-hidden shrink-0 border border-[#E6D7BE] bg-white flex items-center justify-center">
+                  <img
+                    src={dailyProverbCoverSrc}
+                    alt={dailyProverbItem.turkce}
+                    referrerPolicy="no-referrer"
+                    className="w-20 h-20 aspect-square object-contain rounded-xl bg-white shrink-0"
+                  />
                 </div>
 
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="inline-block px-1.5 py-0.5 rounded bg-amber-600 text-white text-[9px] font-extrabold tabular-nums whitespace-nowrap">
+                    Atasözü #{dailyProverbItem.sira || dailyProverbItem.id.replace("ata_", "")} • {dailyProverbItem.cefr}
+                  </span>
+                  <p className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug line-clamp-2">
+                    “{dailyProverbItem.turkce}”
+                  </p>
+                  {dailyProverbItem.lafzi_ceviri && (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">
+                      <strong>Lafzî:</strong> {dailyProverbItem.lafzi_ceviri}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Arapça Atasözü Kutusu */}
+              <div className="py-3 px-3.5 rounded-xl border border-[#E6D7BE] bg-white dark:bg-[var(--background)] text-center shadow-2xs">
                 <p
                   dir="rtl"
-                  className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed bg-white/85 dark:bg-[var(--background)] rounded-lg px-2.5 py-1.5 border border-[#E6D7BE]"
+                  className="arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-relaxed text-center"
                 >
                   {displayArabic(dailyProverbItem.arapca)}
                 </p>
               </div>
 
+              {/* 3. 💡 Kullanım Bağlamı Kutusu (flex-1) */}
+              <div className="flex-1 flex items-center rounded-xl bg-[#F7F2E7] dark:bg-[var(--background)] border border-[#E6D7BE]/80 p-2.5 text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p className="line-clamp-3">
+                  <strong className="text-amber-900 dark:text-amber-300">💡 Bağlam:</strong>{" "}
+                  {dailyProverbItem.kullanim_baglami ||
+                    (dailyProverbItem as unknown as { context_tr?: string })
+                      .context_tr ||
+                    "Günlük hayatta hikmetli bir öğüt ve tecrübe paylaşımı olarak kullanılır."}
+                </p>
+              </div>
+
+              {/* 4. Alt Butonlar */}
               <div className="flex items-center justify-between gap-2 pt-1">
                 <button
                   type="button"

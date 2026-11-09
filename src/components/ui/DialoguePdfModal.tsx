@@ -80,6 +80,13 @@ export function buildDialogueQrUrl(
   const num = digitsMatch
     ? parseInt(digitsMatch[0], 10)
     : fallbackRawNum || 1;
+  if (rawStr.startsWith("kutuphane_")) {
+    return {
+      dialogueUrl: `https://app.muallimun.net/kutuphane`,
+      shortDisplayUrl: `app.muallimun.net/kutuphane`,
+      normalizedSlug: rawStr,
+    };
+  }
   if (rawStr.startsWith("metin_")) {
     const padded = String(Math.max(1, num)).padStart(2, "0");
     const normalizedSlug = `metin_${padded}`;
@@ -1140,8 +1147,20 @@ export default function DialoguePdfModal({
             ? `<div class="vocab-dotted-blank-ar" dir="rtl" title="Arapça karşılığını yazınız">....................................</div>`
             : `<span class="vocab-ar">${formatAr(mainAr)}</span>`;
 
+        const itemThumbUrl = w.gorsel
+          ? w.gorsel.startsWith("http")
+            ? w.gorsel
+            : `${typeof window !== "undefined" ? window.location.origin : ""}${
+                w.gorsel.startsWith("/") ? "" : "/"
+              }${w.gorsel}`
+          : "";
+        const itemThumbHtml = itemThumbUrl
+          ? `<img src="${itemThumbUrl}" alt="" loading="eager" style="width:36px;height:36px;aspect-ratio:1/1;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;flex-shrink:0;" onerror="this.style.display='none'" />`
+          : "";
+
         return `
           <div class="vocab-grid-card">
+            ${itemThumbHtml}
             <div class="vocab-left">
               <div class="vocab-meta-row">
                 ${badgeHtml}
@@ -1488,9 +1507,12 @@ export default function DialoguePdfModal({
             border: 1.5px solid #cbd5e1;
           }
           .cover-img-banner {
-            width: 100%;
-            max-height: 135px;
-            object-fit: cover;
+            width: 135px;
+            height: 135px;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            background: #ffffff;
+            margin: 0 auto;
             display: block;
           }
           .qr-code-container {
@@ -2131,10 +2153,13 @@ export default function DialoguePdfModal({
         <div class="header-card">
           <div class="header-left">
             <div class="badge-row">
-              <span class="badge">DİYALOG #${String(rawNum).padStart(
-                2,
-                "0"
-              )}</span>
+              <span class="badge">${
+                dialogue.id.startsWith("kutuphane_")
+                  ? "KÜTÜPHANE ÇALIŞMA FÖYÜ"
+                  : dialogue.id.startsWith("metin_")
+                  ? `OKUMA METNİ #${String(rawNum).padStart(2, "0")}`
+                  : `DİYALOG #${String(rawNum).padStart(2, "0")}`
+              }</span>
               <span class="badge-cefr">CEFR ${dialogue.seviye}</span>
               <span class="badge-outline">${
                 pdfDocMode === "quiz-sheet"
@@ -2334,9 +2359,11 @@ export default function DialoguePdfModal({
         }
 
         <footer class="corporate-footer">
-          <span>Diyalog #${String(rawNum).padStart(2, "0")}: ${
-      dialogue.baslik_tr
-    } (${dialogue.seviye}) — ${
+          <span>${
+            dialogue.id.startsWith("kutuphane_")
+              ? `${dialogue.baslik_tr} (${dialogue.seviye})`
+              : `${dialogue.id.startsWith("metin_") ? "Metin" : "Diyalog"} #${String(rawNum).padStart(2, "0")}: ${dialogue.baslik_tr} (${dialogue.seviye})`
+          } — ${
       pdfDocMode === "quiz-sheet"
         ? "A4 Sınıf İçi Çalışma & Quiz Yaprağı"
         : "Arapça Çalışma Kağıdı"
@@ -3111,7 +3138,9 @@ export default function DialoguePdfModal({
                   }`}
                 >
                   <span className="px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold">
-                    {dialogue.id.startsWith("metin_") ? "OKUMA METNİ" : "DİYALOG"} #{String(rawNum).padStart(2, "0")}
+                    {dialogue.id.startsWith("kutuphane_")
+                      ? "KÜTÜPHANE ÇALIŞMA FÖYÜ"
+                      : `${dialogue.id.startsWith("metin_") ? "OKUMA METNİ" : "DİYALOG"} #${String(rawNum).padStart(2, "0")}`}
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold">
                     CEFR {dialogue.seviye}
@@ -3169,7 +3198,7 @@ export default function DialoguePdfModal({
                       loading="eager"
                       referrerPolicy="no-referrer"
                       onError={() => setImgError(true)}
-                      className={`object-cover rounded-xl border border-slate-300 shrink-0 ${
+                      className={`aspect-square object-contain bg-white rounded-xl border border-slate-300 shrink-0 ${
                         activeDensity === "ultra"
                           ? "w-14 h-14"
                           : activeDensity === "tight"
@@ -3467,14 +3496,14 @@ export default function DialoguePdfModal({
               <>
             {/* PDF-1: Geniş Banner Görsel Modu (width: 100%, max-height: 135px, object-fit: cover) */}
             {effectiveImageMode === "banner" && (
-              <div className="w-full rounded-xl overflow-hidden border border-slate-300">
+              <div className="w-full rounded-xl overflow-hidden border border-slate-300 bg-white flex items-center justify-center py-1">
                 <img
                   src={imagePath}
                   alt={dialogue.baslik_tr}
                   loading="eager"
                   referrerPolicy="no-referrer"
                   onError={() => setImgError(true)}
-                  className="w-full max-h-[135px] object-cover block"
+                  className="w-[135px] h-[135px] aspect-square object-contain block"
                 />
               </div>
             )}
@@ -3927,6 +3956,18 @@ export default function DialoguePdfModal({
                             : "py-1.5 px-2.5 text-xs"
                         } rounded-lg border border-slate-300 bg-slate-50 break-inside-avoid`}
                       >
+                        {w.gorsel && (
+                          <img
+                            src={w.gorsel}
+                            alt=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                            }}
+                            className="w-9 h-9 aspect-square object-contain rounded-md border border-slate-300 bg-white shrink-0"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
                           {vocabLanguageMode === "ar-only" ? (
                             <div className="border-b border-dotted border-slate-400 h-5 w-11/12" />
@@ -4170,8 +4211,9 @@ export default function DialoguePdfModal({
             {/* ZORUNLU KURUMSAL ALT BİLGİ (FOOTER): www.muallimun.net */}
             <footer className="pt-3 mt-4 border-t-2 border-[#087F5B] flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
               <span className="font-semibold">
-                Diyalog #{String(rawNum).padStart(2, "0")}: {dialogue.baslik_tr} (
-                {dialogue.seviye}) — Arapça Çalışma Kağıdı
+                {dialogue.id.startsWith("kutuphane_")
+                  ? `${dialogue.baslik_tr} (${dialogue.seviye}) — Arapça Çalışma Kağıdı`
+                  : `${dialogue.id.startsWith("metin_") ? "Metin" : "Diyalog"} #${String(rawNum).padStart(2, "0")}: ${dialogue.baslik_tr} (${dialogue.seviye}) — Arapça Çalışma Kağıdı`}
               </span>
               <a
                 href="https://www.muallimun.net"

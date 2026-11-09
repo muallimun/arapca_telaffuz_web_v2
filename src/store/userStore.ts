@@ -92,6 +92,20 @@ function sanitizeDictionaryItems(arr: unknown): DictionaryItem[] {
       muzari: typeof item.muzari === "string" ? item.muzari : undefined,
       masdar: typeof item.masdar === "string" ? item.masdar : undefined,
       anlam_tr: typeof item.anlam_tr === "string" ? item.anlam_tr : "",
+      ornek_ar: typeof item.ornek_ar === "string" ? item.ornek_ar : undefined,
+      ornek_tr: typeof item.ornek_tr === "string" ? item.ornek_tr : undefined,
+      gorsel: typeof item.gorsel === "string" ? item.gorsel : undefined,
+      ses_erkek:
+        typeof item.ses_erkek === "string" ? item.ses_erkek : undefined,
+      ses_kadin:
+        typeof item.ses_kadin === "string" ? item.ses_kadin : undefined,
+      kategori_tr:
+        typeof item.kategori_tr === "string" ? item.kategori_tr : undefined,
+      cefr:
+        typeof item.cefr === "string" &&
+        ["A1", "A2", "B1", "B2"].includes(item.cefr)
+          ? (item.cefr as DictionaryItem["cefr"])
+          : undefined,
     });
   }
   return validItems;

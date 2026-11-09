@@ -26,6 +26,12 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  FileText,
+  Share2,
+  Copy,
+  Check,
+  Gamepad2,
+  GraduationCap,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -38,8 +44,12 @@ import {
   getProverbCoverUrl,
   getVisualWordCoverUrl,
 } from "@/lib/data";
-import { Level, DictionaryItem } from "@/types/data";
-import { extractDialogueVocabulary, cleanArabicText } from "@/lib/dict";
+import { Level, DictionaryItem, Dialogue } from "@/types/data";
+import {
+  extractDialogueVocabulary,
+  cleanArabicText,
+  DialogueVocabularyEntry,
+} from "@/lib/dict";
 import { normalizeArabicText } from "@/lib/arabicTextUtils";
 import { useUserStore } from "@/store/userStore";
 import { useSettings, VoiceGender } from "@/store/settings";
@@ -57,6 +67,14 @@ import {
 } from "@/lib/offlineManager";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import WordTooltip from "@/components/ui/WordTooltip";
+import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
+
+type SavedItemFilter =
+  | "all"
+  | "words"
+  | "visual-words"
+  | "sentences"
+  | "proverbs";
 
 type StatusFilter = "all" | "completed" | "ongoing" | "favorites";
 type ViewSection =
@@ -130,6 +148,19 @@ export default function LibraryPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadingPct, setDownloadingPct] = useState<number>(0);
 
+  const [savedItemFilter, setSavedItemFilter] =
+    useState<SavedItemFilter>("all");
+  const [isHomeworkMode, setIsHomeworkMode] = useState<boolean>(false);
+  const [isHomeworkModalOpen, setIsHomeworkModalOpen] =
+    useState<boolean>(false);
+  const [homeworkLinkCopied, setHomeworkLinkCopied] = useState<boolean>(false);
+  const [libraryPdfConfig, setLibraryPdfConfig] = useState<{
+    dialogue: Dialogue;
+    vocabEntries: DialogueVocabularyEntry[];
+    imagePath: string;
+    rawNum: number;
+  } | null>(null);
+
   useEffect(() => {
     void loadAudioManifest().then(() => {
       void getDownloadedDialogueIds().then((ids) => setOfflineIds(ids));
@@ -138,24 +169,43 @@ export default function LibraryPage() {
       setMounted(true);
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
-        const lvl = params.get("seviye") as Level | null;
+        const lvl = (params.get("level") ||
+          params.get("seviye")) as Level | null;
         const durum = params.get("durum");
         const tab = params.get("tab");
+        const cat = params.get("cat") || params.get("category");
+        const qParam = params.get("q");
+        const hwParam = params.get("hw");
+
         if (lvl && ["A1", "A2", "B1", "B2"].includes(lvl)) {
           setLevelFilter(lvl);
         }
         if (durum === "completed") {
           setStatusFilter("completed");
         }
+        if (cat && cat.trim().length > 0) {
+          setCategoryFilter(cat.trim());
+        }
+        if (qParam && qParam.trim().length > 0) {
+          setSearch(qParam.trim());
+        }
+        if (hwParam === "1" || hwParam === "true") {
+          setIsHomeworkMode(true);
+        }
         if (tab) {
           if (tab === "diyaloglar" || tab === "dialogues") {
             setActiveSection("dialogues");
+          } else if (
+            tab === "gorsel_kelime" ||
+            tab === "gorsel-kelimeler" ||
+            tab === "visual_words"
+          ) {
+            setActiveSection("gorsel-kelimeler");
           } else if (
             [
               "metinler",
               "cumleler",
               "atasozleri",
-              "gorsel-kelimeler",
               "saved-words",
               "weak-words",
             ].includes(tab)
@@ -633,6 +683,369 @@ export default function LibraryPage() {
     activeSection === "atasozleri" ||
     activeSection === "gorsel-kelimeler";
 
+  const favoriteIdsSet = useMemo(() => {
+    return new Set(favoriteWords.map((w) => w.id));
+  }, [favoriteWords]);
+
+  const toSentenceFavoriteItem = (
+    item: (typeof cumleler1111)[number]
+  ): DictionaryItem => ({
+    id: item.id,
+    kok: item.odak_kalip || "-",
+    tur: "cumle",
+    mufret: item.arapca,
+    anlam_tr: item.turkce,
+    ses_erkek: item.ses_erkek,
+    ses_kadin: item.ses_kadin,
+    kategori_tr: item.tema ? item.tema.replace(/_/g, " ") : "1111 Günlük Cümle",
+    cefr: item.seviye || item.cefr || "A1",
+  });
+
+  const toProverbFavoriteItem = (
+    item: (typeof atasozleri)[number]
+  ): DictionaryItem => ({
+    id: item.id,
+    kok: "-",
+    tur: "atasozu",
+    mufret: item.arapca,
+    anlam_tr: item.turkce,
+    ornek_tr: item.lafzi_ceviri,
+    gorsel: item.gorsel || getProverbCoverUrl(item.id),
+    ses_erkek: item.ses_erkek,
+    ses_kadin: item.ses_kadin,
+    kategori_tr: item.tema ? item.tema.replace(/_/g, " ") : "508 Atasözü",
+    cefr: item.cefr || "B1",
+  });
+
+  const toVisualWordFavoriteItem = (
+    item: (typeof gorselKelimeler)[number]
+  ): DictionaryItem => ({
+    id: item.id.startsWith("gorsel_") ? item.id : `gorsel_${item.id}`,
+    kok: "-",
+    tur: "gorsel_kelime",
+    mufret: item.arapca,
+    cemi:
+      item.ikincil_form && item.ikincil_form !== "-"
+        ? item.ikincil_form
+        : undefined,
+    masdar:
+      item.ucuncul_form && item.ucuncul_form !== "-"
+        ? item.ucuncul_form
+        : undefined,
+    anlam_tr: item.turkce,
+    ornek_ar: item.ornek_ar,
+    ornek_tr: item.ornek_tr,
+    gorsel: item.gorsel || getVisualWordCoverUrl(item),
+    ses_erkek: item.ses_erkek,
+    ses_kadin: item.ses_kadin,
+    kategori_tr: item.kategori_tr || "Görsel Kelime",
+    cefr: item.cefr || "A1",
+  });
+
+  const isVisualWordFavorited = (item: (typeof gorselKelimeler)[number]) => {
+    const normId = item.id.startsWith("gorsel_")
+      ? item.id
+      : `gorsel_${item.id}`;
+    return favoriteIdsSet.has(normId) || favoriteIdsSet.has(item.id);
+  };
+
+  const getSavedItemKind = (
+    word: DictionaryItem
+  ): "words" | "visual-words" | "sentences" | "proverbs" => {
+    if (word.tur === "cumle" || word.id.startsWith("cumle_")) {
+      return "sentences";
+    }
+    if (word.tur === "atasozu" || word.id.startsWith("ata_")) {
+      return "proverbs";
+    }
+    if (
+      word.tur === "gorsel_kelime" ||
+      word.id.startsWith("gorsel_") ||
+      Boolean(word.gorsel && !word.id.startsWith("ata_"))
+    ) {
+      return "visual-words";
+    }
+    return "words";
+  };
+
+  const filteredSavedItems = useMemo(() => {
+    if (savedItemFilter === "all") return favoriteWords;
+    return favoriteWords.filter(
+      (w) => getSavedItemKind(w) === savedItemFilter
+    );
+  }, [favoriteWords, savedItemFilter]);
+
+  const buildExerciseUrlForCurrentTab = () => {
+    const pool =
+      activeSection === "cumleler"
+        ? "sentences_1111"
+        : activeSection === "atasozleri"
+        ? "proverbs_508"
+        : "visual_words";
+    const params = new URLSearchParams();
+    params.set("pool", pool);
+    if (levelFilter !== "all") {
+      params.set("level", levelFilter);
+    }
+    if (categoryFilter !== "all") {
+      params.set("cat", categoryFilter);
+    }
+    return `/alistirmalar?${params.toString()}`;
+  };
+
+  const buildHomeworkShareUrl = () => {
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://app.muallimun.net";
+    const params = new URLSearchParams();
+    params.set("tab", activeSection);
+    if (levelFilter !== "all") {
+      params.set("level", levelFilter);
+    }
+    if (categoryFilter !== "all") {
+      params.set("cat", categoryFilter);
+    }
+    if (search.trim()) {
+      params.set("q", search.trim());
+    }
+    params.set("hw", "1");
+    return `${origin}/kutuphane?${params.toString()}`;
+  };
+
+  const getModuleHumanLabel = () => {
+    if (activeSection === "cumleler") return "1111 Günlük Cümle";
+    if (activeSection === "atasozleri") return "508 Atasözü ve Hikmetli Söz";
+    if (activeSection === "gorsel-kelimeler") return "999 Görsel Kelime";
+    if (activeSection === "saved-words") return "Kişisel Çalışma Defterim";
+    if (activeSection === "metinler") return "60 Okuma Metni";
+    return "120 Diyalog";
+  };
+
+  const handleOpenLibraryPdfModal = (targetSection?: ViewSection) => {
+    playClick();
+    const sec = targetSection || activeSection;
+    const lvlLabel = levelFilter === "all" ? "Tüm Kurlar" : levelFilter;
+    const catLabel =
+      categoryFilter === "all"
+        ? "Tüm Kategoriler"
+        : categoryFilter.replace(/_/g, " ");
+    const safeLevel: Level = levelFilter === "all" ? "A1" : levelFilter;
+    const activeGender: "E" | "K" =
+      preferredVoiceGender === "kadin" ? "K" : "E";
+
+    if (sec === "cumleler") {
+      const slice = filteredSentences.slice(0, 24);
+      if (slice.length === 0) return;
+      const syntheticDialogue: Dialogue = {
+        id: "kutuphane_cumleler",
+        seviye: safeLevel,
+        baslik_tr: `1111 Günlük Cümle • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "١١١١ جُمْلَةً يَوْمِيَّةً وَقَوَاعِدَ تَطْبِيقِيَّةً",
+        odak_gramer: catLabel,
+        satirlar: slice.map((item, i) => ({
+          sira: i + 1,
+          konusmaci: item.tema
+            ? item.tema.replace(/_/g, " ")
+            : `Cümle #${item.sira || i + 1}`,
+          konusmaci_ar: item.seviye || item.cefr || "A1",
+          cinsiyet: activeGender,
+          arapca: item.arapca,
+          turkce: item.turkce,
+        })),
+      };
+      const extracted = extractDialogueVocabulary(slice.map((s) => s.arapca));
+      const extractedEntries: DialogueVocabularyEntry[] = extracted
+        .slice(0, 20)
+        .map((dictItem, idx) => ({
+          item: dictItem,
+          contextWord: dictItem.mufret || dictItem.mazi || "",
+          contextSentence: slice[idx % slice.length]?.arapca || "",
+          contextTranslation: slice[idx % slice.length]?.turkce || "",
+          morphologyNote: dictItem.tur || "isim",
+          lineNumber: (idx % slice.length) + 1,
+        }));
+      const fallbackVocab: DialogueVocabularyEntry[] = slice
+        .slice(0, 16)
+        .map((s, idx) => ({
+          item: {
+            id: s.id || `cumle_v_${idx}`,
+            kok: s.odak_kalip || "-",
+            tur: "isim",
+            mufret: s.arapca,
+            anlam_tr: s.turkce,
+          },
+          contextWord: s.arapca,
+          contextSentence: s.arapca,
+          contextTranslation: s.turkce,
+          morphologyNote: s.odak_kalip || "Kalıp Cümle",
+          lineNumber: idx + 1,
+        }));
+      setLibraryPdfConfig({
+        dialogue: syntheticDialogue,
+        vocabEntries:
+          extractedEntries.length >= 4 ? extractedEntries : fallbackVocab,
+        imagePath: "/gorseller/diyaloglar/001.webp",
+        rawNum: 1,
+      });
+      return;
+    }
+
+    if (sec === "atasozleri") {
+      const slice = filteredProverbs.slice(0, 22);
+      if (slice.length === 0) return;
+      const firstImg =
+        slice[0]?.gorsel || getProverbCoverUrl(slice[0]?.id || "ata_001");
+      const syntheticDialogue: Dialogue = {
+        id: "kutuphane_atasozleri",
+        seviye: levelFilter === "all" ? "B1" : levelFilter,
+        baslik_tr: `508 Atasözü • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "٥٠٨ أَمْثَالٍ وَحِكَمٍ عَرَبِيَّةٍ",
+        odak_gramer: catLabel,
+        satirlar: slice.map((item, i) => ({
+          sira: i + 1,
+          konusmaci: item.tema
+            ? item.tema.replace(/_/g, " ")
+            : `Atasözü #${item.sira || i + 1}`,
+          konusmaci_ar: item.cefr || "B1",
+          cinsiyet: activeGender,
+          arapca: item.arapca,
+          turkce: item.lafzi_ceviri
+            ? `${item.turkce} (Lafzî: ${item.lafzi_ceviri})`
+            : item.turkce,
+        })),
+      };
+      const vocabEntries: DialogueVocabularyEntry[] = slice.map((item, i) => ({
+        item: {
+          id: item.id,
+          kok: "-",
+          tur: "isim",
+          mufret: item.arapca,
+          anlam_tr: item.turkce,
+          gorsel: item.gorsel || getProverbCoverUrl(item.id),
+        },
+        contextWord: item.arapca,
+        contextSentence: item.arapca,
+        contextTranslation: item.turkce,
+        morphologyNote: item.tema ? item.tema.replace(/_/g, " ") : "Atasözü",
+        lineNumber: i + 1,
+      }));
+      setLibraryPdfConfig({
+        dialogue: syntheticDialogue,
+        vocabEntries,
+        imagePath: firstImg,
+        rawNum: 1,
+      });
+      return;
+    }
+
+    if (sec === "gorsel-kelimeler") {
+      const slice = filteredVisualWords.slice(0, 24);
+      if (slice.length === 0) return;
+      const firstImg =
+        slice[0]?.gorsel || getVisualWordCoverUrl(slice[0]);
+      const syntheticDialogue: Dialogue = {
+        id: "kutuphane_gorsel_kelimeler",
+        seviye: safeLevel,
+        baslik_tr: `999 Görsel Kelime • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "٩٩٩ كَلِمَةً مُصَوَّرَةً وَأَمْثِلَةً",
+        odak_gramer: catLabel,
+        satirlar: slice.map((item, i) => ({
+          sira: i + 1,
+          konusmaci: item.kategori_tr || `Kelime #${i + 1}`,
+          konusmaci_ar: item.tur === "fiil" ? "فعل" : "اسم",
+          cinsiyet: activeGender,
+          arapca: item.ornek_ar
+            ? `${item.arapca} — ${item.ornek_ar}`
+            : item.arapca,
+          turkce: item.ornek_tr
+            ? `${item.turkce} (${item.ornek_tr})`
+            : item.turkce,
+        })),
+      };
+      const vocabEntries: DialogueVocabularyEntry[] = slice.map((item, i) => ({
+        item: {
+          id: item.id,
+          kok: "-",
+          tur: item.tur || "isim",
+          mufret: item.arapca,
+          cemi:
+            item.ikincil_form && item.ikincil_form !== "-"
+              ? item.ikincil_form
+              : undefined,
+          masdar:
+            item.ucuncul_form && item.ucuncul_form !== "-"
+              ? item.ucuncul_form
+              : undefined,
+          anlam_tr: item.turkce,
+          gorsel: item.gorsel || getVisualWordCoverUrl(item),
+        },
+        contextWord: item.arapca,
+        contextSentence: item.ornek_ar || item.arapca,
+        contextTranslation: item.ornek_tr || item.turkce,
+        morphologyNote: item.kategori_tr || "Görsel Kelime",
+        lineNumber: i + 1,
+      }));
+      setLibraryPdfConfig({
+        dialogue: syntheticDialogue,
+        vocabEntries,
+        imagePath: firstImg,
+        rawNum: 1,
+      });
+      return;
+    }
+
+    if (sec === "saved-words") {
+      const slice = filteredSavedItems.slice(0, 24);
+      if (slice.length === 0) return;
+      const firstWithImg = slice.find((w) => Boolean(w.gorsel));
+      const filterTitleMap: Record<SavedItemFilter, string> = {
+        all: "Tüm Kayıtlı Öğeler",
+        words: "Sözlük Kelimeleri",
+        "visual-words": "Görsel Kelimeler",
+        sentences: "Günlük Cümleler",
+        proverbs: "Atasözleri",
+      };
+      const syntheticDialogue: Dialogue = {
+        id: "kutuphane_defterim",
+        seviye: "A1",
+        baslik_tr: `Defterim • ${filterTitleMap[savedItemFilter]} (${slice.length} Öğe)`,
+        baslik_ar: "دَفْتَرُ الْمُفْرَدَاتِ وَالْعِبَارَاتِ الْخَاصُّ بِي",
+        odak_gramer: filterTitleMap[savedItemFilter],
+        satirlar: slice.map((w, i) => {
+          const mainAr = w.mufret || w.mazi || "";
+          return {
+            sira: i + 1,
+            konusmaci: w.kategori_tr || w.tur || `Öğe #${i + 1}`,
+            konusmaci_ar: w.cefr || "A1",
+            cinsiyet: activeGender,
+            arapca: w.ornek_ar ? `${mainAr} — ${w.ornek_ar}` : mainAr,
+            turkce: w.ornek_tr
+              ? `${w.anlam_tr} (${w.ornek_tr})`
+              : w.anlam_tr,
+          };
+        }),
+      };
+      const vocabEntries: DialogueVocabularyEntry[] = slice.map((w, i) => {
+        const mainAr = w.mufret || w.mazi || "";
+        return {
+          item: w,
+          contextWord: mainAr,
+          contextSentence: w.ornek_ar || mainAr,
+          contextTranslation: w.ornek_tr || w.anlam_tr,
+          morphologyNote: w.kategori_tr || w.tur || "Defterim",
+          lineNumber: i + 1,
+        };
+      });
+      setLibraryPdfConfig({
+        dialogue: syntheticDialogue,
+        vocabEntries,
+        imagePath: firstWithImg?.gorsel || "/gorseller/diyaloglar/001.webp",
+        rawNum: 1,
+      });
+    }
+  };
+
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* GÖLGELEME MODALI */}
@@ -643,6 +1056,157 @@ export default function LibraryPage() {
           forms={shadowingTarget.forms}
           onClose={() => setShadowingTarget(null)}
         />
+      )}
+
+      {/* A4 PDF ÇALIŞMA KAĞIDI VE QUİZ YAPRAĞI MODALI */}
+      {libraryPdfConfig && (
+        <DialoguePdfModal
+          dialogue={libraryPdfConfig.dialogue}
+          vocabEntries={libraryPdfConfig.vocabEntries}
+          imagePath={libraryPdfConfig.imagePath}
+          rawNum={libraryPdfConfig.rawNum}
+          onClose={() => setLibraryPdfConfig(null)}
+        />
+      )}
+
+      {/* 🎓 ÖĞRETMEN ÖDEV PAYLAŞIM MODALI */}
+      {isHomeworkModalOpen && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          onClick={() => setIsHomeworkModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#6741D9] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <GraduationCap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
+                    🎓 Öğretmen Ödev Paketi Paylaş
+                  </h3>
+                  <p className="text-xs font-semibold text-[var(--muted)]">
+                    Öğrencileriniz bağlantıya tıkladığında doğrudan bu filtreli
+                    listeyle çalışmaya başlar.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHomeworkModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[var(--muted)]">Modül:</span>
+                <span className="font-extrabold text-[#087F5B]">
+                  {getModuleHumanLabel()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[var(--muted)]">Seviye:</span>
+                <span className="font-extrabold text-[#6741D9]">
+                  {levelFilter === "all" ? "Tüm Kurlar (A1–B2)" : levelFilter}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[var(--muted)]">Kategori:</span>
+                <span className="font-extrabold text-[var(--foreground)] truncate max-w-[220px]">
+                  {categoryFilter === "all"
+                    ? "Tüm Kategoriler"
+                    : categoryFilter.replace(/_/g, " ")}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-extrabold uppercase text-[var(--muted)] block">
+                Doğrudan Ödev Bağlantısı
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={buildHomeworkShareUrl()}
+                  className="flex-1 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] px-3 text-xs font-mono text-[var(--foreground)] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    const url = buildHomeworkShareUrl();
+                    void navigator.clipboard?.writeText(url);
+                    setHomeworkLinkCopied(true);
+                    playSuccess();
+                    setTimeout(() => setHomeworkLinkCopied(false), 2500);
+                  }}
+                  className="h-10 px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  {homeworkLinkCopied ? (
+                    <>
+                      <Check size={14} />
+                      <span>Kopyalandı</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Kopyala</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(
+                  `🎓 Arapça Ödev Paketi (${getModuleHumanLabel()} • ${
+                    levelFilter === "all" ? "Tüm Kurlar" : levelFilter
+                  } • ${
+                    categoryFilter === "all"
+                      ? "Tüm Kategoriler"
+                      : categoryFilter.replace(/_/g, " ")
+                  }):\n${buildHomeworkShareUrl()}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => playClick()}
+                className="min-h-[42px] px-4 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] flex items-center justify-center gap-2"
+              >
+                <Share2 size={14} />
+                <span>WhatsApp ile Gönder</span>
+              </a>
+
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(
+                  buildHomeworkShareUrl()
+                )}&text=${encodeURIComponent(
+                  `🎓 Arapça Ödev Paketi: ${getModuleHumanLabel()} (${
+                    levelFilter === "all" ? "Tüm Kurlar" : levelFilter
+                  } • ${
+                    categoryFilter === "all"
+                      ? "Tüm Kategoriler"
+                      : categoryFilter.replace(/_/g, " ")
+                  })`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => playClick()}
+                className="min-h-[42px] px-4 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#5230B5] flex items-center justify-center gap-2"
+              >
+                <Share2 size={14} />
+                <span>Telegram ile Gönder</span>
+              </a>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 999 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
@@ -776,8 +1340,51 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  {/* Görünürlük Anahtarları + Kapat */}
+                  {/* Görünürlük Anahtarları + Defterime Ekle + Kapat */}
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                    {(() => {
+                      const modalFavItem = currentVisual
+                        ? toVisualWordFavoriteItem(currentVisual)
+                        : currentProverb
+                        ? toProverbFavoriteItem(currentProverb)
+                        : currentSentence
+                        ? toSentenceFavoriteItem(currentSentence)
+                        : null;
+                      const isModalFav =
+                        mounted &&
+                        modalFavItem &&
+                        (currentVisual
+                          ? isVisualWordFavorited(currentVisual)
+                          : favoriteIdsSet.has(modalFavItem.id));
+                      return modalFavItem ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            toggleFavoriteWord(modalFavItem);
+                          }}
+                          title={
+                            isModalFav
+                              ? "Defterimden Çıkar"
+                              : "Defterime Ekle"
+                          }
+                          className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isModalFav
+                              ? "bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-600 dark:text-rose-300 shadow-2xs"
+                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-600"
+                          }`}
+                        >
+                          <Heart
+                            size={14}
+                            fill={isModalFav ? "currentColor" : "none"}
+                          />
+                          <span className="hidden sm:inline">
+                            {isModalFav ? "Defterimde" : "Defterime Ekle"}
+                          </span>
+                        </button>
+                      ) : null;
+                    })()}
+
                     <button
                       type="button"
                       onClick={toggleBulkArabic}
@@ -1253,6 +1860,52 @@ export default function LibraryPage() {
             </div>
           );
         })()}
+
+      {/* 🎓 ÖĞRETMEN ÖDEV PAKETİ AKTİF BİLDİRİM BANDI */}
+      {isHomeworkMode && (
+        <div className="rounded-2xl border-2 border-[#6741D9] border-b-4 bg-[#F3F0FF] dark:bg-indigo-950/70 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[#6741D9] text-white flex items-center justify-center shrink-0">
+              <GraduationCap size={17} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-200 truncate">
+                🎓 Öğretmen Ödev Paketi Aktif
+              </p>
+              <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 truncate">
+                {getModuleHumanLabel()} •{" "}
+                {levelFilter === "all" ? "Tüm Kurlar" : levelFilter} •{" "}
+                {categoryFilter === "all"
+                  ? "Tüm Kategoriler"
+                  : categoryFilter.replace(/_/g, " ")}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {isDualGenderSection && (
+              <Link
+                href={buildExerciseUrlForCurrentTab()}
+                onClick={() => playClick()}
+                className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] flex items-center gap-1.5"
+              >
+                <Gamepad2 size={14} />
+                <span>🎮 Ödev Alıştırmasını Başlat</span>
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsHomeworkMode(false);
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#D0BFFF] text-[11px] font-extrabold text-[#4C28B5] dark:text-indigo-200 cursor-pointer"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ÜST BAŞLIK & V2 MODÜL SEÇİCİ */}
       <div className="space-y-2.5">
@@ -1909,6 +2562,16 @@ export default function LibraryPage() {
                         </button>
 
                         <Link
+                          href={`/alistirmalar?pool=all_dialogues&dialogueId=${dlg.id}`}
+                          onClick={() => playClick()}
+                          title="Bu Diyalogla Alıştırma Yap"
+                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0"
+                        >
+                          <Gamepad2 size={14} />
+                          <span className="hidden sm:inline">Alıştırma</span>
+                        </Link>
+
+                        <Link
                           href={`/diyalog/${dlg.id}`}
                           onClick={() => playClick()}
                           className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
@@ -2095,6 +2758,16 @@ export default function LibraryPage() {
                         </button>
 
                         <Link
+                          href={`/alistirmalar?pool=reading_texts&readingId=${txt.id}`}
+                          onClick={() => playClick()}
+                          title="Bu Metinle Alıştırma Yap"
+                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0"
+                        >
+                          <Gamepad2 size={14} />
+                          <span className="hidden sm:inline">Alıştırma</span>
+                        </Link>
+
+                        <Link
                           href={`/metin/${txt.id}`}
                           onClick={() => playClick()}
                           className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5"
@@ -2120,7 +2793,7 @@ export default function LibraryPage() {
               Toplam <strong>{filteredSentences.length}</strong> kalıp ve günlük
               cümle listeleniyor
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() =>
@@ -2135,7 +2808,7 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                    <span>⏹ Durdur</span>
                   </>
                 ) : (
                   <>
@@ -2149,6 +2822,38 @@ export default function LibraryPage() {
                     </span>
                   </>
                 )}
+              </button>
+
+              <Link
+                href={buildExerciseUrlForCurrentTab()}
+                onClick={() => playClick()}
+                className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
+              >
+                <Gamepad2 size={13} />
+                <span>🎮 Alıştırma Yap</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => handleOpenLibraryPdfModal("cumleler")}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <FileText size={13} className="text-[#087F5B]" />
+                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">📄 PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsHomeworkModalOpen(true);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <GraduationCap size={13} className="text-[#6741D9]" />
+                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
+                <span className="sm:hidden">🎓 Ödev</span>
               </button>
             </div>
           </div>
@@ -2306,6 +3011,33 @@ export default function LibraryPage() {
                       type="button"
                       onClick={() => {
                         playClick();
+                        toggleFavoriteWord(toSentenceFavoriteItem(item));
+                      }}
+                      title={
+                        mounted && favoriteIdsSet.has(item.id)
+                          ? "Defterimden Çıkar"
+                          : "Defterime Ekle"
+                      }
+                      className={`min-h-[40px] w-10 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        mounted && favoriteIdsSet.has(item.id)
+                          ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 text-rose-600"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-500"
+                      }`}
+                    >
+                      <Heart
+                        size={15}
+                        fill={
+                          mounted && favoriteIdsSet.has(item.id)
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
                         setSelectedCardIndex(idx);
                       }}
                       title="Tekil Kart Görünümünde Aç"
@@ -2346,7 +3078,7 @@ export default function LibraryPage() {
               Toplam <strong>{filteredProverbs.length}</strong> Arapça atasözü
               ve hikmetli söz
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() =>
@@ -2361,7 +3093,7 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                    <span>⏹ Durdur</span>
                   </>
                 ) : (
                   <>
@@ -2375,6 +3107,38 @@ export default function LibraryPage() {
                     </span>
                   </>
                 )}
+              </button>
+
+              <Link
+                href={buildExerciseUrlForCurrentTab()}
+                onClick={() => playClick()}
+                className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
+              >
+                <Gamepad2 size={13} />
+                <span>🎮 Alıştırma Yap</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => handleOpenLibraryPdfModal("atasozleri")}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <FileText size={13} className="text-[#087F5B]" />
+                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">📄 PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsHomeworkModalOpen(true);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <GraduationCap size={13} className="text-[#6741D9]" />
+                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
+                <span className="sm:hidden">🎓 Ödev</span>
               </button>
             </div>
           </div>
@@ -2562,6 +3326,33 @@ export default function LibraryPage() {
                       type="button"
                       onClick={() => {
                         playClick();
+                        toggleFavoriteWord(toProverbFavoriteItem(item));
+                      }}
+                      title={
+                        mounted && favoriteIdsSet.has(item.id)
+                          ? "Defterimden Çıkar"
+                          : "Defterime Ekle"
+                      }
+                      className={`min-h-[40px] w-10 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        mounted && favoriteIdsSet.has(item.id)
+                          ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 text-rose-600"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-500"
+                      }`}
+                    >
+                      <Heart
+                        size={15}
+                        fill={
+                          mounted && favoriteIdsSet.has(item.id)
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
                         setSelectedCardIndex(idx);
                       }}
                       title="Tekil Kart Görünümünde Aç"
@@ -2602,7 +3393,7 @@ export default function LibraryPage() {
               Toplam <strong>{filteredVisualWords.length}</strong> resimli
               kelime kartı
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() =>
@@ -2617,7 +3408,7 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Sıralı Dinlemeyi Durdur</span>
+                    <span>⏹ Durdur</span>
                   </>
                 ) : (
                   <>
@@ -2631,6 +3422,38 @@ export default function LibraryPage() {
                     </span>
                   </>
                 )}
+              </button>
+
+              <Link
+                href={buildExerciseUrlForCurrentTab()}
+                onClick={() => playClick()}
+                className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
+              >
+                <Gamepad2 size={13} />
+                <span>🎮 Alıştırma Yap</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => handleOpenLibraryPdfModal("gorsel-kelimeler")}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <FileText size={13} className="text-[#087F5B]" />
+                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">📄 PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsHomeworkModalOpen(true);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <GraduationCap size={13} className="text-[#6741D9]" />
+                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
+                <span className="sm:hidden">🎓 Ödev</span>
               </button>
             </div>
           </div>
@@ -2924,6 +3747,33 @@ export default function LibraryPage() {
                       type="button"
                       onClick={() => {
                         playClick();
+                        toggleFavoriteWord(toVisualWordFavoriteItem(item));
+                      }}
+                      title={
+                        mounted && isVisualWordFavorited(item)
+                          ? "Defterimden Çıkar"
+                          : "Defterime Ekle"
+                      }
+                      className={`min-h-[40px] w-10 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        mounted && isVisualWordFavorited(item)
+                          ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 text-rose-600"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-500"
+                      }`}
+                    >
+                      <Heart
+                        size={15}
+                        fill={
+                          mounted && isVisualWordFavorited(item)
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
                         setSelectedCardIndex(idx);
                       }}
                       title="Tekil Kart Görünümünde Aç"
@@ -2956,77 +3806,291 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {/* 6. SEKME: KELİME DEFTERİM */}
+      {/* 6. SEKME: KİŞİSEL ÇALIŞMA DEFTERİM (KELİMELER, GÖRSEL KELİMELER, CÜMLELER, ATASÖZLERİ) */}
       {activeSection === "saved-words" && (
         <section className="space-y-4">
           {!mounted || favoriteWords.length === 0 ? (
             <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-10 text-center space-y-3">
               <p className="text-base font-extrabold text-[var(--foreground)]">
-                Kelime defterinizde henüz kayıtlı kelime bulunmuyor.
+                Çalışma defterinizde henüz kayıtlı öğe bulunmuyor.
               </p>
-              <p className="text-xs text-[var(--muted)]">
-                Diyalog okurken veya Sözlük sayfasında kalp ikonuna tıklayarak
-                kelimeleri buraya kaydedebilirsiniz.
+              <p className="text-xs text-[var(--muted)] max-w-xl mx-auto">
+                1111 Cümle, 508 Atasözü, 999 Görsel Kelime kartlarındaki,
+                Diyaloglardaki veya Sözlük sayfasındaki kalp (❤️) ikonuna
+                tıklayarak öğeleri kişisel defterinize kaydedebilirsiniz.
               </p>
-              <Link
-                href="/sozluk"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-bold border-b-4 border-[#065F46]"
-              >
-                Sözlüğe Git
-              </Link>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSection("gorsel-kelimeler")}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-4 border-[#065F46] cursor-pointer"
+                >
+                  <span>🖼️ 999 Görsel Kelimeye Göz At</span>
+                </button>
+                <Link
+                  href="/sozluk"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-4 border-[#5230B5]"
+                >
+                  <span>📖 Sözlüğe Git</span>
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favoriteWords.map((word) => (
-                <div
-                  key={word.id}
-                  className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 flex flex-col justify-between space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#E2D3B8] pb-3">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase text-[#065F46] dark:text-emerald-400">
-                        {word.tur} · Kök: {word.kok}
-                      </span>
-                      <p className="text-sm font-extrabold text-[var(--foreground)] mt-1">
-                        {word.anlam_tr}
-                      </p>
-                    </div>
-                    <span
-                      lang="ar"
-                      dir="rtl"
-                      className="arabic text-3xl font-bold text-[#065F46] dark:text-emerald-400"
-                    >
-                      {getDisplayArabic(word.mufret || word.mazi || "")}
-                    </span>
+            <>
+              {/* Defterim Üst Kontrol, Tür Filtreleme ve Aksiyon Çubuğu */}
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                      ❤️ Kişisel Çalışma Defterim ({favoriteWords.length} Kayıt)
+                    </h2>
+                    <p className="text-[11px] font-semibold text-[var(--muted)]">
+                      Kaydettiğiniz kelime, görsel kart, cümle ve atasözleriyle
+                      özel alıştırma yapın veya A4 PDF çalışma kağıdı indirin.
+                    </p>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href="/alistirmalar?pool=favorites"
+                      onClick={() => playClick()}
+                      className="px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#5230B5] flex items-center gap-1.5 transition-all"
+                    >
+                      <Gamepad2 size={14} />
+                      <span>🎮 Defterimdekilerle Alıştırma Yap</span>
+                    </Link>
+
                     <button
                       type="button"
-                      onClick={() => handlePracticeWord(word)}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-bold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => handleOpenLibraryPdfModal("saved-words")}
+                      className="px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      <Mic
-                        size={14}
-                        className="text-[#065F46] dark:text-emerald-400"
-                      />
-                      <span>Telaffuz Et</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        toggleFavoriteWord(word);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-red-50 border-2 border-red-200 border-b-3 text-xs font-bold text-red-600 flex items-center gap-1 cursor-pointer"
-                    >
-                      <Heart size={14} fill="currentColor" />
-                      <span>Çıkar</span>
+                      <FileText size={14} />
+                      <span>📄 Defterimi PDF İndir</span>
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Tür Filtresi Sekmeleri: Tümü | Kelimeler | Görsel Kelimeler | Cümleler | Atasözleri */}
+                <div className="flex overflow-x-auto no-scrollbar items-center gap-1.5 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                  {(
+                    [
+                      {
+                        id: "all",
+                        label: `Tümü (${favoriteWords.length})`,
+                      },
+                      {
+                        id: "words",
+                        label: `📖 Kelimeler (${
+                          favoriteWords.filter(
+                            (w) => getSavedItemKind(w) === "words"
+                          ).length
+                        })`,
+                      },
+                      {
+                        id: "visual-words",
+                        label: `🖼️ Görsel Kelimeler (${
+                          favoriteWords.filter(
+                            (w) => getSavedItemKind(w) === "visual-words"
+                          ).length
+                        })`,
+                      },
+                      {
+                        id: "sentences",
+                        label: `🗣️ Cümleler (${
+                          favoriteWords.filter(
+                            (w) => getSavedItemKind(w) === "sentences"
+                          ).length
+                        })`,
+                      },
+                      {
+                        id: "proverbs",
+                        label: `📜 Atasözleri (${
+                          favoriteWords.filter(
+                            (w) => getSavedItemKind(w) === "proverbs"
+                          ).length
+                        })`,
+                      },
+                    ] as { id: SavedItemFilter; label: string }[]
+                  ).map((tab) => {
+                    const active = savedItemFilter === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setSavedItemFilter(tab.id);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                          active
+                            ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {filteredSavedItems.length === 0 ? (
+                <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] p-8 text-center">
+                  <p className="text-sm font-extrabold text-[var(--foreground)]">
+                    Bu kategoride henüz kayıtlı öğeniz bulunmuyor.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredSavedItems.map((word) => {
+                    const kind = getSavedItemKind(word);
+                    const mainAr = word.mufret || word.mazi || "";
+                    const isPlaying = playingItemId === word.id;
+                    const kindBadge =
+                      kind === "visual-words"
+                        ? "🖼️ Görsel Kelime"
+                        : kind === "sentences"
+                        ? "🗣️ Günlük Cümle"
+                        : kind === "proverbs"
+                        ? "📜 Atasözü"
+                        : `📖 ${word.tur || "Kelime"}`;
+
+                    return (
+                      <div
+                        key={word.id}
+                        className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 flex flex-col justify-between gap-3"
+                      >
+                        <div className="space-y-2.5">
+                          <div className="flex items-start gap-3.5">
+                            {word.gorsel && (
+                              <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden border-2 border-[#E6D7BE] bg-white shrink-0 flex items-center justify-center">
+                                <img
+                                  src={word.gorsel}
+                                  alt={word.anlam_tr}
+                                  referrerPolicy="no-referrer"
+                                  className="w-full h-full aspect-square object-contain"
+                                />
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-extrabold">
+                                  {kindBadge}
+                                </span>
+                                {word.cefr && (
+                                  <span className="px-2 py-0.5 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold">
+                                    {word.cefr}
+                                  </span>
+                                )}
+                                {word.kategori_tr && (
+                                  <span className="px-2 py-0.5 rounded-lg bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
+                                    {word.kategori_tr}
+                                  </span>
+                                )}
+                                {word.kok && word.kok !== "-" && (
+                                  <span className="px-2 py-0.5 rounded-lg bg-amber-100/90 text-amber-900 text-[10px] font-extrabold">
+                                    📌 {word.kok}
+                                  </span>
+                                )}
+                              </div>
+
+                              <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
+                                {word.anlam_tr}
+                              </p>
+
+                              {word.ornek_tr && (
+                                <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
+                                  {kind === "proverbs"
+                                    ? `Lafzî: ${word.ornek_tr}`
+                                    : word.ornek_tr}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div
+                            dir="rtl"
+                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.9] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                          >
+                            <WordTooltip
+                              text={mainAr}
+                              contextSentenceTr={word.anlam_tr}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleListenDualGender({
+                                id: word.id,
+                                arapca: mainAr,
+                                ses_erkek: word.ses_erkek,
+                                ses_kadin: word.ses_kadin,
+                              })
+                            }
+                            className={`flex-1 min-h-[38px] px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                              isPlaying
+                                ? "bg-[#087F5B] border-[#065F46] text-white"
+                                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
+                            }`}
+                          >
+                            <Volume2
+                              size={14}
+                              className={
+                                isPlaying ? "text-white" : "text-[#065F46]"
+                              }
+                            />
+                            <span>
+                              {isPlaying ? "Dinleniyor..." : "Dinle"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setShadowingTarget({
+                                text: mainAr,
+                                refAudioUrl: getDualGenderAudioUrl(
+                                  {
+                                    id: word.id,
+                                    ses_erkek: word.ses_erkek,
+                                    ses_kadin: word.ses_kadin,
+                                  },
+                                  preferredVoiceGender
+                                ),
+                                forms: prepareForms(word),
+                              });
+                            }}
+                            className="min-h-[38px] px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Mic size={14} />
+                            <span>Telaffuz</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              toggleFavoriteWord(word);
+                            }}
+                            title="Defterimden Çıkar"
+                            className="min-h-[38px] px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-200 border-b-3 text-xs font-extrabold text-rose-600 flex items-center gap-1 cursor-pointer shrink-0"
+                          >
+                            <Heart size={14} fill="currentColor" />
+                            <span>Çıkar</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </section>
       )}

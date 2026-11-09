@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "bagli_id": "dlg_001",
     "konu_basligi": "İsim Cümlesi, Zamirler ve Tanışma Kalıpları",
@@ -177,7 +177,7 @@
     "konu_basligi": "Müntesib İsimler ve İletişim Kalıpları",
     "hap_kural": "Arapçada bulunma ve yer bildirmek için harf-i cerler (özellikle 'فِي') kullanılır. 'أَيْنَ' edatı mekân sorar ve kendiden sonra gelen kelimenin konumunu öğrenmeyi sağlar.",
     "metinden_ornek": {
-      "arapca": "أَسْكُنُ فِي أُنْقُرَةَ.",
+      "arapca": "أَسْكُنُ فِي أَنْقَرَةُ.",
       "turkce": "Ankara'da oturuyorum.",
       "aciklama": "Burada 'فِي' harf-i ceri ikamet edilen şehri ve bulunma halini belirtmektedir."
     },
@@ -212,7 +212,7 @@
             "أَيْنَ تَسْكُنُ؟",
             "أَسْكُنُ",
             "فِي",
-            "أَسْكُنُ فِي أُنْقُرَةَ."
+            "أَسْكُنُ فِي أَنْقَرَةُ."
           ],
           [
             "أَيْنَ تَعْمَلُ؟",
@@ -240,14 +240,14 @@
           "hareke_nedeni": "Sükûn üzere mebnidir, amel ederek takip eden ismi mecrûr yapar."
         },
         {
-          "kelime": "أُنْقُرَةَ",
+          "kelime": "أَنْقَرَةُ",
           "gorevi": "Mecrûr İsim",
           "hareke_nedeni": "Gayri munsarif özel şehir ismi olduğu için esre (kesra) yerine fetha (üstün) ile mecrûrdur."
         }
       ],
       "dikkat_sik_hata": {
         "yanlis": "أَسْكُنُ فِي أُنْقُرَةٍ.",
-        "dogru": "أَسْكُنُ فِي أُنْقُرَةَ.",
+        "dogru": "أَسْكُنُ فِي أَنْقَرَةُ.",
         "neden": "Özel yabancı şehir isimleri gayri munsarif kabul edilir; tenvin almazlar ve harf-i cerden sonra esre yerine tek fetha ile okunurlar."
       }
     }
@@ -523,70 +523,7 @@
         "turkce": "Dersi yaz Ali."
       }
     ],
-    "ipucu": "Kadına veya kız çocuğuna emrederken fiilin sonuna mutlaka dişil yâ'sı ('ي') eklenir (إِفْتَحِي).",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Emir Fiili: Eril (إِفْتَحْ - Sükûn ــْ) / Dişil (إِفْتَحِي - Muhataba Yâ'sı ــِي)] + [Mef'ûlün Bih + İyelik Zamiri (كِتَابَكَ / كِتَابَكِ)]",
-      "adim_adim_anlatim": [
-        "1. Emir Fiilinde Cinsiyet Uyumu: Arapçada karşımızdaki kişiye bir eylem emredilirken muhatabın cinsiyeti fiilin sonunu doğrudan belirler.",
-        "2. Tekil Erkek Hitabı (Müzekker): Tekil erkeğe emrederken fiilin son harfi cezimli (sükûnlu) okunur ('إِفْتَحْ' = Aç, 'أُكْتُبْ' = Yaz).",
-        "3. Tekil Kadın Hitabı (Müennes): Tekil kadına emrederken emir fiilinin sonuna muhataba yâ'sı ('ـِي') eklenir ('إِفْتَحِي' = Aç, 'أُكْتُبِي' = Yaz) ve nesnedeki iyelik zamiri de esreli ('كِتَابَكِ') olur."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "Emir Fiillerinde Eril ve Dişil Hitap Çekimi",
-        "sutunlar": [
-          "Muzari Fiil",
-          "Eril Emir",
-          "Dişil Emir",
-          "Örnek Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "تَفْتَحُ",
-            "إِفْتَحْ",
-            "إِفْتَحِي",
-            "إِفْتَحْ كِتَابَكَ.",
-            "Kitabını aç (Erkek)."
-          ],
-          [
-            "تَفْتَحِينَ",
-            "إِفْتَحْ",
-            "إِفْتَحِي",
-            "إِفْتَحِي كِتَابَكِ يَا فَاطِمَةُ.",
-            "Kitabını aç Fatma."
-          ],
-          [
-            "تَكْتُبُ",
-            "أُكْتُبْ",
-            "أُكْتُبِي",
-            "أُكْتُبِ الدَّرْسَ يَا عَلِيُّ.",
-            "Dersi yaz Ali."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "إِفْتَحْ",
-          "gorevi": "Emir Fiili (Fâil: Gizli Zamir أَنْتَ)",
-          "hareke_nedeni": "Tekil eril muhataba yönelik emir fiili olduğu için sükûn (cezim) üzere mebnidir."
-        },
-        {
-          "kelime": "كِتَابَكَ",
-          "gorevi": "Mef'ûlün Bih (Muzaf) + Muhatap Zamiri (Muzafun İleyh)",
-          "hareke_nedeni": "'كِتَابَ' nesne olduğu için fetha ile mansûb; 'كَ' bitişik zamiri mahallen mecrûrdur."
-        },
-        {
-          "kelime": "عَلَى الصَّفْحَةِ",
-          "gorevi": "Câr-Mecrûr (Harf-i Cer + Mecrûr İsim)",
-          "hareke_nedeni": "'عَلَى' harf-i cerinden dolayı 'الصَّفْحَةِ' kelimesi esre (kesra) ile mecrûrdur."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "إِفْتَحْ كِتَابَكِ يَا فَاطِمَةُ.",
-        "dogru": "إِفْتَحِي كِتَابَكِ يَا فَاطِمَةُ.",
-        "neden": "Kadın muhataba emredilirken fiil eril formda ('إِفْتَحْ') bırakılmaz; sonuna mutlaka muhataba yâ'sı ('ـِي') getirilmelidir."
-      }
-    }
+    "ipucu": "Kadına veya kız çocuğuna emrederken fiilin sonuna mutlaka dişil yâ'sı ('ي') eklenir (إِفْتَحِي)."
   },
   {
     "bagli_id": "dlg_008",
@@ -1093,70 +1030,7 @@
         "turkce": "Siz ikiniz becerikli öğretmensiniz."
       }
     ],
-    "ipucu": "Dişil ikil isim ve sıfatların sonuna '-etâni' (َتَانِ) eki eklenir (ذَاهِبَتَانِ).",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Mübteda Zamir (نَحْنُ / هُمَا / أَنْتُمَا)] + [İkil Haber: Eril (ــَانِ) / Dişil (ــَتَانِ)] + [Câr-Mecrûr]",
-      "adim_adim_anlatim": [
-        "1. İkil (Tesniye) Kavramı: Arapçada iki kişiden veya iki nesneden bahsederken çoğul değil, özel ikil (tesniye) kalıbı kullanılır.",
-        "2. Eril ve Dişil İkil Ekleri: Merfû (özne/haber) durumunda eril isimlerin sonuna '-âni' ('ـَانِ'), dişil isimlerin sonuna ise yuvarlak tâ açılıp '-etâni' ('ـَتَانِ') eklenir.",
-        "3. İkil Zamirler: İki kişi kendisinden bahsederken 'نَحْنُ' (biz ikimiz), iki kişiye hitap ederken 'أَنْتُمَا' (siz ikiniz), iki kişiden bahsederken 'هُمَا' (o ikisi) kullanılır."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "İkil (Tesniye) Zamirler ve Haber Uyumu",
-        "sutunlar": [
-          "Özne Zamiri",
-          "Tekil İsim",
-          "İkil Haber (Merfû)",
-          "Örnek Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "نَحْنُ",
-            "ذَاهِبَةٌ",
-            "ذَاهِبَتَانِ",
-            "نَحْنُ ذَاهِبَتَانِ إِلَى الْمَكْتَبَةِ.",
-            "Biz (iki kız) kütüphaneye gidiyoruz."
-          ],
-          [
-            "هُمَا",
-            "طَالِبٌ",
-            "طَالِبَانِ",
-            "هُمَا طَالِبَانِ مُجْتَهِدَانِ.",
-            "O ikisi çalışkan iki öğrencidir."
-          ],
-          [
-            "أَنْتُمَا",
-            "مُعَلِّمَةٌ",
-            "مُعَلِّمَتَانِ",
-            "أَنْتُمَا مُعَلِّمَتَانِ مَاهِرَتَانِ.",
-            "Siz ikiniz becerikli iki öğretmensiniz."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "نَحْنُ",
-          "gorevi": "Mübteda (Özne Zamiri)",
-          "hareke_nedeni": "1. çoğul/ikil ayrık şahıs zamiri olup damma üzere mebni, mahallen merfûdur."
-        },
-        {
-          "kelime": "ذَاهِبَتَانِ",
-          "gorevi": "Haber (İkil Dişil Yüklem)",
-          "hareke_nedeni": "Tesniye (ikil) isim olduğu için damma yerine Elif ('ا') harfi ile merfûdur."
-        },
-        {
-          "kelime": "إِلَى الْمَكْتَبَةِ",
-          "gorevi": "Câr-Mecrûr",
-          "hareke_nedeni": "'إِلَى' yönelme harf-i ceri, 'الْمَكْتَبَةِ' esre ile mecrûr isimdir."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "نَحْنُ ذَاهِبَانِ إِلَى الْمَكْتَبَةِ (İki kız konuşurken).",
-        "dogru": "نَحْنُ ذَاهِبَتَانِ إِلَى الْمَكْتَبَةِ.",
-        "neden": "İki kadın veya kız kendisinden bahsederken haber eril ikil ('ذَاهِبَانِ') değil, dişil ikil ('ذَاهِبَتَانِ') kalıbında gelmelidir."
-      }
-    }
+    "ipucu": "Dişil ikil isim ve sıfatların sonuna '-etâni' (َتَانِ) eki eklenir (ذَاهِبَتَانِ)."
   },
   {
     "bagli_id": "dlg_015",
@@ -1235,422 +1109,6 @@
         "yanlis": "الْمَكْتَبُ الْمُخْتَارِ / مَكْتَبٌ الْمُخْتَارِ.",
         "dogru": "مَكْتَبُ الْمُخْتَارِ.",
         "neden": "İsim tamlamasında birinci kelimenin (muzaf) başına 'ال' takısı veya sonuna tenvin konulması kesinlikle yasaktır."
-      }
-    }
-  },
-  {
-    "bagli_id": "dlg_016",
-    "konu_basligi": "Kırtasiye Eşyaları ve İhtiyaç Bildirme",
-    "hap_kural": "'أَحْتَاجُ' (ihtiyacım var) fiili nesnesini dâima 'إِلَى' harf-i ceri ile alır ve 'إِلَى' edatından sonra gelen isim esreli (mecrur) okunur.",
-    "metinden_ornek": {
-      "arapca": "أَحْتَاجُ إِلَى دَفْتَرٍ كَبِيرٍ وَقَلَمِ رَصَاصٍ.",
-      "turkce": "Büyük bir deftere ve kurşun kaleme ihtiyacım var.",
-      "aciklama": "'أَحْتَاجُ إِلَى' kalıbından sonra gelen 'دَفْتَرٍ' kelimesi harf-i cer sebebiyle mecrur olmuştur."
-    },
-    "ek_ornekler": [
-      {
-        "arapca": "أَحْتَاجُ إِلَى مِمْحَاةٍ وَمِسْطَرَةٍ.",
-        "turkce": "Silgiye ve cetvele ihtiyacım var."
-      },
-      {
-        "arapca": "أَحْتَاجُ إِلَى مُسَاعَدَتِكَ.",
-        "turkce": "Senin yardımına ihtiyacım var."
-      }
-    ],
-    "ipucu": "'أُرِيدُ' fiili nesnesini doğrudan üstünlü alırken (أُرِيدُ دَفْتَراً), 'أَحْتَاجُ' fiili mutlaka 'إِلَى' ile kullanılır (أَحْتَاجُ إِلَى دَفْتَرٍ).",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Fiil (أَحْتَاجُ)] + [Zorunlu Harf-i Cer (إِلَى)] + [Mecrûr İsim (دَفْتَرٍ - Mecrûr ــٍ)] + [Mecrûr Sıfat (كَبِيرٍ)]",
-      "adim_adim_anlatim": [
-        "1. Harf-i Cerli Fiil Kalıbı: 'İhtiyaç duymak' anlamındaki 'اِحْتَاجَ - يَحْتَاجُ' fiili nesnesini doğrudan alamaz; mutlaka 'إِلَى' (-e / -a) harf-i ceri ile bağlanır.",
-        "2. Mecrûr İrab Uyumu: 'إِلَى' harf-i cerinden sonra gelen isim esreli (mecrûr) olur; onu niteleyen sıfat da esreli okunur ('إِلَى دَفْتَرٍ كَبِيرٍ').",
-        "3. İsim Tamlamasıyla Kullanım: 'قَلَمِ رَصَاصٍ' (kurşun kalem) tamlaması atıf harfi ('وَ') ile 'دَفْتَرٍ' kelimesine bağlandığı için 'قَلَمِ' kelimesi de esreli okunur."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "أَحْتَاجُ إِلَى ve أُرِيدُ Kalıplarının Karşılaştırması",
-        "sutunlar": [
-          "Fiil Kalıbı",
-          "Harf-i Cer",
-          "Tamamlanan İsim",
-          "Örnek Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "أَحْتَاجُ",
-            "إِلَى",
-            "دَفْتَرٍ (Mecrûr ــٍ)",
-            "أَحْتَاجُ إِلَى دَفْتَرٍ كَبِيرٍ.",
-            "Büyük bir deftere ihtiyacım var."
-          ],
-          [
-            "أَحْتَاجُ",
-            "إِلَى",
-            "مِمْحَاةٍ (Mecrûr ــٍ)",
-            "أَحْتَاجُ إِلَى مِمْحَاةٍ.",
-            "Bir silgiye ihtiyacım var."
-          ],
-          [
-            "أُرِيدُ",
-            "-",
-            "دَفْتَرًا (Mansûb ــً)",
-            "أُرِيدُ دَفْتَرًا كَبِيرًا.",
-            "Büyük bir defter istiyorum."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "أَحْتَاجُ",
-          "gorevi": "Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma (ötre) ile merfûdur."
-        },
-        {
-          "kelime": "إِلَى دَفْتَرٍ",
-          "gorevi": "Câr-Mecrûr",
-          "hareke_nedeni": "'إِلَى' harf-i cerinden dolayı 'دَفْتَرٍ' kelimesi kesra tenvini (çift esre) ile mecrûrdur."
-        },
-        {
-          "kelime": "كَبِيرٍ",
-          "gorevi": "Sıfat (Mefsûfu: دَفْتَرٍ)",
-          "hareke_nedeni": "Nitelediği mecrûr ve nekre isme uyarak kesra tenvini almıştır."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "أَحْتَاجُ دَفْتَرًا كَبِيرًا.",
-        "dogru": "أَحْتَاجُ إِلَى دَفْتَرٍ كَبِيرٍ.",
-        "neden": "'أَحْتَاجُ' fiili 'إِلَى' harf-i ceri olmadan kullanılmaz ve sonrasında gelen isim esreli (mecrûr) olmalıdır."
-      }
-    }
-  },
-  {
-    "bagli_id": "dlg_017",
-    "konu_basligi": "Hava Durumu İfadeleri ve Sıfatlar",
-    "hap_kural": "Hava durumunu anlatırken genellikle isim cümlesi kurulur. 'الجَوُّ' (hava) mübteda olarak ötreli, durumu bildiren sıfat ise haber olarak ötreli gelir.",
-    "metinden_ornek": {
-      "arapca": "الجَوُّ مُشْمِسٌ وَدَافِئٌ اليَوْمَ يَا سَلْمَى.",
-      "turkce": "Bugün hava güneşli ve ılık Selma.",
-      "aciklama": "'الجَوُّ' mübteda, 'مُشْمِسٌ' birinci haber, 'دَافِئٌ' ise atıfla bağlanan ikinci haberdir."
-    },
-    "ek_ornekler": [
-      {
-        "arapca": "الجَوُّ بَارِدٌ وَمُمْطِرٌ اليَوْمَ.",
-        "turkce": "Bugün hava soğuk ve yağmurludur."
-      },
-      {
-        "arapca": "الطَّقْسُ مُعْتَدِلٌ فِي الرَّبِيعِ.",
-        "turkce": "İlkbaharda hava ılımandır."
-      }
-    ],
-    "ipucu": "Mübteda olan 'الجَوُّ' belirli (ال takılı), haber olan 'مُشْمِسٌ' ise belirsiz (tenvinli) ve ötreli olur.",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Mübteda (الجَوُّ / الطَّقْسُ - Marife ــُ)] + [Haber 1 (مُشْمِسٌ - Nekre ــٌ)] + [Atıf (وَ)] + [Haber 2 (دَافِئٌ - ــٌ)]",
-      "adim_adim_anlatim": [
-        "1. Hava Durumu İsim Cümlesi: Hava durumunu tasvir ederken 'الجَوُّ' veya 'الطَّقْسُ' (hava) özne (mübteda) olarak cümlenin başında yer alır.",
-        "2. Haberlerin Uyumu: Havanın durumunu bildiren 'مُشْمِسٌ' (güneşli), 'بَارِدٌ' (soğuk), 'مُمْطِرٌ' (yağmurlu) kelimeleri haber olduğu için belirsiz (nekre) ve ötre tenvinli gelir.",
-        "3. Atıf Bağlacı (وَ): İki hava durumu niteliği 'وَ' (ve) ile bağlandığında ikinci sıfat da birinci habere uyarak ötre tenvinli okunur."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "Hava Durumu İsim Cümleleri ve Haber Kalıpları",
-        "sutunlar": [
-          "Mübteda (Özne)",
-          "Haber (Yüklem)",
-          "Zaman Zarfı",
-          "Tam Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "الجَوُّ",
-            "مُشْمِسٌ وَدَافِئٌ",
-            "اليَوْمَ",
-            "الجَوُّ مُشْمِسٌ وَدَافِئٌ اليَوْمَ.",
-            "Bugün hava güneşli ve ılıktır."
-          ],
-          [
-            "الجَوُّ",
-            "بَارِدٌ وَمُمْطِرٌ",
-            "اليَوْمَ",
-            "الجَوُّ بَارِدٌ وَمُمْطِرٌ اليَوْمَ.",
-            "Bugün hava soğuk ve yağmurludur."
-          ],
-          [
-            "الطَّقْسُ",
-            "مُعْتَدِلٌ",
-            "فِي الرَّبِيعِ",
-            "الطَّقْسُ مُعْتَدِلٌ فِي الرَّبِيعِ.",
-            "İlkbaharda hava ılımandır."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "الجَوُّ",
-          "gorevi": "Mübteda (Özne)",
-          "hareke_nedeni": "İsim cümlesinin belirli öznesi olduğu için damma (ötre) ile merfûdur."
-        },
-        {
-          "kelime": "مُشْمِسٌ",
-          "gorevi": "Haber (Yüklem)",
-          "hareke_nedeni": "Mübtedayı tamamlayan belirsiz tekil haber olduğu için damma tenvini ile merfûdur."
-        },
-        {
-          "kelime": "وَدَافِئٌ",
-          "gorevi": "Atıf Harfi + Ma'tûf (2. Haber)",
-          "hareke_nedeni": "'وَ' atıf harfiyle merfû habere bağlandığı için damma tenvini ile merfûdur."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "الجَوُّ الْمُشْمِسُ اليَوْمَ.",
-        "dogru": "الجَوُّ مُشْمِسٌ اليَوْمَ.",
-        "neden": "Habere 'ال' takısı getirilirse ifade tam cümle ('Hava güneşlidir') olmaktan çıkıp sıfat tamlamasına ('Güneşli hava...') dönüşür."
-      }
-    }
-  },
-  {
-    "bagli_id": "dlg_018",
-    "konu_basligi": "Giyim Eşyaları ve Renklerin Uyumu",
-    "hap_kural": "Renk sıfatları (أَبْيَضُ, أَسْوَدُ, أَزْرَقُ) gayr-ı munsarif olduğu için kesinlikle tenvin (çift hareke) almaz; nitelediği ismin marifeliğine ve harekesine uyar.",
-    "metinden_ornek": {
-      "arapca": "أَبْحَثُ عَنْ قَمِيصٍ أَبْيَضَ يَا سَيِّدِي.",
-      "turkce": "Beyaz bir gömlek arıyorum efendim.",
-      "aciklama": "'أَبْحَثُ عَنْ' kalıbı 'arıyorum' demektir; 'أَبْيَضَ' renk sıfatı gayr-ı munsarif olduğu için kesra yerine fetha ile mecrur olmuştur."
-    },
-    "ek_ornekler": [
-      {
-        "arapca": "هَذَا قَمِيصٌ أَزْرَقُ.",
-        "turkce": "Bu mavi bir gömlektir."
-      },
-      {
-        "arapca": "اشْتَرَيْتُ حَقِيبَةً سَوْدَاءَ.",
-        "turkce": "Siyah bir çanta satın aldım."
-      }
-    ],
-    "ipucu": "'بَحَثَ' (aramak) fiili her zaman 'عَنْ' harf-i ceri ile kullanılır ('أَبْحَثُ عَنْ' = arıyorum).",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Fiil + Harf-i Cer (أَبْحَثُ عَنْ)] + [Mecrûr İsim (قَمِيصٍ - ــٍ)] + [Gayr-ı Munsarif Renk Sıfatı (أَبْيَضَ - Tenvinsiz ــَ)]",
-      "adim_adim_anlatim": [
-        "1. Arama Kalıbı (أَبْحَثُ عَنْ): 'Aramak' fiili Arapçada dâima 'عَنْ' harf-i ceri ile kullanılır ve aranan nesneyi mecrûr yapar ('عَنْ قَمِيصٍ').",
-        "2. Renklerin Cinsiyet Kalıbı: Renkler eril isimler için 'أَفْعَلُ' (أَبْيَضُ = beyaz, أَسْوَدُ = siyah), dişil isimler için 'فَعْلَاءُ' (بَيْضَاءُ, سَوْدَاءُ) vezninde gelir.",
-        "3. Gayr-ı Munsarif Özelliği: Bu iki vezindeki renkler asla tenvin almaz ve Elif-Lâmsız mecrûr olduklarında esre yerine üstün (fetha) ile mecrûr olurlar ('قَمِيصٍ أَبْيَضَ')."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "Eril ve Dişil Renk Sıfatlarının İsimle Uyumu",
-        "sutunlar": [
-          "Renk",
-          "Eril Kalıp (أَفْعَلُ)",
-          "Dişil Kalıp (فَعْلَاءُ)",
-          "Örnek Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "Beyaz",
-            "أَبْيَضُ",
-            "بَيْضَاءُ",
-            "أَبْحَثُ عَنْ قَمِيصٍ أَبْيَضَ.",
-            "Beyaz bir gömlek arıyorum."
-          ],
-          [
-            "Mavi",
-            "أَزْرَقُ",
-            "زَرْقَاءُ",
-            "هَذَا قَمِيصٌ أَزْرَقُ.",
-            "Bu mavi bir gömlektir."
-          ],
-          [
-            "Siyah",
-            "أَسْوَدُ",
-            "سَوْدَاءُ",
-            "اشْتَرَيْتُ حَقِيبَةً سَوْدَاءَ.",
-            "Siyah bir çanta satın aldım."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "أَبْحَثُ",
-          "gorevi": "Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma (ötre) ile merfûdur."
-        },
-        {
-          "kelime": "عَنْ قَمِيصٍ",
-          "gorevi": "Câr-Mecrûr",
-          "hareke_nedeni": "'عَنْ' harf-i cerinden dolayı 'قَمِيصٍ' kesra tenvini ile mecrûrdur."
-        },
-        {
-          "kelime": "أَبْيَضَ",
-          "gorevi": "Sıfat (Mefsûfu: قَمِيصٍ)",
-          "hareke_nedeni": "Gayr-ı munsarif sıfat olduğu için tenvin almaz ve kesra yerine fetha ile mecrûrdur."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "أَبْحَثُ عَنْ قَمِيصٍ أَبْيَضٍ.",
-        "dogru": "أَبْحَثُ عَنْ قَمِيصٍ أَبْيَضَ.",
-        "neden": "'أَبْيَضُ' gibi renk sıfatları gayr-ı munsarif olduğu için kesinlikle tenvin ve esre almazlar."
-      }
-    }
-  },
-  {
-    "bagli_id": "dlg_019",
-    "konu_basligi": "Yemek Siparişi ve İstek Kalıpları",
-    "hap_kural": "Restoranda sipariş verirken 'أُرِيدُ' (istiyorum) veya 'مِنْ فَضْلِكَ أَعْطِنِي' (lütfen bana ver) kalıpları kullanılır. İstenen yemek nesne (mansub) olur.",
-    "metinden_ornek": {
-      "arapca": "أُرِيدُ دَجَاجاً مَشْوِيّاً مَعَ الأَرُزِّ.",
-      "turkce": "Pilavla birlikte ızgara tavuk istiyorum.",
-      "aciklama": "'دَجَاجاً' nesne, 'مَشْوِيّاً' onun sıfatı olup her ikisi de mansub (üstünlü) gelmiştir."
-    },
-    "ek_ornekler": [
-      {
-        "arapca": "أُرِيدُ حَسَاءَ الْعَدَسِ مِنْ فَضْلِكَ.",
-        "turkce": "Lütfen mercimek çorbası istiyorum."
-      },
-      {
-        "arapca": "أُرِيدُ سَلَطَةً خَضْرَاءَ.",
-        "turkce": "Yeşil salata istiyorum."
-      }
-    ],
-    "ipucu": "'مَعَ' (birlikte / ile) zarfından sonra gelen isim her zaman esreli (mecrur) okunur ('مَعَ الأَرُزِّ').",
-    "ayrintili_anlatim": {
-      "formul_sema": "[Fiil (أُرِيدُ)] + [Mef'ûlün Bih (دَجَاجًا - Mansûb ــً)] + [Mansûb Sıfat (مَشْوِيًّا - ــً)] + [Zarf + Muzafun İleyh (مَعَ الأَرُزِّ)]",
-      "adim_adim_anlatim": [
-        "1. Sipariş Nesnesi ve Sıfatı: 'أُرِيدُ' fiilinden sonra gelen yemek ismi nesne olduğu için fethalı (mansûb) okunur; yemeğin niteliğini bildiren sıfat da ('مَشْوِيًّا' = ızgara) ona uyarak fetha tenvini alır.",
-        "2. Birliktelik Zarfı (مَعَ): '... ile birlikte' anlamındaki 'مَعَ' kelimesi muzaf olarak kullanılır ve kendisinden sonraki ismi esreli (mecrûr) yapar ('مَعَ الأَرُزِّ' = pilavla birlikte).",
-        "3. İzafetle Yemek İsimleri: 'حَسَاءَ الْعَدَسِ' (mercimek çorbası) gibi tamlamalarda birinci kelime fethalı nesne, ikinci kelime esreli muzafun ileyh olur."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "Sipariş Cümlelerinde Nesne, Sıfat ve مَعَ Kullanımı",
-        "sutunlar": [
-          "İstek Fiili",
-          "Yemek (Mef'ûl)",
-          "Nitelik / Tamlayan",
-          "Ek İstek (مَعَ)",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "أُرِيدُ",
-            "دَجَاجًا",
-            "مَشْوِيًّا (Sıfat)",
-            "مَعَ الأَرُزِّ",
-            "Pilavla birlikte ızgara tavuk istiyorum."
-          ],
-          [
-            "أُرِيدُ",
-            "حَسَاءَ",
-            "الْعَدَسِ (Muzafun İleyh)",
-            "مَعَ الْخُبْزِ",
-            "Ekmekle birlikte mercimek çorbası istiyorum."
-          ],
-          [
-            "أُرِيدُ",
-            "سَلَطَةً",
-            "خَضْرَاءَ (Sıfat)",
-            "مَعَ الطَّعَامِ",
-            "Yemekle birlikte yeşil salata istiyorum."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "دَجَاجًا",
-          "gorevi": "Mef'ûlün Bih (Nesne)",
-          "hareke_nedeni": "'أُرِيدُ' fiilinin doğrudan nesnesi olduğu için fetha tenvini ile mansûbdur."
-        },
-        {
-          "kelime": "مَشْوِيًّا",
-          "gorevi": "Sıfat (Mefsûfu: دَجَاجًا)",
-          "hareke_nedeni": "Nitelediği mansûb ve nekre nesneye uyarak fetha tenvini almıştır."
-        },
-        {
-          "kelime": "مَعَ الأَرُزِّ",
-          "gorevi": "Zarf (Muzaf) + Muzafun İleyh",
-          "hareke_nedeni": "'مَعَ' fetha üzere mansûb zarf; 'الأَرُزِّ' ise esre ile mecrûr muzafun ileyhtir."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "أُرِيدُ دَجَاجٌ مَشْوِيٌّ مَعَ الأَرُزُّ.",
-        "dogru": "أُرِيدُ دَجَاجًا مَشْوِيًّا مَعَ الأَرُزِّ.",
-        "neden": "İstenen yemek ve sıfatı mansûb (üstünlü), 'مَعَ' zarfından sonra gelen isim ise mecrûr (esreli) olmalıdır."
-      }
-    }
-  },
-  {
-    "bagli_id": "dlg_020",
-    "konu_basligi": "Günlük Rutin ve Geniş Zaman Fiilleri",
-    "hap_kural": "Günlük tekrarlanan alışkanlıklar ve rutin eylemler muzari fiil (geniş/şimdiki zaman) ile anlatılır. 1. tekil şahıs ('ben') çekiminde fiil 'أَ' (hemze) ile başlar.",
-    "metinden_ornek": {
-      "arapca": "أَسْتَيْقِظُ مُبَكِّراً فِي السَّاعَةِ السَّادِسَةِ.",
-      "turkce": "Saat altıda erken uyanırım.",
-      "aciklama": "'أَسْتَيْقِظُ' muzari fiili her gün yapılan rutin uyanma eylemini bildirir; 'مُبَكِّراً' ise zaman/hal zarfıdır."
-    },
-    "ek_ornekler": [
-      {
-        "arapca": "أُصَلِّي الفَجْرَ ثُمَّ أَقْرَأُ القُرْآنَ.",
-        "turkce": "Sabah namazını kılarım, sonra Kur'an okurum."
-      },
-      {
-        "arapca": "أَذْهَبُ إِلَى العَمَلِ كُلَّ يَوْمٍ.",
-        "turkce": "Her gün işe giderim."
-      }
-    ],
-    "ipucu": "Sıralı günlük eylemleri birbirine bağlarken 'sonra' anlamındaki 'ثُمَّ' bağlacı kullanılır.",
-    "ayrintili_anlatim": {
-      "formul_sema": "[1. Tekil Muzari Fiil (أَسْتَيْقِظُ / أَذْهَبُ - Merfû ــُ)] + [Zaman/Hâl Zarfı (مُبَكِّرًا - Mansûb ــً)] + [Saat / Zaman İfadesi]",
-      "adim_adim_anlatim": [
-        "1. Geniş Zaman ve Rutin: Her gün tekrarlanan alışkanlıkları anlatırken muzari fiil kullanılır; 'Ben' (أَنَا) öznesi için fiilin başına hemze ('أَ') getirilir ('أَسْتَيْقِظُ' = uyanırım).",
-        "2. Zaman ve Hâl Zarfı (مُبَكِّرًا): Eylemin 'erken' yapıldığını bildiren 'مُبَكِّرًا' veya 'geç' yapıldığını bildiren 'مُتَأَخِّرًا' zarfları dâima fetha tenvinli (mansûb) okunur.",
-        "3. Sıralama Bağlacı (ثُمَّ): Günlük rutindeki eylemleri oluş sırasına göre bağlamak için 'ثُمَّ' (sonra / ardından) atıf edatı kullanılır."
-      ],
-      "ozet_tablo": {
-        "tablo_basligi": "Günlük Rutin Fiilleri (1. Tekil Şahıs - أَنَا)",
-        "sutunlar": [
-          "Muzari Fiil (أَنَا)",
-          "Zarf / Tamamlayıcı",
-          "Tam Cümle",
-          "Türkçe Anlamı"
-        ],
-        "satirlar": [
-          [
-            "أَسْتَيْقِظُ",
-            "مُبَكِّرًا",
-            "أَسْتَيْقِظُ مُبَكِّرًا كُلَّ يَوْمٍ.",
-            "Her gün erken uyanırım."
-          ],
-          [
-            "أُصَلِّي",
-            "الفَجْرَ",
-            "أُصَلِّي الفَجْرَ ثُمَّ أَقْرَأُ القُرْآنَ.",
-            "Sabah namazını kılarım, sonra Kur'an okurum."
-          ],
-          [
-            "أَذْهَبُ",
-            "إِلَى العَمَلِ",
-            "أَذْهَبُ إِلَى العَمَلِ صَبَاحًا.",
-            "Sabahleyin işe giderim."
-          ]
-        ]
-      },
-      "irab_tahlili": [
-        {
-          "kelime": "أَسْتَيْقِظُ",
-          "gorevi": "Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
-          "hareke_nedeni": "Başında nasb veya cezm edatı olmadığı için damma (ötre) ile merfûdur."
-        },
-        {
-          "kelime": "مُبَكِّرًا",
-          "gorevi": "Hâl / Zaman Zarfı",
-          "hareke_nedeni": "Uyanma eyleminin zamanını ve durumunu bildirdiği için fetha tenvini ile mansûbdur."
-        },
-        {
-          "kelime": "فِي السَّاعَةِ السَّادِسَةِ",
-          "gorevi": "Câr-Mecrûr + Sıfat",
-          "hareke_nedeni": "'فِي' harf-i cerinden dolayı 'السَّاعَةِ' ve sıfatı 'السَّادِسَةِ' esre ile mecrûrdur."
-        }
-      ],
-      "dikkat_sik_hata": {
-        "yanlis": "أَنَا يَسْتَيْقِظُ مُبَكِّرًا.",
-        "dogru": "أَنَا أَسْتَيْقِظُ مُبَكِّرًا.",
-        "neden": "'أَنَا' (ben) öznesi için muzari fiil 'يَـ' (o) ile değil, 'أَ' (ben) muzaraat harfiyle başlamalıdır."
       }
     }
   },
@@ -3738,7 +3196,7 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "سَافَرْتُ إِلَى أُنْقُرَةَ أَمْسِ.",
+        "arapca": "سَافَرْتُ إِلَى أَنْقَرَةُ أَمْسِ.",
         "turkce": "Dün Ankara'ya seyahat ettim."
       },
       {
@@ -3774,7 +3232,7 @@
           [
             "سَافَرْتُ",
             "إِلَى",
-            "أُنْقُرَةَ",
+            "أَنْقَرَةُ",
             "Fetha ile mecrûr (Gayri Munsarif)",
             "Ankara'ya seyahat ettim."
           ],

@@ -2210,7 +2210,7 @@ export default function LibraryPage() {
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="px-2.5 py-1 rounded-xl bg-[#6741D9] text-white text-xs font-black flex items-center gap-1.5 shrink-0">
               <GraduationCap size={15} />
-              <span>🎓 Öğretmen Ödev Paketi</span>
+              <span>Öğretmen Ödev Paketi</span>
             </span>
             <div className="min-w-0">
               <p className="text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-200 truncate">
@@ -2335,8 +2335,8 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {/* V2 Modül Sekmeleri */}
-        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto no-scrollbar items-center gap-1 max-w-full">
+        {/* V2 Modül Sekmeleri (Yatay Kaydırmasız Esnek Sarımlı Tek Bar) */}
+        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center gap-1.5 max-w-full">
           {(
             [
               {
@@ -2383,7 +2383,7 @@ export default function LibraryPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleSwitchSection(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                   active
                     ? tab.id === "vitrin"
                       ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
@@ -2747,20 +2747,21 @@ export default function LibraryPage() {
                     {contentStats.sentenceCategoryCount} Kategori
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
-                    {contentStats.sentenceGrammarCount} Gramer Kalıbı
+                    {contentStats.grammarNoteCount} Odak Gramer Notu
                   </span>
                 </div>
 
                 {cumleler1111[0] && (
-                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
-                      “{cumleler1111[0].turkce}”
-                    </span>
-                    <span
+                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex flex-col gap-1">
+                    <div
                       dir="rtl"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 shrink-0"
+                      lang="ar"
+                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
                     >
                       {getDisplayArabic(cumleler1111[0].arapca)}
+                    </div>
+                    <span className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
+                      “{cumleler1111[0].turkce}”
                     </span>
                   </div>
                 )}
@@ -2838,15 +2839,16 @@ export default function LibraryPage() {
                 </div>
 
                 {atasozleri[0] && (
-                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
-                      “{atasozleri[0].turkce}”
-                    </span>
-                    <span
+                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex flex-col gap-1">
+                    <div
                       dir="rtl"
-                      className="arabic text-base font-bold text-amber-800 dark:text-amber-300 shrink-0"
+                      lang="ar"
+                      className="arabic text-base font-bold text-amber-800 dark:text-amber-300 text-right leading-snug"
                     >
                       {getDisplayArabic(atasozleri[0].arapca)}
+                    </div>
+                    <span className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
+                      “{atasozleri[0].turkce}”
                     </span>
                   </div>
                 )}
@@ -2989,23 +2991,23 @@ export default function LibraryPage() {
                 </div>
                 <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
                   120 Diyalog ve 60 Okuma Metnine ait toplam{" "}
-                  <strong>{contentStats.grammarNoteCount} ders gramer notu</strong>{" "}
-                  ile 1111 Günlük Cümle içindeki{" "}
-                  <strong>{contentStats.sentenceGrammarCount} cümle kalıbını</strong>{" "}
-                  formülleri, irab analizleri ve sesli örnekleriyle tek ekranda keşfedin.
+                  <strong>{contentStats.grammarNoteCount} odak gramer notu</strong>{" "}
+                  ile{" "}
+                  <strong>{contentStats.sentenceCount} günlük kalıp cümleyi</strong>{" "}
+                  görsel formül şemaları, karşılaştırmalı tabloları, kelime kelime i&apos;rab analizleri ve sık yapılan hatalarla tek ekranda keşfedin.
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] font-extrabold">
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-amber-300 text-amber-900 dark:text-amber-200">
-                    120 Diyalog Grameri
+                    {contentStats.grammarNoteCount} Odak Gramer Notu
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-amber-300 text-amber-900 dark:text-amber-200">
-                    60 Metin Grameri
+                    120 Diyalog • 60 Metin Grameri
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
-                    {contentStats.sentenceGrammarCount} Cümle Kalıbı
+                    {contentStats.sentenceCount} Kalıp Cümle Eşleşmesi
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white">
-                    📐 Yan Panel &amp; 🖥️ Akıllı Tahta Uyumlu
+                    Yan Panel &amp; Akıllı Tahta Uyumlu
                   </span>
                 </div>
               </div>
@@ -3049,7 +3051,7 @@ export default function LibraryPage() {
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold transition-all whitespace-nowrap"
               >
                 <Gamepad2 size={15} />
-                <span>🎮 Kütüphane Havuzuyla Alıştırma Yap</span>
+                <span>Kütüphane Havuzuyla Alıştırma Yap</span>
               </Link>
 
               <Link
@@ -3059,7 +3061,7 @@ export default function LibraryPage() {
               >
                 <BookOpen size={15} />
                 <span>
-                  📚 İnteraktif Kök Sözlüğü (
+                  İnteraktif Kök Sözlüğü (
                   {contentStats.dictionaryWordCount.toLocaleString("tr-TR")}{" "}
                   Kelime)
                 </span>
@@ -5530,7 +5532,7 @@ export default function LibraryPage() {
                         className="py-2 px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-indigo-200 font-extrabold text-xs flex items-center justify-center gap-1 transition-all"
                       >
                         <Gamepad2 size={13} />
-                        <span>🎮 Alıştırma Yap</span>
+                        <span>Alıştırma Yap</span>
                       </Link>
                     </div>
                   </div>

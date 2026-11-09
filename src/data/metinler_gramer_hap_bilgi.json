@@ -1,7 +1,7 @@
-﻿[
+[
   {
     "bagli_id": "metin_01",
-    "konu_basligi": "İisim Cümlesi, Şahıs ve İyelik Zamirleri",
+    "konu_basligi": "İsim Cümlesi, Şahıs ve İyelik Zamirleri",
     "hap_kural": "Arapçada isim veya zamirle başlayan cümlelere isim cümlesi denir. Ayrık şahıs zamirleri (أَنَا, نَحْنُ) özne (mübteda) olur; isme bitişen zamirler (اسْمِي, عَائِلَتِي) ise aidiyet bildirir.",
     "metinden_ornek": {
       "arapca": "اِسْمِي عَلِيٌّ، وَأَنَا طَالِبٌ فِي الْمَدْرَسَةِ.",
@@ -3245,8 +3245,9 @@
         "dogru": "أَعَدَّتْ أُمِّي كَعْكَةً / أَحْضَرَ أَبِي.",
         "neden": "Özne dişilse fiile '-تْ' eklenir, erilse eklenmez; nesneler ise fethalı mansûb okunmalıdır."
       }
-    },
-	{
+    }
+  },
+  {
     "bagli_id": "metin_41",
     "konu_basligi": "Amaç Bildiren 'لِـ' Harf-i Ceri (Mef'ûlün Li-eclih) ve İzafet",
     "hap_kural": "Bir eylemin yapılma amacını ve gerekçesini bildirmek için masdarın başına 'لِـ' (için / amacıyla) harf-i ceri getirilir. Harf-i cerden sonra gelen masdar mecrur (esreli) okunur.",

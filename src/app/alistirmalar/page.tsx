@@ -1130,7 +1130,7 @@ function ExercisesPageContent() {
     },
     {
       id: "morphology-context",
-      title: "🌿 Sarf, Kök & Bağlam Atölyesi",
+      title: "Sarf, Kök & Bağlam Atölyesi",
       arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
       subtitle:
         "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam",
@@ -1138,7 +1138,7 @@ function ExercisesPageContent() {
     },
     {
       id: "classroom-battle",
-      title: "🏆 Sınıf & Tahta Yarışması",
+      title: "Sınıf & Tahta Yarışması",
       arabicBadge: "المُسَابَقَةُ الصَّفِّيَّة",
       subtitle:
         "Akıllı tahta ve çift kişilik Takım A vs Takım B bilgi yarışması",

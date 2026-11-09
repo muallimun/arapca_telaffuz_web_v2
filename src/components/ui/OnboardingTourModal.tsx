@@ -340,7 +340,7 @@ export default function OnboardingTourModal() {
     },
     {
       badge: "ADIM 5 / 6 — ALIŞTIRMA MERKEZİ & SRS HAFIZA SİSTEMİ",
-      title: "5 İnteraktif Alıştırma & Aralıklı Tekrar (SRS)",
+      title: "6 İnteraktif Alıştırma & Aralıklı Tekrar (SRS)",
       subtitle:
         "🎯 'Bugün Ne Çalışmalıyım?' günlük 12 dk kişisel çalışma paketi ve 5 aşamalı (1, 3, 7, 14, 30 gün) akıllı hafıza sistemi:",
       visual: (

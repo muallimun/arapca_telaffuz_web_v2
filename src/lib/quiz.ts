@@ -487,7 +487,7 @@ export function selectSmartWordDistractors(
 }
 
 /**
- * Rosetta Stone Usulü Görsel Kelime Akıllı Çeldirici Motoru:
+ * Görsel & Sesli Eşleştirme Akıllı Çeldirici Motoru:
  * KURAL 1 (Zorunlu İsim/Fiil Uyumu): Hedef kelime fiil (tur === "fiil") ise çeldiricilerin tamamı fiil,
  * isim ise tamamı isim seçilir.
  * KURAL 2 (Kategori ve Seviye Yakınlığı): Aynı tur içinde önce aynı kategori_tr ve aynı cefr,

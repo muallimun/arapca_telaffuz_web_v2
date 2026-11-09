@@ -258,16 +258,19 @@ export default function GuideAndInfoModal() {
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-amber-700">
-                      3. İnteraktif Alıştırma Merkezi (5 Mod)
+                      3. İnteraktif Alıştırma Merkezi (6 Mod)
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
                       3B Kelime/İfade Kartları, Çoktan Seçmeli Test, Ok Çizimli
-                      Eşleştirme, Sürükle-Bırak / Klavyeli İmla Boşluk Doldurma
-                      ve{" "}
+                      Eşleştirme, Sürükle-Bırak / Klavyeli İmla Boşluk Doldurma,{" "}
                       <strong className="text-[var(--foreground)]">
                         🧩 Dinle ve Sırala (Cümle Kurma)
                       </strong>{" "}
-                      modlarıyla kelimeleri, cümleleri ve kalıp ifadeleri
+                      ve{" "}
+                      <strong className="text-[var(--foreground)]">
+                        🖼️ Görsel &amp; Sesli Eşleştirme
+                      </strong>{" "}
+                      modlarıyla kelimeleri, atasözlerini ve cümleleri
                       pekiştirin.
                     </p>
                   </div>

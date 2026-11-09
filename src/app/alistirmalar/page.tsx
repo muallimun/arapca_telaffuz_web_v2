@@ -425,12 +425,105 @@ function ExercisesPageContent() {
     [cefrFilter]
   );
 
-  // Rosetta Görsel Eşleştirme için filtrelenmiş ResimliKelime[] havuzu
+  // Görsel & Sesli Eşleştirme için filtrelenmiş ResimliKelime[] havuzu (999 Görsel Kelime, 508 Atasözü, 120 Diyalog, 60 Metin)
   const filteredVisualWordsPool: ResimliKelime[] = useMemo(() => {
+    if (rangePreset === "proverbs_508") {
+      const items =
+        activeProverbsWordItems.length >= 4
+          ? activeProverbsWordItems
+          : generatePoolFromProverbs({ category: "all", level: "all" });
+      return items.map(
+        (a, idx): ResimliKelime => ({
+          id: a.id,
+          sira: idx + 1,
+          kategori: a.category || "atasozu",
+          kategori_tr: (a.category || "Atasözü").replace(/_/g, " "),
+          arapca: a.arabic,
+          turkce: a.turkish,
+          tur: "ifade",
+          cefr: (a.level as Level) || "B1",
+          kok: "-",
+          ikincil_form: "",
+          ucuncul_form: "",
+          soru_kalibi: "",
+          ornek_ar: a.literal || a.arabic,
+          ornek_tr: a.context || a.turkish,
+          gorsel: a.imageUrl || `/gorseller/atasozleri/atasozu_001.webp`,
+          ses_erkek: a.audioUrl || `/sesler/atasozleri/erkek/atasozu_001.mp3`,
+          ses_kadin:
+            a.audioFemaleUrl || `/sesler/atasozleri/kadin/atasozu_001.mp3`,
+        })
+      );
+    }
+
+    if (rangePreset === "all_dialogues") {
+      const items = activeDialoguesWordItems.filter(
+        (w) => w.type === "sentence" && w.imageUrl && w.audioUrl
+      );
+      if (items.length >= 4) {
+        return items.map(
+          (d, idx): ResimliKelime => ({
+            id: d.id,
+            sira: idx + 1,
+            kategori: d.category || "diyalog",
+            kategori_tr: d.category || "Diyalog",
+            arapca: d.arabic,
+            turkce: d.turkish,
+            tur: "cumle",
+            cefr: (d.level as Level) || "A1",
+            kok: "-",
+            ikincil_form: "",
+            ucuncul_form: "",
+            soru_kalibi: "",
+            ornek_ar: d.exampleAr || d.arabic,
+            ornek_tr: d.exampleTr || d.turkish,
+            gorsel: d.imageUrl || "/gorseller/diyaloglar/dlg_001.webp",
+            ses_erkek: d.audioUrl || "",
+            ses_kadin: d.audioFemaleUrl || d.audioUrl || "",
+          })
+        );
+      }
+    }
+
+    if (rangePreset === "reading_texts") {
+      const items = activeReadingsWordItems.filter(
+        (w) => w.type === "sentence" && w.imageUrl && w.audioUrl
+      );
+      if (items.length >= 4) {
+        return items.map(
+          (m, idx): ResimliKelime => ({
+            id: m.id,
+            sira: idx + 1,
+            kategori: m.category || "metin",
+            kategori_tr: m.category || "Okuma Metni",
+            arapca: m.arabic,
+            turkce: m.turkish,
+            tur: "cumle",
+            cefr: (m.level as Level) || "A1",
+            kok: "-",
+            ikincil_form: "",
+            ucuncul_form: "",
+            soru_kalibi: "",
+            ornek_ar: m.exampleAr || m.arabic,
+            ornek_tr: m.exampleTr || m.turkish,
+            gorsel: m.imageUrl || "/gorseller/metinler/metin_01.webp",
+            ses_erkek: m.audioUrl || "",
+            ses_kadin: m.audioFemaleUrl || m.audioUrl || "",
+          })
+        );
+      }
+    }
+
     const allowedIds = new Set(activeVisualWordsWordItems.map((w) => w.id));
     const filtered = gorselKelimeler.filter((gk) => allowedIds.has(gk.id));
     return filtered.length >= 4 ? filtered : gorselKelimeler;
-  }, [activeVisualWordsWordItems]);
+  }, [
+    rangePreset,
+    activeVisualWordsWordItems,
+    activeProverbsWordItems,
+    activeDialoguesWordItems,
+    activeReadingsWordItems,
+  ]);
 
   // Seçili Havuza Göre Cümle / Diyalog Yapısı (Flashcard, MultipleChoice, FillInBlanks, MatchingGame, SentenceBuilder için)
   const selectedDialogues: Dialogue[] = useMemo(() => {
@@ -964,10 +1057,10 @@ function ExercisesPageContent() {
     },
     {
       id: "visual-rosetta",
-      title: "Görsel Eşleştirme (Rosetta)",
-      arabicBadge: "الصُّوَرُ وَالصَّوْت",
+      title: "Görsel & Sesli Eşleştirme",
+      arabicBadge: "الصُّوَرُ وَالتَّلَفُّظ",
       subtitle:
-        "999 kare görsel ve çift cinsiyetli sesle Rosetta Stone usulü eşleştirme",
+        "Kare görseller, çift cinsiyetli ses ve canlı telaffuz ile görsel-işitsel eşleştirme",
       icon: ImageIcon,
     },
   ];
@@ -1094,7 +1187,8 @@ function ExercisesPageContent() {
     if (
       combinedVocabulary.length < 4 &&
       sentenceCountInPool < 2 &&
-      idiomsPool.length < 1
+      idiomsPool.length < 1 &&
+      filteredVisualWordsPool.length < 4
     )
       return;
     setFrozenPools({
@@ -1122,10 +1216,18 @@ function ExercisesPageContent() {
   // Seçili havuz, kategori, seviye ve alıştırma moduna göre gerçek zamanlı öğe sayısı
   const { activeItemCount, activePoolCountLabel } = useMemo(() => {
     if (selectedType === "visual-rosetta") {
-      const cnt = activeVisualWordsWordItems.length || gorselKelimeler.length;
+      const cnt = filteredVisualWordsPool.length || gorselKelimeler.length;
+      const labelSuffix =
+        rangePreset === "proverbs_508"
+          ? "Görsel Atasözü"
+          : rangePreset === "all_dialogues"
+          ? "Görsel Diyalog İfadesi"
+          : rangePreset === "reading_texts"
+          ? "Görsel Metin Cümlesi"
+          : "Görsel Kelime";
       return {
         activeItemCount: cnt,
-        activePoolCountLabel: `${cnt} Görsel Kelime`,
+        activePoolCountLabel: `${cnt} ${labelSuffix}`,
       };
     }
 
@@ -1245,6 +1347,7 @@ function ExercisesPageContent() {
     isSentencesOnlyMode,
     effectiveContentType,
     cefrFilter,
+    filteredVisualWordsPool.length,
     activeVisualWordsWordItems,
     active1111SentencesWordItems,
     activeProverbsWordItems,
@@ -1257,10 +1360,10 @@ function ExercisesPageContent() {
   ]);
 
   return (
-    <div className="space-y-3 sm:space-y-4 pb-28 md:pb-8">
+    <div className={isPlaying ? "space-y-2 pb-4" : "space-y-2 sm:space-y-2.5 pb-16 md:pb-2"}>
       {/* ÜST BAŞLIK */}
-      <div className="flex items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {isPlaying ? (
             <button
               type="button"
@@ -1268,27 +1371,27 @@ function ExercisesPageContent() {
                 playClick();
                 handleCloseExercise();
               }}
-              className="h-9 px-3 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1.5 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
+              className="h-8 px-2.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
               <span>Ayarlara Dön</span>
             </button>
           ) : (
             <Link
               href="/"
               onClick={() => playClick()}
-              className="w-9 h-9 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] shrink-0"
+              className="w-8 h-8 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] shrink-0"
               aria-label="Ana Sayfaya Dön"
             >
-              <ChevronLeft size={18} strokeWidth={2.5} />
+              <ChevronLeft size={16} strokeWidth={2.5} />
             </Link>
           )}
 
           <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate">
+            <h1 className="text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate">
               İnteraktif Alıştırma Merkezi
             </h1>
-            <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)] truncate">
+            <p className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] truncate">
               120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi
             </p>
           </div>
@@ -1298,18 +1401,18 @@ function ExercisesPageContent() {
           data-tooltip="120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi"
           data-tooltip-pos="bottom"
           data-tooltip-align="right"
-          className="hidden sm:flex items-center gap-2 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-3 py-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
+          className="hidden sm:flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
         >
           <span>{activePoolCountLabel}</span>
-          <Info size={13} className="opacity-75 shrink-0" />
+          <Info size={12} className="opacity-75 shrink-0" />
         </div>
       </div>
 
       {!isPlaying ? (
         <>
-          {/* 1. ÜSTTE 2 SÜTUNLU (MOBİL) / 6'LI (MASAÜSTÜ) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
+          {/* 1. ÜSTTE 2 SÜTUNLU (MOBİL) / 6'LI (MASAÜSTÜ) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI (ZERO-SCROLL) */}
           <section aria-label="Alıştırma Türü Seçimi">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               {exerciseCards.map((card) => {
                 const isSelected = selectedType === card.id;
                 const Icon = card.icon;
@@ -1327,45 +1430,52 @@ function ExercisesPageContent() {
                       ) {
                         setContentType("sentences");
                       } else if (card.id === "visual-rosetta") {
-                        setRangePreset("visual_words");
+                        if (
+                          rangePreset !== "visual_words" &&
+                          rangePreset !== "proverbs_508" &&
+                          rangePreset !== "all_dialogues" &&
+                          rangePreset !== "reading_texts"
+                        ) {
+                          setRangePreset("visual_words");
+                        }
                         setContentType("words");
                       }
                     }}
-                    className={`text-left p-2.5 sm:p-3 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
+                    className={`text-left p-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2 gap-1.5">
+                    <div className="flex items-center justify-between w-full mb-1 sm:mb-1.5 gap-1">
                       <div
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
                           isSelected
                             ? "bg-[#6741D9] border-[#5230B5] text-white"
                             : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#065F46] dark:text-emerald-400"
                         }`}
                       >
-                        <Icon size={16} strokeWidth={2.3} />
+                        <Icon size={15} strokeWidth={2.3} />
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <span
                           lang="ar"
                           dir="rtl"
-                          className="arabic text-sm font-bold text-[var(--muted)] opacity-75 leading-none"
+                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-none"
                         >
                           {card.arabicBadge}
                         </span>
                         {isSelected && (
-                          <span className="w-5 h-5 rounded-full bg-[#6741D9] text-white flex items-center justify-center shrink-0">
-                            <Check size={11} strokeWidth={3} />
+                          <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#6741D9] text-white flex items-center justify-center shrink-0">
+                            <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </div>
                     </div>
 
                     <h2
-                      className={`font-bold text-xs sm:text-base leading-snug w-full ${
+                      className={`font-extrabold text-xs sm:text-sm leading-tight w-full ${
                         isSelected
                           ? "text-[#4C28B5] dark:text-[#d0bfff]"
                           : "text-[var(--foreground)]"
@@ -1374,7 +1484,7 @@ function ExercisesPageContent() {
                       {card.title}
                     </h2>
 
-                    <p className="hidden sm:block text-xs text-[var(--muted)] leading-snug line-clamp-2 mt-1">
+                    <p className="hidden sm:block text-[11px] text-[var(--muted)] leading-tight line-clamp-2 mt-0.5">
                       {card.subtitle}
                     </p>
                   </button>
@@ -1384,7 +1494,7 @@ function ExercisesPageContent() {
           </section>
 
           {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
-          <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 space-y-2.5">
+          <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
             {/* Hızlı Havuz Sekmeleri (Quick Pool Pills — 8 Ana Veri Kaynağı) */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
               {quickPoolPills.map((pill) => {
@@ -1401,7 +1511,7 @@ function ExercisesPageContent() {
                     key={pill.id}
                     type="button"
                     onClick={() => handlePoolSelectChange(pill.id)}
-                    className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    className={`px-2 py-1 rounded-xl border text-[11px] sm:text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       isActive
                         ? activeStyle
                         : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
@@ -1414,11 +1524,11 @@ function ExercisesPageContent() {
             </div>
 
             {/* Üst Ayar Satırı: Havuz Seçimi + Dinamik Alt Filtre (Kategori/Metin/Diyalog) + Seviye */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-1.5 sm:gap-2">
               {/* 1. Kaynak Havuzu Select */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[260px]">
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
                 <Layers
-                  size={14}
+                  size={13}
                   className="text-[#065F46] dark:text-emerald-400 shrink-0"
                 />
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -1442,9 +1552,9 @@ function ExercisesPageContent() {
 
               {/* 2. Dinamik Alt Filtre (Diyalog / Okuma Metni / Kategori Seçimi) */}
               {rangePreset === "all_dialogues" && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
                   <FolderOpen
-                    size={14}
+                    size={13}
                     className="text-[#6741D9] shrink-0"
                   />
                   <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -1483,9 +1593,9 @@ function ExercisesPageContent() {
               )}
 
               {rangePreset === "reading_texts" && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
                   <FolderOpen
-                    size={14}
+                    size={13}
                     className="text-[#6741D9] shrink-0"
                   />
                   <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -1518,9 +1628,9 @@ function ExercisesPageContent() {
               {(rangePreset === "sentences_1111" ||
                 rangePreset === "proverbs_508" ||
                 rangePreset === "visual_words") && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
                   <FolderOpen
-                    size={14}
+                    size={13}
                     className="text-[#6741D9] shrink-0"
                   />
                   <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -1548,7 +1658,7 @@ function ExercisesPageContent() {
               )}
 
               {/* 2.5. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
                   Seviye:
                 </span>
@@ -1570,59 +1680,61 @@ function ExercisesPageContent() {
               </div>
 
               {/* 3. İçerik Türü (Soru Kaynağı: Kelimeler | Kalıp İfadeler | Cümleler | Karışık) */}
-              <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5 w-full lg:w-auto">
-                <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                  İçerik:
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full">
-                  {(
-                    [
-                      { id: "words", label: "🔤 Kelimeler" },
-                      { id: "idioms", label: "✨ Atasözü / Kalıp" },
-                      {
-                        id: "sentences",
-                        label: "💬 Cümleler",
-                      },
-                      { id: "mixed", label: "🔀 Karışık" },
-                    ] as { id: QuizContentType; label: string }[]
-                  ).map((item) => {
-                    const active = effectiveContentType === item.id;
-                    const isDisabled =
-                      isSentencesOnlyMode && item.id !== "sentences";
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        disabled={isDisabled}
-                        data-tooltip={
-                          isDisabled
-                            ? "Bu mod otomatik olarak cümle/atasözü/örnek cümle içeren öğeleri süzer"
-                            : undefined
-                        }
-                        data-tooltip-pos="top"
-                        onClick={() => {
-                          if (isDisabled) return;
-                          playClick();
-                          setContentType(item.id);
-                        }}
-                        className={`px-2.5 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center ${
-                          active
-                            ? "bg-[#6741D9] text-white font-bold shadow-2xs cursor-pointer"
-                            : isDisabled
-                            ? "text-[var(--muted)] opacity-45 cursor-not-allowed"
-                            : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] cursor-pointer"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
+              {selectedType !== "visual-rosetta" && (
+                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1 w-full lg:w-auto">
+                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
+                    İçerik:
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 w-full">
+                    {(
+                      [
+                        { id: "words", label: "🔤 Kelimeler" },
+                        { id: "idioms", label: "✨ Atasözü / Kalıp" },
+                        {
+                          id: "sentences",
+                          label: "💬 Cümleler",
+                        },
+                        { id: "mixed", label: "🔀 Karışık" },
+                      ] as { id: QuizContentType; label: string }[]
+                    ).map((item) => {
+                      const active = effectiveContentType === item.id;
+                      const isDisabled =
+                        isSentencesOnlyMode && item.id !== "sentences";
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          disabled={isDisabled}
+                          data-tooltip={
+                            isDisabled
+                              ? "Bu mod otomatik olarak cümle/atasözü/örnek cümle içeren öğeleri süzer"
+                              : undefined
+                          }
+                          data-tooltip-pos="top"
+                          onClick={() => {
+                            if (isDisabled) return;
+                            playClick();
+                            setContentType(item.id);
+                          }}
+                          className={`px-2 py-1 text-[11px] sm:text-xs rounded-lg transition-all whitespace-nowrap text-center ${
+                            active
+                              ? "bg-[#6741D9] text-white font-bold shadow-2xs cursor-pointer"
+                              : isDisabled
+                              ? "text-[var(--muted)] opacity-45 cursor-not-allowed"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] cursor-pointer"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Boşluk Doldurma Alt Mod Seçicisi */}
               {selectedType === "fill-in-blanks" && (
-                <div className="sm:col-span-2 lg:col-span-1 py-1.5 px-1.5 bg-white dark:bg-[var(--background)] rounded-xl h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
+                <div className="sm:col-span-2 lg:col-span-1 py-1 px-1.5 bg-white dark:bg-[var(--background)] rounded-xl h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Mod:
                   </span>
@@ -1642,7 +1754,7 @@ function ExercisesPageContent() {
                             playClick();
                             setFillSubMode(m.id);
                           }}
-                          className={`px-2 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
                             active
                               ? "bg-[#6741D9] text-white font-bold shadow-2xs"
                               : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
@@ -1657,8 +1769,8 @@ function ExercisesPageContent() {
               )}
 
               {/* 4. Değerlendirme Zamanı Seçicisi (⚡ Hemen Göster | 🏁 Bitince Göster) */}
-              {selectedType !== "flashcard" && (
-                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
+              {selectedType !== "flashcard" && selectedType !== "visual-rosetta" && (
+                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Sonuçlar:
                   </span>
@@ -1678,7 +1790,7 @@ function ExercisesPageContent() {
                             playClick();
                             setFeedbackMode(fb.id);
                           }}
-                          className={`px-2 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
                             active
                               ? "bg-[#087F5B] text-white font-bold shadow-2xs"
                               : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
@@ -1693,9 +1805,9 @@ function ExercisesPageContent() {
               )}
 
               {/* 5 & 6. Soru Sayısı (10 | 20 | 30) ve Süre (Süresiz | 60s | 30s) */}
-              <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto">
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
+              <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-2 gap-1.5 w-full lg:w-auto">
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-8.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Soru:
                   </span>
                   {([10, 20, 30] as (10 | 20 | 30)[]).map((cnt) => (
@@ -1706,7 +1818,7 @@ function ExercisesPageContent() {
                         playClick();
                         setQuestionCount(cnt);
                       }}
-                      className={`flex-1 px-2.5 py-1 text-xs tabular-nums rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                      className={`flex-1 px-2 py-0.5 text-xs tabular-nums rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                         questionCount === cnt
                           ? "bg-[#087F5B] text-white font-bold"
                           : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
@@ -1717,10 +1829,10 @@ function ExercisesPageContent() {
                   ))}
                 </div>
 
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-8.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
                   <Timer
-                    size={13}
-                    className="text-[#6741D9] ml-1.5 shrink-0"
+                    size={12}
+                    className="text-[#6741D9] ml-1 shrink-0"
                   />
                   {[
                     { val: null, label: "Süresiz" },
@@ -1734,7 +1846,7 @@ function ExercisesPageContent() {
                         playClick();
                         setTimeLimit(t.val);
                       }}
-                      className={`flex-1 px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                      className={`flex-1 px-1.5 py-0.5 text-xs rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                         timeLimit === t.val
                           ? "bg-[#087F5B] text-white font-bold"
                           : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
@@ -1754,11 +1866,12 @@ function ExercisesPageContent() {
                   isMistakesEmpty ||
                   (combinedVocabulary.length < 4 &&
                     sentenceCountInPool < 2 &&
-                    idiomsPool.length < 1)
+                    idiomsPool.length < 1 &&
+                    filteredVisualWordsPool.length < 4)
                 }
-                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto h-11 sm:h-10 px-5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto h-10 sm:h-9 px-4 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
               >
-                <Play size={15} fill="currentColor" />
+                <Play size={14} fill="currentColor" />
                 <span className="truncate">
                   ▶ Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe · {activePoolCountLabel})
                 </span>
@@ -1766,10 +1879,10 @@ function ExercisesPageContent() {
             </div>
 
             {isMistakesEmpty && (
-              <div className="bg-emerald-50 dark:bg-emerald-950/50 rounded-xl px-4 py-3 border-2 border-[#087F5B]/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-400">
+              <div className="bg-emerald-50 dark:bg-emerald-950/50 rounded-xl px-3.5 py-2 border-2 border-[#087F5B]/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-400">
                 <div className="flex items-center gap-2 text-center sm:text-left">
                   <Check
-                    size={16}
+                    size={15}
                     className="shrink-0 text-[#065F46] dark:text-emerald-400"
                   />
                   <span>
@@ -1780,7 +1893,7 @@ function ExercisesPageContent() {
                 <button
                   type="button"
                   onClick={() => handlePoolSelectChange("full_dict")}
-                  className="px-3 py-1.5 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold shrink-0 cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold shrink-0 cursor-pointer"
                 >
                   Tüm Sözlüğe Geç
                 </button>
@@ -1790,7 +1903,7 @@ function ExercisesPageContent() {
             {!isMistakesEmpty &&
               rangePreset === "mistakes" &&
               mistakeIds.length > 0 && (
-                <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl px-3.5 py-2 border border-amber-300 dark:border-amber-700/60 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-amber-900 dark:text-amber-200">
+                <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-amber-900 dark:text-amber-200">
                   <span>
                     ⚡ Akıllı Hata Defterinizde{" "}
                     <strong>{mistakeIds.length}</strong> öğe kayıtlı. Farklı
@@ -1804,7 +1917,7 @@ function ExercisesPageContent() {
                       playClick();
                       clearMistakes();
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-amber-400 text-[11px] font-extrabold text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer shrink-0"
+                    className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-amber-400 text-[11px] font-extrabold text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer shrink-0"
                   >
                     Defteri Temizle
                   </button>
@@ -1812,9 +1925,9 @@ function ExercisesPageContent() {
               )}
 
             {poolNotice && !isMistakesEmpty && (
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-3 py-1.5 border border-[#E6D7BE] flex items-center gap-2 text-xs font-semibold text-[#6741D9] dark:text-[#d0bfff]">
-                <Info size={14} className="shrink-0" />
-                <span>{poolNotice}</span>
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 py-1 border border-[#E6D7BE] flex items-center gap-1.5 text-[11px] font-semibold text-[#6741D9] dark:text-[#d0bfff]">
+                <Info size={13} className="shrink-0" />
+                <span className="truncate">{poolNotice}</span>
               </div>
             )}
           </section>

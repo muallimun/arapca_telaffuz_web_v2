@@ -466,7 +466,32 @@ export default function VisualRosettaQuiz({
     Array.from({ length: questionCount }, () => "pending")
   );
 
-  // Mod A (listen_speak_matrix) için sıralı kart, 3 deneme sayacı ve mikrofon durumları
+  // Etkinlik Başlangıç & "1 - 2 - 3" Mikrofon Kalibrasyon Ekranı State'leri
+  const [isActivityStarted, setIsActivityStarted] = useState<boolean>(false);
+  const [showCalibrationTest, setShowCalibrationTest] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("visual_quiz_mic_calibrated") !== "1";
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+  const [calibSteps, setCalibSteps] = useState<[boolean, boolean, boolean]>([
+    false,
+    false,
+    false,
+  ]);
+  const [calibVolumePct, setCalibVolumePct] = useState<number>(0);
+  const [calibWaveBars, setCalibWaveBars] = useState<number[]>([
+    12, 18, 14, 22, 16, 20, 14, 18, 15, 20, 14, 12,
+  ]);
+  const [calibSpokenText, setCalibSpokenText] = useState<string>("");
+  const [calibErrorMsg, setCalibErrorMsg] = useState<string | null>(null);
+  const [calibCompleted, setCalibCompleted] = useState<boolean>(false);
+
+  // Mod A (listen_speak_matrix) için sıralı kart, 3 deneme sayacı, 6sn geri sayım ve mikrofon durumları
   const [matrixStepIndex, setMatrixStepIndex] = useState<number>(0);
   const [matrixCompletedIndices, setMatrixCompletedIndices] = useState<
     number[]
@@ -480,8 +505,23 @@ export default function VisualRosettaQuiz({
   const [micTimedOut, setMicTimedOut] = useState<boolean>(false);
   const [isWrongPronunciationState, setIsWrongPronunciationState] =
     useState<boolean>(false);
+  const [micRemainingSec, setMicRemainingSec] = useState<number>(6);
+  const [micRemainingPct, setMicRemainingPct] = useState<number>(100);
+  const [liveMicLevel, setLiveMicLevel] = useState<number>(0);
 
   const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
+  const calibRecognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
+  const calibAudioCtxRef = useRef<AudioContext | null>(null);
+  const calibStreamRef = useRef<MediaStream | null>(null);
+  const calibRafRef = useRef<number | null>(null);
+  const calibAutoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const activeMicAudioCtxRef = useRef<AudioContext | null>(null);
+  const activeMicStreamRef = useRef<MediaStream | null>(null);
+  const activeMicRafRef = useRef<number | null>(null);
+
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -491,12 +531,130 @@ export default function VisualRosettaQuiz({
   const micSilenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const micCountdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
+  const speechSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const autoReplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialAudioDelayRef = useRef<number>(700);
   const failedAttemptsRef = useRef<number>(0);
   const streakRef = useRef<number>(0);
   const verifiedCardLockRef = useRef<boolean>(false);
 
   const currentQuestion = questions[currentIndex];
+
+  const stopActiveMicAnalyser = useCallback(() => {
+    if (activeMicRafRef.current !== null) {
+      cancelAnimationFrame(activeMicRafRef.current);
+      activeMicRafRef.current = null;
+    }
+    if (activeMicStreamRef.current) {
+      try {
+        activeMicStreamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore
+      }
+      activeMicStreamRef.current = null;
+    }
+    if (activeMicAudioCtxRef.current) {
+      try {
+        activeMicAudioCtxRef.current.close();
+      } catch {
+        // ignore
+      }
+      activeMicAudioCtxRef.current = null;
+    }
+    setLiveMicLevel(0);
+  }, []);
+
+  const startActiveMicAnalyser = useCallback(async () => {
+    stopActiveMicAnalyser();
+    if (
+      typeof window === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      activeMicStreamRef.current = stream;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      activeMicAudioCtxRef.current = audioCtx;
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.7;
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const updateMeter = () => {
+        if (!activeMicAudioCtxRef.current) return;
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avg = sum / dataArray.length;
+        const pct = Math.min(100, Math.round((avg / 95) * 100));
+        setLiveMicLevel(pct);
+        activeMicRafRef.current = requestAnimationFrame(updateMeter);
+      };
+      activeMicRafRef.current = requestAnimationFrame(updateMeter);
+    } catch {
+      // getUserMedia başarısız olursa sessizce geç (SpeechRecognition kendi mikrofonunu kullanır)
+    }
+  }, [stopActiveMicAnalyser]);
+
+  const stopCalibrationResources = useCallback(() => {
+    if (calibAutoStartTimerRef.current) {
+      clearTimeout(calibAutoStartTimerRef.current);
+      calibAutoStartTimerRef.current = null;
+    }
+    if (calibRafRef.current !== null) {
+      cancelAnimationFrame(calibRafRef.current);
+      calibRafRef.current = null;
+    }
+    if (calibRecognitionRef.current) {
+      try {
+        calibRecognitionRef.current.onresult = null;
+        calibRecognitionRef.current.onerror = null;
+        calibRecognitionRef.current.onend = null;
+        calibRecognitionRef.current.abort();
+      } catch {
+        // ignore
+      }
+      calibRecognitionRef.current = null;
+    }
+    if (calibStreamRef.current) {
+      try {
+        calibStreamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore
+      }
+      calibStreamRef.current = null;
+    }
+    if (calibAudioCtxRef.current) {
+      try {
+        calibAudioCtxRef.current.close();
+      } catch {
+        // ignore
+      }
+      calibAudioCtxRef.current = null;
+    }
+  }, []);
 
   const clearTimers = useCallback(() => {
     if (autoAdvanceTimerRef.current) {
@@ -511,6 +669,14 @@ export default function VisualRosettaQuiz({
       clearTimeout(micSilenceTimeoutRef.current);
       micSilenceTimeoutRef.current = null;
     }
+    if (micCountdownIntervalRef.current) {
+      clearInterval(micCountdownIntervalRef.current);
+      micCountdownIntervalRef.current = null;
+    }
+    if (speechSettleTimerRef.current) {
+      clearTimeout(speechSettleTimerRef.current);
+      speechSettleTimerRef.current = null;
+    }
     if (autoReplayTimerRef.current) {
       clearTimeout(autoReplayTimerRef.current);
       autoReplayTimerRef.current = null;
@@ -521,6 +687,14 @@ export default function VisualRosettaQuiz({
     if (micSilenceTimeoutRef.current) {
       clearTimeout(micSilenceTimeoutRef.current);
       micSilenceTimeoutRef.current = null;
+    }
+    if (micCountdownIntervalRef.current) {
+      clearInterval(micCountdownIntervalRef.current);
+      micCountdownIntervalRef.current = null;
+    }
+    if (speechSettleTimerRef.current) {
+      clearTimeout(speechSettleTimerRef.current);
+      speechSettleTimerRef.current = null;
     }
     if (recognitionRef.current) {
       try {
@@ -533,8 +707,255 @@ export default function VisualRosettaQuiz({
       }
       recognitionRef.current = null;
     }
+    stopActiveMicAnalyser();
     setIsListeningMic(false);
-  }, []);
+  }, [stopActiveMicAnalyser]);
+
+  // GÖREV 1: "1 - 2 - 3 Mikrofon Testi & Hazırlık" Kalibrasyon Motoru (Web Audio AnalyserNode + SpeechRecognition)
+  useEffect(() => {
+    if (isActivityStarted || !showCalibrationTest) {
+      stopCalibrationResources();
+      return;
+    }
+
+    let isMounted = true;
+    let stepCount = 0;
+    let isCalibDone = false;
+    let voiceBurstActive = false;
+    let voiceBurstStartMs = 0;
+    let lastBurstIncrementMs = 0;
+
+    const markStep = (targetStep: 1 | 2 | 3) => {
+      if (!isMounted || isCalibDone) return;
+      if (targetStep <= stepCount) return;
+      stepCount = targetStep;
+
+      setCalibSteps([
+        stepCount >= 1,
+        stepCount >= 2,
+        stepCount >= 3,
+      ]);
+
+      if (stepCount >= 3 && !isCalibDone) {
+        isCalibDone = true;
+        setCalibCompleted(true);
+        playCorrect({ isSpeech: false });
+        try {
+          sessionStorage.setItem("visual_quiz_mic_calibrated", "1");
+        } catch {
+          // ignore
+        }
+
+        calibAutoStartTimerRef.current = setTimeout(() => {
+          if (!isMounted) return;
+          stopCalibrationResources();
+          initialAudioDelayRef.current = 700;
+          setShowCalibrationTest(false);
+          setIsActivityStarted(true);
+        }, 800);
+      } else {
+        playClick();
+      }
+    };
+
+    // 1. Web Audio AnalyserNode ile Canlı Ses Seviyesi Göstergesi ve Ses Dalgası
+    const initMicAnalyser = async () => {
+      if (
+        typeof window === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setCalibErrorMsg(
+          "Tarayıcınız mikrofon erişimini desteklemiyor. 'Testi Geç' veya 'Mikrofonsuz Mod' ile devam edebilirsiniz."
+        );
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        if (!isMounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        calibStreamRef.current = stream;
+        setCalibErrorMsg(null);
+
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+        const audioCtx = new AudioCtx();
+        calibAudioCtxRef.current = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.72;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const tick = () => {
+          if (!isMounted || !calibAudioCtxRef.current) return;
+          analyser.getByteFrequencyData(dataArray);
+
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / dataArray.length;
+          const pct = Math.min(100, Math.round((avg / 90) * 100));
+          setCalibVolumePct(pct);
+
+          const bars: number[] = [];
+          for (let b = 0; b < 12; b++) {
+            const idx = Math.min(dataArray.length - 1, b * 4 + 2);
+            const val = dataArray[idx] || 0;
+            bars.push(Math.max(12, Math.min(100, Math.round((val / 210) * 100))));
+          }
+          setCalibWaveBars(bars);
+
+          // Canlı ses patlaması (Voice Burst) algılaması:
+          // Kullanıcı mikrofona net şekilde "1", "2", "3" dediğinde her net ses öbeği sayacı ilerletir
+          const now = Date.now();
+          if (pct >= 24) {
+            if (!voiceBurstActive) {
+              voiceBurstActive = true;
+              voiceBurstStartMs = now;
+            } else if (
+              now - voiceBurstStartMs >= 130 &&
+              now - lastBurstIncrementMs >= 520 &&
+              stepCount < 3
+            ) {
+              lastBurstIncrementMs = now;
+              voiceBurstStartMs = now + 260;
+              const next = (stepCount + 1) as 1 | 2 | 3;
+              markStep(next);
+            }
+          } else if (pct < 14) {
+            voiceBurstActive = false;
+          }
+
+          calibRafRef.current = requestAnimationFrame(tick);
+        };
+
+        calibRafRef.current = requestAnimationFrame(tick);
+      } catch {
+        if (!isMounted) return;
+        setCalibErrorMsg(
+          "Mikrofon izni alınamadı. Tarayıcıdan mikrofon izni verebilir veya 'Mikrofonsuz Mod' ile başlayabilirsiniz."
+        );
+      }
+    };
+
+    // 2. SpeechRecognition ile "1 - 2 - 3" (veya واحد، اثنان، ثلاثة / bir, iki, üç) Algılama
+    const initCalibSpeechRec = () => {
+      const win =
+        typeof window !== "undefined"
+          ? (window as unknown as Record<string, unknown>)
+          : null;
+      const SpeechRecCtor = win
+        ? ((win.SpeechRecognition || win.webkitSpeechRecognition) as
+            | (new () => WebSpeechRecognitionInstance)
+            | undefined)
+        : undefined;
+      if (!SpeechRecCtor) return;
+
+      try {
+        const rec = new SpeechRecCtor();
+        rec.lang = "ar-SA";
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.maxAlternatives = 3;
+
+        rec.onresult = (evt: unknown) => {
+          if (!isMounted || isCalibDone) return;
+          const event = evt as {
+            results?: {
+              [index: number]: {
+                isFinal?: boolean;
+                length?: number;
+                [altIndex: number]: { transcript?: string };
+              };
+              length: number;
+            };
+          };
+          if (!event.results) return;
+
+          let fullTranscript = "";
+          for (let i = 0; i < event.results.length; i++) {
+            const r = event.results[i];
+            if (r && r[0]?.transcript) {
+              fullTranscript += " " + r[0].transcript;
+            }
+          }
+          const clean = fullTranscript.trim().toLowerCase();
+          if (!clean) return;
+          setCalibSpokenText(clean);
+
+          const hasOne =
+            /\b(1|١|واحد|واحده|bir)\b/i.test(clean) ||
+            clean.includes("واحد") ||
+            clean.includes("1") ||
+            clean.includes("١");
+          const hasTwo =
+            /\b(2|٢|اثنان|اثنين|iki)\b/i.test(clean) ||
+            clean.includes("اثن") ||
+            clean.includes("2") ||
+            clean.includes("٢");
+          const hasThree =
+            /\b(3|٣|ثلاثة|ثلاثه|ثلاث|üç|uc)\b/i.test(clean) ||
+            clean.includes("ثلاث") ||
+            clean.includes("3") ||
+            clean.includes("٣");
+
+          const words = clean.split(/\s+/).filter(Boolean);
+
+          if (hasThree || words.length >= 3) {
+            markStep(1);
+            markStep(2);
+            markStep(3);
+          } else if (hasTwo || words.length >= 2) {
+            markStep(1);
+            markStep(2);
+          } else if (hasOne || words.length >= 1) {
+            markStep(1);
+          }
+        };
+
+        rec.onend = () => {
+          if (!isMounted || isCalibDone) return;
+          setTimeout(() => {
+            if (!isMounted || isCalibDone || calibRecognitionRef.current !== rec)
+              return;
+            try {
+              rec.start();
+            } catch {
+              // ignore
+            }
+          }, 100);
+        };
+
+        calibRecognitionRef.current = rec;
+        rec.start();
+      } catch {
+        // ignore
+      }
+    };
+
+    initMicAnalyser();
+    initCalibSpeechRec();
+
+    return () => {
+      isMounted = false;
+      stopCalibrationResources();
+    };
+  }, [isActivityStarted, showCalibrationTest, stopCalibrationResources]);
 
   const formatAr = useCallback(
     (text: string) => {
@@ -565,6 +986,7 @@ export default function VisualRosettaQuiz({
   /**
    * 1. Mikrofon Yaşam Döngüsü ve Ses Çakışmasını Önleme:
    * Hedef Arapça ses dosyası çalarken mikrofon (`SpeechRecognition`) kesinlikle kapatılır.
+   * `playDualGenderAudio` HTMLAudioElement `onended` olayı gerçekleştiğinde çözülür.
    */
   const playItemAudio = useCallback(
     (item: ResimliKelime, mode?: ConcreteVisualMode, onEnded?: () => void) => {
@@ -611,6 +1033,7 @@ export default function VisualRosettaQuiz({
 
       if (currentIndex + 1 < questions.length) {
         const nextIndex = currentIndex + 1;
+        initialAudioDelayRef.current = 260;
         setCurrentIndex(nextIndex);
         setSelectedOptionId(null);
         setWrongAttemptIds([]);
@@ -679,6 +1102,7 @@ export default function VisualRosettaQuiz({
       if (cardIdx + 1 < totalCards) {
         autoAdvanceTimerRef.current = setTimeout(() => {
           verifiedCardLockRef.current = false;
+          initialAudioDelayRef.current = 240;
           setMatrixStepIndex(cardIdx + 1);
           setSpokenTranscript("");
           setMicStatusMessage("");
@@ -686,7 +1110,7 @@ export default function VisualRosettaQuiz({
           failedAttemptsRef.current = 0;
           setMicTimedOut(false);
           setIsWrongPronunciationState(false);
-        }, 650);
+        }, 700);
       } else {
         // Tüm 4 kart tamamlandı
         const allClean = !hadWrongOnCurrent && !wasSkippedAfterFailed;
@@ -703,7 +1127,7 @@ export default function VisualRosettaQuiz({
         autoAdvanceTimerRef.current = setTimeout(() => {
           verifiedCardLockRef.current = false;
           advanceToNextQuestion(allClean ? "correct" : "wrong");
-        }, 750);
+        }, 700);
       }
     },
     [
@@ -718,18 +1142,27 @@ export default function VisualRosettaQuiz({
   );
 
   /**
-   * Mod A: Sıkı Harf Uyumlu (`strictArabicSpeechMatch`) ve 3 Deneme Döngülü WebSpeech STT Başlatıcı
+   * GÖREV 3: En Az 6 Saniye Kesintisiz Dinleme Penceresi (`continuous: true` + Otomatik Yeniden Başlatma),
+   * Anında Doğru Telaffuz Onayı ve Yanlış Kelimede 800ms Bekleme + 3 Hak Döngüsü
    */
   const startMatrixListening = useCallback(
     function startMatrixListeningImpl(
       targetItem: ResimliKelime,
       cardIdx: number
     ) {
-      if (isPaused || micFreeMode || verifiedCardLockRef.current) return;
+      if (
+        !isActivityStarted ||
+        isPaused ||
+        micFreeMode ||
+        verifiedCardLockRef.current
+      )
+        return;
 
-      // Önceki SpeechRecognition nesnesini güvenli şekilde temizle (abort)
+      // Önceki SpeechRecognition nesnesini güvenli şekilde temizle
       stopSpeechRecognition();
       setMicTimedOut(false);
+      setMicRemainingSec(6);
+      setMicRemainingPct(100);
 
       const win =
         typeof window !== "undefined"
@@ -749,39 +1182,94 @@ export default function VisualRosettaQuiz({
         return;
       }
 
+      const LISTEN_WINDOW_MS = 6000;
+      const windowStartMs = Date.now();
+      let resolvedAttempt = false;
+      let receivedAnySpeech = false;
+      let lastSpokenTranscript = "";
+
+      const triggerWrongAttempt = (detectedText: string) => {
+        if (resolvedAttempt || verifiedCardLockRef.current) return;
+        resolvedAttempt = true;
+        stopSpeechRecognition();
+
+        streakRef.current = 0;
+        const nextAttempts = failedAttemptsRef.current + 1;
+        failedAttemptsRef.current = nextAttempts;
+        setFailedAttempts(nextAttempts);
+        setIsWrongPronunciationState(true);
+        setMicTimedOut(false);
+        playWrong();
+
+        if (nextAttempts < 3) {
+          setMicStatusMessage(
+            `🗣️ Algılanan: "${detectedText}" • Doğru telaffuzu dinleyin (Deneme ${nextAttempts}/3)`
+          );
+          if (autoReplayTimerRef.current) {
+            clearTimeout(autoReplayTimerRef.current);
+          }
+          autoReplayTimerRef.current = setTimeout(() => {
+            if (isPaused || verifiedCardLockRef.current) return;
+            playItemAudio(targetItem, "listen_speak_matrix", () => {
+              // GÖREV 3.1: Doğru sesin çalması tamamen bittikten 400ms sonra mikrofonu 6 saniyeliğine yeniden aç
+              if (micStartDelayTimerRef.current) {
+                clearTimeout(micStartDelayTimerRef.current);
+              }
+              micStartDelayTimerRef.current = setTimeout(() => {
+                if (
+                  !isPaused &&
+                  !micFreeMode &&
+                  !verifiedCardLockRef.current
+                ) {
+                  startMatrixListeningImpl(targetItem, cardIdx);
+                }
+              }, 400);
+            });
+          }, 550);
+        } else {
+          setMicStatusMessage(
+            `🗣️ Algılanan: "${detectedText}" • 3 deneme tamamlandı (Deneme 3/3)`
+          );
+          if (autoReplayTimerRef.current) {
+            clearTimeout(autoReplayTimerRef.current);
+          }
+          autoReplayTimerRef.current = setTimeout(() => {
+            if (isPaused || verifiedCardLockRef.current) return;
+            playItemAudio(targetItem, "listen_speak_matrix");
+          }, 550);
+        }
+      };
+
       try {
         const rec = new SpeechRecCtor();
         rec.lang = "ar-SA";
-        rec.continuous = false;
+        rec.continuous = true;
         rec.interimResults = true;
-        rec.maxAlternatives = 3;
+        rec.maxAlternatives = 5;
 
-        let resolvedAttempt = false;
-        let receivedAnySpeech = false;
+        // Canlı mikrofon ses dalgası göstergesini başlat
+        startActiveMicAnalyser();
 
-        const resetSilenceWatchdog = () => {
-          if (micSilenceTimeoutRef.current) {
-            clearTimeout(micSilenceTimeoutRef.current);
+        // 6.0 Saniyelik Geri Sayım Çubuğu (6s -> 0s)
+        micCountdownIntervalRef.current = setInterval(() => {
+          const elapsed = Date.now() - windowStartMs;
+          const remaining = Math.max(0, LISTEN_WINDOW_MS - elapsed);
+          setMicRemainingSec(Math.max(1, Math.ceil(remaining / 1000)));
+          setMicRemainingPct(Math.round((remaining / LISTEN_WINDOW_MS) * 100));
+        }, 100);
+
+        // 6.0 Saniye Kesintisiz Dinleme Penceresi Sonu Kontrolü
+        micSilenceTimeoutRef.current = setTimeout(() => {
+          if (resolvedAttempt || verifiedCardLockRef.current) return;
+          if (receivedAnySpeech && lastSpokenTranscript) {
+            triggerWrongAttempt(lastSpokenTranscript);
+            return;
           }
-          micSilenceTimeoutRef.current = setTimeout(() => {
-            if (!resolvedAttempt && recognitionRef.current === rec) {
-              resolvedAttempt = true;
-              try {
-                rec.abort();
-              } catch {
-                // ignore
-              }
-              recognitionRef.current = null;
-              setIsListeningMic(false);
-              setMicTimedOut(true);
-              setMicStatusMessage(
-                "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
-              );
-            }
-          }, 5000);
-        };
-
-        resetSilenceWatchdog();
+          resolvedAttempt = true;
+          stopSpeechRecognition();
+          setMicTimedOut(true);
+          setMicStatusMessage("🎙️ Ses algılanmadı");
+        }, LISTEN_WINDOW_MS);
 
         rec.onresult = (evt: unknown) => {
           if (resolvedAttempt || verifiedCardLockRef.current) return;
@@ -796,21 +1284,37 @@ export default function VisualRosettaQuiz({
             };
           };
           if (!event.results || event.results.length === 0) return;
-          const res = event.results[event.results.length - 1];
-          if (!res) return;
 
-          const altCount = typeof res.length === "number" ? res.length : 1;
+          // Tüm aktif sonuçları ve alternatifleri topla
           const alternatives: string[] = [];
-          for (let i = 0; i < altCount; i++) {
-            const t = (res[i]?.transcript || "").trim();
-            if (t) alternatives.push(t);
+          const latestRes = event.results[event.results.length - 1];
+          if (latestRes) {
+            const altCount =
+              typeof latestRes.length === "number" ? latestRes.length : 1;
+            for (let i = 0; i < altCount; i++) {
+              const t = (latestRes[i]?.transcript || "").trim();
+              if (t) alternatives.push(t);
+            }
+          }
+
+          // Ayrıca continuous modda birleşik cümle/kelime ihtimaline karşı tüm sonuçları da birleştir
+          let combinedTranscript = "";
+          for (let i = 0; i < event.results.length; i++) {
+            const seg = (event.results[i]?.[0]?.transcript || "").trim();
+            if (seg) combinedTranscript += (combinedTranscript ? " " : "") + seg;
+          }
+          if (
+            combinedTranscript &&
+            !alternatives.includes(combinedTranscript)
+          ) {
+            alternatives.push(combinedTranscript);
           }
 
           const primaryTranscript = alternatives[0] || "";
           if (!primaryTranscript) return;
 
           receivedAnySpeech = true;
-          resetSilenceWatchdog();
+          lastSpokenTranscript = primaryTranscript;
           setSpokenTranscript(primaryTranscript);
 
           // Tüm alternatifler içinde en yüksek harf uyumunu kontrol et
@@ -838,138 +1342,133 @@ export default function VisualRosettaQuiz({
             }
           }
 
-          // Interim sonuçlarda yalnızca %100 tam eşleşme sağlandığında anında onayla;
-          // aksi halde konuşmanın bitmesini (res.isFinal) bekle!
-          if (!res.isFinal) {
-            if (bestMatch.isMatch && bestMatch.isExact100) {
-              resolvedAttempt = true;
-              setSpokenTranscript(matchedTranscript);
-              handleMatrixCardVerified(cardIdx, false);
-            }
-            return;
-          }
-
-          // Konuşma tamamlandı (isFinal === true)
-          resolvedAttempt = true;
-          if (micSilenceTimeoutRef.current) {
-            clearTimeout(micSilenceTimeoutRef.current);
-            micSilenceTimeoutRef.current = null;
-          }
-
+          // GÖREV 3.3: Hedef kelimeyle %90-%100 harf uyumu yakalandığı AN (interimResults veya isFinal fark etmeksizin)
+          // 6 saniyenin bitmesini beklemeden ANINDA doğru kabul et!
           if (bestMatch.isMatch) {
+            resolvedAttempt = true;
+            if (speechSettleTimerRef.current) {
+              clearTimeout(speechSettleTimerRef.current);
+              speechSettleTimerRef.current = null;
+            }
             setSpokenTranscript(matchedTranscript);
             handleMatrixCardVerified(cardIdx, false);
             return;
           }
 
-          // YANLIŞ TELAFFUZ:
-          // 1) Deneme sayacını artır (1/3, 2/3, 3/3) ve yanlış ses efektini çal
-          stopSpeechRecognition();
-          streakRef.current = 0;
-          const nextAttempts = failedAttemptsRef.current + 1;
-          failedAttemptsRef.current = nextAttempts;
-          setFailedAttempts(nextAttempts);
-          setIsWrongPronunciationState(true);
-          setMicTimedOut(false);
-          playWrong();
-
-          if (nextAttempts < 3) {
-            setMicStatusMessage(
-              `Algılanan: "${primaryTranscript}" • Tekrar dinleyin (Deneme ${nextAttempts}/3)`
-            );
-            // 2) 600ms sonra doğru Arapça sesi OTOMATİK OLARAK tekrar çal
-            if (autoReplayTimerRef.current) {
-              clearTimeout(autoReplayTimerRef.current);
-            }
-            autoReplayTimerRef.current = setTimeout(() => {
-              if (isPaused || verifiedCardLockRef.current) return;
-              playItemAudio(targetItem, "listen_speak_matrix", () => {
-                // 3) Doğru sesin çalması bittikten 300ms sonra mikrofonu otomatik yeniden aç
-                if (micStartDelayTimerRef.current) {
-                  clearTimeout(micStartDelayTimerRef.current);
-                }
-                micStartDelayTimerRef.current = setTimeout(() => {
-                  if (!isPaused && !micFreeMode && !verifiedCardLockRef.current) {
-                    startMatrixListeningImpl(targetItem, cardIdx);
-                  }
-                }, 300);
-              });
-            }, 600);
-          } else {
-            // 3 Başarısız Deneme Sonrası: Doğru sesi bir kez daha dinlet ve "Sonrakine Geç ⏭" + "🎙️ Tekrar Dene" butonlarını aktif et
-            setMicStatusMessage(
-              `Algılanan: "${primaryTranscript}" • 3 deneme tamamlandı (Deneme 3/3)`
-            );
-            if (autoReplayTimerRef.current) {
-              clearTimeout(autoReplayTimerRef.current);
-            }
-            autoReplayTimerRef.current = setTimeout(() => {
-              if (isPaused || verifiedCardLockRef.current) return;
-              playItemAudio(targetItem, "listen_speak_matrix");
-            }, 600);
+          // GÖREV 3.3: Yanlış bir kelime söylendiyse konuşmanın tamamlanması için 800ms bekle (Debounce),
+          // 800ms sonunda hala eşleşme yoksa deneme sayacını (1/3, 2/3, 3/3) artır ve doğru sesi tekrar çal!
+          if (speechSettleTimerRef.current) {
+            clearTimeout(speechSettleTimerRef.current);
           }
+          speechSettleTimerRef.current = setTimeout(() => {
+            if (!resolvedAttempt && !verifiedCardLockRef.current) {
+              triggerWrongAttempt(primaryTranscript);
+            }
+          }, 800);
         };
 
-        rec.onerror = () => {
-          if (resolvedAttempt) return;
-          resolvedAttempt = true;
-          if (micSilenceTimeoutRef.current) {
-            clearTimeout(micSilenceTimeoutRef.current);
-            micSilenceTimeoutRef.current = null;
+        rec.onerror = (errEvt: unknown) => {
+          if (resolvedAttempt || verifiedCardLockRef.current) return;
+          const errCode =
+            (errEvt as { error?: string })?.error || "";
+          const elapsed = Date.now() - windowStartMs;
+
+          // Eğer 6 saniye dolmadan tarayıcı "no-speech" veya geçici bir durum dönerse
+          // hemen "Ses duyulmadı" verme; onend içinde mikrofon otomatik yeniden başlayacak
+          if (
+            errCode !== "not-allowed" &&
+            errCode !== "service-not-allowed" &&
+            elapsed < LISTEN_WINDOW_MS - 300
+          ) {
+            return;
           }
-          setIsListeningMic(false);
+
+          resolvedAttempt = true;
+          stopSpeechRecognition();
           setMicTimedOut(true);
-          setMicStatusMessage(
-            "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
-          );
+          setMicStatusMessage("🎙️ Ses algılanmadı");
         };
 
         rec.onend = () => {
-          if (micSilenceTimeoutRef.current) {
-            clearTimeout(micSilenceTimeoutRef.current);
-            micSilenceTimeoutRef.current = null;
+          if (resolvedAttempt || verifiedCardLockRef.current) return;
+          const elapsed = Date.now() - windowStartMs;
+
+          // GÖREV 3.2 KRİTİK KURAL: Tarayıcı SpeechRecognition servisi 6.0 saniye dolmadan
+          // kendi kendine onend tetiklerse, "Ses duyulmadı" hatası VERME!
+          // 6 saniyelik pencere aktif olduğu sürece rec.start() ile mikrofonu kesintisiz açık tut.
+          if (
+            elapsed < LISTEN_WINDOW_MS - 250 &&
+            recognitionRef.current === rec &&
+            !isPaused &&
+            !micFreeMode
+          ) {
+            setTimeout(() => {
+              if (
+                !resolvedAttempt &&
+                !verifiedCardLockRef.current &&
+                recognitionRef.current === rec &&
+                !isPaused &&
+                !micFreeMode
+              ) {
+                try {
+                  rec.start();
+                } catch {
+                  // ignore
+                }
+              }
+            }, 60);
+            return;
           }
-          setIsListeningMic(false);
-          if (!resolvedAttempt && !receivedAnySpeech) {
+
+          // 6 saniyelik süre tamamlandıysa
+          if (receivedAnySpeech && lastSpokenTranscript) {
+            triggerWrongAttempt(lastSpokenTranscript);
+          } else {
             resolvedAttempt = true;
+            stopSpeechRecognition();
             setMicTimedOut(true);
-            setMicStatusMessage(
-              "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
-            );
+            setMicStatusMessage("🎙️ Ses algılanmadı");
           }
         };
 
         recognitionRef.current = rec;
         setIsListeningMic(true);
         setIsWrongPronunciationState(false);
-        const attemptLabel =
-          failedAttemptsRef.current > 0
-            ? ` (Deneme ${Math.min(3, failedAttemptsRef.current + 1)}/3)`
-            : "";
-        setMicStatusMessage(
-          `🎙️ Dinleniyor... Şimdi okuyun${attemptLabel}`
-        );
+        setMicStatusMessage("");
         rec.start();
       } catch {
-        setIsListeningMic(false);
+        stopSpeechRecognition();
         setMicTimedOut(true);
-        setMicStatusMessage(
-          "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
-        );
+        setMicStatusMessage("🎙️ Ses algılanmadı");
       }
     },
     [
+      isActivityStarted,
       isPaused,
       micFreeMode,
       stopSpeechRecognition,
+      startActiveMicAnalyser,
       handleMatrixCardVerified,
       playItemAudio,
     ]
   );
 
-  // Soru veya Matrix adımı değiştiğinde önce hedef sesi çal, ses bittikten 300ms sonra mikrofonu başlat
+  // GÖREV 2 & GÖREV 3.1:
+  // - Etkinlik başlamadan (Mikrofon Testi / Hazırlık ekranındayken) hiçbir ses otomatik çalmaz (baslangic.mp3 ile çakışmaz).
+  // - Etkinlik başladığında ilk referans ses 700ms sonra tek başına ve berrak şekilde çalar.
+  // - Referans sesin çalması (onended) tamamen bittikten 400ms sonra mikrofon otomatik açılır.
   useEffect(() => {
-    if (!currentQuestion || isCompleted || isPaused) return;
+    if (
+      !isActivityStarted ||
+      showCalibrationTest ||
+      !currentQuestion ||
+      isCompleted ||
+      isPaused
+    )
+      return;
+
+    const startDelay = initialAudioDelayRef.current;
+    initialAudioDelayRef.current = 250;
 
     if (currentQuestion.concreteMode === "listen_speak_matrix") {
       const activeCard =
@@ -982,15 +1481,15 @@ export default function VisualRosettaQuiz({
             if (micStartDelayTimerRef.current) {
               clearTimeout(micStartDelayTimerRef.current);
             }
-            // Hedef sesin çalması tamamen bittikten 300ms sonra mikrofonu otomatik başlat
+            // GÖREV 3.1: Hedef sesin çalması tamamen bittikten 400ms sonra mikrofonu otomatik başlat
             micStartDelayTimerRef.current = setTimeout(() => {
               if (!micFreeMode && !isPaused && !verifiedCardLockRef.current) {
                 startMatrixListening(activeCard, matrixStepIndex);
               }
-            }, 300);
+            }, 400);
           }
         });
-      }, 220);
+      }, startDelay);
 
       return () => {
         clearTimeout(timer);
@@ -1002,12 +1501,14 @@ export default function VisualRosettaQuiz({
     } else {
       const timer = setTimeout(() => {
         playItemAudio(currentQuestion.target, currentQuestion.concreteMode);
-      }, 200);
+      }, startDelay);
       return () => {
         clearTimeout(timer);
       };
     }
   }, [
+    isActivityStarted,
+    showCalibrationTest,
     currentIndex,
     matrixStepIndex,
     currentQuestion,
@@ -1023,9 +1524,10 @@ export default function VisualRosettaQuiz({
     return () => {
       stopAllAudio();
       stopSpeechRecognition();
+      stopCalibrationResources();
       clearTimers();
     };
-  }, [stopSpeechRecognition, clearTimers]);
+  }, [stopSpeechRecognition, stopCalibrationResources, clearTimers]);
 
   const restartQuiz = useCallback(
     (customPool?: ResimliKelime[], customMode?: VisualInteractionMode) => {
@@ -1033,6 +1535,8 @@ export default function VisualRosettaQuiz({
       stopAllAudio();
       stopSpeechRecognition();
       clearTimers();
+      // GÖREV 2: baslangic.mp3 ile ilk kelime sesinin çakışmaması için 700ms gecikme
+      initialAudioDelayRef.current = 700;
       const targetPool = customPool || activePool;
       const targetMode = customMode || interactionMode;
       const built = buildVisualQuestions(
@@ -1074,7 +1578,7 @@ export default function VisualRosettaQuiz({
   const handleSelectOption = (option: ResimliKelime) => {
     if (!currentQuestion || isPaused) return;
 
-    // Mod A'da karta tıklanınca o kartın sesini çal, ses bitince 300ms sonra mikrofonu aç (veya mikrofonsuz moddaysa onayla)
+    // Mod A'da karta tıklanınca o kartın sesini çal, ses bitince 400ms sonra mikrofonu aç (veya mikrofonsuz moddaysa onayla)
     if (currentQuestion.concreteMode === "listen_speak_matrix") {
       const clickedIdx = currentQuestion.options.findIndex(
         (o) => o.id === option.id
@@ -1096,7 +1600,7 @@ export default function VisualRosettaQuiz({
           }
           micStartDelayTimerRef.current = setTimeout(() => {
             startMatrixListening(option, clickedIdx);
-          }, 300);
+          }, 400);
         }
       });
       return;
@@ -1163,6 +1667,234 @@ export default function VisualRosettaQuiz({
         <p className="text-sm font-bold text-[var(--muted)]">
           Bu filtrede yeterli görsel öğe bulunamadı.
         </p>
+      </div>
+    );
+  }
+
+  // GÖREV 1: Sesli Etkinlik Öncesi "1 - 2 - 3 Mikrofon Testi & Hazırlık" Ekranı (Zero-Scroll)
+  if (!isActivityStarted || showCalibrationTest) {
+    const startWithMicNow = () => {
+      playClick();
+      stopCalibrationResources();
+      setMicFreeMode(false);
+      initialAudioDelayRef.current = 700;
+      setShowCalibrationTest(false);
+      setIsActivityStarted(true);
+    };
+
+    const startMicFreeNow = () => {
+      playClick();
+      stopCalibrationResources();
+      setMicFreeMode(true);
+      initialAudioDelayRef.current = 700;
+      setShowCalibrationTest(false);
+      setIsActivityStarted(true);
+    };
+
+    const reopenOneTwoThreeTest = () => {
+      playClick();
+      setCalibSteps([false, false, false]);
+      setCalibCompleted(false);
+      setCalibSpokenText("");
+      setShowCalibrationTest(true);
+    };
+
+    return (
+      <div className="h-[calc(100dvh-105px)] max-h-[calc(100dvh-105px)] flex flex-col items-center justify-center overflow-hidden p-3 sm:p-5 bg-[#F7EFE1]/70 dark:bg-[var(--surface)]/60 rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+        <div className="w-full max-w-lg bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 shadow-md space-y-3.5 text-center">
+          {showCalibrationTest ? (
+            <>
+              {/* Başlık */}
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[#087F5B] dark:text-emerald-300 text-xs font-extrabold">
+                  <Mic size={14} />
+                  <span>🎙️ Mikrofon &amp; Ses Kalibrasyonu (1 - 2 - 3 Testi)</span>
+                </span>
+                <h2 className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
+                  Mikrofonunuzu doğrulamak için mikrofona{" "}
+                  <span className="text-[#6741D9] dark:text-purple-300">
+                    1, 2, 3
+                  </span>{" "}
+                  (veya{" "}
+                  <span lang="ar" dir="rtl" className="arabic font-bold text-[#087F5B]">
+                    واحد، اثنان، ثلاثة
+                  </span>
+                  ) deyin
+                </h2>
+              </div>
+
+              {/* 1 - 2 - 3 Dairesel Rozetleri */}
+              <div className="flex items-center justify-center gap-4 sm:gap-6 py-1">
+                {[1, 2, 3].map((num, idx) => {
+                  const done = calibSteps[idx];
+                  const isNext =
+                    !done && (idx === 0 || calibSteps[idx - 1] === true);
+                  return (
+                    <div
+                      key={num}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <div
+                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-3 flex items-center justify-center text-xl sm:text-2xl font-extrabold transition-all duration-300 shadow-xs ${
+                          done
+                            ? "bg-emerald-600 border-emerald-700 text-white scale-105 ring-4 ring-emerald-400/30"
+                            : isNext
+                            ? "bg-white dark:bg-[var(--background)] border-[#6741D9] text-[#6741D9] dark:text-purple-300 ring-4 ring-purple-400/20 animate-pulse"
+                            : "bg-white/70 dark:bg-[var(--background)]/60 border-[#E6D7BE] text-[var(--muted)]"
+                        }`}
+                      >
+                        {done ? <Check size={28} strokeWidth={3} /> : num}
+                      </div>
+                      <span
+                        className={`text-[11px] font-extrabold ${
+                          done
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-[var(--muted)]"
+                        }`}
+                      >
+                        {num === 1
+                          ? "1 • واحد"
+                          : num === 2
+                          ? "2 • اثنان"
+                          : "3 • ثلاثة"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Canlı Ses Seviyesi Göstergesi (Web Audio AnalyserNode) */}
+              <div className="bg-[#1E293B] text-white rounded-2xl p-3 border border-slate-700 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="flex items-center gap-1.5 text-emerald-300">
+                    <Mic size={14} className="animate-pulse" />
+                    <span>Canlı Mikrofon Ses Seviyesi</span>
+                  </span>
+                  <span className="tabular-nums text-slate-300">
+                    %{calibVolumePct}
+                  </span>
+                </div>
+
+                {/* Canlı Yeşil Ses Barı */}
+                <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden p-0.5">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-75"
+                    style={{ width: `${Math.max(4, calibVolumePct)}%` }}
+                  />
+                </div>
+
+                {/* Canlı 12-Sütunlu Ses Dalgası */}
+                <div className="h-7 flex items-end justify-center gap-1.5 pt-1">
+                  {calibWaveBars.map((barVal, i) => (
+                    <span
+                      key={i}
+                      className={`w-2 rounded-full transition-all duration-75 ${
+                        calibVolumePct > 15
+                          ? "bg-emerald-400"
+                          : "bg-slate-600"
+                      }`}
+                      style={{
+                        height: `${Math.max(20, barVal)}%`,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {calibCompleted ? (
+                  <p className="text-xs sm:text-sm font-extrabold text-emerald-300 pt-0.5">
+                    ✅ Mikrofon Hazır! Etkinlik başlatılıyor...
+                  </p>
+                ) : calibSpokenText ? (
+                  <p className="text-[11px] text-slate-300 truncate">
+                    Algılanan: &ldquo;{calibSpokenText}&rdquo;
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-300">
+                    Sesiniz algılandığında yukarıdaki yeşil bar hareket eder ve{" "}
+                    <strong>[1] - [2] - [3]</strong> halkaları yeşile döner.
+                  </p>
+                )}
+              </div>
+
+              {calibErrorMsg && (
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-1.5">
+                  {calibErrorMsg}
+                </p>
+              )}
+
+              {/* Kullanıcı Kontrolü ve Alternatif Seçenekler */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={startWithMicNow}
+                  className="h-10 px-4 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs sm:text-sm border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Play size={15} />
+                  <span>
+                    {calibCompleted
+                      ? "▶️ Etkinliği Başlat"
+                      : "▶️ Testi Geç, Hemen Başla"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={startMicFreeNow}
+                  className="h-10 px-4 rounded-xl bg-white dark:bg-[var(--background)] hover:border-[#6741D9] border-2 border-[#E6D7BE] text-[var(--foreground)] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <MicOff size={15} className="text-amber-600" />
+                  <span>🔇 Mikrofonsuz Modda Başlat (Sadece Dinle &amp; Seç)</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Oturumda Kalibrasyon Zaten Tamamlanmışsa Kompakt "Hazırım, Sesi Dinle & Başla" Kartı */
+            <>
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[#087F5B] dark:text-emerald-300 text-xs font-extrabold">
+                  <Check size={14} />
+                  <span>✅ Mikrofon Bu Oturumda Doğrulandı</span>
+                </span>
+                <h2 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)]">
+                  Görsel &amp; Sesli Eşleştirmeye Hazır mısınız?
+                </h2>
+                <p className="text-xs sm:text-sm font-semibold text-[var(--muted)]">
+                  Başlat butonuna tıkladığınızda ilk kelimenin Arapça telaffuzu net şekilde çalacak ve ardından mikrofonunuz 6 saniye boyunca sizi dinleyecektir.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={startWithMicNow}
+                  className="h-11 px-5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-sm border-b-3 border-[#065F46] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Play size={16} />
+                  <span>▶️ Hazırım, Sesi Dinle &amp; Başla</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={reopenOneTwoThreeTest}
+                  className="h-11 px-4 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Mic size={15} className="text-[#6741D9]" />
+                  <span>🎙️ Mikrofonu Test Et (1-2-3)</span>
+                </button>
+              </div>
+
+              <div className="pt-0.5">
+                <button
+                  type="button"
+                  onClick={startMicFreeNow}
+                  className="text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] underline cursor-pointer"
+                >
+                  🔇 Mikrofonsuz Modda Başlat (Sadece Dinle &amp; Seç)
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -1321,8 +2053,28 @@ export default function VisualRosettaQuiz({
           })}
         </div>
 
-        {/* Sağ Kontroller: Erkek/Kadın Ses + Kategori */}
+        {/* Sağ Kontroller: Mikrofonu Test Et + Erkek/Kadın Ses + Kategori */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              stopAllAudio();
+              stopSpeechRecognition();
+              clearTimers();
+              setCalibSteps([false, false, false]);
+              setCalibCompleted(false);
+              setCalibSpokenText("");
+              setShowCalibrationTest(true);
+            }}
+            className="h-7 px-2 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 flex items-center gap-1 cursor-pointer shrink-0"
+            title="1 - 2 - 3 Mikrofon Kalibrasyon Testini Aç"
+          >
+            <Mic size={12} />
+            <span className="hidden sm:inline">🎙️ Mikrofonu Test Et</span>
+            <span className="sm:hidden">Test</span>
+          </button>
+
           <div className="inline-flex items-center rounded-lg bg-white dark:bg-[var(--background)] p-0.5 border border-[#E6D7BE]">
             <button
               type="button"
@@ -1391,7 +2143,7 @@ export default function VisualRosettaQuiz({
 
       {/* 2. HEDEF İBARE / AKTİF KONUŞMA BANDI (shrink-0) */}
       {activeConcreteMode === "listen_speak_matrix" ? (
-        /* MOD A: Koyu Lacivert/Antrasit Aktif Konuşma Çubuğu (bg-[#1E293B] text-white) */
+        /* GÖREV 4: Koyu Lacivert/Antrasit Aktif Konuşma Çubuğu — Mükerrer "Ses duyulmadı" yazısı olmadan tek net aksiyon */
         <div
           className={`shrink-0 text-white rounded-xl px-3 py-2 border-2 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shadow-sm transition-colors ${
             isWrongPronunciationState
@@ -1411,7 +2163,7 @@ export default function VisualRosettaQuiz({
                     if (!micFreeMode && !isPaused) {
                       micStartDelayTimerRef.current = setTimeout(() => {
                         startMatrixListening(activeMatrixCard, matrixStepIndex);
-                      }, 300);
+                      }, 400);
                     }
                   }
                 );
@@ -1473,28 +2225,65 @@ export default function VisualRosettaQuiz({
                   ({activeMatrixCard.turkce})
                 </span>
               </div>
-              <p
-                className={`text-[11px] truncate mt-0.5 font-semibold ${
-                  isWrongPronunciationState
-                    ? "text-amber-200"
+
+              {/* Alt Durum Satırı + 6 Saniyelik Geri Sayım ve Canlı Mikrofon Ses Dalgası */}
+              <div className="flex items-center gap-2 mt-0.5">
+                <p
+                  className={`text-[11px] truncate font-semibold ${
+                    isWrongPronunciationState
+                      ? "text-amber-200"
+                      : isListeningMic
+                      ? "text-emerald-300"
+                      : micTimedOut
+                      ? "text-amber-300"
+                      : "text-slate-300"
+                  }`}
+                >
+                  {micFreeMode
+                    ? "Mikrofonsuz Mod aktif: Onaylamak için 'Onayla ✓' butonuna dokunun."
+                    : isPlayingTargetAudio
+                    ? "🔊 Örnek ses çalıyor..."
                     : isListeningMic
-                    ? "text-emerald-300"
-                    : "text-slate-300"
-                }`}
-              >
-                {micFreeMode
-                  ? "Mikrofonsuz Mod aktif: Onaylamak için aktif karta veya 'Onayla ✓' butonuna dokunun."
-                  : isPlayingTargetAudio
-                  ? "🔊 Örnek telaffuz çalıyor... Ses bitince mikrofon otomatik açılacak."
-                  : micStatusMessage ||
-                    (spokenTranscript
-                      ? `Algılanan: "${spokenTranscript}"`
-                      : "🎙️ Dinleniyor... Şimdi okuyun")}
-              </p>
+                    ? `🎙️ Dinleniyor (${micRemainingSec}s)...${
+                        spokenTranscript ? ` "${spokenTranscript}"` : ""
+                      }`
+                    : micStatusMessage ||
+                      (spokenTranscript
+                        ? `Algılanan: "${spokenTranscript}"`
+                        : "🎙️ Ses algılanmadı")}
+                </p>
+
+                {/* Aktif dinleme sırasında canlı ses dalgası ve 6sn ilerleme çubuğu */}
+                {isListeningMic && !micFreeMode && (
+                  <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    <div className="flex items-end gap-0.5 h-3">
+                      {[0.6, 1.0, 0.8, 1.15, 0.7].map((mult, idx) => {
+                        const barH = Math.max(
+                          25,
+                          Math.min(100, Math.round(liveMicLevel * mult))
+                        );
+                        return (
+                          <span
+                            key={idx}
+                            className="w-1 rounded-full bg-emerald-400 transition-all duration-75"
+                            style={{ height: `${barH}%` }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="w-20 h-1.5 rounded-full bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-400 transition-all duration-100"
+                        style={{ width: `${micRemainingPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Sağ Aksiyon Butonları: Mikrofonsuz Onay / Ses Duyulmadı Tekrar Konuş / 3 Deneme Sonrası Tekrar Dene & Sonrakine Geç */}
+          {/* Sağ Aksiyon Butonu: Tek ve net buton ("Onayla ✓" | "🎙️ Tekrar Konuş" | "Sonrakine Geç ⏭") */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             {micFreeMode ? (
               <button
@@ -1516,7 +2305,7 @@ export default function VisualRosettaQuiz({
                   }}
                   className="h-8 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
                 >
-                  <span>🎙️ Tekrar Dene</span>
+                  <span>🎙️ Tekrar Konuş</span>
                 </button>
                 <button
                   type="button"
@@ -1528,7 +2317,7 @@ export default function VisualRosettaQuiz({
                   <span>Sonrakine Geç ⏭</span>
                 </button>
               </>
-            ) : micTimedOut && !isListeningMic && !isPlayingTargetAudio ? (
+            ) : (micTimedOut || !isListeningMic) && !isPlayingTargetAudio ? (
               <button
                 type="button"
                 onClick={() => {
@@ -1537,9 +2326,9 @@ export default function VisualRosettaQuiz({
                   stopAllAudio();
                   startMatrixListening(activeMatrixCard, matrixStepIndex);
                 }}
-                className="h-8 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer animate-pulse"
+                className="h-8 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
               >
-                <span>🎙️ Ses duyulmadı, tekrar konuşmak için dokunun</span>
+                <span>🎙️ Tekrar Konuş</span>
               </button>
             ) : null}
           </div>
@@ -1789,7 +2578,7 @@ export default function VisualRosettaQuiz({
                           ) {
                             micStartDelayTimerRef.current = setTimeout(() => {
                               startMatrixListening(option, idx);
-                            }, 300);
+                            }, 400);
                           }
                         });
                       }}

@@ -135,13 +135,13 @@ export default function RootLayout({
         <ShareAppModal />
         <FeedbackModal />
         <Header />
-        <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 pt-4 md:pt-6 pb-28 lg:pb-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-4 md:pt-6 pb-28 lg:pb-8">
           {children}
         </main>
         <ScrollToTopButton />
         <MobileNav />
 
-        <footer className="hidden lg:block print:hidden border-t-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] mt-10 max-w-6xl w-full mx-auto rounded-t-2xl">
+        <footer className="hidden lg:block print:hidden border-t-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] mt-10 max-w-7xl w-full mx-auto rounded-t-2xl">
           <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 whitespace-nowrap">
             {/* Sol Grup: Logo + Telif + Ziyaretçi Sayacı Kapsülü */}
             <div className="flex items-center gap-2.5 min-w-0">

@@ -44,13 +44,13 @@ import {
   buildDailyStudyPackage,
 } from "@/lib/mistakeUtils";
 import {
-  generateFullDictionaryPool,
   generatePoolFromDialogues,
   generatePoolFromReadings,
   generatePoolFrom1111Sentences,
   generatePoolFromProverbs,
   generatePoolFromVisualWords,
   getModuleCategoryList,
+  normalizeWordPartOfSpeech,
 } from "@/lib/quiz";
 
 import Flashcard from "@/components/exercises/Flashcard";
@@ -212,6 +212,9 @@ function ExercisesPageContent() {
   // Havuz ve Dinamik Alt Filtre State'leri
   const [rangePreset, setRangePreset] = useState<PoolSourceId>("full_dict");
   const [cefrFilter, setCefrFilter] = useState<"all" | Level>("all");
+  const [wordPosFilter, setWordPosFilter] = useState<
+    "all" | "isim" | "fiil" | "edat"
+  >("all");
   const [singleDialogueId, setSingleDialogueId] = useState<string>("all");
   const [singleReadingId, setSingleReadingId] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -349,11 +352,24 @@ function ExercisesPageContent() {
       const resolvedMode = normalizeModeParam(modeParam);
       if (resolvedMode) {
         setSelectedType(resolvedMode);
-        if (
-          resolvedMode === "sentence-builder" ||
-          resolvedMode === "fill-in-blanks"
-        ) {
+        if (resolvedMode === "sentence-builder") {
           setContentType("sentences");
+          if (!resolvedPool) {
+            setRangePreset("sentences_1111");
+          }
+        } else if (resolvedMode === "fill-in-blanks") {
+          setContentType("sentences");
+        } else if (resolvedMode === "visual-rosetta") {
+          if (
+            !resolvedPool ||
+            (resolvedPool !== "visual_words" &&
+              resolvedPool !== "proverbs_508" &&
+              resolvedPool !== "all_dialogues" &&
+              resolvedPool !== "reading_texts")
+          ) {
+            setRangePreset("visual_words");
+          }
+          setContentType("words");
         }
       }
     });
@@ -423,11 +439,6 @@ function ExercisesPageContent() {
         endNum,
       }),
     [singleDialogueId, cefrFilter, startNum, endNum]
-  );
-
-  const activeFullDictWordItems = useMemo(
-    () => generateFullDictionaryPool({ level: cefrFilter }),
-    [cefrFilter]
   );
 
   // Görsel & Sesli Eşleştirme için filtrelenmiş ResimliKelime[] havuzu (999 Görsel Kelime, 508 Atasözü, 120 Diyalog, 60 Metin)
@@ -955,9 +966,23 @@ function ExercisesPageContent() {
         cefrFilter === "all"
           ? nonProperSozluk
           : nonProperSozluk.filter((w) => w.cefr === cefrFilter);
+      const filteredByPos =
+        wordPosFilter === "all"
+          ? filteredByLevel
+          : filteredByLevel.filter((w) => {
+              const pos = normalizeWordPartOfSpeech(w.tur);
+              if (wordPosFilter === "edat") {
+                return pos === "edat" || pos === "ifade";
+              }
+              return pos === wordPosFilter;
+            });
       return {
         combinedVocabulary:
-          filteredByLevel.length >= 4 ? filteredByLevel : nonProperSozluk,
+          filteredByPos.length >= 4
+            ? filteredByPos
+            : filteredByLevel.length >= 4
+            ? filteredByLevel
+            : nonProperSozluk,
         poolNotice: null,
       };
     }
@@ -1002,6 +1027,7 @@ function ExercisesPageContent() {
     singleDialogueId,
     singleReadingId,
     cefrFilter,
+    wordPosFilter,
     selectedDialogues,
     sentenceCountInPool,
     favoriteWords,
@@ -1072,73 +1098,111 @@ function ExercisesPageContent() {
 
   const contentStats = getDynamicContentStats();
 
-  // Hızlı Havuz Sekmeleri (Quick Pool Pills) ve Havuz Select Seçenekleri
+  // Hızlı Havuz Sekmeleri (4x2 Ferah Izgara Seçenekleri)
   const poolOptions: {
     id: PoolSourceId;
+    title: string;
+    countBadge: string;
     label: string;
-    shortLabel: string;
   }[] = [
     {
       id: "full_dict",
-      label: `📚 Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")} Kelime)`,
-      shortLabel: `📚 Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")})`,
+      title: "📚 Tüm Sözlük",
+      countBadge: contentStats.dictionaryWordCount.toLocaleString("tr-TR"),
+      label: `Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")} Kelime)`,
     },
     {
       id: "visual_words",
-      label: `🖼️ ${contentStats.visualWordCount} Görsel Kelime (Resimli & Örnekli)`,
-      shortLabel: `🖼️ ${contentStats.visualWordCount} Görsel Kelime`,
+      title: "🖼️ Görsel Kelimeler",
+      countBadge: contentStats.visualWordCount.toLocaleString("tr-TR"),
+      label: `Görsel Kelimeler (${contentStats.visualWordCount})`,
     },
     {
       id: "all_dialogues",
-      label: `💬 ${contentStats.dialogueCount} Diyalog (Kelime & Cümleler)`,
-      shortLabel: `💬 ${contentStats.dialogueCount} Diyalog`,
+      title: "💬 Diyaloglar",
+      countBadge: contentStats.dialogueCount.toLocaleString("tr-TR"),
+      label: `Diyaloglar (${contentStats.dialogueCount})`,
     },
     {
       id: "reading_texts",
-      label: `📖 ${contentStats.readingCount} Okuma Metni (Cümle & Kelimeler)`,
-      shortLabel: `📖 ${contentStats.readingCount} Okuma Metni`,
+      title: "📖 Okuma Metinleri",
+      countBadge: contentStats.readingCount.toLocaleString("tr-TR"),
+      label: `Okuma Metinleri (${contentStats.readingCount})`,
     },
     {
       id: "sentences_1111",
-      label: `🗣️ ${contentStats.sentenceCount} Günlük Kalıp Cümle`,
-      shortLabel: `🗣️ ${contentStats.sentenceCount} Günlük Cümle`,
+      title: "🗣️ Günlük Cümleler",
+      countBadge: contentStats.sentenceCount.toLocaleString("tr-TR"),
+      label: `Günlük Cümleler (${contentStats.sentenceCount.toLocaleString("tr-TR")})`,
     },
     {
       id: "proverbs_508",
-      label: `📜 ${contentStats.proverbCount} Arapça Atasözü & Hikmet`,
-      shortLabel: `📜 ${contentStats.proverbCount} Atasözü`,
+      title: "📜 Atasözleri",
+      countBadge: contentStats.proverbCount.toLocaleString("tr-TR"),
+      label: `Atasözleri (${contentStats.proverbCount})`,
     },
     {
       id: "srs_due",
-      label: `⏰ Bugün Tekrar Edilecekler (SRS) (${dailyPackage.dueReviewPool.totalDueCount})`,
-      shortLabel: `⏰ SRS Tekrar (${dailyPackage.dueReviewPool.totalDueCount})`,
+      title: "⏰ SRS Tekrar",
+      countBadge: String(dailyPackage.dueReviewPool.totalDueCount),
+      label: `SRS Tekrar (${dailyPackage.dueReviewPool.totalDueCount})`,
     },
     {
       id: "mistakes",
-      label: `⚡ Hata Defteri / Zorlandıklarım (${mistakeIds.length})`,
-      shortLabel: `⚡ Hata Defteri (${mistakeIds.length})`,
+      title: "⚡ Hata Defteri",
+      countBadge: String(mistakeIds.length),
+      label: `Hata Defteri (${mistakeIds.length})`,
     },
     {
       id: "favorites",
-      label: `❤️ Favorilerim / Kaydedilenler (${favoriteWords.length})`,
-      shortLabel: `❤️ Favorilerim (${favoriteWords.length})`,
+      title: "❤️ Favorilerim",
+      countBadge: String(favoriteWords.length),
+      label: `Favorilerim (${favoriteWords.length})`,
     },
     {
       id: "weak-words",
-      label: `🎯 Mahreç Tekrarı (${weakWords.length})`,
-      shortLabel: `🎯 Mahreç (${weakWords.length})`,
+      title: "🎯 Mahreç Tekrarı",
+      countBadge: String(weakWords.length),
+      label: `Mahreç Tekrarı (${weakWords.length})`,
     },
   ];
 
   const quickPoolPills = poolOptions.slice(0, 8);
 
+  const isPoolCompatibleWithSelectedMode = (poolId: PoolSourceId): boolean => {
+    if (selectedType === "visual-rosetta") {
+      return (
+        poolId === "visual_words" ||
+        poolId === "proverbs_508" ||
+        poolId === "all_dialogues" ||
+        poolId === "reading_texts"
+      );
+    }
+    if (selectedType === "sentence-builder") {
+      return poolId !== "full_dict";
+    }
+    return true;
+  };
+
   const isMistakesEmpty =
     rangePreset === "mistakes" && mistakeIds.length === 0;
 
   const handlePoolSelectChange = (presetId: PoolSourceId) => {
+    if (
+      selectedType === "visual-rosetta" &&
+      !isPoolCompatibleWithSelectedMode(presetId)
+    ) {
+      playClick();
+      return;
+    }
+    if (selectedType === "sentence-builder" && presetId === "full_dict") {
+      playClick();
+      return;
+    }
     playClick();
     setRangePreset(presetId);
     setCategoryFilter("all");
+    setWordPosFilter("all");
     setSingleDialogueId("all");
     setSingleReadingId("all");
     setStartNum(1);
@@ -1371,12 +1435,20 @@ function ExercisesPageContent() {
         };
       }
       const cnt =
-        cefrFilter === "all"
-          ? contentStats.dictionaryWordCount
-          : activeFullDictWordItems.length;
+        cefrFilter === "all" && wordPosFilter === "all"
+          ? getDynamicContentStats().dictionaryWordCount
+          : combinedVocabulary.length;
+      const posSuffix =
+        wordPosFilter === "isim"
+          ? "İsim"
+          : wordPosFilter === "fiil"
+          ? "Fiil"
+          : wordPosFilter === "edat"
+          ? "Edat & Kalıp"
+          : "Kelime";
       return {
         activeItemCount: cnt,
-        activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} Kelime`,
+        activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} ${posSuffix}`,
       };
     }
 
@@ -1397,17 +1469,16 @@ function ExercisesPageContent() {
     isSentencesOnlyMode,
     effectiveContentType,
     cefrFilter,
+    wordPosFilter,
     filteredVisualWordsPool.length,
     activeVisualWordsWordItems,
     active1111SentencesWordItems,
     activeProverbsWordItems,
     activeReadingsWordItems,
     activeDialoguesWordItems,
-    activeFullDictWordItems,
     sentenceCountInPool,
     combinedVocabulary.length,
     idiomsPool.length,
-    contentStats.dictionaryWordCount,
   ]);
 
   return (
@@ -1475,10 +1546,12 @@ function ExercisesPageContent() {
                     onClick={() => {
                       playClick();
                       setSelectedType(card.id);
-                      if (
-                        card.id === "sentence-builder" ||
-                        card.id === "fill-in-blanks"
-                      ) {
+                      if (card.id === "sentence-builder") {
+                        setContentType("sentences");
+                        if (rangePreset === "full_dict") {
+                          setRangePreset("sentences_1111");
+                        }
+                      } else if (card.id === "fill-in-blanks") {
                         setContentType("sentences");
                       } else if (card.id === "visual-rosetta") {
                         if (
@@ -1545,11 +1618,19 @@ function ExercisesPageContent() {
           </section>
 
           {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
-          <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
-            {/* 8 Ana Veri Kaynağı Izgarası (Yatay Kaydırma Yok — Sarmalanan Kompakt Grid) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-2 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+          <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 sm:p-3 space-y-2">
+            {/* 8 Ana Veri Kaynağı Izgarası (4x2 Ferah Izgara — Metin Kesilmesi Yok) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
               {quickPoolPills.map((pill) => {
                 const isActive = rangePreset === pill.id;
+                const isCompatible = isPoolCompatibleWithSelectedMode(pill.id);
+                const incompatibilityHint =
+                  selectedType === "visual-rosetta" && !isCompatible
+                    ? "Bu modül görselli havuzlarla (Görsel Kelimeler, Atasözleri, Diyaloglar, Metinler) çalışır"
+                    : selectedType === "sentence-builder" && !isCompatible
+                    ? "Bu modül cümle içeren havuzlarla (Günlük Cümleler, Diyaloglar, Okuma Metinleri, Atasözleri, Görsel Kelimeler) çalışır"
+                    : undefined;
+
                 const activeStyle =
                   pill.id === "srs_due"
                     ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
@@ -1557,18 +1638,35 @@ function ExercisesPageContent() {
                     ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
                     : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
 
+                const badgeStyle = isActive
+                  ? "bg-white/20 text-white border-white/30"
+                  : pill.id === "srs_due"
+                  ? "bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-300 border-[#6741D9]/30"
+                  : pill.id === "mistakes"
+                  ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-400 border-[#E6D7BE]";
+
                 return (
                   <button
                     key={pill.id}
                     type="button"
+                    title={incompatibilityHint}
+                    data-tooltip={incompatibilityHint}
                     onClick={() => handlePoolSelectChange(pill.id)}
-                    className={`min-h-[36px] px-2 py-1.5 rounded-xl border text-[11px] sm:text-xs font-extrabold flex items-center justify-center text-center transition-all cursor-pointer truncate ${
-                      isActive
-                        ? activeStyle
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                    className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-2 text-left transition-all ${
+                      !isCompatible
+                        ? "opacity-45 bg-white/60 dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] cursor-not-allowed"
+                        : isActive
+                        ? `${activeStyle} cursor-pointer`
+                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B] cursor-pointer"
                     }`}
                   >
-                    <span className="truncate">{pill.shortLabel}</span>
+                    <span className="leading-snug">{pill.title}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
+                    >
+                      {pill.countBadge}
+                    </span>
                   </button>
                 );
               })}
@@ -1774,6 +1872,47 @@ function ExercisesPageContent() {
                 </div>
               )}
 
+              {/* Kural C: 📚 Tüm Sözlük Seçildiğinde Kelime Türü Filtresi ([Tümü] [İsimler] [Fiiller] [Edat & Kalıplar]) */}
+              {rangePreset === "full_dict" && !isSentencesOnlyMode && (
+                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
+                  <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
+                    Kelime Türü:
+                  </span>
+                  <div className="grid grid-cols-2 sm:flex items-center gap-1 w-full sm:w-auto">
+                    {(
+                      [
+                        { id: "all", label: "Tümü" },
+                        { id: "isim", label: "İsimler" },
+                        { id: "fiil", label: "Fiiller" },
+                        { id: "edat", label: "Edat & Kalıplar" },
+                      ] as {
+                        id: "all" | "isim" | "fiil" | "edat";
+                        label: string;
+                      }[]
+                    ).map((posItem) => {
+                      const active = wordPosFilter === posItem.id;
+                      return (
+                        <button
+                          key={posItem.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setWordPosFilter(posItem.id);
+                          }}
+                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                            active
+                              ? "bg-[#6741D9] text-white font-bold shadow-2xs"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {posItem.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* 2. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
               <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -1940,6 +2079,40 @@ function ExercisesPageContent() {
                   Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe)
                 </span>
               </button>
+            </div>
+
+            {/* Seçili Alıştırma Özeti Şeridi (Tek Satırlık Net Pedagojik Özet Rozeti) */}
+            <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] px-3 py-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-bold text-[var(--foreground)]">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="text-[#065F46] dark:text-emerald-400 font-extrabold">
+                  🎯 Seçili:{" "}
+                  {exerciseCards.find((c) => c.id === selectedType)?.title}
+                </span>
+                <span className="text-[var(--muted)]">•</span>
+                <span>
+                  Kaynak:{" "}
+                  <strong className="text-[#6741D9] dark:text-indigo-300">
+                    {poolOptions
+                      .find((p) => p.id === rangePreset)
+                      ?.title.replace(/^[^\s]+\s/, "") || "Tüm Sözlük"}{" "}
+                    ({activePoolCountLabel})
+                  </strong>
+                </span>
+                <span className="text-[var(--muted)]">•</span>
+                <span>
+                  Seviye:{" "}
+                  <strong>
+                    {cefrFilter === "all"
+                      ? "Tüm Seviyeler"
+                      : `Seviye ${cefrFilter}`}
+                  </strong>
+                </span>
+                <span className="text-[var(--muted)]">•</span>
+                <span>
+                  <strong>{questionCount} Soru</strong> (
+                  {timeLimit ? `${timeLimit}s Süreli` : "Süresiz"})
+                </span>
+              </div>
             </div>
 
             {isMistakesEmpty && (

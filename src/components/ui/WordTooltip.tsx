@@ -26,6 +26,8 @@ interface Props {
   activeWordIndex?: number | null;
   activeWordProgress?: number;
   isClassroomMode?: boolean;
+  forceShowHareke?: boolean;
+  inlineFlow?: boolean;
 }
 
 function buildWordForms(item: DictionaryItem): TargetForm[] {
@@ -115,6 +117,8 @@ export default function WordTooltip({
   activeWordIndex = null,
   activeWordProgress = 0,
   isClassroomMode = false,
+  forceShowHareke,
+  inlineFlow = false,
 }: Props) {
   const {
     showTooltips,
@@ -267,8 +271,10 @@ export default function WordTooltip({
     };
   }, [activeIndex, computePosition]);
 
+  const effectiveShowHareke =
+    forceShowHareke !== undefined ? forceShowHareke : showHareke;
   const formatAr = (str: string) =>
-    formatArabicText(str, showHareke, arabicFont);
+    formatArabicText(str, effectiveShowHareke, arabicFont);
 
   const words = text.split(/\s+/).filter(Boolean);
   const isPureNumericOrPhoneLine =
@@ -327,7 +333,11 @@ export default function WordTooltip({
         ref={containerRef}
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
-        className="flex flex-wrap items-baseline justify-start gap-x-1.5 gap-y-2 text-right"
+        className={
+          inlineFlow
+            ? "inline text-right"
+            : "flex flex-wrap items-baseline justify-start gap-x-1.5 gap-y-2 text-right"
+        }
       >
         {words.map((word, index) => {
           const isWordSpeaking =
@@ -465,7 +475,9 @@ export default function WordTooltip({
           return (
             <span
               key={index}
-              className="relative inline-block align-baseline leading-normal"
+              className={`relative inline-block align-baseline leading-normal ${
+                inlineFlow ? "mx-0.5" : ""
+              }`}
             >
               {trackingArrowIndicator}
               {prefix}

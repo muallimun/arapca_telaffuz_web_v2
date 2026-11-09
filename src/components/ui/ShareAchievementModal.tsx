@@ -293,6 +293,11 @@ export function TeacherHomeworkModal({
   const [taskQuiz, setTaskQuiz] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  const isReadingText = dialogueId.startsWith("metin_");
+  const itemNumberLabel = isReadingText
+    ? `Metin #${dialogueId.replace("metin_", "")}`
+    : `#${dialogueId.replace("dlg_", "")}`;
+
   const homeworkUrl = useMemo(() => {
     const baseOrigin =
       typeof window !== "undefined" ? window.location.origin : APP_URL;
@@ -306,8 +311,17 @@ export function TeacherHomeworkModal({
     if (homeworkNote.trim()) {
       params.set("title", homeworkNote.trim().slice(0, 45));
     }
-    return `${baseOrigin}/diyalog/${dialogueId}?${params.toString()}`;
-  }, [dialogueId, homeworkNote, taskListen, taskPron, pronMinCount, taskQuiz]);
+    const routeSegment = isReadingText ? "metin" : "diyalog";
+    return `${baseOrigin}/${routeSegment}/${dialogueId}?${params.toString()}`;
+  }, [
+    dialogueId,
+    isReadingText,
+    homeworkNote,
+    taskListen,
+    taskPron,
+    pronMinCount,
+    taskQuiz,
+  ]);
 
   const qrSvg = useMemo(
     () => generateHomeworkQrSvg(homeworkUrl, 136),
@@ -316,19 +330,23 @@ export function TeacherHomeworkModal({
 
   const tasksSummaryText = useMemo(() => {
     const items: string[] = [];
-    if (taskListen) items.push(`• Diyaloğu Dinle ve İncele (${totalLines} Cümle)`);
+    if (taskListen)
+      items.push(
+        `• ${isReadingText ? "Metni" : "Diyaloğu"} Dinle ve İncele (${totalLines} Cümle)`
+      );
     if (taskPron)
       items.push(`• En Az ${pronMinCount} Cümlede Sesli Telaffuz Çalışması Yap`);
     if (taskQuiz)
       items.push(
-        "• Diyalog Alıştırmalarını (Boşluk Doldurma & Eşleştirme) Tamamla"
+        `• ${isReadingText ? "Metin" : "Diyalog"} Alıştırmalarını (Boşluk Doldurma & Eşleştirme) Tamamla`
       );
     return items.join("\n");
-  }, [taskListen, taskPron, pronMinCount, taskQuiz, totalLines]);
+  }, [taskListen, taskPron, pronMinCount, taskQuiz, totalLines, isReadingText]);
 
   const whatsappMessage = `🎓 *${
-    homeworkNote.trim() || "Arapça Diyalog Ödevi"
-  }*\n📖 *Diyalog:* #${dialogueId.replace("dlg_", "")} ${dialogueTitleTr} (${levelLabel})\n\n*Görevleriniz:*\n${tasksSummaryText}\n\n👇 *Ödeve Başlamak İçin Tıklayın:*\n${homeworkUrl}`;
+    homeworkNote.trim() ||
+    (isReadingText ? "Arapça Okuma Metni Ödevi" : "Arapça Diyalog Ödevi")
+  }*\n📖 *${isReadingText ? "Metin" : "Diyalog"}:* ${itemNumberLabel} ${dialogueTitleTr} (${levelLabel})\n\n*Görevleriniz:*\n${tasksSummaryText}\n\n👇 *Ödeve Başlamak İçin Tıklayın:*\n${homeworkUrl}`;
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -364,7 +382,7 @@ export function TeacherHomeworkModal({
                 🎓 Öğretmen Ödev Bağlantısı Oluşturucu
               </h3>
               <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                #{dialogueId.replace("dlg_", "")} {dialogueTitleTr} ({levelLabel})
+                {itemNumberLabel} {dialogueTitleTr} ({levelLabel})
               </p>
             </div>
           </div>

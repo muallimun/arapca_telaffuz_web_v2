@@ -16,7 +16,7 @@ import {
   PenTool,
   Eye,
 } from "lucide-react";
-import { Dialogue } from "@/types/data";
+import { Dialogue, ReadingTextQuestion } from "@/types/data";
 import { DialogueVocabularyEntry, getWordCategory } from "@/lib/dict";
 import { extractDialogueIdioms } from "@/lib/arabicIdioms";
 import { playClick, playSuccess } from "@/lib/sfxManager";
@@ -32,6 +32,7 @@ interface DialoguePdfModalProps {
   vocabEntries: DialogueVocabularyEntry[];
   imagePath: string;
   rawNum: number;
+  readingQuestions?: ReadingTextQuestion[];
   onClose: () => void;
 }
 
@@ -79,6 +80,15 @@ export function buildDialogueQrUrl(
   const num = digitsMatch
     ? parseInt(digitsMatch[0], 10)
     : fallbackRawNum || 1;
+  if (rawStr.startsWith("metin_")) {
+    const padded = String(Math.max(1, num)).padStart(2, "0");
+    const normalizedSlug = `metin_${padded}`;
+    return {
+      dialogueUrl: `https://app.muallimun.net/metin/${normalizedSlug}`,
+      shortDisplayUrl: `app.muallimun.net/metin/${normalizedSlug}`,
+      normalizedSlug,
+    };
+  }
   const padded = String(Math.max(1, num)).padStart(3, "0");
   const normalizedSlug = `dlg_${padded}`;
 
@@ -306,6 +316,7 @@ export default function DialoguePdfModal({
   vocabEntries,
   imagePath,
   rawNum,
+  readingQuestions,
   onClose,
 }: DialoguePdfModalProps) {
   const { arabicFont } = useSettings();
@@ -751,6 +762,41 @@ export default function DialoguePdfModal({
       });
     });
 
+    // Okuma metni soruları varsa Bölüm C'ye ekle
+    if (readingQuestions && readingQuestions.length > 0) {
+      readingQuestions.slice(0, 4).forEach((rq, rqIdx) => {
+        if (sectionCMultipleChoice.length >= 4) return;
+        const otherQs = readingQuestions
+          .filter((_, i) => i !== rqIdx)
+          .map((o) => `${o.cevap_ar} (${o.cevap_tr})`);
+        const correctStr = `${rq.cevap_ar} (${rq.cevap_tr})`;
+        const rawOpts = Array.from(
+          new Set([
+            correctStr,
+            ...otherQs,
+            "نَعَمْ، بِكُلِّ سُرُورٍ. (Evet, memnuniyetle.)",
+            "فِي الصَّبَاحِ الْبَاكِرِ. (Sabah erkenden.)",
+          ])
+        ).slice(0, 3);
+        const rot = (rqIdx + 1) % rawOpts.length;
+        const ordered = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
+        const cIdx = ordered.indexOf(correctStr);
+        const optLetters = ["A", "B", "C"];
+        sectionCMultipleChoice.push({
+          num: sectionCMultipleChoice.length + 1,
+          typeLabel: "Okuduğunu Anlama",
+          arabicPrompt: rq.soru_ar,
+          questionTr: rq.soru_tr,
+          options: ordered.map((t, oIdx) => ({
+            letter: optLetters[oIdx] || "A",
+            text: t,
+          })),
+          correctLetter: optLetters[cIdx >= 0 ? cIdx : 0],
+          correctText: correctStr,
+        });
+      });
+    }
+
     // Kalan soruları diyalog cümlelerinden tamamla (toplam 4 soru)
     for (
       let i = 0;
@@ -783,9 +829,9 @@ export default function DialoguePdfModal({
       const optLetters = ["A", "B", "C"];
       sectionCMultipleChoice.push({
         num: sectionCMultipleChoice.length + 1,
-        typeLabel: `Diyalog Anlama (Cümle #${ln.sira})`,
+        typeLabel: `Metin Anlama (Cümle #${ln.sira})`,
         arabicPrompt: ln.arapca,
-        questionTr: "Diyalogda geçen bu cümlenin doğru Türkçe çevirisi hangisidir?",
+        questionTr: "Metinde geçen bu cümlenin doğru Türkçe çevirisi hangisidir?",
         options: ordered.map((t, oIdx) => ({
           letter: optLetters[oIdx] || "A",
           text: t,
@@ -801,7 +847,7 @@ export default function DialoguePdfModal({
       wordBank,
       sectionCMultipleChoice,
     };
-  }, [vocabEntries, dialogue, miniWorksheetQuestions, dialogueIdioms]);
+  }, [vocabEntries, dialogue, miniWorksheetQuestions, dialogueIdioms, readingQuestions]);
 
   const { dialogueUrl, shortDisplayUrl } = useMemo(
     () => buildDialogueQrUrl(dialogue.id, rawNum),
@@ -3065,7 +3111,7 @@ export default function DialoguePdfModal({
                   }`}
                 >
                   <span className="px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold">
-                    DİYALOG #{String(rawNum).padStart(2, "0")}
+                    {dialogue.id.startsWith("metin_") ? "OKUMA METNİ" : "DİYALOG"} #{String(rawNum).padStart(2, "0")}
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold">
                     CEFR {dialogue.seviye}
@@ -3077,6 +3123,11 @@ export default function DialoguePdfModal({
                   <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
                     {includeHarakat ? "Harekeli" : "Harekesiz"}
                   </span>
+                  {dialogue.odak_gramer && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
+                      📌 {dialogue.odak_gramer}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-baseline justify-between gap-3 flex-wrap">

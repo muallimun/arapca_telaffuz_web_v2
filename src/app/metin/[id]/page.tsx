@@ -102,18 +102,6 @@ type StudyMode =
 type FlowMode = "single" | "sequential";
 type TextLayoutMode = "sentences" | "paragraph";
 
-const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
-
-function toArabicNumerals(num: number): string {
-  return String(num)
-    .split("")
-    .map((ch) => {
-      const code = ch.charCodeAt(0) - 48;
-      return code >= 0 && code <= 9 ? ARABIC_DIGITS[code] : ch;
-    })
-    .join("");
-}
-
 export default function ReadingTextDetailPage({
   params,
 }: {
@@ -677,7 +665,7 @@ export default function ReadingTextDetailPage({
       satirlar: readingText.satirlar.map((l) => ({
         sira: l.sira,
         konusmaci: `Cümle ${l.sira}`,
-        konusmaci_ar: `﴿${toArabicNumerals(l.sira)}﴾`,
+        konusmaci_ar: `#${l.sira}`,
         cinsiyet: preferredVoiceGender === "kadin" ? "K" : "E",
         arapca: l.arapca,
         turkce: l.turkce,
@@ -3226,16 +3214,18 @@ export default function ReadingTextDetailPage({
                 <AlignJustify size={13} />
                 <span>Paragraf Görünümü</span>
               </span>
-              <span className="text-xs font-bold text-[var(--foreground)]">
-                Cümle sonlarındaki{" "}
-                <bdi
-                  dir="rtl"
-                  className="arabic font-arabic text-base font-bold text-[#065F46] dark:text-emerald-400"
-                >
-                  ﴿١﴾
-                </bdi>{" "}
-                numaralarına tıklayarak o cümleyi dinleyebilir veya telaffuz
-                edebilirsiniz.
+              <span className="text-xs font-bold text-[var(--foreground)] inline-flex flex-wrap items-center gap-1">
+                <span>Cümle sonlarındaki</span>
+                <span className="inline-flex items-center justify-center min-w-[22px] h-[20px] px-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800">
+                  1
+                </span>
+                <span className="inline-flex items-center justify-center min-w-[22px] h-[20px] px-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800">
+                  2
+                </span>
+                <span>
+                  numaralı rozetlere tıklayarak o cümleyi dinleyebilir veya
+                  telaffuz edebilirsiniz.
+                </span>
               </span>
             </div>
 
@@ -3401,21 +3391,20 @@ export default function ReadingTextDetailPage({
                         </span>
                         <button
                           type="button"
+                          dir="ltr"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedParagraphSira(line.sira);
                             handlePlayLine(line);
                           }}
                           title={`Cümle #${line.sira} — Dinlemek için tıklayın`}
-                          className={`mx-1.5 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-base sm:text-lg font-bold align-middle transition-all cursor-pointer select-none ${
-                            isPlaying || isLooping
-                              ? "bg-[#6741D9] text-white scale-110 shadow-xs"
-                              : isSelected
-                                ? "bg-[#087F5B] text-white"
-                                : "bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 hover:bg-[#087F5B] hover:text-white"
+                          className={`inline-flex items-center justify-center min-w-[26px] h-[24px] px-1.5 mx-1.5 rounded-md text-xs font-sans font-bold tracking-tight transition-all cursor-pointer select-none align-middle ${
+                            isPlaying || isLooping || isSelected
+                              ? "bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300 dark:ring-indigo-500"
+                              : "bg-indigo-50 text-indigo-700 border border-indigo-200/80 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
                           }`}
                         >
-                          ﴿{toArabicNumerals(line.sira)}﴾
+                          {line.sira}
                         </button>{" "}
                       </span>
                     );
@@ -3638,12 +3627,6 @@ export default function ReadingTextDetailPage({
                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <span className="px-2.5 py-0.5 rounded-xl text-xs font-extrabold border-b-2 bg-[#087F5B] text-white border-[#087F5B]">
                       Cümle #{line.sira}
-                    </span>
-                    <span
-                      dir="rtl"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400"
-                    >
-                      ﴿{toArabicNumerals(line.sira)}﴾
                     </span>
                   </div>
 

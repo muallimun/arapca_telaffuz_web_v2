@@ -253,30 +253,64 @@ export function generatePoolFromReadings(options?: {
 export function generatePoolFrom1111Sentences(options?: {
   category?: string;
   level?: Level | "all";
+  grammar?: string;
 }): WordItem[] {
   const lvl = options?.level || "all";
   const category = options?.category || "all";
+  const grammar = (options?.grammar || "all").trim();
 
-  return cumleler1111
-    .filter((item) => {
+  const normalizeKey = (s: string) =>
+    s
+      .toLocaleLowerCase("tr-TR")
+      .replace(/[âîû]/g, (m) => ({ â: "a", î: "i", û: "u" }[m] || m))
+      .trim();
+
+  const normGrammar = grammar !== "all" ? normalizeKey(grammar) : "";
+  const grammarKeywords = normGrammar
+    .split(/[\s,()/\-–:+]+/)
+    .filter((w) => w.length >= 3 && !["ile", "icin", "olan", "veya"].includes(w));
+
+  let filtered = cumleler1111.filter((item) => {
+    const itemLevel = item.seviye || item.cefr || "A1";
+    if (lvl !== "all" && itemLevel !== lvl) return false;
+    const itemCat = (item.tema || item.kategori || "").trim();
+    if (category !== "all" && itemCat !== category) return false;
+    if (grammar !== "all" && normGrammar) {
+      const itemGrammar = normalizeKey(item.odak_kalip || "");
+      if (!itemGrammar) return false;
+      if (itemGrammar === normGrammar || itemGrammar.includes(normGrammar) || normGrammar.includes(itemGrammar)) {
+        return true;
+      }
+      if (grammarKeywords.length > 0 && grammarKeywords.some((kw) => itemGrammar.includes(kw))) {
+        return true;
+      }
+      return false;
+    }
+    return true;
+  });
+
+  if (filtered.length < 4 && grammar !== "all") {
+    filtered = cumleler1111.filter((item) => {
       const itemLevel = item.seviye || item.cefr || "A1";
       if (lvl !== "all" && itemLevel !== lvl) return false;
       const itemCat = (item.tema || item.kategori || "").trim();
       if (category !== "all" && itemCat !== category) return false;
       return true;
-    })
-    .map((item) => ({
-      id: item.id,
-      type: "sentence" as const,
-      arabic: item.arapca,
-      turkish: item.turkce,
-      level: item.seviye || item.cefr || "A1",
-      category: item.tema || item.kategori || "Genel",
-      grammarTopic: item.odak_kalip,
-      context: item.baglam || item.not_tr,
-      audioUrl: item.ses_erkek || `/sesler/cumleler/${item.id}_m.mp3`,
-      audioFemaleUrl: item.ses_kadin || `/sesler/cumleler/${item.id}_f.mp3`,
-    }));
+    });
+  }
+
+  return filtered.map((item) => ({
+    id: item.id,
+    type: "sentence" as const,
+    arabic: item.arapca,
+    turkish: item.turkce,
+    level: item.seviye || item.cefr || "A1",
+    category: item.tema || item.kategori || "Genel",
+    grammarTopic: item.odak_kalip,
+    context: item.baglam || item.not_tr,
+    audioUrl: item.ses_erkek || `/sesler/cumleler/${item.id}_m.mp3`,
+    audioFemaleUrl: item.ses_kadin || `/sesler/cumleler/${item.id}_f.mp3`,
+  }));
 }
 
 /**

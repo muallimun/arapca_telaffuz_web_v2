@@ -37,7 +37,10 @@ import {
   getReadingTextCoverUrl,
   getReadingTextGrammarNote,
 } from "@/lib/data";
-import { GrammarHapBilgiPanel } from "@/components/ui/GrammarHapBilgiPanel";
+import {
+  GrammarHapBilgiPanel,
+  GrammarQuickModal,
+} from "@/components/ui/GrammarHapBilgiPanel";
 import {
   loadAudioManifest,
   hasMp3,
@@ -651,6 +654,7 @@ export default function ReadingTextDetailPage({
   const imagePath =
     readingText.gorsel || getReadingTextCoverUrl(readingText.id);
   const grammarNote = getReadingTextGrammarNote(readingText.id);
+  const [isGrammarQuickModalOpen, setIsGrammarQuickModalOpen] = useState(false);
 
   // PDF Modal uyumu için Dialogue nesnesi
   const dialogueForPdf: Dialogue = useMemo(
@@ -1955,6 +1959,27 @@ export default function ReadingTextDetailPage({
                 </button>
               )}
 
+              {/* 5b. Grameri Ayrı Pencerede Aç (Metinle Yan Yana) Butonu */}
+              {grammarNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (studyMode === "gramer") {
+                      setStudyMode("listen");
+                    }
+                    setIsGrammarQuickModalOpen(true);
+                  }}
+                  data-tooltip="Grameri Ayrı Pencerede Aç (Metni okurken sağ yan panelde gramer notunu inceleyin)"
+                  title="Grameri Ayrı Pencerede Aç (Metinle Yan Yana)"
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+                >
+                  <span>🗔</span>
+                  <span className="hidden lg:inline">Grameri Ayrı Pencerede Aç (Metinle Yan Yana)</span>
+                  <span className="lg:hidden">📌 Yan Pencere</span>
+                </button>
+              )}
+
               {/* 6. PDF Butonu (📄 PDF) */}
               <button
                 type="button"
@@ -2651,10 +2676,28 @@ export default function ReadingTextDetailPage({
       {/* SEKME İÇERİKLERİ: GRAMER / SÖZLÜK / SORULAR / METİN (CÜMLE & PARAGRAF) */}
       {/* ===================================================================== */}
       {studyMode === "gramer" && grammarNote ? (
-        <GrammarHapBilgiPanel
-          grammarNote={grammarNote}
-          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
-        />
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-50/90 dark:bg-amber-950/50 border-2 border-amber-300 dark:border-amber-700 rounded-2xl px-4 py-2.5">
+            <span className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-200">
+              💡 Okuma metnini incelerken gramer notunu yan tarafta açık tutmak ister misiniz?
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStudyMode("listen");
+                setIsGrammarQuickModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] cursor-pointer transition-all"
+            >
+              🗔 Grameri Ayrı Pencerede Aç (Metinle Yan Yana)
+            </button>
+          </div>
+          <GrammarHapBilgiPanel
+            grammarNote={grammarNote}
+            onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+          />
+        </div>
       ) : studyMode === "vocabulary" ? (
         <div className="space-y-4">
           {textIdioms.length > 0 && (
@@ -4206,6 +4249,15 @@ export default function ReadingTextDetailPage({
           )}
         </div>
       </section>
+
+      <GrammarQuickModal
+        isOpen={isGrammarQuickModalOpen}
+        onClose={() => setIsGrammarQuickModalOpen(false)}
+        grammarNote={grammarNote}
+        readingId={readingText.id}
+        initialViewMode="drawer"
+        onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+      />
     </div>
   );
 }

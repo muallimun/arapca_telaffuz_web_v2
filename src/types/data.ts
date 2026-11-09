@@ -46,6 +46,26 @@ export interface GramerOrnek {
   aciklama?: string;
 }
 
+export interface GrammarDetailLayer {
+  formul_sema?: string;
+  adim_adim_anlatim?: string[];
+  ozet_tablo?: {
+    tablo_basligi: string;
+    sutunlar: string[];
+    satirlar: string[][];
+  };
+  irab_tahlili?: Array<{
+    kelime: string;
+    gorevi: string;
+    hareke_nedeni: string;
+  }>;
+  dikkat_sik_hata?: {
+    yanlis: string;
+    dogru: string;
+    neden: string;
+  };
+}
+
 export interface GramerHapBilgi {
   bagli_id: string;
   konu_basligi: string;
@@ -60,6 +80,7 @@ export interface GramerHapBilgi {
     turkce: string;
   }[];
   ipucu: string;
+  ayrintili_anlatim?: GrammarDetailLayer;
 }
 
 export interface ReadingTextLine {

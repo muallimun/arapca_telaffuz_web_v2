@@ -218,6 +218,7 @@ function ExercisesPageContent() {
   const [singleDialogueId, setSingleDialogueId] = useState<string>("all");
   const [singleReadingId, setSingleReadingId] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [grammarFilter, setGrammarFilter] = useState<string>("all");
   const [startNum, setStartNum] = useState(1);
   const [endNum, setEndNum] = useState(diyaloglar.length);
   const [contentType, setContentType] = useState<QuizContentType>("words");
@@ -238,12 +239,13 @@ function ExercisesPageContent() {
     [srsRecords, mistakeIds, completedDialogues, learnedWords, preferredLevel]
   );
 
-  // URL parametrelerini oku (?pool=sentences_1111&cat=...&level=A1&mode=quiz vb.)
+  // URL parametrelerini oku (?pool=sentences_1111&cat=...&grammar=...&level=A1&mode=quiz vb.)
   useEffect(() => {
     const poolParam =
       searchParams.get("pool") || searchParams.get("source");
     const catParam =
       searchParams.get("cat") || searchParams.get("category");
+    const grammarParam = searchParams.get("grammar");
     const levelParam =
       searchParams.get("level") || searchParams.get("seviye");
     const modeParam = searchParams.get("mode");
@@ -257,6 +259,7 @@ function ExercisesPageContent() {
         setSingleDialogueId("all");
         setSingleReadingId("all");
         setCategoryFilter("all");
+        setGrammarFilter("all");
         setRangePreset("srs_due");
         setContentType("mixed");
         setSelectedType("multiple-choice");
@@ -317,6 +320,14 @@ function ExercisesPageContent() {
             ? getMainVisualCategory(catParam)
             : catParam
         );
+      }
+
+      if (grammarParam) {
+        setGrammarFilter(grammarParam);
+        if (!resolvedPool) {
+          setRangePreset("sentences_1111");
+          setContentType("sentences");
+        }
       }
 
       if (dlgParam) {
@@ -408,8 +419,9 @@ function ExercisesPageContent() {
       generatePoolFrom1111Sentences({
         category: rangePreset === "sentences_1111" ? categoryFilter : "all",
         level: cefrFilter,
+        grammar: rangePreset === "sentences_1111" ? grammarFilter : "all",
       }),
-    [rangePreset, categoryFilter, cefrFilter]
+    [rangePreset, categoryFilter, cefrFilter, grammarFilter]
   );
 
   const activeProverbsWordItems = useMemo(
@@ -1202,6 +1214,7 @@ function ExercisesPageContent() {
     playClick();
     setRangePreset(presetId);
     setCategoryFilter("all");
+    setGrammarFilter("all");
     setWordPosFilter("all");
     setSingleDialogueId("all");
     setSingleReadingId("all");
@@ -1686,6 +1699,22 @@ function ExercisesPageContent() {
                   className="text-[11px] font-bold underline cursor-pointer"
                 >
                   Tüm Sözlüğe Dön
+                </button>
+              </div>
+            )}
+
+            {/* Gramer Kalıbı filtresi aktifse gösterge */}
+            {rangePreset === "sentences_1111" && grammarFilter !== "all" && (
+              <div className="flex items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/60 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                <span>
+                  📌 Odak Gramer Kalıbı: <strong>{grammarFilter}</strong> ({active1111SentencesWordItems.length} cümle)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setGrammarFilter("all")}
+                  className="text-[11px] font-bold underline cursor-pointer shrink-0"
+                >
+                  Tüm Cümleleri Göster
                 </button>
               </div>
             )}

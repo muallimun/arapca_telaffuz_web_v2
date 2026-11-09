@@ -360,6 +360,8 @@ export interface DynamicContentStats {
   visualWordCategoryCount: number;
   dictionaryWordCount: number;
   totalLibraryCards: number;
+  grammarNoteCount: number;
+  totalGrammarAtlasCount: number;
 }
 
 export function getMainVisualCategory(rawCatTr?: string): string {
@@ -407,6 +409,8 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   ).size;
   const dictionaryWordCount = sozluk.length;
   const totalLibraryCards = sentenceCount + proverbCount + visualWordCount;
+  const grammarNoteCount = diyalogGramerNotlari.length + metinGramerNotlari.length;
+  const totalGrammarAtlasCount = grammarNoteCount + sentenceGrammarCount;
 
   return {
     dialogueCount,
@@ -422,6 +426,8 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     visualWordCategoryCount,
     dictionaryWordCount,
     totalLibraryCards,
+    grammarNoteCount,
+    totalGrammarAtlasCount,
   };
 })();
 

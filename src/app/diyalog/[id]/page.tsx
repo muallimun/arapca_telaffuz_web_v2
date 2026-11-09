@@ -34,7 +34,10 @@ import {
   getDialogueCoverUrl,
   getDialogueGrammarNote,
 } from "@/lib/data";
-import { GrammarHapBilgiPanel } from "@/components/ui/GrammarHapBilgiPanel";
+import {
+  GrammarHapBilgiPanel,
+  GrammarQuickModal,
+} from "@/components/ui/GrammarHapBilgiPanel";
 import {
   loadAudioManifest,
   hasMp3,
@@ -759,6 +762,7 @@ export default function DialogueDetailPage({
   const rawNum = parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
   const imagePath = dialogue.gorsel || getDialogueCoverUrl(dialogue.id);
   const grammarNote = getDialogueGrammarNote(dialogue.id);
+  const [isGrammarQuickModalOpen, setIsGrammarQuickModalOpen] = useState(false);
 
   const getDisplayText = (text: string) =>
     formatArabicText(text, !mounted || showHareke, arabicFont);
@@ -2510,6 +2514,27 @@ export default function DialogueDetailPage({
                 <span aria-hidden="true">🎭</span>
               </button>
 
+              {/* 4b. Grameri Ayrı Pencerede Aç (Metinle Yan Yana) Butonu */}
+              {grammarNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (studyMode === "gramer") {
+                      setStudyMode("listen");
+                    }
+                    setIsGrammarQuickModalOpen(true);
+                  }}
+                  data-tooltip="Grameri Ayrı Pencerede Aç (Diyaloğu okurken sağ yan panelde gramer notunu inceleyin)"
+                  title="Grameri Ayrı Pencerede Aç (Metinle Yan Yana)"
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+                >
+                  <span>🗔</span>
+                  <span className="hidden lg:inline">Grameri Ayrı Pencerede Aç (Metinle Yan Yana)</span>
+                  <span className="lg:hidden">📌 Yan Pencere</span>
+                </button>
+              )}
+
               {/* 5. PDF Butonu (PDF) */}
               <button
                 type="button"
@@ -3310,10 +3335,28 @@ export default function DialogueDetailPage({
 
       {/* DİYALOG SATIRLARI, ODAK GRAMER HAP BİLGİ VEYA MORFOLOJİK DİYALOG SÖZLÜĞÜ */}
       {studyMode === "gramer" && grammarNote ? (
-        <GrammarHapBilgiPanel
-          grammarNote={grammarNote}
-          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
-        />
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-50/90 dark:bg-amber-950/50 border-2 border-amber-300 dark:border-amber-700 rounded-2xl px-4 py-2.5">
+            <span className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-200">
+              💡 Diyalog cümlelerini okurken gramer notunu yan tarafta açık tutmak ister misiniz?
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStudyMode("listen");
+                setIsGrammarQuickModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] cursor-pointer transition-all"
+            >
+              🗔 Grameri Ayrı Pencerede Aç (Metinle Yan Yana)
+            </button>
+          </div>
+          <GrammarHapBilgiPanel
+            grammarNote={grammarNote}
+            onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+          />
+        </div>
       ) : studyMode === "vocabulary" ? (
         <div className="space-y-4">
           {/* BU DİYALOGDAKİ KALIP İFADELER (التعبيرات الاصطلاحية) BÖLÜMÜ */}
@@ -4730,6 +4773,15 @@ export default function DialogueDetailPage({
           )}
         </div>
       </section>
+
+      <GrammarQuickModal
+        isOpen={isGrammarQuickModalOpen}
+        onClose={() => setIsGrammarQuickModalOpen(false)}
+        grammarNote={grammarNote}
+        dialogueId={dialogue.id}
+        initialViewMode="drawer"
+        onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+      />
     </div>
   );
 }

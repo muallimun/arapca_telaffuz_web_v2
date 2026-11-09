@@ -46,6 +46,7 @@ import {
 } from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
 import ShadowingModal from "@/components/ui/ShadowingModal";
+import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
 import { formatArabicText } from "@/lib/arabicTextUtils";
 
@@ -186,6 +187,11 @@ export default function HomePage() {
       ?.length ?? recommendedDialogue.satirlar.length;
   const [failedCoverId, setFailedCoverId] = useState<string | null>(null);
   const recImgFailed = failedCoverId === recommendedDialogueId;
+  const [activeGrammarModal, setActiveGrammarModal] = useState<{
+    dialogueId?: string;
+    readingId?: string;
+    grammarTopic?: string;
+  } | null>(null);
 
   const contentStats = getDynamicContentStats();
 
@@ -655,7 +661,24 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-2 pt-1.5 border-t border-dashed border-[#E2D3B8]/80 dark:border-[var(--border-dashed)]">
-                  <span className="block text-[11px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      playClick();
+                      setActiveGrammarModal({
+                        dialogueId: recommendedDialogue.id,
+                        grammarTopic:
+                          recommendedDialogue.odak_gramer ||
+                          diyalogGramerNotlari.find(
+                            (g) => g.bagli_id === recommendedDialogue.id
+                          )?.konu_basligi,
+                      });
+                    }}
+                    title="Bu gramer kuralını ve örneklerini ayrı pencerede incelemek için tıklayın"
+                    className="w-full text-left block text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
+                  >
                     📌{" "}
                     {recommendedDialogue.odak_gramer ||
                       diyalogGramerNotlari.find(
@@ -663,7 +686,7 @@ export default function HomePage() {
                       )?.konu_basligi ||
                       recommendedDialogue.satirlar?.[0]?.odak_kalip ||
                       "Günlük Konuşma"}
-                  </span>
+                  </button>
                 </div>
               </Link>
 
@@ -703,11 +726,24 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-2 pt-1.5 border-t border-dashed border-[#6741D9]/25">
-                  <span className="block text-[11px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      playClick();
+                      setActiveGrammarModal({
+                        readingId: recommendedReading.id,
+                        grammarTopic: recommendedReading.odak_gramer,
+                      });
+                    }}
+                    title="Bu metnin odak gramer notunu ayrı pencerede incelemek için tıklayın"
+                    className="w-full text-left block text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
+                  >
                     📌{" "}
                     {recommendedReading.odak_gramer ||
                       `${recommendedReading.satirlar?.length || 6} Cümle • Sorulu`}
-                  </span>
+                  </button>
                 </div>
               </Link>
             </div>
@@ -849,9 +885,19 @@ export default function HomePage() {
                   “{dailySentenceItem.turkce}”
                 </p>
                 {dailySentenceItem.odak_kalip && (
-                  <p className="text-[11px] font-bold text-amber-900 dark:text-amber-300 leading-snug">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setActiveGrammarModal({
+                        grammarTopic: dailySentenceItem.odak_kalip,
+                      });
+                    }}
+                    title="Bu gramer kalıbının kuralını ve örnek cümlelerini incelemek için tıklayın"
+                    className="w-fit text-left text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md leading-snug cursor-pointer transition-colors"
+                  >
                     📌 {dailySentenceItem.odak_kalip}
-                  </p>
+                  </button>
                 )}
               </div>
 
@@ -1217,6 +1263,19 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      <GrammarQuickModal
+        isOpen={Boolean(activeGrammarModal)}
+        onClose={() => setActiveGrammarModal(null)}
+        dialogueId={activeGrammarModal?.dialogueId}
+        readingId={activeGrammarModal?.readingId}
+        grammarTopic={activeGrammarModal?.grammarTopic}
+        onOpenShadowing={(ar) =>
+          setShadowingModalData({
+            text: ar,
+          })
+        }
+      />
     </div>
   );
 }

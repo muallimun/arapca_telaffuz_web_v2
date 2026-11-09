@@ -362,6 +362,15 @@ export interface DynamicContentStats {
   totalLibraryCards: number;
 }
 
+export function getMainVisualCategory(rawCatTr?: string): string {
+  return (rawCatTr || "").replace(/\s*\(\d+\)\s*$/, "").trim();
+}
+
+export function getVisualSubGroupNo(rawCatTr?: string): number | null {
+  const match = (rawCatTr || "").match(/\((\d+)\)\s*$/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   const dialogueCount = diyaloglar.length;
   const dialogueSentenceCount = diyaloglar.reduce(
@@ -387,11 +396,12 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   const visualWordCount = gorselKelimeler.length;
   const visualWordCategoryCount = new Set(
     gorselKelimeler
-      .map(
-        (g) =>
+      .map((g) =>
+        getMainVisualCategory(
           g.kategori_tr ||
-          (g as unknown as { kategori?: string }).kategori ||
-          ""
+            (g as unknown as { kategori?: string }).kategori ||
+            ""
+        )
       )
       .filter(Boolean)
   ).size;

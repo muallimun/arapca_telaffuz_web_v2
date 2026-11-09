@@ -24,6 +24,7 @@ import {
   sozluk,
   gorselKelimeler,
   getDynamicContentStats,
+  getMainVisualCategory,
 } from "@/lib/data";
 import {
   getDialogueVocabulary,
@@ -308,7 +309,11 @@ function ExercisesPageContent() {
       }
 
       if (catParam) {
-        setCategoryFilter(catParam);
+        setCategoryFilter(
+          resolvedPool === "visual_words"
+            ? getMainVisualCategory(catParam)
+            : catParam
+        );
       }
 
       if (dlgParam) {

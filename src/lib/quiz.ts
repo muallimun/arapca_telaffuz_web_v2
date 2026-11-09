@@ -11,6 +11,7 @@ import {
   atasozleri,
   gorselKelimeler,
   sozluk,
+  getMainVisualCategory,
 } from "@/lib/data";
 import {
   getDialogueVocabulary,
@@ -320,13 +321,22 @@ export function generatePoolFromVisualWords(options?: {
 }): WordItem[] {
   const lvl = options?.level || "all";
   const category = options?.category || "all";
+  const targetMainCat =
+    category === "all" ? "all" : getMainVisualCategory(category);
 
   return gorselKelimeler
     .filter((item) => {
       const itemLevel = item.cefr || "A1";
       if (lvl !== "all" && itemLevel !== lvl) return false;
-      const itemCat = (item.kategori_tr || item.kategori || "").trim();
-      if (category !== "all" && itemCat !== category) return false;
+      const rawCat = (item.kategori_tr || item.kategori || "").trim();
+      const itemMainCat = getMainVisualCategory(rawCat);
+      if (
+        targetMainCat !== "all" &&
+        itemMainCat !== targetMainCat &&
+        rawCat !== category
+      ) {
+        return false;
+      }
       return true;
     })
     .map((item) => ({
@@ -341,7 +351,8 @@ export function generatePoolFromVisualWords(options?: {
       exampleAr: item.ornek_ar,
       exampleTr: item.ornek_tr,
       level: item.cefr || "A1",
-      category: item.kategori_tr || item.kategori || "Genel",
+      category:
+        getMainVisualCategory(item.kategori_tr || item.kategori) || "Genel",
       imageUrl: item.gorsel,
       audioUrl: item.ses_erkek,
       audioFemaleUrl: item.ses_kadin,
@@ -379,7 +390,7 @@ export function getModuleCategoryList(
     for (const item of gorselKelimeler) {
       const itemLevel = item.cefr || "A1";
       if (level !== "all" && itemLevel !== level) continue;
-      const cat = (item.kategori_tr || item.kategori || "").trim();
+      const cat = getMainVisualCategory(item.kategori_tr || item.kategori || "");
       if (!cat) continue;
       counts.set(cat, (counts.get(cat) || 0) + 1);
     }
@@ -501,7 +512,9 @@ export function selectSmartVisualDistractors(
 ): VisualWordItem[] {
   const targetTur = normalizeWordPartOfSpeech(target.tur);
   const targetCefrNum = CEFR_ORDER[target.cefr || "A1"] ?? 1;
-  const targetCategory = (target.kategori_tr || target.kategori || "").trim();
+  const targetCategory = getMainVisualCategory(
+    target.kategori_tr || target.kategori || ""
+  );
 
   const seenImages = new Set<string>(
     target.gorsel ? [target.gorsel.trim().toLowerCase()] : []
@@ -540,7 +553,8 @@ export function selectSmartVisualDistractors(
   const tier1 = shuffleArray(
     sameTurPool.filter(
       (c) =>
-        (c.kategori_tr || c.kategori || "").trim() === targetCategory &&
+        getMainVisualCategory(c.kategori_tr || c.kategori || "") ===
+          targetCategory &&
         (CEFR_ORDER[c.cefr || "A1"] ?? 1) === targetCefrNum
     )
   );
@@ -549,7 +563,8 @@ export function selectSmartVisualDistractors(
   const tier2 = shuffleArray(
     sameTurPool.filter(
       (c) =>
-        (c.kategori_tr || c.kategori || "").trim() === targetCategory &&
+        getMainVisualCategory(c.kategori_tr || c.kategori || "") ===
+          targetCategory &&
         (CEFR_ORDER[c.cefr || "A1"] ?? 1) !== targetCefrNum
     )
   );
@@ -558,7 +573,8 @@ export function selectSmartVisualDistractors(
   const tier3 = shuffleArray(
     sameTurPool.filter(
       (c) =>
-        (c.kategori_tr || c.kategori || "").trim() !== targetCategory &&
+        getMainVisualCategory(c.kategori_tr || c.kategori || "") !==
+          targetCategory &&
         (CEFR_ORDER[c.cefr || "A1"] ?? 1) === targetCefrNum
     )
   );
@@ -567,7 +583,8 @@ export function selectSmartVisualDistractors(
   const tier4 = shuffleArray(
     sameTurPool.filter(
       (c) =>
-        (c.kategori_tr || c.kategori || "").trim() !== targetCategory &&
+        getMainVisualCategory(c.kategori_tr || c.kategori || "") !==
+          targetCategory &&
         (CEFR_ORDER[c.cefr || "A1"] ?? 1) !== targetCefrNum
     )
   );

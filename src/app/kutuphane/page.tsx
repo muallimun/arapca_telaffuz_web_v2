@@ -44,6 +44,8 @@ import {
   getProverbCoverUrl,
   getVisualWordCoverUrl,
   getDynamicContentStats,
+  getMainVisualCategory,
+  getVisualSubGroupNo,
 } from "@/lib/data";
 import { Level, DictionaryItem, Dialogue } from "@/types/data";
 import {
@@ -116,6 +118,9 @@ export default function LibraryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [levelFilter, setLevelFilter] = useState<Level | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [visualSubSetFilter, setVisualSubSetFilter] = useState<number | "all">(
+    "all"
+  );
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] =
     useState<boolean>(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(
@@ -192,7 +197,14 @@ export default function LibraryPage() {
           }
         }
         if (cat && cat.trim().length > 0) {
-          setCategoryFilter(cat.trim());
+          const rawCat = cat.trim();
+          setCategoryFilter(
+            tab === "gorsel_kelime" ||
+              tab === "gorsel-kelimeler" ||
+              tab === "visual_words"
+              ? getMainVisualCategory(rawCat)
+              : rawCat
+          );
         }
         if (qParam && qParam.trim().length > 0) {
           setSearch(qParam.trim());
@@ -233,6 +245,7 @@ export default function LibraryPage() {
       stopAllAudio();
       setActiveSection("vitrin");
       setCategoryFilter("all");
+      setVisualSubSetFilter("all");
       setIsCategoryPanelOpen(false);
       setSelectedCardIndex(null);
     };
@@ -269,6 +282,7 @@ export default function LibraryPage() {
     stopSequentialPlay();
     setActiveSection(sec);
     setCategoryFilter("all");
+    setVisualSubSetFilter("all");
     setIsCategoryPanelOpen(false);
     setSelectedCardIndex(null);
     setVisibleCount(36);
@@ -488,10 +502,20 @@ export default function LibraryPage() {
     });
   }, [search, levelFilter, categoryFilter]);
 
-  // 5. 999 Görsel Kelime Filtreleme
+  // 5. 999 Görsel Kelime Filtreleme (19 Ana Tematik Kategori + 9'lu Alt Setler)
+  const formatVisualCategoryBadge = (rawCatTr?: string) => {
+    const mainCat = getMainVisualCategory(rawCatTr);
+    const subNo = getVisualSubGroupNo(rawCatTr);
+    return subNo ? `${mainCat} • Set ${subNo}` : mainCat || "Görsel Kelime";
+  };
+
   const visualCategories = useMemo(() => {
     return Array.from(
-      new Set(gorselKelimeler.map((g) => g.kategori_tr).filter(Boolean))
+      new Set(
+        gorselKelimeler
+          .map((g) => getMainVisualCategory(g.kategori_tr))
+          .filter(Boolean)
+      )
     );
   }, []);
 
@@ -515,13 +539,35 @@ export default function LibraryPage() {
     } else if (activeSection === "gorsel-kelimeler") {
       gorselKelimeler.forEach((g) => {
         if (levelFilter !== "all" && g.cefr !== levelFilter) return;
-        if (g.kategori_tr) {
-          counts[g.kategori_tr] = (counts[g.kategori_tr] || 0) + 1;
+        const mainCat = getMainVisualCategory(g.kategori_tr);
+        if (mainCat) {
+          counts[mainCat] = (counts[mainCat] || 0) + 1;
         }
       });
     }
     return counts;
   }, [activeSection, levelFilter]);
+
+  const availableVisualSubSets = useMemo(() => {
+    if (activeSection !== "gorsel-kelimeler" || categoryFilter === "all") {
+      return { totalInMainCat: 0, sets: [] as { setNo: number; count: number }[] };
+    }
+    const setCounts = new Map<number, number>();
+    let totalInMainCat = 0;
+    gorselKelimeler.forEach((g) => {
+      if (levelFilter !== "all" && g.cefr !== levelFilter) return;
+      if (getMainVisualCategory(g.kategori_tr) !== categoryFilter) return;
+      totalInMainCat += 1;
+      const subNo = getVisualSubGroupNo(g.kategori_tr);
+      if (subNo !== null) {
+        setCounts.set(subNo, (setCounts.get(subNo) || 0) + 1);
+      }
+    });
+    const sets = Array.from(setCounts.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([setNo, count]) => ({ setNo, count }));
+    return { totalInMainCat, sets };
+  }, [activeSection, categoryFilter, levelFilter]);
 
   const filteredVisualWords = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -530,7 +576,15 @@ export default function LibraryPage() {
 
     return gorselKelimeler.filter((g) => {
       if (levelFilter !== "all" && g.cefr !== levelFilter) return false;
-      if (categoryFilter !== "all" && g.kategori_tr !== categoryFilter)
+      if (
+        categoryFilter !== "all" &&
+        getMainVisualCategory(g.kategori_tr) !== categoryFilter
+      )
+        return false;
+      if (
+        visualSubSetFilter !== "all" &&
+        getVisualSubGroupNo(g.kategori_tr) !== visualSubSetFilter
+      )
         return false;
       if (q) {
         const matchTr = g.turkce.toLowerCase().includes(q);
@@ -543,7 +597,7 @@ export default function LibraryPage() {
       }
       return true;
     });
-  }, [search, levelFilter, categoryFilter]);
+  }, [search, levelFilter, categoryFilter, visualSubSetFilter]);
 
   const activeModalListLength =
     activeSection === "cumleler"
@@ -802,7 +856,7 @@ export default function LibraryPage() {
     gorsel: item.gorsel || getVisualWordCoverUrl(item),
     ses_erkek: item.ses_erkek,
     ses_kadin: item.ses_kadin,
-    kategori_tr: item.kategori_tr || "Görsel Kelime",
+    kategori_tr: formatVisualCategoryBadge(item.kategori_tr),
     cefr: item.cefr || "A1",
   });
 
@@ -1021,7 +1075,7 @@ export default function LibraryPage() {
         odak_gramer: catLabel,
         satirlar: slice.map((item, i) => ({
           sira: i + 1,
-          konusmaci: item.kategori_tr || `Kelime #${i + 1}`,
+          konusmaci: formatVisualCategoryBadge(item.kategori_tr),
           konusmaci_ar: item.tur === "fiil" ? "فعل" : "اسم",
           cinsiyet: activeGender,
           arapca: item.ornek_ar
@@ -1319,7 +1373,7 @@ export default function LibraryPage() {
           const headerBadge = currentVisual
             ? `#${currentVisual.id.replace("gorsel_", "")} • ${
                 currentVisual.cefr
-              } • ${currentVisual.kategori_tr}`
+              } • ${formatVisualCategoryBadge(currentVisual.kategori_tr)}`
             : currentProverb
             ? `#${
                 currentProverb.sira || currentProverb.id.replace("ata_", "")
@@ -1465,7 +1519,7 @@ export default function LibraryPage() {
                       }`}
                     >
                       {showArabic ? <Eye size={13} /> : <EyeOff size={13} />}
-                      <span>🇸🇦 Arapça</span>
+                      <span>Arapça</span>
                     </button>
 
                     <button
@@ -1479,7 +1533,7 @@ export default function LibraryPage() {
                       }`}
                     >
                       {showTurkish ? <Eye size={13} /> : <EyeOff size={13} />}
-                      <span>🇹🇷 Türkçe</span>
+                      <span>Türkçe</span>
                     </button>
 
                     <button
@@ -1959,7 +2013,7 @@ export default function LibraryPage() {
                 className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] flex items-center gap-1.5"
               >
                 <Gamepad2 size={14} />
-                <span>🎮 Ödev Alıştırmasını Başlat</span>
+                <span>Ödev Alıştırmasını Başlat</span>
               </Link>
             )}
             <button
@@ -1988,7 +2042,7 @@ export default function LibraryPage() {
                 title="Kütüphane Vitrinine Dön"
               >
                 <ChevronLeft size={17} strokeWidth={2.5} />
-                <span>← Kütüphane Vitrini</span>
+                <span>Kütüphane Vitrini</span>
               </button>
             ) : (
               <Link
@@ -2871,7 +2925,7 @@ export default function LibraryPage() {
                           className="text-[#6741D9] shrink-0"
                         />
                         <span className="truncate">
-                          📂 Kategori:{" "}
+                          Kategori:{" "}
                           <strong className="text-[#6741D9] dark:text-indigo-300">
                             {categoryFilter === "all"
                               ? "Tüm Kategoriler"
@@ -2886,6 +2940,7 @@ export default function LibraryPage() {
                           onClick={() => {
                             playClick();
                             setCategoryFilter("all");
+                            setVisualSubSetFilter("all");
                             setSelectedCardIndex(null);
                             setVisibleCount(36);
                           }}
@@ -2922,12 +2977,13 @@ export default function LibraryPage() {
                   </div>
 
                   {isCategoryPanelOpen && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-64 sm:max-h-80 overflow-y-auto p-2.5 bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-inner">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-72 sm:max-h-none overflow-y-auto sm:overflow-visible p-3 bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-inner">
                       <button
                         type="button"
                         onClick={() => {
                           playClick();
                           setCategoryFilter("all");
+                          setVisualSubSetFilter("all");
                           setSelectedCardIndex(null);
                           setVisibleCount(36);
                           setIsCategoryPanelOpen(false);
@@ -2963,6 +3019,7 @@ export default function LibraryPage() {
                             onClick={() => {
                               playClick();
                               setCategoryFilter(cat);
+                              setVisualSubSetFilter("all");
                               setSelectedCardIndex(null);
                               setVisibleCount(36);
                               setIsCategoryPanelOpen(false);
@@ -2991,6 +3048,55 @@ export default function LibraryPage() {
                     </div>
                   )}
 
+                  {/* Görsel Kelimeler Seçili Ana Kategori İçin 9'lu Alt Set (Alt Grup) Seçicisi */}
+                  {activeSection === "gorsel-kelimeler" &&
+                    categoryFilter !== "all" &&
+                    availableVisualSubSets.sets.length > 1 && (
+                      <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)]">
+                        <span className="text-[11px] font-extrabold text-[var(--muted)] mr-1">
+                          Alt Set (9’lu Grup):
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setVisualSubSetFilter("all");
+                            setSelectedCardIndex(null);
+                            setVisibleCount(36);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                            visualSubSetFilter === "all"
+                              ? "bg-[#087F5B] text-white shadow-2xs"
+                              : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] hover:border-[#087F5B] border border-[#E6D7BE]"
+                          }`}
+                        >
+                          Tümü ({availableVisualSubSets.totalInMainCat})
+                        </button>
+                        {availableVisualSubSets.sets.map((sub) => {
+                          const active = visualSubSetFilter === sub.setNo;
+                          return (
+                            <button
+                              key={sub.setNo}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setVisualSubSetFilter(sub.setNo);
+                                setSelectedCardIndex(null);
+                                setVisibleCount(36);
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
+                                active
+                                  ? "bg-[#087F5B] text-white shadow-2xs"
+                                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] hover:border-[#087F5B] border border-[#E6D7BE]"
+                              }`}
+                            >
+                              {sub.setNo}. Set ({sub.count})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
                   {/* Toplu Arapça / Türkçe / Hareke Görünürlük Kontrolleri */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -3005,7 +3111,7 @@ export default function LibraryPage() {
                       >
                         {showArabic ? <Eye size={13} /> : <EyeOff size={13} />}
                         <span>
-                          🇸🇦 Arapça: {showArabic ? "Açık" : "Kapalı"}
+                          Arapça: {showArabic ? "Açık" : "Kapalı"}
                         </span>
                       </button>
 
@@ -3024,7 +3130,7 @@ export default function LibraryPage() {
                           <EyeOff size={13} />
                         )}
                         <span>
-                          🇹🇷 Türkçe: {showTurkish ? "Açık" : "Kapalı"}
+                          Türkçe: {showTurkish ? "Açık" : "Kapalı"}
                         </span>
                       </button>
 
@@ -3505,13 +3611,13 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Durdur</span>
+                    <span>Durdur</span>
                   </>
                 ) : (
                   <>
                     <Play size={11} fill="currentColor" />
                     <span>
-                      ▶ Sıralı Dinle (
+                      Sıralı Dinle (
                       {mounted && preferredVoiceGender === "kadin"
                         ? "👩 Kadın"
                         : "👨 Erkek"}
@@ -3527,7 +3633,7 @@ export default function LibraryPage() {
                 className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
               >
                 <Gamepad2 size={13} />
-                <span>🎮 Alıştırma Yap</span>
+                <span>Alıştırma Yap</span>
               </Link>
 
               <button
@@ -3536,8 +3642,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <FileText size={13} className="text-[#087F5B]" />
-                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
-                <span className="sm:hidden">📄 PDF</span>
+                <span className="hidden sm:inline">PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">PDF</span>
               </button>
 
               <button
@@ -3549,8 +3655,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <GraduationCap size={13} className="text-[#6741D9]" />
-                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
-                <span className="sm:hidden">🎓 Ödev</span>
+                <span className="hidden sm:inline">Ödev Paylaş</span>
+                <span className="sm:hidden">Ödev</span>
               </button>
             </div>
           </div>
@@ -3633,7 +3739,7 @@ export default function LibraryPage() {
                         </span>
                         <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
                           <Eye size={12} />
-                          <span>👁️ Arapçayı görmek için dokun</span>
+                          <span>Arapçayı görmek için dokun</span>
                         </span>
                       </button>
                     )}
@@ -3660,7 +3766,7 @@ export default function LibraryPage() {
                         className="w-full min-h-[42px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-3 py-2 flex items-center justify-center gap-1.5 text-xs font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
                       >
                         <Eye size={13} />
-                        <span>👁️ Türkçeyi görmek için dokun</span>
+                        <span>Türkçeyi görmek için dokun</span>
                       </button>
                     )}
                   </div>
@@ -3794,13 +3900,13 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Durdur</span>
+                    <span>Durdur</span>
                   </>
                 ) : (
                   <>
                     <Play size={11} fill="currentColor" />
                     <span>
-                      ▶ Sıralı Dinle (
+                      Sıralı Dinle (
                       {mounted && preferredVoiceGender === "kadin"
                         ? "👩 Kadın"
                         : "👨 Erkek"}
@@ -3816,7 +3922,7 @@ export default function LibraryPage() {
                 className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
               >
                 <Gamepad2 size={13} />
-                <span>🎮 Alıştırma Yap</span>
+                <span>Alıştırma Yap</span>
               </Link>
 
               <button
@@ -3825,8 +3931,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <FileText size={13} className="text-[#087F5B]" />
-                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
-                <span className="sm:hidden">📄 PDF</span>
+                <span className="hidden sm:inline">PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">PDF</span>
               </button>
 
               <button
@@ -3838,8 +3944,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <GraduationCap size={13} className="text-[#6741D9]" />
-                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
-                <span className="sm:hidden">🎓 Ödev</span>
+                <span className="hidden sm:inline">Ödev Paylaş</span>
+                <span className="sm:hidden">Ödev</span>
               </button>
             </div>
           </div>
@@ -3928,7 +4034,7 @@ export default function LibraryPage() {
                             className="w-full min-h-[44px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-2.5 py-1.5 flex items-center justify-center gap-1 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
                           >
                             <Eye size={12} />
-                            <span>👁️ Türkçeyi görmek için dokun</span>
+                            <span>Türkçeyi görmek için dokun</span>
                           </button>
                         )}
                       </div>
@@ -3972,7 +4078,7 @@ export default function LibraryPage() {
                         </span>
                         <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
                           <Eye size={12} />
-                          <span>👁️ Arapçayı görmek için dokun</span>
+                          <span>Arapçayı görmek için dokun</span>
                         </span>
                       </button>
                     )}
@@ -4113,13 +4219,13 @@ export default function LibraryPage() {
                 {isSequentialPlaying ? (
                   <>
                     <Square size={11} fill="currentColor" />
-                    <span>⏹ Durdur</span>
+                    <span>Durdur</span>
                   </>
                 ) : (
                   <>
                     <Play size={11} fill="currentColor" />
                     <span>
-                      ▶ Sıralı Dinle (
+                      Sıralı Dinle (
                       {mounted && preferredVoiceGender === "kadin"
                         ? "👩 Kadın"
                         : "👨 Erkek"}
@@ -4135,7 +4241,7 @@ export default function LibraryPage() {
                 className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-2 border-[#5230B5] flex items-center gap-1.5 transition-all"
               >
                 <Gamepad2 size={13} />
-                <span>🎮 Alıştırma Yap</span>
+                <span>Alıştırma Yap</span>
               </Link>
 
               <button
@@ -4144,8 +4250,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <FileText size={13} className="text-[#087F5B]" />
-                <span className="hidden sm:inline">📄 PDF Çalışma Kağıdı</span>
-                <span className="sm:hidden">📄 PDF</span>
+                <span className="hidden sm:inline">PDF Çalışma Kağıdı</span>
+                <span className="sm:hidden">PDF</span>
               </button>
 
               <button
@@ -4157,8 +4263,8 @@ export default function LibraryPage() {
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:border-[#6741D9] text-[var(--foreground)] font-extrabold text-xs border border-[#E6D7BE] border-b-2 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <GraduationCap size={13} className="text-[#6741D9]" />
-                <span className="hidden sm:inline">🎓 Ödev Paylaş</span>
-                <span className="sm:hidden">🎓 Ödev</span>
+                <span className="hidden sm:inline">Ödev Paylaş</span>
+                <span className="sm:hidden">Ödev</span>
               </button>
             </div>
           </div>
@@ -4225,7 +4331,7 @@ export default function LibraryPage() {
                             {item.cefr}
                           </span>
                           <span className="px-2 py-0.5 rounded-lg bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)] truncate">
-                            {item.kategori_tr}
+                            {formatVisualCategoryBadge(item.kategori_tr)}
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase ${
@@ -4260,7 +4366,7 @@ export default function LibraryPage() {
                             className="w-full min-h-[38px] rounded-xl bg-white/75 dark:bg-[var(--background)] border-2 border-dashed border-[#6741D9]/50 px-2.5 py-1 flex items-center justify-center gap-1 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300 cursor-pointer hover:bg-indigo-50/40 transition-all"
                           >
                             <Eye size={12} />
-                            <span>👁️ Türkçeyi görmek için dokun</span>
+                            <span>Türkçeyi görmek için dokun</span>
                           </button>
                         )}
 
@@ -4338,7 +4444,7 @@ export default function LibraryPage() {
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
                             <Eye size={12} />
-                            <span>👁️ Arapçayı görmek için dokun</span>
+                            <span>Arapçayı görmek için dokun</span>
                           </span>
                         </button>
                       )}
@@ -4574,7 +4680,7 @@ export default function LibraryPage() {
                       className="px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#5230B5] flex items-center gap-1.5 transition-all"
                     >
                       <Gamepad2 size={14} />
-                      <span>🎮 Defterimdekilerle Alıştırma Yap</span>
+                      <span>Defterimdekilerle Alıştırma Yap</span>
                     </Link>
 
                     <button
@@ -4583,7 +4689,7 @@ export default function LibraryPage() {
                       className="px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <FileText size={14} />
-                      <span>📄 Defterimi PDF İndir</span>
+                      <span>Defterimi PDF İndir</span>
                     </button>
                   </div>
                 </div>

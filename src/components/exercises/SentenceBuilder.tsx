@@ -200,7 +200,7 @@ export default function SentenceBuilder({
     for (const dlg of dialogues) {
       for (const line of dlg.satirlar) {
         const tokens = tokenizeArabicSentence(line.arapca);
-        if (tokens.length >= 3 && tokens.length <= 10) {
+        if (tokens.length >= 2 && tokens.length <= 14) {
           candidates.push({
             id: `sb_${dlg.id}_${line.sira}`,
             dialogueId: dlg.id,

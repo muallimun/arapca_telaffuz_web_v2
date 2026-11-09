@@ -64,19 +64,30 @@ interface Props {
 export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[] {
   const items: FlashcardItem[] = [];
   dialogues.forEach((dlg) => {
-    const dlgNum = dlg.id.replace("dlg_", "");
+    const isStandardDialogue = dlg.id.startsWith("dlg_");
+    const dlgNum = dlg.id.replace(/^(dlg_|metin_)/, "");
     dlg.satirlar.forEach((line) => {
       const ar = line.arapca.trim();
       const tr = line.turkce.trim();
       if (!ar || !tr) return;
       const words = ar.split(/\s+/).filter(Boolean);
-      if (words.length >= 2 && words.length <= 6) {
+      const maxWords = isStandardDialogue ? 8 : 24;
+      if (words.length >= 2 && words.length <= maxWords) {
+        const badgeText = dlg.id.startsWith("metin_")
+          ? `📖 Metin #${dlgNum}: ${dlg.baslik_tr}`
+          : dlg.id.startsWith("pool_1111")
+          ? `🗣️ 1111 Günlük Cümle · ${line.konusmaci}`
+          : dlg.id.startsWith("pool_proverbs")
+          ? `📜 Atasözü & Hikmet · ${line.konusmaci}`
+          : dlg.id.startsWith("pool_visual")
+          ? `🖼️ Görsel Kelime Örnek Cümlesi · ${line.konusmaci}`
+          : `💬 Diyalog #${dlgNum}: ${dlg.baslik_tr} · ${line.konusmaci}`;
         items.push({
           id: `sent_${dlg.id}_${line.sira}`,
           kind: "sentence",
           arabic: ar,
           turkish: tr,
-          badgeText: `💬 Diyalog #${dlgNum}: ${dlg.baslik_tr} · ${line.konusmaci}`,
+          badgeText,
           subLabel: `${line.konusmaci} (${line.konusmaci_ar})`,
           dialogueId: dlg.id,
           lineSira: line.sira,

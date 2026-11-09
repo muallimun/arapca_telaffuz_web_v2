@@ -16,14 +16,13 @@ import {
   Timer,
   ListOrdered,
   Image as ImageIcon,
+  FolderOpen,
 } from "lucide-react";
 import { playClick } from "@/lib/sfxManager";
 import {
   diyaloglar,
   metinler,
   sozluk,
-  cumleler1111,
-  atasozleri,
   gorselKelimeler,
 } from "@/lib/data";
 import {
@@ -31,7 +30,7 @@ import {
   getReadingTextVocabulary,
   isProperNounItem,
 } from "@/lib/dict";
-import { Dialogue, DictionaryItem } from "@/types/data";
+import { Dialogue, DictionaryItem, Level, ResimliKelime } from "@/types/data";
 import { useUserStore } from "@/store/userStore";
 import { useSettings } from "@/store/settings";
 import {
@@ -43,10 +42,17 @@ import {
   resolveMistakesPool,
   buildDailyStudyPackage,
 } from "@/lib/mistakeUtils";
+import {
+  generateFullDictionaryPool,
+  generatePoolFromDialogues,
+  generatePoolFromReadings,
+  generatePoolFrom1111Sentences,
+  generatePoolFromProverbs,
+  generatePoolFromVisualWords,
+  getModuleCategoryList,
+} from "@/lib/quiz";
 
-import Flashcard, {
-  getShortDialogueSentences,
-} from "@/components/exercises/Flashcard";
+import Flashcard from "@/components/exercises/Flashcard";
 import MultipleChoice, {
   FeedbackMode,
   QuizContentType,
@@ -66,6 +72,119 @@ type ExerciseType =
   | "sentence-builder"
   | "visual-rosetta";
 
+export type PoolSourceId =
+  | "full_dict"
+  | "visual_words"
+  | "all_dialogues"
+  | "reading_texts"
+  | "sentences_1111"
+  | "proverbs_508"
+  | "srs_due"
+  | "mistakes"
+  | "favorites"
+  | "weak-words";
+
+function normalizePoolParam(raw?: string | null): PoolSourceId | null {
+  if (!raw) return null;
+  const val = raw.trim().toLowerCase();
+  if (val === "full_dict" || val === "all-dict" || val === "dict") {
+    return "full_dict";
+  }
+  if (
+    val === "visual_words" ||
+    val === "gorsel-kelimeler" ||
+    val === "visual"
+  ) {
+    return "visual_words";
+  }
+  if (
+    val === "all_dialogues" ||
+    val === "dialogues" ||
+    val === "diyaloglar"
+  ) {
+    return "all_dialogues";
+  }
+  if (
+    val === "reading_texts" ||
+    val === "metinler-60" ||
+    val === "metinler" ||
+    val === "readings"
+  ) {
+    return "reading_texts";
+  }
+  if (
+    val === "sentences_1111" ||
+    val === "cumleler-1111" ||
+    val === "cumleler" ||
+    val === "1111"
+  ) {
+    return "sentences_1111";
+  }
+  if (
+    val === "proverbs_508" ||
+    val === "atasozleri-508" ||
+    val === "atasozleri" ||
+    val === "proverbs"
+  ) {
+    return "proverbs_508";
+  }
+  if (val === "srs_due" || val === "srs-daily" || val === "srs") {
+    return "srs_due";
+  }
+  if (val === "mistakes" || val === "hata") {
+    return "mistakes";
+  }
+  if (val === "favorites" || val === "saved-words") {
+    return "favorites";
+  }
+  if (val === "weak-words" || val === "mahrec") {
+    return "weak-words";
+  }
+  return null;
+}
+
+function normalizeModeParam(raw?: string | null): ExerciseType | null {
+  if (!raw) return null;
+  const val = raw.trim().toLowerCase();
+  if (val === "flashcard" || val === "cards" || val === "kartlar") {
+    return "flashcard";
+  }
+  if (
+    val === "quiz" ||
+    val === "multiple-choice" ||
+    val === "test" ||
+    val === "mc"
+  ) {
+    return "multiple-choice";
+  }
+  if (
+    val === "fill" ||
+    val === "fill-in-blanks" ||
+    val === "blanks" ||
+    val === "imla"
+  ) {
+    return "fill-in-blanks";
+  }
+  if (val === "matching" || val === "match" || val === "eslestirme") {
+    return "matching";
+  }
+  if (
+    val === "sentence-builder" ||
+    val === "sentences" ||
+    val === "cumle-kurma"
+  ) {
+    return "sentence-builder";
+  }
+  if (
+    val === "visual-rosetta" ||
+    val === "rosetta" ||
+    val === "gorsel"
+  ) {
+    return "visual-rosetta";
+  }
+  return null;
+}
+
 function ExercisesPageContent() {
   const searchParams = useSearchParams();
   const [selectedType, setSelectedType] = useState<ExerciseType>("flashcard");
@@ -74,6 +193,7 @@ function ExercisesPageContent() {
     vocabulary: DictionaryItem[];
     idioms: ArabicIdiom[];
     dialogues: Dialogue[];
+    visualPool: ResimliKelime[];
     isMistakesMode: boolean;
   } | null>(null);
 
@@ -88,12 +208,12 @@ function ExercisesPageContent() {
   } = useUserStore();
   const { preferredLevel } = useSettings();
 
-  // Kompakt Ayar Barı State
-  const [rangePreset, setRangePreset] = useState<string>("all-dict");
-  const [cefrFilter, setCefrFilter] = useState<"all" | "A1" | "A2" | "B1" | "B2">(
-    "all"
-  );
+  // Havuz ve Dinamik Alt Filtre State'leri
+  const [rangePreset, setRangePreset] = useState<PoolSourceId>("full_dict");
+  const [cefrFilter, setCefrFilter] = useState<"all" | Level>("all");
   const [singleDialogueId, setSingleDialogueId] = useState<string>("all");
+  const [singleReadingId, setSingleReadingId] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [startNum, setStartNum] = useState(1);
   const [endNum, setEndNum] = useState(diyaloglar.length);
   const [contentType, setContentType] = useState<QuizContentType>("words");
@@ -114,15 +234,26 @@ function ExercisesPageContent() {
     [srsRecords, mistakeIds, completedDialogues, learnedWords, preferredLevel]
   );
 
-  // Diyalog sayfasından "?source=idioms&dialogueId=dlg_XX", "?source=mistakes" veya "?plan=daily" ile gelindiğinde otomatik seç
+  // URL parametrelerini oku (?pool=sentences_1111&cat=...&level=A1&mode=quiz vb.)
   useEffect(() => {
-    const sourceParam = searchParams.get("source");
+    const poolParam =
+      searchParams.get("pool") || searchParams.get("source");
+    const catParam =
+      searchParams.get("cat") || searchParams.get("category");
+    const levelParam =
+      searchParams.get("level") || searchParams.get("seviye");
+    const modeParam = searchParams.get("mode");
     const dlgParam = searchParams.get("dialogueId");
+    const readingParam =
+      searchParams.get("readingId") || searchParams.get("metinId");
     const planParam = searchParams.get("plan");
+
     const raf = requestAnimationFrame(() => {
       if (planParam === "daily") {
         setSingleDialogueId("all");
-        setRangePreset("srs-daily");
+        setSingleReadingId("all");
+        setCategoryFilter("all");
+        setRangePreset("srs_due");
         setContentType("mixed");
         setSelectedType("multiple-choice");
         const dueVocab =
@@ -149,16 +280,37 @@ function ExercisesPageContent() {
             dailyPackage.dueReviewPool.dialogues.length > 0
               ? dailyPackage.dueReviewPool.dialogues
               : [dailyPackage.dailyDialogue.dialogue],
+          visualPool: gorselKelimeler,
           isMistakesMode: true,
         });
         setIsPlaying(true);
         return;
       }
-      if (sourceParam === "idioms") {
-        setContentType("idioms");
-      } else if (sourceParam === "mistakes") {
-        setRangePreset("mistakes");
+
+      if (levelParam && ["A1", "A2", "B1", "B2"].includes(levelParam)) {
+        setCefrFilter(levelParam as Level);
       }
+
+      const resolvedPool = normalizePoolParam(poolParam);
+      if (resolvedPool) {
+        setRangePreset(resolvedPool);
+        if (resolvedPool === "sentences_1111") {
+          setContentType("sentences");
+        } else if (resolvedPool === "proverbs_508") {
+          setContentType("idioms");
+        } else if (resolvedPool === "visual_words") {
+          setContentType("words");
+        } else if (resolvedPool === "reading_texts") {
+          setContentType("mixed");
+        }
+      } else if (poolParam === "idioms") {
+        setContentType("idioms");
+      }
+
+      if (catParam) {
+        setCategoryFilter(catParam);
+      }
+
       if (dlgParam) {
         const targetNum = parseInt(dlgParam.replace(/\D+/g, ""), 10);
         const foundDlg =
@@ -169,7 +321,34 @@ function ExercisesPageContent() {
               )
             : undefined);
         if (foundDlg) {
+          setRangePreset("all_dialogues");
           setSingleDialogueId(foundDlg.id);
+        }
+      }
+
+      if (readingParam) {
+        const targetNum = parseInt(readingParam.replace(/\D+/g, ""), 10);
+        const foundReading =
+          metinler.find((m) => m.id === readingParam) ||
+          (!isNaN(targetNum) && targetNum > 0
+            ? metinler.find(
+                (m) => parseInt(m.id.replace(/\D+/g, ""), 10) === targetNum
+              )
+            : undefined);
+        if (foundReading) {
+          setRangePreset("reading_texts");
+          setSingleReadingId(foundReading.id);
+        }
+      }
+
+      const resolvedMode = normalizeModeParam(modeParam);
+      if (resolvedMode) {
+        setSelectedType(resolvedMode);
+        if (
+          resolvedMode === "sentence-builder" ||
+          resolvedMode === "fill-in-blanks"
+        ) {
+          setContentType("sentences");
         }
       }
     });
@@ -181,11 +360,81 @@ function ExercisesPageContent() {
     [mistakeIds]
   );
 
-  const selectedDialogues = useMemo(() => {
-    if (singleDialogueId !== "all") {
-      return diyaloglar.filter((dlg) => dlg.id === singleDialogueId);
+  // Modül bazlı dinamik kategori listesi (1111 Cümle, 508 Atasözü, 999 Görsel Kelime)
+  const activeModuleCategories = useMemo(() => {
+    if (
+      rangePreset === "sentences_1111" ||
+      rangePreset === "proverbs_508" ||
+      rangePreset === "visual_words"
+    ) {
+      return getModuleCategoryList(rangePreset, cefrFilter);
     }
-    if (rangePreset === "srs-daily") {
+    return [];
+  }, [rangePreset, cefrFilter]);
+
+  // src/lib/quiz.ts Üreticilerinden Aktif WordItem[] Havuzları
+  const activeVisualWordsWordItems = useMemo(
+    () =>
+      generatePoolFromVisualWords({
+        category: rangePreset === "visual_words" ? categoryFilter : "all",
+        level: cefrFilter,
+      }),
+    [rangePreset, categoryFilter, cefrFilter]
+  );
+
+  const active1111SentencesWordItems = useMemo(
+    () =>
+      generatePoolFrom1111Sentences({
+        category: rangePreset === "sentences_1111" ? categoryFilter : "all",
+        level: cefrFilter,
+      }),
+    [rangePreset, categoryFilter, cefrFilter]
+  );
+
+  const activeProverbsWordItems = useMemo(
+    () =>
+      generatePoolFromProverbs({
+        category: rangePreset === "proverbs_508" ? categoryFilter : "all",
+        level: cefrFilter,
+      }),
+    [rangePreset, categoryFilter, cefrFilter]
+  );
+
+  const activeReadingsWordItems = useMemo(
+    () =>
+      generatePoolFromReadings({
+        readingId: rangePreset === "reading_texts" ? singleReadingId : "all",
+        level: cefrFilter,
+      }),
+    [rangePreset, singleReadingId, cefrFilter]
+  );
+
+  const activeDialoguesWordItems = useMemo(
+    () =>
+      generatePoolFromDialogues({
+        dialogueId: singleDialogueId,
+        level: cefrFilter,
+        startNum,
+        endNum,
+      }),
+    [singleDialogueId, cefrFilter, startNum, endNum]
+  );
+
+  const activeFullDictWordItems = useMemo(
+    () => generateFullDictionaryPool({ level: cefrFilter }),
+    [cefrFilter]
+  );
+
+  // Rosetta Görsel Eşleştirme için filtrelenmiş ResimliKelime[] havuzu
+  const filteredVisualWordsPool: ResimliKelime[] = useMemo(() => {
+    const allowedIds = new Set(activeVisualWordsWordItems.map((w) => w.id));
+    const filtered = gorselKelimeler.filter((gk) => allowedIds.has(gk.id));
+    return filtered.length >= 4 ? filtered : gorselKelimeler;
+  }, [activeVisualWordsWordItems]);
+
+  // Seçili Havuza Göre Cümle / Diyalog Yapısı (Flashcard, MultipleChoice, FillInBlanks, MatchingGame, SentenceBuilder için)
+  const selectedDialogues: Dialogue[] = useMemo(() => {
+    if (rangePreset === "srs_due") {
       return dailyPackage.dueReviewPool.dialogues.length > 0
         ? dailyPackage.dueReviewPool.dialogues
         : [dailyPackage.dailyDialogue.dialogue];
@@ -193,34 +442,95 @@ function ExercisesPageContent() {
     if (rangePreset === "mistakes" && mistakesResolved.dialogues.length > 0) {
       return mistakesResolved.dialogues;
     }
-    if (rangePreset === "cumleler-1111") {
-      const list =
-        cefrFilter === "all"
-          ? cumleler1111
-          : cumleler1111.filter((c) => c.cefr === cefrFilter);
+    if (rangePreset === "sentences_1111") {
+      const items =
+        active1111SentencesWordItems.length > 0
+          ? active1111SentencesWordItems
+          : generatePoolFrom1111Sentences({ category: "all", level: "all" });
       const syntheticDlg: Dialogue = {
-        id: "dlg_001",
+        id: "pool_1111",
         seviye: cefrFilter === "all" ? "A1" : cefrFilter,
-        baslik_tr: "1111 Günlük Kalıp Cümle",
+        baslik_tr:
+          categoryFilter !== "all"
+            ? `1111 Cümle · ${categoryFilter.replace(/_/g, " ")}`
+            : "1111 Günlük Kalıp Cümle",
         baslik_ar: "١١١١ جُمْلَة يَوْمِيَّة",
-        satirlar: list.slice(0, 120).map((c, idx) => ({
+        satirlar: items.map((c, idx) => ({
           sira: idx + 1,
-          konusmaci: c.tema || "Cümle",
+          konusmaci: (c.category || "Günlük Cümle").replace(/_/g, " "),
           konusmaci_ar: "جُمْلَة",
           cinsiyet: "E",
-          arapca: c.arapca,
-          turkce: c.turkce,
-          ses_dosyasi: c.ses_erkek,
+          odak_kalip: c.grammarTopic,
+          arapca: c.arabic,
+          turkce: c.turkish,
+          ses_dosyasi: c.audioUrl,
         })),
       };
       return [syntheticDlg];
     }
-    if (rangePreset === "metinler-60") {
-      const list =
-        cefrFilter === "all"
-          ? metinler
-          : metinler.filter((m) => m.seviye === cefrFilter);
-      return list.map(
+    if (rangePreset === "proverbs_508") {
+      const items =
+        activeProverbsWordItems.length > 0
+          ? activeProverbsWordItems
+          : generatePoolFromProverbs({ category: "all", level: "all" });
+      const syntheticDlg: Dialogue = {
+        id: "pool_proverbs",
+        seviye: cefrFilter === "all" ? "B1" : cefrFilter,
+        baslik_tr:
+          categoryFilter !== "all"
+            ? `508 Atasözü · ${categoryFilter.replace(/_/g, " ")}`
+            : "508 Arapça Atasözü ve Hikmet",
+        baslik_ar: "٥٠٨ أَمْثَال وَحِكَم",
+        satirlar: items.map((a, idx) => ({
+          sira: idx + 1,
+          konusmaci: (a.category || "Atasözü").replace(/_/g, " "),
+          konusmaci_ar: "مَثَل",
+          cinsiyet: "E",
+          arapca: a.arabic,
+          turkce: a.turkish,
+          ses_dosyasi: a.audioUrl,
+        })),
+      };
+      return [syntheticDlg];
+    }
+    if (rangePreset === "visual_words") {
+      const itemsWithExamples = activeVisualWordsWordItems.filter(
+        (w) => w.exampleAr && w.exampleAr.trim().length > 0
+      );
+      const sourceItems =
+        itemsWithExamples.length > 0
+          ? itemsWithExamples
+          : generatePoolFromVisualWords({ category: "all", level: "all" }).filter(
+              (w) => w.exampleAr && w.exampleAr.trim().length > 0
+            );
+      const syntheticDlg: Dialogue = {
+        id: "pool_visual",
+        seviye: cefrFilter === "all" ? "A1" : cefrFilter,
+        baslik_tr:
+          categoryFilter !== "all"
+            ? `999 Görsel Kelime · ${categoryFilter}`
+            : "999 Görsel Kelime Örnek Cümleleri",
+        baslik_ar: "أَمْثِلَةُ الْكَلِمَاتِ الْمُصَوَّرَة",
+        satirlar: sourceItems.map((w, idx) => ({
+          sira: idx + 1,
+          konusmaci: `${w.turkish} (${w.arabic})`,
+          konusmaci_ar: w.arabic,
+          cinsiyet: "E",
+          arapca: w.exampleAr || w.arabic,
+          turkce: w.exampleTr || w.turkish,
+          ses_dosyasi: w.audioUrl,
+        })),
+      };
+      return [syntheticDlg];
+    }
+    if (rangePreset === "reading_texts") {
+      const list = metinler.filter((m) => {
+        if (singleReadingId !== "all" && m.id !== singleReadingId) return false;
+        if (cefrFilter !== "all" && m.seviye !== cefrFilter) return false;
+        return true;
+      });
+      const effectiveList = list.length > 0 ? list : metinler;
+      return effectiveList.map(
         (m): Dialogue => ({
           id: m.id,
           seviye: m.seviye,
@@ -238,27 +548,10 @@ function ExercisesPageContent() {
         })
       );
     }
-    if (rangePreset === "atasozleri-508") {
-      const list =
-        cefrFilter === "all"
-          ? atasozleri
-          : atasozleri.filter((a) => a.cefr === cefrFilter);
-      const syntheticDlg: Dialogue = {
-        id: "dlg_001",
-        seviye: cefrFilter === "all" ? "B1" : cefrFilter,
-        baslik_tr: "508 Arapça Atasözü ve Hikmet",
-        baslik_ar: "٥٠٨ أَمْثَال وَحِكَم",
-        satirlar: list.slice(0, 120).map((a, idx) => ({
-          sira: idx + 1,
-          konusmaci: a.tema || "Atasözü",
-          konusmaci_ar: "مَثَل",
-          cinsiyet: "E",
-          arapca: a.arapca,
-          turkce: a.turkce,
-          ses_dosyasi: a.ses_erkek,
-        })),
-      };
-      return [syntheticDlg];
+
+    // all_dialogues veya full_dict / favorites / weak-words
+    if (singleDialogueId !== "all" && !singleDialogueId.startsWith("range:")) {
+      return diyaloglar.filter((dlg) => dlg.id === singleDialogueId);
     }
     const rangeFiltered = diyaloglar.filter((dlg) => {
       const num = parseInt(dlg.id.replace("dlg_", ""), 10);
@@ -270,11 +563,16 @@ function ExercisesPageContent() {
     }
     return rangeFiltered;
   }, [
-    singleDialogueId,
     rangePreset,
+    singleDialogueId,
+    singleReadingId,
+    categoryFilter,
     cefrFilter,
     dailyPackage,
     mistakesResolved.dialogues,
+    active1111SentencesWordItems,
+    activeProverbsWordItems,
+    activeVisualWordsWordItems,
     startNum,
     endNum,
   ]);
@@ -286,48 +584,61 @@ function ExercisesPageContent() {
     );
   }, [selectedDialogues]);
 
-  const shortSentenceCountInPool = useMemo(() => {
-    return getShortDialogueSentences(selectedDialogues).length;
-  }, [selectedDialogues]);
-
-  // Seçili kur veya diyaloga göre Kalıp İfadeler havuzu
+  // Seçili havuza göre Kalıp İfadeler / Atasözleri (ArabicIdiom[]) havuzu
   const idiomsPool: ArabicIdiom[] = useMemo(() => {
     const allCatalog = getCombinedIdiomsCatalog();
-    if (singleDialogueId !== "all") {
+
+    if (rangePreset === "proverbs_508") {
+      const items =
+        activeProverbsWordItems.length > 0
+          ? activeProverbsWordItems
+          : generatePoolFromProverbs({ category: "all", level: "all" });
+      return items.map((a) => ({
+        id: a.id,
+        arabic: a.arabic,
+        meaningTr: a.turkish,
+        literalTr: a.literal || "",
+        usageNote: a.context || "",
+        level: (a.level as "A1-A2" | "B1" | "B2") || "B1",
+      }));
+    }
+
+    if (rangePreset === "sentences_1111") {
+      const items =
+        active1111SentencesWordItems.length > 0
+          ? active1111SentencesWordItems
+          : generatePoolFrom1111Sentences({ category: "all", level: "all" });
+      return items.map((c) => ({
+        id: c.id,
+        arabic: c.arabic,
+        meaningTr: c.turkish,
+        literalTr: c.grammarTopic ? `Odak Kalıp: ${c.grammarTopic}` : "",
+        usageNote: c.context || "",
+        level: (c.level as "A1-A2" | "B1" | "B2") || "A1-A2",
+      }));
+    }
+
+    if (
+      rangePreset === "all_dialogues" &&
+      singleDialogueId !== "all" &&
+      !singleDialogueId.startsWith("range:")
+    ) {
       const dlgExtracted = extractDialoguesIdioms(selectedDialogues);
       return dlgExtracted.length > 0 ? dlgExtracted : allCatalog;
     }
-    if (rangePreset === "srs-daily") {
+
+    if (rangePreset === "srs_due") {
       return dailyPackage.dueReviewPool.idioms.length > 0
         ? dailyPackage.dueReviewPool.idioms
         : allCatalog;
     }
+
     if (rangePreset === "mistakes") {
       return mistakesResolved.idioms.length > 0
         ? mistakesResolved.idioms
         : allCatalog;
     }
-    if (rangePreset === "1-15") {
-      const extracted = extractDialoguesIdioms(selectedDialogues);
-      const byLevel = allCatalog.filter((i) => i.level === "A1-A2");
-      const map = new Map<string, ArabicIdiom>();
-      [...extracted, ...byLevel].forEach((i) => map.set(i.id, i));
-      return Array.from(map.values());
-    }
-    if (rangePreset === "16-35") {
-      const extracted = extractDialoguesIdioms(selectedDialogues);
-      const byLevel = allCatalog.filter((i) => i.level === "B1");
-      const map = new Map<string, ArabicIdiom>();
-      [...extracted, ...byLevel].forEach((i) => map.set(i.id, i));
-      return Array.from(map.values());
-    }
-    if (rangePreset === "36-60") {
-      const extracted = extractDialoguesIdioms(selectedDialogues);
-      const byLevel = allCatalog.filter((i) => i.level === "B2");
-      const map = new Map<string, ArabicIdiom>();
-      [...extracted, ...byLevel].forEach((i) => map.set(i.id, i));
-      return Array.from(map.values());
-    }
+
     if (cefrFilter !== "all") {
       const targetIdiomLvl =
         cefrFilter === "A1" || cefrFilter === "A2" ? "A1-A2" : cefrFilter;
@@ -338,26 +649,21 @@ function ExercisesPageContent() {
     }
     return allCatalog;
   }, [
-    singleDialogueId,
     rangePreset,
+    singleDialogueId,
     cefrFilter,
     selectedDialogues,
+    activeProverbsWordItems,
+    active1111SentencesWordItems,
     dailyPackage.dueReviewPool.idioms,
     mistakesResolved.idioms,
   ]);
 
+  // Seçili havuza göre Kelime (DictionaryItem[]) havuzu ve bilgi mesajı
   const { combinedVocabulary, poolNotice } = useMemo(() => {
     const nonProperSozluk = sozluk.filter((w) => !isProperNounItem(w));
-    if (singleDialogueId !== "all") {
-      return {
-        combinedVocabulary: getDialogueVocabulary(singleDialogueId)
-          .map((e) => e.item)
-          .filter((w) => !isProperNounItem(w)),
-        poolNotice: null as string | null,
-      };
-    }
 
-    if (rangePreset === "srs-daily") {
+    if (rangePreset === "srs_due") {
       const dueWords = dailyPackage.dueReviewPool.words.filter(
         (w) => !isProperNounItem(w)
       );
@@ -405,8 +711,8 @@ function ExercisesPageContent() {
         combinedVocabulary: padded,
         poolNotice:
           cleanMistakeWords.length > 0
-            ? `Hata defterinizde ${cleanMistakeWords.length} kelime/ifade bulunduğu için şık havuzu genel sözlükle desteklendi. Farklı günlerde 3 kez ipucusuz doğru bildikleriniz (Kademe 3/5) hata defterinden mezun edilir.`
-            : `Hata defterinizdeki diyalog cümleleriyle pratik yapabilirsiniz. Farklı günlerde 3 kez ipucusuz doğru bildikleriniz (Kademe 3/5) hata defterinden mezun edilir.`,
+            ? `Hata defterinizde ${cleanMistakeWords.length} kelime/ifade bulunduğu için şık havuzu genel sözlükle desteklendi.`
+            : `Hata defterinizdeki cümlelerle pratik yapabilirsiniz.`,
       };
     }
 
@@ -450,22 +756,103 @@ function ExercisesPageContent() {
       };
     }
 
-    if (rangePreset === "gorsel-kelimeler") {
-      const visualWords = nonProperSozluk.filter((w) => Boolean(w.gorsel));
-      const filteredByLevel =
-        cefrFilter === "all"
-          ? visualWords
-          : visualWords.filter((w) => w.cefr === cefrFilter);
+    if (rangePreset === "visual_words") {
+      const items =
+        activeVisualWordsWordItems.length > 0
+          ? activeVisualWordsWordItems
+          : generatePoolFromVisualWords({ category: "all", level: "all" });
+      const mappedVocab: DictionaryItem[] = items.map((w) => ({
+        id: w.id,
+        tur: w.partOfSpeech || "isim",
+        kok: w.root || "-",
+        anlam_tr: w.turkish,
+        mufret: w.arabic,
+        cemi: w.plural,
+        gorsel: w.imageUrl,
+        ornek_ar: w.exampleAr,
+        ornek_tr: w.exampleTr,
+        ses_erkek: w.audioUrl,
+        ses_kadin: w.audioFemaleUrl,
+        kategori_tr: w.category,
+        cefr: (w.level as Level) || "A1",
+      }));
       return {
         combinedVocabulary:
-          filteredByLevel.length >= 4 ? filteredByLevel : visualWords,
-        poolNotice: `🖼️ 999 Görsel Kelime havuzundan ${
-          (filteredByLevel.length >= 4 ? filteredByLevel : visualWords).length
-        } resimli kelime seçildi.`,
+          mappedVocab.length >= 4 ? mappedVocab : nonProperSozluk.slice(0, 12),
+        poolNotice: `🖼️ 999 Görsel Kelime havuzundan ${items.length} resimli ve örnek cümleli kelime seçildi.`,
       };
     }
 
-    if (rangePreset === "all-dict") {
+    if (rangePreset === "sentences_1111") {
+      const items =
+        active1111SentencesWordItems.length > 0
+          ? active1111SentencesWordItems
+          : generatePoolFrom1111Sentences({ category: "all", level: "all" });
+      const mappedSentenceItems: DictionaryItem[] = items.map((c) => ({
+        id: c.id,
+        tur: "ifade",
+        kok: "-",
+        anlam_tr: c.turkish,
+        mufret: c.arabic,
+        ses_erkek: c.audioUrl,
+        ses_kadin: c.audioFemaleUrl,
+        kategori_tr: c.category,
+        cefr: (c.level as Level) || "A1",
+      }));
+      return {
+        combinedVocabulary: mappedSentenceItems,
+        poolNotice: `🗣️ 1111 Günlük Kalıp Cümle havuzundan ${items.length} cümle seçildi.`,
+      };
+    }
+
+    if (rangePreset === "proverbs_508") {
+      const items =
+        activeProverbsWordItems.length > 0
+          ? activeProverbsWordItems
+          : generatePoolFromProverbs({ category: "all", level: "all" });
+      const mappedProverbItems: DictionaryItem[] = items.map((a) => ({
+        id: a.id,
+        tur: "ifade",
+        kok: "-",
+        anlam_tr: a.turkish,
+        mufret: a.arabic,
+        gorsel: a.imageUrl,
+        ornek_ar: a.literal,
+        ornek_tr: a.context,
+        ses_erkek: a.audioUrl,
+        ses_kadin: a.audioFemaleUrl,
+        kategori_tr: a.category,
+        cefr: (a.level as Level) || "B1",
+      }));
+      return {
+        combinedVocabulary: mappedProverbItems,
+        poolNotice: `📜 508 Atasözü & Hikmet havuzundan ${items.length} atasözü seçildi.`,
+      };
+    }
+
+    if (rangePreset === "reading_texts") {
+      const textVocabMap = new Map<string, DictionaryItem>();
+      const targetTexts = metinler.filter((m) => {
+        if (singleReadingId !== "all" && m.id !== singleReadingId) return false;
+        if (cefrFilter !== "all" && m.seviye !== cefrFilter) return false;
+        return true;
+      });
+      const effectiveTexts = targetTexts.length > 0 ? targetTexts : metinler;
+      effectiveTexts.forEach((m) => {
+        getReadingTextVocabulary(m.id).forEach((entry) => {
+          if (!isProperNounItem(entry.item)) {
+            textVocabMap.set(entry.item.id, entry.item);
+          }
+        });
+      });
+      const list = Array.from(textVocabMap.values());
+      return {
+        combinedVocabulary: list.length >= 4 ? list : nonProperSozluk,
+        poolNotice: `📖 60 Okuma Metni havuzundan ${effectiveTexts.length} metin, ${sentenceCountInPool} cümle ve ${list.length} kelime seçildi.`,
+      };
+    }
+
+    if (rangePreset === "full_dict") {
       const filteredByLevel =
         cefrFilter === "all"
           ? nonProperSozluk
@@ -477,23 +864,20 @@ function ExercisesPageContent() {
       };
     }
 
-    if (rangePreset === "metinler-60") {
-      const textVocabMap = new Map<string, DictionaryItem>();
-      const targetTexts =
-        cefrFilter === "all"
-          ? metinler
-          : metinler.filter((m) => m.seviye === cefrFilter);
-      targetTexts.forEach((m) => {
-        getReadingTextVocabulary(m.id).forEach((entry) => {
-          if (!isProperNounItem(entry.item)) {
-            textVocabMap.set(entry.item.id, entry.item);
-          }
-        });
-      });
-      const list = Array.from(textVocabMap.values());
+    // all_dialogues
+    if (singleDialogueId !== "all" && !singleDialogueId.startsWith("range:")) {
+      const singleVocab = getDialogueVocabulary(singleDialogueId)
+        .map((e) => e.item)
+        .filter((w) => !isProperNounItem(w));
       return {
-        combinedVocabulary: list.length >= 4 ? list : nonProperSozluk,
-        poolNotice: `📖 60 Okuma Metni havuzundan ${targetTexts.length} metin, ${sentenceCountInPool} cümle ve ${list.length} kelime seçildi.`,
+        combinedVocabulary:
+          singleVocab.length >= 4 ? singleVocab : nonProperSozluk.slice(0, 12),
+        poolNotice: `💬 Diyalog #${singleDialogueId.replace(
+          "dlg_",
+          ""
+        )} içinden ${sentenceCountInPool} cümle ve ${
+          singleVocab.length
+        } kelime seçildi.`,
       };
     }
 
@@ -511,11 +895,14 @@ function ExercisesPageContent() {
       cefrFilter === "all" ? list : list.filter((w) => w.cefr === cefrFilter);
     return {
       combinedVocabulary: filteredList.length >= 4 ? filteredList : list,
-      poolNotice: null,
+      poolNotice: `💬 ${selectedDialogues.length} Diyalog içinden ${sentenceCountInPool} cümle ve ${
+        (filteredList.length >= 4 ? filteredList : list).length
+      } kelime seçildi.`,
     };
   }, [
-    singleDialogueId,
     rangePreset,
+    singleDialogueId,
+    singleReadingId,
     cefrFilter,
     selectedDialogues,
     sentenceCountInPool,
@@ -524,6 +911,9 @@ function ExercisesPageContent() {
     mistakeIds.length,
     mistakesResolved.words,
     dailyPackage.dueReviewPool,
+    activeVisualWordsWordItems,
+    active1111SentencesWordItems,
+    activeProverbsWordItems,
   ]);
 
   const exerciseCards: {
@@ -537,14 +927,16 @@ function ExercisesPageContent() {
       id: "flashcard",
       title: "Kelime & Cümle Kartları",
       arabicBadge: "البِطَاقَات",
-      subtitle: "Sesli Arapça-Türkçe 3B kelime, kalıp ifade ve kısa cümle kartları",
+      subtitle:
+        "Sesli Arapça-Türkçe 3B kelime, atasözü, kalıp ifade ve cümle kartları",
       icon: BookOpen,
     },
     {
       id: "multiple-choice",
       title: "Çoktan Seçmeli Test",
       arabicBadge: "الاخْتِبَار",
-      subtitle: "Kelime, kalıp ifade veya diyalog cümleleriyle 4 şıklı anlam testi",
+      subtitle:
+        "Kelime, atasözü, kalıp ifade veya cümlelerle 4 şıklı anlam testi",
       icon: CheckSquare,
     },
     {
@@ -558,108 +950,142 @@ function ExercisesPageContent() {
       id: "matching",
       title: "Ok Çizerek Eşleştirme",
       arabicBadge: "المُطَابَقَة",
-      subtitle: "Kelime, kalıp ifade ve cümleleri interaktif ok çizerek eşleştirin",
+      subtitle:
+        "Kelime, atasözü ve cümleleri interaktif ok çizerek eşleştirin",
       icon: Link2,
     },
     {
       id: "sentence-builder",
       title: "Cümle Kurma (Kelime Sıralama)",
       arabicBadge: "تَرْتِيبُ الْجُمَل",
-      subtitle: "Dinlediğiniz cümle veya kalıp ifadenin kelimelerini sağdan sola sıralayın",
+      subtitle:
+        "Dinlediğiniz cümle, atasözü veya örnek cümlenin kelimelerini sıralayın",
       icon: ListOrdered,
     },
     {
       id: "visual-rosetta",
       title: "Görsel Eşleştirme (Rosetta)",
       arabicBadge: "الصُّوَرُ وَالصَّوْت",
-      subtitle: "999 kare görsel ve çift cinsiyetli sesle Rosetta Stone usulü eşleştirme",
+      subtitle:
+        "999 kare görsel ve çift cinsiyetli sesle Rosetta Stone usulü eşleştirme",
       icon: ImageIcon,
     },
   ];
 
-  const nonProperCount = useMemo(
-    () => sozluk.filter((w) => !isProperNounItem(w)).length,
-    []
-  );
-
-  const rangeOptions = [
+  // Hızlı Havuz Sekmeleri (Quick Pool Pills) ve Havuz Select Seçenekleri
+  const poolOptions: {
+    id: PoolSourceId;
+    label: string;
+    shortLabel: string;
+  }[] = [
     {
-      id: "all-dict",
-      label: `Tüm Sözlük (${nonProperCount.toLocaleString("tr-TR")} alıştırma kelimesi — özel isimler hariç)`,
-      s: 1,
-      e: diyaloglar.length,
+      id: "full_dict",
+      label: "📚 Tüm Sözlük (3.118 Kelime)",
+      shortLabel: "📚 Tüm Sözlük (3.118)",
     },
     {
-      id: "srs-daily",
-      label: `⏰ Bugün Tekrar Edilecekler (${dailyPackage.dueReviewPool.totalDueCount})`,
-      s: 1,
-      e: diyaloglar.length,
+      id: "visual_words",
+      label: "🖼️ 999 Görsel Kelime (Resimli & Örnekli)",
+      shortLabel: "🖼️ 999 Görsel Kelime",
+    },
+    {
+      id: "all_dialogues",
+      label: "💬 120 Diyalog (Kelime & Cümleler)",
+      shortLabel: "💬 120 Diyalog",
+    },
+    {
+      id: "reading_texts",
+      label: "📖 60 Okuma Metni (Cümle & Kelimeler)",
+      shortLabel: "📖 60 Okuma Metni",
+    },
+    {
+      id: "sentences_1111",
+      label: "🗣️ 1111 Günlük Kalıp Cümle",
+      shortLabel: "🗣️ 1111 Günlük Cümle",
+    },
+    {
+      id: "proverbs_508",
+      label: "📜 508 Arapça Atasözü & Hikmet",
+      shortLabel: "📜 508 Atasözü",
+    },
+    {
+      id: "srs_due",
+      label: `⏰ Bugün Tekrar Edilecekler (SRS) (${dailyPackage.dueReviewPool.totalDueCount})`,
+      shortLabel: `⏰ SRS Tekrar (${dailyPackage.dueReviewPool.totalDueCount})`,
     },
     {
       id: "mistakes",
-      label: `⚡ Zorlandıklarım / Hata Defteri (${mistakeIds.length})`,
-      s: 1,
-      e: diyaloglar.length,
+      label: `⚡ Hata Defteri / Zorlandıklarım (${mistakeIds.length})`,
+      shortLabel: `⚡ Hata Defteri (${mistakeIds.length})`,
     },
-    {
-      id: "metinler-60",
-      label: `📖 60 Okuma Metni (${metinler.length} metin)`,
-      s: 1,
-      e: diyaloglar.length,
-    },
-    {
-      id: "gorsel-kelimeler",
-      label: `🖼️ Görsel Kelimeler (${gorselKelimeler.length} resimli kelime)`,
-      s: 1,
-      e: diyaloglar.length,
-    },
-    {
-      id: "cumleler-1111",
-      label: `🗣️ 1111 Günlük Cümle (${cumleler1111.length} cümle)`,
-      s: 1,
-      e: diyaloglar.length,
-    },
-    {
-      id: "atasozleri-508",
-      label: `📜 508 Atasözü & Hikmet (${atasozleri.length} atasözü)`,
-      s: 1,
-      e: diyaloglar.length,
-    },
-    { id: "1-15", label: "Başlangıç Kuru (1-30)", s: 1, e: 30 },
-    { id: "16-35", label: "Orta Kur (31-75)", s: 31, e: 75 },
-    { id: "36-60", label: `İleri Kur (76-${diyaloglar.length})`, s: 76, e: diyaloglar.length },
     {
       id: "favorites",
-      label: `Favorilerim / Kaydedilenler (${favoriteWords.length})`,
-      s: 1,
-      e: diyaloglar.length,
+      label: `❤️ Favorilerim / Kaydedilenler (${favoriteWords.length})`,
+      shortLabel: `❤️ Favorilerim (${favoriteWords.length})`,
     },
     {
       id: "weak-words",
-      label: `Mahreç Tekrarı (${weakWords.length})`,
-      s: 1,
-      e: diyaloglar.length,
+      label: `🎯 Mahreç Tekrarı (${weakWords.length})`,
+      shortLabel: `🎯 Mahreç (${weakWords.length})`,
     },
   ];
 
-  const isMistakesEmpty =
-    singleDialogueId === "all" &&
-    rangePreset === "mistakes" &&
-    mistakeIds.length === 0;
+  const quickPoolPills = poolOptions.slice(0, 8);
 
-  const handlePoolSelectChange = (presetId: string) => {
+  const isMistakesEmpty =
+    rangePreset === "mistakes" && mistakeIds.length === 0;
+
+  const handlePoolSelectChange = (presetId: PoolSourceId) => {
     playClick();
-    const found = rangeOptions.find((r) => r.id === presetId);
-    setSingleDialogueId("all");
     setRangePreset(presetId);
-    if (presetId === "cumleler-1111" || presetId === "atasozleri-508") {
+    setCategoryFilter("all");
+    setSingleDialogueId("all");
+    setSingleReadingId("all");
+    setStartNum(1);
+    setEndNum(diyaloglar.length);
+
+    if (presetId === "sentences_1111") {
       setContentType("sentences");
-    } else if (presetId === "gorsel-kelimeler") {
-      setContentType("words");
+    } else if (presetId === "proverbs_508") {
+      setContentType(
+        selectedType === "fill-in-blanks" || selectedType === "sentence-builder"
+          ? "sentences"
+          : "idioms"
+      );
+    } else if (presetId === "visual_words" || presetId === "full_dict") {
+      setContentType(
+        selectedType === "fill-in-blanks" || selectedType === "sentence-builder"
+          ? "sentences"
+          : "words"
+      );
+    } else if (presetId === "reading_texts" || presetId === "all_dialogues") {
+      if (
+        selectedType === "fill-in-blanks" ||
+        selectedType === "sentence-builder"
+      ) {
+        setContentType("sentences");
+      }
     }
-    if (found) {
-      setStartNum(found.s);
-      setEndNum(found.e);
+  };
+
+  const handleDialogueSubSelectChange = (val: string) => {
+    playClick();
+    if (val === "range:1-30") {
+      setSingleDialogueId("range:1-30");
+      setStartNum(1);
+      setEndNum(30);
+    } else if (val === "range:31-75") {
+      setSingleDialogueId("range:31-75");
+      setStartNum(31);
+      setEndNum(75);
+    } else if (val === "range:76-120") {
+      setSingleDialogueId("range:76-120");
+      setStartNum(76);
+      setEndNum(diyaloglar.length);
+    } else {
+      setSingleDialogueId(val);
+      setStartNum(1);
+      setEndNum(diyaloglar.length);
     }
   };
 
@@ -667,7 +1093,7 @@ function ExercisesPageContent() {
     playClick();
     if (
       combinedVocabulary.length < 4 &&
-      sentenceCountInPool < 4 &&
+      sentenceCountInPool < 2 &&
       idiomsPool.length < 1
     )
       return;
@@ -675,8 +1101,9 @@ function ExercisesPageContent() {
       vocabulary: [...combinedVocabulary],
       idioms: [...idiomsPool],
       dialogues: [...selectedDialogues],
+      visualPool: [...filteredVisualWordsPool],
       isMistakesMode:
-        rangePreset === "mistakes" || rangePreset === "srs-daily",
+        rangePreset === "mistakes" || rangePreset === "srs_due",
     });
     setIsPlaying(true);
   };
@@ -686,34 +1113,148 @@ function ExercisesPageContent() {
     setFrozenPools(null);
   };
 
-  const effectiveSentenceCount =
-    selectedType === "flashcard" ||
-    (selectedType === "matching" && shortSentenceCountInPool >= 5)
-      ? shortSentenceCountInPool
-      : sentenceCountInPool;
-
-  const activePoolCountLabel =
-    selectedType === "visual-rosetta"
-      ? `${
-          cefrFilter === "all"
-            ? gorselKelimeler.length
-            : gorselKelimeler.filter((w) => w.cefr === cefrFilter).length
-        } Görsel Kelime`
-      : contentType === "idioms"
-      ? `${idiomsPool.length} Kalıp İfade`
-      : selectedType === "fill-in-blanks" || selectedType === "sentence-builder"
-      ? `${sentenceCountInPool} Cümle`
-      : contentType === "sentences"
-      ? `${effectiveSentenceCount} Cümle`
-      : contentType === "mixed"
-      ? `${combinedVocabulary.length} Kelime + ${idiomsPool.length} Kalıp İfade + ${effectiveSentenceCount} Cümle`
-      : `${combinedVocabulary.length} Kelime`;
-
   const isSentencesOnlyMode =
     selectedType === "fill-in-blanks" || selectedType === "sentence-builder";
   const effectiveContentType: QuizContentType = isSentencesOnlyMode
     ? "sentences"
     : contentType;
+
+  // Seçili havuz, kategori, seviye ve alıştırma moduna göre gerçek zamanlı öğe sayısı
+  const { activeItemCount, activePoolCountLabel } = useMemo(() => {
+    if (selectedType === "visual-rosetta") {
+      const cnt = activeVisualWordsWordItems.length || gorselKelimeler.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Görsel Kelime`,
+      };
+    }
+
+    if (rangePreset === "visual_words") {
+      if (isSentencesOnlyMode || effectiveContentType === "sentences") {
+        const exCount = activeVisualWordsWordItems.filter(
+          (w) => w.exampleAr && w.exampleAr.trim().length > 0
+        ).length;
+        return {
+          activeItemCount: exCount,
+          activePoolCountLabel: `${exCount} Örnek Cümle`,
+        };
+      }
+      const cnt = activeVisualWordsWordItems.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Görsel Kelime`,
+      };
+    }
+
+    if (rangePreset === "sentences_1111") {
+      const cnt = active1111SentencesWordItems.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Günlük Cümle`,
+      };
+    }
+
+    if (rangePreset === "proverbs_508") {
+      const cnt = activeProverbsWordItems.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Atasözü`,
+      };
+    }
+
+    if (rangePreset === "reading_texts") {
+      if (isSentencesOnlyMode || effectiveContentType === "sentences") {
+        return {
+          activeItemCount: sentenceCountInPool,
+          activePoolCountLabel: `${sentenceCountInPool} Metin Cümlesi`,
+        };
+      }
+      if (effectiveContentType === "words") {
+        return {
+          activeItemCount: combinedVocabulary.length,
+          activePoolCountLabel: `${combinedVocabulary.length} Metin Kelimesi`,
+        };
+      }
+      const total = activeReadingsWordItems.length;
+      return {
+        activeItemCount: total,
+        activePoolCountLabel: `${sentenceCountInPool} Cümle + ${combinedVocabulary.length} Kelime`,
+      };
+    }
+
+    if (rangePreset === "all_dialogues") {
+      if (isSentencesOnlyMode || effectiveContentType === "sentences") {
+        return {
+          activeItemCount: sentenceCountInPool,
+          activePoolCountLabel: `${sentenceCountInPool} Diyalog Cümlesi`,
+        };
+      }
+      if (effectiveContentType === "words") {
+        return {
+          activeItemCount: combinedVocabulary.length,
+          activePoolCountLabel: `${combinedVocabulary.length} Diyalog Kelimesi`,
+        };
+      }
+      if (effectiveContentType === "idioms") {
+        return {
+          activeItemCount: idiomsPool.length,
+          activePoolCountLabel: `${idiomsPool.length} Kalıp İfade`,
+        };
+      }
+      return {
+        activeItemCount: activeDialoguesWordItems.length,
+        activePoolCountLabel: `${sentenceCountInPool} Cümle + ${combinedVocabulary.length} Kelime`,
+      };
+    }
+
+    if (rangePreset === "full_dict") {
+      if (isSentencesOnlyMode || effectiveContentType === "sentences") {
+        return {
+          activeItemCount: sentenceCountInPool,
+          activePoolCountLabel: `${sentenceCountInPool} Cümle`,
+        };
+      }
+      if (effectiveContentType === "idioms") {
+        return {
+          activeItemCount: idiomsPool.length,
+          activePoolCountLabel: `${idiomsPool.length} Kalıp İfade`,
+        };
+      }
+      const cnt =
+        cefrFilter === "all" ? 3118 : activeFullDictWordItems.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} Kelime`,
+      };
+    }
+
+    const fallbackCount =
+      effectiveContentType === "idioms"
+        ? idiomsPool.length
+        : effectiveContentType === "sentences"
+        ? sentenceCountInPool
+        : combinedVocabulary.length;
+
+    return {
+      activeItemCount: fallbackCount,
+      activePoolCountLabel: `${fallbackCount} Öğe`,
+    };
+  }, [
+    selectedType,
+    rangePreset,
+    isSentencesOnlyMode,
+    effectiveContentType,
+    cefrFilter,
+    activeVisualWordsWordItems,
+    active1111SentencesWordItems,
+    activeProverbsWordItems,
+    activeReadingsWordItems,
+    activeDialoguesWordItems,
+    activeFullDictWordItems,
+    sentenceCountInPool,
+    combinedVocabulary.length,
+    idiomsPool.length,
+  ]);
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-28 md:pb-8">
@@ -748,23 +1289,17 @@ function ExercisesPageContent() {
               İnteraktif Alıştırma Merkezi
             </h1>
             <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)] truncate">
-              {nonProperCount.toLocaleString("tr-TR")} alıştırma kelimesi (özel isimler hariç), {getCombinedIdiomsCatalog().length} kalıp ifade ve diyalog cümleleri
+              120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi
             </p>
           </div>
         </div>
 
         <div
-          data-tooltip="1.494 toplam sözlük kaydından özel isimler çıkarılarak 1.441 alıştırma kelimesi + 111 kalıp ifade havuzu kullanılır"
+          data-tooltip="120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi"
           data-tooltip-pos="bottom"
           data-tooltip-align="right"
           className="hidden sm:flex items-center gap-2 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-3 py-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
         >
-          <span>
-            {singleDialogueId !== "all"
-              ? `Diyalog #${singleDialogueId.replace("dlg_", "")}`
-              : `${selectedDialogues.length} Diyalog`}
-          </span>
-          <span>·</span>
           <span>{activePoolCountLabel}</span>
           <Info size={13} className="opacity-75 shrink-0" />
         </div>
@@ -792,7 +1327,7 @@ function ExercisesPageContent() {
                       ) {
                         setContentType("sentences");
                       } else if (card.id === "visual-rosetta") {
-                        setRangePreset("gorsel-kelimeler");
+                        setRangePreset("visual_words");
                         setContentType("words");
                       }
                     }}
@@ -802,7 +1337,6 @@ function ExercisesPageContent() {
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
                     }`}
                   >
-                    {/* Üst Satır: Sol İkon + Sağ Arapça Adı ve Seçili Onay Rozeti */}
                     <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2 gap-1.5">
                       <div
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
@@ -830,7 +1364,6 @@ function ExercisesPageContent() {
                       </div>
                     </div>
 
-                    {/* Orta Satır: Tam Genişlikte Türkçe Başlık */}
                     <h2
                       className={`font-bold text-xs sm:text-base leading-snug w-full ${
                         isSelected
@@ -841,7 +1374,6 @@ function ExercisesPageContent() {
                       {card.title}
                     </h2>
 
-                    {/* Alt Satır: Kısa Açıklama (Mobilde Gizli) */}
                     <p className="hidden sm:block text-xs text-[var(--muted)] leading-snug line-clamp-2 mt-1">
                       {card.subtitle}
                     </p>
@@ -851,69 +1383,56 @@ function ExercisesPageContent() {
             </div>
           </section>
 
-          {/* 2. KOMPAKT AYAR PANELİ + HER ZAMAN GÖRÜNÜR BAŞLAT BUTONU */}
+          {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
           <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 space-y-2.5">
-            {/* Hızlı SRS Günlük Tekrar & Hata Defteri Sekme Şeridi */}
-            <div className="flex flex-wrap items-center gap-1.5 pb-1 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-              <button
-                type="button"
-                onClick={() => handlePoolSelectChange("srs-daily")}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  singleDialogueId === "all" && rangePreset === "srs-daily"
+            {/* Hızlı Havuz Sekmeleri (Quick Pool Pills — 8 Ana Veri Kaynağı) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+              {quickPoolPills.map((pill) => {
+                const isActive = rangePreset === pill.id;
+                const activeStyle =
+                  pill.id === "srs_due"
                     ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[#6741D9] dark:text-[#d0bfff] hover:border-[#6741D9]"
-                }`}
-              >
-                <span>
-                  ⏰ Bugün Tekrar Edilecekler (
-                  {dailyPackage.dueReviewPool.totalDueCount})
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePoolSelectChange("mistakes")}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  singleDialogueId === "all" && rangePreset === "mistakes"
+                    : pill.id === "mistakes"
                     ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-amber-800 dark:text-amber-300 hover:border-amber-400"
-                }`}
-              >
-                <span>⚡ Hata Defteri ({mistakeIds.length})</span>
-              </button>
+                    : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
 
-              <button
-                type="button"
-                onClick={() => handlePoolSelectChange("all-dict")}
-                data-tooltip="1.494 toplam sözlük kaydından özel isimler çıkarılarak 1.441 alıştırma kelimesi kullanılır"
-                data-tooltip-pos="top"
-                className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  singleDialogueId === "all" && rangePreset === "all-dict"
-                    ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                <span>
-                  📚 Tüm Sözlük ({nonProperCount.toLocaleString("tr-TR")} alıştırma kelimesi — özel isimler hariç)
-                </span>
-              </button>
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => handlePoolSelectChange(pill.id)}
+                    className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      isActive
+                        ? activeStyle
+                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                    }`}
+                  >
+                    <span>{pill.shortLabel}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Üst Ayar Satırı: Mobilde 2 Sütunlu Grid, Masaüstünde Flex */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-              {/* 1. Kelime Havuzu Select */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
-                <Layers size={13} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
-                <span className="hidden sm:inline text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
+            {/* Üst Ayar Satırı: Havuz Seçimi + Dinamik Alt Filtre (Kategori/Metin/Diyalog) + Seviye */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2">
+              {/* 1. Kaynak Havuzu Select */}
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[260px]">
+                <Layers
+                  size={14}
+                  className="text-[#065F46] dark:text-emerald-400 shrink-0"
+                />
+                <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
                   Havuz:
                 </span>
                 <select
-                  value={singleDialogueId !== "all" ? "all-dict" : rangePreset}
-                  onChange={(e) => handlePoolSelectChange(e.target.value)}
-                  aria-label="Kelime Havuzu Seçimi"
+                  value={rangePreset}
+                  onChange={(e) =>
+                    handlePoolSelectChange(e.target.value as PoolSourceId)
+                  }
+                  aria-label="Kelime ve Cümle Havuzu Seçimi"
                   className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
                 >
-                  {rangeOptions.map((r) => (
+                  {poolOptions.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.label}
                     </option>
@@ -921,34 +1440,115 @@ function ExercisesPageContent() {
                 </select>
               </div>
 
-              {/* 2. Diyalog / Kur Select */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
-                <span className="hidden sm:inline text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                  Diyalog:
-                </span>
-                <select
-                  value={singleDialogueId}
-                  onChange={(e) => {
-                    playClick();
-                    setSingleDialogueId(e.target.value);
-                  }}
-                  aria-label="Diyalog Seçimi"
-                  className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full sm:max-w-[180px] truncate"
-                >
-                  <option value="all">Tüm Kurlar / Seçili Havuz</option>
-                  {diyaloglar.map((dlg) => {
-                    const num = dlg.id.replace("dlg_", "");
-                    return (
-                      <option key={dlg.id} value={dlg.id}>
-                        #{num} — {dlg.baslik_tr} ({dlg.seviye})
+              {/* 2. Dinamik Alt Filtre (Diyalog / Okuma Metni / Kategori Seçimi) */}
+              {rangePreset === "all_dialogues" && (
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                  <FolderOpen
+                    size={14}
+                    className="text-[#6741D9] shrink-0"
+                  />
+                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
+                    Diyalog:
+                  </span>
+                  <select
+                    value={singleDialogueId}
+                    onChange={(e) =>
+                      handleDialogueSubSelectChange(e.target.value)
+                    }
+                    aria-label="Diyalog Seçimi"
+                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                  >
+                    <option value="all">
+                      Tüm Diyaloglar ({diyaloglar.length})
+                    </option>
+                    <option value="range:1-30">
+                      Başlangıç Kuru (Diyalog 1–30)
+                    </option>
+                    <option value="range:31-75">
+                      Orta Kur (Diyalog 31–75)
+                    </option>
+                    <option value="range:76-120">
+                      İleri Kur (Diyalog 76–{diyaloglar.length})
+                    </option>
+                    {diyaloglar.map((dlg) => {
+                      const num = dlg.id.replace("dlg_", "");
+                      return (
+                        <option key={dlg.id} value={dlg.id}>
+                          #{num} — {dlg.baslik_tr} ({dlg.seviye})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {rangePreset === "reading_texts" && (
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                  <FolderOpen
+                    size={14}
+                    className="text-[#6741D9] shrink-0"
+                  />
+                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
+                    Metin:
+                  </span>
+                  <select
+                    value={singleReadingId}
+                    onChange={(e) => {
+                      playClick();
+                      setSingleReadingId(e.target.value);
+                    }}
+                    aria-label="Okuma Metni Seçimi"
+                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                  >
+                    <option value="all">
+                      Tüm Okuma Metinleri ({metinler.length})
+                    </option>
+                    {metinler.map((m, idx) => {
+                      const num = String(m.sira || idx + 1).padStart(2, "0");
+                      return (
+                        <option key={m.id} value={m.id}>
+                          #{num} — {m.baslik_tr} ({m.seviye})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {(rangePreset === "sentences_1111" ||
+                rangePreset === "proverbs_508" ||
+                rangePreset === "visual_words") && (
+                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
+                  <FolderOpen
+                    size={14}
+                    className="text-[#6741D9] shrink-0"
+                  />
+                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
+                    Kategori:
+                  </span>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => {
+                      playClick();
+                      setCategoryFilter(e.target.value);
+                    }}
+                    aria-label="Kategori Seçimi"
+                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                  >
+                    <option value="all">
+                      Tüm Kategoriler ({activeModuleCategories.length} kategori)
+                    </option>
+                    {activeModuleCategories.map((cat) => (
+                      <option key={cat.category} value={cat.category}>
+                        {cat.label} ({cat.count})
                       </option>
-                    );
-                  })}
-                </select>
-              </div>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* 2.5. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
-              <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-10 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
                   Seviye:
                 </span>
@@ -956,9 +1556,7 @@ function ExercisesPageContent() {
                   value={cefrFilter}
                   onChange={(e) => {
                     playClick();
-                    setCefrFilter(
-                      e.target.value as "all" | "A1" | "A2" | "B1" | "B2"
-                    );
+                    setCefrFilter(e.target.value as "all" | Level);
                   }}
                   aria-label="CEFR Seviye Filtresi"
                   className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
@@ -972,7 +1570,7 @@ function ExercisesPageContent() {
               </div>
 
               {/* 3. İçerik Türü (Soru Kaynağı: Kelimeler | Kalıp İfadeler | Cümleler | Karışık) */}
-              <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5 w-full sm:w-auto">
+              <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5 w-full lg:w-auto">
                 <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                   İçerik:
                 </span>
@@ -980,12 +1578,10 @@ function ExercisesPageContent() {
                   {(
                     [
                       { id: "words", label: "🔤 Kelimeler" },
-                      { id: "idioms", label: "✨ Kalıp İfadeler" },
+                      { id: "idioms", label: "✨ Atasözü / Kalıp" },
                       {
                         id: "sentences",
-                        label: isSentencesOnlyMode
-                          ? "💬 Cümleler (Diyalog Cümleleri)"
-                          : "💬 Cümleler",
+                        label: "💬 Cümleler",
                       },
                       { id: "mixed", label: "🔀 Karışık" },
                     ] as { id: QuizContentType; label: string }[]
@@ -1000,7 +1596,7 @@ function ExercisesPageContent() {
                         disabled={isDisabled}
                         data-tooltip={
                           isDisabled
-                            ? "Bu mod yalnızca cümlelerle çalışır"
+                            ? "Bu mod otomatik olarak cümle/atasözü/örnek cümle içeren öğeleri süzer"
                             : undefined
                         }
                         data-tooltip-pos="top"
@@ -1026,7 +1622,7 @@ function ExercisesPageContent() {
 
               {/* Boşluk Doldurma Alt Mod Seçicisi */}
               {selectedType === "fill-in-blanks" && (
-                <div className="col-span-2 sm:col-span-1 mt-1 py-1.5 px-1.5 bg-white dark:bg-[var(--background)] rounded-xl h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
+                <div className="sm:col-span-2 lg:col-span-1 py-1.5 px-1.5 bg-white dark:bg-[var(--background)] rounded-xl h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Mod:
                   </span>
@@ -1062,7 +1658,7 @@ function ExercisesPageContent() {
 
               {/* 4. Değerlendirme Zamanı Seçicisi (⚡ Hemen Göster | 🏁 Bitince Göster) */}
               {selectedType !== "flashcard" && (
-                <div className="col-span-2 sm:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
+                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1.5">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Sonuçlar:
                   </span>
@@ -1097,7 +1693,7 @@ function ExercisesPageContent() {
               )}
 
               {/* 5 & 6. Soru Sayısı (10 | 20 | 30) ve Süre (Süresiz | 60s | 30s) */}
-              <div className="col-span-2 sm:col-span-1 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+              <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto">
                 <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
                     Soru:
@@ -1122,7 +1718,10 @@ function ExercisesPageContent() {
                 </div>
 
                 <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
-                  <Timer size={13} className="text-[#6741D9] ml-1.5 shrink-0" />
+                  <Timer
+                    size={13}
+                    className="text-[#6741D9] ml-1.5 shrink-0"
+                  />
                   {[
                     { val: null, label: "Süresiz" },
                     { val: 60, label: "60s" },
@@ -1147,21 +1746,21 @@ function ExercisesPageContent() {
                 </div>
               </div>
 
-              {/* 7. Sağ Uç / Mobil Tam Genişlik: Vurgulu [▶ Alıştırmayı Başlat] Butonu */}
+              {/* 7. Sağ Uç / Mobil Tam Genişlik: Vurgulu [▶ Alıştırmayı Başlat (X Öğe)] Butonu */}
               <button
                 type="button"
                 onClick={handleStartExercise}
                 disabled={
                   isMistakesEmpty ||
                   (combinedVocabulary.length < 4 &&
-                    sentenceCountInPool < 4 &&
+                    sentenceCountInPool < 2 &&
                     idiomsPool.length < 1)
                 }
-                className="col-span-2 sm:col-span-1 sm:ml-auto w-full sm:w-auto h-11 sm:h-10 px-5 mb-2 sm:mb-0 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto h-11 sm:h-10 px-5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
               >
                 <Play size={15} fill="currentColor" />
                 <span className="truncate">
-                  ▶ Alıştırmayı Başlat ({activePoolCountLabel})
+                  ▶ Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe · {activePoolCountLabel})
                 </span>
               </button>
             </div>
@@ -1169,14 +1768,18 @@ function ExercisesPageContent() {
             {isMistakesEmpty && (
               <div className="bg-emerald-50 dark:bg-emerald-950/50 rounded-xl px-4 py-3 border-2 border-[#087F5B]/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-400">
                 <div className="flex items-center gap-2 text-center sm:text-left">
-                  <Check size={16} className="shrink-0 text-[#065F46] dark:text-emerald-400" />
+                  <Check
+                    size={16}
+                    className="shrink-0 text-[#065F46] dark:text-emerald-400"
+                  />
                   <span>
-                    Harika! Şu an hata defterinizde zorlandığınız bir kelime veya cümle bulunmuyor.
+                    Harika! Şu an hata defterinizde zorlandığınız bir kelime
+                    veya cümle bulunmuyor.
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => handlePoolSelectChange("all-dict")}
+                  onClick={() => handlePoolSelectChange("full_dict")}
                   className="px-3 py-1.5 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold shrink-0 cursor-pointer"
                 >
                   Tüm Sözlüğe Geç
@@ -1185,12 +1788,15 @@ function ExercisesPageContent() {
             )}
 
             {!isMistakesEmpty &&
-              singleDialogueId === "all" &&
               rangePreset === "mistakes" &&
               mistakeIds.length > 0 && (
                 <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl px-3.5 py-2 border border-amber-300 dark:border-amber-700/60 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-amber-900 dark:text-amber-200">
                   <span>
-                    ⚡ Akıllı Hata Defterinizde <strong>{mistakeIds.length}</strong> öğe kayıtlı. Farklı günlerde 3 kez ipucusuz doğru cevapladığınız (Kademe 3/5) sorular uzun süreli hafızaya alınarak listeden otomatik mezun edilir.
+                    ⚡ Akıllı Hata Defterinizde{" "}
+                    <strong>{mistakeIds.length}</strong> öğe kayıtlı. Farklı
+                    günlerde 3 kez ipucusuz doğru cevapladığınız (Kademe 3/5)
+                    sorular uzun süreli hafızaya alınarak listeden otomatik
+                    mezun edilir.
                   </span>
                   <button
                     type="button"
@@ -1221,10 +1827,10 @@ function ExercisesPageContent() {
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
-              contentType={contentType}
+              contentType={effectiveContentType}
               questionCount={questionCount}
               isMistakesMode={
-                frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
               onClose={handleCloseExercise}
             />
@@ -1234,12 +1840,12 @@ function ExercisesPageContent() {
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
-              contentType={contentType}
+              contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
               feedbackMode={feedbackMode}
               isMistakesMode={
-                frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
               onClose={handleCloseExercise}
             />
@@ -1249,13 +1855,13 @@ function ExercisesPageContent() {
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
-              contentType={contentType}
+              contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
               feedbackMode={feedbackMode}
               initialSubMode={fillSubMode}
               isMistakesMode={
-                frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
               onClose={handleCloseExercise}
             />
@@ -1265,12 +1871,12 @@ function ExercisesPageContent() {
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
-              contentType={contentType}
+              contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
               feedbackMode={feedbackMode}
               isMistakesMode={
-                frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
               onClose={handleCloseExercise}
             />
@@ -1279,18 +1885,19 @@ function ExercisesPageContent() {
             <SentenceBuilder
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
               idioms={frozenPools?.idioms ?? idiomsPool}
-              contentType={contentType}
+              contentType={effectiveContentType}
               questionCount={questionCount}
               timeLimit={timeLimit}
               feedbackMode={feedbackMode}
               isMistakesMode={
-                frozenPools?.isMistakesMode ?? (rangePreset === "mistakes")
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
               onClose={handleCloseExercise}
             />
           )}
           {selectedType === "visual-rosetta" && (
             <VisualRosettaQuiz
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
               cefrFilter={cefrFilter}
               questionCount={questionCount}
               onClose={handleCloseExercise}

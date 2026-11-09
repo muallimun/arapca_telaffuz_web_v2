@@ -1,6 +1,46 @@
-import { DictionaryItem, DialogueLine, ResimliKelime } from "@/types/data";
+import {
+  DictionaryItem,
+  DialogueLine,
+  Level,
+  ResimliKelime,
+} from "@/types/data";
+import {
+  diyaloglar,
+  metinler,
+  cumleler1111,
+  atasozleri,
+  gorselKelimeler,
+  sozluk,
+} from "@/lib/data";
+import {
+  getDialogueVocabulary,
+  getReadingTextVocabulary,
+  isProperNounItem,
+} from "@/lib/dict";
 
 export type VisualWordItem = ResimliKelime;
+
+export interface WordItem {
+  id: string;
+  type: "word" | "sentence" | "idiom";
+  arabic: string;
+  turkish: string;
+  level?: Level | string;
+  category?: string;
+  grammarTopic?: string;
+  sourceId?: string;
+  sourceTitle?: string;
+  plural?: string;
+  literal?: string;
+  context?: string;
+  exampleAr?: string;
+  exampleTr?: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  audioFemaleUrl?: string;
+  partOfSpeech?: string;
+  root?: string;
+}
 
 export function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
@@ -38,6 +78,318 @@ export function normalizeWordPartOfSpeech(
 
 function getWordPrimaryArabic(item: DictionaryItem): string {
   return (item.mufret || item.mazi || "").split("/")[0].trim();
+}
+
+// ============================================================================
+// VERİ HAVUZU ÜRETİCİLERİ (TÜM EĞİTİM VERİ KAYNAKLARI)
+// ============================================================================
+
+/**
+ * 1. Tüm Sözlük Havuzu (3.118 Kelime — özel isimler hariç)
+ */
+export function generateFullDictionaryPool(options?: {
+  level?: Level | "all";
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  return sozluk
+    .filter((w) => !isProperNounItem(w))
+    .filter((w) => (lvl === "all" ? true : (w.cefr || "A1") === lvl))
+    .map((w) => ({
+      id: w.id,
+      type: "word" as const,
+      arabic: (w.mufret || w.mazi || "").trim(),
+      turkish: w.anlam_tr,
+      level: w.cefr || "A1",
+      category: w.kategori_tr || w.tur,
+      plural: w.cemi || w.muzari,
+      exampleAr: w.ornek_ar,
+      exampleTr: w.ornek_tr,
+      imageUrl: w.gorsel,
+      audioUrl: w.ses_erkek,
+      audioFemaleUrl: w.ses_kadin,
+      partOfSpeech: w.tur,
+      root: w.kok,
+    }))
+    .filter((item) => item.arabic.length > 0 && item.turkish.length > 0);
+}
+
+/**
+ * 2. 120 Diyalog Havuzu (Diyalog Cümleleri ve Kelimeleri)
+ */
+export function generatePoolFromDialogues(options?: {
+  dialogueId?: string;
+  level?: Level | "all";
+  startNum?: number;
+  endNum?: number;
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  const dialogueId = options?.dialogueId || "all";
+  const startNum = options?.startNum ?? 1;
+  const endNum = options?.endNum ?? diyaloglar.length;
+
+  const targetDialogues = diyaloglar.filter((d) => {
+    if (dialogueId !== "all" && !dialogueId.startsWith("range:")) {
+      return d.id === dialogueId;
+    }
+    const num = parseInt(d.id.replace("dlg_", ""), 10);
+    if (num < startNum || num > endNum) return false;
+    if (lvl !== "all" && d.seviye !== lvl) return false;
+    return true;
+  });
+
+  const pool: WordItem[] = [];
+  const seenWordIds = new Set<string>();
+
+  for (const dlg of targetDialogues) {
+    for (const line of dlg.satirlar) {
+      if (!line.arapca?.trim() || !line.turkce?.trim()) continue;
+      pool.push({
+        id: `dlg_line_${dlg.id}_${line.sira}`,
+        type: "sentence",
+        arabic: line.arapca.trim(),
+        turkish: line.turkce.trim(),
+        level: dlg.seviye,
+        category: dlg.tema,
+        grammarTopic: dlg.odak_gramer,
+        sourceId: dlg.id,
+        sourceTitle: dlg.baslik_tr,
+        audioUrl: line.ses_dosyasi || line.audio,
+      });
+    }
+
+    const vocabEntries = getDialogueVocabulary(dlg.id);
+    for (const entry of vocabEntries) {
+      const w = entry.item;
+      if (isProperNounItem(w) || seenWordIds.has(w.id)) continue;
+      if (lvl !== "all" && w.cefr && w.cefr !== lvl) continue;
+      seenWordIds.add(w.id);
+      pool.push({
+        id: w.id,
+        type: "word",
+        arabic: (w.mufret || w.mazi || "").trim(),
+        turkish: w.anlam_tr,
+        level: w.cefr || dlg.seviye,
+        sourceId: dlg.id,
+        sourceTitle: dlg.baslik_tr,
+        plural: w.cemi || w.muzari,
+        exampleAr: entry.contextSentence,
+        exampleTr: entry.contextTranslation,
+        partOfSpeech: w.tur,
+        root: w.kok,
+      });
+    }
+  }
+
+  return pool;
+}
+
+/**
+ * 3. 60 Okuma Metni Havuzu (tum_metinler_60.json — Cümleler ve Metin Kelimeleri)
+ */
+export function generatePoolFromReadings(options?: {
+  readingId?: string;
+  level?: Level | "all";
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  const readingId = options?.readingId || "all";
+
+  const targetReadings = metinler.filter((m) => {
+    if (readingId !== "all" && m.id !== readingId) return false;
+    if (lvl !== "all" && m.seviye !== lvl) return false;
+    return true;
+  });
+
+  const pool: WordItem[] = [];
+  const seenWordIds = new Set<string>();
+
+  for (const metin of targetReadings) {
+    for (const line of metin.satirlar) {
+      if (!line.arapca?.trim() || !line.turkce?.trim()) continue;
+      pool.push({
+        id: `reading_line_${metin.id}_${line.sira}`,
+        type: "sentence",
+        arabic: line.arapca.trim(),
+        turkish: line.turkce.trim(),
+        level: metin.seviye,
+        category: metin.tema,
+        grammarTopic: metin.odak_gramer,
+        sourceId: metin.id,
+        sourceTitle: metin.baslik_tr,
+        imageUrl: metin.gorsel,
+        audioUrl: line.ses_dosyasi,
+      });
+    }
+
+    const vocabEntries = getReadingTextVocabulary(metin.id);
+    for (const entry of vocabEntries) {
+      const w = entry.item;
+      if (isProperNounItem(w) || seenWordIds.has(w.id)) continue;
+      seenWordIds.add(w.id);
+      pool.push({
+        id: w.id,
+        type: "word",
+        arabic: (w.mufret || w.mazi || "").trim(),
+        turkish: w.anlam_tr,
+        level: w.cefr || metin.seviye,
+        category: metin.tema,
+        sourceId: metin.id,
+        sourceTitle: metin.baslik_tr,
+        plural: w.cemi || w.muzari,
+        exampleAr: entry.contextSentence,
+        exampleTr: entry.contextTranslation,
+        partOfSpeech: w.tur,
+        root: w.kok,
+      });
+    }
+  }
+
+  return pool;
+}
+
+/**
+ * 4. 1111 Günlük Kalıp Cümle Havuzu (1111_cumle.json)
+ */
+export function generatePoolFrom1111Sentences(options?: {
+  category?: string;
+  level?: Level | "all";
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  const category = options?.category || "all";
+
+  return cumleler1111
+    .filter((item) => {
+      const itemLevel = item.seviye || item.cefr || "A1";
+      if (lvl !== "all" && itemLevel !== lvl) return false;
+      const itemCat = (item.tema || item.kategori || "").trim();
+      if (category !== "all" && itemCat !== category) return false;
+      return true;
+    })
+    .map((item) => ({
+      id: item.id,
+      type: "sentence" as const,
+      arabic: item.arapca,
+      turkish: item.turkce,
+      level: item.seviye || item.cefr || "A1",
+      category: item.tema || item.kategori || "Genel",
+      grammarTopic: item.odak_kalip,
+      context: item.baglam || item.not_tr,
+      audioUrl: item.ses_erkek || `/sesler/cumleler/${item.id}_m.mp3`,
+      audioFemaleUrl: item.ses_kadin || `/sesler/cumleler/${item.id}_f.mp3`,
+    }));
+}
+
+/**
+ * 5. 508 Atasözü ve Hikmet Havuzu (atasozleri.json)
+ */
+export function generatePoolFromProverbs(options?: {
+  category?: string;
+  level?: Level | "all";
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  const category = options?.category || "all";
+
+  return atasozleri
+    .filter((item) => {
+      const itemLevel = item.cefr || "B1";
+      if (lvl !== "all" && itemLevel !== lvl) return false;
+      const itemCat = (item.tema || "").trim();
+      if (category !== "all" && itemCat !== category) return false;
+      return true;
+    })
+    .map((item) => ({
+      id: item.id,
+      type: "idiom" as const,
+      arabic: item.arapca,
+      turkish: item.turkce,
+      literal: item.lafzi_ceviri,
+      context: item.kullanim_baglami,
+      level: item.cefr || "B1",
+      category: item.tema || "Atasözü",
+      imageUrl: item.gorsel,
+      audioUrl: item.ses_erkek || `/sesler/atasozleri/${item.id}_m.mp3`,
+      audioFemaleUrl: item.ses_kadin || `/sesler/atasozleri/${item.id}_f.mp3`,
+    }));
+}
+
+/**
+ * 6. 999 Görsel Kelime Havuzu (gorselKelimeler_guncel.json)
+ */
+export function generatePoolFromVisualWords(options?: {
+  category?: string;
+  level?: Level | "all";
+}): WordItem[] {
+  const lvl = options?.level || "all";
+  const category = options?.category || "all";
+
+  return gorselKelimeler
+    .filter((item) => {
+      const itemLevel = item.cefr || "A1";
+      if (lvl !== "all" && itemLevel !== lvl) return false;
+      const itemCat = (item.kategori_tr || item.kategori || "").trim();
+      if (category !== "all" && itemCat !== category) return false;
+      return true;
+    })
+    .map((item) => ({
+      id: item.id,
+      type: "word" as const,
+      arabic: item.arapca,
+      turkish: item.turkce,
+      plural:
+        item.ikincil_form && item.ikincil_form !== "-"
+          ? item.ikincil_form
+          : undefined,
+      exampleAr: item.ornek_ar,
+      exampleTr: item.ornek_tr,
+      level: item.cefr || "A1",
+      category: item.kategori_tr || item.kategori || "Genel",
+      imageUrl: item.gorsel,
+      audioUrl: item.ses_erkek,
+      audioFemaleUrl: item.ses_kadin,
+      partOfSpeech: item.tur,
+      root: item.kok,
+    }));
+}
+
+/**
+ * Modül Bazlı Kategori Listesi ve Sayıları
+ */
+export function getModuleCategoryList(
+  moduleType: "sentences_1111" | "proverbs_508" | "visual_words",
+  level: Level | "all" = "all"
+): { category: string; label: string; count: number }[] {
+  const counts = new Map<string, number>();
+
+  if (moduleType === "sentences_1111") {
+    for (const item of cumleler1111) {
+      const itemLevel = item.seviye || item.cefr || "A1";
+      if (level !== "all" && itemLevel !== level) continue;
+      const cat = (item.tema || item.kategori || "").trim();
+      if (!cat) continue;
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+  } else if (moduleType === "proverbs_508") {
+    for (const item of atasozleri) {
+      const itemLevel = item.cefr || "B1";
+      if (level !== "all" && itemLevel !== level) continue;
+      const cat = (item.tema || "").trim();
+      if (!cat) continue;
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+  } else if (moduleType === "visual_words") {
+    for (const item of gorselKelimeler) {
+      const itemLevel = item.cefr || "A1";
+      if (level !== "all" && itemLevel !== level) continue;
+      const cat = (item.kategori_tr || item.kategori || "").trim();
+      if (!cat) continue;
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries()).map(([category, count]) => ({
+    category,
+    label: category.replace(/_/g, " "),
+    count,
+  }));
 }
 
 /**

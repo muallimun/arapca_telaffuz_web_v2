@@ -16,6 +16,8 @@ import {
   ListOrdered,
   Image as ImageIcon,
   FolderOpen,
+  GitBranch,
+  Trophy,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
 import {
@@ -64,6 +66,8 @@ import FillInBlanks, {
 import MatchingGame from "@/components/exercises/MatchingGame";
 import SentenceBuilder from "@/components/exercises/SentenceBuilder";
 import VisualRosettaQuiz from "@/components/exercises/VisualRosettaQuiz";
+import MorphologyAndContextQuiz from "@/components/exercises/MorphologyAndContextQuiz";
+import ClassroomTeamBattle from "@/components/exercises/ClassroomTeamBattle";
 
 type ExerciseType =
   | "flashcard"
@@ -71,7 +75,9 @@ type ExerciseType =
   | "fill-in-blanks"
   | "matching"
   | "sentence-builder"
-  | "visual-rosetta";
+  | "visual-rosetta"
+  | "morphology-context"
+  | "classroom-battle";
 
 export type PoolSourceId =
   | "full_dict"
@@ -182,6 +188,22 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
     val === "gorsel"
   ) {
     return "visual-rosetta";
+  }
+  if (
+    val === "morphology-context" ||
+    val === "sarf" ||
+    val === "kok" ||
+    val === "morphology"
+  ) {
+    return "morphology-context";
+  }
+  if (
+    val === "classroom-battle" ||
+    val === "battle" ||
+    val === "yarisma" ||
+    val === "sinif"
+  ) {
+    return "classroom-battle";
   }
   return null;
 }
@@ -1106,6 +1128,22 @@ function ExercisesPageContent() {
         "Kare görseller, çift cinsiyetli ses ve canlı telaffuz ile görsel-işitsel eşleştirme",
       icon: ImageIcon,
     },
+    {
+      id: "morphology-context",
+      title: "🌿 Sarf, Kök & Bağlam Atölyesi",
+      arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
+      subtitle:
+        "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam",
+      icon: GitBranch,
+    },
+    {
+      id: "classroom-battle",
+      title: "🏆 Sınıf & Tahta Yarışması",
+      arabicBadge: "المُسَابَقَةُ الصَّفِّيَّة",
+      subtitle:
+        "Akıllı tahta ve çift kişilik Takım A vs Takım B bilgi yarışması",
+      icon: Trophy,
+    },
   ];
 
   const contentStats = getDynamicContentStats();
@@ -1297,6 +1335,8 @@ function ExercisesPageContent() {
   const showSmartContentTypeSelector =
     !isSentencesOnlyMode &&
     selectedType !== "visual-rosetta" &&
+    selectedType !== "morphology-context" &&
+    selectedType !== "classroom-battle" &&
     (rangePreset === "all_dialogues" ||
       rangePreset === "reading_texts" ||
       rangePreset === "visual_words");
@@ -1545,9 +1585,9 @@ function ExercisesPageContent() {
 
       {!isPlaying ? (
         <>
-          {/* 1. ÜSTTE 2 SÜTUNLU (MOBİL) / 6'LI (MASAÜSTÜ) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI (ZERO-SCROLL) */}
+          {/* 1. ÜSTTE SİMETRİK 8 MODÜLLÜ (4x2 MASAÜSTÜ / 2x4 MOBİL) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI (ZERO-SCROLL) */}
           <section aria-label="Alıştırma Türü Seçimi">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {exerciseCards.map((card) => {
                 const isSelected = selectedType === card.id;
                 const Icon = card.icon;
@@ -2001,7 +2041,10 @@ function ExercisesPageContent() {
               )}
 
               {/* 3. Değerlendirme Zamanı Seçicisi (⚡ Hemen | 🏁 Bitince) */}
-              {selectedType !== "flashcard" && selectedType !== "visual-rosetta" && (
+              {selectedType !== "flashcard" &&
+                selectedType !== "visual-rosetta" &&
+                selectedType !== "morphology-context" &&
+                selectedType !== "classroom-battle" && (
                 <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
                     Sonuç:
@@ -2279,6 +2322,29 @@ function ExercisesPageContent() {
               visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
               cefrFilter={cefrFilter}
               questionCount={questionCount}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "morphology-context" && (
+            <MorphologyAndContextQuiz
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
+              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
+              dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "classroom-battle" && (
+            <ClassroomTeamBattle
+              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
+              idioms={frozenPools?.idioms ?? idiomsPool}
+              dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
               onClose={handleCloseExercise}
             />
           )}

@@ -83,9 +83,12 @@ class SoundEffectsManager {
   private enabled = true;
   private unlockBound = false;
 
-  // HTMLAudioElement önbelleği (sıfır gecikme için)
+  // HTMLAudioElement önbelleği (sıfır gecikme için) ve aktif çalan ses havuzu
   private audioCache: Map<string, HTMLAudioElement> = new Map();
   private resolvedUrlMap: Map<string, string> = new Map();
+  private activeAudios: Set<HTMLAudioElement> = new Set();
+  private activeResolvers: Set<() => void> = new Set();
+  private stopGeneration = 0;
 
   // Tekrar etmeyen (Round-Robin) sayaçlar ve tıklama soğuma süresi (cooldown)
   private lastClickAt = 0;
@@ -134,10 +137,43 @@ class SoundEffectsManager {
   /** Ayarlardan aç/kapat */
   setEnabled(value: boolean) {
     this.enabled = value;
+    if (!value) {
+      this.stopAllSfx();
+    }
   }
 
   isEnabled(): boolean {
     return this.enabled;
+  }
+
+  /**
+   * Şu an çalan tüm ses efektlerini ve bekleyen sözlü övgü zamanlayıcılarını anında durdurur.
+   * Hedef Arapça kelime sesi başlamadan önce çağrılarak üst üste binmeyi %100 önler.
+   */
+  stopAllSfx() {
+    this.stopGeneration += 1;
+    if (this.praiseTimer) {
+      clearTimeout(this.praiseTimer);
+      this.praiseTimer = null;
+    }
+    for (const audio of Array.from(this.activeAudios)) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+    this.activeAudios.clear();
+
+    for (const resolveFn of Array.from(this.activeResolvers)) {
+      try {
+        resolveFn();
+      } catch {
+        // ignore
+      }
+    }
+    this.activeResolvers.clear();
   }
 
   /** TTS çalarken yalnızca tık sesini bastır, geri bildirim efektlerine izin ver */
@@ -152,15 +188,19 @@ class SoundEffectsManager {
 
   /**
    * `efect/` klasöründeki MP3 dosyasını önbellekten veya çok kademeli CDN yedeğinden çalar.
-   * Ağ veya yükleme hatası olursa `fallbackSynth` çalıştırılır.
+   * Sesin `onended` olayı tamamlanana (veya `maxDurationMs` güvenlik zaman aşımı dolana) kadar bekleyen bir `Promise<void>` döndürür.
    */
   private playMp3WithFallback(
     fileName: string,
     volume: number,
-    fallbackSynth?: () => void
-  ) {
-    if (!this.canPlay() || typeof window === "undefined") return;
+    fallbackSynth?: () => void,
+    maxDurationMs = 1200
+  ): Promise<void> {
+    if (!this.canPlay() || typeof window === "undefined") {
+      return Promise.resolve();
+    }
 
+    const genAtStart = this.stopGeneration;
     const candidates = buildEfectCandidateUrls(fileName);
     const knownWorkingUrl = this.resolvedUrlMap.get(fileName);
     const orderedUrls = knownWorkingUrl
@@ -170,63 +210,125 @@ class SoundEffectsManager {
         ]
       : candidates;
 
-    const tryPlayAtIndex = (idx: number) => {
-      if (idx >= orderedUrls.length) {
-        if (fallbackSynth) fallbackSynth();
-        return;
-      }
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+      let currentAudio: HTMLAudioElement | null = null;
+      let onEndedHandler: (() => void) | null = null;
 
-      const url = orderedUrls[idx];
-      const cacheKey = `${fileName}::${url}`;
-      let audio = this.audioCache.get(cacheKey);
-
-      if (!audio) {
-        audio = new Audio(url);
-        audio.preload = "auto";
-        this.audioCache.set(cacheKey, audio);
-      }
-
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch {
-        // ignore seek reset issues on uninitialized media
-      }
-      audio.volume = Math.max(0, Math.min(1, volume));
-
-      let handledError = false;
-      const handleFailure = () => {
-        if (handledError) return;
-        handledError = true;
-        audio?.removeEventListener("error", handleFailure);
-        this.audioCache.delete(cacheKey);
-        tryPlayAtIndex(idx + 1);
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+          safetyTimer = null;
+        }
+        if (currentAudio) {
+          if (onEndedHandler) {
+            currentAudio.removeEventListener("ended", onEndedHandler);
+          }
+          this.activeAudios.delete(currentAudio);
+        }
+        this.activeResolvers.delete(finish);
+        resolve();
       };
 
-      audio.addEventListener("error", handleFailure, { once: true });
+      this.activeResolvers.add(finish);
 
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            audio?.removeEventListener("error", handleFailure);
-            this.resolvedUrlMap.set(fileName, url);
-          })
-          .catch((err: unknown) => {
-            audio?.removeEventListener("error", handleFailure);
-            // Kullanıcı etkileşimi yoksa (NotAllowedError) diğer URL'leri boşuna deneme
-            if (
-              err instanceof DOMException &&
-              err.name === "NotAllowedError"
-            ) {
-              return;
-            }
-            handleFailure();
-          });
-      }
-    };
+      safetyTimer = setTimeout(() => {
+        finish();
+      }, maxDurationMs);
 
-    tryPlayAtIndex(0);
+      const tryPlayAtIndex = (idx: number) => {
+        if (settled || this.stopGeneration !== genAtStart) {
+          finish();
+          return;
+        }
+
+        if (idx >= orderedUrls.length) {
+          if (fallbackSynth) {
+            fallbackSynth();
+            setTimeout(finish, Math.min(320, maxDurationMs));
+          } else {
+            finish();
+          }
+          return;
+        }
+
+        const url = orderedUrls[idx];
+        const cacheKey = `${fileName}::${url}`;
+        let audio = this.audioCache.get(cacheKey);
+
+        if (!audio) {
+          audio = new Audio(url);
+          audio.preload = "auto";
+          this.audioCache.set(cacheKey, audio);
+        }
+
+        currentAudio = audio;
+
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+          // ignore seek reset issues on uninitialized media
+        }
+        audio.volume = Math.max(0, Math.min(1, volume));
+
+        let handledError = false;
+        const handleFailure = () => {
+          if (handledError || settled) return;
+          handledError = true;
+          audio?.removeEventListener("error", handleFailure);
+          if (onEndedHandler) {
+            audio?.removeEventListener("ended", onEndedHandler);
+          }
+          if (audio) {
+            this.activeAudios.delete(audio);
+          }
+          this.audioCache.delete(cacheKey);
+          tryPlayAtIndex(idx + 1);
+        };
+
+        onEndedHandler = () => {
+          audio?.removeEventListener("error", handleFailure);
+          finish();
+        };
+
+        audio.addEventListener("error", handleFailure, { once: true });
+        audio.addEventListener("ended", onEndedHandler, { once: true });
+        this.activeAudios.add(audio);
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              audio?.removeEventListener("error", handleFailure);
+              this.resolvedUrlMap.set(fileName, url);
+            })
+            .catch((err: unknown) => {
+              audio?.removeEventListener("error", handleFailure);
+              if (onEndedHandler) {
+                audio?.removeEventListener("ended", onEndedHandler);
+              }
+              if (audio) {
+                this.activeAudios.delete(audio);
+              }
+              // Kullanıcı etkileşimi yoksa (NotAllowedError) diğer URL'leri boşuna deneme
+              if (
+                err instanceof DOMException &&
+                err.name === "NotAllowedError"
+              ) {
+                finish();
+                return;
+              }
+              handleFailure();
+            });
+        }
+      };
+
+      tryPlayAtIndex(0);
+    });
   }
 
   private playNotes(notes: Note[]) {
@@ -300,17 +402,22 @@ class SoundEffectsManager {
     if (now - this.lastClickAt < 120) return;
     this.lastClickAt = now;
 
-    this.playMp3WithFallback(EFECT_FILES.click, 0.25, () => {
-      this.playNotes([
-        {
-          frequency: 1000,
-          startOffset: 0.0,
-          duration: 0.025,
-          waveform: "square",
-          peakGain: 0.05,
-        },
-      ]);
-    });
+    void this.playMp3WithFallback(
+      EFECT_FILES.click,
+      0.25,
+      () => {
+        this.playNotes([
+          {
+            frequency: 1000,
+            startOffset: 0.0,
+            duration: 0.025,
+            waveform: "square",
+            peakGain: 0.05,
+          },
+        ]);
+      },
+      500
+    );
   }
 
   /** Kart çevirme — `butonsesi.mp3` (120ms cooldown ile) */
@@ -322,38 +429,50 @@ class SoundEffectsManager {
    * 2. Alıştırma / Modül Başlangıcı (`baslangic.mp3`)
    * Alıştırmayı Başlat, Günlük Çalışma Paketi veya Rol Yapma/Telaffuz testi başladığında çalar.
    */
-  playStart() {
-    if (!this.canPlay()) return;
-    this.playMp3WithFallback(EFECT_FILES.start, 0.5, () => {
-      this.playNotes([
-        {
-          frequency: 440,
-          startOffset: 0.0,
-          duration: 0.1,
-          waveform: "sine",
-          peakGain: 0.15,
-        },
-        {
-          frequency: 587.33,
-          startOffset: 0.09,
-          duration: 0.16,
-          waveform: "sine",
-          peakGain: 0.17,
-        },
-      ]);
-    });
+  playStart(): Promise<void> {
+    if (!this.canPlay()) return Promise.resolve();
+    return this.playMp3WithFallback(
+      EFECT_FILES.start,
+      0.5,
+      () => {
+        this.playNotes([
+          {
+            frequency: 440,
+            startOffset: 0.0,
+            duration: 0.1,
+            waveform: "sine",
+            peakGain: 0.15,
+          },
+          {
+            frequency: 587.33,
+            startOffset: 0.09,
+            duration: 0.16,
+            waveform: "sine",
+            peakGain: 0.17,
+          },
+        ]);
+      },
+      1200
+    );
   }
 
   /**
    * 3. Doğru Cevap & Dönüşümlü Arapça Sesli Övgü (`dogru.mp3` / `bildiniz.mp3` + `ahsent` -> `mumtaz` -> `rai`)
-   * - İlk olarak `dogru.mp3` ve `bildiniz.mp3` sırayla (Round-Robin) çalar (`volume = 0.5`).
+   * - İlk olarak `dogru.mp3` ve `bildiniz.mp3` sırayla (Round-Robin) çalar (`volume = 0.5`) ve bitmesi (`onended` veya max 1200ms) beklenir.
    * - Sesli övgü (`ahsent_*`, `mumtaz_*`, `rai_*`) YALNIZCA:
    *   a) Mikrofonlu konuşma/eşleştirme doğrularında (`options.isSpeech === true`) VEYA
    *   b) Art arda her 3 doğru cevap serisinde (`options.streak % 3 === 0`)
-   *   250ms gecikmeyle ve aynı övgü arka arkaya gelmeyecek şekilde sırayla çalar!
+   *   ilk efekt bittikten **150ms sonra** başlar ve sözlü övgünün `onended` olayı tamamlanana kadar (veya max 1800ms) `Promise` bekletilir!
    */
-  playCorrect(options?: PlayCorrectOptions) {
+  async playCorrect(options?: PlayCorrectOptions): Promise<void> {
     if (!this.canPlay()) return;
+
+    if (this.praiseTimer) {
+      clearTimeout(this.praiseTimer);
+      this.praiseTimer = null;
+    }
+
+    const genAtStart = this.stopGeneration;
 
     const chimeFile =
       EFECT_FILES.correctChimes[
@@ -362,32 +481,41 @@ class SoundEffectsManager {
     this.correctChimeIndex =
       (this.correctChimeIndex + 1) % EFECT_FILES.correctChimes.length;
 
-    this.playMp3WithFallback(chimeFile, 0.5, () => {
-      this.playNotes([
-        {
-          frequency: 523.25,
-          startOffset: 0.0,
-          duration: 0.12,
-          waveform: "sine",
-          peakGain: 0.18,
-        },
-        {
-          frequency: 659.25,
-          startOffset: 0.1,
-          duration: 0.12,
-          waveform: "sine",
-          peakGain: 0.18,
-        },
-        {
-          frequency: 783.99,
-          startOffset: 0.2,
-          duration: 0.22,
-          waveform: "sine",
-          peakGain: 0.2,
-        },
-      ]);
-    });
     this.vibrate(40);
+
+    // 1. İlk efektin (dogru.mp3 veya bildiniz.mp3) bitmesini bekle (maks 1200ms güvenlik zaman aşımı)
+    await this.playMp3WithFallback(
+      chimeFile,
+      0.5,
+      () => {
+        this.playNotes([
+          {
+            frequency: 523.25,
+            startOffset: 0.0,
+            duration: 0.12,
+            waveform: "sine",
+            peakGain: 0.18,
+          },
+          {
+            frequency: 659.25,
+            startOffset: 0.1,
+            duration: 0.12,
+            waveform: "sine",
+            peakGain: 0.18,
+          },
+          {
+            frequency: 783.99,
+            startOffset: 0.2,
+            duration: 0.22,
+            waveform: "sine",
+            peakGain: 0.2,
+          },
+        ]);
+      },
+      1200
+    );
+
+    if (this.stopGeneration !== genAtStart) return;
 
     const shouldPlaySpokenPraise =
       Boolean(options?.isSpeech) ||
@@ -395,29 +523,40 @@ class SoundEffectsManager {
         options.streak > 0 &&
         options.streak % 3 === 0);
 
-    if (shouldPlaySpokenPraise) {
-      const gender = this.resolvePraiseVoiceGender(options?.gender);
-      const praiseList =
-        gender === "female"
-          ? EFECT_FILES.praiseFemale
-          : EFECT_FILES.praiseMale;
-      const praiseFile =
-        praiseList[this.praiseRotationIndex % praiseList.length];
-      this.praiseRotationIndex =
-        (this.praiseRotationIndex + 1) % praiseList.length;
+    if (!shouldPlaySpokenPraise) return;
 
-      if (this.praiseTimer) {
-        clearTimeout(this.praiseTimer);
-      }
+    const gender = this.resolvePraiseVoiceGender(options?.gender);
+    const praiseList =
+      gender === "female"
+        ? EFECT_FILES.praiseFemale
+        : EFECT_FILES.praiseMale;
+    const praiseFile =
+      praiseList[this.praiseRotationIndex % praiseList.length];
+    this.praiseRotationIndex =
+      (this.praiseRotationIndex + 1) % praiseList.length;
+
+    // 2. İlk efekt bittikten 150ms sonra sözlü övgüyü başlat
+    await new Promise<void>((resolve) => {
       this.praiseTimer = setTimeout(() => {
-        this.playMp3WithFallback(praiseFile, 0.65);
-      }, 250);
-    }
+        this.praiseTimer = null;
+        resolve();
+      }, 150);
+    });
+
+    if (this.stopGeneration !== genAtStart) return;
+
+    // 3. Sözlü övgünün (`ahsent_*`, `mumtaz_*`, `rai_*`) bitmesini (`onended` veya maks 1800ms) bekle
+    await this.playMp3WithFallback(praiseFile, 0.65, undefined, 1800);
+  }
+
+  /** Asenkron doğru cevap + sözlü övgü bekleme kısayolu */
+  playCorrectAsync(options?: PlayCorrectOptions): Promise<void> {
+    return this.playCorrect(options);
   }
 
   /** Geriye dönük uyumluluk için `playSuccess` -> `playCorrect` çağırır */
-  playSuccess(options?: PlayCorrectOptions) {
-    this.playCorrect(options);
+  playSuccess(options?: PlayCorrectOptions): Promise<void> {
+    return this.playCorrect(options);
   }
 
   /** Orta seviye / %50–%79 telaffuz (E4→G4) */
@@ -443,9 +582,10 @@ class SoundEffectsManager {
 
   /**
    * 4. Yanlış Cevap (`yanliscevap.mp3` ve `bilemediniz.mp3` sırayla / Round-Robin)
+   * Efektin tamamlanmasını (`onended` veya maks 1200ms) bekleyen `Promise<void>` döndürür.
    */
-  playWrong() {
-    if (!this.canPlay()) return;
+  playWrong(): Promise<void> {
+    if (!this.canPlay()) return Promise.resolve();
 
     const wrongFile =
       EFECT_FILES.wrongChimes[
@@ -454,30 +594,41 @@ class SoundEffectsManager {
     this.wrongChimeIndex =
       (this.wrongChimeIndex + 1) % EFECT_FILES.wrongChimes.length;
 
-    this.playMp3WithFallback(wrongFile, 0.45, () => {
-      this.playNotes([
-        {
-          frequency: 329.63,
-          startOffset: 0.0,
-          duration: 0.18,
-          waveform: "triangle",
-          peakGain: 0.14,
-        },
-        {
-          frequency: 261.63,
-          startOffset: 0.15,
-          duration: 0.25,
-          waveform: "triangle",
-          peakGain: 0.14,
-        },
-      ]);
-    });
     this.vibrate([40, 60, 40]);
+
+    return this.playMp3WithFallback(
+      wrongFile,
+      0.45,
+      () => {
+        this.playNotes([
+          {
+            frequency: 329.63,
+            startOffset: 0.0,
+            duration: 0.18,
+            waveform: "triangle",
+            peakGain: 0.14,
+          },
+          {
+            frequency: 261.63,
+            startOffset: 0.15,
+            duration: 0.25,
+            waveform: "triangle",
+            peakGain: 0.14,
+          },
+        ]);
+      },
+      1200
+    );
+  }
+
+  /** Asenkron yanlış cevap bekleme kısayolu */
+  playWrongAsync(): Promise<void> {
+    return this.playWrong();
   }
 
   /** Geriye dönük uyumluluk için `playError` -> `playWrong` çağırır */
-  playError() {
-    this.playWrong();
+  playError(): Promise<void> {
+    return this.playWrong();
   }
 
   /** Mikrofon kaydı başladı (600→880Hz bip) */
@@ -527,15 +678,17 @@ class SoundEffectsManager {
    * Yüksek başarıda (`>= 75` veya parametre verilmediğinde) `tebrikler.mp3`,
    * standart tamamlamada (`< 75`) `basari.mp3` çalar.
    */
-  playFanfare(scorePercent?: number) {
-    if (!this.canPlay()) return;
+  playFanfare(scorePercent?: number): Promise<void> {
+    if (!this.canPlay()) return Promise.resolve();
     const isHighSuccess =
       scorePercent === undefined || scorePercent >= 75;
     const fanfareFile = isHighSuccess
       ? EFECT_FILES.fanfareHigh
       : EFECT_FILES.fanfareStandard;
 
-    this.playMp3WithFallback(
+    this.vibrate([30, 40, 30, 40, 50]);
+
+    return this.playMp3WithFallback(
       fanfareFile,
       isHighSuccess ? 0.6 : 0.55,
       () => {
@@ -569,9 +722,9 @@ class SoundEffectsManager {
             peakGain: 0.2,
           },
         ]);
-      }
+      },
+      2200
     );
-    this.vibrate([30, 40, 30, 40, 50]);
   }
 }
 
@@ -579,15 +732,19 @@ class SoundEffectsManager {
 export const sfx = new SoundEffectsManager();
 
 // Kısayol export'ları
+export const stopAllSfx = () => sfx.stopAllSfx();
 export const playClick = () => sfx.playClick();
 export const playFlip = () => sfx.playFlip();
 export const playStart = () => sfx.playStart();
 export const playCorrect = (options?: PlayCorrectOptions) =>
   sfx.playCorrect(options);
+export const playCorrectAsync = (options?: PlayCorrectOptions) =>
+  sfx.playCorrectAsync(options);
 export const playSuccess = (options?: PlayCorrectOptions) =>
   sfx.playSuccess(options);
 export const playPartial = () => sfx.playPartial();
 export const playWrong = () => sfx.playWrong();
+export const playWrongAsync = () => sfx.playWrongAsync();
 export const playError = () => sfx.playError();
 export const playRecordStart = () => sfx.playRecordStart();
 export const playRecordStop = () => sfx.playRecordStop();

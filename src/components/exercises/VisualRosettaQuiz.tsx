@@ -19,6 +19,8 @@ import {
   SkipForward,
   MessageSquare,
   Puzzle,
+  GripVertical,
+  Hand,
 } from "lucide-react";
 import { ResimliKelime, Level } from "@/types/data";
 import { gorselKelimeler, resolveImageUrl } from "@/lib/data";
@@ -27,14 +29,27 @@ import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { playDualGenderAudio, playTTS, stopAllAudio } from "@/lib/audio";
 import {
+  sfx,
   playClick,
   playStart,
   playCorrect,
-  playWrong,
   playFanfare,
 } from "@/lib/sfxManager";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+
+/**
+ * GÖREV 4.1: Arapça metinleri ve örnek cümleleri ekrana basmadan önce
+ * görünmez/bozuk karakterleri (\uFFFD, \uFEFF, \u200B-\u200D) ve cümle sonlarında
+ * bozuk kare kutu (□) olarak görünebilen izole nokta/kutu karakterlerini temizler.
+ */
+export function sanitizeArabicDisplayText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/[\uFFFD\uFEFF\u200B-\u200D\u200E\u200F\u25A1\u25A0]/g, "")
+    .replace(/\s*\.\s*$/g, "")
+    .trim();
+}
 
 // Doğu Arapça rakamları (٠-٩) -> Batı rakamları (0-9)
 const EASTERN_DIGIT_MAP: Record<string, string> = {
@@ -694,6 +709,15 @@ export default function VisualRosettaQuiz({
   const [micRemainingPct, setMicRemainingPct] = useState<number>(100);
   const [liveMicLevel, setLiveMicLevel] = useState<number>(0);
 
+  // GÖREV 3: Masaüstü + Mobil %100 Uyumlu Sürükle-Bırak (Drag & Drop) State'leri
+  const [isDraggingCard, setIsDraggingCard] = useState<boolean>(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [touchDragPos, setTouchDragPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const dragOverIndexRef = useRef<number | null>(null);
+
   const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
   const calibRecognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
   const calibAudioCtxRef = useRef<AudioContext | null>(null);
@@ -1151,8 +1175,9 @@ export default function VisualRosettaQuiz({
 
   const formatAr = useCallback(
     (text: string) => {
-      if (!text) return "";
-      return formatArabicText(text, showHareke, arabicFont);
+      const cleaned = sanitizeArabicDisplayText(text);
+      if (!cleaned) return "";
+      return formatArabicText(cleaned, showHareke, arabicFont);
     },
     [showHareke, arabicFont]
   );
@@ -1160,37 +1185,41 @@ export default function VisualRosettaQuiz({
   const getPhraseForMode = useCallback(
     (item: ResimliKelime, mode: ConcreteVisualMode) => {
       if (mode === "speech_bubble_match") {
-        const bubbleAr =
-          item.ornek_ar && item.ornek_ar.trim().length > 0
-            ? item.ornek_ar
-            : item.arapca;
+        const cleanExample = sanitizeArabicDisplayText(item.ornek_ar || "");
+        const cleanWord = sanitizeArabicDisplayText(item.arapca || "");
+        const bubbleAr = cleanExample.length > 0 ? cleanExample : cleanWord;
         const bubbleTr =
           item.ornek_tr && item.ornek_tr.trim().length > 0
-            ? item.ornek_tr
+            ? item.ornek_tr.trim()
             : item.turkce;
         return { ar: bubbleAr, tr: bubbleTr };
       }
-      return { ar: item.arapca, tr: item.turkce };
+      return {
+        ar: sanitizeArabicDisplayText(item.arapca),
+        tr: item.turkce,
+      };
     },
     []
   );
 
   /**
-   * 1. Mikrofon Yaşam Döngüsü ve Ses Çakışmasını Önleme:
-   * Hedef Arapça ses dosyası çalarken mikrofon (`SpeechRecognition`) kesinlikle kapatılır.
-   * `playDualGenderAudio` HTMLAudioElement `onended` olayı gerçekleştiğinde çözülür.
+   * GÖREV 1: Mikrofon Yaşam Döngüsü ve Ses Efektleriyle Çakışmayı Önleme:
+   * - Önce `sfx.stopAllSfx()` çağrılarak arkada kalan hiçbir efekt/övgü sesinin kelime sesiyle karışmaması garanti edilir.
+   * - Hedef Arapça ses dosyası çalarken mikrofon (`SpeechRecognition`) kesinlikle kapatılır.
+   * - `playDualGenderAudio` HTMLAudioElement `onended` olayı gerçekleştiğinde çözülür.
    */
   const playItemAudio = useCallback(
     (item: ResimliKelime, mode?: ConcreteVisualMode, onEnded?: () => void) => {
       if (isPaused) return;
-      // Hedef ses çalarken mikrofonu kesinlikle kapalı tut
+      sfx.stopAllSfx();
       stopSpeechRecognition();
       setIsPlayingTargetAudio(true);
 
-      const fallbackText =
-        mode === "speech_bubble_match" && item.ornek_ar
+      const fallbackText = sanitizeArabicDisplayText(
+        mode === "speech_bubble_match" && item.ornek_ar && !item.ses_erkek && !item.ses_kadin
           ? item.ornek_ar
-          : item.arapca;
+          : item.arapca
+      );
 
       playDualGenderAudio({
         text: fallbackText,
@@ -1212,10 +1241,39 @@ export default function VisualRosettaQuiz({
     [isPaused, preferredVoiceGender, speechRate, stopSpeechRecognition]
   );
 
+  /**
+   * GÖREV 4.2: Konuşma Balonlu Eşleştirme modunda örnek cümleyi (`ornek_ar`)
+   * doğrudan `/api/tts` (`playTTS`) üzerinden seslendirir.
+   */
+  const speakArabicSentence = useCallback(
+    (sentenceAr: string) => {
+      if (isPaused) return;
+      const cleaned = sanitizeArabicDisplayText(sentenceAr);
+      if (!cleaned) return;
+      sfx.stopAllSfx();
+      stopSpeechRecognition();
+      stopAllAudio();
+      setIsPlayingTargetAudio(true);
+      playTTS(cleaned, speechRate, preferredVoiceGender)
+        .then(() => {
+          setIsPlayingTargetAudio(false);
+        })
+        .catch(() => {
+          setIsPlayingTargetAudio(false);
+        });
+    },
+    [isPaused, speechRate, preferredVoiceGender, stopSpeechRecognition]
+  );
+
   const advanceToNextQuestion = useCallback(
     (statusForCurrent: QuestionStepStatus) => {
+      sfx.stopAllSfx();
       stopSpeechRecognition();
       clearTimers();
+      setIsDraggingCard(false);
+      setDragOverIndex(null);
+      setTouchDragPos(null);
+      dragOverIndexRef.current = null;
 
       const nextStatuses = [...stepStatuses];
       if (currentIndex < nextStatuses.length) {
@@ -1247,7 +1305,7 @@ export default function VisualRosettaQuiz({
           questions.length > 0
             ? Math.round((correctTotal / questions.length) * 100)
             : 100;
-        playFanfare(pct);
+        void playFanfare(pct);
         setIsCompleted(true);
       }
     },
@@ -1261,8 +1319,9 @@ export default function VisualRosettaQuiz({
   );
 
   /**
-   * Mod A (`listen_speak_matrix`): Bir kartın telaffuzu doğrulandığında veya
-   * 3 başarısız deneme sonrası "Sonrakine Geç ⏭" ile geçildiğinde çağrılır.
+   * GÖREV 1.2: Mod A (`listen_speak_matrix`):
+   * - Doğru cevap verildiğinde `await sfx.playCorrect(...)` tamamlanana kadar (efekt + sözlü övgü `onended`) sıradaki karta veya soruya geçilmez!
+   * - Efekt ve sözlü övgü sesi tamamen bittikten **350ms sonra** sıradaki karta (`matrixStepIndex + 1`) veya soruya geçilir ve yeni kelimenin referans sesi başlatılır.
    */
   const handleMatrixCardVerified = useCallback(
     (cardIdx: number, wasSkippedAfterFailed = false) => {
@@ -1271,59 +1330,63 @@ export default function VisualRosettaQuiz({
       stopSpeechRecognition();
       clearTimers();
       setIsEvaluatingStt(false);
-
-      if (wasSkippedAfterFailed) {
-        playClick();
-        setHadWrongOnCurrent(true);
-        setMicStatusMessage("Sonraki karta geçiliyor...");
-      } else {
-        streakRef.current += 1;
-        playCorrect({
-          isSpeech: true,
-          streak: streakRef.current,
-          gender: preferredVoiceGender,
-        });
-        setMicStatusMessage("Harika telaffuz! ✓");
-      }
-
       setIsWrongPronunciationState(false);
       setMicTimedOut(false);
       setMatrixCompletedIndices((prev) =>
         prev.includes(cardIdx) ? prev : [...prev, cardIdx]
       );
 
-      const totalCards = currentQuestion.options.length;
-      if (cardIdx + 1 < totalCards) {
-        autoAdvanceTimerRef.current = setTimeout(() => {
-          verifiedCardLockRef.current = false;
-          initialAudioDelayRef.current = 240;
-          setMatrixStepIndex(cardIdx + 1);
-          setSpokenTranscript("");
-          setMicStatusMessage("");
-          setFailedAttempts(0);
-          failedAttemptsRef.current = 0;
-          setMicTimedOut(false);
-          setIsEvaluatingStt(false);
-          setIsWrongPronunciationState(false);
-        }, 700);
-      } else {
-        // Tüm 4 kart tamamlandı
-        const allClean = !hadWrongOnCurrent && !wasSkippedAfterFailed;
-        recordItemAttempt(
-          currentQuestion.target.id,
-          "word",
-          allClean,
-          false,
-          allClean ? 100 : 70
-        );
-        if (allClean) {
-          setScore((s) => s + 1);
+      const runSequentialAdvance = async () => {
+        if (wasSkippedAfterFailed) {
+          playClick();
+          setHadWrongOnCurrent(true);
+          setMicStatusMessage("Sonraki karta geçiliyor...");
+        } else {
+          streakRef.current += 1;
+          setMicStatusMessage("Harika telaffuz! ✓");
+          await sfx.playCorrect({
+            isSpeech: true,
+            streak: streakRef.current,
+            gender: preferredVoiceGender,
+          });
         }
-        autoAdvanceTimerRef.current = setTimeout(() => {
-          verifiedCardLockRef.current = false;
-          advanceToNextQuestion(allClean ? "correct" : "wrong");
-        }, 700);
-      }
+
+        const totalCards = currentQuestion.options.length;
+        if (cardIdx + 1 < totalCards) {
+          // Efekt ve sözlü övgü tamamen bittikten 350ms sonra sıradaki karta geç
+          autoAdvanceTimerRef.current = setTimeout(() => {
+            verifiedCardLockRef.current = false;
+            initialAudioDelayRef.current = 50;
+            setMatrixStepIndex(cardIdx + 1);
+            setSpokenTranscript("");
+            setMicStatusMessage("");
+            setFailedAttempts(0);
+            failedAttemptsRef.current = 0;
+            setMicTimedOut(false);
+            setIsEvaluatingStt(false);
+            setIsWrongPronunciationState(false);
+          }, 350);
+        } else {
+          // Tüm 4 kart tamamlandı
+          const allClean = !hadWrongOnCurrent && !wasSkippedAfterFailed;
+          recordItemAttempt(
+            currentQuestion.target.id,
+            "word",
+            allClean,
+            false,
+            allClean ? 100 : 70
+          );
+          if (allClean) {
+            setScore((s) => s + 1);
+          }
+          autoAdvanceTimerRef.current = setTimeout(() => {
+            verifiedCardLockRef.current = false;
+            advanceToNextQuestion(allClean ? "correct" : "wrong");
+          }, 350);
+        }
+      };
+
+      void runSequentialAdvance();
     },
     [
       currentQuestion,
@@ -1387,7 +1450,6 @@ export default function VisualRosettaQuiz({
         setFailedAttempts(nextAttempts);
         setIsWrongPronunciationState(true);
         setMicTimedOut(false);
-        playWrong();
 
         if (nextAttempts < 3) {
           setMicStatusMessage(
@@ -1396,25 +1458,27 @@ export default function VisualRosettaQuiz({
           if (autoReplayTimerRef.current) {
             clearTimeout(autoReplayTimerRef.current);
           }
-          // Yanlış telaffuzda 600ms sonra doğru Arapça sesi otomatik tekrar çal,
-          // ses bittikten 400ms sonra mikrofonu tekrar aç
-          autoReplayTimerRef.current = setTimeout(() => {
+          // Önce yanlış cevap efektinin bitmesini bekle, bittikten 350ms sonra doğru Arapça sesi çal
+          void sfx.playWrong().then(() => {
             if (isPaused || verifiedCardLockRef.current) return;
-            playItemAudio(targetItem, "listen_speak_matrix", () => {
-              if (micStartDelayTimerRef.current) {
-                clearTimeout(micStartDelayTimerRef.current);
-              }
-              micStartDelayTimerRef.current = setTimeout(() => {
-                if (
-                  !isPaused &&
-                  !micFreeMode &&
-                  !verifiedCardLockRef.current
-                ) {
-                  startMatrixListeningImpl(targetItem, cardIdx);
+            autoReplayTimerRef.current = setTimeout(() => {
+              if (isPaused || verifiedCardLockRef.current) return;
+              playItemAudio(targetItem, "listen_speak_matrix", () => {
+                if (micStartDelayTimerRef.current) {
+                  clearTimeout(micStartDelayTimerRef.current);
                 }
-              }, 400);
-            });
-          }, 600);
+                micStartDelayTimerRef.current = setTimeout(() => {
+                  if (
+                    !isPaused &&
+                    !micFreeMode &&
+                    !verifiedCardLockRef.current
+                  ) {
+                    startMatrixListeningImpl(targetItem, cardIdx);
+                  }
+                }, 400);
+              });
+            }, 350);
+          });
         } else {
           setMicStatusMessage(
             `🗣️ Algılanan: "${detectedText}" • 3 deneme tamamlandı (Deneme 3/3)`
@@ -1422,10 +1486,13 @@ export default function VisualRosettaQuiz({
           if (autoReplayTimerRef.current) {
             clearTimeout(autoReplayTimerRef.current);
           }
-          autoReplayTimerRef.current = setTimeout(() => {
+          void sfx.playWrong().then(() => {
             if (isPaused || verifiedCardLockRef.current) return;
-            playItemAudio(targetItem, "listen_speak_matrix");
-          }, 600);
+            autoReplayTimerRef.current = setTimeout(() => {
+              if (isPaused || verifiedCardLockRef.current) return;
+              playItemAudio(targetItem, "listen_speak_matrix");
+            }, 350);
+          });
         }
       };
 
@@ -1967,6 +2034,7 @@ export default function VisualRosettaQuiz({
 
   useEffect(() => {
     return () => {
+      sfx.stopAllSfx();
       stopAllAudio();
       stopSpeechRecognition();
       stopCalibrationResources();
@@ -1976,10 +2044,15 @@ export default function VisualRosettaQuiz({
 
   const restartQuiz = useCallback(
     (customPool?: ResimliKelime[], customMode?: VisualInteractionMode) => {
-      playStart();
+      sfx.stopAllSfx();
+      void playStart();
       stopAllAudio();
       stopSpeechRecognition();
       clearTimers();
+      setIsDraggingCard(false);
+      setDragOverIndex(null);
+      setTouchDragPos(null);
+      dragOverIndexRef.current = null;
       // GÖREV 2: baslangic.mp3 ile ilk kelime sesinin çakışmaması için 700ms gecikme
       initialAudioDelayRef.current = 700;
       const targetPool = customPool || activePool;
@@ -2020,89 +2093,189 @@ export default function VisualRosettaQuiz({
     ]
   );
 
-  const handleSelectOption = (option: ResimliKelime) => {
-    if (!currentQuestion || isPaused) return;
+  const handleSelectOption = useCallback(
+    (option: ResimliKelime) => {
+      if (!currentQuestion || isPaused) return;
 
-    // Mod A'da karta tıklanınca o kartın sesini çal, ses bitince 400ms sonra mikrofonu aç (veya mikrofonsuz moddaysa onayla)
-    if (currentQuestion.concreteMode === "listen_speak_matrix") {
-      const clickedIdx = currentQuestion.options.findIndex(
-        (o) => o.id === option.id
-      );
-      if (micFreeMode && clickedIdx === matrixStepIndex) {
-        playItemAudio(option, "listen_speak_matrix");
-        handleMatrixCardVerified(clickedIdx, false);
+      // Mod A'da karta tıklanınca o kartın sesini çal, ses bitince 400ms sonra mikrofonu aç (veya mikrofonsuz moddaysa onayla)
+      if (currentQuestion.concreteMode === "listen_speak_matrix") {
+        const clickedIdx = currentQuestion.options.findIndex(
+          (o) => o.id === option.id
+        );
+        if (micFreeMode && clickedIdx === matrixStepIndex) {
+          handleMatrixCardVerified(clickedIdx, false);
+          return;
+        }
+        playItemAudio(option, "listen_speak_matrix", () => {
+          if (
+            !micFreeMode &&
+            !isPaused &&
+            clickedIdx === matrixStepIndex &&
+            !verifiedCardLockRef.current
+          ) {
+            if (micStartDelayTimerRef.current) {
+              clearTimeout(micStartDelayTimerRef.current);
+            }
+            micStartDelayTimerRef.current = setTimeout(() => {
+              startMatrixListening(option, clickedIdx);
+            }, 400);
+          }
+        });
         return;
       }
-      playItemAudio(option, "listen_speak_matrix", () => {
-        if (
-          !micFreeMode &&
-          !isPaused &&
-          clickedIdx === matrixStepIndex &&
-          !verifiedCardLockRef.current
-        ) {
-          if (micStartDelayTimerRef.current) {
-            clearTimeout(micStartDelayTimerRef.current);
-          }
-          micStartDelayTimerRef.current = setTimeout(() => {
-            startMatrixListening(option, clickedIdx);
-          }, 400);
+
+      if (selectedOptionId === currentQuestion.target.id) return;
+      if (wrongAttemptIds.includes(option.id)) return;
+
+      const isCorrect = option.id === currentQuestion.target.id;
+
+      if (isCorrect) {
+        setSelectedOptionId(option.id);
+        setIsDraggingCard(false);
+        setDragOverIndex(null);
+        setTouchDragPos(null);
+        dragOverIndexRef.current = null;
+        streakRef.current += 1;
+
+        const firstTry = !hadWrongOnCurrent && !revealHint;
+        if (firstTry) {
+          setScore((s) => s + 1);
+          recordItemAttempt(
+            currentQuestion.target.id,
+            "word",
+            true,
+            false,
+            100
+          );
+        } else {
+          recordItemAttempt(
+            currentQuestion.target.id,
+            "word",
+            true,
+            revealHint,
+            75
+          );
         }
-      });
-      return;
-    }
 
-    if (selectedOptionId === currentQuestion.target.id) return;
-    if (wrongAttemptIds.includes(option.id)) return;
+        clearTimers();
+        stopAllAudio();
 
-    const isCorrect = option.id === currentQuestion.target.id;
-
-    if (isCorrect) {
-      setSelectedOptionId(option.id);
-      streakRef.current += 1;
-      playCorrect({
-        streak: streakRef.current,
-        gender: preferredVoiceGender,
-      });
-      playItemAudio(option, currentQuestion.concreteMode);
-
-      const firstTry = !hadWrongOnCurrent && !revealHint;
-      if (firstTry) {
-        setScore((s) => s + 1);
-        recordItemAttempt(
-          currentQuestion.target.id,
-          "word",
-          true,
-          false,
-          100
-        );
+        // GÖREV 1: Önce doğru cevap + sözlü övgü efektinin tamamen bitmesini bekle,
+        // ardından 350ms sonra kelimenin Arapça sesini çal ve tamamlanınca sonraki soruya geç!
+        void sfx
+          .playCorrect({
+            streak: streakRef.current,
+            gender: preferredVoiceGender,
+          })
+          .then(() => {
+            if (isPaused) return;
+            autoAdvanceTimerRef.current = setTimeout(() => {
+              if (isPaused) return;
+              playItemAudio(option, currentQuestion.concreteMode, () => {
+                if (isPaused) return;
+                autoAdvanceTimerRef.current = setTimeout(() => {
+                  advanceToNextQuestion(
+                    hadWrongOnCurrent ? "wrong" : "correct"
+                  );
+                }, 900);
+              });
+            }, 350);
+          });
       } else {
+        streakRef.current = 0;
+        setHadWrongOnCurrent(true);
+        setWrongAttemptIds((prev) => [...prev, option.id]);
+        addMistake(currentQuestion.target.id);
         recordItemAttempt(
           currentQuestion.target.id,
           "word",
-          true,
+          false,
           revealHint,
-          75
+          25
         );
+        stopAllAudio();
+        void sfx.playWrong().then(() => {
+          if (isPaused) return;
+          setTimeout(() => {
+            if (!isPaused) {
+              playItemAudio(option, currentQuestion.concreteMode);
+            }
+          }, 250);
+        });
       }
+    },
+    [
+      currentQuestion,
+      isPaused,
+      micFreeMode,
+      matrixStepIndex,
+      selectedOptionId,
+      wrongAttemptIds,
+      hadWrongOnCurrent,
+      revealHint,
+      preferredVoiceGender,
+      handleMatrixCardVerified,
+      playItemAudio,
+      startMatrixListening,
+      recordItemAttempt,
+      clearTimers,
+      advanceToNextQuestion,
+      addMistake,
+    ]
+  );
 
-      clearTimers();
-      autoAdvanceTimerRef.current = setTimeout(() => {
-        advanceToNextQuestion(hadWrongOnCurrent ? "wrong" : "correct");
-      }, 950);
-    } else {
-      streakRef.current = 0;
-      playWrong();
-      setHadWrongOnCurrent(true);
-      setWrongAttemptIds((prev) => [...prev, option.id]);
-      addMistake(currentQuestion.target.id);
-      recordItemAttempt(
-        currentQuestion.target.id,
-        "word",
-        false,
-        revealHint,
-        25
-      );
-      playItemAudio(option, currentQuestion.concreteMode);
+  const handleOptionClick = useCallback(
+    (idx: number) => {
+      if (!currentQuestion) return;
+      const opt = currentQuestion.options[idx];
+      if (opt) {
+        handleSelectOption(opt);
+      }
+    },
+    [currentQuestion, handleSelectOption]
+  );
+
+  // Mobil Dokunmatik Sürükle-Bırak (Touch Drag & Drop) Olay Yöneticileri
+  const handleTargetTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (selectedOptionId !== null || isPaused) return;
+    const targetEl = e.target as HTMLElement;
+    if (targetEl.closest("button")) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    setIsDraggingCard(true);
+    setTouchDragPos({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTargetTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDraggingCard || selectedOptionId !== null) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    setTouchDragPos({ x: touch.clientX, y: touch.clientY });
+
+    if (typeof document !== "undefined") {
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      const cardNode = elem?.closest("[data-option-index]");
+      const attr = cardNode?.getAttribute("data-option-index");
+      const parsed =
+        attr !== null && attr !== undefined ? parseInt(attr, 10) : null;
+      const validIdx =
+        parsed !== null && !Number.isNaN(parsed) ? parsed : null;
+      if (dragOverIndexRef.current !== validIdx) {
+        dragOverIndexRef.current = validIdx;
+        setDragOverIndex(validIdx);
+      }
+    }
+  };
+
+  const handleTargetTouchEnd = () => {
+    if (!isDraggingCard) return;
+    const dropIdx = dragOverIndexRef.current;
+    setIsDraggingCard(false);
+    setTouchDragPos(null);
+    setDragOverIndex(null);
+    dragOverIndexRef.current = null;
+    if (dropIdx !== null && selectedOptionId === null) {
+      handleOptionClick(dropIdx);
     }
   };
 
@@ -2442,6 +2615,17 @@ export default function VisualRosettaQuiz({
   const activeMatrixCard =
     currentQuestion.options[matrixStepIndex] || currentQuestion.target;
 
+  // GÖREV 4.2: Konuşma balonlu modda öğenin kendine ait ayrı bir örnek cümlesi var mı?
+  const cleanTargetWordAr = sanitizeArabicDisplayText(
+    currentQuestion.target.arapca || ""
+  );
+  const cleanTargetExampleAr = sanitizeArabicDisplayText(
+    currentQuestion.target.ornek_ar || ""
+  );
+  const hasDistinctExampleSentence =
+    cleanTargetExampleAr.length > 0 &&
+    cleanTargetExampleAr !== cleanTargetWordAr;
+
   const modeTabs: {
     id: VisualInteractionMode;
     label: string;
@@ -2472,6 +2656,26 @@ export default function VisualRosettaQuiz({
 
   return (
     <div className="h-[calc(100dvh-105px)] max-h-[calc(100dvh-105px)] flex flex-col justify-between overflow-hidden p-2 sm:p-4 bg-[#F7EFE1]/60 dark:bg-[var(--surface)]/50 rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] gap-1.5 sm:gap-2">
+      {/* Mobil dokunmatik sürükleme sırasında parmak altında yüzen ibare etiketi */}
+      {touchDragPos && isDraggingCard && selectedOptionId === null && (
+        <div
+          className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-full px-3.5 py-1.5 rounded-xl bg-[#6741D9] text-white border-2 border-white shadow-xl flex items-center gap-2"
+          style={{
+            left: `${touchDragPos.x}px`,
+            top: `${Math.max(40, touchDragPos.y - 14)}px`,
+          }}
+        >
+          <GripVertical size={14} className="text-purple-200" />
+          <span
+            lang="ar"
+            dir="rtl"
+            className="arabic text-lg font-bold leading-none"
+          >
+            {formatAr(targetPhrase.ar)}
+          </span>
+        </div>
+      )}
+
       {/* 1. ÜST KONTROL VE 4 ETKİLEŞİM MODU SEÇİCİ ÇUBUĞU (shrink-0) */}
       <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] px-2 py-1.5 flex flex-wrap items-center justify-between gap-1.5">
         {/* Etkileşim Modu Sekmeleri */}
@@ -2499,27 +2703,30 @@ export default function VisualRosettaQuiz({
           })}
         </div>
 
-        {/* Sağ Kontroller: Mikrofonu Test Et + Erkek/Kadın Ses + Kategori */}
+        {/* Sağ Kontroller: Yalnızca Mikrofonlu Modda "Mikrofonu Test Et" + Erkek/Kadın Ses + Kategori */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              stopAllAudio();
-              stopSpeechRecognition();
-              clearTimers();
-              setCalibSteps([false, false, false]);
-              setCalibCompleted(false);
-              setCalibSpokenText("");
-              setShowCalibrationTest(true);
-            }}
-            className="h-7 px-2 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 flex items-center gap-1 cursor-pointer shrink-0"
-            title="1 - 2 - 3 Mikrofon Kalibrasyon Testini Aç"
-          >
-            <Mic size={12} />
-            <span className="hidden sm:inline">Mikrofonu Test Et</span>
-            <span className="sm:hidden">Test</span>
-          </button>
+          {activeConcreteMode === "listen_speak_matrix" && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                sfx.stopAllSfx();
+                stopAllAudio();
+                stopSpeechRecognition();
+                clearTimers();
+                setCalibSteps([false, false, false]);
+                setCalibCompleted(false);
+                setCalibSpokenText("");
+                setShowCalibrationTest(true);
+              }}
+              className="h-7 px-2 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 flex items-center gap-1 cursor-pointer shrink-0"
+              title="1 - 2 - 3 Mikrofon Kalibrasyon Testini Aç"
+            >
+              <Mic size={12} />
+              <span className="hidden sm:inline">Mikrofonu Test Et</span>
+              <span className="sm:hidden">Test</span>
+            </button>
+          )}
 
           <div className="inline-flex items-center rounded-lg bg-white dark:bg-[var(--background)] p-0.5 border border-[#E6D7BE]">
             <button
@@ -2789,25 +2996,56 @@ export default function VisualRosettaQuiz({
           </div>
         </div>
       ) : activeConcreteMode === "match_header_to_card" ? (
-        /* MOD B: Üst-Ortada Sesli Hedef İbare Kartı (🧩 İbareyi Görsele Yerleştir) */
-        <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl px-3 py-1.5 border-2 border-[#6741D9] flex items-center justify-between gap-2 shadow-2xs">
+        /* MOD B: Üst-Ortada Sürüklenebilir Sesli Hedef İbare Kartı (🧩 İbareyi Görsele Yerleştir) */
+        <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl px-3 py-1.5 border-2 border-[#6741D9] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shadow-2xs">
           <div className="flex items-center gap-2 min-w-0">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#6741D9]/15 text-[#6741D9] dark:text-purple-300 text-[11px] font-extrabold shrink-0">
               <Puzzle size={13} />
               <span>İbareyi Görsele Yerleştir</span>
             </span>
-            <span className="text-[11px] font-semibold text-[var(--muted)] hidden sm:inline truncate">
-              Üstteki Arapça ibareyi aşağıdaki doğru görselin başlık yuvasına yerleştirin:
+            <span className="text-[11px] font-semibold text-[var(--muted)] hidden md:inline truncate">
+              Arapça kartı doğru görselin yuvasına sürükleyin veya görsele tıklayın:
             </span>
           </div>
 
-          {/* Merkez Hedef İbare Kartı */}
-          <div className="flex items-center gap-2 bg-white dark:bg-[var(--background)] px-3 py-1 rounded-xl border-2 border-[#6741D9] shadow-2xs">
+          {/* GÖREV 3: Sürüklenebilir Hedef İbare Kartı (Draggable Chip — Masaüstü + Mobil Dokunmatik) */}
+          <div
+            draggable={selectedOptionId === null}
+            onDragStart={(e) => {
+              if (selectedOptionId !== null) {
+                e.preventDefault();
+                return;
+              }
+              setIsDraggingCard(true);
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", currentQuestion.target.id);
+            }}
+            onDragEnd={() => {
+              setIsDraggingCard(false);
+              setDragOverIndex(null);
+              dragOverIndexRef.current = null;
+            }}
+            onTouchStart={handleTargetTouchStart}
+            onTouchMove={handleTargetTouchMove}
+            onTouchEnd={handleTargetTouchEnd}
+            onTouchCancel={handleTargetTouchEnd}
+            className={`flex items-center gap-2 bg-white dark:bg-[var(--background)] px-3 py-1 rounded-xl border-2 shadow-2xs transition-all select-none touch-none ${
+              selectedOptionId === null
+                ? "cursor-grab active:cursor-grabbing border-[#6741D9] hover:ring-2 hover:ring-[#6741D9]/30"
+                : "border-emerald-600 bg-emerald-50/50"
+            } ${isDraggingCard ? "opacity-80 scale-95 ring-2 ring-indigo-400" : ""}`}
+            title="Bu ibareyi doğru görselin üst yuvasına sürükleyin"
+          >
+            <GripVertical
+              size={16}
+              className="text-[#6741D9] dark:text-purple-300 shrink-0"
+            />
             <button
               type="button"
-              onClick={() =>
-                playItemAudio(currentQuestion.target, activeConcreteMode)
-              }
+              onClick={(e) => {
+                e.stopPropagation();
+                playItemAudio(currentQuestion.target, activeConcreteMode);
+              }}
               className="w-7 h-7 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white flex items-center justify-center cursor-pointer shrink-0"
               title="Tekrar Dinle"
             >
@@ -2820,8 +3058,8 @@ export default function VisualRosettaQuiz({
             >
               {formatAr(targetPhrase.ar)}
             </span>
-            {revealHint && (
-              <span className="text-xs font-bold text-[#087F5B] border-l border-[#E6D7BE] pl-2">
+            {(revealHint || selectedOptionId !== null) && (
+              <span className="text-xs font-extrabold text-[#087F5B] dark:text-emerald-400 border-l border-[#E6D7BE] pl-2">
                 {targetPhrase.tr}
               </span>
             )}
@@ -2842,40 +3080,146 @@ export default function VisualRosettaQuiz({
           </button>
         </div>
       ) : activeConcreteMode === "speech_bubble_match" ? (
-        /* MOD C: Konuşma Balonlu Eşleştirme Başlığı */
-        <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl px-3 py-1.5 border-2 border-[#087F5B] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={() =>
-                playItemAudio(currentQuestion.target, "speech_bubble_match")
+        /* MOD C: Konuşma Balonlu Eşleştirme Başlığı — Sürüklenebilir & Kelime + Örnek Cümle Çift Sesli */
+        <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl px-3 py-1.5 border-2 border-[#087F5B] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+          {/* GÖREV 3 & GÖREV 4: Sürüklenebilir Hedef Kart + Kelime Seslendirme + Örnek Cümle Seslendirme */}
+          <div
+            draggable={selectedOptionId === null}
+            onDragStart={(e) => {
+              if (selectedOptionId !== null) {
+                e.preventDefault();
+                return;
               }
-              className="w-8 h-8 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white flex items-center justify-center shrink-0 cursor-pointer"
-              title="İfadeyi Dinle"
-            >
-              <Volume2 size={16} />
-            </button>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <MessageSquare size={13} className="text-[#087F5B] shrink-0" />
-                <span
-                  lang="ar"
-                  dir="rtl"
-                  className="arabic text-base sm:text-xl font-bold text-[var(--foreground)] leading-tight truncate"
-                >
-                  {formatAr(targetPhrase.ar)}
-                </span>
+              setIsDraggingCard(true);
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", currentQuestion.target.id);
+            }}
+            onDragEnd={() => {
+              setIsDraggingCard(false);
+              setDragOverIndex(null);
+              dragOverIndexRef.current = null;
+            }}
+            onTouchStart={handleTargetTouchStart}
+            onTouchMove={handleTargetTouchMove}
+            onTouchEnd={handleTargetTouchEnd}
+            onTouchCancel={handleTargetTouchEnd}
+            className={`flex items-center gap-2 min-w-0 flex-1 bg-white dark:bg-[var(--background)] px-2.5 py-1.5 rounded-xl border-2 transition-all select-none touch-none ${
+              selectedOptionId === null
+                ? "cursor-grab active:cursor-grabbing border-[#087F5B] hover:ring-2 hover:ring-[#087F5B]/30"
+                : "border-emerald-600 bg-emerald-50/50"
+            } ${isDraggingCard ? "opacity-80 scale-[0.99] ring-2 ring-indigo-400" : ""}`}
+            title="Bu ifadeyi doğru görselin konuşma balonuna sürükleyin"
+          >
+            <GripVertical
+              size={16}
+              className="text-[#087F5B] dark:text-emerald-400 shrink-0"
+            />
+
+            {hasDistinctExampleSentence ? (
+              <div className="min-w-0 flex-1 flex flex-col gap-1">
+                {/* Üst Satır: Vurgulu Hedef Kelime + 🔊 Kelime Butonu */}
+                <div className="flex items-center flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700">
+                    <span
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-base sm:text-xl font-bold text-emerald-950 dark:text-emerald-200 leading-none"
+                    >
+                      {formatAr(currentQuestion.target.arapca)}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playItemAudio(
+                        currentQuestion.target,
+                        "match_header_to_card"
+                      );
+                    }}
+                    className="h-6 px-2 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Hedef Kelimeyi Dinle"
+                  >
+                    <Volume2 size={12} />
+                    <span>Kelime</span>
+                  </button>
+
+                  {(revealHint || selectedOptionId !== null) && (
+                    <span className="text-xs font-extrabold text-[#087F5B] dark:text-emerald-400 truncate">
+                      — {currentQuestion.target.turkce}
+                    </span>
+                  )}
+                </div>
+
+                {/* Alt Satır: Örnek Cümle + 🔊 Cümleyi Oku Butonu */}
+                <div className="flex items-center flex-wrap gap-2">
+                  <MessageSquare
+                    size={13}
+                    className="text-[#6741D9] dark:text-purple-300 shrink-0"
+                  />
+                  <span
+                    lang="ar"
+                    dir="rtl"
+                    className="arabic text-sm sm:text-lg font-bold text-[var(--foreground)] leading-snug"
+                  >
+                    {formatAr(cleanTargetExampleAr)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      speakArabicSentence(cleanTargetExampleAr);
+                    }}
+                    className="h-6 px-2 rounded-lg bg-[#6741D9] hover:bg-[#5230B5] text-white text-[11px] font-extrabold flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Örnek Cümlenin Tamamını Dinle"
+                  >
+                    <Volume2 size={12} />
+                    <span>Cümleyi Oku</span>
+                  </button>
+                </div>
               </div>
-              {revealHint ? (
-                <p className="text-[11px] font-bold text-[#087F5B] truncate">
-                  {targetPhrase.tr}
-                </p>
-              ) : (
-                <p className="text-[10px] font-semibold text-[var(--muted)] truncate">
-                  Bu ifadeyi doğru sahnenin konuşma balonuna yerleştirin
-                </p>
-              )}
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playItemAudio(
+                      currentQuestion.target,
+                      "speech_bubble_match"
+                    );
+                  }}
+                  className="w-8 h-8 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white flex items-center justify-center shrink-0 cursor-pointer"
+                  title="İfadeyi Dinle"
+                >
+                  <Volume2 size={16} />
+                </button>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <MessageSquare
+                      size={13}
+                      className="text-[#087F5B] shrink-0"
+                    />
+                    <span
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-base sm:text-xl font-bold text-[var(--foreground)] leading-tight"
+                    >
+                      {formatAr(targetPhrase.ar)}
+                    </span>
+                  </div>
+                  {revealHint || selectedOptionId !== null ? (
+                    <p className="text-[11px] font-bold text-[#087F5B] dark:text-emerald-400 truncate">
+                      {targetPhrase.tr}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] font-semibold text-[var(--muted)] truncate">
+                      Bu ifadeyi doğru sahnenin konuşma balonuna sürükleyin veya tıklayın
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -2905,16 +3249,17 @@ export default function VisualRosettaQuiz({
               <Volume2 size={16} />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span
                   lang="ar"
                   dir="rtl"
-                  className="arabic text-lg sm:text-2xl font-bold text-[var(--foreground)] leading-none truncate"
+                  className="arabic text-lg sm:text-2xl font-bold text-[var(--foreground)] leading-none"
                 >
                   {formatAr(currentQuestion.target.arapca)}
                 </span>
-                {revealHint && (
-                  <span className="text-xs font-extrabold text-[#087F5B] truncate">
+                {/* GÖREV 2: Cevap verildiğinde veya ipucu açıldığında hedef Arapça kelimenin yanında Türkçe anlamı açılır */}
+                {(revealHint || selectedOptionId !== null) && (
+                  <span className="text-xs sm:text-sm font-extrabold text-[#087F5B] dark:text-emerald-400">
                     — {currentQuestion.target.turkce}
                   </span>
                 )}
@@ -2930,8 +3275,9 @@ export default function VisualRosettaQuiz({
               type="button"
               onClick={() => {
                 playClick();
+                sfx.stopAllSfx();
                 playTTS(
-                  currentQuestion.target.arapca,
+                  sanitizeArabicDisplayText(currentQuestion.target.arapca),
                   Math.max(0.65, speechRate * 0.78),
                   preferredVoiceGender
                 );
@@ -2975,19 +3321,35 @@ export default function VisualRosettaQuiz({
             const isMatrixDone =
               activeConcreteMode === "listen_speak_matrix" &&
               matrixCompletedIndices.includes(idx);
+            const isDragHovered =
+              dragOverIndex === idx && selectedOptionId === null;
+            const isDraggableMode =
+              activeConcreteMode === "match_header_to_card" ||
+              activeConcreteMode === "speech_bubble_match";
+
+            // GÖREV 2: Soru cevaplandığında (selectedOptionId !== null) tüm 4 kartta veya tamamlanan/denenen kartta Arapça + Türkçe göster
+            const showRichCardDetails =
+              selectedOptionId !== null ||
+              isQuestionSolved ||
+              isSelectedCorrect ||
+              isWrongAttempt ||
+              isMatrixDone;
 
             let cardStyle =
               "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]";
             if (isSelectedCorrect || isMatrixDone) {
               cardStyle =
                 "bg-emerald-50/90 dark:bg-emerald-950/40 border-[#087F5B] ring-3 ring-[#087F5B]/40";
+            } else if (isDragHovered) {
+              cardStyle =
+                "border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/60 scale-[1.02] ring-2 ring-indigo-300";
             } else if (isMatrixActive) {
               cardStyle = isWrongPronunciationState
                 ? "bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 ring-3 ring-amber-400/50"
                 : "bg-sky-50/90 dark:bg-sky-950/40 border-sky-500 ring-3 ring-sky-400/50";
             } else if (isWrongAttempt) {
               cardStyle =
-                "bg-rose-50/80 dark:bg-rose-950/30 border-rose-400 opacity-65";
+                "bg-rose-50/80 dark:bg-rose-950/30 border-rose-400 opacity-75";
             }
 
             const optionBubblePhrase = getPhraseForMode(
@@ -2998,7 +3360,34 @@ export default function VisualRosettaQuiz({
             return (
               <div
                 key={`${option.id}_${idx}`}
+                data-option-index={idx}
                 onClick={() => handleSelectOption(option)}
+                onDragOver={(e) => {
+                  if (!isDraggableMode || selectedOptionId !== null) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverIndexRef.current !== idx) {
+                    dragOverIndexRef.current = idx;
+                    setDragOverIndex(idx);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  if (!isDraggableMode) return;
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    if (dragOverIndexRef.current === idx) {
+                      dragOverIndexRef.current = null;
+                    }
+                    setDragOverIndex((prev) => (prev === idx ? null : prev));
+                  }
+                }}
+                onDrop={(e) => {
+                  if (!isDraggableMode || selectedOptionId !== null) return;
+                  e.preventDefault();
+                  setIsDraggingCard(false);
+                  setDragOverIndex(null);
+                  dragOverIndexRef.current = null;
+                  handleOptionClick(idx);
+                }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -3070,6 +3459,10 @@ export default function VisualRosettaQuiz({
                         ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
                         : isWrongAttempt
                         ? "bg-rose-100 dark:bg-rose-950/60 border-rose-400 text-rose-800 dark:text-rose-200"
+                        : isDragHovered
+                        ? "border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-200 scale-[1.03] ring-2 ring-indigo-300"
+                        : isDraggingCard
+                        ? "border-indigo-400 border-dashed bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300"
                         : "bg-[#F7EFE1]/60 dark:bg-[var(--background)]/60 border-dashed border-[#cbb692] text-[var(--muted)]"
                     }`}
                   >
@@ -3093,8 +3486,10 @@ export default function VisualRosettaQuiz({
                         {formatAr(option.arapca)}
                       </span>
                     ) : (
-                      <span className="text-[10px] sm:text-[11px] font-bold opacity-75">
-                        Buraya yerleştir ({idx + 1})
+                      <span className="text-[10px] sm:text-[11px] font-bold">
+                        {isDragHovered
+                          ? "✨ Buraya bırakın!"
+                          : `Buraya yerleştir (${idx + 1})`}
                       </span>
                     )}
                   </div>
@@ -3109,6 +3504,10 @@ export default function VisualRosettaQuiz({
                           ? "bg-emerald-600 border-emerald-700 text-white"
                           : isWrongAttempt
                           ? "bg-rose-50 border-rose-300 text-rose-800"
+                          : isDragHovered
+                          ? "border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-200 scale-[1.03] ring-2 ring-indigo-300"
+                          : isDraggingCard
+                          ? "border-indigo-400 border-dashed bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300"
                           : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
                       }`}
                     >
@@ -3132,8 +3531,10 @@ export default function VisualRosettaQuiz({
                           {formatAr(optionBubblePhrase.ar)}
                         </span>
                       ) : (
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400">
-                          💬 Konuşma balonuna yerleştir...
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-300">
+                          {isDragHovered
+                            ? "💬 Balona bırakın!"
+                            : "💬 Konuşma balonuna yerleştir..."}
                         </span>
                       )}
                     </div>
@@ -3144,6 +3545,8 @@ export default function VisualRosettaQuiz({
                           ? "bg-emerald-600 border-emerald-700"
                           : isWrongAttempt
                           ? "bg-rose-50 border-rose-300"
+                          : isDragHovered
+                          ? "bg-indigo-50 border-indigo-500"
                           : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
                       }`}
                     />
@@ -3156,7 +3559,7 @@ export default function VisualRosettaQuiz({
                     src={resolveImageUrl(option.gorsel)}
                     alt={option.turkce}
                     loading="eager"
-                    className="aspect-square max-h-[22vh] sm:max-h-[26vh] lg:max-h-[30vh] w-auto mx-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
+                    className="aspect-square max-h-[19vh] sm:max-h-[23vh] lg:max-h-[27vh] w-auto mx-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
                   />
 
                   {/* Sağ Üst Doğru / Yanlış Büyük Rozeti */}
@@ -3172,20 +3575,59 @@ export default function VisualRosettaQuiz({
                   )}
                 </div>
 
-                {/* Alt Bilgi Satırı (Seçildiğinde veya Matrix modunda anlam gösterimi) */}
-                <div className="shrink-0 pt-1 flex items-center justify-between gap-1 text-[11px] font-bold text-[var(--muted)]">
-                  <span className="truncate">
-                    {isSelectedCorrect ||
-                    isWrongAttempt ||
-                    isMatrixDone ||
-                    isQuestionSolved
-                      ? option.turkce
-                      : `Seçenek ${idx + 1}`}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-[#F7EFE1] dark:bg-[var(--background)] text-[10px] font-extrabold text-[var(--muted)]">
-                    {option.cefr}
-                  </span>
-                </div>
+                {/* GÖREV 2: Alt Bilgi Alanı — Cevap Verildiğinde Hem Harekeli Arapça (+ 🔊) Hem Türkçe Anlam Birlikte Gösterilir */}
+                {showRichCardDetails ? (
+                  <div className="shrink-0 pt-1.5 mt-1 border-t border-[#E6D7BE]/70 dark:border-[var(--border)] flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between gap-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectedOptionId !== null) {
+                            clearTimers();
+                          }
+                          playItemAudio(option, activeConcreteMode, () => {
+                            if (selectedOptionId !== null && !isPaused) {
+                              autoAdvanceTimerRef.current = setTimeout(() => {
+                                advanceToNextQuestion(
+                                  hadWrongOnCurrent ? "wrong" : "correct"
+                                );
+                              }, 1200);
+                            }
+                          });
+                        }}
+                        className="w-6 h-6 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-[#087F5B] dark:text-emerald-300 flex items-center justify-center shrink-0 cursor-pointer"
+                        title="Bu kelimenin Arapça telaffuzunu dinle"
+                      >
+                        <Volume2 size={13} />
+                      </button>
+
+                      <span
+                        lang="ar"
+                        dir="rtl"
+                        className="arabic text-lg sm:text-xl font-bold font-arabic text-emerald-950 dark:text-emerald-200 leading-none truncate"
+                      >
+                        {formatAr(option.arapca)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                        {option.turkce}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-[#F7EFE1] dark:bg-[var(--background)] text-[10px] font-extrabold text-[var(--muted)] shrink-0">
+                        {option.cefr}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="shrink-0 pt-1 flex items-center justify-between gap-1 text-[11px] font-bold text-[var(--muted)]">
+                    <span className="truncate">Seçenek {idx + 1}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-[#F7EFE1] dark:bg-[var(--background)] text-[10px] font-extrabold text-[var(--muted)]">
+                      {option.cefr}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -3194,7 +3636,7 @@ export default function VisualRosettaQuiz({
 
       {/* 4. ALT DAİRESEL İLERLEME ZİNCİRİ VE KONTROL BARI (shrink-0) */}
       <div className="shrink-0 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] px-2.5 py-1.5 flex items-center justify-between gap-2">
-        {/* Sol: ⏸ Duraklat ve 🎙️ Mikrofon Aç/Kapa */}
+        {/* GÖREV 5: Sol Kontrol — Aktif Moda Göre Akıllı Gösterim */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
@@ -3203,6 +3645,7 @@ export default function VisualRosettaQuiz({
               setIsPaused((prev) => {
                 const next = !prev;
                 if (next) {
+                  sfx.stopAllSfx();
                   stopAllAudio();
                   stopSpeechRecognition();
                   clearTimers();
@@ -3223,31 +3666,60 @@ export default function VisualRosettaQuiz({
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setMicFreeMode((prev) => {
-                const next = !prev;
-                if (next) {
-                  stopSpeechRecognition();
-                  clearTimers();
-                }
-                return next;
-              });
-            }}
-            className={`h-8 px-2.5 rounded-lg border text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all ${
-              micFreeMode
-                ? "bg-slate-700 border-slate-800 text-amber-300"
-                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#087F5B] hover:border-[#087F5B]"
-            }`}
-            title="Mikrofonsuz Mod Aç/Kapa"
-          >
-            {micFreeMode ? <MicOff size={13} /> : <Mic size={13} />}
-            <span className="hidden sm:inline">
-              {micFreeMode ? "Mikrofonsuz Mod" : "Mikrofon Açık"}
-            </span>
-          </button>
+          {activeConcreteMode === "listen_speak_matrix" ? (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setMicFreeMode((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    stopSpeechRecognition();
+                    clearTimers();
+                  }
+                  return next;
+                });
+              }}
+              className={`h-8 px-2.5 rounded-lg border text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all ${
+                micFreeMode
+                  ? "bg-slate-700 border-slate-800 text-amber-300"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#087F5B] hover:border-[#087F5B]"
+              }`}
+              title="Mikrofonsuz Mod Aç/Kapa"
+            >
+              {micFreeMode ? <MicOff size={13} /> : <Mic size={13} />}
+              <span className="hidden sm:inline">
+                {micFreeMode ? "Mikrofonsuz Mod" : "Mikrofon Açık"}
+              </span>
+            </button>
+          ) : activeConcreteMode === "match_header_to_card" ||
+            activeConcreteMode === "speech_bubble_match" ? (
+            <button
+              type="button"
+              onClick={() => {
+                playItemAudio(currentQuestion.target, activeConcreteMode);
+              }}
+              className="h-8 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-purple-300 flex items-center gap-1.5 cursor-pointer transition-all"
+              title="Üstteki Arapça ibareyi doğru görsele sürükleyin veya görsele tıklayın (Sesi tekrar dinlemek için dokunun)"
+            >
+              <Hand size={13} />
+              <span className="hidden sm:inline">Sürükle veya Tıkla</span>
+              <span className="sm:hidden">Sürükle</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                playItemAudio(currentQuestion.target, "audio_to_image");
+              }}
+              className="h-8 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[#087F5B] dark:text-emerald-400 flex items-center gap-1.5 cursor-pointer transition-all"
+              title="Hedef Sesi Tekrar Dinle"
+            >
+              <Volume2 size={13} />
+              <span className="hidden sm:inline">Sesi Tekrar Dinle</span>
+              <span className="sm:hidden">Dinle</span>
+            </button>
+          )}
         </div>
 
         {/* Merkez: Dairesel İlerleme Zinciri (Doğru: Yeşil ✓, Yanlış: Turuncu/Kırmızı ✕, Aktif: Mavi 1..N, Bekleyen: Gri) */}

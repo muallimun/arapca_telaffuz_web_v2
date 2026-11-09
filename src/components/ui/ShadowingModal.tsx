@@ -60,9 +60,9 @@ import {
 import {
   playRecordStart,
   playRecordStop,
-  playSuccess,
+  playCorrect,
   playPartial,
-  playError,
+  playWrong,
   playClick,
 } from "@/lib/sfxManager";
 
@@ -996,7 +996,7 @@ export default function ShadowingModal({
           setFluencyScore(null);
           setActiveWordTip(null);
           setDspFallbackNotice(null);
-          playError();
+          playWrong();
           setSilentWarning(
             "Mikrofondan net bir ses algılanamadı. Lütfen mikrofona biraz daha yakın ve net bir sesle tekrar okuyun."
           );
@@ -1208,7 +1208,7 @@ export default function ShadowingModal({
         setFluencyScore(null);
         setActiveWordTip(null);
         setDspFallbackNotice(null);
-        playError();
+        playWrong();
         setSilentWarning(
           "Mikrofondan net bir ses algılanamadı. Lütfen mikrofona biraz daha yakın ve net bir sesle tekrar okuyun."
         );
@@ -1296,7 +1296,7 @@ export default function ShadowingModal({
       setFluencyScore(null);
       setActiveWordTip(null);
       setDspFallbackNotice(null);
-      playError();
+      playWrong();
       setSilentWarning(
         "Mikrofondan net bir ses algılanamadı. Lütfen mikrofona biraz daha yakın ve net bir sesle tekrar okuyun."
       );
@@ -1351,9 +1351,9 @@ export default function ShadowingModal({
     }
     onEvaluated?.(result.overallScore, activeText);
 
-    if (result.overallScore >= 80) playSuccess();
+    if (result.overallScore >= 80) playCorrect({ isSpeech: true });
     else if (result.overallScore >= 50) playPartial();
-    else playError();
+    else playWrong();
 
     const pronunciation = result.overallScore;
     const fluency =

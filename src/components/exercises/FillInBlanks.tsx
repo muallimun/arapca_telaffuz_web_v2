@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
-  playSuccess,
-  playError,
+  playCorrect,
+  playWrong,
+  playStart,
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
@@ -436,16 +437,21 @@ export default function FillInBlanks({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, subMode, currentQ?.id, roundSeed, customQuestions]);
 
+  const streakRef = useRef<number>(0);
+
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       addStudyMinutes(3);
-      playFanfare();
+      const cCount = Object.values(userAnswers).filter((a) => a.isCorrect).length;
+      const pctScore =
+        questions.length > 0 ? Math.round((cCount / questions.length) * 100) : 100;
+      playFanfare(pctScore);
     } else if (isTimeUp && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
-      playError();
+      playWrong();
     }
-  }, [isFinished, isTimeUp, addStudyMinutes]);
+  }, [isFinished, isTimeUp, addStudyMinutes, userAnswers, questions.length]);
 
   const wordBankList = useMemo(() => {
     return shuffleArray(questions.map((q) => q.correctWord));
@@ -545,7 +551,8 @@ export default function FillInBlanks({
         ...prev,
         [currentIndex]: { answer: currentQ.correctWord, isCorrect: true },
       }));
-      playSuccess();
+      streakRef.current += 1;
+      playCorrect({ streak: streakRef.current });
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);
@@ -554,6 +561,7 @@ export default function FillInBlanks({
         }
       }, 1050);
     } else {
+      streakRef.current = 0;
       setFeedback("wrong");
       setUserAnswers((prev) => ({
         ...prev,
@@ -561,7 +569,7 @@ export default function FillInBlanks({
           ? prev[currentIndex]
           : { answer: word, isCorrect: false },
       }));
-      playError();
+      playWrong();
       setTimeout(() => {
         setFeedback(null);
         setSelectedWord(null);
@@ -608,7 +616,8 @@ export default function FillInBlanks({
         ...prev,
         [currentIndex]: { answer: currentQ.correctWord, isCorrect: true },
       }));
-      playSuccess();
+      streakRef.current += 1;
+      playCorrect({ streak: streakRef.current });
       setTimeout(
         () => {
           if (currentIndex < questions.length - 1) {
@@ -620,6 +629,7 @@ export default function FillInBlanks({
         hasSpellingOrHarakatVariation ? 1750 : 1150
       );
     } else {
+      streakRef.current = 0;
       setSpellingNote(null);
       setFeedback("wrong");
       setUserAnswers((prev) => ({
@@ -628,7 +638,7 @@ export default function FillInBlanks({
           ? prev[currentIndex]
           : { answer: rawTyped, isCorrect: false },
       }));
-      playError();
+      playWrong();
       setTimeout(() => {
         setFeedback(null);
       }, 950);
@@ -766,7 +776,8 @@ export default function FillInBlanks({
 
   // 4 Sonuç Ekranı Aksiyonu
   const handleRepeatSameSet = () => {
-    playClick();
+    playStart();
+    streakRef.current = 0;
     fanfarePlayedRef.current = false;
     setCustomQuestions(
       shuffleArray(

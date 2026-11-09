@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  playSuccess,
-  playError,
+  playCorrect,
+  playWrong,
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
@@ -347,17 +347,27 @@ export default function MatchingGame({
     };
   }, [trCards, arCards, connections, showEndBar, updateSocketCoordinates]);
 
+  const streakRef = useRef<number>(0);
+
   useEffect(() => {
     if (isInstantCompleted && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       addStudyMinutes(3);
-      playFanfare();
+      const totalTries = Math.max(1, totalPairs + wrongAttemptsCount);
+      const accPct = Math.round((totalPairs / totalTries) * 100);
+      playFanfare(accPct);
       setShowEndBar(true);
     } else if (isGameOver && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
-      playError();
+      playWrong();
     }
-  }, [isInstantCompleted, isGameOver, addStudyMinutes]);
+  }, [
+    isInstantCompleted,
+    isGameOver,
+    addStudyMinutes,
+    totalPairs,
+    wrongAttemptsCount,
+  ]);
 
   const inferMatchType = (cid: string): "word" | "idiom" | "sentence" => {
     if (cid.startsWith("idiom_") || cid.startsWith("idm_")) return "idiom";
@@ -406,7 +416,8 @@ export default function MatchingGame({
     if (feedbackMode === "instant") {
       const isMatch = trMatchId === arMatchId;
       if (isMatch) {
-        playSuccess();
+        streakRef.current += 1;
+        playCorrect({ streak: streakRef.current });
         setExerciseScore((s) => s + 10);
         setTotalCumulativeScore((s) => s + 10);
         if (!wrongAttemptedMatchIdsRef.current.has(trMatchId)) {
@@ -425,7 +436,8 @@ export default function MatchingGame({
           }
         }
       } else {
-        playError();
+        streakRef.current = 0;
+        playWrong();
         recordWrongPair(trMatchId, arMatchId);
       }
 
@@ -560,10 +572,13 @@ export default function MatchingGame({
     setTotalCumulativeScore((s) => s + gained);
     setIsExamEvaluated(true);
     addStudyMinutes(3);
-    if (evaluated.filter((c) => c.status === "correct").length === totalPairs) {
-      playFanfare();
+    const correctCount = evaluated.filter((c) => c.status === "correct").length;
+    if (correctCount === totalPairs) {
+      playFanfare(100);
+    } else if (correctCount > 0) {
+      playFanfare(Math.round((correctCount / Math.max(1, totalPairs)) * 100));
     } else {
-      playError();
+      playWrong();
     }
     setShowEndBar(true);
   };

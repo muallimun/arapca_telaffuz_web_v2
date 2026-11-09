@@ -39,6 +39,11 @@ const nextConfig: NextConfig = {
           source: "/sesler/:path*",
           destination: `${mediaCdnBase}/sesler/:path*`,
         },
+        {
+          source: "/efect/:path*",
+          destination:
+            "https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/efect/:path*",
+        },
       ],
     };
   },

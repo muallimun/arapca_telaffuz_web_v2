@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
-  playSuccess,
-  playError,
+  playCorrect,
+  playWrong,
+  playStart,
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
@@ -329,16 +330,21 @@ export default function MultipleChoice({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, questionsSignature]);
 
+  const streakRef = useRef<number>(0);
+
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       addStudyMinutes(3);
-      playFanfare();
+      const cCount = Object.values(userAnswers).filter((a) => a.isCorrect).length;
+      const pctScore =
+        questions.length > 0 ? Math.round((cCount / questions.length) * 100) : 100;
+      playFanfare(pctScore);
     } else if (isTimeUp && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
-      playError();
+      playWrong();
     }
-  }, [isFinished, isTimeUp, addStudyMinutes]);
+  }, [isFinished, isTimeUp, addStudyMinutes, userAnswers, questions.length]);
 
   if (questions.length < 1) {
     return (
@@ -402,9 +408,11 @@ export default function MultipleChoice({
 
     if (feedbackMode === "instant") {
       if (isCorrect) {
-        playSuccess();
+        streakRef.current += 1;
+        playCorrect({ streak: streakRef.current });
       } else {
-        playError();
+        streakRef.current = 0;
+        playWrong();
       }
     } else {
       playClick();
@@ -431,7 +439,8 @@ export default function MultipleChoice({
 
   // 1) Tekrar Yap (Aynı soruları karıştırarak baştan başlat)
   const handleRepeatSameSet = () => {
-    playClick();
+    playStart();
+    streakRef.current = 0;
     fanfarePlayedRef.current = false;
     const reshuffled = shuffleArray(
       questions.map((q) => ({
@@ -451,7 +460,8 @@ export default function MultipleChoice({
 
   // 2) Devam Et (Yeni Set)
   const handleStartNewSet = () => {
-    playClick();
+    playStart();
+    streakRef.current = 0;
     fanfarePlayedRef.current = false;
     setCustomQuestions(null);
     setRoundSeed((s) => s + 1);
@@ -471,7 +481,8 @@ export default function MultipleChoice({
 
   const handleRetryWrongOnly = () => {
     if (wrongQuestions.length === 0) return;
-    playClick();
+    playStart();
+    streakRef.current = 0;
     fanfarePlayedRef.current = false;
     const retryList = shuffleArray(
       wrongQuestions.map((q) => ({

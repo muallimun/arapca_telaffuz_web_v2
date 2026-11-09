@@ -18,7 +18,7 @@ import {
   Image as ImageIcon,
   FolderOpen,
 } from "lucide-react";
-import { playClick } from "@/lib/sfxManager";
+import { playClick, playStart } from "@/lib/sfxManager";
 import {
   diyaloglar,
   metinler,
@@ -1183,7 +1183,6 @@ function ExercisesPageContent() {
   };
 
   const handleStartExercise = () => {
-    playClick();
     if (
       combinedVocabulary.length < 4 &&
       sentenceCountInPool < 2 &&
@@ -1191,6 +1190,7 @@ function ExercisesPageContent() {
       filteredVisualWordsPool.length < 4
     )
       return;
+    playStart();
     setFrozenPools({
       vocabulary: [...combinedVocabulary],
       idioms: [...idiomsPool],

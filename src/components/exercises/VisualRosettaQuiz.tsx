@@ -28,50 +28,286 @@ import { useUserStore } from "@/store/userStore";
 import { playDualGenderAudio, playTTS, stopAllAudio } from "@/lib/audio";
 import {
   playClick,
-  playSuccess,
-  playError,
+  playStart,
+  playCorrect,
+  playWrong,
   playFanfare,
 } from "@/lib/sfxManager";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 
-function normalizeArabicForCompare(str: string): string {
-  return (str || "")
+// Doğu Arapça rakamları (٠-٩) -> Batı rakamları (0-9)
+const EASTERN_DIGIT_MAP: Record<string, string> = {
+  "٠": "0",
+  "١": "1",
+  "٢": "2",
+  "٣": "3",
+  "٤": "4",
+  "٥": "5",
+  "٦": "6",
+  "٧": "7",
+  "٨": "8",
+  "٩": "9",
+};
+
+// Sayı kelimeleri <-> rakam eşdeğerlik tablosu (normalize edilmiş harflerle)
+const ARABIC_NUMBER_EQUIVALENTS: Record<string, string[]> = {
+  "0": ["صفر"],
+  "1": ["واحد", "واحده"],
+  "2": ["اثنان", "اثنين", "اثنتان", "اثنتين"],
+  "3": ["ثلاثه", "ثلاث"],
+  "4": ["اربعه", "اربع"],
+  "5": ["خمسه", "خمس"],
+  "6": ["سته", "ست"],
+  "7": ["سبعه", "سبع"],
+  "8": ["ثمانيه", "ثماني", "ثمان"],
+  "9": ["تسعه", "تسع"],
+  "10": ["عشره", "عشر"],
+  "11": ["احد عشر", "احدى عشره"],
+  "12": ["اثنا عشر", "اثني عشر"],
+};
+
+/**
+ * 2. Sıkı Kelime ve Harf Uyumu Doğrulaması için Normalizasyon (`normalizeStrictArabic`):
+ * - Tüm harekeleri (\u064B-\u065F, \u0670), tatweel (\u0640) ve noktalama işaretlerini temizler.
+ * - Harf varyantlarını birleştirir: أ/إ/آ/ٱ -> ا, ة -> ه, ى -> ي, ؤ -> و, ئ -> ي.
+ * - Doğu Arapça rakamlarını (٠-٩) standart rakamlara (0-9) dönüştürür.
+ */
+export function normalizeStrictArabic(str: string): string {
+  const withWesternDigits = (str || "").replace(
+    /[٠-٩]/g,
+    (d) => EASTERN_DIGIT_MAP[d] ?? d
+  );
+
+  return withWesternDigits
     .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
     .replace(/[أإآٱ]/g, "ا")
     .replace(/ة/g, "ه")
     .replace(/ى/g, "ي")
-    .replace(/[^\u0621-\u064A\s]/g, "")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/[^\u0621-\u064A0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function evaluateArabicSimilarity(target: string, spoken: string): number {
-  const a = normalizeArabicForCompare(target);
-  const b = normalizeArabicForCompare(spoken);
-  if (!a || !b) return 0;
-  if (a === b || b.includes(a) || a.includes(b)) return 100;
+/**
+ * Konuşulan metindeki rakamları (örn. "7") hedef metindeki sayı kelimesine (örn. "سبعه")
+ * veya tam tersine kanonikleştirir.
+ */
+function canonicalizeNumbersForTarget(
+  normalizedSpoken: string,
+  normalizedTarget: string
+): string {
+  if (!normalizedSpoken || !normalizedTarget) return normalizedSpoken;
+  let result = normalizedSpoken;
 
-  const aWords = a.split(" ");
-  const bWords = b.split(" ");
-  let matchedWords = 0;
-  for (const w of aWords) {
-    if (bWords.some((bw) => bw === w || bw.includes(w) || w.includes(bw))) {
-      matchedWords++;
+  for (const [digit, wordVariants] of Object.entries(
+    ARABIC_NUMBER_EQUIVALENTS
+  )) {
+    const targetHasDigit = normalizedTarget.split(" ").includes(digit);
+    const matchingTargetWord = wordVariants.find((w) =>
+      normalizedTarget.includes(w)
+    );
+
+    if (matchingTargetWord) {
+      // Hedefte sayı kelimesi varsa (örn. "سبعه"), konuşmadaki rakamı veya diğer varyantı hedef kelimeye çevir
+      const digitRegex = new RegExp(`\\b${digit}\\b`, "g");
+      result = result.replace(digitRegex, matchingTargetWord);
+      for (const variant of wordVariants) {
+        if (variant !== matchingTargetWord && result.includes(variant)) {
+          result = result.replace(new RegExp(variant, "g"), matchingTargetWord);
+        }
+      }
+    } else if (targetHasDigit) {
+      // Hedefte rakam varsa, konuşmadaki sayı kelimelerini rakama çevir
+      for (const variant of wordVariants) {
+        if (result.includes(variant)) {
+          result = result.replace(new RegExp(variant, "g"), digit);
+        }
+      }
     }
   }
-  if (matchedWords > 0) {
-    return Math.round((matchedWords / aWords.length) * 100);
+
+  return result.replace(/\s+/g, " ").trim();
+}
+
+/** Karakter dizileri arası Levenshtein düzenleme mesafesi */
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  const aChars = Array.from(a);
+  const bChars = Array.from(b);
+  const m = aChars.length;
+  const n = bChars.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    new Array<number>(n + 1).fill(0)
+  );
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = aChars[i - 1] === bChars[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+function stripLeadingAl(word: string): string {
+  return word.startsWith("ال") && word.length > 3 ? word.slice(2) : word;
+}
+
+function isSingleWordStrictMatch(
+  targetWord: string,
+  spokenWord: string
+): { matched: boolean; similarity: number; distance: number } {
+  if (!targetWord || !spokenWord) {
+    return { matched: false, similarity: 0, distance: 99 };
+  }
+  if (targetWord === spokenWord) {
+    return { matched: true, similarity: 100, distance: 0 };
   }
 
-  const aChars = new Set(a.replace(/\s+/g, "").split(""));
-  let commonChars = 0;
-  for (const ch of b.replace(/\s+/g, "")) {
-    if (aChars.has(ch)) commonChars++;
+  // Harf-i tarif (ال) farkı varsa çekirdek kelimeyi de kontrol et (örn. "يوم" vs "اليوم")
+  const bareTarget = stripLeadingAl(targetWord);
+  const bareSpoken = stripLeadingAl(spokenWord);
+  if (bareTarget === bareSpoken && bareTarget.length >= 2) {
+    return { matched: true, similarity: 100, distance: 0 };
   }
-  return Math.min(
-    90,
-    Math.round((commonChars / Math.max(1, a.length)) * 100)
+
+  const distRaw = levenshteinDistance(targetWord, spokenWord);
+  const maxLenRaw = Math.max(
+    Array.from(targetWord).length,
+    Array.from(spokenWord).length,
+    1
   );
+  const simRaw = Math.round(((maxLenRaw - distRaw) / maxLenRaw) * 100);
+
+  const distBare = levenshteinDistance(bareTarget, bareSpoken);
+  const maxLenBare = Math.max(
+    Array.from(bareTarget).length,
+    Array.from(bareSpoken).length,
+    1
+  );
+  const simBare = Math.round(((maxLenBare - distBare) / maxLenBare) * 100);
+
+  const bestDist = distBare < distRaw ? distBare : distRaw;
+  const bestSim = Math.max(simRaw, simBare);
+  const targetLen = Array.from(bareTarget).length;
+
+  // Kısa kelimelerde (<= 4 harf) %100 tam harf eşleşmesi zorunlu;
+  // 5+ harfli kelimelerde en fazla 1 harf farkı (veya >= %90 benzerlik) kabul edilir.
+  if (targetLen <= 4) {
+    return {
+      matched: bestDist === 0,
+      similarity: bestDist === 0 ? 100 : bestSim,
+      distance: bestDist,
+    };
+  }
+
+  const isMatch = bestDist <= 1 || bestSim >= 90;
+  return {
+    matched: isMatch,
+    similarity: bestSim,
+    distance: bestDist,
+  };
+}
+
+export interface StrictSpeechMatchResult {
+  isMatch: boolean;
+  isExact100: boolean;
+  similarity: number;
+}
+
+/**
+ * Hedef Arapça ibare ile kullanıcının söylediği metni %90-%100 harf uyumuna göre doğrular.
+ * Rastgele sesleri veya farklı kelimeleri ASLA doğru kabul etmez.
+ */
+export function strictArabicSpeechMatch(
+  targetAr: string,
+  spokenTranscript: string
+): StrictSpeechMatchResult {
+  const normTarget = normalizeStrictArabic(targetAr);
+  const rawNormSpoken = normalizeStrictArabic(spokenTranscript);
+  const normSpoken = canonicalizeNumbersForTarget(rawNormSpoken, normTarget);
+
+  if (!normTarget || !normSpoken) {
+    return { isMatch: false, isExact100: false, similarity: 0 };
+  }
+
+  if (normTarget === normSpoken) {
+    return { isMatch: true, isExact100: true, similarity: 100 };
+  }
+
+  const targetWords = normTarget.split(" ").filter(Boolean);
+  const spokenWords = normSpoken.split(" ").filter(Boolean);
+
+  // 1) TEK KELİMELİK HEDEFLER (örn. يَوْم, أُسْبُوع, شَهْر, سَنَة, رَجُل, اِمْرَأَة)
+  if (targetWords.length === 1) {
+    const tWord = targetWords[0];
+    // Kullanıcı tek kelime söylediyse veya birkaç kelime içinde tam hedef kelimeyi söylediyse
+    let bestSingle = isSingleWordStrictMatch(tWord, normSpoken.replace(/\s+/g, ""));
+    for (const sWord of spokenWords) {
+      const candidate = isSingleWordStrictMatch(tWord, sWord);
+      if (candidate.similarity > bestSingle.similarity) {
+        bestSingle = candidate;
+      }
+    }
+    return {
+      isMatch: bestSingle.matched,
+      isExact100: bestSingle.similarity === 100,
+      similarity: bestSingle.similarity,
+    };
+  }
+
+  // 2) ÇOK KELİMELİ İBARE VE CÜMLELER (örn. البِنْتُ تَشْرَبُ, سَبْعَةُ أَيَّامٍ)
+  const fullDist = levenshteinDistance(normTarget, normSpoken);
+  const maxFullLen = Math.max(
+    Array.from(normTarget).length,
+    Array.from(normSpoken).length,
+    1
+  );
+  const fullSimilarity = Math.round(
+    ((maxFullLen - fullDist) / maxFullLen) * 100
+  );
+
+  // Hedef kelimelerin tamamının konuşulan kelimeler içinde karşılığı bulunmalı
+  let matchedWordCount = 0;
+  let wordSimSum = 0;
+  for (const tWord of targetWords) {
+    let bestWordMatch = { matched: false, similarity: 0, distance: 99 };
+    for (const sWord of spokenWords) {
+      const res = isSingleWordStrictMatch(tWord, sWord);
+      if (res.similarity > bestWordMatch.similarity) {
+        bestWordMatch = res;
+      }
+    }
+    if (bestWordMatch.matched) {
+      matchedWordCount++;
+    }
+    wordSimSum += bestWordMatch.similarity;
+  }
+
+  const avgWordSimilarity = Math.round(wordSimSum / targetWords.length);
+  const allTargetWordsPresent = matchedWordCount === targetWords.length;
+  const effectiveSim = Math.max(fullSimilarity, avgWordSimilarity);
+
+  const isPhraseMatch =
+    allTargetWordsPresent && (fullSimilarity >= 85 || avgWordSimilarity >= 90);
+
+  return {
+    isMatch: isPhraseMatch,
+    isExact100:
+      allTargetWordsPresent && (fullSimilarity >= 95 || avgWordSimilarity === 100),
+    similarity: effectiveSim,
+  };
 }
 
 export type VisualInteractionMode =
@@ -228,23 +464,62 @@ export default function VisualRosettaQuiz({
     Array.from({ length: questionCount }, () => "pending")
   );
 
-  // Mod A (listen_speak_matrix) için sıralı kart ve mikrofon durumları
+  // Mod A (listen_speak_matrix) için sıralı kart, 3 deneme sayacı ve mikrofon durumları
   const [matrixStepIndex, setMatrixStepIndex] = useState<number>(0);
   const [matrixCompletedIndices, setMatrixCompletedIndices] = useState<
     number[]
   >([]);
   const [isListeningMic, setIsListeningMic] = useState<boolean>(false);
+  const [isPlayingTargetAudio, setIsPlayingTargetAudio] =
+    useState<boolean>(false);
   const [spokenTranscript, setSpokenTranscript] = useState<string>("");
   const [micStatusMessage, setMicStatusMessage] = useState<string>("");
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [micTimedOut, setMicTimedOut] = useState<boolean>(false);
+  const [isWrongPronunciationState, setIsWrongPronunciationState] =
+    useState<boolean>(false);
 
   const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const micStartDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const micSilenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const autoReplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failedAttemptsRef = useRef<number>(0);
+  const streakRef = useRef<number>(0);
+  const verifiedCardLockRef = useRef<boolean>(false);
 
   const currentQuestion = questions[currentIndex];
 
+  const clearTimers = useCallback(() => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    if (micStartDelayTimerRef.current) {
+      clearTimeout(micStartDelayTimerRef.current);
+      micStartDelayTimerRef.current = null;
+    }
+    if (micSilenceTimeoutRef.current) {
+      clearTimeout(micSilenceTimeoutRef.current);
+      micSilenceTimeoutRef.current = null;
+    }
+    if (autoReplayTimerRef.current) {
+      clearTimeout(autoReplayTimerRef.current);
+      autoReplayTimerRef.current = null;
+    }
+  }, []);
+
   const stopSpeechRecognition = useCallback(() => {
+    if (micSilenceTimeoutRef.current) {
+      clearTimeout(micSilenceTimeoutRef.current);
+      micSilenceTimeoutRef.current = null;
+    }
     if (recognitionRef.current) {
       try {
         recognitionRef.current.onresult = null;
@@ -257,13 +532,6 @@ export default function VisualRosettaQuiz({
       recognitionRef.current = null;
     }
     setIsListeningMic(false);
-  }, []);
-
-  const clearTimers = useCallback(() => {
-    if (autoAdvanceTimerRef.current) {
-      clearTimeout(autoAdvanceTimerRef.current);
-      autoAdvanceTimerRef.current = null;
-    }
   }, []);
 
   const formatAr = useCallback(
@@ -293,9 +561,17 @@ export default function VisualRosettaQuiz({
     []
   );
 
+  /**
+   * 1. Mikrofon Yaşam Döngüsü ve Ses Çakışmasını Önleme:
+   * Hedef Arapça ses dosyası çalarken mikrofon (`SpeechRecognition`) kesinlikle kapatılır.
+   */
   const playItemAudio = useCallback(
     (item: ResimliKelime, mode?: ConcreteVisualMode, onEnded?: () => void) => {
       if (isPaused) return;
+      // Hedef ses çalarken mikrofonu kesinlikle kapalı tut
+      stopSpeechRecognition();
+      setIsPlayingTargetAudio(true);
+
       const fallbackText =
         mode === "speech_bubble_match" && item.ornek_ar
           ? item.ornek_ar
@@ -310,13 +586,15 @@ export default function VisualRosettaQuiz({
         rate: speechRate,
       })
         .then(() => {
+          setIsPlayingTargetAudio(false);
           if (onEnded) onEnded();
         })
         .catch(() => {
+          setIsPlayingTargetAudio(false);
           if (onEnded) onEnded();
         });
     },
-    [isPaused, preferredVoiceGender, speechRate]
+    [isPaused, preferredVoiceGender, speechRate, stopSpeechRecognition]
   );
 
   const advanceToNextQuestion = useCallback(
@@ -324,13 +602,11 @@ export default function VisualRosettaQuiz({
       stopSpeechRecognition();
       clearTimers();
 
-      setStepStatuses((prev) => {
-        const next = [...prev];
-        if (currentIndex < next.length) {
-          next[currentIndex] = statusForCurrent;
-        }
-        return next;
-      });
+      const nextStatuses = [...stepStatuses];
+      if (currentIndex < nextStatuses.length) {
+        nextStatuses[currentIndex] = statusForCurrent;
+      }
+      setStepStatuses(nextStatuses);
 
       if (currentIndex + 1 < questions.length) {
         const nextIndex = currentIndex + 1;
@@ -343,45 +619,96 @@ export default function VisualRosettaQuiz({
         setMatrixCompletedIndices([]);
         setSpokenTranscript("");
         setMicStatusMessage("");
+        setFailedAttempts(0);
+        failedAttemptsRef.current = 0;
+        setMicTimedOut(false);
+        setIsWrongPronunciationState(false);
+        verifiedCardLockRef.current = false;
       } else {
-        playFanfare();
+        const correctTotal = nextStatuses.filter((s) => s === "correct").length;
+        const pct =
+          questions.length > 0
+            ? Math.round((correctTotal / questions.length) * 100)
+            : 100;
+        playFanfare(pct);
         setIsCompleted(true);
       }
     },
-    [currentIndex, questions.length, stopSpeechRecognition, clearTimers]
+    [
+      currentIndex,
+      questions.length,
+      stepStatuses,
+      stopSpeechRecognition,
+      clearTimers,
+    ]
   );
 
-  // Mod A (listen_speak_matrix): Bir kartın telaffuzu onaylandığında çağrılır
+  /**
+   * Mod A (`listen_speak_matrix`): Bir kartın telaffuzu doğrulandığında veya
+   * 3 başarısız deneme sonrası "Sonrakine Geç ⏭" ile geçildiğinde çağrılır.
+   */
   const handleMatrixCardVerified = useCallback(
-    (cardIdx: number) => {
-      if (!currentQuestion) return;
+    (cardIdx: number, wasSkippedAfterFailed = false) => {
+      if (!currentQuestion || verifiedCardLockRef.current) return;
+      verifiedCardLockRef.current = true;
       stopSpeechRecognition();
       clearTimers();
-      playSuccess();
 
+      if (wasSkippedAfterFailed) {
+        playClick();
+        setHadWrongOnCurrent(true);
+        setMicStatusMessage("Sonraki karta geçiliyor...");
+      } else {
+        streakRef.current += 1;
+        playCorrect({
+          isSpeech: true,
+          streak: streakRef.current,
+          gender: preferredVoiceGender,
+        });
+        setMicStatusMessage("Harika telaffuz! ✓");
+      }
+
+      setIsWrongPronunciationState(false);
+      setMicTimedOut(false);
       setMatrixCompletedIndices((prev) =>
         prev.includes(cardIdx) ? prev : [...prev, cardIdx]
       );
-      setMicStatusMessage("Harika telaffuz! ✓");
 
       const totalCards = currentQuestion.options.length;
       if (cardIdx + 1 < totalCards) {
         autoAdvanceTimerRef.current = setTimeout(() => {
+          verifiedCardLockRef.current = false;
           setMatrixStepIndex(cardIdx + 1);
           setSpokenTranscript("");
           setMicStatusMessage("");
+          setFailedAttempts(0);
+          failedAttemptsRef.current = 0;
+          setMicTimedOut(false);
+          setIsWrongPronunciationState(false);
         }, 650);
       } else {
         // Tüm 4 kart tamamlandı
-        recordItemAttempt(currentQuestion.target.id, "word", true, false, 100);
-        setScore((s) => s + 1);
+        const allClean = !hadWrongOnCurrent && !wasSkippedAfterFailed;
+        recordItemAttempt(
+          currentQuestion.target.id,
+          "word",
+          allClean,
+          false,
+          allClean ? 100 : 70
+        );
+        if (allClean) {
+          setScore((s) => s + 1);
+        }
         autoAdvanceTimerRef.current = setTimeout(() => {
-          advanceToNextQuestion("correct");
+          verifiedCardLockRef.current = false;
+          advanceToNextQuestion(allClean ? "correct" : "wrong");
         }, 750);
       }
     },
     [
       currentQuestion,
+      hadWrongOnCurrent,
+      preferredVoiceGender,
       stopSpeechRecognition,
       clearTimers,
       recordItemAttempt,
@@ -389,11 +716,19 @@ export default function VisualRosettaQuiz({
     ]
   );
 
-  // Mod A: WebSpeech STT başlatıcı
+  /**
+   * Mod A: Sıkı Harf Uyumlu (`strictArabicSpeechMatch`) ve 3 Deneme Döngülü WebSpeech STT Başlatıcı
+   */
   const startMatrixListening = useCallback(
-    (targetItem: ResimliKelime, cardIdx: number) => {
-      if (isPaused || micFreeMode) return;
+    function startMatrixListeningImpl(
+      targetItem: ResimliKelime,
+      cardIdx: number
+    ) {
+      if (isPaused || micFreeMode || verifiedCardLockRef.current) return;
+
+      // Önceki SpeechRecognition nesnesini güvenli şekilde temizle (abort)
       stopSpeechRecognition();
+      setMicTimedOut(false);
 
       const win =
         typeof window !== "undefined"
@@ -406,6 +741,7 @@ export default function VisualRosettaQuiz({
         : undefined;
 
       if (!SpeechRecCtor) {
+        setMicTimedOut(true);
         setMicStatusMessage(
           "Tarayıcı mikrofon desteklemiyor — Onaylamak için karta dokunun"
         );
@@ -419,11 +755,40 @@ export default function VisualRosettaQuiz({
         rec.interimResults = true;
         rec.maxAlternatives = 3;
 
+        let resolvedAttempt = false;
+        let receivedAnySpeech = false;
+
+        const resetSilenceWatchdog = () => {
+          if (micSilenceTimeoutRef.current) {
+            clearTimeout(micSilenceTimeoutRef.current);
+          }
+          micSilenceTimeoutRef.current = setTimeout(() => {
+            if (!resolvedAttempt && recognitionRef.current === rec) {
+              resolvedAttempt = true;
+              try {
+                rec.abort();
+              } catch {
+                // ignore
+              }
+              recognitionRef.current = null;
+              setIsListeningMic(false);
+              setMicTimedOut(true);
+              setMicStatusMessage(
+                "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
+              );
+            }
+          }, 5000);
+        };
+
+        resetSilenceWatchdog();
+
         rec.onresult = (evt: unknown) => {
+          if (resolvedAttempt || verifiedCardLockRef.current) return;
           const event = evt as {
             results?: {
               [index: number]: {
                 isFinal?: boolean;
+                length?: number;
                 [altIndex: number]: { transcript?: string };
               };
               length: number;
@@ -431,64 +796,207 @@ export default function VisualRosettaQuiz({
           };
           if (!event.results || event.results.length === 0) return;
           const res = event.results[event.results.length - 1];
-          const transcript = (res?.[0]?.transcript || "").trim();
-          if (transcript) {
-            setSpokenTranscript(transcript);
-            const simScore = evaluateArabicSimilarity(
-              targetItem.arapca,
-              transcript
-            );
-            if (simScore >= 45 || res.isFinal) {
-              if (simScore >= 35 || transcript.length >= 2) {
-                handleMatrixCardVerified(cardIdx);
-              } else if (res.isFinal) {
-                setMicStatusMessage(
-                  `Tekrar deneyin veya "Geç ⏭" butonuna dokunun`
-                );
-              }
+          if (!res) return;
+
+          const altCount = typeof res.length === "number" ? res.length : 1;
+          const alternatives: string[] = [];
+          for (let i = 0; i < altCount; i++) {
+            const t = (res[i]?.transcript || "").trim();
+            if (t) alternatives.push(t);
+          }
+
+          const primaryTranscript = alternatives[0] || "";
+          if (!primaryTranscript) return;
+
+          receivedAnySpeech = true;
+          resetSilenceWatchdog();
+          setSpokenTranscript(primaryTranscript);
+
+          // Tüm alternatifler içinde en yüksek harf uyumunu kontrol et
+          let bestMatch: StrictSpeechMatchResult = {
+            isMatch: false,
+            isExact100: false,
+            similarity: 0,
+          };
+          let matchedTranscript = primaryTranscript;
+
+          for (const alt of alternatives) {
+            const evalRes = strictArabicSpeechMatch(targetItem.arapca, alt);
+            if (
+              evalRes.isMatch &&
+              (!bestMatch.isMatch || evalRes.similarity > bestMatch.similarity)
+            ) {
+              bestMatch = evalRes;
+              matchedTranscript = alt;
+            } else if (
+              !bestMatch.isMatch &&
+              evalRes.similarity > bestMatch.similarity
+            ) {
+              bestMatch = evalRes;
+              matchedTranscript = alt;
             }
+          }
+
+          // Interim sonuçlarda yalnızca %100 tam eşleşme sağlandığında anında onayla;
+          // aksi halde konuşmanın bitmesini (res.isFinal) bekle!
+          if (!res.isFinal) {
+            if (bestMatch.isMatch && bestMatch.isExact100) {
+              resolvedAttempt = true;
+              setSpokenTranscript(matchedTranscript);
+              handleMatrixCardVerified(cardIdx, false);
+            }
+            return;
+          }
+
+          // Konuşma tamamlandı (isFinal === true)
+          resolvedAttempt = true;
+          if (micSilenceTimeoutRef.current) {
+            clearTimeout(micSilenceTimeoutRef.current);
+            micSilenceTimeoutRef.current = null;
+          }
+
+          if (bestMatch.isMatch) {
+            setSpokenTranscript(matchedTranscript);
+            handleMatrixCardVerified(cardIdx, false);
+            return;
+          }
+
+          // YANLIŞ TELAFFUZ:
+          // 1) Deneme sayacını artır (1/3, 2/3, 3/3) ve yanlış ses efektini çal
+          stopSpeechRecognition();
+          streakRef.current = 0;
+          const nextAttempts = failedAttemptsRef.current + 1;
+          failedAttemptsRef.current = nextAttempts;
+          setFailedAttempts(nextAttempts);
+          setIsWrongPronunciationState(true);
+          setMicTimedOut(false);
+          playWrong();
+
+          if (nextAttempts < 3) {
+            setMicStatusMessage(
+              `Algılanan: "${primaryTranscript}" • Tekrar dinleyin (Deneme ${nextAttempts}/3)`
+            );
+            // 2) 600ms sonra doğru Arapça sesi OTOMATİK OLARAK tekrar çal
+            if (autoReplayTimerRef.current) {
+              clearTimeout(autoReplayTimerRef.current);
+            }
+            autoReplayTimerRef.current = setTimeout(() => {
+              if (isPaused || verifiedCardLockRef.current) return;
+              playItemAudio(targetItem, "listen_speak_matrix", () => {
+                // 3) Doğru sesin çalması bittikten 300ms sonra mikrofonu otomatik yeniden aç
+                if (micStartDelayTimerRef.current) {
+                  clearTimeout(micStartDelayTimerRef.current);
+                }
+                micStartDelayTimerRef.current = setTimeout(() => {
+                  if (!isPaused && !micFreeMode && !verifiedCardLockRef.current) {
+                    startMatrixListeningImpl(targetItem, cardIdx);
+                  }
+                }, 300);
+              });
+            }, 600);
+          } else {
+            // 3 Başarısız Deneme Sonrası: Doğru sesi bir kez daha dinlet ve "Sonrakine Geç ⏭" + "🎙️ Tekrar Dene" butonlarını aktif et
+            setMicStatusMessage(
+              `Algılanan: "${primaryTranscript}" • 3 deneme tamamlandı (Deneme 3/3)`
+            );
+            if (autoReplayTimerRef.current) {
+              clearTimeout(autoReplayTimerRef.current);
+            }
+            autoReplayTimerRef.current = setTimeout(() => {
+              if (isPaused || verifiedCardLockRef.current) return;
+              playItemAudio(targetItem, "listen_speak_matrix");
+            }, 600);
           }
         };
 
         rec.onerror = () => {
+          if (resolvedAttempt) return;
+          resolvedAttempt = true;
+          if (micSilenceTimeoutRef.current) {
+            clearTimeout(micSilenceTimeoutRef.current);
+            micSilenceTimeoutRef.current = null;
+          }
           setIsListeningMic(false);
+          setMicTimedOut(true);
           setMicStatusMessage(
-            "Ses algılanamadı — Tekrar konuşun veya Geç'e basın"
+            "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
           );
         };
 
         rec.onend = () => {
+          if (micSilenceTimeoutRef.current) {
+            clearTimeout(micSilenceTimeoutRef.current);
+            micSilenceTimeoutRef.current = null;
+          }
           setIsListeningMic(false);
+          if (!resolvedAttempt && !receivedAnySpeech) {
+            resolvedAttempt = true;
+            setMicTimedOut(true);
+            setMicStatusMessage(
+              "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
+            );
+          }
         };
 
         recognitionRef.current = rec;
         setIsListeningMic(true);
-        setMicStatusMessage("Şimdi yüksek sesle tekrar edin...");
+        setIsWrongPronunciationState(false);
+        const attemptLabel =
+          failedAttemptsRef.current > 0
+            ? ` (Deneme ${Math.min(3, failedAttemptsRef.current + 1)}/3)`
+            : "";
+        setMicStatusMessage(
+          `🎙️ Dinleniyor... Şimdi okuyun${attemptLabel}`
+        );
         rec.start();
       } catch {
         setIsListeningMic(false);
-        setMicStatusMessage("Mikrofon başlatılamadı — Geç butonunu kullanın");
+        setMicTimedOut(true);
+        setMicStatusMessage(
+          "🎙️ Ses duyulmadı, tekrar konuşmak için dokunun"
+        );
       }
     },
-    [isPaused, micFreeMode, stopSpeechRecognition, handleMatrixCardVerified]
+    [
+      isPaused,
+      micFreeMode,
+      stopSpeechRecognition,
+      handleMatrixCardVerified,
+      playItemAudio,
+    ]
   );
 
-  // Soru veya Matrix adımı değiştiğinde otomatik ses çalma
+  // Soru veya Matrix adımı değiştiğinde önce hedef sesi çal, ses bittikten 300ms sonra mikrofonu başlat
   useEffect(() => {
     if (!currentQuestion || isCompleted || isPaused) return;
 
     if (currentQuestion.concreteMode === "listen_speak_matrix") {
       const activeCard =
         currentQuestion.options[matrixStepIndex] || currentQuestion.target;
+      stopSpeechRecognition();
+
       const timer = setTimeout(() => {
         playItemAudio(activeCard, "listen_speak_matrix", () => {
-          if (!micFreeMode && !isPaused) {
-            startMatrixListening(activeCard, matrixStepIndex);
+          if (!micFreeMode && !isPaused && !verifiedCardLockRef.current) {
+            if (micStartDelayTimerRef.current) {
+              clearTimeout(micStartDelayTimerRef.current);
+            }
+            // Hedef sesin çalması tamamen bittikten 300ms sonra mikrofonu otomatik başlat
+            micStartDelayTimerRef.current = setTimeout(() => {
+              if (!micFreeMode && !isPaused && !verifiedCardLockRef.current) {
+                startMatrixListening(activeCard, matrixStepIndex);
+              }
+            }, 300);
           }
         });
       }, 220);
+
       return () => {
         clearTimeout(timer);
+        if (micStartDelayTimerRef.current) {
+          clearTimeout(micStartDelayTimerRef.current);
+          micStartDelayTimerRef.current = null;
+        }
       };
     } else {
       const timer = setTimeout(() => {
@@ -507,6 +1015,7 @@ export default function VisualRosettaQuiz({
     micFreeMode,
     playItemAudio,
     startMatrixListening,
+    stopSpeechRecognition,
   ]);
 
   useEffect(() => {
@@ -519,7 +1028,7 @@ export default function VisualRosettaQuiz({
 
   const restartQuiz = useCallback(
     (customPool?: ResimliKelime[], customMode?: VisualInteractionMode) => {
-      playClick();
+      playStart();
       stopAllAudio();
       stopSpeechRecognition();
       clearTimers();
@@ -542,6 +1051,12 @@ export default function VisualRosettaQuiz({
       setMatrixCompletedIndices([]);
       setSpokenTranscript("");
       setMicStatusMessage("");
+      setFailedAttempts(0);
+      failedAttemptsRef.current = 0;
+      setMicTimedOut(false);
+      setIsWrongPronunciationState(false);
+      verifiedCardLockRef.current = false;
+      streakRef.current = 0;
       setStepStatuses(
         Array.from({ length: built.length }, () => "pending")
       );
@@ -558,15 +1073,31 @@ export default function VisualRosettaQuiz({
   const handleSelectOption = (option: ResimliKelime) => {
     if (!currentQuestion || isPaused) return;
 
-    // Mod A'da karta tıklanınca o kartın sesini çal veya mikrofonsuz moddaysa onayla
+    // Mod A'da karta tıklanınca o kartın sesini çal, ses bitince 300ms sonra mikrofonu aç (veya mikrofonsuz moddaysa onayla)
     if (currentQuestion.concreteMode === "listen_speak_matrix") {
       const clickedIdx = currentQuestion.options.findIndex(
         (o) => o.id === option.id
       );
-      playItemAudio(option, "listen_speak_matrix");
       if (micFreeMode && clickedIdx === matrixStepIndex) {
-        handleMatrixCardVerified(clickedIdx);
+        playItemAudio(option, "listen_speak_matrix");
+        handleMatrixCardVerified(clickedIdx, false);
+        return;
       }
+      playItemAudio(option, "listen_speak_matrix", () => {
+        if (
+          !micFreeMode &&
+          !isPaused &&
+          clickedIdx === matrixStepIndex &&
+          !verifiedCardLockRef.current
+        ) {
+          if (micStartDelayTimerRef.current) {
+            clearTimeout(micStartDelayTimerRef.current);
+          }
+          micStartDelayTimerRef.current = setTimeout(() => {
+            startMatrixListening(option, clickedIdx);
+          }, 300);
+        }
+      });
       return;
     }
 
@@ -577,7 +1108,11 @@ export default function VisualRosettaQuiz({
 
     if (isCorrect) {
       setSelectedOptionId(option.id);
-      playSuccess();
+      streakRef.current += 1;
+      playCorrect({
+        streak: streakRef.current,
+        gender: preferredVoiceGender,
+      });
       playItemAudio(option, currentQuestion.concreteMode);
 
       const firstTry = !hadWrongOnCurrent && !revealHint;
@@ -605,7 +1140,8 @@ export default function VisualRosettaQuiz({
         advanceToNextQuestion(hadWrongOnCurrent ? "wrong" : "correct");
       }, 950);
     } else {
-      playError();
+      streakRef.current = 0;
+      playWrong();
       setHadWrongOnCurrent(true);
       setWrongAttemptIds((prev) => [...prev, option.id]);
       addMistake(currentQuestion.target.id);
@@ -768,7 +1304,6 @@ export default function VisualRosettaQuiz({
                 key={tab.id}
                 type="button"
                 onClick={() => {
-                  playClick();
                   setInteractionMode(tab.id);
                   restartQuiz(activePool, tab.id);
                 }}
@@ -856,21 +1391,30 @@ export default function VisualRosettaQuiz({
       {/* 2. HEDEF İBARE / AKTİF KONUŞMA BANDI (shrink-0) */}
       {activeConcreteMode === "listen_speak_matrix" ? (
         /* MOD A: Koyu Lacivert/Antrasit Aktif Konuşma Çubuğu (bg-[#1E293B] text-white) */
-        <div className="shrink-0 bg-[#1E293B] text-white rounded-xl px-3 py-2 border-2 border-slate-700 flex items-center justify-between gap-2 shadow-sm">
-          <div className="flex items-center gap-2 min-w-0">
+        <div
+          className={`shrink-0 text-white rounded-xl px-3 py-2 border-2 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shadow-sm transition-colors ${
+            isWrongPronunciationState
+              ? "bg-amber-950/95 border-amber-500/80"
+              : "bg-[#1E293B] border-slate-700"
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                clearTimers();
                 playItemAudio(
                   activeMatrixCard,
                   "listen_speak_matrix",
                   () => {
                     if (!micFreeMode && !isPaused) {
-                      startMatrixListening(activeMatrixCard, matrixStepIndex);
+                      micStartDelayTimerRef.current = setTimeout(() => {
+                        startMatrixListening(activeMatrixCard, matrixStepIndex);
+                      }, 300);
                     }
                   }
-                )
-              }
+                );
+              }}
               className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
               title="Kartın Sesini Dinle"
             >
@@ -881,30 +1425,42 @@ export default function VisualRosettaQuiz({
               type="button"
               onClick={() => {
                 if (micFreeMode) {
-                  handleMatrixCardVerified(matrixStepIndex);
+                  handleMatrixCardVerified(matrixStepIndex, false);
                 } else {
+                  clearTimers();
+                  stopAllAudio();
                   startMatrixListening(activeMatrixCard, matrixStepIndex);
                 }
               }}
+              disabled={isPlayingTargetAudio}
               className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 cursor-pointer transition-all ${
                 isListeningMic
                   ? "bg-emerald-500 text-white ring-4 ring-emerald-400/40 animate-pulse"
+                  : isPlayingTargetAudio
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed"
                   : "bg-slate-700 hover:bg-slate-600 text-emerald-300"
               }`}
               title={
                 micFreeMode
                   ? "Mikrofonsuz Onayla"
+                  : isPlayingTargetAudio
+                  ? "Önce örnek sesi dinleyin..."
                   : "Mikrofonla Telaffuz Et"
               }
             >
               <Mic size={18} />
             </button>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-extrabold">
                   KART {matrixStepIndex + 1} / {currentQuestion.options.length}
                 </span>
+                {failedAttempts > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/25 border border-amber-400/60 text-amber-200 text-[10px] font-extrabold">
+                    Deneme {Math.min(3, failedAttempts)}/3
+                  </span>
+                )}
                 <span
                   lang="ar"
                   dir="rtl"
@@ -916,24 +1472,76 @@ export default function VisualRosettaQuiz({
                   ({activeMatrixCard.turkce})
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 truncate mt-0.5">
+              <p
+                className={`text-[11px] truncate mt-0.5 font-semibold ${
+                  isWrongPronunciationState
+                    ? "text-amber-200"
+                    : isListeningMic
+                    ? "text-emerald-300"
+                    : "text-slate-300"
+                }`}
+              >
                 {micFreeMode
                   ? "Mikrofonsuz Mod aktif: Onaylamak için aktif karta veya 'Onayla ✓' butonuna dokunun."
-                  : spokenTranscript
-                  ? `Algılanan: "${spokenTranscript}" — ${micStatusMessage}`
+                  : isPlayingTargetAudio
+                  ? "🔊 Örnek telaffuz çalıyor... Ses bitince mikrofon otomatik açılacak."
                   : micStatusMessage ||
-                    "Sesi dinleyin ve mikrofon simgesi yanınca yüksek sesle tekrar edin."}
+                    (spokenTranscript
+                      ? `Algılanan: "${spokenTranscript}"`
+                      : "🎙️ Dinleniyor... Şimdi okuyun")}
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleMatrixCardVerified(matrixStepIndex)}
-            className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer"
-          >
-            <span>{micFreeMode ? "Onayla ✓" : "Geç ⏭"}</span>
-          </button>
+          {/* Sağ Aksiyon Butonları: Mikrofonsuz Onay / Ses Duyulmadı Tekrar Konuş / 3 Deneme Sonrası Tekrar Dene & Sonrakine Geç */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            {micFreeMode ? (
+              <button
+                type="button"
+                onClick={() => handleMatrixCardVerified(matrixStepIndex, false)}
+                className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer"
+              >
+                <span>Onayla ✓</span>
+              </button>
+            ) : failedAttempts >= 3 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    clearTimers();
+                    stopAllAudio();
+                    startMatrixListening(activeMatrixCard, matrixStepIndex);
+                  }}
+                  className="h-8 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                >
+                  <span>🎙️ Tekrar Dene</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleMatrixCardVerified(matrixStepIndex, true)
+                  }
+                  className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                >
+                  <span>Sonrakine Geç ⏭</span>
+                </button>
+              </>
+            ) : micTimedOut && !isListeningMic && !isPlayingTargetAudio ? (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  clearTimers();
+                  stopAllAudio();
+                  startMatrixListening(activeMatrixCard, matrixStepIndex);
+                }}
+                className="h-8 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer animate-pulse"
+              >
+                <span>🎙️ Ses duyulmadı, tekrar konuşmak için dokunun</span>
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : activeConcreteMode === "match_header_to_card" ? (
         /* MOD B: Üst-Ortada Sesli Hedef İbare Kartı (🧩 İbareyi Görsele Yerleştir) */
@@ -1129,8 +1737,9 @@ export default function VisualRosettaQuiz({
               cardStyle =
                 "bg-emerald-50/90 dark:bg-emerald-950/40 border-[#087F5B] ring-3 ring-[#087F5B]/40";
             } else if (isMatrixActive) {
-              cardStyle =
-                "bg-sky-50/90 dark:bg-sky-950/40 border-sky-500 ring-3 ring-sky-400/50";
+              cardStyle = isWrongPronunciationState
+                ? "bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 ring-3 ring-amber-400/50"
+                : "bg-sky-50/90 dark:bg-sky-950/40 border-sky-500 ring-3 ring-sky-400/50";
             } else if (isWrongAttempt) {
               cardStyle =
                 "bg-rose-50/80 dark:bg-rose-950/30 border-rose-400 opacity-65";
@@ -1170,7 +1779,18 @@ export default function VisualRosettaQuiz({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        playItemAudio(option, "listen_speak_matrix");
+                        playItemAudio(option, "listen_speak_matrix", () => {
+                          if (
+                            !micFreeMode &&
+                            !isPaused &&
+                            isMatrixActive &&
+                            !verifiedCardLockRef.current
+                          ) {
+                            micStartDelayTimerRef.current = setTimeout(() => {
+                              startMatrixListening(option, idx);
+                            }, 300);
+                          }
+                        });
                       }}
                       className="w-6 h-6 rounded-lg bg-black/15 hover:bg-black/25 flex items-center justify-center shrink-0 cursor-pointer"
                       title="Dinle"
@@ -1340,6 +1960,7 @@ export default function VisualRosettaQuiz({
                 if (next) {
                   stopAllAudio();
                   stopSpeechRecognition();
+                  clearTimers();
                 }
                 return next;
               });
@@ -1363,7 +1984,10 @@ export default function VisualRosettaQuiz({
               playClick();
               setMicFreeMode((prev) => {
                 const next = !prev;
-                if (next) stopSpeechRecognition();
+                if (next) {
+                  stopSpeechRecognition();
+                  clearTimers();
+                }
                 return next;
               });
             }}

@@ -27,8 +27,8 @@ import { useUserStore } from "@/store/userStore";
 import { formatArabicText } from "@/lib/arabicTextUtils";
 import {
   playClick,
-  playSuccess,
-  playError,
+  playCorrect,
+  playWrong,
   playFanfare,
 } from "@/lib/sfxManager";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
@@ -308,16 +308,21 @@ export default function SentenceBuilder({
     return () => clearInterval(id);
   }, [timeLeft, isFinished, isTimeUp]);
 
+  const streakRef = useRef<number>(0);
+
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       addStudyMinutes(3);
-      playFanfare();
+      const cCount = Object.values(userAnswers).filter((a) => a.isCorrect).length;
+      const pctScore =
+        questions.length > 0 ? Math.round((cCount / questions.length) * 100) : 100;
+      playFanfare(pctScore);
     } else if (isTimeUp && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
-      playError();
+      playWrong();
     }
-  }, [isFinished, isTimeUp, addStudyMinutes]);
+  }, [isFinished, isTimeUp, addStudyMinutes, userAnswers, questions.length]);
 
   useEffect(() => {
     return () => {
@@ -383,13 +388,15 @@ export default function SentenceBuilder({
 
     if (isRight) {
       setEvalState("correct");
-      playSuccess();
+      streakRef.current += 1;
+      playCorrect({ streak: streakRef.current });
       setTimeout(() => {
         playCurrentSentenceAudio(currentQ);
       }, 280);
     } else {
+      streakRef.current = 0;
       setEvalState("wrong");
-      playError();
+      playWrong();
     }
   };
 

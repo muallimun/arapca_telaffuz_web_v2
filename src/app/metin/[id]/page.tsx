@@ -1368,6 +1368,10 @@ export default function ReadingTextDetailPage({
         dialogueTitleAr={getDisplayText(readingText.baslik_ar)}
         levelLabel={readingText.seviye}
         totalLines={readingText.satirlar.length}
+        onOpenCertificate={() => {
+          setHwConfig((prev) => ({ ...prev, active: true }));
+          setIsHwReportModalOpen(true);
+        }}
       />
 
       {/* ÖĞRENCİ ÖDEV TAMAMLAMA VE DOĞRULAMA RAPORU MODALI */}
@@ -1531,7 +1535,7 @@ export default function ReadingTextDetailPage({
         </div>
       )}
 
-      {/* ÖĞRENCİ İÇİN "ÖDEV TAKİP ÇUBUĞU" (?hw=1 parametresiyle gelindiğinde en üstte görünür) */}
+      {/* ÖĞRENCİ İÇİN "ÖDEV TAKİP ÇUBUĞU" (?hw=1 parametresiyle gelindiğinde veya Ödev menüsünden açıldığında en üstte görünür) */}
       {hwConfig.active && (
         <section className="rounded-2xl bg-gradient-to-r from-[#F3F0FF] via-[#FDFBF7] to-emerald-50/80 dark:from-indigo-950/70 dark:via-slate-900 dark:to-emerald-950/50 border-2 border-[#6741D9] border-b-4 p-3 sm:p-4 shadow-md space-y-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
@@ -1539,7 +1543,7 @@ export default function ReadingTextDetailPage({
               <div className="flex items-center gap-2 min-w-0">
                 <span className="px-2.5 py-1 rounded-xl bg-[#6741D9] text-white text-xs font-black flex items-center gap-1.5 shrink-0">
                   <GraduationCap size={14} className="shrink-0" />
-                  <span>Ödev Modu</span>
+                  <span>🎓 Öğretmen Ödev Paketi</span>
                 </span>
                 <h2 className="text-xs sm:text-sm font-black text-[var(--foreground)] truncate">
                   {hwConfig.title || `${readingText.baslik_tr} Sınıf Ödevi`}
@@ -1553,7 +1557,7 @@ export default function ReadingTextDetailPage({
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 w-full sm:w-auto">
               <span className="hidden sm:inline-flex px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#6741D9]/40 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300 tabular-nums shrink-0">
-                Tamamlanma: {hwCompletedTasks}/{hwTotalTasks} (%
+                İlerleme: {hwListenedLines.length}/{readingText.satirlar.length} Cümle • Görev: {hwCompletedTasks}/{hwTotalTasks} (%
                 {hwCompletionRatioPct})
               </span>
               <button
@@ -1562,10 +1566,10 @@ export default function ReadingTextDetailPage({
                   playClick();
                   setIsHwReportModalOpen(true);
                 }}
-                className="w-full sm:w-auto justify-center text-xs sm:text-sm px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold border-b-2 border-emerald-800 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="w-full sm:w-auto justify-center text-xs sm:text-sm px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold border-b-2 border-emerald-800 flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <CheckCircle2 size={14} className="shrink-0" />
-                <span>Ödevi Tamamla ve Rapor Oluştur</span>
+                <span>🏅 Ödevi Tamamla &amp; Ödev Karnesi Al</span>
               </button>
             </div>
           </div>

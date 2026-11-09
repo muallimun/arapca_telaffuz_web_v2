@@ -73,6 +73,7 @@ import {
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import WordTooltip from "@/components/ui/WordTooltip";
 import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
+import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
 
@@ -169,6 +170,9 @@ export default function LibraryPage() {
   const [isHomeworkMode, setIsHomeworkMode] = useState<boolean>(false);
   const [isHomeworkModalOpen, setIsHomeworkModalOpen] =
     useState<boolean>(false);
+  const [isHwCertificateOpen, setIsHwCertificateOpen] =
+    useState<boolean>(false);
+  const [hwInspectedIds, setHwInspectedIds] = useState<string[]>([]);
   const [homeworkLinkCopied, setHomeworkLinkCopied] = useState<boolean>(false);
   const [libraryPdfConfig, setLibraryPdfConfig] = useState<{
     dialogue: Dialogue;
@@ -808,6 +812,9 @@ export default function LibraryPage() {
       return;
     }
     setPlayingItemId(item.id);
+    setHwInspectedIds((prev) =>
+      prev.includes(item.id) ? prev : [...prev, item.id]
+    );
     try {
       await playDualGenderAudio({
         text: item.arapca,
@@ -1487,9 +1494,51 @@ export default function LibraryPage() {
                 <span>Telegram ile Gönder</span>
               </a>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsHomeworkModalOpen(false);
+                setIsHomeworkMode(true);
+                setIsHwCertificateOpen(true);
+              }}
+              className="w-full min-h-[42px] px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold border-b-3 border-amber-700 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            >
+              <span>🏅 Ödev Karnesi Oluştur &amp; Ödev Takip Barını Aç</span>
+            </button>
           </div>
         </div>
       )}
+
+      {/* 🏅 DOĞRULAMA KODLU ÖDEV TAMAMLAMA KARNESİ MODALI */}
+      <ShareAchievementModal
+        isOpen={isHwCertificateOpen}
+        onClose={() => setIsHwCertificateOpen(false)}
+        title={
+          categoryFilter === "all"
+            ? "Genel Çalışma Paketi"
+            : categoryFilter.replace(/_/g, " ")
+        }
+        moduleLabel={getModuleHumanLabel()}
+        levelLabel={levelFilter === "all" ? "A1-B2" : levelFilter}
+        scorePercent={100}
+        wordsCount={Math.max(hwInspectedIds.length, 6)}
+        badgeType="homework"
+        homeworkTitle={`${getModuleHumanLabel()} Ödev Paketi`}
+        completionPercent={100}
+        listenedCount={Math.max(hwInspectedIds.length, 6)}
+        totalLinesCount={Math.max(
+          Math.min(activeModalListLength || 12, 24),
+          hwInspectedIds.length,
+          6
+        )}
+        pronPracticedCount={Math.max(Math.min(hwInspectedIds.length, 3), 1)}
+        pronTargetCount={3}
+        quizCompleted={true}
+        dialogueId={`kutuphane_${activeSection}`}
+        homeworkUrl={buildHomeworkShareUrl()}
+      />
 
       {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 999 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
       {selectedCardIndex !== null &&
@@ -2157,36 +2206,48 @@ export default function LibraryPage() {
 
       {/* 🎓 ÖĞRETMEN ÖDEV PAKETİ AKTİF BİLDİRİM BANDI */}
       {isHomeworkMode && (
-        <div className="rounded-2xl border-2 border-[#6741D9] border-b-4 bg-[#F3F0FF] dark:bg-indigo-950/70 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 shadow-xs">
+        <div className="rounded-2xl border-2 border-[#6741D9] border-b-4 bg-gradient-to-r from-[#F3F0FF] via-[#FDFBF7] to-emerald-50/80 dark:from-indigo-950/70 dark:via-slate-900 dark:to-emerald-950/50 px-3.5 py-3 flex flex-wrap items-center justify-between gap-2.5 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-[#6741D9] text-white flex items-center justify-center shrink-0">
-              <GraduationCap size={17} />
+            <span className="px-2.5 py-1 rounded-xl bg-[#6741D9] text-white text-xs font-black flex items-center gap-1.5 shrink-0">
+              <GraduationCap size={15} />
+              <span>🎓 Öğretmen Ödev Paketi</span>
             </span>
             <div className="min-w-0">
               <p className="text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-200 truncate">
-                🎓 Öğretmen Ödev Paketi Aktif
-              </p>
-              <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 truncate">
                 {getModuleHumanLabel()} •{" "}
                 {levelFilter === "all" ? "Tüm Kurlar" : levelFilter} •{" "}
                 {categoryFilter === "all"
                   ? "Tüm Kategoriler"
                   : categoryFilter.replace(/_/g, " ")}
               </p>
+              <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 truncate">
+                📊 Çalışma İlerlemesi: {hwInspectedIds.length} Öğe Dinlendi / İncelendi
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {isDualGenderSection && (
               <Link
                 href={buildExerciseUrlForCurrentTab()}
                 onClick={() => playClick()}
-                className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-2 border-[#3b1f8c] flex items-center gap-1.5"
               >
                 <Gamepad2 size={14} />
-                <span>Ödev Alıştırmasını Başlat</span>
+                <span>Ödev Alıştırması</span>
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsHwCertificateOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold border-b-2 border-emerald-800 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <CheckCircle2 size={14} />
+              <span>🏅 Ödevi Tamamla &amp; Ödev Karnesi Al</span>
+            </button>
             <button
               type="button"
               onClick={() => {

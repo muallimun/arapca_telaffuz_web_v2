@@ -374,10 +374,13 @@ export default function DialoguePdfModal({
     useState<SideBySideOrder>("ar-right");
   const [showAdvancedLayout, setShowAdvancedLayout] = useState<boolean>(false);
 
-  // Aşama 2.3: Üst Mod Seçici ("handout": 📄 Ders Föyü | "quiz-sheet": 📝 Çalışma & Quiz Yaprağı)
-  const [pdfDocMode, setPdfDocMode] = useState<"handout" | "quiz-sheet">(
-    "handout"
-  );
+  // ADIM 3: Üst Mod Seçici ("handout": 📄 Ders Föyü | "quiz-sheet": 📝 Çalışma & Quiz Yaprağı | "flashcards": ✂️ Kes-Yapıştır Kartlar)
+  const [pdfDocMode, setPdfDocMode] = useState<
+    "handout" | "quiz-sheet" | "flashcards"
+  >("handout");
+  const [flashcardGridSize, setFlashcardGridSize] = useState<
+    "3x3" | "3x4" | "4x4"
+  >("3x3");
 
   // Otomatik Sığdırma (Auto-Fit) Motoru State'leri
   const [fitMode, setFitMode] = useState<FitMode>("auto");
@@ -386,6 +389,7 @@ export default function DialoguePdfModal({
   const targetMaxHeightRef = useRef<number>(950);
 
   const hasAnyBlankActivity =
+    pdfDocMode === "quiz-sheet" ||
     clozeMode ||
     translationMode === "dotted" ||
     translationMode === "ar-dotted" ||
@@ -395,16 +399,18 @@ export default function DialoguePdfModal({
     (includeIdioms && idioms.length > 0 && idiomsBlankMode) ||
     (includeVocabulary && includeWorksheet);
 
-  // Herhangi bir çalışma kağıdı / boşluk modu seçildiğinde Öğrenci Bilgi Şeridi ve Cevap Anahtarını otomatik aktif et
+  // Herhangi bir çalışma kağıdı / boşluk modu veya Quiz Yaprağı seçildiğinde Öğrenci Bilgi Şeridi ve Cevap Anahtarını otomatik aktif et
   useEffect(() => {
     if (hasAnyBlankActivity) {
       const raf = requestAnimationFrame(() => {
-        setIncludeStudentHeader(true);
+        if (pdfDocMode !== "flashcards") {
+          setIncludeStudentHeader(true);
+        }
         setIncludeAnswerKey(true);
       });
       return () => cancelAnimationFrame(raf);
     }
-  }, [hasAnyBlankActivity]);
+  }, [hasAnyBlankActivity, pdfDocMode]);
 
   // İçerik veya mizanpaj ayarları değiştiğinde fitMode'a göre başlangıç yoğunluğunu belirle
   useEffect(() => {
@@ -421,6 +427,8 @@ export default function DialoguePdfModal({
   }, [
     fitMode,
     dialogue.id,
+    pdfDocMode,
+    flashcardGridSize,
     imageMode,
     translationMode,
     clozeMode,
@@ -529,13 +537,6 @@ export default function DialoguePdfModal({
 
   // PDF-3: Diyalog cümleleri içinde vocabulary kelimelerini tespit edip boşluğa ("....................") dönüştüren motor
   const clozeData = useMemo(() => {
-    if (!clozeMode) {
-      return {
-        processedLines: dialogue.satirlar.map((l) => l.arapca),
-        helperWords: [] as string[],
-      };
-    }
-
     // Sözlükteki hedef kelimeleri normalize edilmiş halleriyle hazırla
     const targetCandidates: { norm: string; display: string }[] = [];
     for (const entry of vocabEntries) {
@@ -544,7 +545,6 @@ export default function DialoguePdfModal({
         (f): f is string => Boolean(f && f !== "-" && f.trim().length > 1)
       );
       for (const f of forms) {
-        // Çok kelimeli ifadelerde ilk anlamlı kelimeyi veya tamamını kontrol et
         const cleanForm = f.split(/[،,/]/)[0].trim();
         const norm = normalizeArabicToken(cleanForm);
         if (norm.length >= 2) {
@@ -555,17 +555,18 @@ export default function DialoguePdfModal({
 
     const usedWords: string[] = [];
     const usedNormSet = new Set<string>();
+    const lineTargetWords: (string | null)[] = [];
 
     const processedLines = dialogue.satirlar.map((line) => {
       const tokens = line.arapca.split(/(\s+)/);
       let replacedInThisLine = false;
+      let targetWordForLine: string | null = null;
 
       const updatedTokens = tokens.map((tok) => {
         if (replacedInThisLine || /^\s+$/.test(tok)) return tok;
         const tokNorm = normalizeArabicToken(tok);
         if (tokNorm.length < 2) return tok;
 
-        // Sözlük adaylarıyla eşleşme kontrolü (tam eşleşme veya ال takılı/zamirli gövde eşleşmesi)
         const matched = targetCandidates.find(
           (cand) =>
             cand.norm === tokNorm ||
@@ -578,18 +579,17 @@ export default function DialoguePdfModal({
         if (matched && !usedNormSet.has(tokNorm)) {
           replacedInThisLine = true;
           usedNormSet.add(tokNorm);
-          // Cümledeki orijinal kelimeyi (noktalamasız) kelime kutusuna ekle
           const cleanOriginalWord = tok
             .replace(/[.,!?؟،؛:"'«»()]/g, "")
             .trim();
           const trailingPunct = tok.slice(cleanOriginalWord.length);
           usedWords.push(cleanOriginalWord);
+          targetWordForLine = cleanOriginalWord;
           return `....................${trailingPunct}`;
         }
         return tok;
       });
 
-      // Eğer sözlükten eşleşen kelime çıkmadıysa ve cümlede anlamlı uzun bir kelime varsa yedek olarak seç
       if (!replacedInThisLine) {
         const wordIndices = tokens
           .map((t, idx) => ({ t, idx, norm: normalizeArabicToken(t) }))
@@ -605,15 +605,16 @@ export default function DialoguePdfModal({
               .trim();
             const trailingPunct = pick.t.slice(cleanOriginalWord.length);
             usedWords.push(cleanOriginalWord);
+            targetWordForLine = cleanOriginalWord;
             updatedTokens[pick.idx] = `....................${trailingPunct}`;
           }
         }
       }
 
-      return updatedTokens.join("");
+      lineTargetWords.push(targetWordForLine);
+      return clozeMode ? updatedTokens.join("") : line.arapca;
     });
 
-    // Kelime kutusu için deterministik karıştırma (shuffle)
     const shuffled = [...usedWords];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = (i * 7 + 3) % (i + 1);
@@ -624,9 +625,74 @@ export default function DialoguePdfModal({
 
     return {
       processedLines,
-      helperWords: shuffled,
+      helperWords: clozeMode ? shuffled : ([] as string[]),
+      lineTargetWords,
     };
   }, [clozeMode, dialogue.satirlar, vocabEntries]);
+
+  // ✂️ Kes-Yapıştır Kelime & Cümle Kartları Verisi (3x3 = 9 Kart, 3x4 = 12 Kart, 4x4 = 16 Kart)
+  const flashcardItems = useMemo(() => {
+    const targetCount =
+      flashcardGridSize === "3x3"
+        ? 9
+        : flashcardGridSize === "3x4"
+        ? 12
+        : 16;
+
+    const cards: Array<{
+      id: string;
+      arabic: string;
+      turkish: string;
+      kok?: string;
+      morphInfo?: string;
+      posLabel: string;
+      imageUrl?: string;
+    }> = [];
+
+    for (const entry of vocabEntries) {
+      if (cards.length >= targetCount) break;
+      const w = entry.item;
+      const mainAr = (w.mufret || w.mazi || entry.contextWord || "").trim();
+      if (!mainAr) continue;
+      const category = getWordCategory(w);
+      const posLabel =
+        category === "fiil" ? "Fiil" : category === "edat" ? "Edat" : "İsim";
+      const rootClean =
+        w.kok && w.kok !== "-" && w.kok.trim().length > 0
+          ? w.kok.trim().split("").join(" ")
+          : undefined;
+
+      const morphParts: string[] = [];
+      if (w.cemi && w.cemi !== "-") morphParts.push(`Çoğul: ${w.cemi}`);
+      if (w.muzari && w.muzari !== "-") morphParts.push(`Muzâri: ${w.muzari}`);
+      if (w.masdar && w.masdar !== "-") morphParts.push(`Masdar: ${w.masdar}`);
+
+      cards.push({
+        id: `fc-v-${cards.length}`,
+        arabic: mainAr,
+        turkish: w.anlam_tr,
+        kok: rootClean,
+        morphInfo: morphParts.slice(0, 2).join(" • ") || undefined,
+        posLabel,
+        imageUrl: w.gorsel || undefined,
+      });
+    }
+
+    for (const line of dialogue.satirlar) {
+      if (cards.length >= targetCount) break;
+      cards.push({
+        id: `fc-l-${line.sira}`,
+        arabic: line.arapca,
+        turkish: line.turkce,
+        kok: undefined,
+        morphInfo: line.konusmaci ? `Konuşmacı: ${line.konusmaci}` : undefined,
+        posLabel: "Cümle",
+        imageUrl: cards.length === 0 ? imagePath : undefined,
+      });
+    }
+
+    return cards.slice(0, targetCount);
+  }, [vocabEntries, dialogue.satirlar, flashcardGridSize, imagePath]);
 
   // 5 soruluk mini çalışma kağıdı (includeWorksheet === true ise sayfa sonuna eklenir)
   const miniWorksheetQuestions = useMemo(() => {
@@ -1299,95 +1365,348 @@ export default function DialoguePdfModal({
       `
       : "";
 
-    // 🗝️ Cevap Anahtarı (Sadece herhangi bir boşluklu etkinlik aktifse ve includeAnswerKey açıksa basılır)
-    let answerKeySectionHtml = "";
-    if (hasAnyBlankActivity && includeAnswerKey) {
-      const parts: string[] = [];
+    // ✂️ Kes-Yapıştır Kelime & Cümle Kartları Şablonu HTML Üretimi
+    const flashcardGridCols =
+      flashcardGridSize === "4x4" ? "repeat(4, 1fr)" : "repeat(3, 1fr)";
+    const flashcardImgPx = flashcardGridSize === "3x3" ? 76 : 54;
+    const flashcardsSectionHtml = `
+      <div style="margin-bottom:8px;padding:6px 12px;border-radius:10px;background:#f8fafc;border:1.5px dashed #94a3b8;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:#334155;">
+        <span>✂️ Kesikli çizgilerden makasla keserek çift yönlü ezber veya sıra üstü eşleştirme kartı olarak kullanabilirsiniz.</span>
+        <span style="color:#087f5b;font-weight:800;">${flashcardGridSize} Şablon (${flashcardItems.length} Kart)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:${flashcardGridCols};gap:10px;">
+        ${flashcardItems
+          .map((fc, idx) => {
+            const absFcImg = fc.imageUrl
+              ? fc.imageUrl.startsWith("http")
+                ? fc.imageUrl
+                : `${typeof window !== "undefined" ? window.location.origin : ""}${
+                    fc.imageUrl.startsWith("/") ? "" : "/"
+                  }${fc.imageUrl}`
+              : "";
+            return `
+              <div style="border:2px dashed #94a3b8;border-radius:14px;padding:${
+                flashcardGridSize === "3x3" ? "12px 10px" : "8px 8px"
+              };display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;background:#ffffff;page-break-inside:avoid;break-inside:avoid;min-height:${
+                flashcardGridSize === "3x3"
+                  ? "215px"
+                  : flashcardGridSize === "3x4"
+                  ? "165px"
+                  : "145px"
+              };position:relative;">
+                <div style="width:100%;display:flex;align-items:center;justify-content:space-between;font-size:9.5px;font-weight:800;color:#64748b;margin-bottom:4px;">
+                  <span>✂️ #${idx + 1} • ${fc.posLabel}</span>
+                  ${
+                    fc.kok
+                      ? `<span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:13px;color:#6741d9;background:#f3f0ff;padding:0 6px;border-radius:5px;border:1px solid #d0bfff;">${formatAr(
+                          fc.kok
+                        )}</span>`
+                      : `<span>${dialogue.seviye}</span>`
+                  }
+                </div>
 
-      if (clozeMode && clozeData.helperWords.length > 0) {
-        const orderedMissing = dialogue.satirlar
-          .map((l, i) => {
-            const p = clozeData.processedLines[i] || "";
-            if (!p.includes("....................")) return null;
-            return `${l.sira}) ${formatAr(l.arapca)}`;
+                ${
+                  absFcImg && effectiveImageMode !== "hide"
+                    ? `<img src="${absFcImg}" alt="" loading="eager" style="width:${flashcardImgPx}px;height:${flashcardImgPx}px;aspect-ratio:1/1;object-fit:contain;margin:2px auto;display:block;border-radius:8px;border:1px solid #e2e8f0;background:#ffffff;" onerror="this.style.display='none'" />`
+                    : ""
+                }
+
+                <div dir="rtl" style="margin:4px 0;width:100%;">
+                  ${
+                    translationMode === "ar-dotted"
+                      ? `<div style="border-bottom:1.5px dotted #64748b;height:26px;width:88%;margin:6px auto;">................</div>`
+                      : `<div style="font-family:'${fontConfig.cssFamily}',serif;font-size:${Math.round(
+                          (flashcardGridSize === "3x3" ? 25 : 20) *
+                            fontConfig.scale
+                        )}px;font-weight:700;color:#087f5b;line-height:1.45;">${formatAr(
+                          fc.arabic
+                        )}</div>`
+                  }
+                  ${
+                    fc.morphInfo && translationMode !== "ar-dotted"
+                      ? `<div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:12px;font-weight:700;color:#475569;margin-top:2px;">${formatAr(
+                          fc.morphInfo
+                        )}</div>`
+                      : ""
+                  }
+                </div>
+
+                <div style="width:100%;border-top:1px dashed #cbd5e1;padding-top:5px;margin-top:4px;">
+                  ${
+                    translationMode === "dotted"
+                      ? `<div style="font-size:11px;color:#64748b;letter-spacing:1px;padding-top:4px;">....................................</div>`
+                      : `<div style="font-size:${
+                          flashcardGridSize === "3x3" ? "12px" : "11px"
+                        };font-weight:800;color:#1e293b;line-height:1.3;">${
+                          fc.turkish
+                        }</div>`
+                  }
+                </div>
+              </div>
+            `;
           })
-          .filter(Boolean)
-          .join(" &nbsp;|&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Diyalog Boşluk Doldurma:</strong> <span dir="rtl" class="ak-ar">${orderedMissing}</span></div>`
+          .join("")}
+      </div>
+    `;
+
+    // 🔑 2. SAYFA ÖĞRETMEN CEVAP ANAHTARI (Ayrı 2. A4 Sayfası: page-break-before: always; break-before: page)
+    const renderHighlightedClozeSentenceHtml = (
+      fullArabic: string,
+      targetWord: string | null
+    ) => {
+      if (!targetWord) return formatAr(fullArabic);
+      const formattedFull = formatAr(fullArabic);
+      const formattedTarget = formatAr(targetWord);
+      if (formattedFull.includes(formattedTarget)) {
+        return formattedFull.replace(
+          formattedTarget,
+          `<u style="color:#087f5b;background:#ecfdf5;padding:0 5px;border-radius:4px;font-weight:800;text-decoration:underline;text-decoration-thickness:2px;">${formattedTarget}</u>`
         );
       }
+      return `${formattedFull} <u style="color:#dc2626;font-weight:800;">(${formattedTarget})</u>`;
+    };
 
-      if (includeIdioms && idioms.length > 0 && idiomsBlankMode) {
-        const idiomAnswers = idioms
-          .map((idm, idx) => `${idx + 1}) ${idm.meaningTr}`)
-          .join(" &nbsp;•&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Kalıp İfadeler:</strong> ${idiomAnswers}</div>`
-        );
-      }
-
-      if (
-        includeVocabulary &&
-        vocabEntries.length > 0 &&
-        vocabLanguageMode !== "both"
-      ) {
-        const vocabAnswers = vocabEntries
-          .map((e, idx) => {
-            const w = e.item;
-            const mainAr = w.mufret || w.mazi || "";
-            return vocabLanguageMode === "ar-only"
-              ? `${idx + 1}) ${w.anlam_tr}`
-              : `${idx + 1}) <span dir="rtl" class="ak-ar">${formatAr(mainAr)}</span>`;
-          })
-          .join(" &nbsp;•&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Kelime Tablosu:</strong> ${vocabAnswers}</div>`
-        );
-      }
-
-      if (includeWorksheet && miniWorksheetQuestions.length > 0) {
-        const wsAnswers = miniWorksheetQuestions
-          .map(
-            (q) =>
-              `${q.sira}) <span dir="rtl" class="ak-ar">${formatAr(q.answer)}</span>`
-          )
-          .join(" &nbsp;•&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Ek Çalışma Soruları:</strong> ${wsAnswers}</div>`
-        );
-      }
-
-      if (translationMode === "dotted") {
-        const trAnswers = dialogue.satirlar
-          .map((l) => `${l.sira}) ${l.turkce}`)
-          .join(" &nbsp;|&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Diyalog Türkçe Tercümeleri:</strong> ${trAnswers}</div>`
-        );
-      } else if (translationMode === "ar-dotted") {
-        const arAnswers = dialogue.satirlar
-          .map(
-            (l) =>
-              `${l.sira}) <span dir="rtl" class="ak-ar">${formatAr(l.arapca)}</span>`
-          )
-          .join(" &nbsp;|&nbsp; ");
-        parts.push(
-          `<div class="ak-item"><strong>Diyalog Arapça Metinleri:</strong> ${arAnswers}</div>`
-        );
-      }
-
-      if (parts.length > 0) {
-        answerKeySectionHtml = `
-          <div class="answer-key-block">
-            <div class="answer-key-title">🗝️ Cevap Anahtarı (مِفْتَاحُ الْإِجَابَات)</div>
-            <div class="answer-key-body">
-              ${parts.join("")}
+    const secondPageAnswerKeyHtml = includeAnswerKey
+      ? `
+        <div class="teacher-answer-key-page" style="page-break-before: always; break-before: page; padding-top: 4px;">
+          <div class="header-card" style="border-color:#087f5b;background:#ecfdf5;margin-bottom:12px;">
+            <div class="header-left">
+              <div class="badge-row">
+                <span class="badge" style="background:#087f5b;">🔑 2. SAYFA • ÖĞRETMEN CEVAP ANAHTARI</span>
+                <span class="badge-cefr">CEFR ${dialogue.seviye}</span>
+                <span class="badge-outline">مِفْتَاحُ الْإِجَابَاتِ لِلْمُعَلِّمِ</span>
+              </div>
+              <div class="title-row">
+                <h2 class="title-tr" style="font-size:16px;">🔑 ÖĞRETMEN CEVAP ANAHTARI — ${
+                  dialogue.baslik_tr
+                }</h2>
+                <span class="title-ar" dir="rtl" style="font-size:22px;">${formatAr(
+                  dialogue.baslik_ar
+                )}</span>
+              </div>
             </div>
           </div>
-        `;
-      }
-    }
+
+          ${
+            pdfDocMode === "quiz-sheet"
+              ? `
+              <!-- BÖLÜM A CEVAPLARI -->
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ Bölüm A — Kelime Eşleştirme Doğru Cevapları (30 Puan)</div>
+                <table class="two-col-table" style="font-size:11.5px;">
+                  <thead>
+                    <tr>
+                      <th style="width:12%;">Soru</th>
+                      <th style="width:38%;text-align:right;" dir="rtl">Arapça Kelime</th>
+                      <th style="width:18%;text-align:center;">Doğru Şık</th>
+                      <th style="width:32%;text-align:left;">Türkçe Karşılığı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${a4QuizSheetData.sectionAMatching
+                      .map(
+                        (m, idx) => `
+                        <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                          <td style="font-weight:800;">#${m.num}</td>
+                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#087f5b;">${formatAr(
+                          m.arabic
+                        )}</td>
+                          <td style="text-align:center;"><span style="background:#ecfdf5;color:#065f46;border:1px solid #087f5b;padding:2px 8px;border-radius:6px;font-weight:800;">${
+                            m.num
+                          } → ${m.correctLetter}</span></td>
+                          <td style="font-weight:700;color:#1e293b;">${m.correctTr}</td>
+                        </tr>
+                      `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- BÖLÜM B CEVAPLARI (Hedef Kelimeler Renkli ve Altı Çizili) -->
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ Bölüm B — Boşluk Doldurma Tam Cümle Çözümleri (40 Puan)</div>
+                <div style="border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;">
+                  ${a4QuizSheetData.sectionBFillBlanks
+                    .map((b, idx) => {
+                      const highlightedSentence = formatAr(b.blankSentence).replace(
+                        /\.{6,}/g,
+                        `<u style="color:#dc2626;background:#fef2f2;padding:0 6px;border-radius:4px;font-weight:800;text-decoration:underline;">${formatAr(
+                          b.answer
+                        )}</u>`
+                      );
+                      return `
+                        <div style="padding:6px 12px;border-bottom:${
+                          idx < a4QuizSheetData.sectionBFillBlanks.length - 1
+                            ? "1px solid #e2e8f0"
+                            : "none"
+                        };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                          <div style="font-size:11px;color:#334155;">
+                            <strong>${idx + 1}. Doğru Kelime:</strong>
+                            <span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:17px;font-weight:800;color:#dc2626;margin:0 6px;"><u>${formatAr(
+                              b.answer
+                            )}</u></span>
+                            <span>(${b.turkce})</span>
+                          </div>
+                          <div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#0f172a;text-align:right;">
+                            ${idx + 1}. ${highlightedSentence}
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </div>
+
+              <!-- BÖLÜM C CEVAPLARI -->
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ Bölüm C — Kalıp İfadeler ve Metin Anlama Çözümleri (30 Puan)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  ${a4QuizSheetData.sectionCMultipleChoice
+                    .map(
+                      (c) => `
+                      <div style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;background:#f8fafc;">
+                        <div style="font-size:11px;font-weight:800;color:#6741d9;">Soru ${c.num} (${c.typeLabel})</div>
+                        <div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:16px;font-weight:700;color:#087f5b;margin:2px 0;">${formatAr(
+                        c.arabicPrompt
+                      )}</div>
+                        <div style="font-size:11.5px;font-weight:800;color:#065f46;">✓ Doğru Şık: ${
+                          c.correctLetter
+                        }) ${c.correctText}</div>
+                      </div>
+                    `
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+              : pdfDocMode === "flashcards"
+              ? `
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ Kes-Yapıştır Kelime &amp; Cümle Kartları Tam Cevap Listesi (${flashcardItems.length} Kart)</div>
+                <table class="two-col-table" style="font-size:11.5px;">
+                  <thead>
+                    <tr>
+                      <th style="width:10%;">Kart</th>
+                      <th style="width:35%;text-align:right;" dir="rtl">Arapça Kelime / İfade</th>
+                      <th style="width:20%;text-align:right;" dir="rtl">Kök &amp; Sarf Bilgisi</th>
+                      <th style="width:35%;text-align:left;">Türkçe Doğru Anlamı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${flashcardItems
+                      .map(
+                        (fc, idx) => `
+                        <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                          <td style="font-weight:800;">#${idx + 1} (${fc.posLabel})</td>
+                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:19px;font-weight:700;color:#087f5b;"><u style="text-decoration-color:#087f5b;">${formatAr(
+                          fc.arabic
+                        )}</u></td>
+                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:14px;color:#6741d9;font-weight:700;">${
+                          fc.kok ? `Kök: ${formatAr(fc.kok)}` : "-"
+                        } ${fc.morphInfo ? `• ${formatAr(fc.morphInfo)}` : ""}</td>
+                          <td style="font-weight:800;color:#1e293b;">${fc.turkish}</td>
+                        </tr>
+                      `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+              : `
+              <!-- DERS FÖYÜ TAM METİN, BOŞLUK DOLDURMA VE SÖZLÜK CEVAP ANAHTARI -->
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ 1. Diyalog / Metin Tam Cümleleri ve Boşluk Doldurma (Cloze) Çözümleri</div>
+                <table class="two-col-table" style="font-size:11.5px;">
+                  <thead>
+                    <tr>
+                      <th style="width:48%;text-align:left;">Tam Türkçe Tercümesi</th>
+                      <th style="width:52%;text-align:right;" dir="rtl">Tam Arapça Cümle (Hedef Kelimeler Altı Çizili)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${dialogue.satirlar
+                      .map((line, idx) => {
+                        const targetW = clozeData.lineTargetWords[idx] || null;
+                        return `
+                          <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                            <td style="font-weight:600;color:#1e293b;"><strong>${line.sira}. ${
+                              line.konusmaci
+                            }:</strong> ${line.turkce}</td>
+                            <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#0f172a;">
+                              <span style="color:#087f5b;font-size:14px;margin-left:6px;">${
+                                line.sira
+                              }. ${formatAr(line.konusmaci_ar)}:</span>
+                              ${renderHighlightedClozeSentenceHtml(
+                                line.arapca,
+                                targetW
+                              )}
+                            </td>
+                          </tr>
+                        `;
+                      })
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              ${
+                vocabEntries.length > 0
+                  ? `
+                  <div class="section-block" style="margin-bottom:10px;">
+                    <div class="section-title">✅ 2. Kelime Tablosu Tam Karşılıkları (${vocabEntries.length} Kelime)</div>
+                    <div class="vocab-two-col-grid">
+                      ${vocabEntries
+                        .map((e, idx) => {
+                          const w = e.item;
+                          const mainAr = w.mufret || w.mazi || "";
+                          return `
+                            <div class="vocab-grid-card" style="padding:5px 9px;min-height:36px;">
+                              <div class="vocab-left">
+                                <span style="font-size:11px;font-weight:800;color:#1e293b;">${
+                                  idx + 1
+                                }. ${w.anlam_tr}</span>
+                              </div>
+                              <div class="vocab-right" dir="rtl">
+                                <span class="vocab-ar" style="font-size:18px;"><u style="color:#087f5b;">${formatAr(
+                                  mainAr
+                                )}</u></span>
+                              </div>
+                            </div>
+                          `;
+                        })
+                        .join("")}
+                    </div>
+                  </div>
+                `
+                  : ""
+              }
+
+              ${
+                includeWorksheet && miniWorksheetQuestions.length > 0
+                  ? `
+                  <div class="section-block" style="margin-bottom:10px;">
+                    <div class="section-title">✅ 3. Ek Çalışma Soruları Cevapları</div>
+                    <div style="border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;background:#f8fafc;font-size:11.5px;">
+                      ${miniWorksheetQuestions
+                        .map(
+                          (q) =>
+                            `<span style="margin-right:14px;"><strong>${q.sira})</strong> <span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:17px;font-weight:800;color:#dc2626;"><u>${formatAr(
+                              q.answer
+                            )}</u></span> (${q.turkce})</span>`
+                        )
+                        .join(" ")}
+                    </div>
+                  </div>
+                `
+                  : ""
+              }
+            `
+          }
+        </div>
+      `
+      : "";
 
     // Görsel & QR Kod HTML blokları
     const compactImageHtml =
@@ -1692,7 +2011,7 @@ export default function DialoguePdfModal({
             border-bottom: 1.5px dotted #64748b;
             vertical-align: bottom;
           }
-          .student-info-strip {
+          .student-info-strip, .student-header-strip {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -1849,6 +2168,9 @@ export default function DialoguePdfModal({
             padding: 6px 12px;
             border-radius: 8px;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           }
           .end-tr-list {
             display: grid;
@@ -2164,6 +2486,8 @@ export default function DialoguePdfModal({
               <span class="badge-outline">${
                 pdfDocMode === "quiz-sheet"
                   ? "SINIF İÇİ ETKİNLİK & QUİZ YAPRAĞI (100 PUAN)"
+                  : pdfDocMode === "flashcards"
+                  ? `✂️ KES-YAPIŞTIR KELİME & CÜMLE KARTLARI (${flashcardGridSize})`
                   : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`
               }</span>
               <span class="badge-outline">${
@@ -2322,29 +2646,11 @@ export default function DialoguePdfModal({
                 .join("")}
             </div>
           </div>
-
-          ${
-            includeAnswerKey
-              ? `
-            <div class="answer-key-block" style="margin-top:8px;">
-              <div class="answer-key-title">🔑 Öğretmen Cevap Anahtarı (مفتاح الإجابات)</div>
-              <div class="answer-key-body">
-                <div><strong>Bölüm A (Kelime Eşleştirme):</strong> ${a4QuizSheetData.sectionAMatching
-                  .map((m) => `${m.num}-${m.correctLetter} (${m.correctTr})`)
-                  .join(" • ")}</div>
-                <div style="margin-top:3px;"><strong>Bölüm B (Boşluk Doldurma):</strong> <span dir="rtl" style="font-family:'${
-                  fontConfig.cssFamily
-                }',serif;font-size:15px;font-weight:700;color:#087f5b;">${a4QuizSheetData.sectionBFillBlanks
-                  .map((b, idx) => `(${idx + 1}) ${formatAr(b.answer)}`)
-                  .join(" • ")}</span></div>
-                <div style="margin-top:3px;"><strong>Bölüm C (Kalıp İfadeler & Anlama):</strong> ${a4QuizSheetData.sectionCMultipleChoice
-                  .map((c) => `${c.num}-${c.correctLetter}`)
-                  .join(" • ")}</div>
-              </div>
-            </div>
-          `
-              : ""
-          }
+        `
+            : pdfDocMode === "flashcards"
+            ? `
+          ${studentHeaderHtml}
+          ${flashcardsSectionHtml}
         `
             : `
           ${studentHeaderHtml}
@@ -2354,7 +2660,6 @@ export default function DialoguePdfModal({
           ${vocabSectionHtml}
           ${idiomsSectionHtml}
           ${worksheetSectionHtml}
-          ${answerKeySectionHtml}
         `
         }
 
@@ -2366,10 +2671,14 @@ export default function DialoguePdfModal({
           } — ${
       pdfDocMode === "quiz-sheet"
         ? "A4 Sınıf İçi Çalışma & Quiz Yaprağı"
+        : pdfDocMode === "flashcards"
+        ? `A4 Kes-Yapıştır Kelime & Cümle Kartları (${flashcardGridSize})`
         : "Arapça Çalışma Kağıdı"
     }</span>
           <a href="https://www.muallimun.net" target="_blank" rel="noopener noreferrer" class="corporate-brand" style="text-decoration:none;">www.muallimun.net</a>
         </footer>
+
+        ${secondPageAnswerKeyHtml}
       </body>
       </html>
     `;
@@ -2518,16 +2827,16 @@ export default function DialoguePdfModal({
               : "hidden md:block shrink-0"
           }`}
         >
-          {/* 0. Satır: Aşama 2.3 Üst Mod Seçici (📄 Ders Föyü vs 📝 Çalışma & Quiz Yaprağı) + 🔑 Cevap Anahtarını Ekle */}
+          {/* 0. Satır: ADIM 3 Üst Şablon Seçici (3 Ana Mod: 📄 Ders Föyü | 📝 Çalışma & Quiz Yaprağı | ✂️ Kes-Yapıştır Kartlar) + 🔑 2. Sayfa Cevap Anahtarı */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-            <div className="flex flex-wrap items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setPdfDocMode("handout");
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                   pdfDocMode === "handout"
                     ? "bg-[#087F5B] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -2540,8 +2849,9 @@ export default function DialoguePdfModal({
                 onClick={() => {
                   playClick();
                   setPdfDocMode("quiz-sheet");
+                  setIncludeAnswerKey(true);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                   pdfDocMode === "quiz-sheet"
                     ? "bg-[#6741D9] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -2549,29 +2859,55 @@ export default function DialoguePdfModal({
               >
                 📝 Çalışma &amp; Quiz Yaprağı (Sınıf İçi Etkinlik / Sınav)
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPdfDocMode("flashcards");
+                }}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                  pdfDocMode === "flashcards"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                ✂️ Kes-Yapıştır Kartlar (3x3 / 4x4 Kelime &amp; Cümle Kartı)
+              </button>
             </div>
 
-            {pdfDocMode === "quiz-sheet" && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIncludeAnswerKey((v) => !v);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    includeAnswerKey
-                      ? "bg-emerald-600 border-emerald-800 text-white shadow-xs"
-                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
-                  }`}
-                >
-                  <span>🔑 Cevap Anahtarını Ekle: {includeAnswerKey ? "Açık ✓" : "Kapalı"}</span>
-                </button>
+            {pdfDocMode === "flashcards" && (
+              <div className="flex flex-wrap items-center gap-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-xl border border-amber-300 dark:border-amber-700">
+                <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
+                  ✂️ Izgara:
+                </span>
+                {(
+                  [
+                    { id: "3x3", label: "3x3 (9 Kart - Büyük Görselli)" },
+                    { id: "3x4", label: "3x4 (12 Kart - Kompakt)" },
+                    { id: "4x4", label: "4x4 (16 Kart - Yoğun)" },
+                  ] as const
+                ).map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setFlashcardGridSize(g.id);
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      flashcardGridSize === g.id
+                        ? "bg-amber-600 text-white shadow-2xs"
+                        : "text-amber-900 dark:text-amber-200 hover:bg-amber-100/70"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* 1. Satır: Görsel Modu + Çeviri Modu */}
+          {/* 1. Satır: Görsel Modu + Çeviri Modu + Sayfaya Sığdır */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* PDF-1: Görsel Seçici */}
             <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] px-2 py-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
@@ -2674,7 +3010,7 @@ export default function DialoguePdfModal({
             </div>
           </div>
 
-          {/* 2. Satır: Boşluk Doldurma + Harekeler + QR Kod + Kelime Tablosu + Kalıp İfadeler + Öğrenci Şeridi + Cevap Anahtarı */}
+          {/* 2. Satır: Boşluk Doldurma + Harekeler + QR Kod + Kelime Tablosu + Kalıp İfadeler + Öğrenci Şeridi + 🔑 Cevap Anahtarı (2. Sayfa) */}
           <div className="flex flex-wrap items-center justify-between gap-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
               {/* PDF-3: Boşluk Doldurma (Etkinlik) Toggle */}
@@ -2745,7 +3081,7 @@ export default function DialoguePdfModal({
                 <span>Kelime Tablosu ({vocabEntries.length})</span>
               </button>
 
-              {/* Kalıp İfadeler Tablosu Toggle (Yalnızca diyalogda kalıp ifade varsa gösterilir — Çift ikon temizlendi) */}
+              {/* Kalıp İfadeler Tablosu Toggle */}
               {dialogueIdioms.length > 0 && (
                 <button
                   type="button"
@@ -2764,7 +3100,7 @@ export default function DialoguePdfModal({
                 </button>
               )}
 
-              {/* Kalıp İfade Anlamlarını Boş Bırak Alt Seçeneği (Tablo kapalıyken pasif) */}
+              {/* Kalıp İfade Anlamlarını Boş Bırak Alt Seçeneği */}
               {dialogueIdioms.length > 0 && (
                 <button
                   type="button"
@@ -2814,25 +3150,23 @@ export default function DialoguePdfModal({
                 </span>
               </button>
 
-              {/* 🗝️ Sayfa Sonuna Cevap Anahtarı Ekle (Boşluklu çalışma kağıdı modlarından herhangi biri aktifse görünür) */}
-              {hasAnyBlankActivity && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIncludeAnswerKey((v) => !v);
-                  }}
-                  className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    includeAnswerKey
-                      ? "bg-emerald-700 text-white border-emerald-900 shadow-xs"
-                      : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
-                  }`}
-                >
-                  <span>
-                    🗝️ Cevap Anahtarı: {includeAnswerKey ? "Açık" : "Kapalı"}
-                  </span>
-                </button>
-              )}
+              {/* 🔑 Öğretmen Cevap Anahtarı (2. Sayfa) Toggle — Her zaman erişilebilir */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIncludeAnswerKey((v) => !v);
+                }}
+                className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  includeAnswerKey
+                    ? "bg-emerald-700 text-white border-emerald-900 shadow-xs"
+                    : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
+                }`}
+              >
+                <span>
+                  🔑 Cevap Anahtarı: {includeAnswerKey ? "Açık (2. Sayfa)" : "Kapalı"}
+                </span>
+              </button>
             </div>
 
             {/* Mizanpaj & Sözlük Alt Ayarları Aç/Kapa */}
@@ -3450,47 +3784,101 @@ export default function DialoguePdfModal({
                   </div>
                 </div>
 
-                {/* 🔑 ÖĞRETMEN CEVAP ANAHTARI SEÇENEĞİ */}
-                {includeAnswerKey && (
-                  <div className="space-y-1.5 pt-2 break-inside-avoid">
-                    <div className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 bg-emerald-50 border border-emerald-300 border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
-                      🔑 Öğretmen Cevap Anahtarı (مفتاح الإجابات)
-                    </div>
-                    <div className="rounded-xl border border-dashed border-[#087F5B] bg-slate-50 p-3 text-[11px] text-slate-800 space-y-1.5">
-                      <div>
-                        <strong>Bölüm A (Kelime Eşleştirme - 30p):</strong>{" "}
-                        {a4QuizSheetData.sectionAMatching
-                          .map(
-                            (m) =>
-                              `${m.num}-${m.correctLetter} (${m.correctTr})`
-                          )
-                          .join(" • ")}
+              </div>
+            ) : pdfDocMode === "flashcards" ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] bg-emerald-50/70 border border-emerald-200 px-3 py-2 rounded-xl">
+                  <span>
+                    ✂️ Kes-Yapıştır Kelime & Cümle Kartları ({flashcardGridSize} •{" "}
+                    {flashcardItems.length} Kart) — Kesikli çizgilerden keserek kart oluşturunuz
+                  </span>
+                  <span dir="rtl" className="arabic text-base font-bold text-[#065F46]">
+                    بطاقات المفردات والعبارات
+                  </span>
+                </div>
+                <div
+                  className={`grid gap-3 ${
+                    flashcardGridSize === "4x4"
+                      ? "grid-cols-2 sm:grid-cols-4"
+                      : "grid-cols-2 sm:grid-cols-3"
+                  }`}
+                >
+                  {flashcardItems.map((fc, idx) => {
+                    const showBlankTr =
+                      translationMode === "dotted" || vocabLanguageMode === "ar-only";
+                    const showBlankAr =
+                      translationMode === "ar-dotted" || vocabLanguageMode === "tr-only";
+                    return (
+                      <div
+                        key={`fc-${idx}`}
+                        className="border-2 border-dashed border-slate-400 rounded-xl p-3 flex flex-col justify-between items-center text-center bg-white relative break-inside-avoid min-h-[155px]"
+                      >
+                        <div className="w-full flex items-center justify-between text-[10px] font-extrabold text-slate-400 mb-1">
+                          <span>✂️ #{idx + 1}</span>
+                          {fc.kok && (
+                            <span
+                              dir="rtl"
+                              className="arabic text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200"
+                            >
+                              جذر: {fc.kok}
+                            </span>
+                          )}
+                        </div>
+
+                        {fc.imageUrl && (
+                          <div className="my-1 flex items-center justify-center">
+                            <img
+                              src={fc.imageUrl}
+                              alt=""
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                              }}
+                              className="aspect-square w-20 h-20 object-contain mx-auto rounded-lg border border-slate-200 bg-slate-50/50 p-1"
+                            />
+                          </div>
+                        )}
+
+                        <div className="my-1.5 w-full">
+                          {showBlankAr ? (
+                            <div className="w-4/5 mx-auto border-b-2 border-dotted border-slate-400 h-7 my-2" />
+                          ) : (
+                            <div
+                              dir="rtl"
+                              className="font-arabic arabic text-2xl font-bold text-[#065F46] leading-snug"
+                            >
+                              {formatAr(fc.arabic)}
+                            </div>
+                          )}
+                          {fc.morphInfo && !showBlankAr && (
+                            <div
+                              dir="rtl"
+                              className="arabic text-xs font-bold text-violet-800 bg-violet-50 border border-violet-200 rounded-md px-2 py-0.5 mt-1 inline-block"
+                            >
+                              {formatAr(fc.morphInfo)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="w-full pt-1.5 mt-1 border-t border-dashed border-slate-200">
+                          {showBlankTr ? (
+                            <div
+                              className="text-xs font-bold text-slate-400 tracking-widest py-0.5"
+                              title="Öğrenci yazım alanı"
+                            >
+                              ....................
+                            </div>
+                          ) : (
+                            <div className="text-xs font-extrabold text-slate-800 leading-snug">
+                              {fc.turkish}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <strong>Bölüm B (Boşluk Doldurma - 40p):</strong>{" "}
-                        <span
-                          dir="rtl"
-                          className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400"
-                        >
-                          {a4QuizSheetData.sectionBFillBlanks
-                            .map((b, idx) => `(${idx + 1}) ${formatAr(b.answer)}`)
-                            .join(" • ")}
-                        </span>
-                      </div>
-                      <div>
-                        <strong>
-                          Bölüm C (Kalıp İfadeler ve Anlama - 30p):
-                        </strong>{" "}
-                        {a4QuizSheetData.sectionCMultipleChoice
-                          .map(
-                            (c) =>
-                              `${c.num}-${c.correctLetter} (${c.correctText})`
-                          )
-                          .join(" | ")}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <>
@@ -4142,69 +4530,6 @@ export default function DialoguePdfModal({
               </div>
             )}
 
-            {/* 🗝️ CEVAP ANAHTARI ÖNİZLEMESİ (Yalnızca boşluklu çalışma kağıdı aktifse) */}
-            {includeAnswerKey && hasAnyBlankActivity && (
-              <div className="space-y-1.5 pt-2 break-inside-avoid">
-                <div className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 bg-emerald-50 border border-emerald-300 border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
-                  🗝️ Cevap Anahtarı (مفتاح الإجابات)
-                </div>
-                <div className="rounded-xl border border-dashed border-[#087F5B] bg-slate-50 p-3 text-[11px] text-slate-700 space-y-1">
-                  {clozeMode && clozeData.helperWords.length > 0 && (
-                    <div>
-                      <strong>Diyalog Boşlukları:</strong>{" "}
-                      <span dir="rtl" className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400">
-                        {dialogue.satirlar
-                          .map((l, i) =>
-                            clozeData.processedLines[i] !== l.arapca
-                              ? `(${i + 1}) ${formatAr(l.arapca)}`
-                              : ""
-                          )
-                          .filter(Boolean)
-                          .join(" • ")}
-                      </span>
-                    </div>
-                  )}
-                  {includeIdioms && idiomsBlankMode && dialogueIdioms.length > 0 && (
-                    <div>
-                      <strong>Kalıp İfadeler:</strong>{" "}
-                      {dialogueIdioms
-                        .map(
-                          (idm, i) =>
-                            `${i + 1}. ${formatAr(idm.arabic)} = ${idm.meaningTr}`
-                        )
-                        .join(" | ")}
-                    </div>
-                  )}
-                  {includeVocabulary && vocabLanguageMode !== "both" && (
-                    <div>
-                      <strong>Kelime Testi:</strong>{" "}
-                      {vocabEntries
-                        .slice(0, 14)
-                        .map(
-                          (e, i) =>
-                            `${i + 1}. ${formatAr(
-                              e.item.mufret || e.item.mazi || ""
-                            )}: ${e.item.anlam_tr}`
-                        )
-                        .join(" | ")}
-                    </div>
-                  )}
-                  {(translationMode === "dotted" ||
-                    translationMode === "ar-dotted") && (
-                    <div>
-                      <strong>Diyalog Satırları:</strong>{" "}
-                      {dialogue.satirlar
-                        .map((l) =>
-                          translationMode === "dotted"
-                            ? `${l.sira}. ${l.turkce}`
-                            : `${l.sira}. ${formatAr(l.arapca)}`
-                        )
-                        .join(" • ")}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
               </>
             )}
 
@@ -4225,6 +4550,273 @@ export default function DialoguePdfModal({
               </a>
             </footer>
           </div>
+
+          {/* 🔑 2. SAYFA: ÖĞRETMEN CEVAP ANAHTARI (includeAnswerKey === true ise ayrı A4 sayfası olarak gösterilir) */}
+          {includeAnswerKey && (
+            <div
+              style={{ pageBreakBefore: "always", breakBefore: "page" }}
+              className="mt-6 max-w-[210mm] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#087F5B] shadow-lg p-4 sm:p-7 space-y-4 print:shadow-none print:border-0 print:p-0"
+            >
+              {/* 2. Sayfa Kurumsal Başlığı */}
+              <div className="pb-3 border-b-2 border-[#087F5B] flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 mb-1">
+                    2. SAYFA • ÖĞRETMEN NÜSHASI (مفتاح الإجابات للمعلم)
+                  </span>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#065F46]">
+                    🔑 ÖĞRETMEN CEVAP ANAHTARI — {dialogue.baslik_tr}
+                  </h3>
+                </div>
+                <div
+                  dir="rtl"
+                  className="arabic text-xl font-bold text-[#065F46]"
+                >
+                  {formatAr(dialogue.baslik_ar)}
+                </div>
+              </div>
+
+              {pdfDocMode === "quiz-sheet" ? (
+                <div className="space-y-3 text-xs text-slate-800">
+                  <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 space-y-1.5">
+                    <div className="font-extrabold text-[#065F46] text-xs">
+                      A) Kelime Eşleştirme Cevapları (30 Puan):
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                      {a4QuizSheetData.sectionAMatching.map((m) => (
+                        <div
+                          key={m.num}
+                          className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-white border border-emerald-200"
+                        >
+                          <span className="font-bold text-slate-800">
+                            {m.num} →{" "}
+                            <strong className="text-[#065F46]">
+                              {m.correctLetter}) {m.correctTr}
+                            </strong>
+                          </span>
+                          <span
+                            dir="rtl"
+                            className="arabic text-base font-bold text-[#065F46]"
+                          >
+                            {formatAr(m.arabic)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-violet-300 bg-violet-50/40 p-3 space-y-1.5">
+                    <div className="font-extrabold text-[#4C28B5] text-xs">
+                      B) Cümle Tamamlama / Boşluk Doldurma Cevapları (40 Puan):
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      {a4QuizSheetData.sectionBFillBlanks.map((b, idx) => {
+                        const tWord = formatAr(b.answer);
+                        const fullAr = formatAr(
+                          b.blankSentence.replace(/\.{4,}/g, b.answer)
+                        );
+                        return (
+                          <div
+                            key={b.sira}
+                            className="p-2 rounded-lg bg-white border border-violet-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
+                          >
+                            <div className="text-[11px] text-slate-700">
+                              <strong className="text-[#4C28B5]">
+                                {idx + 1}. (Satır #{b.sira}):
+                              </strong>{" "}
+                              {b.turkce}
+                            </div>
+                            <div
+                              dir="rtl"
+                              className="arabic text-base font-bold text-slate-900"
+                            >
+                              {fullAr.includes(tWord) ? (
+                                <>
+                                  {fullAr.split(tWord)[0]}
+                                  <span className="underline decoration-2 decoration-emerald-600 bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded mx-0.5">
+                                    {tWord}
+                                  </span>
+                                  {fullAr.split(tWord).slice(1).join(tWord)}
+                                </>
+                              ) : (
+                                <span className="underline decoration-2 decoration-emerald-600 bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded">
+                                  {tWord}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-1.5">
+                    <div className="font-extrabold text-amber-900 text-xs">
+                      C) Çoktan Seçmeli Soruların Cevapları (30 Puan):
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      {a4QuizSheetData.sectionCMultipleChoice.map((c) => (
+                        <div
+                          key={c.num}
+                          className="p-2 rounded-lg bg-white border border-amber-200"
+                        >
+                          <div className="font-extrabold text-amber-900">
+                            Soru {c.num}: Şık {c.correctLetter}
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-700 mt-0.5">
+                            {c.correctText}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : pdfDocMode === "flashcards" ? (
+                <div className="space-y-2">
+                  <div className="text-xs font-extrabold text-[#065F46]">
+                    ✂️ Kes-Yapıştır Kartlar Tam Liste & Çözüm Tablosu ({flashcardItems.length} Kart)
+                  </div>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden">
+                    <table className="w-full border-collapse text-left text-xs">
+                      <thead>
+                        <tr className="bg-emerald-50 text-[#065F46] font-extrabold border-b border-slate-300">
+                          <th className="py-1.5 px-2.5 w-10">#</th>
+                          <th className="py-1.5 px-2.5 text-right">Arapça Kelime / İfade</th>
+                          <th className="py-1.5 px-2.5 text-right">Kök & Sarf Bilgisi</th>
+                          <th className="py-1.5 px-2.5">Türkçe Doğru Anlamı</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {flashcardItems.map((fc, idx) => (
+                          <tr key={idx} className="odd:bg-slate-50">
+                            <td className="py-1 px-2.5 font-extrabold text-slate-500">
+                              {idx + 1}
+                            </td>
+                            <td
+                              dir="rtl"
+                              className="py-1 px-2.5 text-right arabic text-lg font-bold text-[#065F46]"
+                            >
+                              {formatAr(fc.arabic)}
+                            </td>
+                            <td
+                              dir="rtl"
+                              className="py-1 px-2.5 text-right arabic text-xs font-bold text-violet-800"
+                            >
+                              {[
+                                fc.kok ? `جذر: ${fc.kok}` : "",
+                                fc.morphInfo ? formatAr(fc.morphInfo) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" • ") || "—"}
+                            </td>
+                            <td className="py-1 px-2.5 font-bold text-slate-800">
+                              {fc.turkish}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Tam Metin / Boşluk Doldurma (Cloze) & Noktalı Çeviri Çözümleri */}
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-extrabold text-[#065F46] bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                      <span>
+                        📖 Tam Metin, Tercüme & Boşluk Doldurma Çözümleri (Hedef kelimeler altı çizili ve renklidir)
+                      </span>
+                      <span dir="rtl" className="arabic text-sm font-bold">
+                        النص الكامل والترجمة
+                      </span>
+                    </div>
+                    <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
+                      {dialogue.satirlar.map((line, idx) => {
+                        const targetWord = clozeData.lineTargetWords?.[idx];
+                        const formattedFull = formatAr(line.arapca);
+                        const formattedTarget = targetWord ? formatAr(targetWord) : "";
+                        return (
+                          <div
+                            key={line.sira}
+                            className="py-1.5 px-3 grid grid-cols-1 sm:grid-cols-2 items-center gap-2 odd:bg-slate-50"
+                          >
+                            <div className="text-xs text-slate-800">
+                              <strong className="text-[#065F46] mr-1">
+                                {line.sira}. {line.konusmaci}:
+                              </strong>
+                              <span className="font-semibold">{line.turkce}</span>
+                            </div>
+                            <div
+                              dir="rtl"
+                              className="text-right arabic text-lg font-bold text-slate-900"
+                            >
+                              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 ml-1.5">
+                                {formatAr(line.konusmaci_ar)}
+                              </span>
+                              {formattedTarget &&
+                              formattedFull.includes(formattedTarget) ? (
+                                <>
+                                  {formattedFull.split(formattedTarget)[0]}
+                                  <span className="underline decoration-2 decoration-red-600 bg-emerald-100 text-red-700 px-1.5 py-0.5 rounded mx-0.5">
+                                    {formattedTarget}
+                                  </span>
+                                  {formattedFull
+                                    .split(formattedTarget)
+                                    .slice(1)
+                                    .join(formattedTarget)}
+                                </>
+                              ) : (
+                                formattedFull
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Sözlük & Kalıp İfade Çözümleri */}
+                  {vocabEntries.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-extrabold text-[#065F46] bg-slate-50 border border-slate-300 px-3 py-1 rounded-lg">
+                        📚 Kelime Hazinesi Tam Çözüm Anahtarı ({vocabEntries.length} Kelime)
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {vocabEntries.map((entry, idx) => {
+                          const w = entry.item;
+                          const mainAr = w.mufret || w.mazi || "";
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg border border-slate-200 bg-slate-50/70 text-[11px]"
+                            >
+                              <span className="font-bold text-slate-800 truncate">
+                                {idx + 1}. {w.anlam_tr}
+                              </span>
+                              <span
+                                dir="rtl"
+                                className="arabic text-base font-bold text-[#065F46] shrink-0"
+                              >
+                                {formatAr(mainAr)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <footer className="pt-2 mt-3 border-t border-emerald-300 flex items-center justify-between text-[10px] text-slate-500">
+                <span>
+                  🔑 Öğretmen Cevap Anahtarı • {dialogue.baslik_tr} ({dialogue.seviye})
+                </span>
+                <span className="font-extrabold text-[#065F46]">
+                  www.muallimun.net
+                </span>
+              </footer>
+            </div>
+          )}
         </div>
 
         {/* MODAL ALT AKSİYON ÇUBUĞU (print:hidden - Her iki sekmede de sabit görünür) */}

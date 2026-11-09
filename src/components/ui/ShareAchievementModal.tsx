@@ -16,7 +16,7 @@ import {
   UserCheck,
   ShieldCheck,
 } from "lucide-react";
-import { playClick, playSuccess } from "@/lib/sfxManager";
+import { playClick, playSuccess, sfx } from "@/lib/sfxManager";
 
 export interface HomeworkWeakWordItem {
   arabic: string;
@@ -34,8 +34,9 @@ export interface ShareAchievementProps {
   pointsText?: string;
   wordsCount: number;
   badgeType?: "dialogue" | "exercise" | "homework";
-  // Ödev Sonuç Raporu (Homework Mode) Ek Özellikleri
+  // Ödev Sonuç Raporu / Ödev Tamamlama Karnesi (Homework Mode) Ek Özellikleri
   homeworkTitle?: string;
+  moduleLabel?: string;
   completionPercent?: number;
   listenedCount?: number;
   totalLinesCount?: number;
@@ -44,6 +45,7 @@ export interface ShareAchievementProps {
   quizCompleted?: boolean;
   weakWordsList?: HomeworkWeakWordItem[];
   dialogueId?: string;
+  homeworkUrl?: string;
 }
 
 export interface TeacherHomeworkModalProps {
@@ -54,34 +56,35 @@ export interface TeacherHomeworkModalProps {
   dialogueTitleAr: string;
   levelLabel: string;
   totalLines: number;
+  onOpenCertificate?: () => void;
 }
 
 const APP_URL = "https://app.muallimun.net";
 
 /**
- * Öğrenci adı, diyalog ID, tamamlanma ve uyum puanından deterministik doğrulama kodu üretir.
+ * Öğrenci adı + ödev başlığı + tarih bilgisinden deterministik #MLM-2026-XXXX doğrulama kodu üretir.
  */
 function computeVerificationCode(
   studentName: string,
-  dialogueId: string,
-  completionPct: number,
-  scorePct: number
+  studentClass: string,
+  homeworkTitleOrId: string,
+  dateStr: string
 ): string {
   const cleanName = (studentName || "OGRENCI").trim().toUpperCase();
-  const dlgNum = dialogueId.replace(/\D+/g, "").padStart(2, "0") || "01";
-  const dateKey = new Date().toISOString().slice(5, 10).replace("-", "");
-  const raw = `${cleanName}|${dlgNum}|${completionPct}|${scorePct}|${dateKey}`;
+  const cleanClass = (studentClass || "SINIF").trim().toUpperCase();
+  const cleanHw = (homeworkTitleOrId || "ODEV").trim().toUpperCase();
+  const raw = `${cleanName}|${cleanClass}|${cleanHw}|${dateStr}`;
   let hash = 2166136261;
   for (let i = 0; i < raw.length; i++) {
     hash ^= raw.charCodeAt(i);
     hash = Math.imul(hash, 16777619);
   }
-  const hex = (hash >>> 0).toString(16).toUpperCase().padStart(8, "0").slice(0, 4);
-  return `HW-${dlgNum}-${hex}`;
+  const numCode = String(1000 + ((hash >>> 0) % 9000));
+  return `MLM-2026-${numCode}`;
 }
 
 /**
- * Reed-Solomon GF(256) QR Kod Üretici (Ödev Bağlantısı için)
+ * Reed-Solomon GF(256) QR Kod Üretici (Ödev Bağlantısı ve Karne Sağ Alt Köşesi için)
  */
 function computeReedSolomonEC(data: number[], ecCount: number): number[] {
   const gfExp = new Array<number>(512);
@@ -121,7 +124,7 @@ function computeReedSolomonEC(data: number[], ecCount: number): number[] {
   return msg.slice(data.length);
 }
 
-function generateHomeworkQrSvg(urlText: string, size = 148): string {
+function computeHomeworkQrMatrix(urlText: string): boolean[][] {
   // Version 5-L (37x37): 108 data codewords (up to 106 UTF-8 bytes), 26 EC codewords
   const N = 37;
   const DATA_CODEWORDS = 108;
@@ -255,6 +258,12 @@ function generateHomeworkQrSvg(urlText: string, size = 148): string {
   for (let i = 0; i <= 7; i++) grid[8][N - 1 - i] = fBit(i);
   for (let i = 8; i <= 14; i++) grid[N - 15 + i][8] = fBit(i);
 
+  return grid;
+}
+
+function generateHomeworkQrSvg(urlText: string, size = 148): string {
+  const grid = computeHomeworkQrMatrix(urlText);
+  const N = grid.length;
   const quietZone = 2;
   const totalView = N + quietZone * 2;
   const rects: string[] = [];
@@ -285,6 +294,7 @@ export function TeacherHomeworkModal({
   dialogueTitleTr,
   levelLabel,
   totalLines,
+  onOpenCertificate,
 }: TeacherHomeworkModalProps) {
   const [homeworkNote, setHomeworkNote] = useState("10-A Sınıfı Ödevi");
   const [taskListen, setTaskListen] = useState(true);
@@ -379,7 +389,7 @@ export function TeacherHomeworkModal({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
-                🎓 Öğretmen Ödev Bağlantısı Oluşturucu
+                🎓 Öğretmen Ödev Paketi &amp; Karne Merkezi
               </h3>
               <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                 {itemNumberLabel} {dialogueTitleTr} ({levelLabel})
@@ -434,7 +444,7 @@ export function TeacherHomeworkModal({
                   className="w-4 h-4 accent-[#087F5B] rounded cursor-pointer"
                 />
                 <span className="text-xs font-bold text-[var(--foreground)]">
-                  1. Diyaloğu Dinle ve İncele ({totalLines} Cümle)
+                  1. {isReadingText ? "Metni" : "Diyaloğu"} Dinle ve İncele ({totalLines} Cümle)
                 </span>
               </div>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300">
@@ -493,7 +503,7 @@ export function TeacherHomeworkModal({
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
                 />
                 <span className="text-xs font-bold text-[var(--foreground)]">
-                  3. Diyalog Alıştırmalarını (Boşluk Doldurma &amp; Eşleştirme) Tamamla
+                  3. {isReadingText ? "Metin" : "Diyalog"} Alıştırmalarını (Boşluk Doldurma &amp; Eşleştirme) Tamamla
                 </span>
               </div>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 shrink-0">
@@ -516,8 +526,8 @@ export function TeacherHomeworkModal({
             </div>
             <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 leading-snug">
               Öğrenciler bu bağlantıya tıkladığında veya QR kodu okuttuğunda{" "}
-              <strong>📋 Ödev Takip Çubuğu</strong> otomatik açılır ve bitirdiklerinde size{" "}
-              <strong>Doğrulama Kodlu Ödev Sonuç Kartı</strong> gönderebilirler.
+              <strong>🎓 Öğretmen Ödev Paketi Barı</strong> otomatik açılır ve bitirdiklerinde size{" "}
+              <strong>🏅 Doğrulama Kodlu Ödev Tamamlama Karnesi</strong> gönderebilirler.
             </p>
             <div className="p-2 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-[10px] font-mono text-slate-700 dark:text-slate-200 truncate">
               {homeworkUrl}
@@ -526,35 +536,52 @@ export function TeacherHomeworkModal({
         </div>
 
         {/* 4. Aksiyon Butonları */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <button
-            type="button"
-            onClick={handleCopyUrl}
-            className="py-2.5 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#3b1f8c] active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            {copied ? (
-              <>
-                <Check size={15} />
-                <span>📋 Bağlantı Kopyalandı!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={15} />
-                <span>📋 Bağlantıyı Kopyala</span>
-              </>
-            )}
-          </button>
+        <div className="space-y-2 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleCopyUrl}
+              className="py-2.5 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#3b1f8c] active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check size={15} />
+                  <span>📋 Bağlantı Kopyalandı!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={15} />
+                  <span>📋 Bağlantıyı Kopyala</span>
+                </>
+              )}
+            </button>
 
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => playClick()}
-            className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs border-b-3 border-emerald-800 active:translate-y-0.5 flex items-center justify-center gap-1.5 transition-all"
-          >
-            <Share2 size={15} />
-            <span>📲 WhatsApp&apos;ta Paylaş</span>
-          </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => playClick()}
+              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs border-b-3 border-emerald-800 active:translate-y-0.5 flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Share2 size={15} />
+              <span>📲 WhatsApp&apos;ta Paylaş</span>
+            </a>
+          </div>
+
+          {onOpenCertificate && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onClose();
+                onOpenCertificate();
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs border-b-3 border-amber-700 active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Trophy size={15} />
+              <span>🏅 Ödev Karnesi Oluştur &amp; Ödev Takip Barını Aç</span>
+            </button>
+          )}
         </div>
       </div>
     </div>,
@@ -574,43 +601,130 @@ export default function ShareAchievementModal({
   wordsCount,
   badgeType = "dialogue",
   homeworkTitle,
+  moduleLabel,
   completionPercent = 100,
   listenedCount = 0,
   totalLinesCount = 0,
   pronPracticedCount = 0,
   pronTargetCount = 3,
-  quizCompleted = false,
+  quizCompleted: _quizCompleted = false,
   weakWordsList = [],
   dialogueId = "dlg_01",
+  homeworkUrl,
 }: ShareAchievementProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [previewDataUrl, setPreviewDataUrl] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(false);
-  const [studentName, setStudentName] = useState<string>("");
+  const [studentName, setStudentName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return window.localStorage.getItem("muallimun_student_name") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+  const [studentClass, setStudentClass] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return window.localStorage.getItem("muallimun_student_class") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
 
   const isHomework = badgeType === "homework";
+
+  // Ödev karnesi açıldığında sfx.playFanfare(100) çal
+  useEffect(() => {
+    if (isOpen && isHomework) {
+      sfx.playFanfare(100);
+    }
+  }, [isOpen, isHomework]);
+
+  const handleStudentNameChange = (val: string) => {
+    setStudentName(val);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("muallimun_student_name", val);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const handleStudentClassChange = (val: string) => {
+    setStudentClass(val);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("muallimun_student_class", val);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   const hasMeasuredScore =
     typeof scorePercent === "number" && Number.isFinite(scorePercent);
   const safeScoreNumber = hasMeasuredScore ? scorePercent : 0;
   const formattedScoreText = hasMeasuredScore
     ? `%${scorePercent}`
-    : "Ölçülmedi";
+    : "Tamamlandı";
+
+  const completionDateStr = useMemo(() => {
+    const now = new Date();
+    return now.toLocaleDateString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }, []);
+
+  const completionTimeStr = useMemo(() => {
+    const now = new Date();
+    return now.toLocaleTimeString("tr-TR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, []);
 
   const verificationCode = useMemo(
     () =>
       computeVerificationCode(
         studentName,
-        dialogueId,
-        completionPercent,
-        safeScoreNumber
+        studentClass,
+        `${title}|${homeworkTitle || dialogueId}`,
+        completionDateStr
       ),
-    [studentName, dialogueId, completionPercent, safeScoreNumber]
+    [studentName, studentClass, title, homeworkTitle, dialogueId, completionDateStr]
   );
+
+  const effectiveModuleTitle = useMemo(() => {
+    if (moduleLabel) return `${moduleLabel}: ${title} (${levelLabel})`;
+    if (dialogueId.startsWith("metin_")) {
+      const num = dialogueId.replace("metin_", "").padStart(2, "0");
+      return `Okuma Metni #${num}: ${title} (${levelLabel})`;
+    }
+    if (dialogueId.startsWith("dlg_")) {
+      const num = dialogueId.replace("dlg_", "").padStart(2, "0");
+      return `Diyalog #${num}: ${title} (${levelLabel})`;
+    }
+    return `${title} (${levelLabel})`;
+  }, [moduleLabel, dialogueId, title, levelLabel]);
+
+  const effectiveQrUrl = useMemo(() => {
+    if (homeworkUrl) return homeworkUrl;
+    if (typeof window !== "undefined") return window.location.href;
+    return APP_URL;
+  }, [homeworkUrl]);
 
   const weakWordsSummaryText = useMemo(() => {
     if (!weakWordsList || weakWordsList.length === 0) {
-      return "Tüm hedef kelimelerde başarılı!";
+      return "Tüm hedef kelime ve cümleler başarıyla çalışıldı!";
     }
     return weakWordsList
       .slice(0, 4)
@@ -619,11 +733,13 @@ export default function ShareAchievementModal({
   }, [weakWordsList]);
 
   const shareMessage = isHomework
-    ? `📋 *ÖDEV SONUÇ RAPORU — ${homeworkTitle || "Arapça Diyalog Ödevi"}*\n👤 *Öğrenci:* ${
+    ? `🏅 *MUALLİMUN ARAPÇA EĞİTİM PLATFORMU — ÖDEV TAMAMLAMA KARNESİ*\n👤 *Öğrenci:* ${
         studentName.trim() || "Belirtilmedi"
-      }\n📖 *Diyalog:* ${title} (${levelLabel})\n✅ *Görev Tamamlanma Oranı:* %${completionPercent} (Dinleme: ${listenedCount}/${totalLinesCount} • Telaffuz: ${pronPracticedCount}/${pronTargetCount} • Alıştırma: ${
-        quizCompleted ? "Tamamlandı ✓" : "Eksik"
-      })\n🎙️ *Ortalama Telaffuz Uyumu:* ${formattedScoreText}\n📌 *Tekrar Edilecek Kelimeler:* ${weakWordsSummaryText}\n🔐 *Doğrulama Kodu:* #${verificationCode}\n🌐 ${APP_URL}`
+      } (${
+        studentClass.trim() || "Sınıf Belirtilmedi"
+      })\n📖 *Tamamlanan Ödev:* ${effectiveModuleTitle}\n📊 *Çalışma Özeti:* İncelenen/Dinlenen: ${
+        listenedCount || wordsCount
+      }/${totalLinesCount || wordsCount} Öğe • Tamamlanma: %${completionPercent}\n🕒 *Tarih & Saat:* ${completionDateStr} ${completionTimeStr}\n🔐 *DOĞRULAMA KODU:* #${verificationCode}\n🌐 ${effectiveQrUrl}`
     : `🎯 Arapça Telaffuz ve Diyalog Asistanı ile "${title}" çalışmamı ${
         hasMeasuredScore ? `%${scorePercent} başarı oranıyla ` : ""
       }tamamladım! (${wordsCount} Kelime • Seviye: ${levelLabel})\n👉 Hemen ücretsiz dene: ${APP_URL}`;
@@ -687,10 +803,10 @@ export default function ShareAchievementModal({
 
     drawRoundRect(ctx, 50, 50, W - 100, H - 100, 34);
     ctx.lineWidth = 3;
-    ctx.strokeStyle = isHomework ? "#6741D9" : "#087F5B";
+    ctx.strokeStyle = isHomework ? "#087F5B" : "#087F5B";
     ctx.stroke();
 
-    // 2. Üst Başlık Bandı (Logo + Uygulama Adı)
+    // 2. Üst Başlık Bandı (Logo + Kurumsal Başlık)
     drawRoundRect(ctx, 84, 78, W - 168, 114, 28);
     ctx.fillStyle = "#FFFFFF";
     ctx.fill();
@@ -718,31 +834,37 @@ export default function ShareAchievementModal({
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#087F5B";
-    ctx.font = "800 21px system-ui, -apple-system, sans-serif";
+    ctx.font = "800 20px system-ui, -apple-system, sans-serif";
     ctx.fillText(
       isHomework
         ? `DOĞRULAMA KODU: #${verificationCode}`
         : "EĞİTİM VE TELAFFUZ PLATFORMU",
       204,
-      124
+      122
     );
 
     ctx.fillStyle = "#2B241D";
-    ctx.font = "900 30px system-ui, -apple-system, sans-serif";
-    ctx.fillText("Arapça Telaffuz ve Diyalog Asistanı", 204, 164);
+    ctx.font = "900 27px system-ui, -apple-system, sans-serif";
+    ctx.fillText(
+      isHomework
+        ? "MUALLİMUN ARAPÇA EĞİTİM PLATFORMU"
+        : "Arapça Telaffuz ve Diyalog Asistanı",
+      204,
+      162
+    );
 
-    // 3. Başarı / Ödev Rozeti
+    // 3. Başarı / Ödev Tamamlama Karnesi Rozeti
     ctx.textAlign = "center";
-    drawRoundRect(ctx, W / 2 - 260, 212, 520, 54, 27);
+    drawRoundRect(ctx, W / 2 - 310, 210, 620, 54, 27);
     const pillGrad = ctx.createLinearGradient(
-      W / 2 - 260,
-      212,
-      W / 2 + 260,
-      266
+      W / 2 - 310,
+      210,
+      W / 2 + 310,
+      264
     );
     if (isHomework) {
-      pillGrad.addColorStop(0, "#6741D9");
-      pillGrad.addColorStop(1, "#4C28B5");
+      pillGrad.addColorStop(0, "#087F5B");
+      pillGrad.addColorStop(1, "#065F46");
     } else {
       pillGrad.addColorStop(0, "#087F5B");
       pillGrad.addColorStop(1, "#087F5B");
@@ -754,16 +876,16 @@ export default function ShareAchievementModal({
     ctx.font = "800 22px system-ui, -apple-system, sans-serif";
     ctx.fillText(
       isHomework
-        ? `📋 ÖDEV SONUÇ RAPORU • ${(homeworkTitle || "ÖDEV").toUpperCase()}`
+        ? "🏅 ÖDEV TAMAMLAMA KARNESİ • DOĞRULANMIŞ BELGE"
         : badgeType === "dialogue"
         ? "🏆 DİYALOG BAŞARI BELGESİ"
         : "🏆 ALIŞTIRMA BAŞARI KARTI",
       W / 2,
-      248
+      246
     );
 
     // 4. Ana İçerik Kartı
-    drawRoundRect(ctx, 84, 286, W - 168, isHomework ? 255 : 270, 32);
+    drawRoundRect(ctx, 84, 282, W - 168, isHomework ? 262 : 270, 32);
     ctx.fillStyle = "#FFFFFF";
     ctx.fill();
     ctx.lineWidth = 4;
@@ -771,36 +893,49 @@ export default function ShareAchievementModal({
     ctx.stroke();
 
     if (isHomework) {
-      // Öğrenci Adı & Kur Seviyesi
+      // Öğrenci Adı Soyadı & Sınıfı
       ctx.fillStyle = "#4C28B5";
-      ctx.font = "800 24px system-ui, -apple-system, sans-serif";
+      ctx.font = "800 25px system-ui, -apple-system, sans-serif";
+      const displayStudent = studentName.trim() || "Öğrenci Adı Girilmedi";
+      const displayClass = studentClass.trim() || "Sınıf / No Belirtilmedi";
       ctx.fillText(
-        `👤 Öğrenci: ${studentName.trim() || "İsimsiz Öğrenci"}   •   Seviye: ${levelLabel}`,
+        `👤 Öğrenci: ${displayStudent}   •   🏫 Sınıf / No: ${displayClass}`,
         W / 2,
-        332
+        328
       );
 
       if (arabicTitle) {
         ctx.fillStyle = "#087F5B";
         ctx.font =
-          "bold 42px 'Arakom', 'Noto Naskh Arabic', 'Amiri', system-ui, serif";
-        ctx.fillText(arabicTitle, W / 2, 396);
+          "bold 40px 'Arakom', 'Noto Naskh Arabic', 'Amiri', system-ui, serif";
+        ctx.fillText(arabicTitle, W / 2, 390);
       }
 
       ctx.fillStyle = "#2B241D";
-      ctx.font = "900 34px system-ui, -apple-system, sans-serif";
-      const truncatedTitle =
-        title.length > 38 ? `${title.slice(0, 36)}...` : title;
-      ctx.fillText(truncatedTitle, W / 2, arabicTitle ? 454 : 420);
+      ctx.font = "900 30px system-ui, -apple-system, sans-serif";
+      const truncatedModTitle =
+        effectiveModuleTitle.length > 46
+          ? `${effectiveModuleTitle.slice(0, 44)}...`
+          : effectiveModuleTitle;
+      ctx.fillText(truncatedModTitle, W / 2, arabicTitle ? 446 : 412);
+
+      // Çalışma Özeti + Tamamlanma Tarihi ve Saati
+      ctx.fillStyle = "#065F46";
+      ctx.font = "800 20px system-ui, -apple-system, sans-serif";
+      const inspectedCount = listenedCount > 0 ? listenedCount : wordsCount;
+      const targetTotal = totalLinesCount > 0 ? totalLinesCount : wordsCount;
+      ctx.fillText(
+        `📊 İncelenen / Dinlenen Öğe: ${inspectedCount} / ${targetTotal}   •   🕒 Tarih & Saat: ${completionDateStr} - ${completionTimeStr}`,
+        W / 2,
+        494
+      );
 
       ctx.fillStyle = "#5C5142";
-      ctx.font = "700 21px system-ui, -apple-system, sans-serif";
+      ctx.font = "700 18px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        `Dinleme: ${listenedCount}/${totalLinesCount} Cümle  •  Telaffuz: ${pronPracticedCount}/${pronTargetCount} Cümle  •  Alıştırma: ${
-          quizCompleted ? "Tamamlandı ✓" : "Bekliyor"
-        }`,
+        `Ödev Paketi: ${homeworkTitle || "Öğretmen Ödev Paketi"}  •  Telaffuz: ${pronPracticedCount}/${pronTargetCount}  •  Durum: Tamamlandı ✓`,
         W / 2,
-        508
+        526
       );
     } else {
       // Kur Seviye Rozeti
@@ -840,31 +975,26 @@ export default function ShareAchievementModal({
     // 5. 3'lü İstatistik Kutuları
     const boxY = isHomework ? 562 : 596;
     const boxW = 286;
-    const boxH = isHomework ? 168 : 195;
+    const boxH = isHomework ? 164 : 195;
     const gap = 28;
     const startX = 84;
 
     const stats = isHomework
       ? [
           {
-            label: "GÖREV TAMAMLAMA",
-            value: `%${completionPercent}`,
-            sub:
-              completionPercent >= 100
-                ? "Tüm Görevler Tamam"
-                : "Kısmi Tamamlama",
+            label: "ÇALIŞILAN ÖĞE",
+            value: `${listenedCount > 0 ? listenedCount : wordsCount}/${
+              totalLinesCount > 0 ? totalLinesCount : wordsCount
+            }`,
+            sub: `Tamamlanma: %${completionPercent}`,
             bg: "#ECFDF5",
             border: "#087F5B",
             color: "#065F46",
           },
           {
-            label: "TELAFFUZ ÖLÇÜMÜ",
+            label: "BAŞARI & TELAFFUZ",
             value: formattedScoreText,
-            sub: hasMeasuredScore
-              ? safeScoreNumber >= 80
-                ? "Yüksek Başarı"
-                : "Geliştirilebilir"
-              : "Telaffuz Kaydı Yok",
+            sub: `${ completionDateStr } • ${ completionTimeStr }`,
             bg: "#F3F0FF",
             border: "#6741D9",
             color: "#5230B5",
@@ -872,11 +1002,7 @@ export default function ShareAchievementModal({
           {
             label: "DOĞRULAMA KODU",
             value: `#${verificationCode}`,
-            sub: new Date().toLocaleDateString("tr-TR", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }),
+            sub: "Öğretmen Güvenlik Onayı",
             bg: "#FFFBEB",
             border: "#F59E0B",
             color: "#B45309",
@@ -930,72 +1056,138 @@ export default function ShareAchievementModal({
 
       ctx.fillStyle = st.color;
       ctx.font = "800 18px system-ui, -apple-system, sans-serif";
-      ctx.fillText(st.label, x + boxW / 2, boxY + 40);
+      ctx.fillText(st.label, x + boxW / 2, boxY + 38);
 
       ctx.font =
         idx === 2 && isHomework
-          ? "900 32px ui-monospace, monospace"
-          : st.value === "Ölçülmedi"
+          ? "900 26px ui-monospace, monospace"
+          : st.value === "Tamamlandı"
           ? "900 34px system-ui, -apple-system, sans-serif"
-          : "900 46px system-ui, -apple-system, sans-serif";
-      ctx.fillText(st.value, x + boxW / 2, boxY + 102);
+          : "900 42px system-ui, -apple-system, sans-serif";
+      ctx.fillText(st.value, x + boxW / 2, boxY + 96);
 
       ctx.fillStyle = "#5C5142";
-      ctx.font = "700 19px system-ui, -apple-system, sans-serif";
-      ctx.fillText(st.sub, x + boxW / 2, boxY + 144);
+      ctx.font = "700 18px system-ui, -apple-system, sans-serif";
+      ctx.fillText(st.sub, x + boxW / 2, boxY + 138);
     });
 
-    // Ödev modunda Zorlanılan / Tekrar Edilecek Kelimeler kutusu
     if (isHomework) {
-      drawRoundRect(ctx, 84, 750, W - 168, 96, 22);
+      // Alt Sol: Çalışma Notu + Doğrulama Özeti, Alt Sağ Köşe: Ödevin QR Kodu!
+      const qrBoxSize = 236;
+      const qrBoxX = W - 84 - qrBoxSize;
+      const qrBoxY = 746;
+      const leftBoxW = qrBoxX - 84 - 22;
+
+      // Sol özet ve kurumsal imza kutusu
+      drawRoundRect(ctx, 84, 746, leftBoxW, 244, 26);
       ctx.fillStyle = "#FFFFFF";
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#E6D7BE";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#087F5B";
       ctx.stroke();
 
-      ctx.fillStyle = "#B45309";
-      ctx.font = "800 18px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#065F46";
+      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        "📌 ZORLANDIĞI / TEKRAR ETMESİ GEREKEN KELİMELER",
-        W / 2,
-        782
+        `🔐 DOĞRULAMA KODU: #${verificationCode}`,
+        112,
+        790
       );
 
       ctx.fillStyle = "#2B241D";
-      ctx.font = "700 22px system-ui, -apple-system, sans-serif";
+      ctx.font = "700 19px system-ui, -apple-system, sans-serif";
       const truncatedWeak =
-        weakWordsSummaryText.length > 68
-          ? `${weakWordsSummaryText.slice(0, 66)}...`
+        weakWordsSummaryText.length > 52
+          ? `${weakWordsSummaryText.slice(0, 50)}...`
           : weakWordsSummaryText;
-      ctx.fillText(truncatedWeak, W / 2, 822);
+      ctx.fillText(`📌 Not: ${truncatedWeak}`, 112, 830);
+
+      // Alt yeşil kurumsal şerit (Sol kutunun içinde)
+      drawRoundRect(ctx, 104, 856, leftBoxW - 40, 114, 20);
+      ctx.fillStyle = "#087F5B";
+      ctx.fill();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "900 26px system-ui, -apple-system, sans-serif";
+      ctx.fillText("🌐 www.muallimun.net", 128, 902);
+
+      ctx.fillStyle = "#D3F9D8";
+      ctx.font = "700 17px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        "Öğretmen QR kodu okutarak ödev sayfasını doğrulayabilir.",
+        128,
+        942
+      );
+
+      // Sağ Alt Köşe: Ödevin QR Kodu Kutusu
+      drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, 244, 26);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#087F5B";
+      ctx.stroke();
+
+      const qrMatrix = computeHomeworkQrMatrix(effectiveQrUrl);
+      const N = qrMatrix.length;
+      const cellPx = 4.6;
+      const qrDrawSize = N * cellPx;
+      const qrStartX = qrBoxX + (qrBoxSize - qrDrawSize) / 2;
+      const qrStartY = qrBoxY + 18;
+
+      ctx.fillStyle = "#0f172a";
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          if (qrMatrix[r][c]) {
+            ctx.fillRect(
+              qrStartX + c * cellPx,
+              qrStartY + r * cellPx,
+              Math.ceil(cellPx),
+              Math.ceil(cellPx)
+            );
+          }
+        }
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#065F46";
+      ctx.font = "800 15px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        "📱 ÖDEV DOĞRULAMA QR",
+        qrBoxX + qrBoxSize / 2,
+        qrBoxY + 220
+      );
+    } else {
+      // 6. Alt Band (app.muallimun.net)
+      drawRoundRect(ctx, 84, 864, W - 168, 126, 28);
+      const footerGrad = ctx.createLinearGradient(84, 864, W - 84, 990);
+      footerGrad.addColorStop(0, "#087F5B");
+      footerGrad.addColorStop(1, "#087F5B");
+      ctx.fillStyle = footerGrad;
+      ctx.fill();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "900 34px system-ui, -apple-system, sans-serif";
+      ctx.fillText("🌐 app.muallimun.net", W / 2, 920);
+
+      ctx.fillStyle = "#D3F9D8";
+      ctx.font = "700 21px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        "60 Sesli Diyalog • 38 Mahreç Koçu • Morfolojik Sözlük • Alıştırmalar",
+        W / 2,
+        962
+      );
     }
-
-    // 6. Alt Band (app.muallimun.net)
-    drawRoundRect(ctx, 84, 864, W - 168, 126, 28);
-    const footerGrad = ctx.createLinearGradient(84, 864, W - 84, 990);
-    footerGrad.addColorStop(0, "#087F5B");
-    footerGrad.addColorStop(1, "#087F5B");
-    ctx.fillStyle = footerGrad;
-    ctx.fill();
-
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 34px system-ui, -apple-system, sans-serif";
-    ctx.fillText("🌐 app.muallimun.net", W / 2, 920);
-
-    ctx.fillStyle = "#D3F9D8";
-    ctx.font = "700 21px system-ui, -apple-system, sans-serif";
-    ctx.fillText(
-      "60 Sesli Diyalog • 38 Mahreç Koçu • Morfolojik Sözlük • Alıştırmalar",
-      W / 2,
-      962
-    );
 
     setPreviewDataUrl(canvas.toDataURL("image/png"));
   }, [
     arabicTitle,
     badgeType,
+    completionDateStr,
     completionPercent,
+    completionTimeStr,
+    effectiveModuleTitle,
+    effectiveQrUrl,
     formattedScoreText,
     hasMeasuredScore,
     homeworkTitle,
@@ -1005,8 +1197,8 @@ export default function ShareAchievementModal({
     pointsText,
     pronPracticedCount,
     pronTargetCount,
-    quizCompleted,
     safeScoreNumber,
+    studentClass,
     studentName,
     subtitle,
     title,
@@ -1032,7 +1224,7 @@ export default function ShareAchievementModal({
     const a = document.createElement("a");
     a.href = previewDataUrl;
     a.download = isHomework
-      ? `muallimun-odev-raporu-${verificationCode}.png`
+      ? `muallimun-odev-karnesi-${verificationCode}.png`
       : "muallimun-basari-karti.png";
     document.body.appendChild(a);
     a.click();
@@ -1051,7 +1243,7 @@ export default function ShareAchievementModal({
         const file = new File(
           [blob],
           isHomework
-            ? `muallimun-odev-raporu-${verificationCode}.png`
+            ? `muallimun-odev-karnesi-${verificationCode}.png`
             : "muallimun-basari-karti.png",
           {
             type: "image/png",
@@ -1068,7 +1260,7 @@ export default function ShareAchievementModal({
         ) {
           await navigator.share({
             title: isHomework
-              ? `Ödev Sonuç Raporu (#${verificationCode})`
+              ? `Ödev Tamamlama Karnesi (#${verificationCode})`
               : "Arapça Telaffuz ve Diyalog Asistanı — Başarı Kartım",
             text: shareMessage,
             url: APP_URL,
@@ -1081,7 +1273,7 @@ export default function ShareAchievementModal({
 
         await navigator.share({
           title: isHomework
-            ? `Ödev Sonuç Raporu (#${verificationCode})`
+            ? `Ödev Tamamlama Karnesi (#${verificationCode})`
             : "Arapça Telaffuz ve Diyalog Asistanı — Başarı Kartım",
           text: shareMessage,
           url: APP_URL,
@@ -1136,12 +1328,12 @@ export default function ShareAchievementModal({
             <div>
               <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
                 {isHomework
-                  ? "📤 Öğrenci Ödev Sonuç Raporu"
+                  ? "🏅 Doğrulama Kodlu Ödev Tamamlama Karnesi"
                   : "Başarı Kartını Paylaş / İndir"}
               </h3>
               <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                 {isHomework
-                  ? `Doğrulama Kodu: #${verificationCode} • PNG İndirin veya Öğretmene Gönderin`
+                  ? `DOĞRULAMA KODU: #${verificationCode} • PNG İndirin veya Öğretmene Gönderin`
                   : "Görseli indirin veya tıklanabilir uygulama linkiyle paylaşın"}
               </p>
             </div>
@@ -1159,59 +1351,67 @@ export default function ShareAchievementModal({
           </button>
         </div>
 
-        {/* Öğrenci Adı Soyadı Giriş Alanı (Ödev Modunda) */}
+        {/* Öğrenci Adı Soyadı ve Sınıf / Numara Giriş Kutucukları (Ödev Modunda) */}
         {isHomework && (
-          <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/40 p-2.5 space-y-1.5">
+          <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/40 p-2.5 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <label className="text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff] flex items-center gap-1.5">
                 <UserCheck size={14} />
-                <span>Adınız Soyadınız / Numaranız (Rapora Yazılır):</span>
+                <span>Öğrenci Bilgileri (Karneye ve Doğrulama Koduna İşlenir):</span>
               </label>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-[#6741D9]/30 text-[10px] font-mono font-extrabold text-[#4C28B5] dark:text-indigo-200">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-[#6741D9]/30 text-[10px] font-mono font-extrabold text-[#065F46] dark:text-emerald-300">
                 <ShieldCheck size={11} />#{verificationCode}
               </span>
             </div>
-            <input
-              type="text"
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              placeholder="Adınızı ve soyadınızı yazın (ör: Ahmet Yılmaz - 104)..."
-              maxLength={40}
-              className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9]/40 text-xs font-bold text-[var(--foreground)] focus:outline-none focus:border-[#6741D9]"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={studentName}
+                onChange={(e) => handleStudentNameChange(e.target.value)}
+                placeholder="Öğrenci Adı Soyadı (Örn: Ahmet Yılmaz)"
+                maxLength={36}
+                className="sm:col-span-2 h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9]/40 text-xs font-bold text-[var(--foreground)] focus:outline-none focus:border-[#6741D9]"
+              />
+              <input
+                type="text"
+                value={studentClass}
+                onChange={(e) => handleStudentClassChange(e.target.value)}
+                placeholder="Sınıf / No (Örn: 9-A / 104)"
+                maxLength={20}
+                className="h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9]/40 text-xs font-bold text-[var(--foreground)] focus:outline-none focus:border-[#6741D9]"
+              />
+            </div>
           </div>
         )}
 
         {/* Gizli Yüksek Çözünürlüklü Canvas + Canlı Önizleme */}
         <canvas ref={canvasRef} className="hidden" />
 
-        <div className="relative rounded-2xl overflow-hidden border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] shadow-inner max-h-[34vh] sm:max-h-[42vh] w-auto mx-auto flex items-center justify-center">
+        <div className="relative rounded-2xl overflow-hidden border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] shadow-inner max-h-[34vh] sm:max-h-[40vh] w-auto mx-auto flex items-center justify-center">
           {previewDataUrl ? (
             <img
               src={previewDataUrl}
-              alt="Başarı Kartı Önizleme"
-              className="max-h-[34vh] sm:max-h-[42vh] w-auto mx-auto object-contain"
+              alt="Ödev Tamamlama Karnesi Önizleme"
+              className="max-h-[34vh] sm:max-h-[40vh] w-auto mx-auto object-contain"
             />
           ) : (
             <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 py-12 px-6">
               <Sparkles size={16} className="animate-spin text-[#065F46]" />
-              <span>Rapor kartı hazırlanıyor...</span>
+              <span>Ödev tamamlama karnesi hazırlanıyor...</span>
             </div>
           )}
         </div>
 
-        {/* Tıklanabilir Uygulama Linki / Rapor Özeti Kutusu */}
+        {/* Tıklanabilir Uygulama Linki / Karne Özeti Kutusu */}
         <div className="rounded-xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] px-3 py-2 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <span className="text-[10px] font-extrabold uppercase text-slate-600 dark:text-slate-300 block">
               {isHomework
-                ? `Görev Tamamlama: %${completionPercent} • Telaffuz: ${formattedScoreText}`
+                ? `DOĞRULAMA KODU: #${verificationCode} • ${completionDateStr} ${completionTimeStr}`
                 : "Paylaşılacak Tıklanabilir Uygulama Linki"}
             </span>
             <span className="text-xs font-extrabold text-[#065F46] dark:text-[#20c997] truncate block">
-              {isHomework
-                ? `Tekrar Kelimeleri: ${weakWordsSummaryText}`
-                : APP_URL}
+              {isHomework ? effectiveModuleTitle : APP_URL}
             </span>
           </div>
           <button
@@ -1227,7 +1427,7 @@ export default function ShareAchievementModal({
             ) : (
               <>
                 <Copy size={13} />
-                <span>{isHomework ? "Raporu Kopyala" : "Metin + Link Kopyala"}</span>
+                <span>{isHomework ? "Özeti Kopyala" : "Metin + Link Kopyala"}</span>
               </>
             )}
           </button>
@@ -1238,42 +1438,43 @@ export default function ShareAchievementModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={handleNativeShare}
-              disabled={sharingBusy}
-              className="py-2.5 px-4 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#087F5B] active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Share2 size={15} />
-              <span>
-                {isHomework
-                  ? "📲 Rapor Görselini Paylaş"
-                  : "📲 Paylaş (Resim + Link)"}
-              </span>
-            </button>
-
-            <button
-              type="button"
               onClick={handleDownloadPng}
               className="py-2.5 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#3b1f8c] active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Download size={15} />
-              <span>📥 Görseli İndir (PNG)</span>
+              <span>
+                {isHomework
+                  ? "📥 Karneyi Görsel (PNG) Olarak İndir"
+                  : "📥 Görseli İndir (PNG)"}
+              </span>
             </button>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => playClick()}
-              className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs border-b-3 border-emerald-800 flex items-center justify-center gap-1.5 transition-all"
+              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs border-b-3 border-emerald-800 flex items-center justify-center gap-1.5 transition-all"
             >
+              <Share2 size={15} />
               <span>
                 {isHomework
-                  ? "💬 WhatsApp'tan Öğretmene Gönder"
+                  ? "📲 WhatsApp ile Öğretmenime Gönder"
                   : "💬 WhatsApp'ta Paylaş"}
               </span>
             </a>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              disabled={sharingBusy}
+              className="py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] active:translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Share2 size={14} />
+              <span>📲 Cihazda Paylaş (PNG)</span>
+            </button>
 
             <a
               href={telegramUrl}

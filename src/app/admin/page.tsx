@@ -1,0 +1,2659 @@
+"use client";
+
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import Link from "next/link";
+import {
+  Settings,
+  Cloud,
+  HardDrive,
+  Search,
+  Plus,
+  Download,
+  Save,
+  Upload,
+  Volume2,
+  Mic,
+  Square,
+  Sparkles,
+  Image as ImageIcon,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Stethoscope,
+  RefreshCw,
+  Edit3,
+  Trash2,
+  FolderOpen,
+  Play,
+  ExternalLink,
+  Code2,
+} from "lucide-react";
+import {
+  resolveImageUrl,
+  resolveAudioUrl,
+  getDialogueCoverUrl,
+  getReadingTextCoverUrl,
+  getProverbCoverUrl,
+  getVisualWordCoverUrl,
+} from "@/lib/data";
+import { playClick, playSuccess, playError } from "@/lib/sfxManager";
+import type { AdminDatasetKey } from "@/app/api/admin/route";
+
+type StudioTabKey = AdminDatasetKey | "efect_manager";
+
+interface DatasetMeta {
+  key: StudioTabKey;
+  label: string;
+  shortLabel: string;
+  icon: string;
+  fileName: string;
+  description: string;
+}
+
+const STUDIO_TABS: DatasetMeta[] = [
+  {
+    key: "gorsel_kelimeler",
+    label: "🖼️ 999 Görsel Kelime",
+    shortLabel: "Görsel Kelime",
+    icon: "🖼️",
+    fileName: "gorselKelimeler_guncel.json",
+    description: "Görsel destekli kelimeler, kök, çoğul/muzari, soru kalıbı ve örnek cümleler",
+  },
+  {
+    key: "cumleler_1111",
+    label: "🗣️ 1111 Cümle",
+    shortLabel: "1111 Cümle",
+    icon: "🗣️",
+    fileName: "1111_cumle.json",
+    description: "Günlük konuşma kalıpları, odak gramer ve erkek/kadın ses dosyaları",
+  },
+  {
+    key: "atasozleri_508",
+    label: "📜 508 Atasözü",
+    shortLabel: "508 Atasözü",
+    icon: "📜",
+    fileName: "atasozleri.json",
+    description: "Arapça atasözleri, deyimsel/lafzî çeviri, görsel ve ses dosyaları",
+  },
+  {
+    key: "diyaloglar_120",
+    label: "💬 120 Diyalog",
+    shortLabel: "120 Diyalog",
+    icon: "💬",
+    fileName: "tum_diyaloglar_120.json",
+    description: "Seviyelendirilmiş 120 diyalog, konuşmacı satırları ve kapak görselleri",
+  },
+  {
+    key: "metinler_60",
+    label: "📖 60 Metin",
+    shortLabel: "60 Metin",
+    icon: "📖",
+    fileName: "tum_metinler_60.json",
+    description: "60 okuma metni, cümle satırları ve okuduğunu anlama soruları",
+  },
+  {
+    key: "sozluk",
+    label: "📚 3186 Sözlük",
+    shortLabel: "Sözlük",
+    icon: "📚",
+    fileName: "yeni_tum_sozluk.json",
+    description: "Morfolojik sözlük (kök, müfret/cemi, mazi/muzari/masdar, örnekler)",
+  },
+  {
+    key: "diyalog_gramer",
+    label: "📌 Diyalog Gramer (120)",
+    shortLabel: "Diyalog Gramer",
+    icon: "📌",
+    fileName: "diyaloglar_gramer_hap_bilgi.json",
+    description: "120 diyaloğun hap gramer kuralları, formüller ve ayrıntılı i'rab anlatımı",
+  },
+  {
+    key: "metin_gramer",
+    label: "📌 Metin Gramer (60)",
+    shortLabel: "Metin Gramer",
+    icon: "📌",
+    fileName: "metinler_gramer_hap_bilgi.json",
+    description: "60 okuma metninin hap gramer kuralları, tablolar ve i'rab tahlilleri",
+  },
+  {
+    key: "efect_manager",
+    label: "🔊 Ses Efektleri (efect)",
+    shortLabel: "Ses Efektleri",
+    icon: "🔊",
+    fileName: "efect/*.mp3",
+    description: "Uygulama içi 14 MP3 ses efekti ve sözlü övgü sesleri (efect/ klasörü)",
+  },
+];
+
+interface EfectItem {
+  id: string;
+  fileName: string;
+  targetPath: string;
+  titleTr: string;
+  arabicSample: string;
+  gender: "male" | "female";
+  category: string;
+}
+
+const EFECT_CATALOG: EfectItem[] = [
+  {
+    id: "efect_click",
+    fileName: "butonsesi.mp3",
+    targetPath: "/efect/butonsesi.mp3",
+    titleTr: "Buton Tıklama Sesi",
+    arabicSample: "نَقْرَة",
+    gender: "male",
+    category: "Arayüz Efekti",
+  },
+  {
+    id: "efect_start",
+    fileName: "baslangic.mp3",
+    targetPath: "/efect/baslangic.mp3",
+    titleTr: "Alıştırma Başlangıç Sesi",
+    arabicSample: "بِسْمِ اللّٰهِ نَبْدَأُ",
+    gender: "male",
+    category: "Arayüz Efekti",
+  },
+  {
+    id: "efect_dogru",
+    fileName: "dogru.mp3",
+    targetPath: "/efect/dogru.mp3",
+    titleTr: "Doğru Cevap Zil Sesi 1",
+    arabicSample: "إِجَابَةٌ صَحِيحَةٌ",
+    gender: "male",
+    category: "Doğru Cevap",
+  },
+  {
+    id: "efect_bildiniz",
+    fileName: "bildiniz.mp3",
+    targetPath: "/efect/bildiniz.mp3",
+    titleTr: "Doğru Cevap Zil Sesi 2 (Bildiniz)",
+    arabicSample: "أَحْسَنْتَ، إِجَابَةٌ صَحِيحَةٌ",
+    gender: "male",
+    category: "Doğru Cevap",
+  },
+  {
+    id: "efect_yanlis",
+    fileName: "yanliscevap.mp3",
+    targetPath: "/efect/yanliscevap.mp3",
+    titleTr: "Yanlış Cevap Sesi 1",
+    arabicSample: "حَاوِلْ مَرَّةً أُخْرَى",
+    gender: "male",
+    category: "Yanlış Cevap",
+  },
+  {
+    id: "efect_bilemediniz",
+    fileName: "bilemediniz.mp3",
+    targetPath: "/efect/bilemediniz.mp3",
+    titleTr: "Yanlış Cevap Sesi 2 (Bilemediniz)",
+    arabicSample: "لَا بَأْسَ، حَاوِلْ ثَانِيَةً",
+    gender: "male",
+    category: "Yanlış Cevap",
+  },
+  {
+    id: "efect_ahsent_m",
+    fileName: "ahsent_male.mp3",
+    targetPath: "/efect/ahsent_male.mp3",
+    titleTr: "Ahsent! (Erkek Övgü Sesi)",
+    arabicSample: "أَحْسَنْتَ!",
+    gender: "male",
+    category: "Sözlü Övgü (Erkek)",
+  },
+  {
+    id: "efect_mumtaz_m",
+    fileName: "mumtaz_male.mp3",
+    targetPath: "/efect/mumtaz_male.mp3",
+    titleTr: "Mümtâz! (Erkek Övgü Sesi)",
+    arabicSample: "مُمْتَازٌ!",
+    gender: "male",
+    category: "Sözlü Övgü (Erkek)",
+  },
+  {
+    id: "efect_rai_m",
+    fileName: "rai_male.mp3",
+    targetPath: "/efect/rai_male.mp3",
+    titleTr: "Râi'! (Erkek Övgü Sesi)",
+    arabicSample: "رَائِعٌ!",
+    gender: "male",
+    category: "Sözlü Övgü (Erkek)",
+  },
+  {
+    id: "efect_ahsent_f",
+    fileName: "ahsent_female.mp3",
+    targetPath: "/efect/ahsent_female.mp3",
+    titleTr: "Ahsenti! (Kadın Övgü Sesi)",
+    arabicSample: "أَحْسَنْتِ!",
+    gender: "female",
+    category: "Sözlü Övgü (Kadın)",
+  },
+  {
+    id: "efect_mumtaz_f",
+    fileName: "mumtaz_female.mp3",
+    targetPath: "/efect/mumtaz_female.mp3",
+    titleTr: "Mümtâze! (Kadın Övgü Sesi)",
+    arabicSample: "مُمْتَازَةٌ!",
+    gender: "female",
+    category: "Sözlü Övgü (Kadın)",
+  },
+  {
+    id: "efect_rai_f",
+    fileName: "rai_female.mp3",
+    targetPath: "/efect/rai_female.mp3",
+    titleTr: "Râia! (Kadın Övgü Sesi)",
+    arabicSample: "رَائِعَةٌ!",
+    gender: "female",
+    category: "Sözlü Övgü (Kadın)",
+  },
+  {
+    id: "efect_tebrikler",
+    fileName: "tebrikler.mp3",
+    targetPath: "/efect/tebrikler.mp3",
+    titleTr: "Tebrikler Fanfar Sesi (%85+ Başarı)",
+    arabicSample: "مَبْرُوكٌ! نَجَاحٌ بَاهِرٌ!",
+    gender: "male",
+    category: "Bitiş Fanfarı",
+  },
+  {
+    id: "efect_basari",
+    fileName: "basari.mp3",
+    targetPath: "/efect/basari.mp3",
+    titleTr: "Standart Başarı Fanfar Sesi",
+    arabicSample: "أَتْمَمْتَ التَّدْرِيبَ بِنَجَاحٍ",
+    gender: "male",
+    category: "Bitiş Fanfarı",
+  },
+];
+
+const HAREKE_KEYS = [
+  { char: "\u064E", label: "ـَ Fetha" },
+  { char: "\u0650", label: "ـِ Kesra" },
+  { char: "\u064F", label: "ـُ Damme" },
+  { char: "\u0652", label: "ـْ Sükun" },
+  { char: "\u0651", label: "ـّ Şedde" },
+  { char: "\u064B", label: "ـً T.Fetha" },
+  { char: "\u064D", label: "ـٍ T.Kesra" },
+  { char: "\u064C", label: "ـٌ T.Damme" },
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenericRecord = Record<string, any>;
+
+interface HealthIssue {
+  index: number;
+  id: string;
+  title: string;
+  issueType: "corrupt_char" | "missing_hareke" | "empty_field" | "missing_media";
+  severity: "error" | "warning";
+  detail: string;
+}
+
+function hasArabicDiacritics(str: string): boolean {
+  return /[\u064B-\u0652\u0670]/.test(str || "");
+}
+
+function getRecordId(rec: GenericRecord, idx: number): string {
+  return String(
+    rec.id || rec.diyalog_id || rec.metin_id || rec.sira || `kayit_${idx + 1}`
+  );
+}
+
+function getRecordLevel(rec: GenericRecord): string {
+  return String(rec.cefr || rec.seviye || rec.level || "A1");
+}
+
+function getRecordCategory(rec: GenericRecord): string {
+  return String(
+    rec.kategori_tr ||
+      rec.tema ||
+      rec.odak_gramer ||
+      rec.tur ||
+      rec.diyalog_baslik ||
+      rec.metin_baslik ||
+      "Genel"
+  );
+}
+
+function getRecordArabic(rec: GenericRecord): string {
+  if (rec.arapca) return String(rec.arapca);
+  if (rec.baslik_ar) return String(rec.baslik_ar);
+  if (rec.mufret) return String(rec.mufret);
+  if (rec.mazi) return String(rec.mazi);
+  if (Array.isArray(rec.gramer_notlari) && rec.gramer_notlari[0]?.ornekler?.[0]?.arapca) {
+    return String(rec.gramer_notlari[0].ornekler[0].arapca);
+  }
+  return "";
+}
+
+function getRecordTurkish(rec: GenericRecord): string {
+  if (rec.turkce) return String(rec.turkce);
+  if (rec.baslik_tr) return String(rec.baslik_tr);
+  if (rec.anlam_tr) return String(rec.anlam_tr);
+  if (rec.diyalog_baslik) return String(rec.diyalog_baslik);
+  if (rec.metin_baslik) return String(rec.metin_baslik);
+  return "";
+}
+
+function getDefaultImagePath(
+  tab: StudioTabKey,
+  rec: GenericRecord,
+  idx: number
+): string {
+  if (rec.gorsel) return String(rec.gorsel);
+  if (tab === "gorsel_kelimeler") {
+    const num = String(rec.sira || idx + 1).padStart(4, "0");
+    return `/gorseller/kelimeler/gorsel_${num}.webp`;
+  }
+  if (tab === "atasozleri_508") {
+    const num = String(rec.sira || idx + 1).padStart(3, "0");
+    return `/gorseller/atasozleri/ata_${num}.webp`;
+  }
+  if (tab === "diyaloglar_120") {
+    const num = String(rec.id || `${idx + 1}`).replace(/\D+/g, "").padStart(3, "0") || "001";
+    return `/gorseller/diyaloglar/${num}.webp`;
+  }
+  if (tab === "metinler_60") {
+    const num = String(rec.id || `${idx + 1}`).replace(/\D+/g, "").padStart(2, "0") || "01";
+    return `/gorseller/metinler/metin_${num}.webp`;
+  }
+  return "";
+}
+
+function getPreviewImageUrl(
+  tab: StudioTabKey,
+  rec: GenericRecord,
+  idx: number,
+  cacheBuster: number
+): string {
+  let rawUrl = "";
+  if (tab === "gorsel_kelimeler") {
+    rawUrl = rec.gorsel
+      ? resolveImageUrl(String(rec.gorsel))
+      : getVisualWordCoverUrl(String(rec.id || idx + 1));
+  } else if (tab === "atasozleri_508") {
+    rawUrl = rec.gorsel
+      ? resolveImageUrl(String(rec.gorsel))
+      : getProverbCoverUrl(String(rec.id || `ata_${idx + 1}`));
+  } else if (tab === "diyaloglar_120") {
+    rawUrl = getDialogueCoverUrl(String(rec.id || `dlg_${idx + 1}`));
+  } else if (tab === "metinler_60") {
+    rawUrl = getReadingTextCoverUrl(String(rec.id || `metin_${idx + 1}`));
+  } else if (rec.gorsel) {
+    rawUrl = resolveImageUrl(String(rec.gorsel));
+  }
+  if (!rawUrl) return "";
+  return `${rawUrl}${rawUrl.includes("?") ? "&" : "?"}t=${cacheBuster}`;
+}
+
+function getDefaultAudioPath(
+  tab: StudioTabKey,
+  rec: GenericRecord,
+  gender: "male" | "female",
+  idx: number
+): string {
+  const field = gender === "female" ? rec.ses_kadin : rec.ses_erkek;
+  if (field) return String(field);
+  const gFolder = gender === "female" ? "kadin" : "erkek";
+  const num4 = String(rec.sira || idx + 1).padStart(4, "0");
+  const num3 = String(rec.sira || idx + 1).padStart(3, "0");
+  if (tab === "gorsel_kelimeler") {
+    return `/sesler/kelimeler/${gFolder}/${num4}.mp3`;
+  }
+  if (tab === "cumleler_1111") {
+    return `/sesler/cumleler/${gFolder}/cumle_${num4}.mp3`;
+  }
+  if (tab === "atasozleri_508") {
+    return `/sesler/atasozleri/${gFolder}/ata_${num3}.mp3`;
+  }
+  if (tab === "sozluk") {
+    return `/sesler/sozluk/${gFolder}/${rec.id || `kelime_${num4}`}.mp3`;
+  }
+  return `/sesler/ozel/${gFolder}/${rec.id || `kayit_${num4}`}.mp3`;
+}
+
+export default function AdminStudioPage() {
+  // 1. GitHub & Depo Ayarları (localStorage destekli)
+  const [githubToken, setGithubToken] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return window.localStorage.getItem("muallimun_admin_gh_token") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [repoOwner, setRepoOwner] = useState(() => {
+    if (typeof window === "undefined") return "muallimun";
+    try {
+      return window.localStorage.getItem("muallimun_admin_gh_owner") || "muallimun";
+    } catch {
+      return "muallimun";
+    }
+  });
+  const [codeRepo, setCodeRepo] = useState(() => {
+    if (typeof window === "undefined") return "arapca_telaffuz_web_v2";
+    try {
+      return (
+        window.localStorage.getItem("muallimun_admin_code_repo") ||
+        "arapca_telaffuz_web_v2"
+      );
+    } catch {
+      return "arapca_telaffuz_web_v2";
+    }
+  });
+  const [mediaRepo, setMediaRepo] = useState(() => {
+    if (typeof window === "undefined") return "arapca_telaffuz_medya";
+    try {
+      return (
+        window.localStorage.getItem("muallimun_admin_media_repo") ||
+        "arapca_telaffuz_medya"
+      );
+    } catch {
+      return "arapca_telaffuz_medya";
+    }
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // 2. Aktif Sekme & Veri Durumu
+  const [activeTab, setActiveTab] = useState<StudioTabKey>("gorsel_kelimeler");
+  const [records, setRecords] = useState<GenericRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [savingAll, setSavingAll] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [statusBanner, setStatusBanner] = useState<{
+    type: "success" | "error" | "info";
+    text: string;
+    url?: string;
+  } | null>(null);
+
+  // 3. Arama, Filtre & Sayfalama (25 kayıt/sayfa)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
+
+  // 4. Düzenleme Modalı & Medya Stüdyosu Durumu
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draftRecord, setDraftRecord] = useState<GenericRecord | null>(null);
+  const [rawJsonMode, setRawJsonMode] = useState(false);
+  const [rawJsonText, setRawJsonText] = useState("");
+  const [cacheBuster, setCacheBuster] = useState<number>(1);
+  const [imgPreviewBroken, setImgPreviewBroken] = useState(false);
+  const [squareResizePx, setSquareResizePx] = useState<512 | 768>(512);
+  const [mediaBusyLabel, setMediaBusyLabel] = useState<string | null>(null);
+  const [maleAudioStatus, setMaleAudioStatus] = useState<"unknown" | "ready" | "missing">("unknown");
+  const [femaleAudioStatus, setFemaleAudioStatus] = useState<"unknown" | "ready" | "missing">("unknown");
+  const [dialogueSelectedLineIdx, setDialogueSelectedLineIdx] = useState<number>(0);
+
+  // Mikrofon Kayıt Durumu (Tarayıcıdan doğrudan .mp3/ses kaydı)
+  const [recordingGender, setRecordingGender] = useState<"male" | "female" | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
+
+  // 5. Sağlık Taraması (Veri & Medya Denetleyicisi)
+  const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
+  const [brokenMediaIds, setBrokenMediaIds] = useState<Record<string, string>>({});
+  const [checkingMediaHealth, setCheckingMediaHealth] = useState(false);
+
+  const saveRepoSettingsToStorage = (
+    token: string,
+    owner: string,
+    cRepo: string,
+    mRepo: string
+  ) => {
+    setGithubToken(token);
+    setRepoOwner(owner);
+    setCodeRepo(cRepo);
+    setMediaRepo(mRepo);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("muallimun_admin_gh_token", token.trim());
+        window.localStorage.setItem("muallimun_admin_gh_owner", owner.trim());
+        window.localStorage.setItem("muallimun_admin_code_repo", cRepo.trim());
+        window.localStorage.setItem("muallimun_admin_media_repo", mRepo.trim());
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  // Veri setini API'den yükle
+  const fetchDataset = useCallback(async (tabKey: StudioTabKey) => {
+    if (tabKey === "efect_manager") {
+      await Promise.resolve();
+      setRecords(EFECT_CATALOG);
+      setHasUnsavedChanges(false);
+      setCurrentPage(1);
+      return;
+    }
+    await Promise.resolve();
+    setLoading(true);
+    setStatusBanner(null);
+    try {
+      const res = await fetch(`/api/admin?dataset=${tabKey}`, {
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Veri seti yüklenemedi.");
+      }
+      setRecords(Array.isArray(json.data) ? json.data : []);
+      setHasUnsavedChanges(false);
+      setCurrentPage(1);
+    } catch (err) {
+      setStatusBanner({
+        type: "error",
+        text: err instanceof Error ? err.message : "Veri okuma hatası",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!active) return;
+      await fetchDataset(activeTab);
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [activeTab, fetchDataset]);
+
+  // Filtrelenmiş kayıtlar
+  const filteredRecords = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return records
+      .map((rec, originalIndex) => ({ rec, originalIndex }))
+      .filter(({ rec, originalIndex }) => {
+        if (levelFilter !== "all" && activeTab !== "efect_manager") {
+          const lvl = getRecordLevel(rec);
+          if (lvl !== levelFilter) return false;
+        }
+        if (!q) return true;
+        const idStr = getRecordId(rec, originalIndex).toLowerCase();
+        const arStr = getRecordArabic(rec).toLowerCase();
+        const trStr = getRecordTurkish(rec).toLowerCase();
+        const catStr = getRecordCategory(rec).toLowerCase();
+        const rootStr = String(rec.kok || "").toLowerCase();
+        return (
+          idStr.includes(q) ||
+          arStr.includes(q) ||
+          trStr.includes(q) ||
+          catStr.includes(q) ||
+          rootStr.includes(q)
+        );
+      });
+  }, [records, searchQuery, levelFilter, activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+  const paginatedRecords = useMemo(() => {
+    const safePage = Math.min(Math.max(1, currentPage), totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filteredRecords.slice(start, start + PAGE_SIZE);
+  }, [filteredRecords, currentPage, totalPages]);
+
+  // Sağlık Taraması (Veri & Medya Denetleyicisi)
+  const healthIssues = useMemo<HealthIssue[]>(() => {
+    if (activeTab === "efect_manager") return [];
+    const issues: HealthIssue[] = [];
+    records.forEach((rec, index) => {
+      const id = getRecordId(rec, index);
+      const ar = getRecordArabic(rec);
+      const tr = getRecordTurkish(rec);
+      const rawJson = JSON.stringify(rec);
+
+      // 1. Bozuk karakter (\uFFFD / □) kontrolü
+      if (rawJson.includes("\uFFFD") || rawJson.includes("□")) {
+        issues.push({
+          index,
+          id,
+          title: tr || ar || id,
+          issueType: "corrupt_char",
+          severity: "error",
+          detail: "Kayıtta bozuk karakter (□ / \\uFFFD) tespit edildi.",
+        });
+      }
+
+      // 2. Boş Arapça veya Türkçe alan kontrolü
+      if (
+        activeTab !== "diyalog_gramer" &&
+        activeTab !== "metin_gramer" &&
+        (!ar.trim() || !tr.trim())
+      ) {
+        issues.push({
+          index,
+          id,
+          title: tr || ar || id,
+          issueType: "empty_field",
+          severity: "error",
+          detail: !ar.trim()
+            ? "Arapça metin alanı boş bırakılmış."
+            : "Türkçe anlam/başlık alanı boş bırakılmış.",
+        });
+      }
+
+      // 3. Eksik hareke kontrolü
+      if (ar.trim().length > 1 && !hasArabicDiacritics(ar)) {
+        issues.push({
+          index,
+          id,
+          title: tr || ar || id,
+          issueType: "missing_hareke",
+          severity: "warning",
+          detail: `Arapça metinde ("${ar.slice(0, 28)}") hiç hareke bulunmuyor.`,
+        });
+      }
+
+      // 4. Medya yolu veya kırık medya kontrolü
+      if (brokenMediaIds[id]) {
+        issues.push({
+          index,
+          id,
+          title: tr || ar || id,
+          issueType: "missing_media",
+          severity: "error",
+          detail: brokenMediaIds[id],
+        });
+      } else if (
+        activeTab === "gorsel_kelimeler" &&
+        (!rec.gorsel || !String(rec.gorsel).trim())
+      ) {
+        issues.push({
+          index,
+          id,
+          title: tr || ar || id,
+          issueType: "missing_media",
+          severity: "warning",
+          detail: "Görsel dosya yolu (gorsel) tanımlanmamış.",
+        });
+      }
+    });
+    return issues;
+  }, [records, activeTab, brokenMediaIds]);
+
+  // İlk 30 kaydın canlı medya (Görsel/Ses) 404 kontrolü
+  const runLiveMediaProbe = async () => {
+    playClick();
+    setCheckingMediaHealth(true);
+    const nextBroken: Record<string, string> = {};
+    const sample = records.slice(0, 30);
+
+    await Promise.all(
+      sample.map(async (rec, idx) => {
+        const id = getRecordId(rec, idx);
+        const imgUrl = getPreviewImageUrl(activeTab, rec, idx, cacheBuster);
+        if (imgUrl) {
+          try {
+            const res = await fetch(imgUrl, { method: "HEAD" });
+            if (!res.ok) {
+              nextBroken[id] = `Görsel 404 (Bulunamadı): ${getDefaultImagePath(
+                activeTab,
+                rec,
+                idx
+              )}`;
+            }
+          } catch {
+            // ağ hatası
+          }
+        }
+      })
+    );
+
+    setBrokenMediaIds(nextBroken);
+    setCheckingMediaHealth(false);
+    playSuccess();
+  };
+
+  // Kayıt Düzenleme Modalını Aç
+  const openRecordEditor = (index: number) => {
+    playClick();
+    const target = records[index];
+    if (!target) return;
+    const cloned = JSON.parse(JSON.stringify(target)) as GenericRecord;
+    setEditingIndex(index);
+    setDraftRecord(cloned);
+    setRawJsonText(JSON.stringify(cloned, null, 2));
+    setRawJsonMode(false);
+    setImgPreviewBroken(false);
+    setMaleAudioStatus("unknown");
+    setFemaleAudioStatus("unknown");
+    setDialogueSelectedLineIdx(0);
+  };
+
+  // Yeni Kayıt Ekle
+  const handleAddNewRecord = () => {
+    playClick();
+    const nextNum = records.length + 1;
+    let template: GenericRecord = {
+      id: `yeni_${nextNum}`,
+      sira: nextNum,
+      cefr: "A1",
+      kategori_tr: "Genel",
+      arapca: "",
+      turkce: "",
+    };
+
+    if (activeTab === "gorsel_kelimeler") {
+      const pad4 = String(nextNum).padStart(4, "0");
+      template = {
+        id: pad4,
+        sira: nextNum,
+        cefr: "A1",
+        kategori_tr: "Aile ve İnsan",
+        arapca: "كَلِمَةٌ جَدِيدَةٌ",
+        turkce: "Yeni Kelime",
+        kok: "ك ل م",
+        ikincil_form: "كَلِمَاتٌ",
+        ucuncul_form: "-",
+        soru_kalibi: "مَا هٰذِهِ؟",
+        ornek_ar: "هٰذِهِ كَلِمَةٌ مُفِيدَةٌ.",
+        ornek_tr: "Bu faydalı bir kelimedir.",
+        gorsel: `/gorseller/kelimeler/gorsel_${pad4}.webp`,
+        ses_erkek: `/sesler/kelimeler/erkek/${pad4}.mp3`,
+        ses_kadin: `/sesler/kelimeler/kadin/${pad4}.mp3`,
+      };
+    } else if (activeTab === "cumleler_1111") {
+      const pad4 = String(nextNum).padStart(4, "0");
+      template = {
+        id: `cumle_${pad4}`,
+        sira: nextNum,
+        seviye: "A1",
+        tema: "Günlük İletişim",
+        odak_kalip: "",
+        arapca: "السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللّٰهِ",
+        turkce: "Allah'ın selamı ve rahmeti üzerinize olsun",
+        ses_erkek: `/sesler/cumleler/erkek/cumle_${pad4}.mp3`,
+        ses_kadin: `/sesler/cumleler/kadin/cumle_${pad4}.mp3`,
+      };
+    } else if (activeTab === "atasozleri_508") {
+      const pad3 = String(nextNum).padStart(3, "0");
+      template = {
+        id: `ata_${pad3}`,
+        sira: nextNum,
+        cefr: "B1",
+        tema: "Hikmet ve Sabır",
+        arapca: "الصَّبْرُ مِفْتَاحُ الْفَرَجِ",
+        turkce: "Sabır ferahlığın anahtarıdır.",
+        lafzi_ceviri: "Sabır kurtuluşun anahtarıdır.",
+        gorsel: `/gorseller/atasozleri/ata_${pad3}.webp`,
+        ses_erkek: `/sesler/atasozleri/erkek/ata_${pad3}.mp3`,
+        ses_kadin: `/sesler/atasozleri/kadin/ata_${pad3}.mp3`,
+      };
+    } else if (activeTab === "sozluk") {
+      template = {
+        id: `sozluk_${nextNum}`,
+        kok: "ك ت ب",
+        tur: "isim",
+        mufret: "كِتَابٌ",
+        cemi: "كُتُبٌ",
+        anlam_tr: "Kitap",
+        cefr: "A1",
+        ornek_ar: "هٰذَا كِتَابٌ جَدِيدٌ.",
+        ornek_tr: "Bu yeni bir kitaptır.",
+      };
+    }
+
+    const updated = [template, ...records];
+    setRecords(updated);
+    setHasUnsavedChanges(true);
+    openRecordEditor(0);
+  };
+
+  // Taslak Kaydı Listeye Uygula ve İsteğe Bağlı Sunucuya/GitHub'a Kaydet
+  const handleApplyDraftRecord = async (saveToCloudImmediately = false) => {
+    if (editingIndex === null || !draftRecord) return;
+    playClick();
+
+    let finalRecord = draftRecord;
+    if (rawJsonMode) {
+      try {
+        finalRecord = JSON.parse(rawJsonText);
+      } catch {
+        playError();
+        setStatusBanner({
+          type: "error",
+          text: "Ham JSON formatı hatalı! Lütfen parantez ve virgülleri kontrol edin.",
+        });
+        return;
+      }
+    }
+
+    const nextList = [...records];
+    nextList[editingIndex] = finalRecord;
+    setRecords(nextList);
+    setDraftRecord(finalRecord);
+    setHasUnsavedChanges(true);
+
+    if (saveToCloudImmediately && activeTab !== "efect_manager") {
+      await handleSaveDatasetToBackend(nextList);
+    } else {
+      playSuccess();
+      setStatusBanner({
+        type: "info",
+        text: `Kayıt #${editingIndex + 1} bellekte güncellendi. Kalıcı olması için "💾 Veri Setini Kaydet" butonuna basınız.`,
+      });
+    }
+  };
+
+  // Tüm JSON Veri Setini API Üzerinden GitHub / Yerel Dosyaya Kaydet
+  const handleSaveDatasetToBackend = async (customRecords?: GenericRecord[]) => {
+    if (activeTab === "efect_manager") return;
+    playClick();
+    setSavingAll(true);
+    setStatusBanner(null);
+
+    const payloadData = customRecords || records;
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_json",
+          dataset: activeTab,
+          data: payloadData,
+          githubToken,
+          owner: repoOwner,
+          codeRepo,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Kaydetme işlemi başarısız oldu.");
+      }
+      setHasUnsavedChanges(false);
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text:
+          json.mode === "github"
+            ? `✅ ${json.fileName} başarıyla GitHub (${json.repoPath}) deposuna commit edildi!`
+            : `✅ ${json.fileName} yerel geliştirici dosya sistemine (src/data/${json.fileName}) kaydedildi!`,
+        url: json.htmlUrl,
+      });
+    } catch (err) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: err instanceof Error ? err.message : "Kaydetme hatası oluştu.",
+      });
+    } finally {
+      setSavingAll(false);
+    }
+  };
+
+  // JSON Yedek İndir
+  const handleDownloadBackupJson = () => {
+    playClick();
+    const meta = STUDIO_TABS.find((t) => t.key === activeTab);
+    const fileName = meta?.fileName.endsWith(".json")
+      ? meta.fileName
+      : `${activeTab}_backup.json`;
+    const blob = new Blob([JSON.stringify(records, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    playSuccess();
+  };
+
+  // 1:1 Kare .webp Görsel Dönüştürücü ve Yükleyici (Canvas 512x512 / 768x768)
+  const convertImageFileToSquareWebpBase64 = (
+    file: File,
+    sizePx: number
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = sizePx;
+          canvas.height = sizePx;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas başlatılamadı"));
+            return;
+          }
+          // Beyaz/Krem temiz arka plan ve 1:1 merkezlenmiş ölçekleme
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, sizePx, sizePx);
+
+          const scale = Math.max(sizePx / img.width, sizePx / img.height);
+          const drawW = img.width * scale;
+          const drawH = img.height * scale;
+          const dx = (sizePx - drawW) / 2;
+          const dy = (sizePx - drawH) / 2;
+          ctx.drawImage(img, dx, dy, drawW, drawH);
+
+          const dataUrl = canvas.toDataURL("image/webp", 0.9);
+          resolve(dataUrl);
+        };
+        img.onerror = () => reject(new Error("Görsel okunamadı"));
+        img.src = String(reader.result);
+      };
+      reader.onerror = () => reject(new Error("Dosya okunamadı"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleUploadImageFile = async (file: File) => {
+    if (!draftRecord || editingIndex === null) return;
+    playClick();
+    const targetPath = getDefaultImagePath(activeTab, draftRecord, editingIndex);
+    if (!targetPath) return;
+
+    setMediaBusyLabel("Görsel 1:1 .webp formatına dönüştürülüp yükleniyor...");
+    try {
+      const webpBase64 = await convertImageFileToSquareWebpBase64(
+        file,
+        squareResizePx
+      );
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "upload_media",
+          base64Content: webpBase64,
+          targetPath,
+          githubToken,
+          owner: repoOwner,
+          mediaRepo,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Görsel yüklenemedi.");
+      }
+
+      const updatedDraft = { ...draftRecord, gorsel: targetPath };
+      setDraftRecord(updatedDraft);
+      setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+      setCacheBuster((prev) => prev + 1);
+      setImgPreviewBroken(false);
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text: `🖼️ Görsel başarıyla yüklendi: ${json.repoFilePath}`,
+        url: json.htmlUrl,
+      });
+    } catch (err) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: err instanceof Error ? err.message : "Görsel yükleme hatası",
+      });
+    } finally {
+      setMediaBusyLabel(null);
+    }
+  };
+
+  // Ses (.mp3) Dosyası Yükleme (Erkek / Kadın / Efect)
+  const handleUploadAudioBlobOrFile = async (
+    blobOrFile: Blob,
+    targetPath: string,
+    gender: "male" | "female"
+  ) => {
+    if (!draftRecord) return;
+    setMediaBusyLabel(`Ses dosyası (${targetPath}) yükleniyor...`);
+    try {
+      const base64Content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Ses dosyası okunamadı"));
+        reader.readAsDataURL(blobOrFile);
+      });
+
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "upload_media",
+          base64Content,
+          targetPath,
+          githubToken,
+          owner: repoOwner,
+          mediaRepo,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Ses yüklenemedi.");
+      }
+
+      if (activeTab !== "efect_manager") {
+        const fieldName = gender === "female" ? "ses_kadin" : "ses_erkek";
+        const updatedDraft = { ...draftRecord, [fieldName]: targetPath };
+        setDraftRecord(updatedDraft);
+        setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+      }
+
+      if (gender === "female") setFemaleAudioStatus("ready");
+      else setMaleAudioStatus("ready");
+      setCacheBuster((prev) => prev + 1);
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text: `🔊 Ses dosyası başarıyla yüklendi: ${json.repoFilePath}`,
+        url: json.htmlUrl,
+      });
+    } catch (err) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: err instanceof Error ? err.message : "Ses yükleme hatası",
+      });
+    } finally {
+      setMediaBusyLabel(null);
+    }
+  };
+
+  // Otomatik TTS ile Ses Üret & Medya Deposuna Kaydet
+  const handleGenerateAndSaveTts = async (
+    arabicText: string,
+    targetPath: string,
+    gender: "male" | "female"
+  ) => {
+    if (!arabicText.trim()) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: "Seslendirilecek Arapça metin boş olamaz!",
+      });
+      return;
+    }
+    playClick();
+    setMediaBusyLabel(
+      `🎙️ "${arabicText.slice(0, 28)}" için ${
+        gender === "female" ? "Kadın" : "Erkek"
+      } sesi üretilip kaydediliyor...`
+    );
+
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_and_save_tts",
+          text: arabicText,
+          gender,
+          targetPath,
+          githubToken,
+          owner: repoOwner,
+          mediaRepo,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "TTS ses üretimi başarısız oldu.");
+      }
+
+      if (json.base64Audio) {
+        const audio = new Audio(json.base64Audio);
+        void audio.play().catch(() => {});
+      }
+
+      if (draftRecord && activeTab !== "efect_manager") {
+        const fieldName = gender === "female" ? "ses_kadin" : "ses_erkek";
+        const updatedDraft = { ...draftRecord, [fieldName]: targetPath };
+        setDraftRecord(updatedDraft);
+        setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+      }
+
+      if (gender === "female") setFemaleAudioStatus("ready");
+      else setMaleAudioStatus("ready");
+      setCacheBuster((prev) => prev + 1);
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text: `✨ TTS (${json.ttsEngine}) ile ses üretildi ve kaydedildi: ${json.repoFilePath}`,
+        url: json.htmlUrl,
+      });
+    } catch (err) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: err instanceof Error ? err.message : "Otomatik ses üretme hatası",
+      });
+    } finally {
+      setMediaBusyLabel(null);
+    }
+  };
+
+  // Tarayıcı Mikrofonundan Kayıt Başlat / Durdur ve Yükle
+  const handleToggleMicRecord = async (
+    targetPath: string,
+    gender: "male" | "female"
+  ) => {
+    playClick();
+    if (recordingGender === gender && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setRecordingGender(null);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) {
+          recordedChunksRef.current.push(ev.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const audioBlob = new Blob(recordedChunksRef.current, {
+          type: "audio/mpeg",
+        });
+        if (audioBlob.size > 100) {
+          void handleUploadAudioBlobOrFile(audioBlob, targetPath, gender);
+        }
+      };
+
+      recorder.start();
+      setRecordingGender(gender);
+    } catch {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: "Mikrofon izni alınamadı. Lütfen tarayıcı izinlerini kontrol edin.",
+      });
+    }
+  };
+
+  // Ses Önizleme Oynatıcısı
+  const handlePlayPreviewAudio = (
+    rawTargetPath: string,
+    gender: "male" | "female"
+  ) => {
+    playClick();
+    if (activeAudioElRef.current) {
+      activeAudioElRef.current.pause();
+      activeAudioElRef.current = null;
+    }
+
+    const clean = rawTargetPath.replace(/^\/+/, "");
+    const resolvedUrl = clean.startsWith("efect/")
+      ? `https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/${clean}?t=${cacheBuster}`
+      : `${resolveAudioUrl(rawTargetPath)}?t=${cacheBuster}`;
+
+    const audio = new Audio(resolvedUrl);
+    activeAudioElRef.current = audio;
+    audio.onloadeddata = () => {
+      if (gender === "female") setFemaleAudioStatus("ready");
+      else setMaleAudioStatus("ready");
+    };
+    audio.onerror = () => {
+      // Yerel public klasöründen dene
+      const localFallback = new Audio(`/${clean}?t=${cacheBuster}`);
+      localFallback.onloadeddata = () => {
+        if (gender === "female") setFemaleAudioStatus("ready");
+        else setMaleAudioStatus("ready");
+      };
+      localFallback.onerror = () => {
+        if (gender === "female") setFemaleAudioStatus("missing");
+        else setMaleAudioStatus("missing");
+      };
+      void localFallback.play().catch(() => {});
+    };
+    void audio.play().catch(() => {});
+  };
+
+  const updateDraftField = (key: string, value: unknown) => {
+    if (!draftRecord) return;
+    const next = { ...draftRecord, [key]: value };
+    setDraftRecord(next);
+    setRawJsonText(JSON.stringify(next, null, 2));
+  };
+
+  const isCloudActive = Boolean(githubToken.trim());
+
+  return (
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-4">
+      {/* 1. ÜST BAĞLANTI & DEPO AYAR ÇUBUĞU */}
+      <header className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-4 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              onClick={() => playClick()}
+              className="h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B]"
+            >
+              <ChevronLeft size={15} />
+              <span>Ana Sayfa</span>
+            </Link>
+            <div>
+              <h1 className="text-base sm:text-xl font-black text-[var(--foreground)] flex items-center gap-2">
+                <span>🛠️ İçerik, Ses &amp; Görsel Yönetim Stüdyosu</span>
+                <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white">
+                  /admin
+                </span>
+              </h1>
+              <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted)]">
+                8 JSON Veri Tabanı + 1:1 .webp Görsel Dönüştürücü + Çift Cinsiyet .mp3 &amp; TTS Stüdyosu
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Çalışma Modu Göstergesi */}
+            <span
+              className={`px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 ${
+                isCloudActive
+                  ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-900 dark:text-emerald-200"
+                  : "bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200"
+              }`}
+            >
+              {isCloudActive ? (
+                <>
+                  <Cloud size={14} className="text-emerald-600" />
+                  <span>☁️ GitHub Bulut Senkronizasyonu Aktif</span>
+                </>
+              ) : (
+                <>
+                  <HardDrive size={14} className="text-amber-600" />
+                  <span>💻 Yerel Geliştirici Modu (Localhost)</span>
+                </>
+              )}
+            </span>
+
+            {/* 🩺 Veri & Medya Denetleyicisi Butonu */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsHealthModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer hover:bg-[#E5DBFF]"
+            >
+              <Stethoscope size={14} />
+              <span>🩺 Veri &amp; Medya Denetleyicisi</span>
+              {healthIssues.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md bg-rose-600 text-white text-[10px] font-black">
+                  {healthIssues.length}
+                </span>
+              )}
+            </button>
+
+            {/* Depo & Token Ayar Çekmecesi Butonu */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsSettingsOpen((v) => !v);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer hover:border-[#087F5B]"
+            >
+              <Settings size={14} />
+              <span>GitHub &amp; Depo Ayarları</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Açılır/Kapanır GitHub Token & Çift Depo Ayar Çekmecesi */}
+        {isSettingsOpen && (
+          <div className="pt-3 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 animate-in fade-in duration-150">
+            <div className="space-y-1">
+              <label className="text-[11px] font-extrabold text-[var(--foreground)] block">
+                🔑 GitHub Personal Access Token (ghp_...)
+              </label>
+              <input
+                type="password"
+                value={githubToken}
+                onChange={(e) =>
+                  saveRepoSettingsToStorage(
+                    e.target.value,
+                    repoOwner,
+                    codeRepo,
+                    mediaRepo
+                  )
+                }
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-mono text-[var(--foreground)]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-extrabold text-[var(--foreground)] block">
+                👤 GitHub Kullanıcı / Organizasyon Adı
+              </label>
+              <input
+                type="text"
+                value={repoOwner}
+                onChange={(e) =>
+                  saveRepoSettingsToStorage(
+                    githubToken,
+                    e.target.value,
+                    codeRepo,
+                    mediaRepo
+                  )
+                }
+                placeholder="muallimun"
+                className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-extrabold text-[var(--foreground)] block">
+                📦 Kod &amp; JSON Deposu (src/data/*.json)
+              </label>
+              <input
+                type="text"
+                value={codeRepo}
+                onChange={(e) =>
+                  saveRepoSettingsToStorage(
+                    githubToken,
+                    repoOwner,
+                    e.target.value,
+                    mediaRepo
+                  )
+                }
+                placeholder="arapca_telaffuz_web_v2"
+                className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-extrabold text-[var(--foreground)] block">
+                🎵 Medya Deposu (.mp3 &amp; .webp)
+              </label>
+              <input
+                type="text"
+                value={mediaRepo}
+                onChange={(e) =>
+                  saveRepoSettingsToStorage(
+                    githubToken,
+                    repoOwner,
+                    codeRepo,
+                    e.target.value
+                  )
+                }
+                placeholder="arapca_telaffuz_medya"
+                className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+              />
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* DURUM BİLDİRİM ÇUBUĞU */}
+      {statusBanner && (
+        <div
+          className={`rounded-2xl border-2 px-4 py-2.5 flex items-center justify-between gap-3 text-xs font-extrabold ${
+            statusBanner.type === "success"
+              ? "bg-emerald-50 border-emerald-500 text-emerald-950"
+              : statusBanner.type === "error"
+              ? "bg-rose-50 border-rose-500 text-rose-950"
+              : "bg-amber-50 border-amber-400 text-amber-950"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span>{statusBanner.text}</span>
+            {statusBanner.url && (
+              <a
+                href={statusBanner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline inline-flex items-center gap-1 text-[#065F46]"
+              >
+                <span>GitHub&apos;da Gör</span>
+                <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusBanner(null)}
+            className="p-1 rounded-lg hover:bg-black/5 cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* 2. ÜST SEKMELER (8 VERİ SETİ + SES EFEKTLERİ YÖNETİCİSİ) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5">
+        {STUDIO_TABS.map((tab) => {
+          const isSelected = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => {
+                playClick();
+                setActiveTab(tab.key);
+              }}
+              className={`px-2.5 py-2 rounded-2xl border-2 border-b-4 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                isSelected
+                  ? "bg-[#087F5B] border-[#065F46] text-white shadow-sm"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+              }`}
+            >
+              <span className="text-xs font-extrabold leading-tight truncate">
+                {tab.icon} {tab.shortLabel}
+              </span>
+              <span
+                className={`text-[10px] font-bold mt-0.5 truncate ${
+                  isSelected ? "text-emerald-100" : "text-[var(--muted)]"
+                }`}
+              >
+                {tab.fileName}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. FİLTRE, ARAMA VE AKSİYON ÇUBUĞU */}
+      <section className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDFBF7] dark:bg-[var(--surface)] p-3 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Arapça, Türkçe, Kök, ID veya Kategori ara..."
+              className="w-full h-9 pl-9 pr-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)] focus:outline-none focus:border-[#087F5B]"
+            />
+          </div>
+
+          {activeTab !== "efect_manager" && (
+            <div className="flex items-center gap-1">
+              {["all", "A1", "A2", "B1", "B2"].map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setLevelFilter(lvl);
+                    setCurrentPage(1);
+                  }}
+                  className={`h-9 px-2.5 rounded-xl text-xs font-extrabold border cursor-pointer ${
+                    levelFilter === lvl
+                      ? "bg-[#6741D9] text-white border-[#5230B5]"
+                      : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE]"
+                  }`}
+                >
+                  {lvl === "all" ? "Tüm Kurlar" : lvl}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {activeTab !== "efect_manager" && (
+            <>
+              <button
+                type="button"
+                onClick={handleAddNewRecord}
+                className="h-9 px-3 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-2 border-[#3b1f8c] flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>➕ Yeni Kayıt Ekle</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleSaveDatasetToBackend()}
+                disabled={savingAll}
+                className={`h-9 px-3.5 rounded-xl text-white text-xs font-extrabold border-b-2 flex items-center gap-1.5 cursor-pointer ${
+                  hasUnsavedChanges
+                    ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-800 animate-pulse"
+                    : "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46]"
+                }`}
+              >
+                <Save size={14} />
+                <span>
+                  {savingAll
+                    ? "Kaydediliyor..."
+                    : isCloudActive
+                    ? "💾 GitHub'a Commit Et"
+                    : "💾 Veri Setini Kaydet"}
+                </span>
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDownloadBackupJson}
+            className="h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer"
+          >
+            <Download size={14} />
+            <span>📥 JSON İndir (Yedek)</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 4. KAYIT LİSTESİ TABLOSU (SAYFALAMALI — 25 KAYIT / SAYFA) */}
+      <section className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-white dark:bg-[var(--surface)] overflow-hidden shadow-xs">
+        <div className="px-4 py-2.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-[var(--foreground)]">
+          <span>
+            {STUDIO_TABS.find((t) => t.key === activeTab)?.label} — Toplam{" "}
+            {filteredRecords.length} Kayıt (Sayfa {currentPage}/{totalPages})
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => {
+                playClick();
+                setCurrentPage((p) => Math.max(1, p - 1));
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] disabled:opacity-40 cursor-pointer flex items-center gap-1"
+            >
+              <ChevronLeft size={13} />
+              <span>Önceki</span>
+            </button>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => {
+                playClick();
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] disabled:opacity-40 cursor-pointer flex items-center gap-1"
+            >
+              <span>Sonraki</span>
+              <ChevronRight size={13} />
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-16 text-center text-sm font-extrabold text-[var(--muted)] flex items-center justify-center gap-2">
+            <RefreshCw size={18} className="animate-spin text-[#087F5B]" />
+            <span>Veri tabanı yükleniyor...</span>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#E6D7BE]/60">
+            {paginatedRecords.map(({ rec, originalIndex }) => {
+              const id = getRecordId(rec, originalIndex);
+              const lvl = getRecordLevel(rec);
+              const cat = getRecordCategory(rec);
+              const ar =
+                activeTab === "efect_manager"
+                  ? String(rec.arabicSample || "")
+                  : getRecordArabic(rec);
+              const tr =
+                activeTab === "efect_manager"
+                  ? String(rec.titleTr || "")
+                  : getRecordTurkish(rec);
+              const thumbUrl =
+                activeTab === "efect_manager"
+                  ? ""
+                  : getPreviewImageUrl(activeTab, rec, originalIndex, cacheBuster);
+
+              return (
+                <div
+                  key={`${id}-${originalIndex}`}
+                  className="px-3.5 py-2.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-[#FDFBF7] dark:hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="px-2 py-1 rounded-lg bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] text-[11px] font-mono font-extrabold text-[var(--foreground)] shrink-0">
+                      #{originalIndex + 1} • {id}
+                    </span>
+
+                    {thumbUrl && (
+                      <img
+                        src={thumbUrl}
+                        alt=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
+                        }}
+                        className="w-10 h-10 aspect-square object-contain rounded-lg border border-slate-200 bg-white shrink-0"
+                      />
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900">
+                          {lvl}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-100 text-violet-900 truncate max-w-[200px]">
+                          {cat}
+                        </span>
+                        <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] truncate">
+                          {tr}
+                        </span>
+                      </div>
+                      {ar && (
+                        <p
+                          dir="rtl"
+                          className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 truncate mt-0.5"
+                        >
+                          {ar}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {activeTab === "efect_manager" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handlePlayPreviewAudio(String(rec.targetPath), rec.gender)
+                        }
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-extrabold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Play size={13} />
+                        <span>▶️ Dinle</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => openRecordEditor(originalIndex)}
+                      className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Edit3 size={13} />
+                      <span>Düzenle (Metin + Medya)</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 5. BİRLEŞİK KAYIT & MEDYA DÜZENLEME MODALI (İKİ SÜTUNLU: SOL METİN, SAĞ GÖRSEL & SES STÜDYOSU) */}
+      {editingIndex !== null && draftRecord && (
+        <div
+          className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setEditingIndex(null)}
+        >
+          <div
+            className="w-full max-w-6xl bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Üst Bar */}
+            <div className="px-4 sm:px-6 py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold">
+                  Kayıt #{editingIndex + 1} • {getRecordId(draftRecord, editingIndex)}
+                </span>
+                <h3 className="text-sm sm:text-base font-black text-[var(--foreground)] truncate max-w-md">
+                  {getRecordTurkish(draftRecord) || draftRecord.titleTr || "Kayıt & Medya Düzenleyici"}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (!rawJsonMode) {
+                      setRawJsonText(JSON.stringify(draftRecord, null, 2));
+                    } else {
+                      try {
+                        setDraftRecord(JSON.parse(rawJsonText));
+                      } catch {
+                        // ignore
+                      }
+                    }
+                    setRawJsonMode((v) => !v);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 cursor-pointer ${
+                    rawJsonMode
+                      ? "bg-[#6741D9] text-white border-[#5230B5]"
+                      : "bg-white dark:bg-[var(--surface)] text-[var(--foreground)] border-[#E6D7BE]"
+                  }`}
+                >
+                  <Code2 size={14} />
+                  <span>{rawJsonMode ? "Form Görünümüne Dön" : "Ham JSON Düzenle"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditingIndex(null)}
+                  className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {mediaBusyLabel && (
+              <div className="px-4 py-2 bg-amber-100 border-b border-amber-300 text-amber-950 text-xs font-extrabold flex items-center gap-2">
+                <RefreshCw size={14} className="animate-spin text-amber-700" />
+                <span>{mediaBusyLabel}</span>
+              </div>
+            )}
+
+            {/* İKİ SÜTUNLU ANA GÖVDE */}
+            <div className="p-4 sm:p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
+              {/* SOL SÜTUN (7/12): METİN VE DİL BİLİMİ ALANLARI */}
+              <div className="lg:col-span-7 space-y-3.5">
+                <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8]">
+                  <h4 className="text-xs sm:text-sm font-black text-[#065F46] dark:text-emerald-400 uppercase tracking-wide">
+                    📝 SOL SÜTUN — Metin, Hareke &amp; Dil Bilimi Alanları
+                  </h4>
+                  {/* Hızlı Hareke Ekleme Tuşları */}
+                  <div className="flex flex-wrap items-center gap-1">
+                    {HAREKE_KEYS.map((hk) => (
+                      <button
+                        key={hk.label}
+                        type="button"
+                        onClick={() => {
+                          void navigator.clipboard?.writeText(hk.char);
+                          setStatusBanner({
+                            type: "info",
+                            text: `${hk.label} panoya kopyalandı (Ctrl+V ile yapıştırabilirsiniz).`,
+                          });
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-white border border-[#E6D7BE] text-[11px] font-bold hover:border-[#087F5B] cursor-pointer"
+                        title={`${hk.label} kopyala`}
+                      >
+                        {hk.label.split(" ")[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {rawJsonMode ? (
+                  <textarea
+                    value={rawJsonText}
+                    onChange={(e) => setRawJsonText(e.target.value)}
+                    rows={18}
+                    className="w-full p-3 rounded-2xl bg-slate-950 text-emerald-300 font-mono text-xs border-2 border-slate-700 focus:outline-none"
+                  />
+                ) : activeTab === "efect_manager" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-extrabold block mb-1">
+                        Efekt Başlığı (Türkçe)
+                      </label>
+                      <input
+                        type="text"
+                        value={String(draftRecord.titleTr || "")}
+                        onChange={(e) => updateDraftField("titleTr", e.target.value)}
+                        className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-extrabold block mb-1">
+                        TTS Seslendirme Metni (Arapça)
+                      </label>
+                      <input
+                        type="text"
+                        dir="rtl"
+                        value={String(draftRecord.arabicSample || "")}
+                        onChange={(e) =>
+                          updateDraftField("arabicSample", e.target.value)
+                        }
+                        className="w-full h-11 px-3 rounded-xl bg-white border border-[#E6D7BE] arabic text-2xl font-bold text-[#065F46]"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Üst Satır: ID, Seviye, Kategori */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                          Kayıt ID
+                        </label>
+                        <input
+                          type="text"
+                          value={String(
+                            draftRecord.id ||
+                              draftRecord.diyalog_id ||
+                              draftRecord.metin_id ||
+                              ""
+                          )}
+                          onChange={(e) => {
+                            if ("diyalog_id" in draftRecord)
+                              updateDraftField("diyalog_id", e.target.value);
+                            else if ("metin_id" in draftRecord)
+                              updateDraftField("metin_id", e.target.value);
+                            else updateDraftField("id", e.target.value);
+                          }}
+                          className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                          Kur Seviyesi (CEFR)
+                        </label>
+                        <select
+                          value={getRecordLevel(draftRecord)}
+                          onChange={(e) => {
+                            if ("seviye" in draftRecord)
+                              updateDraftField("seviye", e.target.value);
+                            else updateDraftField("cefr", e.target.value);
+                          }}
+                          className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-extrabold"
+                        >
+                          <option value="A1">A1 (Başlangıç)</option>
+                          <option value="A2">A2 (Temel)</option>
+                          <option value="B1">B1 (Orta)</option>
+                          <option value="B2">B2 (İleri)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                          Kategori / Tema / Tür
+                        </label>
+                        <input
+                          type="text"
+                          value={String(
+                            draftRecord.kategori_tr ||
+                              draftRecord.tema ||
+                              draftRecord.odak_gramer ||
+                              draftRecord.tur ||
+                              ""
+                          )}
+                          onChange={(e) => {
+                            if ("kategori_tr" in draftRecord)
+                              updateDraftField("kategori_tr", e.target.value);
+                            else if ("tema" in draftRecord)
+                              updateDraftField("tema", e.target.value);
+                            else if ("odak_gramer" in draftRecord)
+                              updateDraftField("odak_gramer", e.target.value);
+                            else updateDraftField("tur", e.target.value);
+                          }}
+                          className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ana Arapça ve Türkçe Alanları */}
+                    {activeTab !== "diyalog_gramer" &&
+                      activeTab !== "metin_gramer" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[#065F46] block mb-1">
+                              Arapça Ana Metin / Başlık (Harekeli)
+                            </label>
+                            <input
+                              type="text"
+                              dir="rtl"
+                              value={String(
+                                draftRecord.arapca ??
+                                  draftRecord.baslik_ar ??
+                                  draftRecord.mufret ??
+                                  draftRecord.mazi ??
+                                  ""
+                              )}
+                              onChange={(e) => {
+                                if ("baslik_ar" in draftRecord)
+                                  updateDraftField("baslik_ar", e.target.value);
+                                else if ("mufret" in draftRecord)
+                                  updateDraftField("mufret", e.target.value);
+                                else if ("mazi" in draftRecord && !("arapca" in draftRecord))
+                                  updateDraftField("mazi", e.target.value);
+                                else updateDraftField("arapca", e.target.value);
+                              }}
+                              className="w-full h-11 px-3 rounded-xl bg-white border-2 border-[#087F5B]/40 arabic text-2xl font-bold text-[#065F46]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--foreground)] block mb-1">
+                              Türkçe Anlamı / Başlığı
+                            </label>
+                            <input
+                              type="text"
+                              value={String(
+                                draftRecord.turkce ??
+                                  draftRecord.baslik_tr ??
+                                  draftRecord.anlam_tr ??
+                                  ""
+                              )}
+                              onChange={(e) => {
+                                if ("baslik_tr" in draftRecord)
+                                  updateDraftField("baslik_tr", e.target.value);
+                                else if ("anlam_tr" in draftRecord)
+                                  updateDraftField("anlam_tr", e.target.value);
+                                else updateDraftField("turkce", e.target.value);
+                              }}
+                              className="w-full h-11 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs sm:text-sm font-bold"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Morfoloji & Sarf Alanları (Görsel Kelimeler & Sözlük) */}
+                    {(activeTab === "gorsel_kelimeler" ||
+                      activeTab === "sozluk") && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[#F7EFE1]/70 border border-[#E6D7BE]">
+                        <div>
+                          <label className="text-[10px] font-extrabold text-amber-900 block mb-1">
+                            Kök Harfler (جذر)
+                          </label>
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={String(draftRecord.kok || "")}
+                            onChange={(e) => updateDraftField("kok", e.target.value)}
+                            className="w-full h-9 px-2.5 rounded-lg bg-white border border-amber-300 arabic text-lg font-bold text-amber-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-violet-900 block mb-1">
+                            Çoğul (Cemî) / Muzâri
+                          </label>
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={String(
+                              draftRecord.ikincil_form ??
+                                draftRecord.cemi ??
+                                draftRecord.muzari ??
+                                ""
+                            )}
+                            onChange={(e) => {
+                              if ("ikincil_form" in draftRecord)
+                                updateDraftField("ikincil_form", e.target.value);
+                              else if ("muzari" in draftRecord)
+                                updateDraftField("muzari", e.target.value);
+                              else updateDraftField("cemi", e.target.value);
+                            }}
+                            className="w-full h-9 px-2.5 rounded-lg bg-white border border-violet-300 arabic text-lg font-bold text-violet-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-emerald-900 block mb-1">
+                            Masdar / 3. Form
+                          </label>
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={String(
+                              draftRecord.ucuncul_form ?? draftRecord.masdar ?? ""
+                            )}
+                            onChange={(e) => {
+                              if ("ucuncul_form" in draftRecord)
+                                updateDraftField("ucuncul_form", e.target.value);
+                              else updateDraftField("masdar", e.target.value);
+                            }}
+                            className="w-full h-9 px-2.5 rounded-lg bg-white border border-emerald-300 arabic text-lg font-bold text-emerald-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-700 block mb-1">
+                            Soru Kalıbı (مَا هٰذَا؟)
+                          </label>
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={String(draftRecord.soru_kalibi || "")}
+                            onChange={(e) =>
+                              updateDraftField("soru_kalibi", e.target.value)
+                            }
+                            className="w-full h-9 px-2.5 rounded-lg bg-white border border-slate-300 arabic text-lg font-bold text-slate-800"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Örnek Cümle / Lafzi Çeviri Alanları */}
+                    {(activeTab === "gorsel_kelimeler" ||
+                      activeTab === "sozluk" ||
+                      activeTab === "atasozleri_508") && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                            {activeTab === "atasozleri_508"
+                              ? "Lafzî (Kelimesi Kelimesine) Çeviri"
+                              : "Örnek Cümle (Arapça)"}
+                          </label>
+                          <input
+                            type="text"
+                            dir={activeTab === "atasozleri_508" ? "ltr" : "rtl"}
+                            value={String(
+                              activeTab === "atasozleri_508"
+                                ? draftRecord.lafzi_ceviri || ""
+                                : draftRecord.ornek_ar || ""
+                            )}
+                            onChange={(e) =>
+                              updateDraftField(
+                                activeTab === "atasozleri_508"
+                                  ? "lafzi_ceviri"
+                                  : "ornek_ar",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] ${
+                              activeTab === "atasozleri_508"
+                                ? "text-xs font-bold"
+                                : "arabic text-lg font-bold text-[#065F46]"
+                            }`}
+                          />
+                        </div>
+                        {activeTab !== "atasozleri_508" && (
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Örnek Cümle Çevirisi (Türkçe)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.ornek_tr || "")}
+                              onChange={(e) =>
+                                updateDraftField("ornek_tr", e.target.value)
+                              }
+                              className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-bold"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Diyalog veya Okuma Metni Cümle Satırları Düzenleyici */}
+                    {Array.isArray(draftRecord.satirlar) && (
+                      <div className="space-y-2 pt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-extrabold text-[#4C28B5]">
+                            💬 Cümle Satırları ({draftRecord.satirlar.length} Satır) — Seçili Satır: #{dialogueSelectedLineIdx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextLines = [
+                                ...draftRecord.satirlar,
+                                {
+                                  sira: draftRecord.satirlar.length + 1,
+                                  konusmaci: "Konuşmacı",
+                                  konusmaci_ar: "المتحدث",
+                                  cinsiyet: "E",
+                                  arapca: "",
+                                  turkce: "",
+                                },
+                              ];
+                              updateDraftField("satirlar", nextLines);
+                              setDialogueSelectedLineIdx(nextLines.length - 1);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-[11px] font-extrabold cursor-pointer"
+                          >
+                            + Satır Ekle
+                          </button>
+                        </div>
+
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                          {draftRecord.satirlar.map(
+                            (line: GenericRecord, lIdx: number) => (
+                              <div
+                                key={lIdx}
+                                onClick={() => setDialogueSelectedLineIdx(lIdx)}
+                                className={`p-2.5 rounded-xl border-2 space-y-1.5 cursor-pointer ${
+                                  dialogueSelectedLineIdx === lIdx
+                                    ? "bg-[#F3F0FF] border-[#6741D9]"
+                                    : "bg-white border-[#E6D7BE]"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2 text-[11px] font-extrabold">
+                                  <span>
+                                    Satır #{lIdx + 1} ({line.konusmaci || "Metin"})
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = draftRecord.satirlar.filter(
+                                        (_: unknown, idx: number) => idx !== lIdx
+                                      );
+                                      updateDraftField("satirlar", filtered);
+                                    }}
+                                    className="text-rose-600 hover:underline flex items-center gap-0.5"
+                                  >
+                                    <Trash2 size={12} />
+                                    <span>Sil</span>
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  dir="rtl"
+                                  value={String(line.arapca || "")}
+                                  onChange={(e) => {
+                                    const copy = [...draftRecord.satirlar];
+                                    copy[lIdx] = {
+                                      ...copy[lIdx],
+                                      arapca: e.target.value,
+                                    };
+                                    updateDraftField("satirlar", copy);
+                                  }}
+                                  placeholder="Arapça cümle..."
+                                  className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] arabic text-lg font-bold text-[#065F46]"
+                                />
+                                <input
+                                  type="text"
+                                  value={String(line.turkce || "")}
+                                  onChange={(e) => {
+                                    const copy = [...draftRecord.satirlar];
+                                    copy[lIdx] = {
+                                      ...copy[lIdx],
+                                      turkce: e.target.value,
+                                    };
+                                    updateDraftField("satirlar", copy);
+                                  }}
+                                  placeholder="Türkçe çevirisi..."
+                                  className="w-full h-8 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-semibold"
+                                />
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gramer Hap Bilgi ve Ayrıntılı Anlatım Düzenleyici */}
+                    {Array.isArray(draftRecord.gramer_notlari) && (
+                      <div className="space-y-2.5 pt-1">
+                        <span className="text-xs font-extrabold text-[#065F46] block">
+                          📌 Gramer Kuralları &amp; 2. Katman Ayrıntılı Konu Anlatımı ({draftRecord.gramer_notlari.length} Kural)
+                        </span>
+                        {draftRecord.gramer_notlari.map(
+                          (gn: GenericRecord, gIdx: number) => (
+                            <div
+                              key={gIdx}
+                              className="p-3 rounded-2xl bg-white border-2 border-[#E6D7BE] space-y-2"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={String(gn.baslik || "")}
+                                  onChange={(e) => {
+                                    const copy = [...draftRecord.gramer_notlari];
+                                    copy[gIdx] = {
+                                      ...copy[gIdx],
+                                      baslik: e.target.value,
+                                    };
+                                    updateDraftField("gramer_notlari", copy);
+                                  }}
+                                  placeholder="Kural Başlığı"
+                                  className="h-9 px-2.5 rounded-lg border border-[#E6D7BE] text-xs font-extrabold"
+                                />
+                                <input
+                                  type="text"
+                                  value={String(gn.formul || "")}
+                                  onChange={(e) => {
+                                    const copy = [...draftRecord.gramer_notlari];
+                                    copy[gIdx] = {
+                                      ...copy[gIdx],
+                                      formul: e.target.value,
+                                    };
+                                    updateDraftField("gramer_notlari", copy);
+                                  }}
+                                  placeholder="Kısa Formül"
+                                  className="h-9 px-2.5 rounded-lg border border-[#E6D7BE] text-xs font-bold text-[#6741D9]"
+                                />
+                              </div>
+                              <textarea
+                                rows={2}
+                                value={String(gn.kisa_aciklama || "")}
+                                onChange={(e) => {
+                                  const copy = [...draftRecord.gramer_notlari];
+                                  copy[gIdx] = {
+                                    ...copy[gIdx],
+                                    kisa_aciklama: e.target.value,
+                                  };
+                                  updateDraftField("gramer_notlari", copy);
+                                }}
+                                placeholder="Kısa Pedagojik Açıklama..."
+                                className="w-full p-2 rounded-lg border border-[#E6D7BE] text-xs font-semibold"
+                              />
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* SAĞ SÜTUN (5/12): CANLI GÖRSEL (.webp) VE SES (.mp3) STÜDYOSU */}
+              <div className="lg:col-span-5 space-y-4">
+                <h4 className="text-xs sm:text-sm font-black text-[#4C28B5] dark:text-indigo-300 uppercase tracking-wide pb-1.5 border-b border-dashed border-[#E2D3B8]">
+                  🎨 SAĞ SÜTUN — Canlı Görsel (.webp) &amp; Ses (.mp3) Stüdyosu
+                </h4>
+
+                {/* 1. 🖼️ GÖRSEL YÖNETİCİSİ (1:1 KARE ÖNİZLEME & OTOMATİK .WEBP DÖNÜŞTÜRÜCÜ) */}
+                {activeTab !== "efect_manager" &&
+                  activeTab !== "diyalog_gramer" &&
+                  activeTab !== "metin_gramer" && (
+                    <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-3.5 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
+                          <ImageIcon size={15} className="text-[#087F5B]" />
+                          <span>🖼️ 1:1 Kare Görsel Yöneticisi (.webp)</span>
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] font-extrabold">
+                          <span>Boyut:</span>
+                          {([512, 768] as const).map((sz) => (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => setSquareResizePx(sz)}
+                              className={`px-2 py-0.5 rounded border cursor-pointer ${
+                                squareResizePx === sz
+                                  ? "bg-[#087F5B] text-white border-[#065F46]"
+                                  : "bg-slate-100 text-slate-700 border-slate-300"
+                              }`}
+                            >
+                              {sz}x{sz}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const targetImgPath = getDefaultImagePath(
+                          activeTab,
+                          draftRecord,
+                          editingIndex
+                        );
+                        const previewUrl = getPreviewImageUrl(
+                          activeTab,
+                          draftRecord,
+                          editingIndex,
+                          cacheBuster
+                        );
+                        return (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <div className="w-28 h-28 aspect-square rounded-2xl border-2 border-dashed border-[#E6D7BE] bg-[#FDFBF7] flex items-center justify-center overflow-hidden shrink-0 relative">
+                                {previewUrl && !imgPreviewBroken ? (
+                                  <img
+                                    src={previewUrl}
+                                    alt="Önizleme"
+                                    referrerPolicy="no-referrer"
+                                    onError={() => setImgPreviewBroken(true)}
+                                    className="w-full h-full aspect-square object-contain"
+                                  />
+                                ) : (
+                                  <div className="text-center p-2">
+                                    <AlertTriangle
+                                      size={20}
+                                      className="mx-auto text-rose-600 mb-1"
+                                    />
+                                    <span className="text-[10px] font-extrabold text-rose-700 block">
+                                      ❌ Görsel Eksik
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0 space-y-2">
+                                <div>
+                                  <span className="text-[10px] font-bold text-[var(--muted)] block">
+                                    Medya Deposu Hedef Yolu:
+                                  </span>
+                                  <code className="text-[11px] font-mono font-bold text-[#065F46] break-all block bg-emerald-50/80 px-2 py-1 rounded-lg border border-emerald-200 mt-0.5">
+                                    {targetImgPath || "Tanımlanmamış"}
+                                  </code>
+                                </div>
+
+                                <label
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    const f = e.dataTransfer.files?.[0];
+                                    if (f) void handleUploadImageFile(f);
+                                  }}
+                                  className="w-full py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                  <Upload size={14} />
+                                  <span>📤 Yeni Görsel Yükle / Değiştir</span>
+                                  <input
+                                    type="file"
+                                    accept="image/webp,image/png,image/jpeg"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) void handleUploadImageFile(f);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                {/* 2. 🔊 SES YÖNETİCİSİ (ERKEK & KADIN .MP3 DİNLEME, YÜKLEME, MİKROFON VE TTS) */}
+                <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
+                      <Volume2 size={15} className="text-[#6741D9]" />
+                      <span>🔊 Çift Cinsiyet Ses Stüdyosu (.mp3 &amp; TTS)</span>
+                    </span>
+                  </div>
+
+                  {(["male", "female"] as const)
+                    .filter((g) =>
+                      activeTab === "efect_manager"
+                        ? draftRecord.gender === g
+                        : true
+                    )
+                    .map((gender) => {
+                      const isFemale = gender === "female";
+                      const targetAudioPath =
+                        activeTab === "efect_manager"
+                          ? String(draftRecord.targetPath || "")
+                          : Array.isArray(draftRecord.satirlar) &&
+                            draftRecord.satirlar[dialogueSelectedLineIdx]
+                          ? `/sesler/${
+                              activeTab === "metinler_60" ? "metinler" : "diyaloglar"
+                            }/${draftRecord.id}/${String(
+                              dialogueSelectedLineIdx + 1
+                            ).padStart(2, "0")}.mp3`
+                          : getDefaultAudioPath(
+                              activeTab,
+                              draftRecord,
+                              gender,
+                              editingIndex
+                            );
+
+                      const ttsText =
+                        activeTab === "efect_manager"
+                          ? String(draftRecord.arabicSample || "")
+                          : Array.isArray(draftRecord.satirlar) &&
+                            draftRecord.satirlar[dialogueSelectedLineIdx]
+                          ? String(
+                              draftRecord.satirlar[dialogueSelectedLineIdx].arapca ||
+                                ""
+                            )
+                          : getRecordArabic(draftRecord);
+
+                      const status = isFemale ? femaleAudioStatus : maleAudioStatus;
+
+                      return (
+                        <div
+                          key={gender}
+                          className="p-3 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border border-[#E6D7BE] space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-extrabold text-[var(--foreground)]">
+                              {isFemale
+                                ? "👩 Kadın Sesi (ses_kadin)"
+                                : "👨 Erkek Sesi (ses_erkek)"}
+                            </span>
+                            <span
+                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                                status === "ready"
+                                  ? "bg-emerald-100 text-emerald-900"
+                                  : status === "missing"
+                                  ? "bg-rose-100 text-rose-900"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {status === "ready"
+                                ? "✅ Ses Hazır"
+                                : status === "missing"
+                                ? "❌ Ses Bulunamadı"
+                                : "🎵 Kontrol Edilebilir"}
+                            </span>
+                          </div>
+
+                          <code className="text-[10px] font-mono text-slate-600 block truncate bg-white px-2 py-1 rounded border border-[#E6D7BE]">
+                            {targetAudioPath}
+                          </code>
+
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {/* ▶️ Dinle */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handlePlayPreviewAudio(targetAudioPath, gender)
+                              }
+                              className="py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Play size={12} />
+                              <span>▶️ Dinle</span>
+                            </button>
+
+                            {/* 📁 MP3 Dosyası Seç & Yükle */}
+                            <label className="py-1.5 px-2.5 rounded-lg bg-[#6741D9] hover:bg-[#5230B5] text-white text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer">
+                              <FolderOpen size={12} />
+                              <span>📁 MP3 Seç &amp; Yükle</span>
+                              <input
+                                type="file"
+                                accept="audio/mpeg,audio/mp3,audio/wav"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) {
+                                    void handleUploadAudioBlobOrFile(
+                                      f,
+                                      targetAudioPath,
+                                      gender
+                                    );
+                                  }
+                                }}
+                              />
+                            </label>
+
+                            {/* 🎙️ Mikrofondan Kaydet & Yükle */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleToggleMicRecord(targetAudioPath, gender)
+                              }
+                              className={`py-1.5 px-2.5 rounded-lg text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer ${
+                                recordingGender === gender
+                                  ? "bg-rose-600 text-white animate-pulse"
+                                  : "bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300"
+                              }`}
+                            >
+                              {recordingGender === gender ? (
+                                <>
+                                  <Square size={11} />
+                                  <span>Kaydı Bitir &amp; Yükle</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Mic size={12} />
+                                  <span>🎙️ Mikrofondan Kaydet</span>
+                                </>
+                              )}
+                            </button>
+
+                            {/* ✨ TTS ile Otomatik Seslendir & Kaydet */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleGenerateAndSaveTts(
+                                  ttsText,
+                                  targetAudioPath,
+                                  gender
+                                )
+                              }
+                              className="py-1.5 px-2.5 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Sparkles size={12} />
+                              <span>✨ TTS Seslendir &amp; Kaydet</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Alt Kaydetme Çubuğu */}
+            <div className="px-4 sm:px-6 py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <span className="text-xs font-bold text-[var(--muted)]">
+                Medya yüklemeleri anında uygulanır; metin değişiklikleri için kaydet butonunu kullanın.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingIndex(null)}
+                  className="px-4 py-2 rounded-xl bg-white border border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] cursor-pointer"
+                >
+                  Kapat
+                </button>
+                {activeTab !== "efect_manager" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyDraftRecord(false)}
+                      className="px-4 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold cursor-pointer"
+                    >
+                      ✓ Listeye Uygula
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyDraftRecord(true)}
+                      className="px-4 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Save size={14} />
+                      <span>
+                        {isCloudActive
+                          ? "💾 Uygula & GitHub'a Commit Et"
+                          : "💾 Uygula & Dosyaya Kaydet"}
+                      </span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. 🩺 VERİ VE MEDYA DENETLEYİCİSİ ("SAĞLIK TARAMASI" MODALI) */}
+      {isHealthModalOpen && (
+        <div
+          className="fixed inset-0 z-[85] bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={() => setIsHealthModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-3xl bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] border-b-4 p-4 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[88vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-dashed border-[#E2D3B8] pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#6741D9] text-white flex items-center justify-center">
+                  <Stethoscope size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-[var(--foreground)]">
+                    🩺 Veri &amp; Medya Sağlık Taraması ({STUDIO_TABS.find((t) => t.key === activeTab)?.shortLabel})
+                  </h3>
+                  <p className="text-xs font-semibold text-[var(--muted)]">
+                    Bozuk karakter (□), eksik hareke, boş alan ve kırık (404) görsel/ses kontrolü
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={checkingMediaHealth}
+                  onClick={() => void runLiveMediaProbe()}
+                  className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw
+                    size={13}
+                    className={checkingMediaHealth ? "animate-spin" : ""}
+                  />
+                  <span>
+                    {checkingMediaHealth
+                      ? "404 Medya Taranıyor..."
+                      : "🔍 Canlı 404 Medya Taraması Yap"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsHealthModalOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-white border border-[#E6D7BE] flex items-center justify-center cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+              {healthIssues.length === 0 ? (
+                <div className="py-12 text-center space-y-2">
+                  <CheckCircle2
+                    size={36}
+                    className="mx-auto text-emerald-600"
+                  />
+                  <p className="text-sm font-extrabold text-emerald-900">
+                    Harika! Bu veri setinde bozuk karakter, boş alan veya eksik hareke bulunmadı.
+                  </p>
+                </div>
+              ) : (
+                healthIssues.map((iss, idx) => (
+                  <div
+                    key={`${iss.id}-${idx}`}
+                    className="p-3 rounded-2xl bg-white border border-[#E6D7BE] flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                            iss.severity === "error"
+                              ? "bg-rose-100 text-rose-900"
+                              : "bg-amber-100 text-amber-900"
+                          }`}
+                        >
+                          {iss.issueType === "corrupt_char"
+                            ? "Bozuk Karakter"
+                            : iss.issueType === "empty_field"
+                            ? "Boş Alan"
+                            : iss.issueType === "missing_media"
+                            ? "Eksik / 404 Medya"
+                            : "Eksik Hareke"}
+                        </span>
+                        <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
+                          #{iss.index + 1} ({iss.id}) — {iss.title}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                        {iss.detail}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsHealthModalOpen(false);
+                        openRecordEditor(iss.index);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold shrink-0 cursor-pointer"
+                    >
+                      Hemen Düzelt →
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -38,6 +38,7 @@ import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { getArabicFontConfig } from "@/lib/arabicTextUtils";
 import { triggerGuideModal } from "@/components/ui/GuideAndInfoModal";
+import { getDynamicContentStats } from "@/lib/data";
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   stacked: "Alt Alta (Arapça + Türkçe)",
@@ -327,6 +328,8 @@ export default function Header() {
     }
   };
 
+  const contentStats = getDynamicContentStats();
+
   const navLinks = [
     {
       href: "/",
@@ -338,19 +341,19 @@ export default function Header() {
       href: "/kutuphane",
       label: "Kütüphane",
       Icon: BookOpen,
-      tooltip: "60 Sesli Diyalog Kütüphanesi (A1–B2)",
+      tooltip: `Eğitim Kütüphanesi Vitrini (${contentStats.dialogueCount} Diyalog, ${contentStats.readingCount} Metin, ${contentStats.sentenceCount} Cümle, ${contentStats.proverbCount} Atasözü, ${contentStats.visualWordCount} Görsel Kelime)`,
     },
     {
       href: "/alistirmalar",
       label: "Alıştırmalar",
       Icon: Gamepad2,
-      tooltip: "5 Farklı Etkileşimli Kelime ve Cümle Alıştırması",
+      tooltip: "6 Farklı Etkileşimli Kelime, Cümle ve Görsel-Sesli Alıştırma",
     },
     {
       href: "/sozluk",
       label: "Sözlük",
       Icon: BookMarked,
-      tooltip: "Morfolojik Kök Ailesi ve Sesli Arapça-Türkçe Sözlük",
+      tooltip: `Morfolojik Kök Ailesi ve Sesli Arapça-Türkçe Sözlük (${contentStats.dictionaryWordCount} Kelime)`,
     },
     {
       href: "/ayarlar",
@@ -429,7 +432,17 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => playClick()}
+                    onClick={() => {
+                      playClick();
+                      if (
+                        item.href === "/kutuphane" &&
+                        typeof window !== "undefined"
+                      ) {
+                        window.dispatchEvent(
+                          new CustomEvent("muallimun:kutuphane-vitrin")
+                        );
+                      }
+                    }}
                     data-tooltip={item.tooltip}
                     data-tooltip-pos="bottom"
                     className={

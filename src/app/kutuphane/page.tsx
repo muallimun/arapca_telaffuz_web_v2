@@ -43,6 +43,7 @@ import {
   getReadingTextCoverUrl,
   getProverbCoverUrl,
   getVisualWordCoverUrl,
+  getDynamicContentStats,
 } from "@/lib/data";
 import { Level, DictionaryItem, Dialogue } from "@/types/data";
 import {
@@ -79,6 +80,7 @@ type SavedItemFilter =
 
 type StatusFilter = "all" | "completed" | "ongoing" | "favorites";
 type ViewSection =
+  | "vitrin"
   | "dialogues"
   | "metinler"
   | "cumleler"
@@ -133,7 +135,7 @@ export default function LibraryPage() {
     Record<string, boolean>
   >({});
   const touchStartXRef = useRef<number | null>(null);
-  const [activeSection, setActiveSection] = useState<ViewSection>("dialogues");
+  const [activeSection, setActiveSection] = useState<ViewSection>("vitrin");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(36);
   const [playingItemId, setPlayingItemId] = useState<string | null>(null);
@@ -185,6 +187,9 @@ export default function LibraryPage() {
         }
         if (durum === "completed") {
           setStatusFilter("completed");
+          if (!tab) {
+            setActiveSection("dialogues");
+          }
         }
         if (cat && cat.trim().length > 0) {
           setCategoryFilter(cat.trim());
@@ -196,7 +201,9 @@ export default function LibraryPage() {
           setIsHomeworkMode(true);
         }
         if (tab) {
-          if (tab === "diyaloglar" || tab === "dialogues") {
+          if (tab === "vitrin" || tab === "overview") {
+            setActiveSection("vitrin");
+          } else if (tab === "diyaloglar" || tab === "dialogues") {
             setActiveSection("dialogues");
           } else if (
             tab === "gorsel_kelime" ||
@@ -218,8 +225,33 @@ export default function LibraryPage() {
         }
       }
     });
+
+    const handleOpenVitrinEvent = () => {
+      sequentialTokenRef.current += 1;
+      setIsSequentialPlaying(false);
+      setPlayingItemId(null);
+      stopAllAudio();
+      setActiveSection("vitrin");
+      setCategoryFilter("all");
+      setIsCategoryPanelOpen(false);
+      setSelectedCardIndex(null);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(
+        "muallimun:kutuphane-vitrin",
+        handleOpenVitrinEvent
+      );
+    }
+
     return () => {
       cancelAnimationFrame(raf);
+      if (typeof window !== "undefined") {
+        window.removeEventListener(
+          "muallimun:kutuphane-vitrin",
+          handleOpenVitrinEvent
+        );
+      }
       sequentialTokenRef.current += 1;
       stopAllAudio();
     };
@@ -701,6 +733,20 @@ export default function LibraryPage() {
     return new Set(favoriteWords.map((w) => w.id));
   }, [favoriteWords]);
 
+  const contentStats = getDynamicContentStats();
+
+  const completedDialogueCount = useMemo(() => {
+    if (!mounted) return 0;
+    const validIds = new Set(diyaloglar.map((d) => d.id));
+    return completedDialogues.filter((id) => validIds.has(id)).length;
+  }, [mounted, completedDialogues]);
+
+  const completedReadingCount = useMemo(() => {
+    if (!mounted) return 0;
+    const validIds = new Set(metinler.map((m) => m.id));
+    return completedDialogues.filter((id) => validIds.has(id)).length;
+  }, [mounted, completedDialogues]);
+
   const toSentenceFavoriteItem = (
     item: (typeof cumleler1111)[number]
   ): DictionaryItem => ({
@@ -711,7 +757,9 @@ export default function LibraryPage() {
     anlam_tr: item.turkce,
     ses_erkek: item.ses_erkek,
     ses_kadin: item.ses_kadin,
-    kategori_tr: item.tema ? item.tema.replace(/_/g, " ") : "1111 Günlük Cümle",
+    kategori_tr: item.tema
+      ? item.tema.replace(/_/g, " ")
+      : `${contentStats.sentenceCount} Günlük Cümle`,
     cefr: item.seviye || item.cefr || "A1",
   });
 
@@ -727,7 +775,9 @@ export default function LibraryPage() {
     gorsel: item.gorsel || getProverbCoverUrl(item.id),
     ses_erkek: item.ses_erkek,
     ses_kadin: item.ses_kadin,
-    kategori_tr: item.tema ? item.tema.replace(/_/g, " ") : "508 Atasözü",
+    kategori_tr: item.tema
+      ? item.tema.replace(/_/g, " ")
+      : `${contentStats.proverbCount} Atasözü`,
     cefr: item.cefr || "B1",
   });
 
@@ -828,12 +878,17 @@ export default function LibraryPage() {
   };
 
   const getModuleHumanLabel = () => {
-    if (activeSection === "cumleler") return "1111 Günlük Cümle";
-    if (activeSection === "atasozleri") return "508 Atasözü ve Hikmetli Söz";
-    if (activeSection === "gorsel-kelimeler") return "999 Görsel Kelime";
+    if (activeSection === "vitrin") return "Kütüphane Vitrini (Genel Bakış)";
+    if (activeSection === "cumleler")
+      return `${contentStats.sentenceCount} Günlük Cümle`;
+    if (activeSection === "atasozleri")
+      return `${contentStats.proverbCount} Atasözü ve Hikmetli Söz`;
+    if (activeSection === "gorsel-kelimeler")
+      return `${contentStats.visualWordCount} Görsel Kelime`;
     if (activeSection === "saved-words") return "Kişisel Çalışma Defterim";
-    if (activeSection === "metinler") return "60 Okuma Metni";
-    return "120 Diyalog";
+    if (activeSection === "metinler")
+      return `${contentStats.readingCount} Okuma Metni`;
+    return `${contentStats.dialogueCount} Diyalog`;
   };
 
   const handleOpenLibraryPdfModal = (targetSection?: ViewSection) => {
@@ -854,8 +909,8 @@ export default function LibraryPage() {
       const syntheticDialogue: Dialogue = {
         id: "kutuphane_cumleler",
         seviye: safeLevel,
-        baslik_tr: `1111 Günlük Cümle • ${lvlLabel} • ${catLabel}`,
-        baslik_ar: "١١١١ جُمْلَةً يَوْمِيَّةً وَقَوَاعِدَ تَطْبِيقِيَّةً",
+        baslik_tr: `${contentStats.sentenceCount} Günlük Cümle • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "الجُمَلُ اليَوْمِيَّةُ وَالقَوَاعِدُ التَّطْبِيقِيَّةُ",
         odak_gramer: catLabel,
         satirlar: slice.map((item, i) => ({
           sira: i + 1,
@@ -913,8 +968,8 @@ export default function LibraryPage() {
       const syntheticDialogue: Dialogue = {
         id: "kutuphane_atasozleri",
         seviye: levelFilter === "all" ? "B1" : levelFilter,
-        baslik_tr: `508 Atasözü • ${lvlLabel} • ${catLabel}`,
-        baslik_ar: "٥٠٨ أَمْثَالٍ وَحِكَمٍ عَرَبِيَّةٍ",
+        baslik_tr: `${contentStats.proverbCount} Atasözü • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "الأَمْثَالُ وَالحِكَمُ العَرَبِيَّةُ",
         odak_gramer: catLabel,
         satirlar: slice.map((item, i) => ({
           sira: i + 1,
@@ -961,8 +1016,8 @@ export default function LibraryPage() {
       const syntheticDialogue: Dialogue = {
         id: "kutuphane_gorsel_kelimeler",
         seviye: safeLevel,
-        baslik_tr: `999 Görsel Kelime • ${lvlLabel} • ${catLabel}`,
-        baslik_ar: "٩٩٩ كَلِمَةً مُصَوَّرَةً وَأَمْثِلَةً",
+        baslik_tr: `${contentStats.visualWordCount} Görsel Kelime • ${lvlLabel} • ${catLabel}`,
+        baslik_ar: "المُفْرَدَاتُ المُصَوَّرَةُ وَالأَمْثِلَةُ",
         odak_gramer: catLabel,
         satirlar: slice.map((item, i) => ({
           sira: i + 1,
@@ -1925,26 +1980,40 @@ export default function LibraryPage() {
       <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
-            <Link
-              href="/"
-              onClick={() => playClick()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0"
-              aria-label="Ana Sayfaya Dön"
-            >
-              <ChevronLeft size={19} strokeWidth={2.5} />
-            </Link>
+            {activeSection !== "vitrin" ? (
+              <button
+                type="button"
+                onClick={() => handleSwitchSection("vitrin")}
+                className="h-9 sm:h-10 px-3 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0 cursor-pointer"
+                title="Kütüphane Vitrinine Dön"
+              >
+                <ChevronLeft size={17} strokeWidth={2.5} />
+                <span>← Kütüphane Vitrini</span>
+              </button>
+            ) : (
+              <Link
+                href="/"
+                onClick={() => playClick()}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0"
+                aria-label="Ana Sayfaya Dön"
+              >
+                <ChevronLeft size={19} strokeWidth={2.5} />
+              </Link>
+            )}
             <div>
               <h1 className="text-lg sm:text-2xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight">
                 Eğitim Kütüphanesi (V2)
               </h1>
               <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)]">
-                120 diyalog, 60 okuma metni, 1111 cümle, 508 atasözü ve 999
-                görsel kelime
+                {contentStats.dialogueCount} diyalog, {contentStats.readingCount}{" "}
+                okuma metni, {contentStats.sentenceCount} cümle,{" "}
+                {contentStats.proverbCount} atasözü ve{" "}
+                {contentStats.visualWordCount} görsel kelime
               </p>
             </div>
           </div>
 
-          {/* Çift Cinsiyetli Seslendirici Seçici (1111 Cümle, 508 Atasözü ve Görsel Kelimeler için) */}
+          {/* Çift Cinsiyetli Seslendirici Seçici (Günlük Cümle, Atasözü ve Görsel Kelimeler için) */}
           {isDualGenderSection && (
             <div className="flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] px-2.5 py-1.5 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] self-start sm:self-auto">
               <UserCheck size={14} className="text-[#087F5B] shrink-0" />
@@ -1985,24 +2054,28 @@ export default function LibraryPage() {
           {(
             [
               {
+                id: "vitrin",
+                label: "🏛️ Vitrin (Genel Bakış)",
+              },
+              {
                 id: "dialogues",
-                label: `💬 Diyaloglar (${diyaloglar.length})`,
+                label: `💬 Diyaloglar (${contentStats.dialogueCount})`,
               },
               {
                 id: "metinler",
-                label: `📖 Metinler (${metinler.length})`,
+                label: `📖 Metinler (${contentStats.readingCount})`,
               },
               {
                 id: "cumleler",
-                label: `🗣️ 1111 Cümle (${cumleler1111.length})`,
+                label: `🗣️ Günlük Cümle (${contentStats.sentenceCount})`,
               },
               {
                 id: "atasozleri",
-                label: `📜 Atasözleri (${atasozleri.length})`,
+                label: `📜 Atasözleri (${contentStats.proverbCount})`,
               },
               {
                 id: "gorsel-kelimeler",
-                label: `🖼️ Görsel Kelime (${gorselKelimeler.length})`,
+                label: `🖼️ Görsel Kelime (${contentStats.visualWordCount})`,
               },
               {
                 id: "saved-words",
@@ -2022,7 +2095,9 @@ export default function LibraryPage() {
                 onClick={() => handleSwitchSection(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                   active
-                    ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                    ? tab.id === "vitrin"
+                      ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
+                      : "bg-[#087F5B] text-white font-extrabold shadow-2xs"
                     : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
                 }`}
               >
@@ -2033,8 +2108,616 @@ export default function LibraryPage() {
         </div>
       </div>
 
+      {/* 0. SEKME: KÜTÜPHANE VİTRİN (GENEL BAKIŞ) EKRANI */}
+      {activeSection === "vitrin" && (
+        <section
+          aria-label="Kütüphane Vitrini (Genel Bakış)"
+          className="space-y-4"
+        >
+          {/* 6 Zengin Vitrin Kartı (Bento Grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {/* 1. Konuşma Diyalogları Kartı */}
+            <div
+              onClick={() => handleSwitchSection("dialogues")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchSection("dialogues");
+                }
+              }}
+              className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                    <img
+                      src={
+                        diyaloglar[0]?.gorsel || getDialogueCoverUrl("dlg_001")
+                      }
+                      alt="Konuşma Diyalogları"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold shadow-2xs">
+                      💬 Sesli
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                    >
+                      {getDisplayArabic("الحِوَارَاتُ اليَوْمِيَّة")}
+                    </div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
+                      💬 Konuşma Diyalogları
+                    </h2>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                      Gerçek hayat senaryoları, rol yapma modu, kelime-kelime
+                      ses takibi ve odak gramer notları
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dinamik İstatistik Metadatası */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
+                    {contentStats.dialogueCount} Diyalog
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[var(--foreground)]">
+                    {contentStats.dialogueSentenceCount} Cümle
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-emerald-100/80 dark:bg-emerald-950/60 text-[#065F46] dark:text-emerald-300">
+                    A1–B2 Kurları
+                  </span>
+                </div>
+
+                {/* Kişisel İlerleme Çubuğu */}
+                <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl p-2.5 border border-[#E6D7BE] space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold">
+                    <span className="text-[var(--muted)]">
+                      Kişisel İlerleme
+                    </span>
+                    <span className="text-[#065F46] dark:text-emerald-400 tabular-nums">
+                      {completedDialogueCount} / {contentStats.dialogueCount}{" "}
+                      Tamamlandı
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-[#E6D7BE]/60 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#087F5B] transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (completedDialogueCount /
+                              Math.max(1, contentStats.dialogueCount)) *
+                              100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
+                  Diyalogları Keşfet →
+                </span>
+                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Okuma Metinleri Kartı */}
+            <div
+              onClick={() => handleSwitchSection("metinler")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchSection("metinler");
+                }
+              }}
+              className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#6741D9] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                    <img
+                      src={
+                        metinler[0]?.gorsel ||
+                        getReadingTextCoverUrl("metin_01")
+                      }
+                      alt="Okuma Metinleri"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold shadow-2xs">
+                      📖 Metin
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#6741D9] dark:text-[#d0bfff] text-right leading-snug"
+                    >
+                      {getDisplayArabic("نُصُوصُ القِرَاءَة")}
+                    </div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] transition-colors leading-snug">
+                      📖 Okuma Metinleri
+                    </h2>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                      Cümle ve paragraf görünümü, okuduğunu anlama soruları,
+                      sesli takip ve odak gramer analizi
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dinamik İstatistik Metadatası */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#6741D9] dark:text-[#d0bfff]">
+                    {contentStats.readingCount} Okuma Metni
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[var(--foreground)]">
+                    {contentStats.readingQuestionCount} Anlama Sorusu
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-200">
+                    Paragraf & Cümle Modu
+                  </span>
+                </div>
+
+                {/* Kişisel İlerleme Çubuğu */}
+                <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl p-2.5 border border-[#E6D7BE] space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold">
+                    <span className="text-[var(--muted)]">
+                      Kişisel İlerleme
+                    </span>
+                    <span className="text-[#6741D9] dark:text-[#d0bfff] tabular-nums">
+                      {completedReadingCount} / {contentStats.readingCount}{" "}
+                      Tamamlandı
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-[#E6D7BE]/60 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#6741D9] transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (completedReadingCount /
+                              Math.max(1, contentStats.readingCount)) *
+                              100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] group-hover:underline">
+                  Metinleri Oku & Dinle →
+                </span>
+                <span className="w-7 h-7 rounded-lg bg-[#6741D9] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Görsel Kelime Kartları Kartı */}
+            <div
+              onClick={() => handleSwitchSection("gorsel-kelimeler")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchSection("gorsel-kelimeler");
+                }
+              }}
+              className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                    <img
+                      src={
+                        gorselKelimeler[0]?.gorsel ||
+                        getVisualWordCoverUrl(gorselKelimeler[0])
+                      }
+                      alt="Görsel Kelime Kartları"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold shadow-2xs">
+                      🖼️ 1:1 Kare
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                    >
+                      {getDisplayArabic("المُفْرَدَاتُ المُصَوَّرَة")}
+                    </div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
+                      🖼️ Görsel Kelime Kartları
+                    </h2>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                      Kare illüstrasyonlar, müfret-cemî/masdar çekimleri,
+                      harekeli örnek cümleler ve çift cinsiyetli seslendirme
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dinamik İstatistik Metadatası */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
+                    {contentStats.visualWordCount} Resimli Kelime
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[var(--foreground)]">
+                    {contentStats.visualWordCategoryCount} Konu Kategorisi
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-emerald-100/80 dark:bg-emerald-950/60 text-[#065F46] dark:text-emerald-300">
+                    Örnek Cümleli
+                  </span>
+                </div>
+
+                {/* Örnek Görsel Kelime Önizleme Şeridi */}
+                {gorselKelimeler[0] && (
+                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
+                      Örn: {gorselKelimeler[0].turkce}
+                    </span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 shrink-0"
+                    >
+                      {getDisplayArabic(gorselKelimeler[0].arapca)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
+                  Görsel Kelimelere Git →
+                </span>
+                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Günlük Kalıp Cümleler Kartı */}
+            <div
+              onClick={() => handleSwitchSection("cumleler")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchSection("cumleler");
+                }
+              }}
+              className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-emerald-950/60 dark:via-slate-900 dark:to-indigo-950/50 shadow-2xs flex flex-col items-center justify-center p-2 text-center relative">
+                    <span className="text-2xl mb-0.5">🗣️</span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 leading-tight"
+                    >
+                      {getDisplayArabic("كَلَامٌ يَوْمِيّ")}
+                    </span>
+                    <span className="mt-1 px-1.5 py-0.5 rounded bg-[#087F5B] text-white text-[9px] font-extrabold">
+                      E / K Sesli
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                    >
+                      {getDisplayArabic("الجُمَلُ اليَوْمِيَّة")}
+                    </div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
+                      🗣️ Günlük Kalıp Cümleler
+                    </h2>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                      Günlük hayatta en çok kullanılan cümle kalıpları, gramer
+                      yapısı etiketleri ve kadın/erkek stüdyo sesleri
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dinamik İstatistik Metadatası */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
+                    {contentStats.sentenceCount} Kalıp Cümle
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[var(--foreground)]">
+                    {contentStats.sentenceCategoryCount} Kategori
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                    {contentStats.sentenceGrammarCount} Gramer Kalıbı
+                  </span>
+                </div>
+
+                {cumleler1111[0] && (
+                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
+                      “{cumleler1111[0].turkce}”
+                    </span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 shrink-0"
+                    >
+                      {getDisplayArabic(cumleler1111[0].arapca)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
+                  Cümle Kalıplarını İncele →
+                </span>
+                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+
+            {/* 5. Arapça Atasözleri & Hikmetler Kartı */}
+            <div
+              onClick={() => handleSwitchSection("atasozleri")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchSection("atasozleri");
+                }
+              }}
+              className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-amber-600 p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                    <img
+                      src={
+                        atasozleri[0]?.gorsel ||
+                        getProverbCoverUrl(atasozleri[0]?.id || "ata_001")
+                      }
+                      alt="Arapça Atasözleri & Hikmetler"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-600 text-white text-[10px] font-extrabold shadow-2xs">
+                      📜 Hikmet
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300 text-right leading-snug"
+                    >
+                      {getDisplayArabic("الأَمْثَالُ وَالحِكَم")}
+                    </div>
+                    <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors leading-snug">
+                      📜 Arapça Atasözleri & Hikmetler
+                    </h2>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                      Klasik ve modern Arap dünyasından seçkin atasözleri, lafzî
+                      çevirileri, Türkçe karşılıkları ve kullanım bağlamları
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dinamik İstatistik Metadatası */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-amber-800 dark:text-amber-300">
+                    {contentStats.proverbCount} Atasözü
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[var(--foreground)]">
+                    {contentStats.proverbCategoryCount} Tema
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                    Lafzî & Bağlam Notlu
+                  </span>
+                </div>
+
+                {atasozleri[0] && (
+                  <div className="bg-white/85 dark:bg-[var(--background)] rounded-xl px-3 py-2 border border-[#E6D7BE] flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
+                      “{atasozleri[0].turkce}”
+                    </span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base font-bold text-amber-800 dark:text-amber-300 shrink-0"
+                    >
+                      {getDisplayArabic(atasozleri[0].arapca)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
+                <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 group-hover:underline">
+                  Atasözlerini Keşfet →
+                </span>
+                <span className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+
+            {/* 6. Çalışma Defterim & 38 Mahreç Rehberi İkili Hızlı Erişim Kartı */}
+            <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 flex flex-col justify-between gap-3 shadow-xs">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                    ❤️ Çalışma Defterim & 🎯 38 Mahreç
+                  </h2>
+                  <span
+                    lang="ar"
+                    dir="rtl"
+                    className="arabic text-lg font-bold text-[#6741D9] dark:text-[#d0bfff]"
+                  >
+                    {getDisplayArabic("دَفْتَرِي وَالمَخَارِج")}
+                  </span>
+                </div>
+
+                <p className="text-xs font-medium text-[var(--muted)] leading-snug">
+                  Kaydettiğiniz kelime, cümle ve atasözlerini tek yerden yönetin
+                  veya 38 mahreç çiftinde zorlandığınız kelimeleri tekrar edin.
+                </p>
+
+                {/* Alt Araç 1: Kişisel Çalışma Defterim */}
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSection("saved-words")}
+                  className="w-full text-left p-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-400 flex items-center justify-between gap-2.5 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 flex items-center justify-center shrink-0">
+                      <Heart size={18} fill="currentColor" />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)] group-hover:text-rose-600 truncate">
+                        Defterim ({mounted ? favoriteWords.length : 0})
+                      </span>
+                      <span className="block text-[11px] font-semibold text-[var(--muted)] truncate">
+                        Kaydedilen kelime, cümle, atasözü & PDF çıktı
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight
+                    size={15}
+                    className="text-rose-600 shrink-0 group-hover:translate-x-0.5 transition-transform"
+                  />
+                </button>
+
+                {/* Alt Araç 2: 38 Mahreç Rehberi & Zorlandıklarım */}
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSection("weak-words")}
+                  className="w-full text-left p-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] flex items-center justify-between gap-2.5 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-10 h-10 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/60 border border-[#6741D9]/30 text-[#6741D9] dark:text-indigo-300 flex items-center justify-center shrink-0">
+                      <Mic size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] truncate">
+                        38 Mahreç Çifti & Zorlandıklarım (
+                        {mounted ? weakWords.length : 0})
+                      </span>
+                      <span className="block text-[11px] font-semibold text-[var(--muted)] truncate">
+                        Telaffuz ve gölgelemede tekrar edilecek kelimeler
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight
+                    size={15}
+                    className="text-[#6741D9] shrink-0 group-hover:translate-x-0.5 transition-transform"
+                  />
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2 text-[11px] font-extrabold">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSection("saved-words")}
+                  className="text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                >
+                  ❤️ Defterimi Aç →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSection("weak-words")}
+                  className="text-[#6741D9] dark:text-[#d0bfff] hover:underline cursor-pointer"
+                >
+                  🎯 Mahreç Listesi →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Alt Hızlı Aksiyon Şeridi (Vitrin Alt Barı) */}
+          <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-extrabold">
+                  📊 Toplam Kütüphane Özeti
+                </span>
+                <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                  {contentStats.dialogueCount} Diyalog •{" "}
+                  {contentStats.readingCount} Metin •{" "}
+                  {contentStats.totalLibraryCards.toLocaleString("tr-TR")} Eğitim
+                  Kartı
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted)]">
+                {contentStats.dialogueSentenceCount} diyalog cümlesi,{" "}
+                {contentStats.readingQuestionCount} okuma anlama sorusu,{" "}
+                {contentStats.sentenceCount} günlük kalıp cümle,{" "}
+                {contentStats.proverbCount} atasözü ve{" "}
+                {contentStats.visualWordCount} resimli kelime kartı
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Link
+                href="/alistirmalar"
+                onClick={() => playClick()}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold transition-all whitespace-nowrap"
+              >
+                <Gamepad2 size={15} />
+                <span>🎮 Kütüphane Havuzuyla Alıştırma Yap</span>
+              </Link>
+
+              <Link
+                href="/sozluk"
+                onClick={() => playClick()}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#5230B5] text-xs font-extrabold transition-all whitespace-nowrap"
+              >
+                <BookOpen size={15} />
+                <span>
+                  📚 İnteraktif Kök Sözlüğü (
+                  {contentStats.dictionaryWordCount.toLocaleString("tr-TR")}{" "}
+                  Kelime)
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ORTAK ARAMA VE SEVİYE / DURUM FİLTRE ÇUBUĞU */}
-      {activeSection !== "saved-words" && activeSection !== "weak-words" && (
+      {activeSection !== "vitrin" &&
+        activeSection !== "saved-words" &&
+        activeSection !== "weak-words" && (
         <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
           <div className="flex items-center gap-2">
             <div className="relative flex-1 min-w-0">
@@ -2051,14 +2734,14 @@ export default function LibraryPage() {
                 }}
                 placeholder={
                   activeSection === "dialogues"
-                    ? "120 diyalog içinde başlık, gramer konusu veya Arapça ifade ara..."
+                    ? `${contentStats.dialogueCount} diyalog içinde başlık, gramer konusu veya Arapça ifade ara...`
                     : activeSection === "metinler"
-                    ? "60 okuma metni içinde başlık, tema, gramer veya Arapça ara..."
+                    ? `${contentStats.readingCount} okuma metni içinde başlık, tema, gramer veya Arapça ara...`
                     : activeSection === "cumleler"
-                    ? "1111 cümle içinde Türkçe, Arapça veya tema ara..."
+                    ? `${contentStats.sentenceCount} cümle içinde Türkçe, Arapça veya tema ara...`
                     : activeSection === "atasozleri"
-                    ? "508 atasözü içinde Türkçe anlam, lafzî çeviri veya Arapça ara..."
-                    : "999 görsel kelime içinde Türkçe, Arapça veya kategori ara..."
+                    ? `${contentStats.proverbCount} atasözü içinde Türkçe anlam, lafzî çeviri veya Arapça ara...`
+                    : `${contentStats.visualWordCount} görsel kelime içinde Türkçe, Arapça veya kategori ara...`
                 }
                 className="w-full h-9 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] rounded-xl pl-8 pr-8 text-xs font-semibold text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[#087F5B]"
               />
@@ -3845,9 +4528,11 @@ export default function LibraryPage() {
                 Çalışma defterinizde henüz kayıtlı öğe bulunmuyor.
               </p>
               <p className="text-xs text-[var(--muted)] max-w-xl mx-auto">
-                1111 Cümle, 508 Atasözü, 999 Görsel Kelime kartlarındaki,
-                Diyaloglardaki veya Sözlük sayfasındaki kalp (❤️) ikonuna
-                tıklayarak öğeleri kişisel defterinize kaydedebilirsiniz.
+                {contentStats.sentenceCount} Cümle, {contentStats.proverbCount}{" "}
+                Atasözü, {contentStats.visualWordCount} Görsel Kelime
+                kartlarındaki, Diyaloglardaki veya Sözlük sayfasındaki kalp (❤️)
+                ikonuna tıklayarak öğeleri kişisel defterinize
+                kaydedebilirsiniz.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                 <button
@@ -3855,7 +4540,9 @@ export default function LibraryPage() {
                   onClick={() => handleSwitchSection("gorsel-kelimeler")}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-4 border-[#065F46] cursor-pointer"
                 >
-                  <span>🖼️ 999 Görsel Kelimeye Göz At</span>
+                  <span>
+                    🖼️ {contentStats.visualWordCount} Görsel Kelimeye Göz At
+                  </span>
                 </button>
                 <Link
                   href="/sozluk"

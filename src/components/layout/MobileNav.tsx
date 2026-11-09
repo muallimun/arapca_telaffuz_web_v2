@@ -39,7 +39,17 @@ export default function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => playClick()}
+              onClick={() => {
+                playClick();
+                if (
+                  item.href === "/kutuphane" &&
+                  typeof window !== "undefined"
+                ) {
+                  window.dispatchEvent(
+                    new CustomEvent("muallimun:kutuphane-vitrin")
+                  );
+                }
+              }}
               className={`min-h-[48px] flex flex-col items-center justify-center py-1.5 px-1 rounded-xl border-2 transition-all ${
                 isActive
                   ? "bg-[#F3F0FF] border-[#6741D9] border-b-4 text-[#6741D9] font-extrabold -translate-y-0.5"

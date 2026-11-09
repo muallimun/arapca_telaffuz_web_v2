@@ -346,6 +346,79 @@ export interface ContentCatalogStats {
   byLevel: Record<Level, { dialogues: number; sentences: number }>;
 }
 
+export interface DynamicContentStats {
+  dialogueCount: number;
+  dialogueSentenceCount: number;
+  readingCount: number;
+  readingQuestionCount: number;
+  sentenceCount: number;
+  sentenceCategoryCount: number;
+  sentenceGrammarCount: number;
+  proverbCount: number;
+  proverbCategoryCount: number;
+  visualWordCount: number;
+  visualWordCategoryCount: number;
+  dictionaryWordCount: number;
+  totalLibraryCards: number;
+}
+
+const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
+  const dialogueCount = diyaloglar.length;
+  const dialogueSentenceCount = diyaloglar.reduce(
+    (acc, d) => acc + (Array.isArray(d.satirlar) ? d.satirlar.length : 0),
+    0
+  );
+  const readingCount = metinler.length;
+  const readingQuestionCount = metinler.reduce(
+    (acc, m) => acc + (Array.isArray(m.sorular) ? m.sorular.length : 0),
+    0
+  );
+  const sentenceCount = cumleler1111.length;
+  const sentenceCategoryCount = new Set(
+    cumleler1111.map((c) => c.tema).filter(Boolean)
+  ).size;
+  const sentenceGrammarCount = new Set(
+    cumleler1111.map((c) => c.odak_kalip).filter(Boolean)
+  ).size;
+  const proverbCount = atasozleri.length;
+  const proverbCategoryCount = new Set(
+    atasozleri.map((a) => a.tema).filter(Boolean)
+  ).size;
+  const visualWordCount = gorselKelimeler.length;
+  const visualWordCategoryCount = new Set(
+    gorselKelimeler
+      .map(
+        (g) =>
+          g.kategori_tr ||
+          (g as unknown as { kategori?: string }).kategori ||
+          ""
+      )
+      .filter(Boolean)
+  ).size;
+  const dictionaryWordCount = sozluk.length;
+  const totalLibraryCards = sentenceCount + proverbCount + visualWordCount;
+
+  return {
+    dialogueCount,
+    dialogueSentenceCount,
+    readingCount,
+    readingQuestionCount,
+    sentenceCount,
+    sentenceCategoryCount,
+    sentenceGrammarCount,
+    proverbCount,
+    proverbCategoryCount,
+    visualWordCount,
+    visualWordCategoryCount,
+    dictionaryWordCount,
+    totalLibraryCards,
+  };
+})();
+
+export function getDynamicContentStats(): DynamicContentStats {
+  return DYNAMIC_CONTENT_STATS;
+}
+
 export function getContentCatalogStats(): ContentCatalogStats {
   const byLevel: Record<Level, { dialogues: number; sentences: number }> = {
     A1: { dialogues: 0, sentences: 0 },

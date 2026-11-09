@@ -15,7 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { sozluk, diyaloglar } from "@/lib/data";
+import { sozluk, diyaloglar, getDynamicContentStats } from "@/lib/data";
 import { DictionaryItem } from "@/types/data";
 import {
   getDialogueVocabulary,
@@ -668,7 +668,7 @@ export default function DictionaryPage() {
               İnteraktif Arapça Sözlük
             </h1>
             <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)] truncate">
-              Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
+              {getDynamicContentStats().dictionaryWordCount.toLocaleString("tr-TR")} Kelime • Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
             </p>
           </div>
         </div>

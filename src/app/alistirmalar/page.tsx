@@ -23,6 +23,7 @@ import {
   metinler,
   sozluk,
   gorselKelimeler,
+  getDynamicContentStats,
 } from "@/lib/data";
 import {
   getDialogueVocabulary,
@@ -871,7 +872,7 @@ function ExercisesPageContent() {
       return {
         combinedVocabulary:
           mappedVocab.length >= 4 ? mappedVocab : nonProperSozluk.slice(0, 12),
-        poolNotice: `🖼️ 999 Görsel Kelime havuzundan ${items.length} resimli ve örnek cümleli kelime seçildi.`,
+        poolNotice: `🖼️ ${getDynamicContentStats().visualWordCount} Görsel Kelime havuzundan ${items.length} resimli ve örnek cümleli kelime seçildi.`,
       };
     }
 
@@ -893,7 +894,7 @@ function ExercisesPageContent() {
       }));
       return {
         combinedVocabulary: mappedSentenceItems,
-        poolNotice: `🗣️ 1111 Günlük Kalıp Cümle havuzundan ${items.length} cümle seçildi.`,
+        poolNotice: `🗣️ ${getDynamicContentStats().sentenceCount} Günlük Kalıp Cümle havuzundan ${items.length} cümle seçildi.`,
       };
     }
 
@@ -918,7 +919,7 @@ function ExercisesPageContent() {
       }));
       return {
         combinedVocabulary: mappedProverbItems,
-        poolNotice: `📜 508 Atasözü & Hikmet havuzundan ${items.length} atasözü seçildi.`,
+        poolNotice: `📜 ${getDynamicContentStats().proverbCount} Atasözü & Hikmet havuzundan ${items.length} atasözü seçildi.`,
       };
     }
 
@@ -940,7 +941,7 @@ function ExercisesPageContent() {
       const list = Array.from(textVocabMap.values());
       return {
         combinedVocabulary: list.length >= 4 ? list : nonProperSozluk,
-        poolNotice: `📖 60 Okuma Metni havuzundan ${effectiveTexts.length} metin, ${sentenceCountInPool} cümle ve ${list.length} kelime seçildi.`,
+        poolNotice: `📖 ${getDynamicContentStats().readingCount} Okuma Metni havuzundan ${effectiveTexts.length} metin, ${sentenceCountInPool} cümle ve ${list.length} kelime seçildi.`,
       };
     }
 
@@ -1064,6 +1065,8 @@ function ExercisesPageContent() {
     },
   ];
 
+  const contentStats = getDynamicContentStats();
+
   // Hızlı Havuz Sekmeleri (Quick Pool Pills) ve Havuz Select Seçenekleri
   const poolOptions: {
     id: PoolSourceId;
@@ -1072,33 +1075,33 @@ function ExercisesPageContent() {
   }[] = [
     {
       id: "full_dict",
-      label: "📚 Tüm Sözlük (3.118 Kelime)",
-      shortLabel: "📚 Tüm Sözlük (3.118)",
+      label: `📚 Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")} Kelime)`,
+      shortLabel: `📚 Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")})`,
     },
     {
       id: "visual_words",
-      label: "🖼️ 999 Görsel Kelime (Resimli & Örnekli)",
-      shortLabel: "🖼️ 999 Görsel Kelime",
+      label: `🖼️ ${contentStats.visualWordCount} Görsel Kelime (Resimli & Örnekli)`,
+      shortLabel: `🖼️ ${contentStats.visualWordCount} Görsel Kelime`,
     },
     {
       id: "all_dialogues",
-      label: "💬 120 Diyalog (Kelime & Cümleler)",
-      shortLabel: "💬 120 Diyalog",
+      label: `💬 ${contentStats.dialogueCount} Diyalog (Kelime & Cümleler)`,
+      shortLabel: `💬 ${contentStats.dialogueCount} Diyalog`,
     },
     {
       id: "reading_texts",
-      label: "📖 60 Okuma Metni (Cümle & Kelimeler)",
-      shortLabel: "📖 60 Okuma Metni",
+      label: `📖 ${contentStats.readingCount} Okuma Metni (Cümle & Kelimeler)`,
+      shortLabel: `📖 ${contentStats.readingCount} Okuma Metni`,
     },
     {
       id: "sentences_1111",
-      label: "🗣️ 1111 Günlük Kalıp Cümle",
-      shortLabel: "🗣️ 1111 Günlük Cümle",
+      label: `🗣️ ${contentStats.sentenceCount} Günlük Kalıp Cümle`,
+      shortLabel: `🗣️ ${contentStats.sentenceCount} Günlük Cümle`,
     },
     {
       id: "proverbs_508",
-      label: "📜 508 Arapça Atasözü & Hikmet",
-      shortLabel: "📜 508 Atasözü",
+      label: `📜 ${contentStats.proverbCount} Arapça Atasözü & Hikmet`,
+      shortLabel: `📜 ${contentStats.proverbCount} Atasözü`,
     },
     {
       id: "srs_due",
@@ -1363,7 +1366,9 @@ function ExercisesPageContent() {
         };
       }
       const cnt =
-        cefrFilter === "all" ? 3118 : activeFullDictWordItems.length;
+        cefrFilter === "all"
+          ? contentStats.dictionaryWordCount
+          : activeFullDictWordItems.length;
       return {
         activeItemCount: cnt,
         activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} Kelime`,
@@ -1397,6 +1402,7 @@ function ExercisesPageContent() {
     sentenceCountInPool,
     combinedVocabulary.length,
     idiomsPool.length,
+    contentStats.dictionaryWordCount,
   ]);
 
   return (
@@ -1432,13 +1438,13 @@ function ExercisesPageContent() {
               İnteraktif Alıştırma Merkezi
             </h1>
             <p className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] truncate">
-              120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi
+              {contentStats.dialogueCount} Diyalog • {contentStats.readingCount} Metin • {contentStats.sentenceCount} Cümle • {contentStats.proverbCount} Atasözü • {contentStats.visualWordCount} Görsel Kelime • {contentStats.dictionaryWordCount} Sözlük Kelimesi
             </p>
           </div>
         </div>
 
         <div
-          data-tooltip="120 Diyalog • 60 Metin • 1111 Cümle • 508 Atasözü • 999 Görsel Kelime • 3118 Sözlük Kelimesi"
+          data-tooltip={`${contentStats.dialogueCount} Diyalog • ${contentStats.readingCount} Metin • ${contentStats.sentenceCount} Cümle • ${contentStats.proverbCount} Atasözü • ${contentStats.visualWordCount} Görsel Kelime • ${contentStats.dictionaryWordCount} Sözlük Kelimesi`}
           data-tooltip-pos="bottom"
           data-tooltip-align="right"
           className="hidden sm:flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
@@ -1591,8 +1597,14 @@ function ExercisesPageContent() {
                   <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:min-w-[340px]">
                     {(
                       [
-                        { id: "words", label: "🖼️ Kelimeler (999)" },
-                        { id: "sentences", label: "💬 Örnek Cümleler (999)" },
+                        {
+                          id: "words",
+                          label: `🖼️ Kelimeler (${filteredVisualWordsPool.length})`,
+                        },
+                        {
+                          id: "sentences",
+                          label: `💬 Örnek Cümleler (${filteredVisualWordsPool.filter((w) => Boolean(w.ornek_ar)).length})`,
+                        },
                       ] as { id: QuizContentType; label: string }[]
                     ).map((item) => {
                       const active = effectiveContentType === item.id;

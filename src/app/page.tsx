@@ -24,12 +24,11 @@ import {
   metinler,
   cumleler1111,
   atasozleri,
-  gorselKelimeler,
-  sozluk,
   getDialoguesSortedPedagogically,
   getDialogueCoverUrl,
   getReadingTextCoverUrl,
   getProverbCoverUrl,
+  getDynamicContentStats,
 } from "@/lib/data";
 import {
   useUserStore,
@@ -149,15 +148,17 @@ export default function HomePage() {
   const [failedCoverId, setFailedCoverId] = useState<string | null>(null);
   const recImgFailed = failedCoverId === recommendedDialogueId;
 
+  const contentStats = getDynamicContentStats();
+
   const modules: ModuleItem[] = useMemo(
     () => [
       {
         id: "kutuphane",
         title: "Eğitim Kütüphanesi (V2)",
         arabicBadge: "المَكْتَبَة",
-        subtitle: "120 Diyalog, 60 Metin, 1111 Cümle, 508 Atasözü ve 999 Görsel Kelime",
-        meta: `${diyaloglar.length} Diyalog · ${metinler.length} Metin`,
-        tooltip: "A1'den B2'ye 120 diyalog, 60 okuma metni, 1111 cümle ve 508 atasözünü inceleyin",
+        subtitle: `${contentStats.dialogueCount} Diyalog, ${contentStats.readingCount} Metin, ${contentStats.sentenceCount} Cümle, ${contentStats.proverbCount} Atasözü ve ${contentStats.visualWordCount} Görsel Kelime`,
+        meta: `${contentStats.dialogueCount} Diyalog · ${contentStats.readingCount} Metin`,
+        tooltip: `A1'den B2'ye ${contentStats.dialogueCount} diyalog, ${contentStats.readingCount} okuma metni, ${contentStats.sentenceCount} cümle, ${contentStats.proverbCount} atasözü ve ${contentStats.visualWordCount} görsel kelimeyi inceleyin`,
         icon: BookOpen,
         targetHref: "/kutuphane",
         accentColor: "emerald",
@@ -189,14 +190,14 @@ export default function HomePage() {
         title: "İnteraktif Sözlük",
         arabicBadge: "المُعْجَم",
         subtitle: "Kök harfler, müfret-cemî, mâzî-muzâri ve sesli telaffuz",
-        meta: `${sozluk.length} Kelime · Sesli Sözlük`,
+        meta: `${contentStats.dictionaryWordCount} Kelime · Sesli Sözlük`,
         tooltip: "Kök harflere göre kelimeleri, çoğulları, fiil çekimlerini ve kalıpları arayın",
         icon: BookMarked,
         targetHref: "/sozluk",
         accentColor: "purple",
       },
     ],
-    [recommendedDialogueId]
+    [recommendedDialogueId, contentStats]
   );
 
   const pedagogicalDialogues = useMemo(
@@ -450,31 +451,31 @@ export default function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
           {[
             {
-              label: `💬 ${diyaloglar.length} Diyalog`,
+              label: `💬 ${contentStats.dialogueCount} Diyalog`,
               sub: "Odak Gramer Notlu",
               href: "/kutuphane?tab=diyaloglar",
               badge: "A1-B2",
             },
             {
-              label: `📖 ${metinler.length} Okuma Metni`,
+              label: `📖 ${contentStats.readingCount} Okuma Metni`,
               sub: "Sorulu & Gramerli",
               href: "/kutuphane?tab=metinler",
               badge: "Yeni",
             },
             {
-              label: `🗣️ ${cumleler1111.length} Günlük Cümle`,
+              label: `🗣️ ${contentStats.sentenceCount} Günlük Cümle`,
               sub: "Çift Cinsiyet Sesli",
               href: "/kutuphane?tab=cumleler",
               badge: "E/K Ses",
             },
             {
-              label: `📜 ${atasozleri.length} Atasözü`,
+              label: `📜 ${contentStats.proverbCount} Atasözü`,
               sub: "Lafzî & Bağlam Notlu",
               href: "/kutuphane?tab=atasozleri",
               badge: "Hikmet",
             },
             {
-              label: `🖼️ ${gorselKelimeler.length} Görsel Kelime`,
+              label: `🖼️ ${contentStats.visualWordCount} Görsel Kelime`,
               sub: "Resimli & Örnekli",
               href: "/kutuphane?tab=gorsel-kelimeler",
               badge: "Resimli",
@@ -519,7 +520,7 @@ export default function HomePage() {
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Diyalog, Okuma Metni, SRS Kelime, 1111 Günlük Cümle ve 508 Atasözü modüllerinden oluşan kişisel günlük çalışma planınız
+              Diyalog, Okuma Metni, SRS Kelime, {contentStats.sentenceCount} Günlük Cümle ve {contentStats.proverbCount} Atasözü modüllerinden oluşan kişisel günlük çalışma planınız
             </p>
           </div>
 
@@ -739,16 +740,16 @@ export default function HomePage() {
                 onClick={() => playClick()}
                 className="text-[10px] font-extrabold text-[#065F46] dark:text-emerald-400 hover:underline"
               >
-                1111 Cümle →
+                {contentStats.sentenceCount} Cümle →
               </Link>
             </div>
 
             <div className="space-y-2 flex-1 flex flex-col justify-between">
-              {/* 1111 Günlük Cümle Kartı */}
+              {/* Günlük Cümle Kartı */}
               <div className="p-2.5 rounded-xl bg-[#F7EFE1]/75 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5">
                 <div className="flex items-center justify-between gap-1.5">
                   <span className="px-1.5 py-0.5 rounded bg-[#087F5B] text-white text-[9px] font-extrabold">
-                    1111 Cümle #{dailySentenceItem.sira || dailySentenceItem.id.replace("cumle_", "")} • {dailySentenceItem.seviye || dailySentenceItem.cefr || "A1"}
+                    Kalıp Cümle #{dailySentenceItem.sira || dailySentenceItem.id.replace("cumle_", "")} • {dailySentenceItem.seviye || dailySentenceItem.cefr || "A1"}
                   </span>
                   <button
                     type="button"
@@ -831,7 +832,7 @@ export default function HomePage() {
                 onClick={() => playClick()}
                 className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 hover:underline"
               >
-                508 Atasözü →
+                {contentStats.proverbCount} Atasözü →
               </Link>
             </div>
 
@@ -983,7 +984,7 @@ export default function HomePage() {
           <Link
             href="/kutuphane?durum=completed"
             onClick={() => playClick()}
-            data-tooltip="Tamamladığınız diyalogların (120) ve okuma metinlerinin (60) toplam ilerleme durumu"
+            data-tooltip={`Tamamladığınız diyalogların (${contentStats.dialogueCount}) ve okuma metinlerinin (${contentStats.readingCount}) toplam ilerleme durumu`}
             className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors"
           >
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[#065F46] dark:text-emerald-400 shrink-0">
@@ -994,13 +995,13 @@ export default function HomePage() {
                 <span className="text-base sm:text-lg font-black tabular-nums text-[var(--foreground)] leading-tight">
                   {completedDialogueCount}
                   <span className="text-[11px] font-bold text-[var(--muted)]">
-                    /{diyaloglar.length} Diyalog
+                    /{contentStats.dialogueCount} Diyalog
                   </span>
                 </span>
                 <span className="text-sm sm:text-base font-black tabular-nums text-[#6741D9] dark:text-[#d0bfff] leading-tight">
                   {completedReadingCount}
                   <span className="text-[11px] font-bold text-[var(--muted)]">
-                    /{metinler.length} Metin
+                    /{contentStats.readingCount} Metin
                   </span>
                 </span>
               </div>
@@ -1024,7 +1025,7 @@ export default function HomePage() {
               <span className="block text-xl font-black tabular-nums text-[var(--foreground)] leading-normal">
                 {mounted
                   ? Math.min(
-                      sozluk.length,
+                      contentStats.dictionaryWordCount,
                       learnedWords.filter(
                         (id) =>
                           Boolean(id) &&
@@ -1035,7 +1036,7 @@ export default function HomePage() {
                     )
                   : 0}
                 <span className="text-xs font-bold text-[var(--muted)]">
-                  /{sozluk.length}
+                  /{contentStats.dictionaryWordCount}
                 </span>
               </span>
               <span className="block text-xs font-bold text-[var(--muted)] mt-0.5 line-clamp-2 leading-tight">

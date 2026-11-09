@@ -68,6 +68,7 @@ import {
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import WordTooltip from "@/components/ui/WordTooltip";
 import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
+import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
 
 type SavedItemFilter =
   | "all"
@@ -104,6 +105,8 @@ export default function LibraryPage() {
     speechRate,
     preferredVoiceGender,
     setPreferredVoiceGender,
+    arabicFont,
+    arabicFontSize,
   } = useSettings();
 
   const [mounted, setMounted] = useState(false);
@@ -254,9 +257,20 @@ export default function LibraryPage() {
     }
   };
 
-  const removeTashkeel = (text: string) => text.replace(/[\u064B-\u0652]/g, "");
+  const activeFontCfg = getArabicFontConfig(mounted ? arabicFont : "arakom");
+  const libraryCardArabicFontSizePx = Math.round(
+    (mounted ? arabicFontSize : 34) * 0.82 * activeFontCfg.scale
+  );
+  const librarySubArabicFontSizePx = Math.round(
+    (mounted ? arabicFontSize : 34) * 0.65 * activeFontCfg.scale
+  );
+
   const getDisplayArabic = (text: string) =>
-    !mounted || showHareke ? text : removeTashkeel(text);
+    formatArabicText(
+      text,
+      !mounted || showHareke,
+      mounted ? arabicFont : "arakom"
+    );
 
   const toggleBulkArabic = () => {
     playClick();
@@ -2901,7 +2915,11 @@ export default function LibraryPage() {
                     {isArVisible ? (
                       <div
                         dir="rtl"
-                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                        style={{
+                          fontSize: `${libraryCardArabicFontSizePx}px`,
+                          lineHeight: activeFontCfg.lineHeight,
+                        }}
+                        className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
                       >
                         <WordTooltip
                           text={item.arapca}
@@ -3236,7 +3254,11 @@ export default function LibraryPage() {
                     {isArVisible ? (
                       <div
                         dir="rtl"
-                        className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.95] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                        style={{
+                          fontSize: `${libraryCardArabicFontSizePx}px`,
+                          lineHeight: activeFontCfg.lineHeight,
+                        }}
+                        className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
                       >
                         <WordTooltip
                           text={item.arapca}
@@ -3597,7 +3619,11 @@ export default function LibraryPage() {
                         <div>
                           <div
                             dir="rtl"
-                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
+                            style={{
+                              fontSize: `${libraryCardArabicFontSizePx}px`,
+                              lineHeight: activeFontCfg.lineHeight,
+                            }}
+                            className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right"
                           >
                             <WordTooltip
                               text={item.arapca}
@@ -3672,7 +3698,11 @@ export default function LibraryPage() {
                           {isArVisible ? (
                             <div
                               dir="rtl"
-                              className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-[1.9]"
+                              style={{
+                                fontSize: `${librarySubArabicFontSizePx}px`,
+                                lineHeight: activeFontCfg.lineHeight,
+                              }}
+                              className="arabic font-arabic font-bold text-[var(--foreground)] text-right"
                             >
                               <WordTooltip
                                 text={item.ornek_ar}
@@ -4012,7 +4042,11 @@ export default function LibraryPage() {
 
                           <div
                             dir="rtl"
-                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.9] bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
+                            style={{
+                              fontSize: `${libraryCardArabicFontSizePx}px`,
+                              lineHeight: activeFontCfg.lineHeight,
+                            }}
+                            className="arabic font-arabic font-bold text-[#065F46] dark:text-emerald-400 text-right bg-white/85 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE]"
                           >
                             <WordTooltip
                               text={mainAr}

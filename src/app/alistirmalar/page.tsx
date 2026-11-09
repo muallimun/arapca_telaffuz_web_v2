@@ -12,7 +12,6 @@ import {
   PenTool,
   Link2,
   Info,
-  Layers,
   Timer,
   ListOrdered,
   Image as ImageIcon,
@@ -1209,9 +1208,50 @@ function ExercisesPageContent() {
 
   const isSentencesOnlyMode =
     selectedType === "fill-in-blanks" || selectedType === "sentence-builder";
-  const effectiveContentType: QuizContentType = isSentencesOnlyMode
-    ? "sentences"
-    : contentType;
+
+  const showSmartContentTypeSelector =
+    !isSentencesOnlyMode &&
+    selectedType !== "visual-rosetta" &&
+    (rangePreset === "all_dialogues" ||
+      rangePreset === "reading_texts" ||
+      rangePreset === "visual_words");
+
+  const effectiveContentType: QuizContentType = useMemo(() => {
+    if (isSentencesOnlyMode) return "sentences";
+    if (rangePreset === "full_dict") return "words";
+    if (rangePreset === "sentences_1111") return "sentences";
+    if (rangePreset === "proverbs_508") return "idioms";
+    if (rangePreset === "favorites" || rangePreset === "weak-words") {
+      return "words";
+    }
+    if (rangePreset === "srs_due") {
+      return dailyPackage.dueReviewPool.idioms.length > 0 ||
+        dailyPackage.dueReviewPool.dialogues.length > 0
+        ? "mixed"
+        : "words";
+    }
+    if (rangePreset === "mistakes") {
+      return mistakesResolved.idioms.length > 0 ||
+        mistakesResolved.dialogues.length > 0
+        ? "mixed"
+        : "words";
+    }
+    if (rangePreset === "visual_words") {
+      return contentType === "sentences" ? "sentences" : "words";
+    }
+    if (rangePreset === "all_dialogues" || rangePreset === "reading_texts") {
+      return contentType === "idioms" ? "mixed" : contentType;
+    }
+    return contentType;
+  }, [
+    isSentencesOnlyMode,
+    rangePreset,
+    contentType,
+    dailyPackage.dueReviewPool.idioms.length,
+    dailyPackage.dueReviewPool.dialogues.length,
+    mistakesResolved.idioms.length,
+    mistakesResolved.dialogues.length,
+  ]);
 
   // Seçili havuz, kategori, seviye ve alıştırma moduna göre gerçek zamanlı öğe sayısı
   const { activeItemCount, activePoolCountLabel } = useMemo(() => {
@@ -1495,8 +1535,8 @@ function ExercisesPageContent() {
 
           {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
           <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
-            {/* Hızlı Havuz Sekmeleri (Quick Pool Pills — 8 Ana Veri Kaynağı) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+            {/* 8 Ana Veri Kaynağı Izgarası (Yatay Kaydırma Yok — Sarmalanan Kompakt Grid) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-2 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
               {quickPoolPills.map((pill) => {
                 const isActive = rangePreset === pill.id;
                 const activeStyle =
@@ -1511,46 +1551,106 @@ function ExercisesPageContent() {
                     key={pill.id}
                     type="button"
                     onClick={() => handlePoolSelectChange(pill.id)}
-                    className={`px-2 py-1 rounded-xl border text-[11px] sm:text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    className={`min-h-[36px] px-2 py-1.5 rounded-xl border text-[11px] sm:text-xs font-extrabold flex items-center justify-center text-center transition-all cursor-pointer truncate ${
                       isActive
                         ? activeStyle
                         : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
                     }`}
                   >
-                    <span>{pill.shortLabel}</span>
+                    <span className="truncate">{pill.shortLabel}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Üst Ayar Satırı: Havuz Seçimi + Dinamik Alt Filtre (Kategori/Metin/Diyalog) + Seviye */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-1.5 sm:gap-2">
-              {/* 1. Kaynak Havuzu Select */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[240px]">
-                <Layers
-                  size={13}
-                  className="text-[#065F46] dark:text-emerald-400 shrink-0"
-                />
-                <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                  Havuz:
+            {/* Kütüphane Defterim veya Mahreç Tekrarı URL'sinden gelindiyse aktif kaynak göstergesi */}
+            {(rangePreset === "favorites" || rangePreset === "weak-words") && (
+              <div className="flex items-center justify-between gap-2 bg-white/90 dark:bg-[var(--background)] rounded-xl px-3 py-1.5 border border-[#6741D9]/50 text-xs font-extrabold text-[#6741D9] dark:text-indigo-300">
+                <span>
+                  {rangePreset === "favorites"
+                    ? `❤️ Kişisel Çalışma Defterim (${favoriteWords.length} kayıt) seçili`
+                    : `🎯 Mahreç Tekrarı (${weakWords.length} kelime) seçili`}
                 </span>
-                <select
-                  value={rangePreset}
-                  onChange={(e) =>
-                    handlePoolSelectChange(e.target.value as PoolSourceId)
-                  }
-                  aria-label="Kelime ve Cümle Havuzu Seçimi"
-                  className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                <button
+                  type="button"
+                  onClick={() => handlePoolSelectChange("full_dict")}
+                  className="text-[11px] font-bold underline cursor-pointer"
                 >
-                  {poolOptions.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
+                  Tüm Sözlüğe Dön
+                </button>
               </div>
+            )}
 
-              {/* 2. Dinamik Alt Filtre (Diyalog / Okuma Metni / Kategori Seçimi) */}
+            {/* Bağlama Duyarlı Çalışma Türü Seçicisi: SADECE Çoklu-Tür Kaynaklarında (120 Diyalog, 60 Metin, 999 Görsel Kelime) görünür */}
+            {showSmartContentTypeSelector && (
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
+                  Çalışma Türü:
+                </span>
+                {rangePreset === "visual_words" ? (
+                  <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:min-w-[340px]">
+                    {(
+                      [
+                        { id: "words", label: "🖼️ Kelimeler (999)" },
+                        { id: "sentences", label: "💬 Örnek Cümleler (999)" },
+                      ] as { id: QuizContentType; label: string }[]
+                    ).map((item) => {
+                      const active = effectiveContentType === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setContentType(item.id);
+                          }}
+                          className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                            active
+                              ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:min-w-[340px]">
+                    {(
+                      [
+                        { id: "words", label: "🔤 Kelimeler" },
+                        { id: "sentences", label: "💬 Cümleler" },
+                        { id: "mixed", label: "🔀 Karışık" },
+                      ] as { id: QuizContentType; label: string }[]
+                    ).map((item) => {
+                      const active = effectiveContentType === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setContentType(item.id);
+                          }}
+                          className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                            active
+                              ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tek Kompakt Filtre ve Ayar Barı: Kategori/Konu + Seviye + Soru/Süre/Sonuç + Başlat Butonu */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-1.5 sm:gap-2">
+              {/* 1. Dinamik Alt Filtre (Sadece 120 Diyalog, 60 Metin, 999 Görsel Kelime, 1111 Cümle veya 508 Atasözü seçiliyse görünür) */}
               {rangePreset === "all_dialogues" && (
                 <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
                   <FolderOpen
@@ -1657,7 +1757,7 @@ function ExercisesPageContent() {
                 </div>
               )}
 
-              {/* 2.5. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
+              {/* 2. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
               <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
                   Seviye:
@@ -1678,59 +1778,6 @@ function ExercisesPageContent() {
                   <option value="B2">Seviye B2 (İleri)</option>
                 </select>
               </div>
-
-              {/* 3. İçerik Türü (Soru Kaynağı: Kelimeler | Kalıp İfadeler | Cümleler | Karışık) */}
-              {selectedType !== "visual-rosetta" && (
-                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1 w-full lg:w-auto">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                    İçerik:
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 w-full">
-                    {(
-                      [
-                        { id: "words", label: "🔤 Kelimeler" },
-                        { id: "idioms", label: "✨ Atasözü / Kalıp" },
-                        {
-                          id: "sentences",
-                          label: "💬 Cümleler",
-                        },
-                        { id: "mixed", label: "🔀 Karışık" },
-                      ] as { id: QuizContentType; label: string }[]
-                    ).map((item) => {
-                      const active = effectiveContentType === item.id;
-                      const isDisabled =
-                        isSentencesOnlyMode && item.id !== "sentences";
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          disabled={isDisabled}
-                          data-tooltip={
-                            isDisabled
-                              ? "Bu mod otomatik olarak cümle/atasözü/örnek cümle içeren öğeleri süzer"
-                              : undefined
-                          }
-                          data-tooltip-pos="top"
-                          onClick={() => {
-                            if (isDisabled) return;
-                            playClick();
-                            setContentType(item.id);
-                          }}
-                          className={`px-2 py-1 text-[11px] sm:text-xs rounded-lg transition-all whitespace-nowrap text-center ${
-                            active
-                              ? "bg-[#6741D9] text-white font-bold shadow-2xs cursor-pointer"
-                              : isDisabled
-                              ? "text-[var(--muted)] opacity-45 cursor-not-allowed"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] cursor-pointer"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Boşluk Doldurma Alt Mod Seçicisi */}
               {selectedType === "fill-in-blanks" && (
@@ -1768,17 +1815,17 @@ function ExercisesPageContent() {
                 </div>
               )}
 
-              {/* 4. Değerlendirme Zamanı Seçicisi (⚡ Hemen Göster | 🏁 Bitince Göster) */}
+              {/* 3. Değerlendirme Zamanı Seçicisi (⚡ Hemen | 🏁 Bitince) */}
               {selectedType !== "flashcard" && selectedType !== "visual-rosetta" && (
                 <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                    Sonuçlar:
+                    Sonuç:
                   </span>
                   <div className="grid grid-cols-2 sm:flex items-center gap-1 w-full sm:w-auto">
                     {(
                       [
-                        { id: "instant", label: "⚡ Hemen Göster" },
-                        { id: "end", label: "🏁 Bitince Göster" },
+                        { id: "instant", label: "⚡ Hemen" },
+                        { id: "end", label: "🏁 Bitince" },
                       ] as { id: FeedbackMode; label: string }[]
                     ).map((fb) => {
                       const active = feedbackMode === fb.id;
@@ -1804,7 +1851,7 @@ function ExercisesPageContent() {
                 </div>
               )}
 
-              {/* 5 & 6. Soru Sayısı (10 | 20 | 30) ve Süre (Süresiz | 60s | 30s) */}
+              {/* 4 & 5. Soru Sayısı (10 | 20 | 30) ve Süre (Süresiz | 60s | 30s) */}
               <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-2 gap-1.5 w-full lg:w-auto">
                 <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-8.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
@@ -1858,7 +1905,7 @@ function ExercisesPageContent() {
                 </div>
               </div>
 
-              {/* 7. Sağ Uç / Mobil Tam Genişlik: Vurgulu [▶ Alıştırmayı Başlat (X Öğe)] Butonu */}
+              {/* 6. Sağ Uç / Mobil Tam Genişlik: Vurgulu [▶ Alıştırmayı Başlat (X Öğe)] Butonu (Tek ▶ ikonu) */}
               <button
                 type="button"
                 onClick={handleStartExercise}
@@ -1871,9 +1918,9 @@ function ExercisesPageContent() {
                 }
                 className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto h-10 sm:h-9 px-4 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
               >
-                <Play size={14} fill="currentColor" />
+                <Play size={14} fill="currentColor" className="shrink-0" />
                 <span className="truncate">
-                  ▶ Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe · {activePoolCountLabel})
+                  Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe)
                 </span>
               </button>
             </div>

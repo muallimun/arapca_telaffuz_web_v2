@@ -153,6 +153,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const cfg = getArabicFontConfig(arabicFont);
+    const ratio = Number(((arabicFontSize / 34) * cfg.scale).toFixed(3));
     document.documentElement.style.setProperty(
       "--font-arabic-family",
       cfg.cssFamily
@@ -165,7 +166,15 @@ export default function SettingsPage() {
       "--font-arabic-line-height",
       String(cfg.lineHeight)
     );
-  }, [arabicFont]);
+    document.documentElement.style.setProperty(
+      "--font-arabic-size-px",
+      `${arabicFontSize}px`
+    );
+    document.documentElement.style.setProperty(
+      "--font-arabic-size-ratio",
+      String(ratio)
+    );
+  }, [arabicFont, arabicFontSize]);
 
   if (!mounted) return null;
 
@@ -870,50 +879,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* 4. Etkileşim Ses Efektleri (SFX) */}
-              <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
-                <div className="flex items-start gap-2.5">
-                  <Volume2 size={17} className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                      Etkileşim Ses Efektleri (SFX)
-                    </span>
-                    <span className="block text-[11px] text-[var(--muted)]">
-                      Buton tıklama, doğru/yanlış cevap ve telaffuz bildirim
-                      sesleri
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSfxEnabled(true);
-                      playClick();
-                    }}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
-                      sfxEnabled
-                        ? "bg-[#087F5B] text-white font-bold"
-                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    Açık
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSfxEnabled(false)}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
-                      !sfxEnabled
-                        ? "bg-[#087F5B] text-white font-bold"
-                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    Kapalı
-                  </button>
-                </div>
-              </div>
-
               {/* 5. Renk Teması */}
               <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
                 <div className="flex items-start gap-2.5">
@@ -1018,6 +983,49 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* 0. Etkileşim Ses Efektleri (SFX) */}
+            <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <Volume2 size={17} className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                    Etkileşim Ses Efektleri (SFX)
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Buton tıklama, doğru/yanlış cevap ve telaffuz bildirim sesleri
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSfxEnabled(true);
+                    playClick();
+                  }}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    sfxEnabled
+                      ? "bg-[#087F5B] text-white font-bold"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  🔊 Açık
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSfxEnabled(false)}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    !sfxEnabled
+                      ? "bg-[#087F5B] text-white font-bold"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  🔇 Kapalı
+                </button>
+              </div>
+            </div>
+
             {/* 1. Arapça Seslendirme Hızı (TTS / MP3) */}
             <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
               <div className="flex items-start gap-2.5">

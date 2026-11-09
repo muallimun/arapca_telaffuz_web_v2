@@ -34,6 +34,7 @@ import {
   playFanfare,
 } from "@/lib/sfxManager";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
+import { formatArabicText } from "@/lib/arabicTextUtils";
 
 // Doğu Arapça rakamları (٠-٩) -> Batı rakamları (0-9)
 const EASTERN_DIGIT_MAP: Record<string, string> = {
@@ -412,6 +413,7 @@ export default function VisualRosettaQuiz({
     setPreferredVoiceGender,
     showHareke,
     speechRate,
+    arabicFont,
   } = useSettings();
   const { recordItemAttempt, addMistake } = useUserStore();
 
@@ -537,10 +539,9 @@ export default function VisualRosettaQuiz({
   const formatAr = useCallback(
     (text: string) => {
       if (!text) return "";
-      if (showHareke) return text;
-      return text.replace(/[\u064B-\u065F\u0670]/g, "");
+      return formatArabicText(text, showHareke, arabicFont);
     },
-    [showHareke]
+    [showHareke, arabicFont]
   );
 
   const getPhraseForMode = useCallback(

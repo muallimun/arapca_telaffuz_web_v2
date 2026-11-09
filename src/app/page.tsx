@@ -28,6 +28,8 @@ import {
   sozluk,
   getDialoguesSortedPedagogically,
   getDialogueCoverUrl,
+  getReadingTextCoverUrl,
+  getProverbCoverUrl,
 } from "@/lib/data";
 import {
   useUserStore,
@@ -36,10 +38,17 @@ import {
 } from "@/store/userStore";
 import { useSettings } from "@/store/settings";
 import { playClick } from "@/lib/sfxManager";
-import { playTTS, loadAudioManifest, hasMp3, getMp3Path } from "@/lib/audio";
+import {
+  playTTS,
+  playDualGenderAudio,
+  loadAudioManifest,
+  hasMp3,
+  getMp3Path,
+} from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
+import { formatArabicText } from "@/lib/arabicTextUtils";
 
 type ModuleKey = "kutuphane" | "telaffuz" | "alistirmalar" | "sozluk";
 
@@ -78,7 +87,14 @@ export default function HomePage() {
     syncDailyProgress,
   } = useUserStore();
 
-  const { preferredLevel, viewMode, speechRate, showHareke } = useSettings();
+  const {
+    preferredLevel,
+    viewMode,
+    speechRate,
+    showHareke,
+    arabicFont,
+    preferredVoiceGender,
+  } = useSettings();
   const { playAudio } = useAudioStore();
 
   useEffect(() => {
@@ -161,9 +177,9 @@ export default function HomePage() {
         id: "alistirmalar",
         title: "Kelime Alıştırmaları",
         arabicBadge: "التَّدْرِيبَات",
-        subtitle: "Kartlar, çoktan seçmeli test, eşleştirme ve boşluk doldurma",
-        meta: "5 Farklı Modül · Süreli/Süresiz",
-        tooltip: "Kelime kartları, test, eşleştirme, boşluk doldurma ve cümle sıralama",
+        subtitle: "Kartlar, çoktan seçmeli test, eşleştirme, boşluk doldurma ve görsel-sesli pratik",
+        meta: "6 Farklı Modül • Görsel & Sesli",
+        tooltip: "Kelime kartları, test, eşleştirme, boşluk doldurma, cümle sıralama ve görsel-sesli eşleştirme",
         icon: Gamepad2,
         targetHref: "/alistirmalar",
         accentColor: "emerald",
@@ -201,6 +217,64 @@ export default function HomePage() {
     return "A1";
   }, [mounted, completedDialogues, pedagogicalDialogues]);
 
+  // Günün Okuma Metni (60 Okuma Metni içinden kullanıcının seviyesine ve tamamlama durumuna göre seçilir)
+  const recommendedReading = useMemo(() => {
+    const doneSet = new Set(mounted ? completedDialogues || [] : []);
+    const unreadInLevel = metinler.filter(
+      (m) => m.seviye === activeLevel && !doneSet.has(m.id)
+    );
+    if (unreadInLevel.length > 0) return unreadInLevel[0];
+    const anyUnread = metinler.filter((m) => !doneSet.has(m.id));
+    if (anyUnread.length > 0) return anyUnread[0];
+    return metinler[0];
+  }, [mounted, completedDialogues, activeLevel]);
+
+  const recommendedReadingCoverSrc =
+    recommendedReading.gorsel || getReadingTextCoverUrl(recommendedReading.id);
+
+  // Günün Kalıp Cümlesi (1111 Günlük Cümle içinden seviyeye ve güne göre seçilir)
+  const dailySentenceItem = useMemo(() => {
+    const levelPool = cumleler1111.filter(
+      (c) => (c.seviye || c.cefr || "A1") === activeLevel
+    );
+    const pool = levelPool.length > 0 ? levelPool : cumleler1111;
+    const daySeed = mounted
+      ? parseInt(getTodayDateString().replace(/\D/g, ""), 10) || 1
+      : 1;
+    return pool[(daySeed + tipIndex) % pool.length] || pool[0];
+  }, [activeLevel, mounted, tipIndex]);
+
+  // Günün Atasözü & Hikmeti (508 Atasözü içinden seviyeye ve güne göre seçilir)
+  const dailyProverbItem = useMemo(() => {
+    const levelPool = atasozleri.filter(
+      (a) => (a.cefr || "B1") === activeLevel
+    );
+    const pool = levelPool.length > 0 ? levelPool : atasozleri;
+    const daySeed = mounted
+      ? parseInt(getTodayDateString().replace(/\D/g, ""), 10) || 1
+      : 1;
+    return pool[(daySeed + tipIndex) % pool.length] || pool[0];
+  }, [activeLevel, mounted, tipIndex]);
+
+  const dailyProverbCoverSrc =
+    dailyProverbItem.gorsel || getProverbCoverUrl(dailyProverbItem.id);
+
+  // Tamamlanan Diyalog (120) ve Tamamlanan Okuma Metni (60) ayrımı
+  const { completedDialogueCount, completedReadingCount } = useMemo(() => {
+    if (!mounted) {
+      return { completedDialogueCount: 0, completedReadingCount: 0 };
+    }
+    const dlgIds = new Set(diyaloglar.map((d) => d.id));
+    const txtIds = new Set(metinler.map((m) => m.id));
+    let dCount = 0;
+    let rCount = 0;
+    for (const id of completedDialogues) {
+      if (dlgIds.has(id)) dCount++;
+      else if (txtIds.has(id)) rCount++;
+    }
+    return { completedDialogueCount: dCount, completedReadingCount: rCount };
+  }, [mounted, completedDialogues]);
+
   // Günün Konuşma Kalıbı Havuzu: Önce Günün Diyaloğundan, ardından kullanıcının aktif seviyesindeki (ör. A1) diyaloglardan seçilir
   const levelQuotesPool = useMemo(() => {
     const dailyDlg = dailyPackage.dailyDialogue.dialogue;
@@ -236,9 +310,12 @@ export default function HomePage() {
     return levelQuotesPool[tipIndex % levelQuotesPool.length] || levelQuotesPool[0];
   }, [levelQuotesPool, tipIndex]);
 
-  const removeTashkeel = (text: string) => text.replace(/[\u064B-\u0652]/g, "");
   const displayArabic = (text: string) =>
-    !mounted || showHareke ? text : removeTashkeel(text);
+    formatArabicText(
+      text,
+      !mounted || showHareke,
+      mounted ? arabicFont : "arakom"
+    );
 
   // Telaffuz Başarısı Hesaplama (Gerçek mikrofon denemeleri yoksa sahte %88 gösterme)
   const pronunciationAccuracy = useMemo(() => {
@@ -442,7 +519,7 @@ export default function HomePage() {
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Aralıklı tekrar (SRS) geçmişinize, hata defterinize ve seviyenize göre hazırlanan günlük kişisel çalışma planınız
+              Diyalog, Okuma Metni, SRS Kelime, 1111 Günlük Cümle ve 508 Atasözü modüllerinden oluşan kişisel günlük çalışma planınız
             </p>
           </div>
 
@@ -454,7 +531,17 @@ export default function HomePage() {
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all whitespace-nowrap"
             >
               <BookOpen size={14} className="text-[#065F46] dark:text-emerald-400" />
-              <span>Günün Diyaloğuna Git</span>
+              <span>Günün Diyaloğu</span>
+            </Link>
+
+            <Link
+              href={`/metin/${recommendedReading.id}`}
+              onClick={() => playClick()}
+              data-tooltip="Bugün için önerilen okuma metnini açın"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:border-[#6741D9] transition-all whitespace-nowrap"
+            >
+              <BookOpen size={14} />
+              <span>Günün Metni</span>
             </Link>
 
             <Link
@@ -462,7 +549,7 @@ export default function HomePage() {
               onClick={() => playClick()}
               data-tooltip="Aralıklı tekrar (SRS) algoritmasıyla seçilen kelimelerle günlük çalışmayı başlatın"
               data-tooltip-align="right"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white border-b-3 border-emerald-800 text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all whitespace-nowrap shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white border-b-3 border-emerald-800 text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all whitespace-nowrap shadow-xs"
             >
               <Play size={14} fill="currentColor" />
               <span>12 Dakikalık Günlük Paketi Başlat</span>
@@ -470,26 +557,27 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-          {/* 1. Günün Diyaloğu (3 sütun) */}
-          <div className="lg:col-span-4 bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
-            <div className="space-y-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {/* 1. Günün Diyaloğu & Okuma Metni (1:1 Kare Görselli) */}
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
+            <div className="space-y-2">
               <div className="flex items-center justify-between gap-1.5">
                 <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide">
-                  📖 1. Günün Diyaloğu
+                  📖 1. Günün Diyaloğu & Metni
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-[10px] font-extrabold">
                   Seviye {recommendedDialogue.seviye}
                 </span>
               </div>
 
+              {/* Günün Diyaloğu (1:1 Kare Görsel) */}
               <Link
                 href={`/diyalog/${recommendedDialogue.id}`}
                 onClick={() => playClick()}
                 data-tooltip="Diyaloğu açmak, cümleleri dinlemek ve telaffuz çalışmak için tıklayın"
-                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] shadow-2xs group transition-colors"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] shadow-2xs group transition-colors"
               >
-                <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white relative">
+                <div className="w-20 h-20 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white relative flex items-center justify-center">
                   {!recImgFailed ? (
                     <img
                       src={recommendedCoverSrc}
@@ -498,64 +586,93 @@ export default function HomePage() {
                       onError={() => {
                         setFailedCoverId(recommendedDialogueId);
                       }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-emerald-700 via-teal-800 to-indigo-900 flex items-center justify-center">
-                      <BookOpen size={30} className="text-white/80" />
+                      <BookOpen size={26} className="text-white/80" />
                     </div>
                   )}
                 </div>
 
-                <div className="min-w-0 flex-1 flex flex-col justify-between gap-1.5">
-                  <span className="inline-block w-fit px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums">
-                    Diyalog #{recommendedDialogue.id.replace("dlg_", "")}
+                <div className="min-w-0 flex-1 flex flex-col justify-between gap-1">
+                  <span className="inline-block w-fit px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[9px] font-extrabold tabular-nums">
+                    Diyalog #{recommendedDialogue.id.replace("dlg_", "")} • {recommendedSentenceCount} Cümle
                   </span>
 
-                  <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug line-clamp-2 group-hover:text-[#087F5B] transition-colors">
+                  <h3 className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-1 group-hover:text-[#087F5B] transition-colors">
                     {recommendedDialogue.baslik_tr}
                   </h3>
 
                   <p
                     dir="rtl"
-                    className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-snug text-right truncate"
+                    className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 leading-snug text-right truncate"
                   >
                     {displayArabic(recommendedDialogue.baslik_ar)}
                   </p>
+                </div>
+              </Link>
 
-                  <span className="w-fit bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
-                    {recommendedSentenceCount} Cümle • Sesli Diyalog
-                  </span>
+              {/* Günün Okuma Metni (1:1 Kare Görselli Hızlı Geçiş Kartı) */}
+              <Link
+                href={`/metin/${recommendedReading.id}`}
+                onClick={() => playClick()}
+                data-tooltip="Günün okuma metnini (paragraf/cümle görünümü ve sorularla) açmak için tıklayın"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-[#F3F0FF]/65 dark:bg-[var(--lavender-bg)] border border-[#6741D9]/35 hover:border-[#6741D9] shadow-2xs group transition-colors"
+              >
+                <div className="w-16 h-16 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white flex items-center justify-center">
+                  <img
+                    src={recommendedReadingCoverSrc}
+                    alt={recommendedReading.baslik_tr}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full aspect-square object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="px-1.5 py-0.5 rounded bg-[#6741D9] text-white text-[9px] font-extrabold tabular-nums">
+                      Okuma Metni #{String(recommendedReading.sira || 1).padStart(2, "0")} ({recommendedReading.seviye})
+                    </span>
+                    <ArrowRight size={11} className="text-[#6741D9] shrink-0" />
+                  </div>
+                  <p className="text-xs font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] truncate">
+                    {recommendedReading.baslik_tr}
+                  </p>
+                  <p
+                    dir="rtl"
+                    className="arabic text-sm sm:text-base font-bold text-[#6741D9] dark:text-[#d0bfff] text-right truncate"
+                  >
+                    {displayArabic(recommendedReading.baslik_ar)}
+                  </p>
                 </div>
               </Link>
             </div>
 
-            <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-300/80 dark:border-amber-700/60 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
+            <div className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-300/80 dark:border-amber-700/60 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 truncate">
                 <Sparkles size={11} className="shrink-0" />
-                <span>{dailyPackage.dailyDialogue.reasonBadge}</span>
+                <span className="truncate">{dailyPackage.dailyDialogue.reasonBadge}</span>
               </span>
               <Link
-                href={`/diyalog/${recommendedDialogue.id}`}
+                href={`/metin/${recommendedReading.id}`}
                 onClick={() => playClick()}
-                data-tooltip="Diyaloğu açmak, cümleleri dinlemek ve telaffuz çalışmak için tıklayın"
-                className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 inline-flex items-center gap-0.5 hover:underline shrink-0"
+                className="text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff] inline-flex items-center gap-0.5 hover:underline shrink-0"
               >
-                <span>Aç</span>
+                <span>Metni Oku</span>
                 <ArrowRight size={11} />
               </Link>
             </div>
           </div>
 
-          {/* 2. Zamanı Gelen veya Bugün Öğrenilecek 6 Kelime (5 sütun) */}
-          <div className="lg:col-span-5 bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
+          {/* 2. Zamanı Gelen veya Bugün Öğrenilecek 6 Kelime */}
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between gap-1.5">
               <span className="text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff] uppercase tracking-wide">
                 {dailyPackage.dailyWords.some(
                   (dw) => dw.badgeTone === "due" || dw.badgeTone === "mistake"
                 )
                   ? "🔄 2. Zamanı Gelen 6 Kelime"
-                  : "🌱 2. Bugün Öğrenilecek 6 Yeni Kelime"}
+                  : "🌱 2. Günün 6 Kelimesi"}
               </span>
               <Link
                 href="/alistirmalar?plan=daily"
@@ -566,7 +683,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2.5 content-stretch">
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2 content-stretch">
               {dailyPackage.dailyWords.map((dw) => {
                 const ar = (dw.item.mufret || dw.item.mazi || "")
                   .split("/")[0]
@@ -611,27 +728,81 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 3. Zorlandığınız / Günlük 2 Kalıp İfade (3 sütun) */}
-          <div className="lg:col-span-3 bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
-            <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide block">
-              💬 3. Günün 2 Kalıp İfadesi
-            </span>
+          {/* 3. Günün Kalıp Cümlesi (1111 Günlük Cümle + Diyalog Kalıbı) */}
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 uppercase tracking-wide">
+                🗣️ 3. Günün Kalıp Cümlesi
+              </span>
+              <Link
+                href="/kutuphane?tab=cumleler"
+                onClick={() => playClick()}
+                className="text-[10px] font-extrabold text-[#065F46] dark:text-emerald-400 hover:underline"
+              >
+                1111 Cümle →
+              </Link>
+            </div>
 
-            <div className="space-y-1.5 flex-1 flex flex-col justify-center">
-              {dailyPackage.dailyIdioms.map((di) => (
+            <div className="space-y-2 flex-1 flex flex-col justify-between">
+              {/* 1111 Günlük Cümle Kartı */}
+              <div className="p-2.5 rounded-xl bg-[#F7EFE1]/75 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5">
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="px-1.5 py-0.5 rounded bg-[#087F5B] text-white text-[9px] font-extrabold">
+                    1111 Cümle #{dailySentenceItem.sira || dailySentenceItem.id.replace("cumle_", "")} • {dailySentenceItem.seviye || dailySentenceItem.cefr || "A1"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      void playDualGenderAudio({
+                        text: dailySentenceItem.arapca,
+                        ses_erkek: dailySentenceItem.ses_erkek,
+                        ses_kadin: dailySentenceItem.ses_kadin,
+                        rate: mounted ? speechRate : 1,
+                        gender: mounted ? preferredVoiceGender : "erkek",
+                      });
+                    }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[#065F46] dark:text-emerald-400 hover:border-[#087F5B] cursor-pointer"
+                  >
+                    <Volume2 size={11} />
+                    <span>Dinle</span>
+                  </button>
+                </div>
+
+                <p
+                  dir="rtl"
+                  className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed"
+                >
+                  {displayArabic(dailySentenceItem.arapca)}
+                </p>
+
+                <p className="text-xs font-extrabold text-[var(--foreground)] leading-snug">
+                  “{dailySentenceItem.turkce}”
+                </p>
+
+                {dailySentenceItem.odak_kalip && (
+                  <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 truncate">
+                    📌 {dailySentenceItem.odak_kalip}
+                  </p>
+                )}
+              </div>
+
+              {/* Ek Kalıp İfade (SRS/Diyalog) */}
+              {dailyPackage.dailyIdioms[0] && (
                 <button
-                  key={di.idiom.id}
                   type="button"
                   onClick={() => {
                     playClick();
-                    playTTS(di.idiom.arabic, mounted ? speechRate : 1);
+                    playTTS(
+                      dailyPackage.dailyIdioms[0].idiom.arabic,
+                      mounted ? speechRate : 1
+                    );
                   }}
-                  data-tooltip="Kalıp ifadeyi sesli dinlemek için tıklayın"
-                  className="w-full p-2 rounded-lg bg-[#F3F0FF]/70 dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 hover:border-[#6741D9] text-left space-y-0.5 transition-colors cursor-pointer"
+                  className="w-full p-2 rounded-xl bg-[#F3F0FF]/70 dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 hover:border-[#6741D9] text-left space-y-0.5 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[10px] font-extrabold text-[#6741D9] dark:text-[#d0bfff]">
-                      {di.statusBadge}
+                      {dailyPackage.dailyIdioms[0].statusBadge}
                     </span>
                     <Volume2 size={11} className="text-[#6741D9] shrink-0" />
                   </div>
@@ -639,13 +810,91 @@ export default function HomePage() {
                     dir="rtl"
                     className="arabic text-base font-bold text-[var(--foreground)] text-right leading-snug"
                   >
-                    {displayArabic(di.idiom.arabic)}
+                    {displayArabic(dailyPackage.dailyIdioms[0].idiom.arabic)}
                   </p>
                   <p className="text-[10px] font-bold text-[var(--muted)] line-clamp-1">
-                    {di.idiom.meaningTr}
+                    {dailyPackage.dailyIdioms[0].idiom.meaningTr}
                   </p>
                 </button>
-              ))}
+              )}
+            </div>
+          </div>
+
+          {/* 4. Günün Atasözü & Hikmeti (508 Atasözü — 1:1 Kare Görselli) */}
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[11px] font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
+                📜 4. Günün Atasözü & Hikmeti
+              </span>
+              <Link
+                href="/kutuphane?tab=atasozleri"
+                onClick={() => playClick()}
+                className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 hover:underline"
+              >
+                508 Atasözü →
+              </Link>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-between gap-2 p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)]">
+              <div className="flex items-start gap-2.5">
+                <div className="w-20 h-20 aspect-square rounded-xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white flex items-center justify-center">
+                  <img
+                    src={dailyProverbCoverSrc}
+                    alt={dailyProverbItem.turkce}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full aspect-square object-contain"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="inline-block px-1.5 py-0.5 rounded bg-amber-600 text-white text-[9px] font-extrabold tabular-nums">
+                    Atasözü #{dailyProverbItem.sira || dailyProverbItem.id.replace("ata_", "")} • {dailyProverbItem.cefr}
+                  </span>
+                  <p className="text-xs font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
+                    “{dailyProverbItem.turkce}”
+                  </p>
+                  {dailyProverbItem.lafzi_ceviri && (
+                    <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug line-clamp-2">
+                      <strong>Lafzî:</strong> {dailyProverbItem.lafzi_ceviri}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <p
+                dir="rtl"
+                className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed bg-white/85 dark:bg-[var(--background)] rounded-lg px-2.5 py-1.5 border border-[#E6D7BE]"
+              >
+                {displayArabic(dailyProverbItem.arapca)}
+              </p>
+
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    void playDualGenderAudio({
+                      text: dailyProverbItem.arapca,
+                      ses_erkek: dailyProverbItem.ses_erkek,
+                      ses_kadin: dailyProverbItem.ses_kadin,
+                      rate: mounted ? speechRate : 1,
+                      gender: mounted ? preferredVoiceGender : "erkek",
+                    });
+                  }}
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Volume2 size={12} />
+                  <span>Atasözünü Dinle</span>
+                </button>
+
+                <Link
+                  href="/alistirmalar?pool=proverbs_508"
+                  onClick={() => playClick()}
+                  className="py-1.5 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#6741D9] text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff]"
+                >
+                  Çalış
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -730,25 +979,33 @@ export default function HomePage() {
       {/* BÖLÜM 3: 4 SÜTUNLU ÖĞRENCİ İLERLEME ÖZETİ (KOMPAKT) */}
       <section aria-label="Öğrenci İlerleme Özeti">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* 1. Tamamlanan Diyalog */}
+          {/* 1. Tamamlanan Diyalog & Okuma Metni */}
           <Link
             href="/kutuphane?durum=completed"
             onClick={() => playClick()}
-            data-tooltip="Tamamladığınız diyalogların toplam ilerleme durumu"
+            data-tooltip="Tamamladığınız diyalogların (120) ve okuma metinlerinin (60) toplam ilerleme durumu"
             className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors"
           >
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[#065F46] dark:text-emerald-400 shrink-0">
               <CheckCircle2 size={20} strokeWidth={2.4} />
             </div>
             <div className="min-w-0">
-              <span className="block text-xl font-black tabular-nums text-[var(--foreground)] leading-normal">
-                {mounted ? completedDialogues.length : 0}
-                <span className="text-xs font-bold text-[var(--muted)]">
-                  /{diyaloglar.length}
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-base sm:text-lg font-black tabular-nums text-[var(--foreground)] leading-tight">
+                  {completedDialogueCount}
+                  <span className="text-[11px] font-bold text-[var(--muted)]">
+                    /{diyaloglar.length} Diyalog
+                  </span>
                 </span>
-              </span>
+                <span className="text-sm sm:text-base font-black tabular-nums text-[#6741D9] dark:text-[#d0bfff] leading-tight">
+                  {completedReadingCount}
+                  <span className="text-[11px] font-bold text-[var(--muted)]">
+                    /{metinler.length} Metin
+                  </span>
+                </span>
+              </div>
               <span className="block text-xs font-bold text-[var(--muted)] mt-0.5 line-clamp-2 leading-tight">
-                Tamamlanan Diyalog
+                Tamamlanan Diyalog & Metin
               </span>
             </div>
           </Link>

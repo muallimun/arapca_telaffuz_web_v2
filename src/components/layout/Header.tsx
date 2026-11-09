@@ -62,6 +62,7 @@ export default function Header() {
     speechRate,
     cycleSpeechRate,
     arabicFont,
+    arabicFontSize,
   } = useSettings();
   const { isInstallable, isInstalled, isIOS, installApp } = usePwaInstall();
 
@@ -95,6 +96,7 @@ export default function Header() {
 
   useEffect(() => {
     const cfg = getArabicFontConfig(arabicFont);
+    const ratio = Number(((arabicFontSize / 34) * cfg.scale).toFixed(3));
     document.documentElement.style.setProperty(
       "--font-arabic-family",
       cfg.cssFamily
@@ -107,7 +109,15 @@ export default function Header() {
       "--font-arabic-line-height",
       String(cfg.lineHeight)
     );
-  }, [arabicFont]);
+    document.documentElement.style.setProperty(
+      "--font-arabic-size-px",
+      `${arabicFontSize}px`
+    );
+    document.documentElement.style.setProperty(
+      "--font-arabic-size-ratio",
+      String(ratio)
+    );
+  }, [arabicFont, arabicFontSize]);
 
   const closeMicTestResourcesOnly = useCallback(() => {
     if (rafRef.current) {

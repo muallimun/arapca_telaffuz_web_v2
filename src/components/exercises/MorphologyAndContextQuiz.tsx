@@ -32,6 +32,12 @@ import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { useCountdown } from "@/lib/useTimer";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
+import { MixedText } from "@/components/ui/MixedText";
+import {
+  formatTurkishCategory,
+  hasLatinCharacters,
+  extractPureArabicFromMixed,
+} from "@/lib/arabicTextUtils";
 import {
   Volume2,
   CheckCircle2,
@@ -66,6 +72,8 @@ interface MorphologyOption {
   rootFormatted?: string;
   morphBadge?: string;
   isCorrect: boolean;
+  isGrammarPatternOption?: boolean;
+  sampleArabic?: string;
   audioItem?: {
     id?: string;
     ses_erkek?: string;
@@ -813,7 +821,7 @@ export default function MorphologyAndContextQuiz({
               id: target.id,
               arabic: target.arapca,
               turkish: target.turkce,
-              morphBadge: (target.tema || "Atasözü").replace(/_/g, " "),
+              morphBadge: formatTurkishCategory(target.tema || "Atasözü"),
               isCorrect: true,
               audioItem: {
                 id: target.id,
@@ -825,7 +833,7 @@ export default function MorphologyAndContextQuiz({
               id: d.id,
               arabic: d.arapca,
               turkish: d.turkce,
-              morphBadge: (d.tema || "Atasözü").replace(/_/g, " "),
+              morphBadge: formatTurkishCategory(d.tema || "Atasözü"),
               isCorrect: false,
               audioItem: {
                 id: d.id,
@@ -880,6 +888,8 @@ export default function MorphologyAndContextQuiz({
               turkish: `${target.arapca} — "${target.turkce}"`,
               morphBadge: `Seviye ${target.seviye}`,
               isCorrect: true,
+              isGrammarPatternOption: true,
+              sampleArabic: target.arapca,
               audioItem: {
                 id: target.id,
                 ses_erkek: target.ses_erkek,
@@ -896,8 +906,19 @@ export default function MorphologyAndContextQuiz({
                 turkish: sampleForTopic
                   ? `Örnek: ${sampleForTopic.arapca} (${sampleForTopic.turkce})`
                   : "Farklı nahiv/sarf cümle kalıbı",
-                morphBadge: sampleForTopic ? `Seviye ${sampleForTopic.seviye}` : "Gramer",
+                morphBadge: sampleForTopic
+                  ? `Seviye ${sampleForTopic.seviye}`
+                  : "Gramer",
                 isCorrect: false,
+                isGrammarPatternOption: true,
+                sampleArabic: sampleForTopic?.arapca,
+                audioItem: sampleForTopic
+                  ? {
+                      id: sampleForTopic.id,
+                      ses_erkek: sampleForTopic.ses_erkek,
+                      ses_kadin: sampleForTopic.ses_kadin,
+                    }
+                  : undefined,
               };
             }),
           ]);
@@ -908,9 +929,9 @@ export default function MorphologyAndContextQuiz({
             badgeTitle: "📌 Cümleden Gramer Kalıbı Bulma",
             promptTitleTr:
               "Bu Arapça cümlenin inşa edildiği odak gramer kalıbı aşağıdakilerden hangisidir?",
-            promptSubtitleTr: `Türkçe Anlamı: "${target.turkce}" (${(
+            promptSubtitleTr: `Türkçe Anlamı: "${target.turkce}" (${formatTurkishCategory(
               target.tema || "Günlük Hayat"
-            ).replace(/_/g, " ")})`,
+            )})`,
             heroArabic: target.arapca,
             heroTurkish: target.turkce,
             heroAudio: {
@@ -1344,14 +1365,20 @@ export default function MorphologyAndContextQuiz({
                 </div>
               )}
 
-              <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug">
-                {currentQuestion.promptTitleTr}
-              </p>
+              <div className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug text-center">
+                <MixedText
+                  text={currentQuestion.promptTitleTr}
+                  arabicClassName="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                />
+              </div>
 
               {currentQuestion.promptSubtitleTr && (
-                <p className="text-[11px] sm:text-xs font-semibold text-[#065F46] dark:text-emerald-400 leading-snug">
-                  {currentQuestion.promptSubtitleTr}
-                </p>
+                <div className="text-[11px] sm:text-xs font-semibold text-[#065F46] dark:text-emerald-400 leading-snug text-center">
+                  <MixedText
+                    text={currentQuestion.promptSubtitleTr}
+                    arabicClassName="arabic font-arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -1494,8 +1521,16 @@ export default function MorphologyAndContextQuiz({
 
                   {currentQuestion.grammarTopicToOpen && (
                     <div className="flex items-center justify-between w-full gap-2">
-                      <span className="text-xs font-extrabold text-[#4C28B5] dark:text-indigo-300">
-                        📌 Kalıp: {currentQuestion.grammarTopicToOpen}
+                      <span
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-xs font-extrabold text-[#4C28B5] dark:text-indigo-300 text-left inline-flex items-center gap-1"
+                      >
+                        <span className="shrink-0">📌 Kalıp:</span>
+                        <MixedText
+                          text={currentQuestion.grammarTopicToOpen}
+                          arabicClassName="arabic font-arabic text-sm font-bold text-[#4C28B5] dark:text-indigo-200 mx-0.5 inline-block"
+                        />
                       </span>
                       <button
                         type="button"
@@ -1541,6 +1576,11 @@ export default function MorphologyAndContextQuiz({
               }
 
               const optionLetter = ["A", "B", "C", "D"][idx] || String(idx + 1);
+              const isTurkishGrammarOption =
+                Boolean(opt.isGrammarPatternOption) ||
+                hasLatinCharacters(opt.arabic);
+              const hasLeadingPin = opt.arabic.trim().startsWith("📌");
+              const cleanOptionText = opt.arabic.replace(/^📌\s*/, "").trim();
 
               return (
                 <div
@@ -1573,27 +1613,47 @@ export default function MorphologyAndContextQuiz({
 
                     <div className="flex items-center gap-1.5">
                       {opt.morphBadge && (
-                        <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] text-[10px] font-extrabold text-[var(--muted)] border border-[#E6D7BE]">
-                          {opt.morphBadge}
+                        <span
+                          dir="ltr"
+                          className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] text-[10px] font-extrabold text-[var(--muted)] border border-[#E6D7BE]"
+                        >
+                          <MixedText
+                            text={opt.morphBadge}
+                            arabicClassName="arabic font-arabic text-xs font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                          />
                         </span>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          playQuestionAudio({
-                            text: opt.arabic.replace(/^📌\s*/, ""),
-                            id: opt.audioItem?.id,
-                            ses_erkek: opt.audioItem?.ses_erkek,
-                            ses_kadin: opt.audioItem?.ses_kadin,
-                          });
-                        }}
-                        className="w-7 h-7 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] hover:bg-[#087F5B] hover:text-white flex items-center justify-center text-[#087F5B] transition-colors cursor-pointer"
-                        title="Seçeneği Sesli Dinle"
-                      >
-                        <Volume2 size={14} />
-                      </button>
+                      {isTurkishGrammarOption ? (
+                        <span
+                          dir="ltr"
+                          className="px-2 py-0.5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/70 text-[10px] font-extrabold text-[#4C28B5] dark:text-indigo-300 border border-[#6741D9]/30"
+                        >
+                          📌 Kalıp
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const pureAr =
+                              opt.sampleArabic ||
+                              extractPureArabicFromMixed(opt.arabic) ||
+                              cleanOptionText;
+                            if (!pureAr) return;
+                            playQuestionAudio({
+                              text: pureAr,
+                              id: opt.audioItem?.id,
+                              ses_erkek: opt.audioItem?.ses_erkek,
+                              ses_kadin: opt.audioItem?.ses_kadin,
+                            });
+                          }}
+                          className="w-7 h-7 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] hover:bg-[#087F5B] hover:text-white flex items-center justify-center text-[#087F5B] transition-colors cursor-pointer"
+                          title="Seçeneği Sesli Dinle"
+                        >
+                          <Volume2 size={14} />
+                        </button>
+                      )}
 
                       {isAnswered && opt.isCorrect && (
                         <CheckCircle2
@@ -1607,30 +1667,51 @@ export default function MorphologyAndContextQuiz({
                     </div>
                   </div>
 
-                  {/* Seçenek Ana Metin (Arapça veya Gramer Kalıbı) */}
-                  <div
-                    dir={/[\u0600-\u06FF]/.test(opt.arabic) ? "rtl" : "ltr"}
-                    lang={/[\u0600-\u06FF]/.test(opt.arabic) ? "ar" : "tr"}
-                    className={`${
-                      /[\u0600-\u06FF]/.test(opt.arabic)
-                        ? "arabic text-xl sm:text-2xl text-right"
-                        : "text-sm sm:text-base"
-                    } font-black text-[var(--foreground)] leading-snug my-auto`}
-                  >
-                    {opt.arabic}
-                  </div>
+                  {/* Seçenek Ana Metin (Türkçe+Arapça Karma Gramer Kalıbı veya Saf Arapça) */}
+                  {isTurkishGrammarOption ? (
+                    <div
+                      dir="ltr"
+                      lang="tr"
+                      className="font-sans text-sm sm:text-base font-extrabold text-[var(--foreground)] text-left leading-snug my-auto flex items-start gap-1.5"
+                    >
+                      {hasLeadingPin && (
+                        <span className="shrink-0 select-none mt-0.5">📌</span>
+                      )}
+                      <MixedText
+                        text={cleanOptionText}
+                        className="font-sans font-extrabold text-[var(--foreground)] leading-snug"
+                        arabicClassName="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      dir="rtl"
+                      lang="ar"
+                      className="arabic font-arabic text-xl sm:text-2xl font-black text-[var(--foreground)] text-right leading-snug my-auto"
+                    >
+                      {opt.arabic}
+                    </div>
+                  )}
 
                   {/* Cevap Sonrası Tüm Seçeneklerin Türkçe Anlamı ve Kök Harfleri */}
                   {isAnswered ? (
-                    <div className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center justify-between gap-1 text-[11px] font-bold">
-                      <span className="text-[var(--foreground)]">
-                        🇹🇷 {opt.turkish}
+                    <div
+                      dir="ltr"
+                      lang="tr"
+                      className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center justify-between gap-1 text-[11px] font-bold text-left"
+                    >
+                      <span className="font-sans text-[var(--foreground)] inline-flex items-start gap-1">
+                        <span className="shrink-0">🇹🇷</span>
+                        <MixedText
+                          text={opt.turkish}
+                          arabicClassName="arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                        />
                       </span>
                       {opt.rootFormatted && opt.rootFormatted !== "-" && (
                         <span
                           dir="rtl"
                           lang="ar"
-                          className="arabic px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-xs font-bold"
+                          className="arabic font-arabic px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-xs font-bold"
                         >
                           Kök: {opt.rootFormatted}
                         </span>

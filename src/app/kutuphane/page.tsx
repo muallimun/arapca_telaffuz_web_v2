@@ -55,7 +55,8 @@ import {
   cleanArabicText,
   DialogueVocabularyEntry,
 } from "@/lib/dict";
-import { normalizeArabicText } from "@/lib/arabicTextUtils";
+import { normalizeArabicText, formatTurkishCategory } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import { useUserStore } from "@/store/userStore";
 import { useSettings, VoiceGender } from "@/store/settings";
 import { playClick, playSuccess } from "@/lib/sfxManager";
@@ -1897,9 +1898,11 @@ export default function LibraryPage() {
                                     });
                                   }}
                                   title="Bu gramer kalıbının kuralını ve örneklerini pencerede aç"
-                                  className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold cursor-pointer transition-colors"
+                                  dir="ltr"
+                                  className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold cursor-pointer transition-colors inline-flex items-center gap-1"
                                 >
-                                  📌 {currentSentence.odak_kalip}
+                                  <span className="shrink-0">📌</span>
+                                  <MixedText text={currentSentence.odak_kalip} />
                                 </button>
                               )}
                               {!showTurkish && (
@@ -3280,7 +3283,7 @@ export default function LibraryPage() {
                           <strong className="text-[#6741D9] dark:text-indigo-300">
                             {categoryFilter === "all"
                               ? "Tüm Kategoriler"
-                              : categoryFilter.replace(/_/g, " ")}
+                              : formatTurkishCategory(categoryFilter)}
                           </strong>
                         </span>
                       </span>
@@ -3382,7 +3385,7 @@ export default function LibraryPage() {
                             }`}
                           >
                             <span className="line-clamp-2 leading-tight">
-                              {cat.replace(/_/g, " ")}
+                              {formatTurkishCategory(cat)}
                             </span>
                             <span
                               className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold tabular-nums shrink-0 ${
@@ -3665,9 +3668,11 @@ export default function LibraryPage() {
                               });
                             }}
                             title="Bu gramer kuralını ve örneklerini bağımsız pencerede açmak için tıklayın"
+                            dir="ltr"
                             className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 dark:border-amber-700 rounded-lg px-2 py-0.5 truncate cursor-pointer transition-colors"
                           >
-                            📌 {dlg.odak_gramer}
+                            <span className="mr-1">📌</span>
+                            <MixedText text={dlg.odak_gramer} />
                           </button>
                         )}
                       </div>
@@ -3886,9 +3891,11 @@ export default function LibraryPage() {
                               });
                             }}
                             title="Bu okuma metninin gramer kuralını bağımsız pencerede açmak için tıklayın"
+                            dir="ltr"
                             className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 rounded-lg px-2 py-0.5 truncate cursor-pointer transition-colors"
                           >
-                            📌 {txt.odak_gramer}
+                            <span className="mr-1">📌</span>
+                            <MixedText text={txt.odak_gramer} />
                           </button>
                         )}
                       </div>
@@ -4077,14 +4084,16 @@ export default function LibraryPage() {
                               });
                             }}
                             title="Bu gramer kalıbının kuralını, formülünü ve örnek cümlelerini incelemek için tıklayın"
-                            className="px-2 py-0.5 rounded-lg bg-amber-100/90 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold cursor-pointer transition-colors"
+                            dir="ltr"
+                            className="px-2 py-0.5 rounded-lg bg-amber-100/90 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold cursor-pointer transition-colors inline-flex items-center gap-1"
                           >
-                            📌 {item.odak_kalip}
+                            <span className="shrink-0">📌</span>
+                            <MixedText text={item.odak_kalip} />
                           </button>
                         )}
                         {item.tema && (
                           <span className="px-2 py-0.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-bold text-[var(--muted)] truncate">
-                            {item.tema.replace(/_/g, " ")}
+                            {formatTurkishCategory(item.tema)}
                           </span>
                         )}
                       </div>
@@ -5435,8 +5444,13 @@ export default function LibraryPage() {
                       </div>
 
                       {/* Türkçe & Arapça Gramer Konu Başlığı */}
-                      <h3 className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug">
-                        📌 {gItem.title}
+                      <h3
+                        dir="ltr"
+                        lang="tr"
+                        className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug text-left"
+                      >
+                        <span className="mr-1">📌</span>
+                        <MixedText text={gItem.title} />
                       </h3>
 
                       {/* Kısa Kural Özeti (hap_kural) */}
@@ -5444,8 +5458,12 @@ export default function LibraryPage() {
                         <span className="text-[10px] font-black uppercase tracking-wider text-[#087F5B] dark:text-emerald-400 block mb-0.5">
                           Temel Kural Özeti:
                         </span>
-                        <p className="text-xs sm:text-sm font-semibold text-[var(--foreground)] leading-relaxed line-clamp-3">
-                          {gItem.hapKural}
+                        <p
+                          dir="ltr"
+                          lang="tr"
+                          className="text-xs sm:text-sm font-semibold text-[var(--foreground)] leading-relaxed line-clamp-3 text-left"
+                        >
+                          <MixedText text={gItem.hapKural} />
                         </p>
                       </div>
 

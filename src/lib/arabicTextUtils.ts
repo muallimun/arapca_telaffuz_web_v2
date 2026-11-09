@@ -24,7 +24,8 @@ export const ARABIC_FONT_OPTIONS: ArabicFontConfig[] = [
     id: "arakom",
     name: "Arakom (Varsayılan Eğitim Fontu)",
     subtitle: "Net hareke konumlandırmalı özel eğitim yazı tipi",
-    cssFamily: '"ArakomFont", "Amiri", "Noto Naskh Arabic", serif',
+    cssFamily:
+      '"ArakomFont", "Amiri", "Noto Naskh Arabic", system-ui, -apple-system, sans-serif',
     scale: 1.0,
     lineHeight: 2.05,
   },
@@ -32,7 +33,7 @@ export const ARABIC_FONT_OPTIONS: ArabicFontConfig[] = [
     id: "amiri",
     name: "Amiri (Klasik Matbaa & Mushaf Neskih)",
     subtitle: "Klasik İslam matbaası ve Mushaf-ı Şerif estetiği",
-    cssFamily: '"Amiri", "ArakomFont", serif',
+    cssFamily: '"Amiri", "ArakomFont", system-ui, -apple-system, sans-serif',
     scale: 1.04,
     lineHeight: 2.15,
   },
@@ -40,7 +41,8 @@ export const ARABIC_FONT_OPTIONS: ArabicFontConfig[] = [
     id: "scheherazade",
     name: "Scheherazade New (Akademik & Geniş Harekeli Neskih)",
     subtitle: "SIL tarafından geliştirilen geniş aralıklı akademik Neskih",
-    cssFamily: '"Scheherazade New", "ArakomFont", serif',
+    cssFamily:
+      '"Scheherazade New", "ArakomFont", system-ui, -apple-system, sans-serif',
     scale: 1.12,
     lineHeight: 2.2,
   },
@@ -48,7 +50,8 @@ export const ARABIC_FONT_OPTIONS: ArabicFontConfig[] = [
     id: "noto-naskh",
     name: "Noto Naskh Arabic (Modern Ekran & Okunaklılık Standardı)",
     subtitle: "Dijital ekranlarda yüksek kontrast ve modern okunaklılık",
-    cssFamily: '"Noto Naskh Arabic", "ArakomFont", serif',
+    cssFamily:
+      '"Noto Naskh Arabic", "ArakomFont", system-ui, -apple-system, sans-serif',
     scale: 1.0,
     lineHeight: 2.05,
   },
@@ -56,7 +59,7 @@ export const ARABIC_FONT_OPTIONS: ArabicFontConfig[] = [
     id: "lateef",
     name: "Lateef (Zarif ve Ferah Kaligrafik Neskih)",
     subtitle: "Yumuşak kaligrafik hatlar ve ferah satır yüksekliği",
-    cssFamily: '"Lateef", "ArakomFont", serif',
+    cssFamily: '"Lateef", "ArakomFont", system-ui, -apple-system, sans-serif',
     scale: 1.14,
     lineHeight: 2.18,
   },
@@ -134,6 +137,30 @@ export function formatArabicText(
   return fixArabicTypography(text, fontFamily);
 }
 
+export const ARABIC_CHAR_REGEX =
+  /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+export const LATIN_TR_CHAR_REGEX = /[a-zA-ZçğıöşüÇĞİÖŞÜâîûÂÎÛ]/;
+
+export const ARABIC_RUN_CAPTURE_REGEX =
+  /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
+
+export function hasArabicCharacters(text?: string): boolean {
+  if (!text) return false;
+  return ARABIC_CHAR_REGEX.test(text);
+}
+
+export function hasLatinCharacters(text?: string): boolean {
+  if (!text) return false;
+  return LATIN_TR_CHAR_REGEX.test(text);
+}
+
+export function extractPureArabicFromMixed(text?: string): string {
+  if (!text) return "";
+  const matches = text.match(ARABIC_RUN_CAPTURE_REGEX);
+  return matches ? matches.join(" ").trim() : "";
+}
+
 /**
  * Türkçe (LTR) metin içindeki Arapça (RTL) kelime/cümle gruplarını ayırır.
  * Böylece parantez içi Arapça ifadeler `<bdi dir="rtl">` ile izole edilerek
@@ -143,17 +170,172 @@ export function splitMixedBidiText(
   text: string
 ): Array<{ text: string; isArabic: boolean }> {
   if (!text) return [];
-  const arabicRunRegex =
-    /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u064B-\u065F\u0670]+(?:[\s،؛؟]+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u064B-\u065F\u0670]+)*)/g;
-  const parts = text.split(arabicRunRegex);
+  const parts = text.split(ARABIC_RUN_CAPTURE_REGEX);
   const result: Array<{ text: string; isArabic: boolean }> = [];
   for (const part of parts) {
     if (!part) continue;
-    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(part);
+    const isArabic = ARABIC_CHAR_REGEX.test(part);
     result.push({ text: part, isArabic });
   }
   return result;
 }
+
+/**
+ * Başta Arapça bir cümle/ibare olup sonunda parantez içinde Türkçe not bulunan
+ * dizgileri (ör. `"فَحَصِي الطَّبِيبُ (Nûn harfini koymamak)."`)
+ * üst satır Arapça (`arabicPart`) ve alt satır Türkçe notlar (`turkishNotes`) olarak ayırır.
+ */
+export function splitArabicSentenceWithTurkishNote(rawText?: string): {
+  arabicPart: string;
+  turkishNotes: string[];
+} {
+  if (!rawText) return { arabicPart: "", turkishNotes: [] };
+  const trimmed = rawText.trim();
+  const turkishNotes: string[] = [];
+
+  const withoutTrParens = trimmed.replace(/\(([^()]+)\)/g, (full, inner) => {
+    if (LATIN_TR_CHAR_REGEX.test(inner)) {
+      turkishNotes.push(inner.trim());
+      return "";
+    }
+    return full;
+  });
+
+  const cleanedRemainder = withoutTrParens
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.،؛؟!])/g, "$1")
+    .trim();
+
+  if (
+    LATIN_TR_CHAR_REGEX.test(cleanedRemainder) &&
+    !ARABIC_CHAR_REGEX.test(cleanedRemainder)
+  ) {
+    return {
+      arabicPart: "",
+      turkishNotes: [trimmed],
+    };
+  }
+
+  return {
+    arabicPart: cleanedRemainder,
+    turkishNotes,
+  };
+}
+
+const TURKISH_CATEGORY_EXACT_MAP: Record<string, string> = {
+  "alisveris ve yemek": "Alışveriş ve Yemek",
+  "alisveris ve ekonomi": "Alışveriş ve Ekonomi",
+  "gunluk hayat": "Günlük Hayat",
+  "gunluk iletisim kalibi": "Günlük İletişim Kalıbı",
+  "kultur ve teknoloji": "Kültür ve Teknoloji",
+  "seyahat ve ulasim": "Seyahat ve Ulaşım",
+  "seyahat ve turizm": "Seyahat ve Turizm",
+  "saglik ve spor": "Sağlık ve Spor",
+  "okul ve egitim": "Okul ve Eğitim",
+  "is ve meslekler": "İş ve Meslekler",
+  "doga ve cevre": "Doğa ve Çevre",
+  "duygular ve dusunce": "Duygular ve Düşünce",
+  "duygu ve dusunce": "Duygular ve Düşünce",
+  "duygular ve ahlak": "Duygular ve Ahlak",
+  "aile ve insan": "Aile ve İnsan",
+  "aile ve sosyal": "Aile ve Sosyal Hayat",
+  "aile ve toplum": "Aile ve Toplum",
+  "selamlasma ve tanisma": "Selamlaşma ve Tanışma",
+  "ev ve esyalar": "Ev ve Eşyalar",
+  "vucut ve saglik": "Vücut ve Sağlık",
+  "giysiler ve renkler": "Giysiler ve Renkler",
+  "yiyecek ve icecek": "Yiyecek ve İçecek",
+  "yiyecek ve icecekler": "Yiyecek ve İçecekler",
+  "hayvanlar ve doga": "Hayvanlar ve Doğa",
+  "sehir ve ulasim": "Şehir ve Ulaşım",
+  "zaman ve sayilar": "Zaman ve Sayılar",
+  "hobiler ve spor": "Hobiler ve Spor",
+  "teknoloji ve medya": "Teknoloji ve Medya",
+  "din ve kultur": "Din ve Kültür",
+  "bilim ve cevre": "Bilim ve Çevre",
+  "temel ve ileri fiiller": "Temel ve İleri Fiiller",
+  "ahlak ve dogruluk": "Ahlak ve Doğruluk",
+  "calisma ve emek": "Çalışma ve Emek",
+  "dil ve sukut": "Dil ve Sükût",
+  "dostluk ve vefa": "Dostluk ve Vefa",
+  "ilim ve bilgelik": "İlim ve Bilgelik",
+  "sabir ve azim": "Sabır ve Azim",
+  "tedbir ve tevekkul": "Tedbir ve Tevekkül",
+  "yardimlasma ve comertlik": "Yardımlaşma ve Cömertlik",
+  "zaman ve fursat": "Zaman ve Fırsat",
+  "meslekler": "Meslekler",
+};
+
+const TURKISH_WORD_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bAlisveris\b/gi, "Alışveriş"],
+  [/\bGunluk\b/gi, "Günlük"],
+  [/\bIletisim\b/gi, "İletişim"],
+  [/\bKalibi\b/gi, "Kalıbı"],
+  [/\bKultur\b/gi, "Kültür"],
+  [/\bUlasim\b/gi, "Ulaşım"],
+  [/\bSaglik\b/gi, "Sağlık"],
+  [/\bEgitim\b/gi, "Eğitim"],
+  [/\bIs\b/g, "İş"],
+  [/\bDoga\b/gi, "Doğa"],
+  [/\bCevre\b/gi, "Çevre"],
+  [/\bDusunce\b/gi, "Düşünce"],
+  [/\bInsan\b/gi, "İnsan"],
+  [/\bSelamlasma\b/gi, "Selamlaşma"],
+  [/\bTanisma\b/gi, "Tanışma"],
+  [/\bEsyalar\b/gi, "Eşyalar"],
+  [/\bVucut\b/gi, "Vücut"],
+  [/\bIcecek\b/gi, "İçecek"],
+  [/\bIcecekler\b/gi, "İçecekler"],
+  [/\bSehir\b/gi, "Şehir"],
+  [/\bSayilar\b/gi, "Sayılar"],
+  [/\bIleri\b/gi, "İleri"],
+  [/\bDogruluk\b/gi, "Doğruluk"],
+  [/\bCalisma\b/gi, "Çalışma"],
+  [/\bSukut\b/gi, "Sükût"],
+  [/\bIlim\b/gi, "İlim"],
+  [/\bSabir\b/gi, "Sabır"],
+  [/\bTevekkul\b/gi, "Tevekkül"],
+  [/\bYardimlasma\b/gi, "Yardımlaşma"],
+  [/\bComertlik\b/gi, "Cömertlik"],
+  [/\bFursat\b/gi, "Fırsat"],
+];
+
+/**
+ * `1111_cumle.json`, `atasozleri.json`, `gorselKelimeler_guncel.json` vb. verilerdeki
+ * ASCII Türkçe kategori ve tema isimlerini (ör. "Alisveris_ve_Yemek", "11_Alisveris_ve_Ekonomi",
+ * "Gunluk_Hayat") kusursuz Türkçe karakterli haline ("Alışveriş ve Yemek", "Alışveriş ve Ekonomi",
+ * "Günlük Hayat") dönüştürür.
+ */
+export function formatTurkishCategory(rawCategory?: string): string {
+  if (!rawCategory) return "";
+  let cleaned = rawCategory
+    .trim()
+    .replace(/^\d+[_-\s]+/, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Sonunda "(1)", "(2)" gibi alt grup numarası varsa koru
+  let suffix = "";
+  const subMatch = cleaned.match(/\s*(\(\d+\))$/);
+  if (subMatch) {
+    suffix = ` ${subMatch[1]}`;
+    cleaned = cleaned.slice(0, cleaned.length - subMatch[0].length).trim();
+  }
+
+  const lowerKey = cleaned.toLowerCase();
+  if (TURKISH_CATEGORY_EXACT_MAP[lowerKey]) {
+    return `${TURKISH_CATEGORY_EXACT_MAP[lowerKey]}${suffix}`;
+  }
+
+  let result = cleaned;
+  for (const [regex, replacement] of TURKISH_WORD_REPLACEMENTS) {
+    result = result.replace(regex, replacement);
+  }
+  return `${result}${suffix}`;
+}
+
+export const formatCategoryName = formatTurkishCategory;
 
 /**
  * Med-i Mukadder (yazılmayan ama okunan elif) kelimelerinin eşdeğerlik tablosu.

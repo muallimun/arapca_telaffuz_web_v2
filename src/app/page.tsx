@@ -47,8 +47,9 @@ import {
 import { useAudioStore } from "@/store/audioStore";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
+import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
-import { formatArabicText } from "@/lib/arabicTextUtils";
+import { formatArabicText, formatTurkishCategory } from "@/lib/arabicTextUtils";
 
 const SENTENCE_THEME_LABELS: Record<string, string> = {
   selamlasma_ve_nezaket: "Selamlaşma ve Nezaket",
@@ -84,9 +85,7 @@ function formatSentenceThemeLabel(raw?: string): string {
   if (!raw) return "Günlük İletişim";
   const key = raw.trim().toLowerCase();
   if (SENTENCE_THEME_LABELS[key]) return SENTENCE_THEME_LABELS[key];
-  return raw
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (ch) => ch.toLocaleUpperCase("tr-TR"));
+  return formatTurkishCategory(raw);
 }
 
 type ModuleKey = "kutuphane" | "telaffuz" | "alistirmalar" | "sozluk";
@@ -677,15 +676,21 @@ export default function HomePage() {
                       });
                     }}
                     title="Bu gramer kuralını ve örneklerini ayrı pencerede incelemek için tıklayın"
-                    className="w-full text-left block text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
+                    dir="ltr"
+                    className="w-full text-left block font-sans text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
                   >
                     📌{" "}
-                    {recommendedDialogue.odak_gramer ||
-                      diyalogGramerNotlari.find(
-                        (g) => g.bagli_id === recommendedDialogue.id
-                      )?.konu_basligi ||
-                      recommendedDialogue.satirlar?.[0]?.odak_kalip ||
-                      "Günlük Konuşma"}
+                    <MixedText
+                      text={
+                        recommendedDialogue.odak_gramer ||
+                        diyalogGramerNotlari.find(
+                          (g) => g.bagli_id === recommendedDialogue.id
+                        )?.konu_basligi ||
+                        recommendedDialogue.satirlar?.[0]?.odak_kalip ||
+                        "Günlük Konuşma"
+                      }
+                      arabicClassName="arabic font-arabic text-xs font-bold text-amber-950 dark:text-amber-200 mx-0.5 inline-block"
+                    />
                   </button>
                 </div>
               </Link>
@@ -738,11 +743,17 @@ export default function HomePage() {
                       });
                     }}
                     title="Bu metnin odak gramer notunu ayrı pencerede incelemek için tıklayın"
-                    className="w-full text-left block text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
+                    dir="ltr"
+                    className="w-full text-left block font-sans text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md line-clamp-1 cursor-pointer transition-colors"
                   >
                     📌{" "}
-                    {recommendedReading.odak_gramer ||
-                      `${recommendedReading.satirlar?.length || 6} Cümle • Sorulu`}
+                    <MixedText
+                      text={
+                        recommendedReading.odak_gramer ||
+                        `${recommendedReading.satirlar?.length || 6} Cümle • Sorulu`
+                      }
+                      arabicClassName="arabic font-arabic text-xs font-bold text-amber-950 dark:text-amber-200 mx-0.5 inline-block"
+                    />
                   </button>
                 </div>
               </Link>
@@ -894,9 +905,14 @@ export default function HomePage() {
                       });
                     }}
                     title="Bu gramer kalıbının kuralını ve örnek cümlelerini incelemek için tıklayın"
-                    className="w-fit text-left text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md leading-snug cursor-pointer transition-colors"
+                    dir="ltr"
+                    className="w-fit text-left font-sans text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-200/80 hover:border-amber-400 dark:border-amber-700/60 px-2 py-0.5 rounded-md leading-snug cursor-pointer transition-colors inline-flex items-center gap-1"
                   >
-                    📌 {dailySentenceItem.odak_kalip}
+                    <span className="shrink-0">📌</span>
+                    <MixedText
+                      text={dailySentenceItem.odak_kalip}
+                      arabicClassName="arabic font-arabic text-xs font-bold text-amber-950 dark:text-amber-200 mx-0.5 inline-block"
+                    />
                   </button>
                 )}
               </div>

@@ -6,6 +6,16 @@
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+  font-family: "WinSoftPro";
+  src: url("/fonts/Arakom.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
 }
 
 @theme {
@@ -47,7 +57,9 @@
   --lavender-bg: #f3f0ff;
   --purple-accent: #6741d9;
 
-  --font-arabic-family: "ArakomFont", "Amiri", "Noto Naskh Arabic", serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-arabic: "ArakomFont", "Amiri", "Noto Naskh Arabic", system-ui, -apple-system, sans-serif;
+  --font-arabic-family: "ArakomFont", "Amiri", "Noto Naskh Arabic", system-ui, -apple-system, sans-serif;
   --font-arabic-scale: 1;
   --font-arabic-line-height: 2.05;
 
@@ -109,19 +121,26 @@ body {
   max-width: 100vw;
 }
 
-/* Arapça Metinler İçin Dinamik Font Ailesi ve Ölçekleme */
-.arabic {
+/* Arapça Metinler İçin Dinamik Font Ailesi ve Ölçekleme (Türkçe/Latin Fallback Korumalı) */
+.arabic,
+.font-arabic {
   font-family: var(
-    --font-arabic-family,
-    "ArakomFont",
-    "Amiri",
-    "Noto Naskh Arabic",
-    serif
-  ) !important;
-  direction: rtl;
+      --font-arabic-family,
+      "ArakomFont",
+      "Amiri",
+      "Noto Naskh Arabic"
+    ),
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    sans-serif !important;
   line-height: var(--font-arabic-line-height, 2.05);
   letter-spacing: 0;
   font-feature-settings: "liga" 1, "calt" 1;
+}
+
+.arabic:not([dir="ltr"]) {
+  direction: rtl;
 }
 
 /* 3B Dokunsal Kart & Buton Yardımcı Sınıfları */

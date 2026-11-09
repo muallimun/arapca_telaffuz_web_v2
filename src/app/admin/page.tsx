@@ -29,6 +29,11 @@ import {
   Play,
   ExternalLink,
   Code2,
+  Lock,
+  Unlock,
+  LogOut,
+  KeyRound,
+  ShieldCheck,
 } from "lucide-react";
 import {
   resolveImageUrl,
@@ -412,8 +417,17 @@ function getDefaultAudioPath(
   return `/sesler/ozel/${gFolder}/${rec.id || `kayit_${num4}`}.mp3`;
 }
 
+function isValidAdminToken(rawToken: string): boolean {
+  const t = (rawToken || "").trim();
+  return (
+    (t.startsWith("github_pat_") && t.length >= 20) ||
+    (t.startsWith("ghp_") && t.length >= 20) ||
+    t === "muallimun-admin-2026"
+  );
+}
+
 export default function AdminStudioPage() {
-  // 1. GitHub & Depo Ayarları (localStorage destekli)
+  // 1. GitHub & Depo Ayarları (localStorage destekli) ve Yönetici Kilit Ekranı
   const [githubToken, setGithubToken] = useState(() => {
     if (typeof window === "undefined") return "";
     try {
@@ -422,6 +436,29 @@ export default function AdminStudioPage() {
       return "";
     }
   });
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const savedToken =
+        window.localStorage.getItem("muallimun_admin_gh_token") || "";
+      const unlockedFlag =
+        window.localStorage.getItem("muallimun_admin_unlocked") === "true";
+      return unlockedFlag && isValidAdminToken(savedToken);
+    } catch {
+      return false;
+    }
+  });
+  const [lockTokenInput, setLockTokenInput] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return window.localStorage.getItem("muallimun_admin_gh_token") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [lockError, setLockError] = useState<string | null>(null);
+  const [verifyingToken, setVerifyingToken] = useState(false);
+
   const [repoOwner, setRepoOwner] = useState(() => {
     if (typeof window === "undefined") return "muallimun";
     try {
@@ -552,6 +589,7 @@ export default function AdminStudioPage() {
   }, []);
 
   useEffect(() => {
+    if (!isAdminUnlocked) return;
     let active = true;
     const load = async () => {
       if (!active) return;
@@ -561,7 +599,73 @@ export default function AdminStudioPage() {
     return () => {
       active = false;
     };
-  }, [activeTab, fetchDataset]);
+  }, [activeTab, fetchDataset, isAdminUnlocked]);
+
+  const handleUnlockAdminStudio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClick();
+    setLockError(null);
+    const trimmed = lockTokenInput.trim();
+
+    if (!isValidAdminToken(trimmed)) {
+      playError();
+      setLockError(
+        "Geçersiz erişim anahtarı! Lütfen geçerli bir GitHub Erişim Anahtarı (github_pat_... veya ghp_...) girin."
+      );
+      return;
+    }
+
+    if (trimmed.startsWith("github_pat_") || trimmed.startsWith("ghp_")) {
+      setVerifyingToken(true);
+      try {
+        const res = await fetch("https://api.github.com/user", {
+          headers: {
+            Authorization: `Bearer ${trimmed}`,
+            Accept: "application/vnd.github+json",
+          },
+        });
+        if (!res.ok) {
+          playError();
+          setLockError(
+            "GitHub erişim anahtarı doğrulanamadı (401 Unauthorized). Anahtarın süresinin dolmadığından emin olun."
+          );
+          setVerifyingToken(false);
+          return;
+        }
+      } catch {
+        // Çevrimdışı veya ağ kısıtlı ortamda format doğrulaması yeterlidir
+      } finally {
+        setVerifyingToken(false);
+      }
+    }
+
+    saveRepoSettingsToStorage(trimmed, repoOwner, codeRepo, mediaRepo);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("muallimun_admin_unlocked", "true");
+      } catch {
+        // ignore
+      }
+    }
+    playSuccess();
+    setIsAdminUnlocked(true);
+  };
+
+  const handleLockAdminStudio = () => {
+    playClick();
+    setIsAdminUnlocked(false);
+    setGithubToken("");
+    setLockTokenInput("");
+    setRecords([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("muallimun_admin_unlocked");
+        window.localStorage.removeItem("muallimun_admin_gh_token");
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   // Filtrelenmiş kayıtlar
   const filteredRecords = useMemo(() => {
@@ -1221,6 +1325,130 @@ export default function AdminStudioPage() {
 
   const isCloudActive = Boolean(githubToken.trim());
 
+  if (!isAdminUnlocked) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-10 sm:py-16">
+        <div className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-6 sm:p-8 shadow-md space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#087F5B] text-white flex items-center justify-center shadow-xs shrink-0">
+              <Lock size={24} />
+            </div>
+            <Link
+              href="/"
+              onClick={() => playClick()}
+              className="h-9 px-3.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B]"
+            >
+              <ChevronLeft size={15} />
+              <span>Ana Sayfaya Dön</span>
+            </Link>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-indigo-950/70 border border-[#6741D9]/40 text-[11px] font-black text-[#4C28B5] dark:text-indigo-300">
+              <ShieldCheck size={13} />
+              <span>YETKİLİ YÖNETİCİ ERİŞİMİ</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-[var(--foreground)]">
+              🔒 Yönetici Doğrulaması (Admin Stüdyosu)
+            </h1>
+            <p className="text-xs sm:text-sm font-semibold text-[var(--muted)] leading-relaxed">
+              İçerik, Ses ve Görsel Yönetim Stüdyosu yalnızca yetkili yöneticilere
+              açıktır. Devam etmek için GitHub Erişim Anahtarınızı (
+              <code className="font-mono text-[#065F46] dark:text-emerald-400">
+                github_pat_...
+              </code>{" "}
+              veya{" "}
+              <code className="font-mono text-[#065F46] dark:text-emerald-400">
+                ghp_...
+              </code>
+              ) girin.
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlockAdminStudio} className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="admin-gh-token-input"
+                className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5"
+              >
+                <KeyRound size={14} className="text-[#087F5B]" />
+                <span>GitHub Personal Access Token (github_pat_... / ghp_...)</span>
+              </label>
+              <input
+                id="admin-gh-token-input"
+                type="password"
+                value={lockTokenInput}
+                onChange={(e) => {
+                  setLockTokenInput(e.target.value);
+                  if (lockError) setLockError(null);
+                }}
+                placeholder="github_pat_xxxxxxxxxxxxxxxxxxxxxxxx"
+                autoComplete="off"
+                className="w-full h-11 px-3.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] focus:border-[#087F5B] focus:outline-none text-xs sm:text-sm font-mono text-[var(--foreground)]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-[var(--muted)] block">
+                  Organizasyon / Sahip
+                </label>
+                <input
+                  type="text"
+                  value={repoOwner}
+                  onChange={(e) => setRepoOwner(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-[var(--muted)] block">
+                  Kod Deposu
+                </label>
+                <input
+                  type="text"
+                  value={codeRepo}
+                  onChange={(e) => setCodeRepo(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-[var(--muted)] block">
+                  Medya Deposu
+                </label>
+                <input
+                  type="text"
+                  value={mediaRepo}
+                  onChange={(e) => setMediaRepo(e.target.value)}
+                  className="w-full h-8 px-2.5 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-bold text-[var(--foreground)]"
+                />
+              </div>
+            </div>
+
+            {lockError && (
+              <div className="rounded-xl border-2 border-rose-400 bg-rose-50 dark:bg-rose-950/50 p-3 flex items-start gap-2 text-xs font-extrabold text-rose-800 dark:text-rose-200">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5 text-rose-600" />
+                <span>{lockError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={verifyingToken}
+              className="w-full h-11 rounded-xl bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-60 text-white font-black text-xs sm:text-sm border-b-4 border-[#064E3B] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Unlock size={16} />
+              <span>
+                {verifyingToken
+                  ? "GitHub Anahtarı Doğrulanıyor..."
+                  : "🔓 Doğrula ve Yönetim Stüdyosunu Aç"}
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-4">
       {/* 1. ÜST BAĞLANTI & DEPO AYAR ÇUBUĞU */}
@@ -1299,6 +1527,17 @@ export default function AdminStudioPage() {
             >
               <Settings size={14} />
               <span>GitHub &amp; Depo Ayarları</span>
+            </button>
+
+            {/* 🔒 Çıkış Yap / Kilitle Butonu */}
+            <button
+              type="button"
+              onClick={handleLockAdminStudio}
+              className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 dark:border-rose-700 text-rose-800 dark:text-rose-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer hover:bg-rose-100"
+              title="Yönetici oturumunu kapat ve stüdyoyu kilitle"
+            >
+              <LogOut size={14} />
+              <span>🔒 Çıkış Yap / Kilitle</span>
             </button>
           </div>
         </div>

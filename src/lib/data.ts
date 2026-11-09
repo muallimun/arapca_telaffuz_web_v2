@@ -7,6 +7,7 @@ import atasozleriJson from "@/data/atasozleri.json";
 import gorselKelimelerJson from "@/data/gorselKelimeler_guncel.json";
 import { getCombinedIdiomsCatalog } from "@/lib/arabicIdioms";
 import { unifiedDictionary } from "@/lib/dict";
+import { formatTurkishCategory } from "@/lib/arabicTextUtils";
 import {
   AnahtarCumle,
   AtasozuDeyim,
@@ -106,6 +107,7 @@ export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
     ).padStart(3, "0");
     return {
       ...d,
+      tema: d.tema ? formatTurkishCategory(d.tema) : d.tema,
       gorsel: resolveImageUrl(
         d.gorsel || `/gorseller/diyaloglar/dlg_${num3}.webp`
       ),
@@ -137,6 +139,7 @@ export const metinler: ReadingText[] = (metinlerJson as ReadingText[]).map(
     return {
       ...m,
       sira: m.sira || idx + 1,
+      tema: formatTurkishCategory(m.tema),
       gorsel: resolveImageUrl(
         m.gorsel || `/gorseller/metinler/metin_${num2}.webp`
       ),
@@ -164,6 +167,8 @@ export const cumleler1111: AnahtarCumle[] = (
   cumlelerJson as AnahtarCumle[]
 ).map((c) => ({
   ...c,
+  tema: formatTurkishCategory(c.tema),
+  kategori: c.kategori ? formatTurkishCategory(c.kategori) : c.kategori,
   cefr: c.cefr || c.seviye || "A1",
   arapca: normalizeCanonicalArabicLine(c.arapca),
 }));
@@ -177,6 +182,7 @@ export const atasozleri: AtasozuDeyim[] = (
   ).padStart(4, "0");
   return {
     ...a,
+    tema: formatTurkishCategory(a.tema),
     arapca: normalizeCanonicalArabicLine(a.arapca),
     gorsel: resolveImageUrl(
       a.gorsel || `/gorseller/atasozleri/ata_${num4}.webp`
@@ -196,6 +202,7 @@ export const gorselKelimeler: ResimliKelime[] = (
   ).padStart(4, "0");
   return {
     ...gk,
+    kategori_tr: formatTurkishCategory(gk.kategori_tr || gk.kategori),
     arapca: normalizeCanonicalArabicLine(gk.arapca),
     ornek_ar: normalizeCanonicalArabicLine(gk.ornek_ar || ""),
     gorsel: resolveImageUrl(

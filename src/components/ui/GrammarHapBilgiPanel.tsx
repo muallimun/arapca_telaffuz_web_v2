@@ -402,15 +402,21 @@ export function splitArabicAndTurkish(rawText: string): {
  */
 function renderTurkishWithIsolatedArabic(
   text: string,
-  arabicBadgeClass = "arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 px-1 inline-block"
+  arabicBadgeClass = "arabic font-arabic text-[1.18em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block leading-normal"
 ): React.ReactNode {
   if (!text) return null;
-  if (!/[\u0600-\u06FF]/.test(text)) {
+  const arabicRegex =
+    /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
+  if (!arabicRegex.test(text)) {
     return text;
   }
-  const parts = text.split(/([\u0600-\u06FF\u064B-\u065F\u0670\u0640]+(?:\s+[\u0600-\u06FF\u064B-\u065F\u0670\u0640]+)*)/g);
+  const parts = text.split(arabicRegex);
   return parts.map((part, idx) => {
-    if (/[\u0600-\u06FF]/.test(part)) {
+    if (
+      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+        part
+      )
+    ) {
       return (
         <bdi key={idx} dir="rtl" lang="ar" className={arabicBadgeClass}>
           {part}
@@ -844,8 +850,15 @@ export function GrammarDeepDiveModal({
                   </span>
                 )}
               </div>
-              <h2 className="text-sm sm:text-lg font-black text-white leading-snug break-words">
-                {grammarNote.konu_basligi}
+              <h2
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-sm sm:text-lg font-black text-white text-left leading-snug break-words"
+              >
+                {renderTurkishWithIsolatedArabic(
+                  grammarNote.konu_basligi,
+                  "arabic font-arabic text-[1.15em] font-bold text-amber-200 mx-0.5 inline-block"
+                )}
               </h2>
             </div>
           </div>
@@ -1071,7 +1084,7 @@ export function GrammarDeepDiveModal({
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-black text-xs uppercase tracking-wider">
                     <XCircle className="w-4 h-4 shrink-0" />
-                    <span>Yanlış Kullanım</span>
+                    <span>❌ Yanlış Kullanım</span>
                   </div>
                   {parsedYanlis.arabicPart && (
                     <div
@@ -1087,14 +1100,14 @@ export function GrammarDeepDiveModal({
                   <div
                     dir="ltr"
                     lang="tr"
-                    className="font-sans text-xs sm:text-sm font-semibold text-rose-800 dark:text-rose-200 text-left pt-1.5 border-t border-rose-200/80 dark:border-rose-800/60"
+                    className="font-sans text-xs text-slate-600 dark:text-rose-200 font-semibold text-left mt-1 pt-1.5 border-t border-rose-200/80 dark:border-rose-800/60"
                   >
                     {parsedYanlis.turkishNotes.map((note, idx) => (
                       <div key={idx}>
-                        {renderTurkishWithIsolatedArabic(
+                        ({renderTurkishWithIsolatedArabic(
                           note,
-                          "arabic font-arabic text-sm font-bold text-rose-900 dark:text-rose-200 px-0.5 inline-block"
-                        )}
+                          "arabic font-arabic text-sm font-bold text-rose-900 dark:text-rose-200 mx-0.5 inline-block"
+                        )})
                       </div>
                     ))}
                   </div>
@@ -1107,7 +1120,7 @@ export function GrammarDeepDiveModal({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-[#065F46] dark:text-emerald-300 font-black text-xs uppercase tracking-wider">
                       <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>Doğru Kullanım</span>
+                      <span>✅ Doğru Kullanım</span>
                     </div>
                     {(parsedDogru.arabicPart ||
                       grammarNote.metinden_ornek?.arapca) && (
@@ -1141,14 +1154,14 @@ export function GrammarDeepDiveModal({
                   <div
                     dir="ltr"
                     lang="tr"
-                    className="font-sans text-xs sm:text-sm font-semibold text-[#065F46] dark:text-emerald-200 text-left pt-1.5 border-t border-emerald-200/80 dark:border-emerald-800/60"
+                    className="font-sans text-xs text-slate-600 dark:text-emerald-200 font-semibold text-left mt-1 pt-1.5 border-t border-emerald-200/80 dark:border-emerald-800/60"
                   >
                     {parsedDogru.turkishNotes.map((note, idx) => (
                       <div key={idx}>
-                        {renderTurkishWithIsolatedArabic(
+                        ({renderTurkishWithIsolatedArabic(
                           note,
-                          "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 px-0.5 inline-block"
-                        )}
+                          "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                        )})
                       </div>
                     ))}
                   </div>
@@ -1334,13 +1347,18 @@ export function GrammarHapBilgiPanel({
         </div>
 
         <h2
-          className={`${
+          dir="ltr"
+          lang="tr"
+          className={`font-sans text-left ${
             isSmartboardLarge
               ? "text-xl sm:text-3xl"
               : "text-lg sm:text-2xl"
           } font-black text-[var(--foreground)] tracking-tight mb-3.5 leading-snug break-words`}
         >
-          {activeNote.konu_basligi}
+          {renderTurkishWithIsolatedArabic(
+            activeNote.konu_basligi,
+            "arabic font-arabic text-[1.15em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block"
+          )}
         </h2>
 
         <div
@@ -1888,7 +1906,7 @@ export function GrammarHapBilgiModal({
                 drawerSide === "left"
                   ? "border-r-4 border-[#087F5B] dark:border-emerald-600 shadow-[12px_0_35px_rgba(0,0,0,0.22)] animate-in slide-in-from-left"
                   : "border-l-4 border-[#087F5B] dark:border-emerald-600 shadow-[-12px_0_35px_rgba(0,0,0,0.22)] animate-in slide-in-from-right"
-              } w-full sm:w-[450px] lg:w-[480px] h-full flex flex-col relative overflow-hidden duration-200`
+              } w-full sm:w-[440px] lg:w-[460px] h-full flex flex-col relative overflow-hidden duration-200`
         }
         onClick={(e) => e.stopPropagation()}
       >
@@ -1901,21 +1919,21 @@ export function GrammarHapBilgiModal({
                 <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-wider text-[#087F5B] dark:text-emerald-400">
-                Gramer Hap Bilgi Penceresi
+                Gramer Hap Bilgi
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-              {/* Yan Panel Konum Seçici: Sola Yasla / Sağa Yasla (Sadece Drawer Modunda) */}
+            <div className="flex flex-wrap items-center gap-1.5 shrink-0 ml-auto">
+              {/* Yan Panel Konum Seçici: [⬅️ Sol Panel | ➡️ Sağ Panel] (Sadece Drawer Modunda) */}
               {!isSmartboard && (
-                <div className="hidden sm:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+                <div className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
                   <button
                     type="button"
                     onClick={() => {
                       playClick();
                       setDrawerSide("left");
                     }}
-                    title="Paneli Sola Yasla"
+                    title="Yan Paneli Sola Yasla"
                     className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
                       drawerSide === "left"
                         ? "bg-amber-500 text-slate-950"
@@ -1923,7 +1941,7 @@ export function GrammarHapBilgiModal({
                     }`}
                   >
                     <PanelLeft className="w-3 h-3 shrink-0" />
-                    <span>Sol</span>
+                    <span>⬅️ Sol Panel</span>
                   </button>
                   <button
                     type="button"
@@ -1931,7 +1949,7 @@ export function GrammarHapBilgiModal({
                       playClick();
                       setDrawerSide("right");
                     }}
-                    title="Paneli Sağa Yasla"
+                    title="Yan Paneli Sağa Yasla"
                     className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
                       drawerSide === "right"
                         ? "bg-amber-500 text-slate-950"
@@ -1939,7 +1957,7 @@ export function GrammarHapBilgiModal({
                     }`}
                   >
                     <PanelRight className="w-3 h-3 shrink-0" />
-                    <span>Sağ</span>
+                    <span>➡️ Sağ Panel</span>
                   </button>
                 </div>
               )}
@@ -1997,9 +2015,16 @@ export function GrammarHapBilgiModal({
             </div>
           </div>
 
-          {/* 2. Satır: Konu Başlığı (Tam Genişlikte, Kesilmeden) */}
-          <h3 className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug break-words w-full">
-            {resolvedNote.konu_basligi}
+          {/* 2. Satır: Konu Başlığı (Tam Genişlikte, Kesilmeden, Arapça kısımları <bdi> ile izole) */}
+          <h3
+            dir="ltr"
+            lang="tr"
+            className="font-sans text-sm sm:text-base font-black text-[var(--foreground)] text-left leading-snug break-words w-full"
+          >
+            {renderTurkishWithIsolatedArabic(
+              resolvedNote.konu_basligi,
+              "arabic font-arabic text-[1.15em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block"
+            )}
           </h3>
         </div>
 

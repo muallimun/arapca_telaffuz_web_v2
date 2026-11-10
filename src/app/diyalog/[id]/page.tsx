@@ -2316,7 +2316,7 @@ export default function DialogueDetailPage({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-1.5 flex-wrap leading-tight">
-                <h1 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] truncate">
+                <h1 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] line-clamp-2">
                   {dialogue.baslik_tr}
                 </h1>
                 <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-bold">
@@ -2359,8 +2359,8 @@ export default function DialogueDetailPage({
           </button>
         </div>
 
-        {/* 2. SATIR: Mobilde 2-3 Sütun, Masaüstünde 5 Sütunlu Mod Sekmeleri */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+        {/* 2. SATIR: Mobilde Tek Satır Yatay Kaydırılabilir, Masaüstünde 5 Sütunlu Mod Sekmeleri */}
+        <div className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap sm:grid sm:grid-cols-5 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
           {(
             [
               { id: "listen", label: "📖 Dinle & İncele" },
@@ -2392,7 +2392,7 @@ export default function DialogueDetailPage({
                   }
                   setStudyMode(tab.id);
                 }}
-                className={`text-xs py-1.5 px-2 whitespace-nowrap rounded-lg font-extrabold transition-all text-center cursor-pointer ${
+                className={`shrink-0 text-xs py-1.5 px-2.5 sm:px-2 whitespace-nowrap rounded-lg font-extrabold transition-all text-center cursor-pointer ${
                   isSelected
                     ? "bg-[#6741D9] text-white shadow-2xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)] bg-white/60 dark:bg-transparent"
@@ -2518,7 +2518,7 @@ export default function DialogueDetailPage({
                 <span aria-hidden="true">🎭</span>
               </button>
 
-              {/* 4b. Yan Yana Gramer Butonu */}
+              {/* 4b. Yan Yana Gramer Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
               {grammarNote && (
                 <button
                   type="button"
@@ -2531,13 +2531,14 @@ export default function DialogueDetailPage({
                   }}
                   data-tooltip="Gramer notunu metinle yan yana ayrı pencerede aç"
                   title="Gramer notunu metinle yan yana ayrı pencerede aç"
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0"
+                  className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0"
                 >
-                  <span>🗔 Yan Yana Gramer</span>
+                  <Columns2 size={13} className="shrink-0" />
+                  <span>Yan Yana Gramer</span>
                 </button>
               )}
 
-              {/* 5. PDF Butonu (PDF) */}
+              {/* 5. PDF Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
               <button
                 type="button"
                 onClick={() => {
@@ -2546,7 +2547,7 @@ export default function DialogueDetailPage({
                 }}
                 data-tooltip="PDF Ders Notu veya A4 Çalışma/Quiz Yaprağı Üret"
                 aria-label="PDF / Ders Notu"
-                className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
               >
                 <FileText size={13} className="text-[#065F46] shrink-0" />
                 <span>PDF</span>
@@ -2778,6 +2779,39 @@ export default function DialogueDetailPage({
                       Ek Araçlar &amp; Modlar
                     </span>
                     <div className="grid grid-cols-2 gap-1.5">
+                      {grammarNote && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setIsMoreMenuOpen(false);
+                            if (studyMode === "gramer") {
+                              setStudyMode("listen");
+                            }
+                            setIsGrammarQuickModalOpen(true);
+                          }}
+                          className="py-2 px-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
+                        >
+                          <Columns2 size={13} className="shrink-0" />
+                          <span>Yan Yana Gramer</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIsMoreMenuOpen(false);
+                          setIsPdfModalOpen(true);
+                        }}
+                        className={`py-2 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer ${
+                          grammarNote ? "" : "col-span-2"
+                        }`}
+                      >
+                        <FileText size={13} className="text-[#065F46] shrink-0" />
+                        <span>PDF / Çalışma Kağıdı</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -3350,9 +3384,10 @@ export default function DialogueDetailPage({
                 setIsGrammarQuickModalOpen(true);
               }}
               title="Gramer notunu metinle yan yana ayrı pencerede aç"
-              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] whitespace-nowrap cursor-pointer transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all"
             >
-              🗔 Yan Yana Gramer
+              <Columns2 size={14} className="shrink-0" />
+              <span>Yan Yana Gramer</span>
             </button>
           </div>
           <GrammarHapBilgiPanel

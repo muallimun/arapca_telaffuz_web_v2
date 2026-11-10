@@ -1535,9 +1535,21 @@ function ExercisesPageContent() {
   ]);
 
   return (
-    <div className={isPlaying ? "space-y-2 pb-4" : "space-y-2 sm:space-y-2.5 pb-16 md:pb-2"}>
-      {/* ÜST BAŞLIK */}
-      <div className="flex items-center justify-between gap-2">
+    <div
+      className={
+        isPlaying
+          ? "space-y-1.5 sm:space-y-2 pb-1 sm:pb-4"
+          : "space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
+      }
+    >
+      {/* ÜST BAŞLIK (Mobilde Görsel-Sesli Eşleştirme aktifken kendi iç Çık butonu olduğu için gizlenir, diğer alıştırmalarda tek satır kompakt görünür) */}
+      <div
+        className={
+          isPlaying && selectedType === "visual-rosetta"
+            ? "hidden sm:flex items-center justify-between gap-2"
+            : "flex items-center justify-between gap-2"
+        }
+      >
         <div className="flex items-center gap-2 min-w-0">
           {isPlaying ? (
             <button
@@ -1546,10 +1558,11 @@ function ExercisesPageContent() {
                 playClick();
                 handleCloseExercise();
               }}
-              className="h-8 px-2.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
+              className="h-7 sm:h-8 px-2 sm:px-2.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
             >
               <ChevronLeft size={15} />
-              <span>Ayarlara Dön</span>
+              <span className="sm:hidden">Çık</span>
+              <span className="hidden sm:inline">Ayarlara Dön</span>
             </button>
           ) : (
             <Link
@@ -1566,7 +1579,13 @@ function ExercisesPageContent() {
             <h1 className="text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate">
               İnteraktif Alıştırma Merkezi
             </h1>
-            <p className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] truncate">
+            <p
+              className={
+                isPlaying
+                  ? "hidden sm:block text-[11px] font-medium text-[var(--muted)] truncate"
+                  : "text-[10px] sm:text-[11px] font-medium text-[var(--muted)] truncate"
+              }
+            >
               {contentStats.dialogueCount} Diyalog • {contentStats.readingCount} Metin • {contentStats.sentenceCount} Cümle • {contentStats.proverbCount} Atasözü • {contentStats.visualWordCount} Görsel Kelime • {contentStats.dictionaryWordCount} Sözlük Kelimesi
             </p>
           </div>

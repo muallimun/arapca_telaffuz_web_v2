@@ -6,6 +6,11 @@
 
 import type { WhisperWorkerResponse } from "./whisperWorker";
 import { useSettings } from "@/store/settings";
+import {
+  isWebSpeechBlocked,
+  markWebSpeechBlocked,
+  stopAllActiveMediaStreams,
+} from "./universalStt";
 
 export type SttEngineType = "whisper" | "webspeech";
 
@@ -14,6 +19,7 @@ export interface SttCallbacks {
   onStarted?: () => void;
   onSpeechActivity?: (level: number) => void;
   onAutoStop?: (finalText: string) => void;
+  onBlockedError?: (errorCode: string) => void;
   onInterimTranscript?: (
     interimText: string,
     finalTranscript?: string,
@@ -152,7 +158,9 @@ interface SpeechRecognitionResultAlternativeLike {
 
 interface SpeechRecognitionResultLike {
   isFinal?: boolean;
+  length?: number;
   0?: SpeechRecognitionResultAlternativeLike;
+  [index: number]: SpeechRecognitionResultAlternativeLike | boolean | number | undefined;
 }
 
 interface SpeechRecognitionEventLike {
@@ -164,6 +172,7 @@ interface SpeechRecognitionInstanceLike {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives?: number;
   onstart?: (() => void) | null;
   onsoundstart?: (() => void) | null;
   onspeechstart?: (() => void) | null;
@@ -240,8 +249,9 @@ export class HybridSpeechManager {
       return;
     }
 
-    if (!this.isWebSpeechSupported()) return;
+    if (!this.isWebSpeechSupported() || isWebSpeechBlocked()) return;
 
+    stopAllActiveMediaStreams();
     this.shouldKeepListening = true;
     let hasFiredStarted = false;
     let priorSessionsTranscript = "";
@@ -261,7 +271,11 @@ export class HybridSpeechManager {
     };
 
     const launchRecognitionInstance = () => {
-      if (!this.shouldKeepListening || useSettings.getState().localSttOnly) {
+      if (
+        !this.shouldKeepListening ||
+        useSettings.getState().localSttOnly ||
+        isWebSpeechBlocked()
+      ) {
         this.isWebSpeechActive = false;
         return;
       }
@@ -273,6 +287,7 @@ export class HybridSpeechManager {
         rec.lang = "ar-SA";
         rec.continuous = true;
         rec.interimResults = true;
+        rec.maxAlternatives = 5;
 
         rec.onstart = () => {
           notifyStartedAfterWarmup();
@@ -306,13 +321,28 @@ export class HybridSpeechManager {
           }
 
           for (let i = 0; i < event.results.length; ++i) {
-            const transcript = (event.results[i][0]?.transcript || "").trim();
-            if (!transcript) continue;
-            allSegments.push(transcript);
-            if (event.results[i].isFinal) {
-              rawFinalSegments.push(transcript);
+            const resItem = event.results[i];
+            let chosenTranscript = (resItem[0]?.transcript || "").trim();
+            if (!/[\u0600-\u06FF]/.test(chosenTranscript)) {
+              const altCount =
+                typeof resItem.length === "number" ? resItem.length : 1;
+              for (let a = 1; a < Math.min(5, altCount); a++) {
+                const altCand = (
+                  (resItem[a] as SpeechRecognitionResultAlternativeLike | undefined)
+                    ?.transcript || ""
+                ).trim();
+                if (/[\u0600-\u06FF]/.test(altCand)) {
+                  chosenTranscript = altCand;
+                  break;
+                }
+              }
+            }
+            if (!chosenTranscript) continue;
+            allSegments.push(chosenTranscript);
+            if (resItem.isFinal) {
+              rawFinalSegments.push(chosenTranscript);
             } else {
-              rawInterimSegments.push(transcript);
+              rawInterimSegments.push(chosenTranscript);
             }
           }
 
@@ -322,7 +352,6 @@ export class HybridSpeechManager {
             deduplicateCumulativeTranscript(rawInterimSegments);
 
           this.webSpeechFinalTranscript = dedupedFinal;
-          // Eğer dedupedAll, dedupedFinal'dan uzunsa kalan kısmı interim olarak tut
           if (
             dedupedAll.length > dedupedFinal.length &&
             normalizeTranscriptComparison(dedupedAll).startsWith(
@@ -341,7 +370,6 @@ export class HybridSpeechManager {
               this.webSpeechInterimTranscript,
             ]);
 
-          // Canlı ses aktivitesi darbesi (mobil dalga boyunun kullanıcının sesiyle ritmik hareket etmesi için)
           const level = Math.min(
             0.92,
             0.38 + ((combined.length * 7) % 45) / 100
@@ -357,8 +385,19 @@ export class HybridSpeechManager {
           }
         };
 
-        rec.onerror = () => {
+        rec.onerror = (errEvt?: unknown) => {
           this.isWebSpeechActive = false;
+          const code = (errEvt as { error?: string })?.error || "";
+          if (
+            code === "network" ||
+            code === "service-not-allowed" ||
+            code === "not-allowed" ||
+            code === "audio-capture"
+          ) {
+            markWebSpeechBlocked();
+            this.shouldKeepListening = false;
+            callbacks?.onBlockedError?.(code);
+          }
         };
 
         rec.onend = () => {
@@ -694,13 +733,15 @@ export class HybridSpeechManager {
       );
       const paddedPcm16k = this.preparePadded16kHzAudio(audioData16kHz, 1.0);
       const wavBlob = this.encodePcm16kToWavBlob(paddedPcm16k);
+      const formData = new FormData();
+      formData.append("audio", wavBlob, "speech.wav");
+      formData.append("lang", "ar");
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 18000);
+      const timeoutId = setTimeout(() => controller.abort(), 7500);
       try {
         const res = await fetch("/api/stt", {
           method: "POST",
-          headers: { "Content-Type": "audio/wav" },
-          body: wavBlob,
+          body: formData,
           signal: controller.signal,
         });
         if (!res.ok) return "";
@@ -935,18 +976,19 @@ export class HybridSpeechManager {
         return { text: retryWebSpeech, usedEngine: "webspeech" };
       }
 
-      // Masaüstünde (Brave vb.) ⚡ Tarayıcı seçili olduğu halde Google Web Speech boş döndüyse
-      // ve elimizde gerçek pcm16k ses verisi varsa otomatik olarak cihaz içi Whisper motoruna düş!
-      const isIPadOS =
-        typeof navigator !== "undefined" &&
-        navigator.platform === "MacIntel" &&
-        navigator.maxTouchPoints > 1;
-      const isMobileUa =
-        typeof navigator !== "undefined" &&
-        (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "") ||
-          isIPadOS);
+      // Katman 2: Önce hızlı /api/stt sunucu çözümlemesini dene (Brave, Firefox, Mobil WebView dahil)
+      if (!isLocalOnly && audioData16kHz && audioData16kHz.length >= 2400) {
+        const serverText = await this.transcribeViaServerApi(
+          audioData16kHz,
+          callbacks
+        );
+        if (serverText && /[\u0600-\u06FF]/.test(serverText)) {
+          return { text: serverText, usedEngine: "whisper" };
+        }
+      }
 
-      if (!isMobileUa && audioData16kHz && audioData16kHz.length >= 2400) {
+      // Katman 3: /api/stt yanıt vermezse veya boş dönerse cihaz içi Whisper Worker ile çözümle
+      if (audioData16kHz && audioData16kHz.length >= 2400) {
         try {
           const whisperFallback = await this.transcribeWithWhisper(
             audioData16kHz,
@@ -956,14 +998,7 @@ export class HybridSpeechManager {
             return { text: whisperFallback, usedEngine: "whisper" };
           }
         } catch {
-          // ignore and try server fallback
-        }
-      }
-
-      if (!isLocalOnly && audioData16kHz && audioData16kHz.length >= 2400) {
-        const serverText = await this.transcribeViaServerApi(audioData16kHz);
-        if (serverText && /[\u0600-\u06FF]/.test(serverText)) {
-          return { text: serverText, usedEngine: "whisper" };
+          // ignore
         }
       }
 

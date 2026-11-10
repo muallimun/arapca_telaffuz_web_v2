@@ -135,7 +135,7 @@ export default function RootLayout({
         <ShareAppModal />
         <FeedbackModal />
         <Header />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-4 md:pt-6 pb-28 lg:pb-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-24 lg:pb-8">
           {children}
         </main>
         <ScrollToTopButton />

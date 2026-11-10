@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, Square, Play, RotateCcw, Sparkles } from "lucide-react";
+import { Mic, Square, Play, RotateCcw, AudioLines } from "lucide-react";
 import {
   playRecordStart,
   playRecordStop,
@@ -12,6 +12,10 @@ import {
   RecordingSession16kHz,
 } from "@/lib/audioAnalysis";
 import { useSettings } from "@/store/settings";
+import {
+  registerActiveMediaStream,
+  stopAllActiveMediaStreams,
+} from "@/lib/universalStt";
 
 interface Props {
   text: string;
@@ -50,6 +54,7 @@ export default function ShadowingButton({ text, onOpenCoach }: Props) {
       }
       streamRef.current = null;
     }
+    stopAllActiveMediaStreams();
   }, []);
 
   useEffect(() => {
@@ -123,6 +128,7 @@ export default function ShadowingButton({ text, onOpenCoach }: Props) {
       }
 
       streamRef.current = stream;
+      registerActiveMediaStream(stream);
 
       const targetWords = (text || "").trim().split(/\s+/).filter(Boolean);
       const maxRecordingDurationMs = Math.max(
@@ -284,7 +290,7 @@ export default function ShadowingButton({ text, onOpenCoach }: Props) {
           </div>
         )}
 
-        {/* ✨ Yapay Zeka Telaffuz & Mahreç Koçu */}
+        {/* 🎙️ Yapay Zeka Telaffuz & Mahreç Koçu (Hareke ✨ ikonundan net biçimde ayrışan AudioLines ikonu) */}
         {onOpenCoach && (
           <button
             type="button"
@@ -292,12 +298,15 @@ export default function ShadowingButton({ text, onOpenCoach }: Props) {
               playClick();
               onOpenCoach();
             }}
-            className="group relative w-9 h-9 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center cursor-pointer"
+            className="group relative h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center gap-1 cursor-pointer"
             data-tooltip="Yapay Zeka Telaffuz & Mahreç Koçu"
             data-tooltip-align="right"
             aria-label="Yapay Zeka Telaffuz & Mahreç Koçu"
           >
-            <Sparkles size={15} />
+            <AudioLines size={15} />
+            <span className="hidden sm:inline text-[11px] font-extrabold">
+              Koç
+            </span>
           </button>
         )}
       </div>

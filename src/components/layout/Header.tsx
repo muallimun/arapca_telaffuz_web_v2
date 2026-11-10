@@ -31,6 +31,7 @@ import {
   BookOpen,
   Gamepad2,
   BookMarked,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode } from "@/store/settings";
@@ -39,6 +40,10 @@ import { usePwaInstall } from "@/lib/usePwaInstall";
 import { getArabicFontConfig } from "@/lib/arabicTextUtils";
 import { triggerGuideModal } from "@/components/ui/GuideAndInfoModal";
 import { getDynamicContentStats } from "@/lib/data";
+import {
+  registerActiveMediaStream,
+  stopAllActiveMediaStreams,
+} from "@/lib/universalStt";
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   stacked: "Alt Alta (Arapça + Türkçe)",
@@ -75,7 +80,9 @@ export default function Header() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iosInstallOpen, setIosInstallOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const viewMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileToolsRef = useRef<HTMLDivElement | null>(null);
 
   // Mikrofon Testi Modal/Popover State & İzin Yarışı Koruması
   const [micModalOpen, setMicModalOpen] = useState(false);
@@ -125,20 +132,21 @@ export default function Header() {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-    if (streamRef.current) {
-      try {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      } catch {
-        // ignore
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+        } catch {
+          // ignore
+        }
+        streamRef.current = null;
       }
-      streamRef.current = null;
-    }
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
-    }
-    setMicLevel(0);
-  }, []);
+      stopAllActiveMediaStreams();
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+      setMicLevel(0);
+    }, []);
 
   const stopMicTest = useCallback(() => {
     micTestSessionIdRef.current += 1;
@@ -156,6 +164,12 @@ export default function Header() {
         !viewMenuRef.current.contains(e.target as Node)
       ) {
         setViewMenuOpen(false);
+      }
+      if (
+        mobileToolsRef.current &&
+        !mobileToolsRef.current.contains(e.target as Node)
+      ) {
+        setMobileToolsOpen(false);
       }
     };
     const handleVisibilityChange = () => {
@@ -218,6 +232,7 @@ export default function Header() {
         return;
       }
       streamRef.current = stream;
+      registerActiveMediaStream(stream);
       const AC =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext })
@@ -372,12 +387,12 @@ export default function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 z-40 print:hidden w-full h-12 py-1.5 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center">
         <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 xl:px-6 h-full flex items-center justify-between gap-1 sm:gap-2">
-          {/* SOL: Sabit Uygulama Logosu (shrink-0) + Yanında Ayrı PWA Kurulum Butonu + Masaüstü Menü */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
+          {/* SOL: Sabit Uygulama Logosu + Mobilde Kompakt "Arapça Telaffuz" Başlığı + Masaüstü Menü */}
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
             <Link
               href="/"
               onClick={() => playClick()}
-              className="flex items-center gap-1.5 sm:gap-2 group shrink-0"
+              className="flex items-center gap-2 group min-w-0"
               data-tooltip="Ana Sayfaya Dön"
               data-tooltip-pos="bottom"
               data-tooltip-align="left"
@@ -390,14 +405,17 @@ export default function Header() {
                   className="w-6 h-6 object-contain rounded-lg"
                 />
               </div>
+              <span className="md:hidden text-xs font-extrabold tracking-tight text-[var(--foreground)] truncate leading-tight">
+                Arapça Telaffuz
+              </span>
               <div className="hidden xl:block min-w-0">
                 <span className="block text-xs sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] truncate leading-tight">
-                  Arapça Telaffuz & Diyalog
+                  Arapça Telaffuz &amp; Diyalog
                 </span>
               </div>
             </Link>
 
-            {/* PWA Uygulamayı Kur Butonu */}
+            {/* PWA Uygulamayı Kur Butonu (Masaüstü/Tablet; mobilde Görünüm & Araçlar menüsündedir) */}
             {mounted && canInstall && (
               <button
                 type="button"
@@ -413,14 +431,14 @@ export default function Header() {
                 data-tooltip-pos="bottom"
                 data-tooltip-align="left"
                 aria-label="Uygulamayı Cihaza Kur"
-                className="group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto xl:px-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1 text-xs font-extrabold cursor-pointer shrink-0"
+                className="hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto xl:px-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all items-center justify-center gap-1 text-xs font-extrabold cursor-pointer shrink-0"
               >
                 <Download size={14} className="shrink-0" />
                 <span className="hidden xl:inline">Kur</span>
               </button>
             )}
 
-            {/* Masaüstü İkonlu ve Çerçeveli Premium Navigasyon Kutusu (1024px altı tabletlerde MobileNav kullanıldığı için hidden lg:flex ile taşma 0px) */}
+            {/* Masaüstü Navigasyon (lg ve üzeri) */}
             <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 ml-1 bg-slate-200/50 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700/60">
               {navLinks.map((item) => {
                 const isActive =
@@ -459,9 +477,9 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* SAĞ: 3B Dokunsal Global Hızlı Ayar İkonları */}
-          <div className="flex items-center gap-1 xl:gap-1.5 shrink-0">
-            {/* 1. Hareke Aç/Kapa İkonu */}
+          {/* SAĞ: Mobilde Sadece 3 Net Hızlı Buton ([1x] [🌙] [⚙️]), Masaüstünde Tam Araç Çubuğu */}
+          <div className="flex items-center gap-1.5 xl:gap-1.5 shrink-0">
+            {/* 1. Hareke Aç/Kapa İkonu (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={() => {
@@ -471,7 +489,7 @@ export default function Header() {
               data-tooltip="Harekeleri Göster / Gizle (Okuma Zorluk Ayarı)"
               data-tooltip-pos="bottom"
               aria-label="Harekeleri Göster / Gizle"
-              className={`group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 isHarekeOn
                   ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] opacity-75"
@@ -480,8 +498,8 @@ export default function Header() {
               <Sparkles size={14} strokeWidth={2.4} />
             </button>
 
-            {/* 2. Çeviri Görünümü İkonu + Popover Menü */}
-            <div className="relative shrink-0" ref={viewMenuRef}>
+            {/* 2. Çeviri Görünümü İkonu + Popover Menü (Masaüstü/Tablet md+) */}
+            <div className="hidden md:block relative shrink-0" ref={viewMenuRef}>
               <button
                 type="button"
                 onClick={() => {
@@ -501,17 +519,9 @@ export default function Header() {
               </button>
 
               {viewMenuOpen && (
-                <div className="fixed inset-x-3 top-13 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 shadow-2xl z-50 space-y-1">
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 shadow-2xl z-50 space-y-1">
                   <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)] border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
                     <span>Görünüm Modu</span>
-                    <button
-                      type="button"
-                      onClick={() => setViewMenuOpen(false)}
-                      className="sm:hidden text-[var(--muted)] hover:text-[var(--foreground)]"
-                      aria-label="Menüyü Kapat"
-                    >
-                      <X size={13} />
-                    </button>
                   </div>
                   {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map((mode) => {
                     const active = currentViewMode === mode;
@@ -539,7 +549,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* 3. TTS Okuma Hızı */}
+            {/* 3. TTS Okuma Hızı (Mobil + Masaüstü Ortak Hızlı Buton #1) */}
             <button
               type="button"
               onClick={() => {
@@ -549,7 +559,7 @@ export default function Header() {
               data-tooltip="Seslendirme Hızını Değiştir (0.5x – 1.5x)"
               data-tooltip-pos="bottom"
               aria-label="Seslendirme Hızını Değiştir"
-              className="group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto px-1 xl:px-2 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center gap-1 text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="group relative h-9 min-w-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto px-2 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center gap-1 text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               <Gauge
                 size={13}
@@ -560,7 +570,7 @@ export default function Header() {
               </span>
             </button>
 
-            {/* 4. Tema Değiştirici (Sun / Moon) */}
+            {/* 4. Tema Değiştirici (Mobil + Masaüstü Ortak Hızlı Buton #2) */}
             <button
               type="button"
               onClick={() => {
@@ -570,16 +580,182 @@ export default function Header() {
               data-tooltip="Gece / Gündüz Görünüm Modunu Değiştir"
               data-tooltip-pos="bottom"
               aria-label="Gece / Gündüz Görünüm Modunu Değiştir"
-              className="group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="group relative h-9 w-9 sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               {isDark ? (
-                <Sun size={14} strokeWidth={2.4} className="text-amber-400" />
+                <Sun size={15} strokeWidth={2.4} className="text-amber-400" />
               ) : (
-                <Moon size={14} strokeWidth={2.4} className="text-[#6741D9]" />
+                <Moon size={15} strokeWidth={2.4} className="text-[#6741D9]" />
               )}
             </button>
 
-            {/* 5. Ses Efektleri Aç/Kapa */}
+            {/* MOBİL [⚙️ Görünüm & Araçlar] Açılır Menü Butonu (< md için 3. ve son buton) */}
+            <div className="relative md:hidden shrink-0" ref={mobileToolsRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setMobileToolsOpen((prev) => !prev);
+                }}
+                aria-label="Görünüm ve Araçlar Menüsü"
+                className={`h-9 w-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                  mobileToolsOpen
+                    ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
+                    : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                }`}
+              >
+                <SlidersHorizontal size={15} strokeWidth={2.4} />
+              </button>
+
+              {mobileToolsOpen && (
+                <div className="fixed right-2.5 left-2.5 top-13 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 p-3 shadow-2xl z-50 space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-[#E6D7BE]/80 dark:border-slate-800">
+                    <span className="text-xs font-extrabold text-[var(--foreground)]">
+                      Görünüm &amp; Hızlı Araçlar
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMobileToolsOpen(false)}
+                      className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-slate-800 flex items-center justify-center text-[var(--muted)]"
+                      aria-label="Menüyü Kapat"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+
+                  {/* Hızlı Anahtarlar: Hareke & Ses Efektleri */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleHareke();
+                        playClick();
+                      }}
+                      className={`px-2.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer ${
+                        isHarekeOn
+                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles size={13} />
+                        <span>Hareke</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold">
+                        {isHarekeOn ? "Açık" : "Kapalı"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleSfx();
+                        playClick();
+                      }}
+                      className={`px-2.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer ${
+                        mounted && sfxEnabled
+                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {mounted && sfxEnabled ? (
+                          <Volume2 size={13} />
+                        ) : (
+                          <VolumeX size={13} />
+                        )}
+                        <span>Efekt</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold">
+                        {mounted && sfxEnabled ? "Açık" : "Kapalı"}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Çeviri & Metin Görünüm Seçici */}
+                  <div className="space-y-1">
+                    <span className="block px-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                      Çeviri &amp; Metin Görünümü
+                    </span>
+                    <div className="grid grid-cols-1 gap-1">
+                      {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map(
+                        (mode) => {
+                          const active = currentViewMode === mode;
+                          return (
+                            <button
+                              key={mode}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setViewMode(mode);
+                                setMobileToolsOpen(false);
+                              }}
+                              className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between cursor-pointer ${
+                                active
+                                  ? "bg-[#087F5B] text-white"
+                                  : "bg-[#F7EFE1]/80 dark:bg-slate-800/80 text-[var(--foreground)]"
+                              }`}
+                            >
+                              <span>{VIEW_MODE_LABELS[mode]}</span>
+                              {active && <Check size={13} strokeWidth={3} />}
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Mikrofon Testi, Uygulama Rehberi ve Kurulum */}
+                  <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#E6D7BE]/80 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileToolsOpen(false);
+                        handleToggleMicModal();
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-bold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Mic size={13} className="text-[#087F5B]" />
+                      <span>Mikrofon Testi</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setMobileToolsOpen(false);
+                        triggerGuideModal("quickstart");
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/50 border border-[#6741D9]/50 text-xs font-bold text-[#6741D9] dark:text-purple-300 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <HelpCircle size={13} />
+                      <span>Rehber (?)</span>
+                    </button>
+
+                    {mounted && canInstall && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          playClick();
+                          setMobileToolsOpen(false);
+                          if (isInstallable) {
+                            await installApp();
+                          } else if (isIOS) {
+                            setIosInstallOpen(true);
+                          }
+                        }}
+                        className="col-span-2 px-3 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Download size={14} />
+                        <span>Uygulamayı Cihaza Yükle (Kur)</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Ses Efektleri Aç/Kapa (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={() => {
@@ -589,7 +765,7 @@ export default function Header() {
               data-tooltip="Arayüz Ses Efektlerini Aç / Kapat"
               data-tooltip-pos="bottom"
               aria-label="Arayüz Ses Efektlerini Aç / Kapat"
-              className={`group relative hidden sm:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`group relative hidden md:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 mounted && sfxEnabled
                   ? "text-[#065F46] dark:text-emerald-400"
                   : "text-[var(--muted)] opacity-75"
@@ -602,7 +778,7 @@ export default function Header() {
               )}
             </button>
 
-            {/* 6. Mikrofon Testi / Gölgeleme */}
+            {/* 6. Mikrofon Testi (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={handleToggleMicModal}
@@ -610,7 +786,7 @@ export default function Header() {
               data-tooltip-pos="bottom"
               data-tooltip-align="right"
               aria-label="Serbest Telaffuz ve Mahreç Koçu"
-              className={`group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 micModalOpen
                   ? "bg-[#F3F0FF] border-[#6741D9] text-[#6741D9]"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
@@ -619,7 +795,7 @@ export default function Header() {
               <Mic size={14} strokeWidth={2.4} />
             </button>
 
-            {/* 7. Kullanım Kılavuzu & İnfo [❓] */}
+            {/* 7. Kullanım Kılavuzu & İnfo [❓] (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={() => {
@@ -630,12 +806,12 @@ export default function Header() {
               data-tooltip-pos="bottom"
               data-tooltip-align="right"
               aria-label="Uygulama Kullanım Rehberi ve İletişim / Hata Bildirimi"
-              className="group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 flex items-center justify-center text-[#6741D9] dark:text-[#d0bfff] hover:bg-[#e8e2ff] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 items-center justify-center text-[#6741D9] dark:text-[#d0bfff] hover:bg-[#e8e2ff] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               <HelpCircle size={14} strokeWidth={2.4} />
             </button>
 
-            {/* 8. Tam Ekran */}
+            {/* 8. Tam Ekran (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={handleToggleFullscreen}
@@ -643,7 +819,7 @@ export default function Header() {
               data-tooltip-pos="bottom"
               data-tooltip-align="right"
               aria-label="Tam Ekran Moduna Geç / Çık"
-              className="group relative hidden sm:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="group relative hidden md:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               {isFullscreen ? (
                 <Minimize2 size={14} strokeWidth={2.4} />

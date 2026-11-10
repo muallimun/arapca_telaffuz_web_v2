@@ -17,6 +17,12 @@ import {
 import { normalizeArabicForPronunciation } from "@/lib/arabicTextUtils";
 import { HybridSpeechManager, SttEngineType } from "@/lib/speechManager";
 import {
+  detectIsBraveBrowser,
+  isWebSpeechBlocked,
+  registerActiveMediaStream,
+  stopAllActiveMediaStreams,
+} from "@/lib/universalStt";
+import {
   X,
   Square,
   Mic,
@@ -579,6 +585,7 @@ export default function ShadowingModal({
     setIsMicPreparing(true);
 
     // Arka planda çalan diyalog veya TTS sesinin mikrofona karışmaması için anında sustur
+    const wasPlayingAudio = isPlayingRef || isPlayingUser;
     audioStore.stop();
     stopAllAudio();
     if (typeof window !== "undefined") {
@@ -593,10 +600,22 @@ export default function ShadowingModal({
 
     // 2. Önce eski mediaStreamRef / audioContextRef kaynaklarını kapat (sessionId artırmadan!)
     stopPreviousMediaOnly();
+    stopAllActiveMediaStreams();
     setIsMicPreparing(true);
 
     // 3. Sonra yeni oturum numarasını artır (bu satırdan sonra kesinlikle cleanup() çağırma!)
     const sessionId = ++recordingSessionIdRef.current;
+
+    // 400ms Yankı Koruması (Echo Guard): Örnek ses çalıyorduysa hoparlör yankısının sönümlenmesini bekle
+    if (wasPlayingAudio) {
+      await new Promise((r) => setTimeout(r, 400));
+      if (
+        !isMountedRef.current ||
+        sessionId !== recordingSessionIdRef.current
+      ) {
+        return;
+      }
+    }
 
     if (userAudioUrl) URL.revokeObjectURL(userAudioUrl);
     setUserAudioUrl(null);
@@ -669,22 +688,122 @@ export default function ShadowingModal({
         micNoiseSuppression: currentNoiseSuppression,
       } = useSettings.getState();
 
-      const isIPadOS =
-        typeof navigator !== "undefined" &&
-        navigator.platform === "MacIntel" &&
-        navigator.maxTouchPoints > 1;
-      const isMobileUa =
-        typeof navigator !== "undefined" &&
-        (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || isIPadOS);
-
-      // MOBİLDE ⚡ TARAYICI (webspeech) SEÇİLİYKEN getUserMedia İLE EŞZAMANLI MİKROFON AKIŞI AÇMA!
-      // Böylece Android işletim sistemi webkitSpeechRecognition mikrofonunu engellemez.
+      const isBrave = await detectIsBraveBrowser();
       if (
-        isMobileUa &&
+        !isMountedRef.current ||
+        sessionId !== recordingSessionIdRef.current
+      ) {
+        return;
+      }
+
+      const startRecorderFallbackPipeline = async () => {
+        if (
+          !isMountedRef.current ||
+          sessionId !== recordingSessionIdRef.current
+        ) {
+          return;
+        }
+        isMobileWebSpeechOnlyRef.current = false;
+        if (mobileWaveTimerRef.current !== null) {
+          clearInterval(mobileWaveTimerRef.current);
+          mobileWaveTimerRef.current = null;
+        }
+        stopAllActiveMediaStreams();
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: Boolean(currentNoiseSuppression),
+              noiseSuppression: Boolean(currentNoiseSuppression),
+              autoGainControl: true,
+            },
+          });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+
+        if (
+          !isMountedRef.current ||
+          sessionId !== recordingSessionIdRef.current
+        ) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        mediaStreamRef.current = stream;
+        registerActiveMediaStream(stream);
+
+        const targetWords = activeText.trim().split(/\s+/).filter(Boolean);
+        const maxRecordingDurationMs = Math.max(
+          15000,
+          Math.min(45000, targetWords.length * 1800 + 8000)
+        );
+
+        const session = await start16kHzRecorder({
+          stream,
+          silenceDurationMs: 1450,
+          maxDurationMs: maxRecordingDurationMs,
+          micNoiseSuppression: currentNoiseSuppression,
+          onFirstAudioFrame: () => {
+            activateMicListeningState();
+          },
+          onLiveRms: (_rms, liveHistory) => {
+            activateMicListeningState();
+            if (rafIdRef.current !== null) {
+              cancelAnimationFrame(rafIdRef.current);
+            }
+            rafIdRef.current = requestAnimationFrame(() => {
+              const padded = [
+                ...Array(Math.max(0, 48 - liveHistory.length)).fill(0.06),
+                ...liveHistory.slice(-48),
+              ];
+              setUserBars(padded);
+              rafIdRef.current = null;
+            });
+          },
+          onAutoSilenceStop: () => {
+            void stopRecording();
+          },
+        });
+
+        if (
+          !isMountedRef.current ||
+          sessionId !== recordingSessionIdRef.current
+        ) {
+          try {
+            session
+              .getStream()
+              ?.getTracks()
+              .forEach((track) => track.stop());
+            session.killStreamImmediately();
+          } catch {
+            // ignore
+          }
+          return;
+        }
+
+        recordingSessionRef.current = session;
+        mediaStreamRef.current = session.getStream();
+        const audioCtx = session.getAudioContext();
+        audioContextRef.current = audioCtx;
+        const actualSampleRate = audioCtx.sampleRate || 48000;
+        recordingSampleRateRef.current = actualSampleRate;
+
+        setTimeout(() => {
+          activateMicListeningState();
+        }, 250);
+      };
+
+      // KATMAN 1: ⚡ TARAYICI (webspeech) seçiliyse, Brave değilse ve engellenmemişse
+      // HEM MASAÜSTÜNDE HEM MOBİLDE getUserMedia AÇMADAN çakışmasız doğrudan SpeechRecognition çalıştır!
+      if (
         currentEngine === "webspeech" &&
         !currentLocalOnly &&
+        !isBrave &&
+        !isWebSpeechBlocked() &&
         speechManagerRef.current?.isWebSpeechSupported()
       ) {
+        stopAllActiveMediaStreams();
         isMobileWebSpeechOnlyRef.current = true;
         let lastTranscriptText = "";
         let stepTick = 0;
@@ -700,6 +819,10 @@ export default function ShadowingModal({
               level
             );
             lastMobileVoiceTimeRef.current = Date.now();
+          },
+          onBlockedError: () => {
+            // SpeechRecognition ağ/mikrofon engeline takılırsa anında Katman 2/3 (MediaRecorder + /api/stt + Whisper) başlat!
+            void startRecorderFallbackPipeline().catch(() => {});
           },
           onAutoStop: () => {
             if (
@@ -744,7 +867,8 @@ export default function ShadowingModal({
         mobileWaveTimerRef.current = setInterval(() => {
           if (
             !isMountedRef.current ||
-            sessionId !== recordingSessionIdRef.current
+            sessionId !== recordingSessionIdRef.current ||
+            !isMobileWebSpeechOnlyRef.current
           ) {
             return;
           }
@@ -755,9 +879,6 @@ export default function ShadowingModal({
             .split(/\s+/)
             .filter((w) => /[\u0600-\u06FF]/.test(w)).length;
 
-          // Akıllı VAD Otomatik Durdurma (Mobil Web Speech):
-          // En az 2 Arapça kelime algılandıysa, toplam kayıt >= 1.3s ise ve son kelimeden bu yana
-          // 1450ms (1.45s) sessizlik geçtiyse kaydı otomatik tamamla!
           if (
             micActivated &&
             spokenWordsCount >= 2 &&
@@ -768,7 +889,6 @@ export default function ShadowingModal({
             return;
           }
 
-          // Canlı konuşma enerjisine göre dinamik çubuk hareketi (kullanıcı konuşurken belirgin yükselir, susunca yumuşak iner)
           const activeEnergy = mobileSpeechEnergyRef.current;
           mobileSpeechEnergyRef.current = Math.max(0, activeEnergy * 0.72);
 
@@ -799,122 +919,8 @@ export default function ShadowingModal({
         return;
       }
 
-      // 4. Masaüstünde veya 🤖 Whisper modunda mikrofon iznini geri dönüşlü (fallback) yapıyla iste
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: Boolean(currentNoiseSuppression),
-            noiseSuppression: Boolean(currentNoiseSuppression),
-            autoGainControl: true,
-          },
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
-
-      if (
-        !isMountedRef.current ||
-        sessionId !== recordingSessionIdRef.current
-      ) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-
-      mediaStreamRef.current = stream;
-
-      // Kelime sayısına göre dinamik maksimum kayıt süresi (15 sn - 45 sn arası) ve 1450ms akıllı sessizlik toleransı
-      const targetWords = activeText.trim().split(/\s+/).filter(Boolean);
-      const maxRecordingDurationMs = Math.max(
-        15000,
-        Math.min(45000, targetWords.length * 1800 + 8000)
-      );
-
-      const session = await start16kHzRecorder({
-        stream,
-        silenceDurationMs: 1450,
-        maxDurationMs: maxRecordingDurationMs,
-        micNoiseSuppression: currentNoiseSuppression,
-        onFirstAudioFrame: () => {
-          activateMicListeningState();
-        },
-        onLiveRms: (_rms, liveHistory) => {
-          activateMicListeningState();
-          if (rafIdRef.current !== null) {
-            cancelAnimationFrame(rafIdRef.current);
-          }
-          rafIdRef.current = requestAnimationFrame(() => {
-            const padded = [
-              ...Array(Math.max(0, 48 - liveHistory.length)).fill(0.06),
-              ...liveHistory.slice(-48),
-            ];
-            setUserBars(padded);
-            rafIdRef.current = null;
-          });
-        },
-        onAutoSilenceStop: () => {
-          void stopRecording();
-        },
-      });
-
-      if (
-        !isMountedRef.current ||
-        sessionId !== recordingSessionIdRef.current
-      ) {
-        try {
-          session
-            .getStream()
-            ?.getTracks()
-            .forEach((track) => track.stop());
-          session.killStreamImmediately();
-        } catch {
-          // ignore
-        }
-        return;
-      }
-
-      recordingSessionRef.current = session;
-      mediaStreamRef.current = session.getStream();
-      const audioCtx = session.getAudioContext();
-      audioContextRef.current = audioCtx;
-      const actualSampleRate = audioCtx.sampleRate || 48000;
-      recordingSampleRateRef.current = actualSampleRate;
-      // Eğer ScriptProcessor ilk çerçeveyi 250ms içinde tetiklemezse yedek olarak mikrofonu hazır işaretle
-      setTimeout(() => {
-        activateMicListeningState();
-      }, 250);
-
-      // Kullanıcı "Yalnızca Cihazda İşle" kilidini açmadıysa (localSttOnly === false) veya "Hızlı Tarayıcı Motoru" seçiliyse
-      // canlı Web Speech tanımayı arka planda yedek/aktif olarak başlat
-      const shouldUseWebSpeech = !currentLocalOnly;
-      if (shouldUseWebSpeech) {
-        try {
-          speechManagerRef.current?.startLiveWebSpeech({
-            onInterimTranscript: (combined, finalPart, interimPart) => {
-              if (typeof finalPart === "string" && finalPart.trim()) {
-                finalTranscriptRef.current = finalPart.trim();
-              }
-              if (typeof interimPart === "string") {
-                interimTranscriptRef.current = interimPart.trim();
-              } else if (combined && !finalTranscriptRef.current) {
-                interimTranscriptRef.current = combined.trim();
-              }
-              const latestBackup =
-                (
-                  finalTranscriptRef.current +
-                  " " +
-                  interimTranscriptRef.current
-                ).trim() || combined.trim();
-              if (latestBackup) {
-                liveTranscriptRef.current = latestBackup;
-                backupBrowserTranscriptRef.current = latestBackup;
-              }
-              setLiveInterimText(combined);
-            },
-          });
-        } catch {
-          // Hata verirse mikrofon kaydını durdurma, kayıt bitince Whisper'a düş
-        }
-      }
+      // KATMAN 2 & 3: Brave, Firefox, Whisper Modu veya Çevrimdışı Modda çakışmasız getUserMedia + 16kHz Kaydedici
+      await startRecorderFallbackPipeline();
 
       setTimeout(() => {
         waveformCardRef.current?.scrollIntoView({
@@ -923,9 +929,10 @@ export default function ShadowingModal({
         });
       }, 120);
     } catch (err) {
-      if (stream) {
+      const activeStream = (stream ?? mediaStreamRef.current) as MediaStream | null;
+      if (activeStream) {
         try {
-          stream.getTracks().forEach((t) => t.stop());
+          activeStream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
         } catch {
           // ignore
         }

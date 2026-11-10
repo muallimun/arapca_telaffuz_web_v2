@@ -32,6 +32,7 @@ import {
   Check,
   Gamepad2,
   GraduationCap,
+  Columns2,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -2273,11 +2274,12 @@ export default function LibraryPage() {
               <button
                 type="button"
                 onClick={() => handleSwitchSection("vitrin")}
-                className="h-9 sm:h-10 px-3 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0 cursor-pointer"
+                className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-1 sm:gap-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0 cursor-pointer"
                 title="Kütüphane Vitrinine Dön"
               >
                 <ChevronLeft size={17} strokeWidth={2.5} />
-                <span>Kütüphane Vitrini</span>
+                <span className="sm:hidden">Vitrin</span>
+                <span className="hidden sm:inline">Kütüphane Vitrini</span>
               </button>
             ) : (
               <Link
@@ -2338,8 +2340,8 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {/* V2 Modül Sekmeleri (Yatay Kaydırmasız Esnek Sarımlı Tek Bar) */}
-        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center gap-1.5 max-w-full">
+        {/* Modül Sekmeleri (Mobilde Tek Satır Yatay Kaydırılabilir Hap Şeridi, Masaüstünde Esnek Sarımlı) */}
+        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 max-w-full">
           {(
             [
               {
@@ -3128,19 +3130,7 @@ export default function LibraryPage() {
                   setSearch(e.target.value);
                   setVisibleCount(36);
                 }}
-                placeholder={
-                  activeSection === "dialogues"
-                    ? `${contentStats.dialogueCount} diyalog içinde başlık, gramer konusu veya Arapça ifade ara...`
-                    : activeSection === "metinler"
-                    ? `${contentStats.readingCount} okuma metni içinde başlık, tema, gramer veya Arapça ara...`
-                    : activeSection === "cumleler"
-                    ? `${contentStats.sentenceCount} cümle içinde Türkçe, Arapça veya tema ara...`
-                    : activeSection === "atasozleri"
-                    ? `${contentStats.proverbCount} atasözü içinde Türkçe anlam, lafzî çeviri veya Arapça ara...`
-                    : activeSection === "gramer"
-                    ? `Gramer Atlasında konu başlığı (Mübteda, Haber, الفاعل, المضاف إليه, إنّ, كان) veya kural ara...`
-                    : `${contentStats.visualWordCount} görsel kelime içinde Türkçe, Arapça veya kategori ara...`
-                }
+                placeholder="Başlık, kelime veya konu ara..."
                 className="w-full h-9 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] rounded-xl pl-8 pr-8 text-xs font-semibold text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[#087F5B]"
               />
               {search && (
@@ -3200,7 +3190,7 @@ export default function LibraryPage() {
 
           {/* Alt Durum veya Tema/Kategori Filtre Şeridi */}
           {(activeSection === "dialogues" || activeSection === "metinler") && (
-            <div className="flex overflow-x-auto no-scrollbar items-center gap-1.5 py-0.5">
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
               {(
                 [
                   {
@@ -3249,7 +3239,7 @@ export default function LibraryPage() {
 
           {/* Gramer Atlası Kaynak Filtresi (Tümü, Diyalog Grameri, Metin Grameri, Cümle Kalıpları) */}
           {activeSection === "gramer" && (
-            <div className="flex overflow-x-auto no-scrollbar items-center gap-1.5 py-0.5">
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
               {(
                 [
                   {
@@ -3658,11 +3648,11 @@ export default function LibraryPage() {
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
-                          <span className="bg-white/95 text-[#2b241d] font-extrabold text-[10px] px-2 py-0.5 rounded-md border border-[#E6D7BE] tabular-nums shadow-2xs">
+                        <div className="absolute top-1 left-1 flex items-center gap-0.5">
+                          <span className="bg-white/95 text-[#2b241d] font-extrabold text-[9px] px-1.5 py-0.5 rounded-md border border-[#E6D7BE] tabular-nums shadow-2xs leading-none">
                             #{dlgNo}
                           </span>
-                          <span className="bg-[#087F5B] text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded-md shadow-2xs">
+                          <span className="bg-[#087F5B] text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded-md shadow-2xs leading-none">
                             {dlg.seviye}
                           </span>
                         </div>
@@ -3705,7 +3695,7 @@ export default function LibraryPage() {
                             }}
                             title="Bu gramer kuralını ve örneklerini bağımsız pencerede açmak için tıklayın"
                             dir="ltr"
-                            className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 dark:border-amber-700 rounded-lg px-2 py-0.5 truncate cursor-pointer transition-colors"
+                            className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 dark:border-amber-700 rounded-lg px-2 py-1 line-clamp-2 leading-snug cursor-pointer transition-colors"
                           >
                             <span className="mr-1">📌</span>
                             <MixedText text={dlg.odak_gramer} />
@@ -3881,11 +3871,11 @@ export default function LibraryPage() {
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
-                          <span className="bg-white/95 text-[#2b241d] font-extrabold text-[10px] px-2 py-0.5 rounded-md border border-[#E6D7BE] tabular-nums shadow-2xs">
+                        <div className="absolute top-1 left-1 flex items-center gap-0.5">
+                          <span className="bg-white/95 text-[#2b241d] font-extrabold text-[9px] px-1.5 py-0.5 rounded-md border border-[#E6D7BE] tabular-nums shadow-2xs leading-none">
                             #{txtNo}
                           </span>
-                          <span className="bg-[#6741D9] text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded-md shadow-2xs">
+                          <span className="bg-[#6741D9] text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded-md shadow-2xs leading-none">
                             {txt.seviye}
                           </span>
                         </div>
@@ -3928,7 +3918,7 @@ export default function LibraryPage() {
                             }}
                             title="Bu okuma metninin gramer kuralını bağımsız pencerede açmak için tıklayın"
                             dir="ltr"
-                            className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 rounded-lg px-2 py-0.5 truncate cursor-pointer transition-colors"
+                            className="w-full text-left text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/70 border border-amber-300 hover:border-amber-500 rounded-lg px-2 py-1 line-clamp-2 leading-snug cursor-pointer transition-colors"
                           >
                             <span className="mr-1">📌</span>
                             <MixedText text={txt.odak_gramer} />
@@ -5433,8 +5423,10 @@ export default function LibraryPage() {
             <span>
               Toplam <strong>{filteredGrammarAtlasItems.length}</strong> gramer kuralı ve kalıp listeleniyor
             </span>
-            <span className="text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400">
-              💡 Kartlardaki &ldquo;🗔 Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı yan panelde veya akıllı tahta modunda inceleyebilirsiniz.
+            <span className="text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 inline-flex items-center gap-1 flex-wrap">
+              <span>💡 Kartlardaki</span>
+              <Columns2 size={13} className="inline shrink-0" />
+              <span>&ldquo;Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı yan panelde veya akıllı tahta modunda inceleyebilirsiniz.</span>
             </span>
           </div>
 
@@ -5553,7 +5545,8 @@ export default function LibraryPage() {
                         }}
                         className="flex-1 min-w-[140px] py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                       >
-                        <span>🗔 Notu &amp; Tabloyu Aç</span>
+                        <Columns2 size={14} className="shrink-0" />
+                        <span>Notu &amp; Tabloyu Aç</span>
                       </button>
 
                       {gItem.linkedLessonUrl ? (

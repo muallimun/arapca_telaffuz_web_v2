@@ -15,7 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { sozluk, diyaloglar, getDynamicContentStats } from "@/lib/data";
+import { sozluk, diyaloglar } from "@/lib/data";
 import { DictionaryItem } from "@/types/data";
 import {
   getDialogueVocabulary,
@@ -668,7 +668,7 @@ export default function DictionaryPage() {
               İnteraktif Arapça Sözlük
             </h1>
             <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)] truncate">
-              {getDynamicContentStats().dictionaryWordCount.toLocaleString("tr-TR")} Kelime • Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
+              {totalAllItemsCount.toLocaleString("tr-TR")} Kelime &amp; İfade • Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
             </p>
           </div>
         </div>
@@ -723,7 +723,7 @@ export default function DictionaryPage() {
             />
             <input
               type="text"
-              placeholder="Arapça, Türkçe anlam veya kök ara (ör: أستودعك)..."
+              placeholder="Arapça, Türkçe veya kök ara..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -831,8 +831,8 @@ export default function DictionaryPage() {
           </div>
         </div>
 
-        {/* 4. Mobil Uyumlu Kategori ve Hızlı Filtre Sekmeleri (Taşmasız Esnek Haplar) */}
-        <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center py-0.5">
+        {/* 4. Mobil Uyumlu Kategori ve Hızlı Filtre Sekmeleri (Mobilde Tek Satır Yatay Kaydırılabilir, Masaüstünde Esnek Haplar) */}
+        <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1">
           {(
             [
               {

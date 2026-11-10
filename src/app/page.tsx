@@ -198,7 +198,7 @@ export default function HomePage() {
     () => [
       {
         id: "kutuphane",
-        title: "Eğitim Kütüphanesi (V2)",
+        title: "Eğitim Kütüphanesi",
         arabicBadge: "المَكْتَبَة",
         subtitle: `${contentStats.dialogueCount} Diyalog, ${contentStats.readingCount} Metin, ${contentStats.sentenceCount} Cümle, ${contentStats.proverbCount} Atasözü ve ${contentStats.visualWordCount} Görsel Kelime`,
         meta: `${contentStats.dialogueCount} Diyalog · ${contentStats.readingCount} Metin`,

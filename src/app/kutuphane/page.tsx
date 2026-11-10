@@ -2291,7 +2291,7 @@ export default function LibraryPage() {
             )}
             <div>
               <h1 className="text-lg sm:text-2xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight">
-                Eğitim Kütüphanesi (V2)
+                Eğitim Kütüphanesi
               </h1>
               <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)]">
                 {contentStats.dialogueCount} diyalog, {contentStats.readingCount}{" "}
@@ -2498,13 +2498,20 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
-                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
-                  Diyalogları Keşfet →
-                </span>
-                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={14} />
-                </span>
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSwitchSection("dialogues");
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm flex items-center justify-between transition-all duration-200 shadow-2xs group-hover:shadow-md cursor-pointer"
+                >
+                  <span>💬 Diyalogları Keşfet</span>
+                  <span className="bg-white/20 p-1 rounded-lg flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={15} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2598,13 +2605,20 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
-                <span className="text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] group-hover:underline">
-                  Metinleri Oku & Dinle →
-                </span>
-                <span className="w-7 h-7 rounded-lg bg-[#6741D9] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={14} />
-                </span>
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSwitchSection("metinler");
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-between transition-all duration-200 shadow-2xs group-hover:shadow-md cursor-pointer"
+                >
+                  <span>📖 Metinleri Oku &amp; Dinle</span>
+                  <span className="bg-white/20 p-1 rounded-lg flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={15} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2677,7 +2691,8 @@ export default function LibraryPage() {
                     </span>
                     <span
                       dir="rtl"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 shrink-0"
+                      lang="ar"
+                      className="arabic font-arabic text-2xl font-bold text-emerald-950 dark:text-emerald-300 shrink-0 leading-none"
                     >
                       {getDisplayArabic(gorselKelimeler[0].arapca)}
                     </span>
@@ -2685,13 +2700,20 @@ export default function LibraryPage() {
                 )}
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
-                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
-                  Görsel Kelimelere Git →
-                </span>
-                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={14} />
-                </span>
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSwitchSection("gorsel-kelimeler");
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm flex items-center justify-between transition-all duration-200 shadow-2xs group-hover:shadow-md cursor-pointer"
+                >
+                  <span>🖼️ Görsel Kelimelere Git</span>
+                  <span className="bg-white/20 p-1 rounded-lg flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={15} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2770,13 +2792,20 @@ export default function LibraryPage() {
                 )}
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
-                <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 group-hover:underline">
-                  Cümle Kalıplarını İncele →
-                </span>
-                <span className="w-7 h-7 rounded-lg bg-[#087F5B] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={14} />
-                </span>
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSwitchSection("cumleler");
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#166534] hover:bg-[#14532d] text-white font-bold text-sm flex items-center justify-between transition-all duration-200 shadow-2xs group-hover:shadow-md cursor-pointer"
+                >
+                  <span>🗣️ Cümle Kalıplarını İncele</span>
+                  <span className="bg-white/20 p-1 rounded-lg flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={15} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2857,13 +2886,20 @@ export default function LibraryPage() {
                 )}
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between">
-                <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 group-hover:underline">
-                  Atasözlerini Keşfet →
-                </span>
-                <span className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight size={14} />
-                </span>
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSwitchSection("atasozleri");
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm flex items-center justify-between transition-all duration-200 shadow-2xs group-hover:shadow-md cursor-pointer"
+                >
+                  <span>📜 Atasözlerini Keşfet</span>
+                  <span className="bg-white/20 p-1 rounded-lg flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={15} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2940,20 +2976,20 @@ export default function LibraryPage() {
                 </button>
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2 text-[11px] font-extrabold">
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] grid grid-cols-2 gap-2.5 w-full">
                 <button
                   type="button"
                   onClick={() => handleSwitchSection("saved-words")}
-                  className="text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                  className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-950/50 dark:hover:bg-rose-600 text-rose-700 dark:text-rose-200 hover:text-white border border-rose-200 dark:border-rose-800 hover:border-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                 >
-                  ❤️ Defterimi Aç →
+                  <span>❤️ Defterimi Aç →</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSwitchSection("weak-words")}
-                  className="text-[#6741D9] dark:text-[#d0bfff] hover:underline cursor-pointer"
+                  className="py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-600 dark:bg-purple-950/50 dark:hover:bg-purple-600 text-purple-700 dark:text-purple-200 hover:text-white border border-purple-200 dark:border-purple-800 hover:border-purple-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                 >
-                  🎯 Mahreç Listesi →
+                  <span>🎯 Mahreç Rehberi →</span>
                 </button>
               </div>
             </div>

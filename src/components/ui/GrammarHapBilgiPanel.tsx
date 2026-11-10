@@ -44,6 +44,8 @@ import {
 } from "@/lib/audio";
 import { useSettings } from "@/store/settings";
 import { cleanArabicText } from "@/lib/dict";
+import { formatTurkishCategory } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import WordTooltip from "@/components/ui/WordTooltip";
 import { playClick } from "@/lib/sfxManager";
 
@@ -1654,12 +1656,22 @@ export function GrammarHapBilgiPanel({
                   className="bg-white/95 dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 flex flex-col justify-between gap-2.5 hover:border-[#087F5B] transition-colors"
                 >
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 text-[10px] font-black truncate max-w-[210px]">
-                        📌 {sent.odak_kalip}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] text-[10px] font-black text-[var(--muted)]">
-                        {sent.seviye || sent.cefr || "A1"} • {sent.tema}
+                    <div className="flex flex-wrap items-start justify-between gap-1.5">
+                      {sent.odak_kalip && (
+                        <span
+                          dir="ltr"
+                          lang="tr"
+                          className="px-2 py-0.5 rounded-md bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300/70 dark:border-amber-700/70 text-amber-900 dark:text-amber-200 text-[11px] font-extrabold leading-snug break-words text-left"
+                        >
+                          <span className="mr-1">📌</span>
+                          <MixedText text={sent.odak_kalip} />
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE]/80 dark:border-[var(--border)] text-[10px] font-black text-[var(--muted)] whitespace-nowrap shrink-0">
+                        {sent.seviye || sent.cefr || "A1"}
+                        {sent.tema
+                          ? ` • ${formatTurkishCategory(sent.tema)}`
+                          : ""}
                       </span>
                     </div>
                     <div
@@ -1687,7 +1699,7 @@ export function GrammarHapBilgiPanel({
 
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)]">
                     <span className="text-[10px] font-bold text-[var(--muted)] truncate">
-                      {sent.baglam || ""}
+                      {sent.baglam ? formatTurkishCategory(sent.baglam) : ""}
                     </span>
                     <button
                       type="button"
@@ -1726,23 +1738,26 @@ export function GrammarHapBilgiPanel({
       )}
 
       {/* 6. ALT HIZLI EYLEM ÇUBUĞU: BU GRAMER KALIBIYLA ALIŞTIRMA YAP & İLGİLİ DERSE GİT */}
-      <div className="bg-gradient-to-r from-emerald-950 via-[#065F46] to-teal-950 text-white rounded-2xl sm:rounded-3xl border-2 border-emerald-500/50 border-b-4 p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="space-y-0.5">
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block">
-            Pedagojik Pekiştirme Adımı
-          </span>
-          <p className="text-xs sm:text-sm font-extrabold text-white">
-            Bu gramer kuralını interaktif cümle ve kelime alıştırmalarıyla hemen test edin:
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+      <div className="bg-gradient-to-r from-emerald-950 via-[#065F46] to-teal-950 text-white rounded-2xl border-2 border-emerald-500/50 border-b-4 p-4 shadow-md flex flex-col gap-3">
+        <p className="text-xs sm:text-sm font-bold text-emerald-50 leading-relaxed">
+          <strong className="text-emerald-300 font-black">
+            💡 PEDAGOJİK PEKİŞTİRME:
+          </strong>{" "}
+          Bu gramer kuralını interaktif alıştırmalarla hemen test edin.
+        </p>
+        <div
+          className={
+            linkedLessonUrl
+              ? "flex flex-wrap sm:grid sm:grid-cols-2 gap-2.5 w-full"
+              : "flex flex-wrap gap-2.5 w-full"
+          }
+        >
           {linkedLessonUrl && (
             <Link
               href={linkedLessonUrl}
-              className="px-3.5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 font-black text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all"
             >
-              <BookOpen className="w-3.5 h-3.5 shrink-0" />
-              <span>İlgili Derse Git</span>
+              <span>📖 İlgili Derse Git</span>
             </Link>
           )}
           <Link
@@ -1751,10 +1766,9 @@ export function GrammarHapBilgiPanel({
                 ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
                 : ""
             }`}
-            className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 font-black text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm transition-all"
           >
-            <Gamepad2 className="w-4 h-4 shrink-0" />
-            <span>Bu Gramer Kalıbıyla Alıştırma Yap</span>
+            <span>🎮 Bu Kalıpla Alıştırma Yap</span>
           </Link>
         </div>
       </div>

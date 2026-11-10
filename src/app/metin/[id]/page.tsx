@@ -1963,7 +1963,7 @@ export default function ReadingTextDetailPage({
                 </button>
               )}
 
-              {/* 5b. Grameri Ayrı Pencerede Aç (Metinle Yan Yana) Butonu */}
+              {/* 5b. Yan Yana Gramer Butonu */}
               {grammarNote && (
                 <button
                   type="button"
@@ -1974,13 +1974,11 @@ export default function ReadingTextDetailPage({
                     }
                     setIsGrammarQuickModalOpen(true);
                   }}
-                  data-tooltip="Grameri Ayrı Pencerede Aç (Metni okurken sağ yan panelde gramer notunu inceleyin)"
-                  title="Grameri Ayrı Pencerede Aç (Metinle Yan Yana)"
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+                  data-tooltip="Gramer notunu metinle yan yana ayrı pencerede aç"
+                  title="Gramer notunu metinle yan yana ayrı pencerede aç"
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center gap-1 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0"
                 >
-                  <span>🗔</span>
-                  <span className="hidden lg:inline">Grameri Ayrı Pencerede Aç (Metinle Yan Yana)</span>
-                  <span className="lg:hidden">📌 Yan Pencere</span>
+                  <span>🗔 Yan Yana Gramer</span>
                 </button>
               )}
 
@@ -2692,9 +2690,10 @@ export default function ReadingTextDetailPage({
                 setStudyMode("listen");
                 setIsGrammarQuickModalOpen(true);
               }}
-              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] cursor-pointer transition-all"
+              title="Gramer notunu metinle yan yana ayrı pencerede aç"
+              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] whitespace-nowrap cursor-pointer transition-all"
             >
-              🗔 Grameri Ayrı Pencerede Aç (Metinle Yan Yana)
+              🗔 Yan Yana Gramer
             </button>
           </div>
           <GrammarHapBilgiPanel

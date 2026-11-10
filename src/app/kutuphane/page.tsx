@@ -2978,18 +2978,18 @@ export default function LibraryPage() {
                 </button>
               </div>
 
-              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] grid grid-cols-2 gap-2.5 w-full">
+              <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] grid grid-cols-2 gap-2 w-full">
                 <button
                   type="button"
                   onClick={() => handleSwitchSection("saved-words")}
-                  className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-950/50 dark:hover:bg-rose-600 text-rose-700 dark:text-rose-200 hover:text-white border border-rose-200 dark:border-rose-800 hover:border-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                  className="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border-b-3 border-rose-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer whitespace-nowrap"
                 >
                   <span>❤️ Defterimi Aç →</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSwitchSection("weak-words")}
-                  className="py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-600 dark:bg-purple-950/50 dark:hover:bg-purple-600 text-purple-700 dark:text-purple-200 hover:text-white border border-purple-200 dark:border-purple-800 hover:border-purple-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#5230B5] font-bold text-xs sm:text-sm flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer whitespace-nowrap"
                 >
                   <span>🎯 Mahreç Rehberi →</span>
                 </button>
@@ -3048,16 +3048,21 @@ export default function LibraryPage() {
                     {contentStats.sentenceCount} Kalıp Cümle Eşleşmesi
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white">
-                    Yan Panel &amp; Akıllı Tahta Uyumlu
+                    <span className="hidden lg:inline">
+                      Yan Panel &amp; Akıllı Tahta Uyumlu
+                    </span>
+                    <span className="lg:hidden">
+                      Görsel Şema &amp; İ&apos;rab Çözümlemeli
+                    </span>
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
-              <span className="px-3.5 py-2 rounded-xl bg-[#087F5B] group-hover:bg-[#065F46] text-white text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-colors">
-                <span>Gramer Atlasını Aç</span>
-                <ArrowRight size={14} />
+            <div className="w-full lg:w-auto flex items-center gap-2 lg:self-center shrink-0">
+              <span className="w-full lg:w-auto py-2.5 px-4 rounded-xl bg-[#087F5B] group-hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs sm:text-sm font-black inline-flex items-center justify-between lg:justify-center gap-1.5 shadow-xs transition-colors">
+                <span>📌 Gramer Atlasını Aç</span>
+                <ArrowRight size={15} className="shrink-0" />
               </span>
             </div>
           </div>
@@ -3432,8 +3437,8 @@ export default function LibraryPage() {
                   {activeSection === "gorsel-kelimeler" &&
                     categoryFilter !== "all" &&
                     availableVisualSubSets.sets.length > 1 && (
-                      <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)]">
-                        <span className="text-[11px] font-extrabold text-[var(--muted)] mr-1">
+                      <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap items-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)]">
+                        <span className="text-[11px] font-extrabold text-[var(--muted)] mr-1 shrink-0">
                           Alt Set (9’lu Grup):
                         </span>
                         <button
@@ -3444,7 +3449,7 @@ export default function LibraryPage() {
                             setSelectedCardIndex(null);
                             setVisibleCount(36);
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                          className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                             visualSubSetFilter === "all"
                               ? "bg-[#087F5B] text-white shadow-2xs"
                               : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] hover:border-[#087F5B] border border-[#E6D7BE]"
@@ -3464,7 +3469,7 @@ export default function LibraryPage() {
                                 setSelectedCardIndex(null);
                                 setVisibleCount(36);
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
+                              className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
                                 active
                                   ? "bg-[#087F5B] text-white shadow-2xs"
                                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] hover:border-[#087F5B] border border-[#E6D7BE]"
@@ -3544,9 +3549,9 @@ export default function LibraryPage() {
             })()}
 
           {mobileFiltersOpen && (
-            <div className="sm:hidden pt-1.5 border-t border-dashed border-[#E2D3B8] flex flex-wrap items-center justify-between gap-1.5">
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="text-[11px] font-extrabold text-[var(--muted)] mr-1">
+            <div className="sm:hidden pt-1.5 border-t border-dashed border-[#E2D3B8] flex items-center justify-between gap-2">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1 py-0.5 min-w-0 flex-1">
+                <span className="text-[11px] font-extrabold text-[var(--muted)] mr-1 shrink-0">
                   Seviye:
                 </span>
                 {(["all", "A1", "A2", "B1", "B2"] as (Level | "all")[]).map(
@@ -3560,7 +3565,7 @@ export default function LibraryPage() {
                           playClick();
                           setLevelFilter(lvl);
                         }}
-                        className={`px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer ${
+                        className={`shrink-0 px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer ${
                           active
                             ? "bg-[#6741D9] border-[#5230B5] text-white font-bold"
                             : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] font-semibold"
@@ -5423,10 +5428,13 @@ export default function LibraryPage() {
             <span>
               Toplam <strong>{filteredGrammarAtlasItems.length}</strong> gramer kuralı ve kalıp listeleniyor
             </span>
-            <span className="text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 inline-flex items-center gap-1 flex-wrap">
+            <span className="hidden lg:inline-flex text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 items-center gap-1 flex-wrap">
               <span>💡 Kartlardaki</span>
               <Columns2 size={13} className="inline shrink-0" />
               <span>&ldquo;Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı yan panelde veya akıllı tahta modunda inceleyebilirsiniz.</span>
+            </span>
+            <span className="lg:hidden text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400">
+              💡 &ldquo;Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı tam ekran inceleyebilirsiniz.
             </span>
           </div>
 
@@ -5545,7 +5553,8 @@ export default function LibraryPage() {
                         }}
                         className="flex-1 min-w-[140px] py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                       >
-                        <Columns2 size={14} className="shrink-0" />
+                        <BookOpen size={14} className="lg:hidden shrink-0" />
+                        <Columns2 size={14} className="hidden lg:inline shrink-0" />
                         <span>Notu &amp; Tabloyu Aç</span>
                       </button>
 

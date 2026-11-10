@@ -668,7 +668,7 @@ export default function DictionaryPage() {
               İnteraktif Arapça Sözlük
             </h1>
             <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)] truncate">
-              {totalAllItemsCount.toLocaleString("tr-TR")} Kelime &amp; İfade • Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
+              {basePool.length.toLocaleString("tr-TR")} Kelime &amp; İfade • Fiil / İsim / Edat renk kodlamalı morfolojik kök sözlüğü
             </p>
           </div>
         </div>
@@ -707,7 +707,8 @@ export default function DictionaryPage() {
           </div>
 
           <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-extrabold text-[var(--foreground)] tabular-nums shrink-0">
-            {filteredWords.length} / {basePool.length}
+            {filteredWords.length.toLocaleString("tr-TR")} /{" "}
+            {basePool.length.toLocaleString("tr-TR")}
           </div>
         </div>
       </div>
@@ -939,7 +940,7 @@ export default function DictionaryPage() {
               </select>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
               {(
                 [
                   { id: "all", label: "Tümü" },

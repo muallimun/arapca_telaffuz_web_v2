@@ -31,7 +31,6 @@ import {
   BookOpen,
   Gamepad2,
   BookMarked,
-  SlidersHorizontal,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode } from "@/store/settings";
@@ -589,7 +588,7 @@ export default function Header() {
               )}
             </button>
 
-            {/* MOBİL [⚙️ Görünüm & Araçlar] Açılır Menü Butonu (< md için 3. ve son buton) */}
+            {/* MOBİL [⚙️ Araçlar] Açılır Menü Butonu (< md için 3. ve son buton) */}
             <div className="relative md:hidden shrink-0" ref={mobileToolsRef}>
               <button
                 type="button"
@@ -598,13 +597,16 @@ export default function Header() {
                   setMobileToolsOpen((prev) => !prev);
                 }}
                 aria-label="Görünüm ve Araçlar Menüsü"
-                className={`h-9 w-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                className={`h-9 px-2.5 rounded-xl border flex items-center justify-center gap-1 transition-all cursor-pointer ${
                   mobileToolsOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
                 }`}
               >
-                <SlidersHorizontal size={15} strokeWidth={2.4} />
+                <Settings size={14} strokeWidth={2.4} className="shrink-0" />
+                <span className="hidden min-[360px]:inline text-[11px] font-extrabold">
+                  Araçlar
+                </span>
               </button>
 
               {mobileToolsOpen && (
@@ -616,29 +618,29 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => setMobileToolsOpen(false)}
-                      className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-slate-800 flex items-center justify-center text-[var(--muted)]"
+                      className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-slate-800 flex items-center justify-center text-[var(--muted)] cursor-pointer"
                       aria-label="Menüyü Kapat"
                     >
                       <X size={13} />
                     </button>
                   </div>
 
-                  {/* Hızlı Anahtarlar: Hareke & Ses Efektleri */}
-                  <div className="grid grid-cols-2 gap-1.5">
+                  {/* Hızlı Anahtarlar: Hareke, Çeviri & Ses Efektleri */}
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
                         toggleHareke();
                         playClick();
                       }}
-                      className={`px-2.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer ${
+                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                         isHarekeOn
                           ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
                           : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
                       }`}
                     >
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles size={13} />
+                      <span className="flex items-center gap-1">
+                        <Sparkles size={12} />
                         <span>Hareke</span>
                       </span>
                       <span className="text-[10px] font-extrabold">
@@ -649,20 +651,45 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => {
+                        playClick();
+                        setViewMode(
+                          currentViewMode === "arabic-only"
+                            ? "stacked"
+                            : "arabic-only"
+                        );
+                      }}
+                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                        currentViewMode !== "arabic-only"
+                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1">
+                        <Languages size={12} />
+                        <span>Çeviri</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold">
+                        {currentViewMode !== "arabic-only" ? "Açık" : "Kapalı"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         toggleSfx();
                         playClick();
                       }}
-                      className={`px-2.5 py-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer ${
+                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                         mounted && sfxEnabled
                           ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
                           : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
                       }`}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1">
                         {mounted && sfxEnabled ? (
-                          <Volume2 size={13} />
+                          <Volume2 size={12} />
                         ) : (
-                          <VolumeX size={13} />
+                          <VolumeX size={12} />
                         )}
                         <span>Efekt</span>
                       </span>

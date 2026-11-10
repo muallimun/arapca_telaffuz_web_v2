@@ -825,26 +825,26 @@ export function GrammarDeepDiveModal({
 
   return (
     <div
-      className="fixed inset-0 z-[110] bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-in fade-in duration-200"
+      className="fixed inset-0 z-[110] bg-black/75 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-200"
       onClick={() => {
         stopAllAudio();
         onClose();
       }}
     >
       <div
-        className="bg-[#FDFBF7] dark:bg-[var(--background)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 w-[96vw] lg:w-[88vw] max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+        className="bg-[#FDFBF7] dark:bg-[var(--background)] rounded-none sm:rounded-3xl border-0 sm:border-2 border-[#E6D7BE] dark:border-[var(--border)] sm:border-b-4 w-screen max-w-[100vw] h-[100dvh] sm:w-[96vw] lg:w-[88vw] sm:max-w-5xl sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ÜST SABİT BAŞLIK ÇUBUĞU */}
-        <div className="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5 text-amber-300" />
+        <div className="px-3.5 sm:px-6 py-3 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
-                  2. Katman • Ayrıntılı Konu Anlatımı &amp; İ&apos;rab Çözümlemesi
+                  Ayrıntılı Anlatım &amp; İ&apos;rab
                 </span>
                 {linkedLevel && (
                   <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-black">
@@ -855,7 +855,7 @@ export function GrammarDeepDiveModal({
               <h2
                 dir="ltr"
                 lang="tr"
-                className="font-sans text-sm sm:text-lg font-black text-white text-left leading-snug break-words"
+                className="font-sans text-xs sm:text-lg font-black text-white text-left leading-snug break-words line-clamp-2"
               >
                 {renderTurkishWithIsolatedArabic(
                   grammarNote.konu_basligi,
@@ -872,19 +872,19 @@ export function GrammarDeepDiveModal({
               stopAllAudio();
               onClose();
             }}
-            className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-rose-600 text-white border border-white/25 font-black text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-400/50 font-black text-xs inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
             title="Ayrıntılı Anlatımı Kapat (Esc)"
           >
             <X className="w-4 h-4 shrink-0" />
-            <span>Kapat (Esc)</span>
+            <span>Kapat</span>
           </button>
         </div>
 
         {/* KAYDIRILABİLİR 5 BÖLÜMLÜ PEDAGOJİK GÖVDE */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-5">
           {/* KART 1: GÖRSEL FORMÜL & ŞEMA KUTUSU (formul_sema) */}
-          <section className="rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 bg-gradient-to-br from-[#F3F0FF] via-white to-[#F7EFE1] dark:from-indigo-950/60 dark:via-[var(--surface)] dark:to-[var(--background)] p-4 sm:p-6 shadow-xs space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
+          <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 bg-gradient-to-br from-[#F3F0FF] via-white to-[#F7EFE1] dark:from-indigo-950/60 dark:via-[var(--surface)] dark:to-[var(--background)] p-3.5 sm:p-6 shadow-xs space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#6741D9] text-white font-black text-xs uppercase tracking-wider">
                 <Compass className="w-3.5 h-3.5 shrink-0" />
                 <span>1. Görsel Formül &amp; Sözdizimi Şeması</span>
@@ -916,7 +916,7 @@ export function GrammarDeepDiveModal({
           </section>
 
           {/* KART 2: ADIM ADIM AYRINTILI KONU ANLATIMI (adim_adim_anlatim) */}
-          <section className="rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xs space-y-3.5">
+          <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-6 shadow-xs space-y-3">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#087F5B] text-white font-black text-xs uppercase tracking-wider">
                 <ListChecks className="w-4 h-4 shrink-0" />
@@ -930,12 +930,12 @@ export function GrammarDeepDiveModal({
                   key={idx}
                   dir="ltr"
                   lang="tr"
-                  className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-4 flex items-start gap-3"
+                  className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3 sm:p-4 flex items-start gap-2.5 sm:gap-3"
                 >
-                  <span className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 text-[#065F46] dark:text-emerald-300 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 text-[#065F46] dark:text-emerald-300 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
-                  <p className="font-sans text-xs sm:text-sm md:text-base font-bold text-[var(--foreground)] leading-relaxed break-words flex-1">
+                  <p className="font-sans text-xs sm:text-sm md:text-base font-bold text-[var(--foreground)] leading-relaxed break-words min-w-0 flex-1">
                     {renderTurkishWithIsolatedArabic(step.replace(/^\d+\.\s*/, ""))}
                   </p>
                 </div>
@@ -946,7 +946,7 @@ export function GrammarDeepDiveModal({
           {/* KART 3: KARŞILAŞTIRMALI ÇEKİM & KURAL TABLOSU (ozet_tablo) */}
           {detailLayer.ozet_tablo &&
             detailLayer.ozet_tablo.satirlar.length > 0 && (
-              <section className="rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xs space-y-3.5">
+              <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-6 shadow-xs space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-600 text-white font-black text-xs uppercase tracking-wider">
                     <Table2 className="w-4 h-4 shrink-0" />
@@ -954,8 +954,8 @@ export function GrammarDeepDiveModal({
                   </span>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)]">
-                  <table className="w-full text-left border-collapse">
+                <div className="w-full max-w-full overflow-x-auto rounded-xl sm:rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)]">
+                  <table className="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
                       <tr className="bg-[#EFE5D4] dark:bg-slate-800 border-b-2 border-[#E6D7BE] dark:border-slate-700">
                         {detailLayer.ozet_tablo.sutunlar.map((col, cIdx) => (
@@ -963,7 +963,7 @@ export function GrammarDeepDiveModal({
                             key={cIdx}
                             dir="ltr"
                             lang="tr"
-                            className="py-2.5 px-3 sm:px-4 font-sans text-[11px] sm:text-xs font-black uppercase tracking-wider text-[var(--foreground)]"
+                            className="py-2 px-2.5 sm:py-2.5 sm:px-4 font-sans text-[11px] sm:text-xs font-black uppercase tracking-wider text-[var(--foreground)]"
                           >
                             {renderTurkishWithIsolatedArabic(col)}
                           </th>
@@ -979,7 +979,7 @@ export function GrammarDeepDiveModal({
                           {row.map((cell, cellIdx) => (
                             <td
                               key={cellIdx}
-                              className="py-3 px-3 sm:px-4 align-middle"
+                              className="py-2.5 px-2.5 sm:py-3 sm:px-4 align-middle"
                             >
                               {renderSmartTableCell(cell)}
                             </td>
@@ -994,7 +994,7 @@ export function GrammarDeepDiveModal({
 
           {/* KART 4: KELİME KELİME İ'RAB & HAREKE ÇÖZÜMLEMESİ (irab_tahlili) */}
           {detailLayer.irab_tahlili && detailLayer.irab_tahlili.length > 0 && (
-            <section className="rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xs space-y-3.5">
+            <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-6 shadow-xs space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#6741D9] text-white font-black text-xs uppercase tracking-wider">
                   <Target className="w-4 h-4 shrink-0" />
@@ -1072,7 +1072,7 @@ export function GrammarDeepDiveModal({
           )}
 
           {/* KART 5: SIK YAPILAN HATA & DOĞRUSU (dikkat_sik_hata) */}
-          <section className="rounded-2xl sm:rounded-3xl border-2 border-amber-300 dark:border-amber-700 border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xs space-y-3.5">
+          <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-amber-300 dark:border-amber-700 border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-6 shadow-xs space-y-3">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-600 text-white font-black text-xs uppercase tracking-wider">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1080,9 +1080,9 @@ export function GrammarDeepDiveModal({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
               {/* Sol Kutu: Yanlış Kullanım */}
-              <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-800 bg-rose-50/90 dark:bg-rose-950/40 p-4 space-y-2 flex flex-col justify-between">
+              <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-800 bg-rose-50/90 dark:bg-rose-950/40 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-black text-xs uppercase tracking-wider">
                     <XCircle className="w-4 h-4 shrink-0" />
@@ -1192,16 +1192,18 @@ export function GrammarDeepDiveModal({
         </div>
 
         {/* ALT SABİT AKSİYON ÇUBUĞU */}
-        <div className="px-4 sm:px-6 py-3 bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="px-3.5 sm:px-6 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3 bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 flex-1 sm:flex-initial">
             {linkedLessonUrl && linkedLessonTitle && (
               <Link
                 href={linkedLessonUrl}
                 onClick={() => onClose()}
-                className="px-3.5 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#087F5B] shrink-0" />
-                <span>Derse Git ({linkedLessonTitle})</span>
+                <span className="truncate max-w-[160px] sm:max-w-none">
+                  Derse Git ({linkedLessonTitle})
+                </span>
               </Link>
             )}
             <Link
@@ -1211,7 +1213,7 @@ export function GrammarDeepDiveModal({
                   : ""
               }`}
               onClick={() => onClose()}
-              className="px-4 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-black inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-black inline-flex items-center gap-1.5"
             >
               <Gamepad2 className="w-4 h-4 shrink-0" />
               <span>Bu Kalıpla Alıştırma Yap</span>
@@ -1225,7 +1227,7 @@ export function GrammarDeepDiveModal({
               stopAllAudio();
               onClose();
             }}
-            className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--foreground)] text-xs font-black cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--foreground)] text-xs font-black cursor-pointer shrink-0"
           >
             Özete Dön
           </button>
@@ -1315,12 +1317,12 @@ export function GrammarHapBilgiPanel({
     : matchingSentences.slice(0, 6);
 
   return (
-    <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-300 overflow-x-hidden">
+    <div className="w-full max-w-full min-w-0 space-y-3.5 sm:space-y-5 animate-in fade-in duration-300 overflow-x-hidden">
       {/* 1. ÜST BAŞLIK VE TEMEL GRAMER KURALI (HAP KURAL) KARTI */}
-      <div className="bg-gradient-to-br from-[#F7EFE1] to-[#EFE5D4] dark:from-[var(--surface)] dark:to-[var(--background)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 shadow-xs relative overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div className="w-full max-w-full min-w-0 box-border bg-gradient-to-br from-[#F7EFE1] to-[#EFE5D4] dark:from-[var(--surface)] dark:to-[var(--background)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-6 shadow-xs relative overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>Odak Gramer &amp; Hap Bilgi</span>
             </span>
@@ -1330,14 +1332,14 @@ export function GrammarHapBilgiPanel({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             {linkedLessonTitle && linkedLessonUrl ? (
               <Link
                 href={linkedLessonUrl}
-                className="px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-[11px] inline-flex items-center gap-1 transition-colors"
+                className="max-w-full px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-[11px] inline-flex items-center gap-1 transition-colors"
               >
                 <BookOpen className="w-3 h-3 text-[#087F5B] shrink-0" />
-                <span>Ders: {linkedLessonTitle}</span>
+                <span className="truncate">Ders: {linkedLessonTitle}</span>
                 <ExternalLink className="w-3 h-3 text-[#087F5B] shrink-0" />
               </Link>
             ) : (
@@ -1354,8 +1356,8 @@ export function GrammarHapBilgiPanel({
           className={`font-sans text-left ${
             isSmartboardLarge
               ? "text-xl sm:text-3xl"
-              : "text-lg sm:text-2xl"
-          } font-black text-[var(--foreground)] tracking-tight mb-3.5 leading-snug break-words`}
+              : "text-base sm:text-2xl"
+          } font-black text-[var(--foreground)] tracking-tight mb-3 leading-snug break-words`}
         >
           {renderTurkishWithIsolatedArabic(
             activeNote.konu_basligi,
@@ -1366,41 +1368,37 @@ export function GrammarHapBilgiPanel({
         <div
           dir="ltr"
           lang="tr"
-          className="bg-white/95 dark:bg-[var(--background)] rounded-2xl p-4 sm:p-5 border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-2xs"
+          className="w-full max-w-full min-w-0 box-border bg-white/95 dark:bg-[var(--background)] rounded-2xl p-3.5 sm:p-5 border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-2xs space-y-1.5"
         >
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-400/70 flex items-center justify-center shrink-0 mt-0.5">
-              <BookOpen className="w-4 h-4 text-[#087F5B] dark:text-emerald-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#087F5B] dark:text-emerald-400 block mb-1">
-                Temel Gramer Kuralı (Hap Kural &amp; Formül)
-              </span>
-              <p
-                className={`${
-                  isSmartboardLarge
-                    ? "text-base sm:text-xl"
-                    : "text-sm sm:text-base"
-                } font-sans font-bold text-[var(--foreground)] leading-relaxed break-words`}
-              >
-                {renderTurkishWithIsolatedArabic(activeNote.hap_kural)}
-              </p>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="w-4 h-4 text-[#087F5B] dark:text-emerald-400 shrink-0" />
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#087F5B] dark:text-emerald-400">
+              Temel Gramer Kuralı (Hap Kural &amp; Formül)
+            </span>
           </div>
+          <p
+            className={`${
+              isSmartboardLarge
+                ? "text-base sm:text-xl"
+                : "text-sm sm:text-base"
+            } font-sans font-bold text-[var(--foreground)] leading-relaxed break-words w-full`}
+          >
+            {renderTurkishWithIsolatedArabic(activeNote.hap_kural)}
+          </p>
         </div>
       </div>
 
       {/* 2. İÇERİKTEN ODAK ÖRNEK KARTI */}
       {activeNote.metinden_ornek && (
-        <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 shadow-xs space-y-3.5">
+        <div className="w-full max-w-full min-w-0 box-border bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-6 shadow-xs space-y-3">
           {/* Üst Bar: Sol tarafta rozet, sağ tarafta Dinle ve Telaffuz Et butonları */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-200 border border-[#6741D9]/35 font-black text-[11px] sm:text-xs uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-200 border border-[#6741D9]/35 font-black text-[11px] sm:text-xs uppercase tracking-wider">
               <Target className="w-3.5 h-3.5 shrink-0" />
               <span>ODAK ÖRNEK &amp; ÇÖZÜMLEME</span>
             </span>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() =>
@@ -1497,15 +1495,15 @@ export function GrammarHapBilgiPanel({
 
       {/* 3. PEKİŞTİRİCİ EK ÖRNEKLER */}
       {activeNote.ek_ornekler && activeNote.ek_ornekler.length > 0 && (
-        <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 shadow-xs">
-          <h3 className="text-sm sm:text-base font-black text-[var(--foreground)] uppercase tracking-wider mb-3.5 flex items-center gap-2">
+        <div className="w-full max-w-full min-w-0 box-border bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-6 shadow-xs">
+          <h3 className="text-sm sm:text-base font-black text-[var(--foreground)] uppercase tracking-wider mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#087F5B] dark:text-emerald-400 shrink-0" />
             <span>Pekiştirici Ek Örnekler</span>
           </h3>
           <div
             className={
               isCompactDrawer
-                ? "grid grid-cols-1 gap-3.5"
+                ? "grid grid-cols-1 gap-3"
                 : "grid grid-cols-1 md:grid-cols-2 gap-3.5"
             }
           >
@@ -1576,25 +1574,23 @@ export function GrammarHapBilgiPanel({
         <div
           dir="ltr"
           lang="tr"
-          className="bg-amber-50/90 dark:bg-amber-950/40 rounded-2xl sm:rounded-3xl border-2 border-amber-300 dark:border-amber-700 border-b-4 p-4 sm:p-5 shadow-xs flex items-start gap-3.5 text-left"
+          className="w-full max-w-full min-w-0 box-border bg-amber-50/90 dark:bg-amber-950/40 rounded-2xl sm:rounded-3xl border-2 border-amber-300 dark:border-amber-700 border-b-4 p-3.5 sm:p-5 shadow-xs space-y-1.5 text-left"
         >
-          <div className="w-10 h-10 rounded-xl bg-amber-200/80 dark:bg-amber-900/70 border border-amber-400 flex items-center justify-center shrink-0">
-            <Lightbulb className="w-5 h-5 text-amber-800 dark:text-amber-300" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300 block mb-1">
+          <div className="flex items-center gap-1.5">
+            <Lightbulb className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0" />
+            <span className="text-[11px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">
               Pratik Öğrenme İpucu
             </span>
-            <p
-              className={`${
-                isSmartboardLarge
-                  ? "text-sm sm:text-base"
-                  : "text-xs sm:text-sm"
-              } font-sans font-bold text-amber-950 dark:text-amber-100 leading-relaxed break-words`}
-            >
-              {renderTurkishWithIsolatedArabic(activeNote.ipucu)}
-            </p>
           </div>
+          <p
+            className={`${
+              isSmartboardLarge
+                ? "text-sm sm:text-base"
+                : "text-xs sm:text-sm"
+            } font-sans font-bold text-amber-950 dark:text-amber-100 leading-relaxed break-words w-full`}
+          >
+            {renderTurkishWithIsolatedArabic(activeNote.ipucu)}
+          </p>
         </div>
       )}
 
@@ -1605,22 +1601,22 @@ export function GrammarHapBilgiPanel({
           playClick();
           setIsDeepDiveOpen(true);
         }}
-        className="w-full group rounded-2xl sm:rounded-3xl border-2 border-[#6741D9] border-b-4 bg-gradient-to-r from-[#6741D9] via-[#5230B5] to-indigo-800 hover:from-[#5230B5] hover:to-[#422399] text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer transition-all active:translate-y-[1px]"
+        className="w-full max-w-full min-w-0 box-border group rounded-2xl sm:rounded-3xl border-2 border-[#6741D9] border-b-4 bg-gradient-to-r from-[#6741D9] via-[#5230B5] to-indigo-800 hover:from-[#5230B5] hover:to-[#422399] text-white p-3.5 sm:p-5 shadow-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 cursor-pointer transition-all active:translate-y-[1px]"
       >
-        <div className="flex items-center gap-3 text-left">
-          <span className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
-            <BookOpen className="w-5 h-5 text-amber-300" />
+        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 text-left min-w-0">
+          <span className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
           </span>
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block">
-              Görsel Şema • Karşılaştırmalı Tablo • Kelime Kelime İ&apos;rab • Sık Hatalar
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block leading-snug">
+              Görsel Şema • Karşılaştırmalı Tablo • Kelime Kelime İ&apos;rab
             </span>
-            <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-              Ayrıntılı Konu Anlatımı, Şema &amp; İ&apos;rab Çözümlemesi İçin Tıklayınız →
+            <span className="text-xs sm:text-base font-black text-white block mt-0.5 leading-snug break-words">
+              Ayrıntılı Konu Anlatımı &amp; İ&apos;rab Çözümlemesi İçin Tıklayınız
             </span>
           </div>
         </div>
-        <span className="px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-300 text-slate-950 font-black text-xs inline-flex items-center gap-1.5 shrink-0 self-end sm:self-center shadow-2xs transition-colors">
+        <span className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-300 text-slate-950 font-black text-xs inline-flex items-center justify-center gap-1.5 shrink-0 shadow-2xs transition-colors">
           <span>Detaylı İncele</span>
           <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
         </span>
@@ -1628,10 +1624,10 @@ export function GrammarHapBilgiPanel({
 
       {/* 5. 1111 CÜMLE HAVUZUNDAN BU KALIBA AİT SESLİ ÖRNEK CÜMLELER */}
       {showMatchingSentences && matchingSentences.length > 0 && (
-        <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 shadow-xs space-y-3.5">
+        <div className="w-full max-w-full min-w-0 box-border bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-6 shadow-xs space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-200 border border-emerald-400/60 font-black text-xs uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-200 border border-emerald-400/60 font-black text-[11px] sm:text-xs uppercase tracking-wider">
                 <Layers className="w-3.5 h-3.5 shrink-0" />
                 <span>Bu Gramer Kalıbına Ait Günlük Cümleler</span>
               </span>
@@ -1738,8 +1734,8 @@ export function GrammarHapBilgiPanel({
       )}
 
       {/* 6. ALT HIZLI EYLEM ÇUBUĞU: BU GRAMER KALIBIYLA ALIŞTIRMA YAP & İLGİLİ DERSE GİT */}
-      <div className="bg-gradient-to-r from-emerald-950 via-[#065F46] to-teal-950 text-white rounded-2xl border-2 border-emerald-500/50 border-b-4 p-4 shadow-md flex flex-col gap-3">
-        <p className="text-xs sm:text-sm font-bold text-emerald-50 leading-relaxed">
+      <div className="w-full max-w-full min-w-0 box-border bg-gradient-to-r from-emerald-950 via-[#065F46] to-teal-950 text-white rounded-2xl border-2 border-emerald-500/50 border-b-4 p-3.5 sm:p-4 shadow-md flex flex-col gap-3">
+        <p className="text-xs sm:text-sm font-bold text-emerald-50 leading-relaxed break-words">
           <strong className="text-emerald-300 font-black">
             💡 PEDAGOJİK PEKİŞTİRME:
           </strong>{" "}
@@ -1747,15 +1743,17 @@ export function GrammarHapBilgiPanel({
         </p>
         <div
           className={
-            linkedLessonUrl
-              ? "flex flex-wrap sm:grid sm:grid-cols-2 gap-2.5 w-full"
-              : "flex flex-wrap gap-2.5 w-full"
+            isCompactDrawer
+              ? "grid grid-cols-1 gap-2.5 w-full"
+              : linkedLessonUrl
+              ? "grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full"
+              : "grid grid-cols-1 gap-2.5 w-full"
           }
         >
           {linkedLessonUrl && (
             <Link
               href={linkedLessonUrl}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold text-center whitespace-normal transition-all"
             >
               <span>📖 İlgili Derse Git</span>
             </Link>
@@ -1766,7 +1764,7 @@ export function GrammarHapBilgiPanel({
                 ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
                 : ""
             }`}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm transition-all"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold text-center whitespace-normal shadow-sm transition-all"
           >
             <span>🎮 Bu Kalıpla Alıştırma Yap</span>
           </Link>
@@ -1867,7 +1865,7 @@ export function GrammarHapBilgiModal({
     };
   }, [isOpen, viewMode, drawerSide]);
 
-  const { resolvedNote } = useMemo(
+  const { resolvedNote, linkedLevel, activeGrammarQuery } = useMemo(
     () =>
       resolveGrammarNoteAndSentences({
         grammarNote,
@@ -1887,9 +1885,9 @@ export function GrammarHapBilgiModal({
     <div
       className={
         isSmartboard
-          ? "fixed inset-0 z-[90] bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-in fade-in duration-200"
-          : `fixed inset-0 z-[90] pointer-events-none flex ${
-              drawerSide === "left" ? "justify-start" : "justify-end"
+          ? "fixed inset-0 z-[90] bg-black/70 backdrop-blur-xs flex items-center justify-center p-0 lg:p-4 overflow-hidden animate-in fade-in duration-200"
+          : `fixed inset-0 z-[90] lg:pointer-events-none flex ${
+              drawerSide === "left" ? "lg:justify-start" : "lg:justify-end"
             } overflow-hidden`
       }
       onClick={
@@ -1901,10 +1899,10 @@ export function GrammarHapBilgiModal({
           : undefined
       }
     >
-      {/* Yan Panel (Drawer) modunda sadece mobilde (<1024px) arka plan karartması, masaüstünde sayfa ile yan yana (Split-View) */}
+      {/* Yan Panel (Drawer) modunda masaüstü haricinde arka plan karartması */}
       {!isSmartboard && (
         <div
-          className="fixed inset-0 bg-black/35 lg:bg-transparent pointer-events-auto lg:pointer-events-none transition-opacity"
+          className="hidden lg:hidden fixed inset-0 bg-black/35 pointer-events-auto transition-opacity"
           onClick={() => {
             stopAllAudio();
             onClose();
@@ -1915,135 +1913,126 @@ export function GrammarHapBilgiModal({
       <div
         className={
           isSmartboard
-            ? "pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 w-[94vw] lg:w-[85vw] max-w-[1350px] h-[88vh] sm:h-[85vh] flex flex-col shadow-2xl relative overflow-hidden"
-            : `pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] ${
+            ? "pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] w-screen max-w-[100vw] h-[100dvh] rounded-none border-0 lg:rounded-3xl lg:border-2 border-[#E6D7BE] dark:border-[var(--border)] lg:border-b-4 lg:w-[85vw] lg:max-w-[1350px] lg:h-[85vh] flex flex-col shadow-2xl relative overflow-hidden"
+            : `pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] w-screen max-w-[100vw] h-[100dvh] rounded-none border-0 ${
                 drawerSide === "left"
-                  ? "border-r-4 border-[#087F5B] dark:border-emerald-600 shadow-[12px_0_35px_rgba(0,0,0,0.22)] animate-in slide-in-from-left"
-                  : "border-l-4 border-[#087F5B] dark:border-emerald-600 shadow-[-12px_0_35px_rgba(0,0,0,0.22)] animate-in slide-in-from-right"
-              } w-full sm:w-[440px] lg:w-[460px] h-full flex flex-col relative overflow-hidden duration-200`
+                  ? "lg:border-r-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-left"
+                  : "lg:border-l-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[-12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-right"
+              } lg:w-[460px] lg:max-w-[460px] lg:h-full flex flex-col relative overflow-hidden duration-200`
         }
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ÜST SABİT KONTROL ÇUBUĞU: Üst satırda kontrol butonları, hemen altında tam genişlikte kesilmeyen konu başlığı */}
-        <div className="px-4 sm:px-5 py-3 bg-[#F7EFE1] dark:bg-[var(--surface)] border-b-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-2 shrink-0">
-          {/* 1. Satır: Rozet + Görünüm / Yön / Kapat Butonları */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-400 flex items-center justify-center shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#087F5B] dark:text-emerald-400">
-                Gramer Hap Bilgi
+        {/* ÜST SABİT KONTROL ÇUBUĞU: Tek satırda sığan yapışkan bar (320px dahil %100 uyum) */}
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-[var(--border)] w-full shrink-0">
+          {/* Sol: Kompakt Gramer Notu + Seviye Rozeti */}
+          <div className="min-w-0 flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-[11px] font-black shrink-0">
+              <span>📌</span>
+              <span>Gramer Notu</span>
+            </span>
+            {linkedLevel && (
+              <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
+                {linkedLevel}
               </span>
-            </div>
+            )}
+          </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 shrink-0 ml-auto">
-              {/* Yan Panel Konum Seçici: [⬅️ Sol Panel | ➡️ Sağ Panel] (Sadece Drawer Modunda) */}
-              {!isSmartboard && (
-                <div className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setDrawerSide("left");
-                    }}
-                    title="Yan Paneli Sola Yasla"
-                    className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                      drawerSide === "left"
-                        ? "bg-amber-500 text-slate-950"
-                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    <PanelLeft className="w-3 h-3 shrink-0" />
-                    <span>⬅️ Sol Panel</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setDrawerSide("right");
-                    }}
-                    title="Yan Paneli Sağa Yasla"
-                    className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                      drawerSide === "right"
-                        ? "bg-amber-500 text-slate-950"
-                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    <PanelRight className="w-3 h-3 shrink-0" />
-                    <span>➡️ Sağ Panel</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Görünüm Modu Seçici: [Yan Panel | Geniş Pencere] */}
-              <div className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+          {/* Sağ: Masaüstü Pencere Kontrolleri (hidden lg:inline-flex) + Her Ekranda Görünür Net Kapat Butonu */}
+          <div className="shrink-0 flex items-center gap-1.5">
+            {/* Yan Panel Konum Seçici: Sadece lg+ ve Drawer Modunda */}
+            {!isSmartboard && (
+              <div className="hidden lg:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
-                    setViewMode("drawer");
+                    setDrawerSide("left");
                   }}
-                  title="Yan Panel Modu (Metni okurken yan tarafta grameri inceleyin)"
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                    !isSmartboard
-                      ? "bg-[#087F5B] text-white shadow-2xs"
+                  title="Yan Paneli Sola Yasla"
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
+                    drawerSide === "left"
+                      ? "bg-amber-500 text-slate-950"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  <PanelRight className="w-3.5 h-3.5 shrink-0" />
-                  <span>Yan Panel</span>
+                  <PanelLeft className="w-3 h-3 shrink-0" />
+                  <span>Sol</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
-                    setViewMode("smartboard");
+                    setDrawerSide("right");
                   }}
-                  title="Akıllı Tahta / Geniş Pencere Modu (%85 Ekran)"
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                    isSmartboard
-                      ? "bg-[#6741D9] text-white shadow-2xs"
+                  title="Yan Paneli Sağa Yasla"
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
+                    drawerSide === "right"
+                      ? "bg-amber-500 text-slate-950"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>Geniş Pencere</span>
+                  <PanelRight className="w-3 h-3 shrink-0" />
+                  <span>Sağ</span>
                 </button>
               </div>
+            )}
 
-              {/* Kapat Butonu */}
+            {/* Görünüm Modu Seçici: Sadece lg+ Masaüstü/Akıllı Tahtada */}
+            <div className="hidden lg:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => {
-                  stopAllAudio();
-                  onClose();
+                  playClick();
+                  setViewMode("drawer");
                 }}
-                className="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-200 dark:border-rose-800 hover:border-rose-500 flex items-center gap-1 text-rose-700 dark:text-rose-200 font-black text-xs transition-colors cursor-pointer shrink-0"
-                aria-label="Kapat"
-                title="Pencereyi Kapat (Esc)"
+                title="Yan Panel Modu (Metni okurken yan tarafta grameri inceleyin)"
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
+                  !isSmartboard
+                    ? "bg-[#087F5B] text-white shadow-2xs"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
               >
-                <X className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">Kapat</span>
+                <PanelRight className="w-3.5 h-3.5 shrink-0" />
+                <span>Yan Panel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setViewMode("smartboard");
+                }}
+                title="Akıllı Tahta / Geniş Pencere Modu (%85 Ekran)"
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
+                  isSmartboard
+                    ? "bg-[#6741D9] text-white shadow-2xs"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Geniş Pencere</span>
               </button>
             </div>
-          </div>
 
-          {/* 2. Satır: Konu Başlığı (Tam Genişlikte, Kesilmeden, Arapça kısımları <bdi> ile izole) */}
-          <h3
-            dir="ltr"
-            lang="tr"
-            className="font-sans text-sm sm:text-base font-black text-[var(--foreground)] text-left leading-snug break-words w-full"
-          >
-            {renderTurkishWithIsolatedArabic(
-              resolvedNote.konu_basligi,
-              "arabic font-arabic text-[1.15em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block"
-            )}
-          </h3>
+            {/* Belirgin Kapat Butonu: Tüm ekran boyutlarında net görünür */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                stopAllAudio();
+                onClose();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
+              aria-label="Gramer Notunu Kapat"
+              title="Pencereyi Kapat (Esc)"
+            >
+              <X className="w-3.5 h-3.5 shrink-0" />
+              <span>Kapat</span>
+            </button>
+          </div>
         </div>
 
         {/* KAYDIRILABİLİR İÇERİK GÖVDESİ (Yatay Kaydırma Tamamen Kapalı) */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5">
           <GrammarHapBilgiPanel
             grammarNote={resolvedNote}
             grammarTopic={grammarTopic}
@@ -2056,6 +2045,38 @@ export function GrammarHapBilgiModal({
               if (onOpenShadowing) onOpenShadowing(ar, tr);
             }}
           />
+        </div>
+
+        {/* MOBİL SABİT ALT AKSİYON ÇUBUĞU (< lg): Başparmakla tek dokunuşta Alıştırma & Kapat */}
+        <div className="lg:hidden shrink-0 px-3.5 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-[#E6D7BE] dark:border-slate-800 grid grid-cols-2 gap-2">
+          <Link
+            href={`/alistirmalar?pool=sentences_1111${
+              activeGrammarQuery
+                ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
+                : ""
+            }`}
+            onClick={() => {
+              playClick();
+              stopAllAudio();
+              onClose();
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+          >
+            <Gamepad2 className="w-4 h-4 shrink-0" />
+            <span>Alıştırma Yap</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              stopAllAudio();
+              onClose();
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4 shrink-0" />
+            <span>Kapat</span>
+          </button>
         </div>
       </div>
     </div>

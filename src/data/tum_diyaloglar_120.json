@@ -291,8 +291,8 @@
         "konusmaci": "Zehra",
         "konusmaci_ar": "زَهْرَاءُ",
         "cinsiyet": "K",
-        "odak_kalip": "Yer Söyleme (أَسْكُنُ فِي أَنْقَرَةُ)",
-        "arapca": "أَسْكُنُ فِي أَنْقَرَةُ.",
+        "odak_kalip": "Yer Söyleme (أَسْكُنُ فِي أَنْقَرَةَ)",
+        "arapca": "أَسْكُنُ فِي أَنْقَرَةَ.",
         "turkce": "Ankara'da oturuyorum.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_003/satir_07_K.mp3"
       },
@@ -4467,7 +4467,7 @@
         "konusmaci_ar": "السَّيِّدُ صَالِحٌ",
         "cinsiyet": "E",
         "odak_kalip": "Peron Sorma (فِي أَيِّ رَصِيفٍ الْقِطَارُ؟)",
-        "arapca": "فِي أَيِّ رَصِيفٍ يَقِفُ قِطَارُ أَنْقَرَةُ؟",
+        "arapca": "فِي أَيِّ رَصِيفٍ يَقِفُ قِطَارُ أَنْقَرَةَ؟",
         "turkce": "Ankara treni hangi peronda duruyor?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_038/satir_01_E.mp3"
       },

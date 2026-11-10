@@ -191,6 +191,15 @@ body {
   border-radius: 9999px;
 }
 
+/* Yatay kaydırılabilir mobil sekme/filtre şeritleri için gizli kaydırma çubuğu */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ==========================================================================
    MASAÜSTÜ ÖZEL BİLGİ BALONCUĞU (TOOLTIP) SİSTEMİ (Mobilde %100 Devre Dışı)
    ========================================================================== */

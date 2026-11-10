@@ -177,7 +177,7 @@
     "konu_basligi": "Müntesib İsimler ve İletişim Kalıpları",
     "hap_kural": "Arapçada bulunma ve yer bildirmek için harf-i cerler (özellikle 'فِي') kullanılır. 'أَيْنَ' edatı mekân sorar ve kendiden sonra gelen kelimenin konumunu öğrenmeyi sağlar.",
     "metinden_ornek": {
-      "arapca": "أَسْكُنُ فِي أَنْقَرَةُ.",
+      "arapca": "أَسْكُنُ فِي أَنْقَرَةَ.",
       "turkce": "Ankara'da oturuyorum.",
       "aciklama": "Burada 'فِي' harf-i ceri ikamet edilen şehri ve bulunma halini belirtmektedir."
     },
@@ -212,7 +212,7 @@
             "أَيْنَ تَسْكُنُ؟",
             "أَسْكُنُ",
             "فِي",
-            "أَسْكُنُ فِي أَنْقَرَةُ."
+            "أَسْكُنُ فِي أَنْقَرَةَ."
           ],
           [
             "أَيْنَ تَعْمَلُ؟",
@@ -240,14 +240,14 @@
           "hareke_nedeni": "Sükûn üzere mebnidir, amel ederek takip eden ismi mecrûr yapar."
         },
         {
-          "kelime": "أَنْقَرَةُ",
+          "kelime": "أَنْقَرَةَ",
           "gorevi": "Mecrûr İsim",
           "hareke_nedeni": "Gayri munsarif özel şehir ismi olduğu için esre (kesra) yerine fetha (üstün) ile mecrûrdur."
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أَسْكُنُ فِي أُنْقُرَةٍ.",
-        "dogru": "أَسْكُنُ فِي أَنْقَرَةُ.",
+        "yanlis": "أَسْكُنُ فِي أَنْقَرَةٍ.",
+        "dogru": "أَسْكُنُ فِي أَنْقَرَةَ.",
         "neden": "Özel yabancı şehir isimleri gayri munsarif kabul edilir; tenvin almazlar ve harf-i cerden sonra esre yerine tek fetha ile okunurlar."
       }
     }
@@ -3196,7 +3196,7 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "سَافَرْتُ إِلَى أَنْقَرَةُ أَمْسِ.",
+        "arapca": "سَافَرْتُ إِلَى أَنْقَرَةَ أَمْسِ.",
         "turkce": "Dün Ankara'ya seyahat ettim."
       },
       {
@@ -3232,7 +3232,7 @@
           [
             "سَافَرْتُ",
             "إِلَى",
-            "أَنْقَرَةُ",
+            "أَنْقَرَةَ",
             "Fetha ile mecrûr (Gayri Munsarif)",
             "Ankara'ya seyahat ettim."
           ],

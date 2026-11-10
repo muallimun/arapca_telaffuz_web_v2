@@ -76,6 +76,9 @@ import ShadowingModal from "@/components/ui/ShadowingModal";
 import WordTooltip from "@/components/ui/WordTooltip";
 import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
+import ShareContentCardModal, {
+  ShareCardPayload,
+} from "@/components/ui/ShareContentCardModal";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
 
@@ -329,6 +332,9 @@ export default function LibraryPage() {
       playSuccess();
     }
   };
+
+  const [shareCardTarget, setShareCardTarget] =
+    useState<ShareCardPayload | null>(null);
 
   const activeFontCfg = getArabicFontConfig(mounted ? arabicFont : "arakom");
   const libraryCardArabicFontSizePx = Math.round(
@@ -2151,6 +2157,83 @@ export default function LibraryPage() {
                       <Mic size={17} />
                       <span>Telaffuz</span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        if (currentVisual) {
+                          const morphAr: string[] = [];
+                          if (
+                            currentVisual.ikincil_form &&
+                            currentVisual.ikincil_form !== "-"
+                          ) {
+                            morphAr.push(
+                              `${
+                                currentVisual.tur === "fiil"
+                                  ? "Mâzî / Muzâri:"
+                                  : "Müfret / Cemî:"
+                              } ${currentVisual.ikincil_form}`
+                            );
+                          }
+                          if (currentVisual.ornek_ar) {
+                            morphAr.push(`Örnek: ${currentVisual.ornek_ar}`);
+                          }
+                          setShareCardTarget({
+                            type: "visual_word",
+                            arabicText: currentVisual.arapca,
+                            turkishText: currentVisual.turkce,
+                            subInfoAr:
+                              morphAr.length > 0
+                                ? morphAr.join("  |  ")
+                                : undefined,
+                            subInfoTr: currentVisual.ornek_tr
+                              ? `Örnek: ${currentVisual.ornek_tr}`
+                              : undefined,
+                            level: currentVisual.cefr,
+                            category: formatVisualCategoryBadge(
+                              currentVisual.kategori_tr
+                            ),
+                            imageUrl: imageUrl || undefined,
+                            initialShowTranslation: isModalTrVisible,
+                          });
+                        } else if (currentProverb) {
+                          setShareCardTarget({
+                            type: "proverb",
+                            arabicText: currentProverb.arapca,
+                            turkishText: currentProverb.turkce,
+                            subInfoTr: currentProverb.lafzi_ceviri
+                              ? `Lafzî: ${currentProverb.lafzi_ceviri}`
+                              : currentProverb.kullanim_baglami,
+                            level: currentProverb.cefr,
+                            category: currentProverb.tema
+                              ? formatTurkishCategory(currentProverb.tema)
+                              : undefined,
+                            imageUrl: imageUrl || undefined,
+                            initialShowTranslation: isModalTrVisible,
+                          });
+                        } else if (currentSentence) {
+                          setShareCardTarget({
+                            type: "sentence",
+                            arabicText: currentSentence.arapca,
+                            turkishText: currentSentence.turkce,
+                            subInfoTr: currentSentence.odak_kalip
+                              ? `📌 Odak Kalıp: ${currentSentence.odak_kalip}`
+                              : undefined,
+                            level: currentSentence.cefr,
+                            category: currentSentence.tema
+                              ? formatTurkishCategory(currentSentence.tema)
+                              : undefined,
+                            initialShowTranslation: isModalTrVisible,
+                          });
+                        }
+                      }}
+                      title="Görsel Kart Olarak Paylaş"
+                      className="px-3.5 py-2.5 lg:px-5 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <Share2 size={17} />
+                      <span className="hidden sm:inline">Paylaş</span>
+                    </button>
                   </div>
 
                   <button
@@ -3764,6 +3847,37 @@ export default function LibraryPage() {
                           </span>
                         </button>
 
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setShareCardTarget({
+                              type: "dialogue",
+                              arabicText:
+                                dlg.satirlar[0]?.arapca || dlg.baslik_ar,
+                              titleAr: dlg.baslik_ar,
+                              titleTr: dlg.baslik_tr,
+                              turkishText:
+                                dlg.satirlar[0]?.turkce || dlg.baslik_tr,
+                              excerptLines: dlg.satirlar
+                                .slice(0, 3)
+                                .map((l) => ({
+                                  speakerAr: l.konusmaci_ar,
+                                  speakerTr: l.konusmaci,
+                                  arapca: l.arapca,
+                                  turkce: l.turkce,
+                                })),
+                              level: dlg.seviye,
+                              category: dlg.tema,
+                              imageUrl: imagePath,
+                            });
+                          }}
+                          title="Diyaloğu Görsel Kart Olarak Paylaş"
+                          className="h-9 w-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center shrink-0 cursor-pointer transition-all"
+                        >
+                          <Share2 size={14} />
+                        </button>
+
                         <Link
                           href={`/alistirmalar?pool=all_dialogues&dialogueId=${dlg.id}`}
                           onClick={() => playClick()}
@@ -3973,6 +4087,35 @@ export default function LibraryPage() {
                         >
                           <CheckCircle2 size={14} />
                           <span>{isComp ? "Bitti" : "Bitir"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setShareCardTarget({
+                              type: "reading",
+                              arabicText:
+                                txt.satirlar[0]?.arapca || txt.baslik_ar,
+                              titleAr: txt.baslik_ar,
+                              titleTr: txt.baslik_tr,
+                              turkishText:
+                                txt.satirlar[0]?.turkce || txt.baslik_tr,
+                              excerptLines: txt.satirlar
+                                .slice(0, 3)
+                                .map((l) => ({
+                                  arapca: l.arapca,
+                                  turkce: l.turkce,
+                                })),
+                              level: txt.seviye,
+                              category: txt.tema,
+                              imageUrl: imagePath,
+                            });
+                          }}
+                          title="Okuma Metnini Görsel Kart Olarak Paylaş"
+                          className="h-9 w-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center shrink-0 cursor-pointer transition-all"
+                        >
+                          <Share2 size={14} />
                         </button>
 
                         <Link
@@ -4268,6 +4411,30 @@ export default function LibraryPage() {
                             : "none"
                         }
                       />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShareCardTarget({
+                          type: "sentence",
+                          arabicText: item.arapca,
+                          turkishText: item.turkce,
+                          subInfoTr: item.odak_kalip
+                            ? `📌 Odak Kalıp: ${item.odak_kalip}`
+                            : undefined,
+                          level: itemLevel,
+                          category: item.tema
+                            ? formatTurkishCategory(item.tema)
+                            : undefined,
+                          initialShowTranslation: isTrVisible,
+                        });
+                      }}
+                      title="Görsel Kart Olarak Paylaş"
+                      className="min-h-[40px] w-10 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      <Share2 size={14} />
                     </button>
 
                     <button
@@ -4587,6 +4754,31 @@ export default function LibraryPage() {
                             : "none"
                         }
                       />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShareCardTarget({
+                          type: "proverb",
+                          arabicText: item.arapca,
+                          turkishText: item.turkce,
+                          subInfoTr: item.lafzi_ceviri
+                            ? `Lafzî: ${item.lafzi_ceviri}`
+                            : item.kullanim_baglami,
+                          level: item.cefr,
+                          category: item.tema
+                            ? formatTurkishCategory(item.tema)
+                            : undefined,
+                          imageUrl: imgUrl,
+                          initialShowTranslation: isTrVisible,
+                        });
+                      }}
+                      title="Atasözünü Görsel Kart Olarak Paylaş"
+                      className="min-h-[40px] w-10 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-amber-500 border-b-3 text-amber-800 dark:text-amber-300 flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      <Share2 size={14} />
                     </button>
 
                     <button
@@ -5022,6 +5214,46 @@ export default function LibraryPage() {
                       type="button"
                       onClick={() => {
                         playClick();
+                        const morphAr: string[] = [];
+                        if (item.ikincil_form && item.ikincil_form !== "-") {
+                          morphAr.push(
+                            `${
+                              item.tur === "fiil"
+                                ? "Mâzî / Muzâri:"
+                                : "Müfret / Cemî:"
+                            } ${item.ikincil_form}`
+                          );
+                        }
+                        if (item.ornek_ar) {
+                          morphAr.push(`Örnek: ${item.ornek_ar}`);
+                        }
+                        setShareCardTarget({
+                          type: "visual_word",
+                          arabicText: item.arapca,
+                          turkishText: item.turkce,
+                          subInfoAr:
+                            morphAr.length > 0
+                              ? morphAr.join("  |  ")
+                              : undefined,
+                          subInfoTr: item.ornek_tr
+                            ? `Örnek: ${item.ornek_tr}`
+                            : undefined,
+                          level: item.cefr,
+                          category: formatVisualCategoryBadge(item.kategori_tr),
+                          imageUrl: imgUrl,
+                          initialShowTranslation: isTrVisible,
+                        });
+                      }}
+                      title="Görsel Kelimeyi Kart Olarak Paylaş"
+                      className="min-h-[40px] w-10 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      <Share2 size={14} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
                         setSelectedCardIndex(idx);
                       }}
                       title="Tekil Kart Görünümünde Aç"
@@ -5332,6 +5564,37 @@ export default function LibraryPage() {
                             type="button"
                             onClick={() => {
                               playClick();
+                              setShareCardTarget({
+                                type:
+                                  kind === "proverbs"
+                                    ? "proverb"
+                                    : kind === "sentences"
+                                    ? "sentence"
+                                    : "visual_word",
+                                arabicText: mainAr,
+                                turkishText: word.anlam_tr,
+                                subInfoAr:
+                                  word.kok && word.kok !== "-"
+                                    ? `Kök: ${word.kok}`
+                                    : word.ornek_ar
+                                    ? `Örnek: ${word.ornek_ar}`
+                                    : undefined,
+                                subInfoTr: word.ornek_tr || undefined,
+                                level: word.cefr,
+                                category: word.kategori_tr,
+                                imageUrl: word.gorsel,
+                              });
+                            }}
+                            title="Görsel Kart Olarak Paylaş"
+                            className="min-h-[38px] w-10 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center cursor-pointer shrink-0"
+                          >
+                            <Share2 size={14} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
                               toggleFavoriteWord(word);
                             }}
                             title="Defterimden Çıkar"
@@ -5624,6 +5887,11 @@ export default function LibraryPage() {
         readingId={activeGrammarModal?.readingId}
         grammarTopic={activeGrammarModal?.grammarTopic}
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
+      />
+
+      <ShareContentCardModal
+        payload={shareCardTarget}
+        onClose={() => setShareCardTarget(null)}
       />
     </div>
   );

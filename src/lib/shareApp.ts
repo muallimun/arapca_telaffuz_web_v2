@@ -4,7 +4,7 @@ export const SHARE_APP_TITLE =
 export const SHARE_APP_TEXT =
   "🎙️ Arapça Telaffuz ve Diyalog Asistanı: 60 günlük konuşma diyaloğu (A1-B2), 38 çiftlik Yapay Zeka Mahreç Koçu, Kalıp İfadeler, 5 modlu interaktif alıştırma merkezi ve akıllı A4 PDF çalışma kağıdı üreticisiyle ücretsiz Arapça pratiği yapın!";
 
-export const SHARE_APP_URL = "https://app.muallimun.net";
+export const SHARE_APP_URL = "https://app.muallimun.net/";
 
 export function getWhatsAppShareUrl(): string {
   return `https://wa.me/?text=${encodeURIComponent(

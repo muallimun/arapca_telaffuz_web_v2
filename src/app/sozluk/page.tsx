@@ -14,8 +14,14 @@ import {
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
+  Share2,
 } from "lucide-react";
-import { sozluk, diyaloglar } from "@/lib/data";
+import {
+  sozluk,
+  diyaloglar,
+  gorselKelimeler,
+  getVisualWordCoverUrl,
+} from "@/lib/data";
 import { DictionaryItem } from "@/types/data";
 import {
   getDialogueVocabulary,
@@ -42,6 +48,9 @@ import { useUserStore } from "@/store/userStore";
 import { useSettings, VoiceGender } from "@/store/settings";
 import { playClick } from "@/lib/sfxManager";
 import ShadowingModal from "@/components/ui/ShadowingModal";
+import ShareContentCardModal, {
+  ShareCardPayload,
+} from "@/components/ui/ShareContentCardModal";
 import {
   formatArabicText,
   splitMixedBidiText,
@@ -108,6 +117,19 @@ export default function DictionaryPage() {
   const [search, setSearch] = useState("");
   const [selectedDialogueId, setSelectedDialogueId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [shareCardTarget, setShareCardTarget] =
+    useState<ShareCardPayload | null>(null);
+
+  const visualWordImageByAr = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const gk of gorselKelimeler) {
+      const key = normalizeArabicText(gk.arapca);
+      if (key && !map.has(key)) {
+        map.set(key, gk.gorsel || getVisualWordCoverUrl(gk.id));
+      }
+    }
+    return map;
+  }, []);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [rootFilter, setRootFilter] = useState<string | null>(null);
   const [expandedCardIds, setExpandedCardIds] = useState<
@@ -1591,7 +1613,6 @@ export default function DictionaryPage() {
                         ? "Öğrenildi İşaretini Kaldır"
                         : "Öğrendim Olarak İşaretle"
                     }
-                    data-tooltip-align="right"
                     aria-label={
                       isLearned
                         ? "Öğrenildi İşaretini Kaldır"
@@ -1604,6 +1625,61 @@ export default function DictionaryPage() {
                     }`}
                   >
                     <CheckCircle2 size={15} />
+                  </button>
+
+                  {/* Görsel Kart Paylaş Butonu */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      const matchedVisualImg =
+                        (word as unknown as { gorsel?: string }).gorsel ||
+                        visualWordImageByAr.get(normalizeArabicText(mainArabic));
+                      const morphPartsAr: string[] = [];
+                      if (word.kok && word.kok !== "-") {
+                        morphPartsAr.push(`Kök: ${word.kok}`);
+                      }
+                      if (word.mazi || word.muzari) {
+                        morphPartsAr.push(
+                          `Mâzî / Muzâri: ${[word.mazi, word.muzari]
+                            .filter(Boolean)
+                            .join(" • ")}`
+                        );
+                      } else if (word.mufret && word.cemi) {
+                        morphPartsAr.push(
+                          `Müfret / Cemî: ${word.mufret} • ${word.cemi}`
+                        );
+                      } else if (word.cemi) {
+                        morphPartsAr.push(`Müfret / Cemî: ${word.cemi}`);
+                      }
+                      if (word.ornek_ar) {
+                        morphPartsAr.push(`Örnek: ${word.ornek_ar}`);
+                      }
+
+                      setShareCardTarget({
+                        type: isIdiomCard ? "sentence" : "visual_word",
+                        arabicText: mainArabic,
+                        turkishText: word.anlam_tr,
+                        subInfoAr:
+                          morphPartsAr.length > 0
+                            ? morphPartsAr.join("  |  ")
+                            : undefined,
+                        subInfoTr: word.ornek_tr
+                          ? `Örnek: ${word.ornek_tr}`
+                          : idiomDetail?.literalTr
+                          ? `Harfiyen: ${idiomDetail.literalTr}`
+                          : undefined,
+                        level: word.cefr,
+                        category: isIdiomCard ? "Kalıp İfade" : theme.badgeText,
+                        imageUrl: matchedVisualImg,
+                      });
+                    }}
+                    data-tooltip="Görsel Kart Olarak Paylaş"
+                    data-tooltip-align="right"
+                    aria-label="Görsel Kart Olarak Paylaş"
+                    className="h-9 w-9 rounded-xl border-2 border-b-3 bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[#065F46] hover:border-[#087F5B] dark:hover:text-emerald-400 flex items-center justify-center transition-all cursor-pointer shrink-0"
+                  >
+                    <Share2 size={15} />
                   </button>
                 </div>
               </div>
@@ -1633,6 +1709,11 @@ export default function DictionaryPage() {
         )}
         </>
       )}
+
+      <ShareContentCardModal
+        payload={shareCardTarget}
+        onClose={() => setShareCardTarget(null)}
+      />
     </div>
   );
 }

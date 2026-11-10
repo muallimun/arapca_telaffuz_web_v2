@@ -72,6 +72,9 @@ import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
 import ShareAchievementModal, {
   TeacherHomeworkModal,
 } from "@/components/ui/ShareAchievementModal";
+import ShareContentCardModal, {
+  ShareCardPayload,
+} from "@/components/ui/ShareContentCardModal";
 import {
   getDialogueVocabulary,
   DialogueVocabularyEntry,
@@ -289,6 +292,8 @@ export default function DialogueDetailPage({
     voice?: VoiceOption;
     forms?: { label: string; arabic: string }[];
   } | null>(null);
+  const [shareCardTarget, setShareCardTarget] =
+    useState<ShareCardPayload | null>(null);
 
   const playToken = useRef(0);
   const lineRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -2569,6 +2574,41 @@ export default function DialogueDetailPage({
                 <span>Ödev</span>
               </button>
 
+              {/* 6B. Diyaloğu Görsel Kart Olarak Paylaş Butonu */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShareCardTarget({
+                    type: "dialogue",
+                    arabicText:
+                      dialogue.satirlar[0]?.arapca || dialogue.baslik_ar,
+                    titleAr: dialogue.baslik_ar,
+                    titleTr: dialogue.baslik_tr,
+                    turkishText:
+                      dialogue.satirlar[0]?.turkce || dialogue.baslik_tr,
+                    excerptLines: dialogue.satirlar.slice(0, 3).map((l) => ({
+                      speakerAr: l.konusmaci_ar,
+                      speakerTr: l.konusmaci,
+                      arapca: l.arapca,
+                      turkce: l.turkce,
+                    })),
+                    level: dialogue.seviye,
+                    category: dialogue.tema,
+                    imageUrl:
+                      dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                    initialShowTranslation:
+                      currentViewMode !== "arabic-only" && !clickToRevealTr,
+                  });
+                }}
+                data-tooltip="Diyaloğu görseliyle birlikte sosyal medyada kart olarak paylaş"
+                aria-label="Görsel Kart Paylaş"
+                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[#065F46] dark:text-emerald-400 items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+              >
+                <Share2 size={13} className="shrink-0" />
+                <span>Paylaş</span>
+              </button>
+
               {/* 7. İndirilebilir Çevrimdışı Ders Paketi Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
               <button
                 type="button"
@@ -2804,6 +2844,45 @@ export default function DialogueDetailPage({
                       >
                         <GraduationCap size={13} className="shrink-0" />
                         <span>Ödev Oluştur</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIsMoreMenuOpen(false);
+                          setShareCardTarget({
+                            type: "dialogue",
+                            arabicText:
+                              dialogue.satirlar[0]?.arapca ||
+                              dialogue.baslik_ar,
+                            titleAr: dialogue.baslik_ar,
+                            titleTr: dialogue.baslik_tr,
+                            turkishText:
+                              dialogue.satirlar[0]?.turkce ||
+                              dialogue.baslik_tr,
+                            excerptLines: dialogue.satirlar
+                              .slice(0, 3)
+                              .map((l) => ({
+                                speakerAr: l.konusmaci_ar,
+                                speakerTr: l.konusmaci,
+                                arapca: l.arapca,
+                                turkce: l.turkce,
+                              })),
+                            level: dialogue.seviye,
+                            category: dialogue.tema,
+                            imageUrl:
+                              dialogue.gorsel ||
+                              getDialogueCoverUrl(dialogue.id),
+                            initialShowTranslation:
+                              currentViewMode !== "arabic-only" &&
+                              !clickToRevealTr,
+                          });
+                        }}
+                        className="col-span-2 py-2 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/50 text-[#065F46] dark:text-emerald-300 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
+                      >
+                        <Share2 size={13} className="shrink-0" />
+                        <span>Görsel Kart Olarak Paylaş</span>
                       </button>
 
                       <button
@@ -4111,6 +4190,35 @@ export default function DialogueDetailPage({
                         />
                       </div>
                     )}
+
+                    {/* Cümleyi Görsel Kart Olarak Paylaş */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        setShareCardTarget({
+                          type: "sentence",
+                          arabicText: line.arapca,
+                          turkishText: line.turkce,
+                          titleAr: dialogue.baslik_ar,
+                          titleTr: dialogue.baslik_tr,
+                          level: dialogue.seviye,
+                          category: dialogue.tema,
+                          imageUrl:
+                            dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                          initialShowTranslation:
+                            currentViewMode !== "arabic-only" &&
+                            (!clickToRevealTr ||
+                              Boolean(revealedTrLines[line.sira])),
+                        });
+                      }}
+                      data-tooltip="Bu cümleyi görsel kart olarak paylaş"
+                      aria-label="Bu cümleyi görsel kart olarak paylaş"
+                      className="w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                      <Share2 size={15} />
+                    </button>
                   </div>
                 </div>
 
@@ -4800,6 +4908,11 @@ export default function DialogueDetailPage({
         dialogueId={dialogue.id}
         initialViewMode="drawer"
         onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+      />
+
+      <ShareContentCardModal
+        payload={shareCardTarget}
+        onClose={() => setShareCardTarget(null)}
       />
     </div>
   );

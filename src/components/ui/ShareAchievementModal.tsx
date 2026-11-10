@@ -59,7 +59,7 @@ export interface TeacherHomeworkModalProps {
   onOpenCertificate?: () => void;
 }
 
-const APP_URL = "https://app.muallimun.net";
+const APP_URL = "https://app.muallimun.net/";
 
 /**
  * Öğrenci adı + ödev başlığı + tarih bilgisinden deterministik #MLM-2026-XXXX doğrulama kodu üretir.
@@ -1110,7 +1110,7 @@ export default function ShareAchievementModal({
 
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "900 26px system-ui, -apple-system, sans-serif";
-      ctx.fillText("🌐 www.muallimun.net", 128, 902);
+      ctx.fillText("🌐 app.muallimun.net", 128, 902);
 
       ctx.fillStyle = "#D3F9D8";
       ctx.font = "700 17px system-ui, -apple-system, sans-serif";

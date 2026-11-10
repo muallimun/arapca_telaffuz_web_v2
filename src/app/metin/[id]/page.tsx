@@ -73,6 +73,9 @@ import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
 import ShareAchievementModal, {
   TeacherHomeworkModal,
 } from "@/components/ui/ShareAchievementModal";
+import ShareContentCardModal, {
+  ShareCardPayload,
+} from "@/components/ui/ShareContentCardModal";
 import {
   getReadingTextVocabulary,
   DialogueVocabularyEntry,
@@ -284,6 +287,8 @@ export default function ReadingTextDetailPage({
     voice?: VoiceOption;
     forms?: { label: string; arabic: string }[];
   } | null>(null);
+  const [shareCardTarget, setShareCardTarget] =
+    useState<ShareCardPayload | null>(null);
 
   const playToken = useRef(0);
   const lineRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -2012,6 +2017,40 @@ export default function ReadingTextDetailPage({
                 <span>Ödev</span>
               </button>
 
+              {/* 7B. Okuma Metnini Görsel Kart Olarak Paylaş Butonu */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShareCardTarget({
+                    type: "reading",
+                    arabicText:
+                      readingText.satirlar[0]?.arapca || readingText.baslik_ar,
+                    titleAr: readingText.baslik_ar,
+                    titleTr: readingText.baslik_tr,
+                    turkishText:
+                      readingText.satirlar[0]?.turkce || readingText.baslik_tr,
+                    excerptLines: readingText.satirlar.slice(0, 3).map((l) => ({
+                      arapca: l.arapca,
+                      turkce: l.turkce,
+                    })),
+                    level: readingText.seviye,
+                    category: readingText.tema,
+                    imageUrl:
+                      readingText.gorsel ||
+                      getReadingTextCoverUrl(readingText.id),
+                    initialShowTranslation:
+                      currentViewMode !== "arabic-only" && !clickToRevealTr,
+                  });
+                }}
+                data-tooltip="Okuma metnini görseliyle birlikte sosyal medyada kart olarak paylaş"
+                aria-label="Görsel Kart Paylaş"
+                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[#065F46] dark:text-emerald-400 items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
+              >
+                <Share2 size={13} className="shrink-0" />
+                <span>Paylaş</span>
+              </button>
+
               {/* 8. İndirilebilir Çevrimdışı Ders Paketi Butonu */}
               <button
                 type="button"
@@ -2204,6 +2243,43 @@ export default function ReadingTextDetailPage({
                       >
                         <GraduationCap size={13} className="shrink-0" />
                         <span>Ödev Oluştur</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIsMoreMenuOpen(false);
+                          setShareCardTarget({
+                            type: "reading",
+                            arabicText:
+                              readingText.satirlar[0]?.arapca ||
+                              readingText.baslik_ar,
+                            titleAr: readingText.baslik_ar,
+                            titleTr: readingText.baslik_tr,
+                            turkishText:
+                              readingText.satirlar[0]?.turkce ||
+                              readingText.baslik_tr,
+                            excerptLines: readingText.satirlar
+                              .slice(0, 3)
+                              .map((l) => ({
+                                arapca: l.arapca,
+                                turkce: l.turkce,
+                              })),
+                            level: readingText.seviye,
+                            category: readingText.tema,
+                            imageUrl:
+                              readingText.gorsel ||
+                              getReadingTextCoverUrl(readingText.id),
+                            initialShowTranslation:
+                              currentViewMode !== "arabic-only" &&
+                              !clickToRevealTr,
+                          });
+                        }}
+                        className="col-span-2 py-2 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/50 text-[#065F46] dark:text-emerald-300 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
+                      >
+                        <Share2 size={13} className="shrink-0" />
+                        <span>Görsel Kart Olarak Paylaş</span>
                       </button>
 
                       <button
@@ -3368,6 +3444,38 @@ export default function ReadingTextDetailPage({
                   <Sparkles size={12} className="shrink-0" />
                   <span>Hareke</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShareCardTarget({
+                      type: "sentence",
+                      arabicText: selectedParagraphLine.arapca,
+                      turkishText: selectedParagraphLine.turkce,
+                      titleAr: readingText.baslik_ar,
+                      titleTr: readingText.baslik_tr,
+                      level: readingText.seviye,
+                      category: readingText.tema,
+                      imageUrl:
+                        readingText.gorsel ||
+                        getReadingTextCoverUrl(readingText.id),
+                      initialShowTranslation:
+                        currentViewMode !== "arabic-only" && !clickToRevealTr,
+                      initialShowHareke:
+                        lineHarekeOverrides[selectedParagraphLine.sira] !==
+                        undefined
+                          ? lineHarekeOverrides[selectedParagraphLine.sira]
+                          : !mounted || showHareke,
+                    });
+                  }}
+                  data-tooltip="Seçili cümleyi görsel kart olarak paylaş"
+                  aria-label="Seçili cümleyi görsel kart olarak paylaş"
+                  className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[#065F46] dark:text-emerald-400 inline-flex items-center gap-1 text-[11px] font-extrabold cursor-pointer"
+                >
+                  <Share2 size={12} className="shrink-0" />
+                  <span>Paylaş</span>
+                </button>
               </div>
             )}
           </div>
@@ -3785,6 +3893,37 @@ export default function ReadingTextDetailPage({
                     >
                       <Sparkles size={12} className="shrink-0" />
                       <span>Hareke</span>
+                    </button>
+
+                    {/* 5. 📤 Cümleyi Görsel Kart Olarak Paylaş */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        setShareCardTarget({
+                          type: "sentence",
+                          arabicText: line.arapca,
+                          turkishText: line.turkce,
+                          titleAr: readingText.baslik_ar,
+                          titleTr: readingText.baslik_tr,
+                          level: readingText.seviye,
+                          category: readingText.tema,
+                          imageUrl:
+                            readingText.gorsel ||
+                            getReadingTextCoverUrl(readingText.id),
+                          initialShowTranslation:
+                            currentViewMode !== "arabic-only" &&
+                            (!clickToRevealTr ||
+                              Boolean(revealedTrLines[line.sira])),
+                          initialShowHareke: effectiveLineHareke,
+                        });
+                      }}
+                      data-tooltip="Bu cümleyi görsel kart olarak paylaş"
+                      aria-label="Bu cümleyi görsel kart olarak paylaş"
+                      className="w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                      <Share2 size={15} />
                     </button>
                   </div>
                 </div>
@@ -4276,6 +4415,11 @@ export default function ReadingTextDetailPage({
         readingId={readingText.id}
         initialViewMode="drawer"
         onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+      />
+
+      <ShareContentCardModal
+        payload={shareCardTarget}
+        onClose={() => setShareCardTarget(null)}
       />
     </div>
   );

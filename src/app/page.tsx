@@ -17,6 +17,7 @@ import {
   Flame,
   Target,
   Play,
+  Share2,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -47,6 +48,9 @@ import {
 import { useAudioStore } from "@/store/audioStore";
 import ShadowingModal from "@/components/ui/ShadowingModal";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
+import ShareContentCardModal, {
+  ShareCardPayload,
+} from "@/components/ui/ShareContentCardModal";
 import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
 import { formatArabicText, formatTurkishCategory } from "@/lib/arabicTextUtils";
@@ -191,6 +195,8 @@ export default function HomePage() {
     readingId?: string;
     grammarTopic?: string;
   } | null>(null);
+  const [shareCardTarget, setShareCardTarget] =
+    useState<ShareCardPayload | null>(null);
 
   const contentStats = getDynamicContentStats();
 
@@ -956,6 +962,28 @@ export default function HomePage() {
                   <Mic size={13} className="shrink-0" />
                   <span>Telaffuz Et</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShareCardTarget({
+                      type: "sentence",
+                      arabicText: dailySentenceItem.arapca,
+                      turkishText: dailySentenceItem.turkce,
+                      subInfoTr: dailySentenceItem.odak_kalip
+                        ? `📌 Odak Kalıp: ${dailySentenceItem.odak_kalip}`
+                        : undefined,
+                      level: dailySentenceItem.cefr,
+                      category: formatSentenceThemeLabel(dailySentenceItem.tema),
+                      initialShowTranslation: isTranslationVisible,
+                    });
+                  }}
+                  title="Görsel Kart Olarak Paylaş"
+                  className="py-2 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Share2 size={13} className="shrink-0" />
+                </button>
               </div>
             </div>
           </div>
@@ -1050,6 +1078,28 @@ export default function HomePage() {
                 >
                   Çalış
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShareCardTarget({
+                      type: "proverb",
+                      arabicText: dailyProverbItem.arapca,
+                      turkishText: dailyProverbItem.turkce,
+                      subInfoTr: dailyProverbItem.lafzi_ceviri
+                        ? `Lafzî: ${dailyProverbItem.lafzi_ceviri}`
+                        : dailyProverbItem.kullanim_baglami,
+                      level: dailyProverbItem.cefr,
+                      imageUrl: dailyProverbCoverSrc,
+                      initialShowTranslation: isTranslationVisible,
+                    });
+                  }}
+                  title="Atasözünü Görsel Kart Olarak Paylaş"
+                  className="py-2 px-2.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-amber-500 text-[11px] font-extrabold text-amber-800 dark:text-amber-300 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Share2 size={13} className="shrink-0" />
+                </button>
               </div>
             </div>
           </div>
@@ -1116,6 +1166,30 @@ export default function HomePage() {
             >
               <Mic size={15} />
               <span>Telaffuz Et</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setShareCardTarget({
+                  type: "sentence",
+                  arabicText: featuredDialogue.line.arapca,
+                  turkishText: featuredDialogue.line.turkce,
+                  titleAr: featuredDialogue.dlg.baslik_ar,
+                  titleTr: featuredDialogue.dlg.baslik_tr,
+                  level: featuredDialogue.dlg.seviye,
+                  imageUrl:
+                    featuredDialogue.dlg.gorsel ||
+                    getDialogueCoverUrl(featuredDialogue.dlg.id),
+                  initialShowTranslation: isTranslationVisible,
+                });
+              }}
+              data-tooltip="Bu kalıp cümleyi görseliyle birlikte kart olarak paylaş"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 hover:border-[#087F5B] active:border-b-1 active:translate-y-0.5 transition-all whitespace-nowrap cursor-pointer"
+            >
+              <Share2 size={15} />
+              <span>Paylaş</span>
             </button>
 
             <Link
@@ -1291,6 +1365,11 @@ export default function HomePage() {
             text: ar,
           })
         }
+      />
+
+      <ShareContentCardModal
+        payload={shareCardTarget}
+        onClose={() => setShareCardTarget(null)}
       />
     </div>
   );

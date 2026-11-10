@@ -23,6 +23,7 @@ import {
   Compass,
   ListChecks,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import {
   GramerHapBilgi,
@@ -44,7 +45,10 @@ import {
 } from "@/lib/audio";
 import { useSettings } from "@/store/settings";
 import { cleanArabicText } from "@/lib/dict";
-import { formatTurkishCategory } from "@/lib/arabicTextUtils";
+import {
+  fixArabicTypography,
+  formatTurkishCategory,
+} from "@/lib/arabicTextUtils";
 import { MixedText } from "@/components/ui/MixedText";
 import WordTooltip from "@/components/ui/WordTooltip";
 import { playClick } from "@/lib/sfxManager";
@@ -515,6 +519,166 @@ function renderSmartTableCell(cell: string): React.ReactNode {
   );
 }
 
+export type FormulaOperatorKind = "plus" | "equals" | "arrow" | "slash";
+
+export type FormulaSchemaNode =
+  | {
+      type: "block";
+      order: number;
+      label: string;
+    }
+  | {
+      type: "operator";
+      operator: FormulaOperatorKind;
+    };
+
+const FORMULA_BLOCK_THEMES = [
+  {
+    card: "border-emerald-500/85 dark:border-emerald-500/70 bg-emerald-50/60 dark:bg-emerald-950/35",
+    badge: "bg-[#087F5B] text-white",
+  },
+  {
+    card: "border-indigo-500/80 dark:border-indigo-400/70 bg-indigo-50/60 dark:bg-indigo-950/35",
+    badge: "bg-[#6741D9] text-white",
+  },
+  {
+    card: "border-amber-500/85 dark:border-amber-500/70 bg-amber-50/65 dark:bg-amber-950/35",
+    badge: "bg-amber-600 text-white",
+  },
+  {
+    card: "border-purple-500/80 dark:border-purple-400/70 bg-purple-50/60 dark:bg-purple-950/35",
+    badge: "bg-purple-600 text-white",
+  },
+] as const;
+
+function detectFormulaOperator(rawBetween: string): FormulaOperatorKind {
+  const trimmed = rawBetween.trim();
+  if (trimmed.includes("=")) return "equals";
+  if (/->|→|➔|⟹|=>/.test(trimmed)) return "arrow";
+  if (trimmed.includes("/") && !trimmed.includes("+")) return "slash";
+  return "plus";
+}
+
+/**
+ * JSON içindeki `[1. Öge] + [2. Öge] = [Sonuç]` biçimindeki sözdizimi formüllerini
+ * köşeli parantez bloklarına ve aralarındaki operatörlere ayrıştırır.
+ * Böylece dış kapsayıcı `dir="rtl"` olduğunda 1. öge en sağda, sonraki ögeler
+ * sağdan sola doğru (١ ← ٢ ← ٣) doğal Arapça cümle dizilimiyle akar.
+ */
+export function parseFormulaSchema(rawFormula: string): FormulaSchemaNode[] {
+  const raw = (rawFormula || "").trim();
+  if (!raw) return [];
+
+  const nodes: FormulaSchemaNode[] = [];
+  let blockOrder = 0;
+
+  if (raw.includes("[") && raw.includes("]")) {
+    const bracketRegex = /\[([^\[\]]+)\]/g;
+    let lastEnd = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = bracketRegex.exec(raw)) !== null) {
+      const between = raw.slice(lastEnd, match.index).trim();
+      if (nodes.length > 0) {
+        nodes.push({
+          type: "operator",
+          operator: detectFormulaOperator(between),
+        });
+      } else if (between) {
+        const leadingClean = between
+          .replace(/^[\s+=➔→\-/>]+|[\s+=➔→\-/>]+$/g, "")
+          .trim();
+        if (leadingClean) {
+          blockOrder += 1;
+          nodes.push({
+            type: "block",
+            order: blockOrder,
+            label: leadingClean,
+          });
+          nodes.push({
+            type: "operator",
+            operator: detectFormulaOperator(between),
+          });
+        }
+      }
+
+      const label = match[1].trim();
+      if (label) {
+        blockOrder += 1;
+        nodes.push({
+          type: "block",
+          order: blockOrder,
+          label,
+        });
+      }
+      lastEnd = match.index + match[0].length;
+    }
+
+    const trailing = raw.slice(lastEnd).trim();
+    if (trailing) {
+      const opMatch = trailing.match(/^(\+|=|->|→|➔|\/)\s*(.+)$/);
+      if (opMatch && opMatch[2].trim()) {
+        if (nodes.length > 0) {
+          nodes.push({
+            type: "operator",
+            operator: detectFormulaOperator(opMatch[1]),
+          });
+        }
+        blockOrder += 1;
+        nodes.push({
+          type: "block",
+          order: blockOrder,
+          label: opMatch[2].replace(/^\[|\]$/g, "").trim(),
+        });
+      } else {
+        const cleanedTrailing = trailing.replace(/^\[|\]$/g, "").trim();
+        if (cleanedTrailing) {
+          if (nodes.length > 0) {
+            nodes.push({
+              type: "operator",
+              operator: detectFormulaOperator(trailing),
+            });
+          }
+          blockOrder += 1;
+          nodes.push({
+            type: "block",
+            order: blockOrder,
+            label: cleanedTrailing,
+          });
+        }
+      }
+    }
+
+    if (nodes.length > 0) {
+      return nodes;
+    }
+  }
+
+  // Köşeli parantez içermeyen sentetik formüller için yedek ayrıştırıcı
+  const parts = raw.split(/\s*(\+|=|->|→|➔)\s*/).filter(Boolean);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    if (/^(\+|=|->|→|➔)$/.test(trimmed)) {
+      if (nodes.length > 0) {
+        nodes.push({
+          type: "operator",
+          operator: detectFormulaOperator(trimmed),
+        });
+      }
+    } else {
+      blockOrder += 1;
+      nodes.push({
+        type: "block",
+        order: blockOrder,
+        label: trimmed.replace(/^\[|\]$/g, "").trim(),
+      });
+    }
+  }
+
+  return nodes;
+}
+
 /**
  * 180 Gramer Notu için JSON'da `ayrintili_anlatim` alanı varsa doğrudan onu döndürür;
  * yoksa (ör. 1111_cumle özel kalıbı) mevcut verilerden pedagojik olarak zenginleştirilmiş
@@ -553,9 +717,16 @@ export function buildSmartGrammarDetailLayer(
   const exAnalysis = enriched.metinden_ornek?.aciklama || "";
   const tip = enriched.ipucu || "";
 
+  const titleBlocks = title.includes("+")
+    ? title
+        .split("+")
+        .map((part) => `[${part.trim()}]`)
+        .join(" + ")
+    : `[Odak Kalıp: ${title}]`;
+
   const formul_sema =
     explicit?.formul_sema ||
-    `[${title}] ➔ ${exAr ? `${exAr} (${exTr})` : rule}`;
+    `${titleBlocks} = [${exAr ? `Örnek Uygulama (${exAr})` : rule}]`;
 
   let adim_adim_anlatim: string[] = explicit?.adim_adim_anlatim || [];
   if (adim_adim_anlatim.length === 0) {
@@ -777,7 +948,7 @@ export function GrammarDeepDiveModal({
   linkedLessonUrl,
   activeGrammarQuery,
 }: GrammarDeepDiveModalProps) {
-  const { speechRate } = useSettings();
+  const { speechRate, arabicFont } = useSettings();
   const [playingKey, setPlayingKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -795,6 +966,37 @@ export function GrammarDeepDiveModal({
   const detailLayer = useMemo(
     () => buildSmartGrammarDetailLayer(grammarNote, matchingSentences),
     [grammarNote, matchingSentences]
+  );
+
+  const modelExample = useMemo(() => {
+    if (grammarNote.metinden_ornek?.arapca?.trim()) {
+      return {
+        arapca: grammarNote.metinden_ornek.arapca.trim(),
+        turkce: grammarNote.metinden_ornek.turkce?.trim() || "",
+      };
+    }
+    if (
+      grammarNote.ek_ornekler &&
+      grammarNote.ek_ornekler.length > 0 &&
+      grammarNote.ek_ornekler[0].arapca?.trim()
+    ) {
+      return {
+        arapca: grammarNote.ek_ornekler[0].arapca.trim(),
+        turkce: grammarNote.ek_ornekler[0].turkce?.trim() || "",
+      };
+    }
+    if (matchingSentences.length > 0 && matchingSentences[0].arapca?.trim()) {
+      return {
+        arapca: matchingSentences[0].arapca.trim(),
+        turkce: matchingSentences[0].turkce?.trim() || "",
+      };
+    }
+    return null;
+  }, [grammarNote, matchingSentences]);
+
+  const formulaNodes = useMemo(
+    () => parseFormulaSchema(detailLayer.formul_sema),
+    [detailLayer.formul_sema]
   );
 
   const parsedYanlis = useMemo(
@@ -882,8 +1084,8 @@ export function GrammarDeepDiveModal({
 
         {/* KAYDIRILABİLİR 5 BÖLÜMLÜ PEDAGOJİK GÖVDE */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-5">
-          {/* KART 1: GÖRSEL FORMÜL & ŞEMA KUTUSU (formul_sema) */}
-          <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 bg-gradient-to-br from-[#F3F0FF] via-white to-[#F7EFE1] dark:from-indigo-950/60 dark:via-[var(--surface)] dark:to-[var(--background)] p-3.5 sm:p-6 shadow-xs space-y-2.5">
+          {/* KART 1: GÖRSEL FORMÜL & ŞEMA KUTUSU (Model Örnek Cümle + RTL formul_sema) */}
+          <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 bg-gradient-to-br from-[#F3F0FF] via-white to-[#F7EFE1] dark:from-indigo-950/60 dark:via-[var(--surface)] dark:to-[var(--background)] p-3.5 sm:p-6 shadow-xs space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#6741D9] text-white font-black text-xs uppercase tracking-wider">
                 <Compass className="w-3.5 h-3.5 shrink-0" />
@@ -901,17 +1103,164 @@ export function GrammarDeepDiveModal({
               )}
             </div>
 
-            <div
-              dir="ltr"
-              lang="tr"
-              className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-[#6741D9]/30 p-3.5 sm:p-4 text-center shadow-2xs"
-            >
-              <p className="font-sans text-sm sm:text-base md:text-lg font-black text-[#4C28B5] dark:text-indigo-200 leading-relaxed break-words">
-                {renderTurkishWithIsolatedArabic(
-                  detailLayer.formul_sema,
-                  "arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 px-1 inline-block"
+            {/* ÜST MODEL ÖRNEK CÜMLE KARTI (GÖREV 1) */}
+            {modelExample && (
+              <div className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-emerald-500/45 dark:border-emerald-600/45 p-3.5 sm:p-4 shadow-2xs space-y-2.5">
+                <div
+                  dir="ltr"
+                  className="flex flex-wrap items-center justify-between gap-2"
+                >
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[#065F46] dark:text-emerald-300 font-sans text-[11px] sm:text-xs font-black tracking-wide">
+                    <span>📌 Model Örnek Cümle</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleListen(
+                        modelExample.arapca,
+                        "formula-model-example"
+                      )
+                    }
+                    className={`px-3 py-1 rounded-xl text-xs font-extrabold border-2 inline-flex items-center gap-1.5 cursor-pointer transition-all shrink-0 ${
+                      playingKey === "formula-model-example"
+                        ? "bg-[#087F5B] text-white border-[#065F46]"
+                        : "bg-[#F7EFE1]/80 dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/60"
+                    }`}
+                    title="Model örnek cümleyi sesli dinle"
+                  >
+                    <Volume2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {playingKey === "formula-model-example"
+                        ? "Dinleniyor..."
+                        : "🔊 Dinle"}
+                    </span>
+                  </button>
+                </div>
+
+                <p
+                  dir="rtl"
+                  lang="ar"
+                  className="arabic font-arabic text-2xl sm:text-3xl font-bold text-emerald-950 dark:text-emerald-300 leading-loose text-right break-words"
+                >
+                  {fixArabicTypography(modelExample.arapca, arabicFont)}
+                </p>
+
+                {modelExample.turkce && (
+                  <p
+                    dir="ltr"
+                    lang="tr"
+                    className="font-sans text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 text-left leading-relaxed pt-2 border-t border-emerald-100 dark:border-emerald-900/50"
+                  >
+                    {renderTurkishWithIsolatedArabic(modelExample.turkce)}
+                  </p>
                 )}
-              </p>
+              </div>
+            )}
+
+            {/* SAĞDAN SOLA (RTL) SÖZDİZİMİ ŞEMASI BLOKLARI (GÖREV 2) */}
+            <div className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-[#6741D9]/30 dark:border-indigo-500/35 p-3.5 sm:p-4 shadow-2xs space-y-3">
+              <div
+                dir="ltr"
+                className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-dashed border-[#6741D9]/20 dark:border-indigo-500/25"
+              >
+                <span className="font-sans text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Sözdizimi Kalıbı &amp; Öge Sırası
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/30 dark:border-indigo-500/40 text-[#4C28B5] dark:text-indigo-200 font-sans text-[11px] sm:text-xs font-black tracking-wide ml-auto">
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#6741D9] dark:text-indigo-300 shrink-0" />
+                  <span>Sağdan Sola Arapça Cümle Dizilimi (١ ← ٢ ← ٣)</span>
+                </span>
+              </div>
+
+              {formulaNodes.length > 0 ? (
+                <div
+                  dir="rtl"
+                  className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-2.5 w-full"
+                >
+                  {formulaNodes.map((node, idx) => {
+                    if (node.type === "operator") {
+                      if (
+                        node.operator === "equals" ||
+                        node.operator === "arrow"
+                      ) {
+                        return (
+                          <span
+                            key={`op-${idx}`}
+                            dir="ltr"
+                            title="Sağdan Sola Türetim / Sonuç"
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 dark:bg-amber-950/85 border-2 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-200 font-sans text-xs sm:text-sm font-black shrink-0 shadow-2xs"
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5 stroke-[2.75] shrink-0" />
+                            {node.operator === "equals" && <span>=</span>}
+                          </span>
+                        );
+                      }
+
+                      if (node.operator === "slash") {
+                        return (
+                          <span
+                            key={`op-${idx}`}
+                            dir="ltr"
+                            className="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-sans text-xs sm:text-sm font-black shrink-0"
+                          >
+                            /
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <span
+                          key={`op-${idx}`}
+                          dir="ltr"
+                          className="w-7 h-7 rounded-full bg-[#F3F0FF] dark:bg-indigo-950/90 border border-[#6741D9]/35 dark:border-indigo-500/45 text-[#4C28B5] dark:text-indigo-200 font-sans text-sm sm:text-base font-black inline-flex items-center justify-center shrink-0 shadow-2xs"
+                        >
+                          +
+                        </span>
+                      );
+                    }
+
+                    const theme =
+                      FORMULA_BLOCK_THEMES[
+                        (node.order - 1) % FORMULA_BLOCK_THEMES.length
+                      ];
+
+                    return (
+                      <div
+                        key={`blk-${idx}`}
+                        className={`inline-flex items-center gap-2.5 rounded-xl border-2 px-3 py-2 shadow-2xs max-w-full ${theme.card}`}
+                      >
+                        <span
+                          dir="ltr"
+                          className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg font-sans text-[11px] sm:text-xs font-black flex items-center justify-center shrink-0 shadow-2xs ${theme.badge}`}
+                          title={`${node.order}. Sözdizimi Ögesi`}
+                        >
+                          {node.order}
+                        </span>
+                        <div
+                          dir="ltr"
+                          lang="tr"
+                          className="font-sans text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-left leading-snug break-words min-w-0"
+                        >
+                          <MixedText
+                            text={node.label}
+                            arabicClassName="arabic font-arabic text-lg font-bold text-emerald-900 dark:text-emerald-300 mx-1 inline-block leading-normal"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div dir="ltr" lang="tr" className="text-center">
+                  <p className="font-sans text-sm sm:text-base font-black text-[#4C28B5] dark:text-indigo-200 leading-relaxed break-words">
+                    {renderTurkishWithIsolatedArabic(
+                      detailLayer.formul_sema,
+                      "arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 px-1 inline-block"
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -1025,12 +1374,16 @@ export function GrammarDeepDiveModal({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div
+                dir="rtl"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+              >
                 {detailLayer.irab_tahlili.map((item, idx) => {
                   const wKey = `irab-w-${idx}`;
                   return (
                     <div
                       key={idx}
+                      dir="ltr"
                       className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 flex flex-col justify-between gap-2 hover:border-[#6741D9] transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E6D7BE] dark:border-slate-800 pb-2">
@@ -1042,15 +1395,27 @@ export function GrammarDeepDiveModal({
                         >
                           <Volume2 className="w-3.5 h-3.5" />
                         </button>
-                        <span
-                          dir="rtl"
-                          lang="ar"
-                          className="arabic font-arabic text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed"
-                        >
-                          {item.kelime}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            dir="rtl"
+                            lang="ar"
+                            className="arabic font-arabic text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed break-words"
+                          >
+                            {fixArabicTypography(item.kelime, arabicFont)}
+                          </span>
+                          <span
+                            className="w-5 h-5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/30 text-[#6741D9] dark:text-indigo-300 font-sans text-[10px] font-black flex items-center justify-center shrink-0"
+                            title={`Cümledeki ${idx + 1}. kelime (Sağdan sola)`}
+                          >
+                            {idx + 1}
+                          </span>
+                        </div>
                       </div>
-                      <div dir="ltr" lang="tr" className="space-y-1 text-left">
+                      <div
+                        dir="ltr"
+                        lang="tr"
+                        className="space-y-1 text-left font-sans"
+                      >
                         <span className="inline-block px-2 py-0.5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-300 font-sans text-[11px] font-black">
                           {renderTurkishWithIsolatedArabic(
                             item.gorevi,

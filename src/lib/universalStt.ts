@@ -736,7 +736,7 @@ export async function transcribePcmViaServerOrWorker(
   }
 
   const localOnly = Boolean(options?.localSttOnly);
-  const timeoutMs = options?.serverTimeoutMs ?? 5500;
+  const timeoutMs = options?.serverTimeoutMs ?? 4500;
 
   if (!localOnly) {
     try {
@@ -1218,7 +1218,7 @@ export function startUniversalSttSession(
           pcm16k,
           {
             localSttOnly: options.localSttOnly,
-            serverTimeoutMs: 5500,
+            serverTimeoutMs: 4500,
             onStatus: options.onEvaluating,
           }
         );

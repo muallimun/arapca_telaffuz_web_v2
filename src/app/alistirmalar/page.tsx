@@ -18,6 +18,7 @@ import {
   FolderOpen,
   GitBranch,
   Trophy,
+  X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
 import {
@@ -54,6 +55,8 @@ import {
   getModuleCategoryList,
   normalizeWordPartOfSpeech,
 } from "@/lib/quiz";
+import { formatTurkishCategory } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 
 import Flashcard from "@/components/exercises/Flashcard";
 import MultipleChoice, {
@@ -442,8 +445,9 @@ function ExercisesPageContent() {
         category: rangePreset === "sentences_1111" ? categoryFilter : "all",
         level: cefrFilter,
         grammar: rangePreset === "sentences_1111" ? grammarFilter : "all",
+        targetCount: questionCount,
       }),
-    [rangePreset, categoryFilter, cefrFilter, grammarFilter]
+    [rangePreset, categoryFilter, cefrFilter, grammarFilter, questionCount]
   );
 
   const activeProverbsWordItems = useMemo(
@@ -487,7 +491,7 @@ function ExercisesPageContent() {
           id: a.id,
           sira: idx + 1,
           kategori: a.category || "atasozu",
-          kategori_tr: (a.category || "Atasözü").replace(/_/g, " "),
+          kategori_tr: formatTurkishCategory(a.category || "Atasözü"),
           arapca: a.arabic,
           turkce: a.turkish,
           tur: "ifade",
@@ -595,12 +599,12 @@ function ExercisesPageContent() {
         seviye: cefrFilter === "all" ? "A1" : cefrFilter,
         baslik_tr:
           categoryFilter !== "all"
-            ? `1111 Cümle · ${categoryFilter.replace(/_/g, " ")}`
+            ? `1111 Günlük Kalıp Cümle · ${formatTurkishCategory(categoryFilter)}`
             : "1111 Günlük Kalıp Cümle",
         baslik_ar: "١١١١ جُمْلَة يَوْمِيَّة",
         satirlar: items.map((c, idx) => ({
           sira: idx + 1,
-          konusmaci: (c.category || "Günlük Cümle").replace(/_/g, " "),
+          konusmaci: formatTurkishCategory(c.category || "Günlük Cümle"),
           konusmaci_ar: "جُمْلَة",
           cinsiyet: "E",
           odak_kalip: c.grammarTopic,
@@ -621,12 +625,12 @@ function ExercisesPageContent() {
         seviye: cefrFilter === "all" ? "B1" : cefrFilter,
         baslik_tr:
           categoryFilter !== "all"
-            ? `508 Atasözü · ${categoryFilter.replace(/_/g, " ")}`
+            ? `508 Atasözü · ${formatTurkishCategory(categoryFilter)}`
             : "508 Arapça Atasözü ve Hikmet",
         baslik_ar: "٥٠٨ أَمْثَال وَحِكَم",
         satirlar: items.map((a, idx) => ({
           sira: idx + 1,
-          konusmaci: (a.category || "Atasözü").replace(/_/g, " "),
+          konusmaci: formatTurkishCategory(a.category || "Atasözü"),
           konusmaci_ar: "مَثَل",
           cinsiyet: "E",
           arapca: a.arabic,
@@ -1542,7 +1546,7 @@ function ExercisesPageContent() {
           : "space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
       }
     >
-      {/* ÜST BAŞLIK (Mobilde Görsel-Sesli Eşleştirme aktifken kendi iç Çık butonu olduğu için gizlenir, diğer alıştırmalarda tek satır kompakt görünür) */}
+      {/* ÜST BAŞLIK (Mobilde Görsel-Sesli Eşleştirme aktifken kendi iç Çık butonu olduğu için gizlenir, diğer aktif alıştırmalarda büyük başlık gizlenip tek satır kompakt bar gösterilir) */}
       <div
         className={
           isPlaying && selectedType === "visual-rosetta"
@@ -1576,9 +1580,21 @@ function ExercisesPageContent() {
           )}
 
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate">
+            <h1
+              className={
+                isPlaying
+                  ? "hidden sm:block text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate"
+                  : "text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate"
+              }
+            >
               İnteraktif Alıştırma Merkezi
             </h1>
+            {isPlaying && (
+              <span className="sm:hidden text-xs font-extrabold text-[#4C28B5] dark:text-indigo-300 truncate block">
+                {exerciseCards.find((c) => c.id === selectedType)?.title ||
+                  "Alıştırma"}
+              </span>
+            )}
             <p
               className={
                 isPlaying
@@ -1591,14 +1607,43 @@ function ExercisesPageContent() {
           </div>
         </div>
 
-        <div
-          data-tooltip={`${contentStats.dialogueCount} Diyalog • ${contentStats.readingCount} Metin • ${contentStats.sentenceCount} Cümle • ${contentStats.proverbCount} Atasözü • ${contentStats.visualWordCount} Görsel Kelime • ${contentStats.dictionaryWordCount} Sözlük Kelimesi`}
-          data-tooltip-pos="bottom"
-          data-tooltip-align="right"
-          className="hidden sm:flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
-        >
-          <span>{activePoolCountLabel}</span>
-          <Info size={12} className="opacity-75 shrink-0" />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isPlaying &&
+            rangePreset === "sentences_1111" &&
+            grammarFilter !== "all" && (
+              <div
+                dir="ltr"
+                lang="tr"
+                className="font-sans flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 rounded-xl px-2 py-1 text-[11px] font-extrabold text-amber-900 dark:text-amber-200 max-w-[210px] sm:max-w-xs"
+              >
+                <span className="truncate">
+                  📌 Odak Kalıp: <MixedText text={grammarFilter} />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setGrammarFilter("all");
+                    setFrozenPools(null);
+                  }}
+                  title="Odak kalıp filtresini kaldır"
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[10px] font-black shrink-0 cursor-pointer"
+                >
+                  <X size={11} />
+                  <span className="hidden sm:inline">Filtreyi Kaldır</span>
+                </button>
+              </div>
+            )}
+
+          <div
+            data-tooltip={`${contentStats.dialogueCount} Diyalog • ${contentStats.readingCount} Metin • ${contentStats.sentenceCount} Cümle • ${contentStats.proverbCount} Atasözü • ${contentStats.visualWordCount} Görsel Kelime • ${contentStats.dictionaryWordCount} Sözlük Kelimesi`}
+            data-tooltip-pos="bottom"
+            data-tooltip-align="right"
+            className="hidden sm:flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
+          >
+            <span>{activePoolCountLabel}</span>
+            <Info size={12} className="opacity-75 shrink-0" />
+          </div>
         </div>
       </div>
 
@@ -1762,18 +1807,33 @@ function ExercisesPageContent() {
               </div>
             )}
 
-            {/* Gramer Kalıbı filtresi aktifse gösterge */}
+            {/* Gramer Kalıbı filtresi aktifse belirgin üst rozet */}
             {rangePreset === "sentences_1111" && grammarFilter !== "all" && (
-              <div className="flex items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/60 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200">
-                <span>
-                  📌 Odak Gramer Kalıbı: <strong>{grammarFilter}</strong> ({active1111SentencesWordItems.length} cümle)
+              <div
+                dir="ltr"
+                lang="tr"
+                className="font-sans flex flex-wrap items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/60 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200"
+              >
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  <span>📌 Odak Kalıp:</span>
+                  <strong className="text-amber-950 dark:text-amber-100">
+                    <MixedText text={grammarFilter} />
+                  </strong>
+                  <span className="text-amber-700 dark:text-amber-300 font-bold">
+                    ({active1111SentencesWordItems.length} cümle)
+                  </span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => setGrammarFilter("all")}
-                  className="text-[11px] font-bold underline cursor-pointer shrink-0"
+                  onClick={() => {
+                    playClick();
+                    setGrammarFilter("all");
+                    setFrozenPools(null);
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[11px] font-black inline-flex items-center gap-1 cursor-pointer shrink-0"
                 >
-                  Tüm Cümleleri Göster
+                  <X size={12} />
+                  <span>Filtreyi Kaldır</span>
                 </button>
               </div>
             )}

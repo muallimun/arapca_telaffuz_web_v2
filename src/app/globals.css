@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 @font-face {
+  font-family: "Arakom";
+  src: url("/fonts/Arakom.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
   font-family: "ArakomFont";
   src: url("/fonts/Arakom.ttf") format("truetype");
   font-weight: normal;
@@ -58,8 +67,8 @@
   --purple-accent: #6741d9;
 
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-arabic: "ArakomFont", "Amiri", "Noto Naskh Arabic", system-ui, -apple-system, sans-serif;
-  --font-arabic-family: "ArakomFont", "Amiri", "Noto Naskh Arabic", system-ui, -apple-system, sans-serif;
+  --font-arabic: "Arakom", "ArakomFont", "Amiri", "Noto Naskh Arabic", var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-arabic-family: "Arakom", "ArakomFont", "Amiri", "Noto Naskh Arabic", var(--font-sans), system-ui, -apple-system, sans-serif;
   --font-arabic-scale: 1;
   --font-arabic-line-height: 2.05;
 

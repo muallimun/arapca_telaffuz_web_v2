@@ -25,6 +25,8 @@ import { useAudioStore } from "@/store/audioStore";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+import { resolveSentenceSourceMeta } from "@/lib/quiz";
+import { MixedText } from "@/components/ui/MixedText";
 import {
   playClick,
   playCorrect,
@@ -201,10 +203,15 @@ export default function SentenceBuilder({
       for (const line of dlg.satirlar) {
         const tokens = tokenizeArabicSentence(line.arapca);
         if (tokens.length >= 2 && tokens.length <= 14) {
+          const srcMeta = resolveSentenceSourceMeta(
+            dlg.id,
+            dlg.baslik_tr,
+            line.konusmaci
+          );
           candidates.push({
             id: `sb_${dlg.id}_${line.sira}`,
             dialogueId: dlg.id,
-            dialogueTitle: dlg.baslik_tr,
+            dialogueTitle: srcMeta.shortTitle,
             level: dlg.seviye,
             lineSira: line.sira,
             fullArabic: line.arapca,
@@ -217,6 +224,13 @@ export default function SentenceBuilder({
           });
         }
       }
+    }
+    const isFocused1111Pool =
+      dialogues.length === 1 && dialogues[0].id === "pool_1111";
+    if (isFocused1111Pool) {
+      return shuffleArray(
+        candidates.slice(0, Math.max(questionCount, 12))
+      ).slice(0, questionCount);
     }
     return shuffleArray(candidates).slice(0, questionCount);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -695,8 +709,12 @@ export default function SentenceBuilder({
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-extrabold text-[var(--muted)]">
-                    #{idx + 1} · {q.dialogueTitle}
+                  <span
+                    dir="ltr"
+                    lang="tr"
+                    className="font-sans text-[11px] font-extrabold text-[var(--muted)]"
+                  >
+                    #{idx + 1} · <MixedText text={q.dialogueTitle} />
                   </span>
                   <button
                     type="button"
@@ -716,8 +734,12 @@ export default function SentenceBuilder({
                 >
                   {formatAr(q.fullArabic)}
                 </p>
-                <p className="text-xs font-semibold text-[var(--muted)]">
-                  {q.turkish}
+                <p
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-xs font-semibold text-[var(--muted)] text-left"
+                >
+                  <MixedText text={q.turkish} />
                 </p>
               </div>
             );
@@ -842,8 +864,12 @@ export default function SentenceBuilder({
       {/* 1. SESLENDİRME VE TÜRKÇE ÇEVİRİ İPUCU KARTI */}
       <div className="bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-4 space-y-2.5 text-center">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="px-2.5 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff]">
-            {currentQ.dialogueTitle} • {currentQ.level}
+          <span
+            dir="ltr"
+            lang="tr"
+            className="font-sans px-2.5 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff]"
+          >
+            <MixedText text={currentQ.dialogueTitle} /> • {currentQ.level}
           </span>
           <span className="text-[11px] font-bold text-[var(--muted)]">
             {currentQ.words.length} Kelimelik Cümle
@@ -880,8 +906,12 @@ export default function SentenceBuilder({
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
             Türkçe Anlam İpucu:
           </span>
-          <p className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug mt-0.5">
-            “{currentQ.turkish}”
+          <p
+            dir="ltr"
+            lang="tr"
+            className="font-sans text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug mt-0.5"
+          >
+            “<MixedText text={currentQ.turkish} />”
           </p>
         </div>
       </div>

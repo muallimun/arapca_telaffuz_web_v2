@@ -18,8 +18,125 @@ import {
   getReadingTextVocabulary,
   isProperNounItem,
 } from "@/lib/dict";
+import { formatTurkishCategory } from "@/lib/arabicTextUtils";
 
 export type VisualWordItem = ResimliKelime;
+
+export interface SentenceSourceMeta {
+  topBadge: string;
+  promptQuestionTr: string;
+  bottomMeta: string;
+  shortTitle: string;
+}
+
+/**
+ * Türkçe şıklarda parantez içinde geçen Arapça örnek cümleleri
+ * (örn. "-e ihtiyacı olmak (بِحَاجَةٍ إِلَى الرَّاحَةِ: dinlenmeye ihtiyacım var.)")
+ * cevap verilmeden önce temizleyerek hem kopya ipucunu hem BiDi kaymasını önler.
+ */
+export function stripParentheticalArabicExamples(trText: string): string {
+  if (!trText) return "";
+  const stripped = trText
+    .replace(/\s*\([^()]*[\u0600-\u06FF][^()]*\)/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return stripped || trText.trim();
+}
+
+/**
+ * Cümle kaynağının teknik ID'sini (#pool_1111 vb.) asla kullanıcıya göstermeden
+ * kaynağa özel rozet, soru kökü ve alt meta açıklamasını üretir.
+ */
+export function resolveSentenceSourceMeta(
+  dlgId: string,
+  dlgTitle?: string,
+  speakerOrCategory?: string
+): SentenceSourceMeta {
+  const id = (dlgId || "").trim();
+  const cleanTitle = formatTurkishCategory((dlgTitle || "").trim());
+  const cleanSpeaker = formatTurkishCategory((speakerOrCategory || "").trim());
+
+  if (
+    id === "pool_1111" ||
+    id.startsWith("pool_1111") ||
+    id.startsWith("cumle_") ||
+    id.startsWith("c_")
+  ) {
+    const cat = cleanSpeaker || "Günlük Cümle";
+    return {
+      topBadge: "🗣️ Günlük Kalıp Cümle",
+      promptQuestionTr:
+        "Aşağıdaki Arapça kalıp cümlenin doğru Türkçe çevirisi hangisidir?",
+      bottomMeta: `🗣️ Günlük Kalıp Cümle • ${cat}`,
+      shortTitle: `🗣️ Günlük Kalıp Cümle • ${cat}`,
+    };
+  }
+
+  if (
+    id === "pool_proverbs" ||
+    id.startsWith("pool_proverbs") ||
+    id.startsWith("ata_")
+  ) {
+    const cat = cleanSpeaker || "Atasözü";
+    return {
+      topBadge: "📜 Atasözü & Hikmet",
+      promptQuestionTr:
+        "Aşağıdaki Arapça atasözünün doğru Türkçe karşılığı hangisidir?",
+      bottomMeta: `📜 Arapça Atasözü • ${cat}`,
+      shortTitle: `📜 Arapça Atasözü • ${cat}`,
+    };
+  }
+
+  if (id.startsWith("metin_")) {
+    const num = id.replace(/^metin_0*/, "") || id.replace("metin_", "");
+    const titlePart = cleanTitle ? `: ${cleanTitle}` : "";
+    return {
+      topBadge: "📖 Okuma Metni Cümlesi",
+      promptQuestionTr:
+        "Aşağıdaki okuma metni cümlesinin doğru Türkçe çevirisi hangisidir?",
+      bottomMeta: `📖 Okuma Metni #${num}${titlePart}`,
+      shortTitle: `📖 Okuma Metni #${num}${titlePart}`,
+    };
+  }
+
+  if (id === "pool_visual" || id.startsWith("pool_visual")) {
+    const cat = cleanSpeaker || "Görsel Kelime";
+    return {
+      topBadge: "🖼️ Görsel Kelime Cümlesi",
+      promptQuestionTr:
+        "Aşağıdaki Arapça örnek cümlenin doğru Türkçe çevirisi hangisidir?",
+      bottomMeta: `🖼️ Görsel Kelime • ${cat}`,
+      shortTitle: `🖼️ Görsel Kelime • ${cat}`,
+    };
+  }
+
+  if (id.startsWith("dlg_")) {
+    const num = id.replace(/^dlg_0*/, "") || id.replace("dlg_", "");
+    const speakerSuffix =
+      cleanSpeaker && cleanSpeaker !== cleanTitle ? ` (${cleanSpeaker})` : "";
+    const titlePart = cleanTitle ? `: ${cleanTitle}` : "";
+    return {
+      topBadge: "💬 Diyalog Cümlesi",
+      promptQuestionTr:
+        "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?",
+      bottomMeta: `💬 Diyalog #${num}${titlePart}${speakerSuffix}`,
+      shortTitle: `💬 Diyalog #${num}${titlePart}`,
+    };
+  }
+
+  // Herhangi bir özel/sentetik havuz ID'si gelirse ham kodu (#pool_...) asla basma
+  const safeLabel = cleanTitle.replace(/#?pool_[a-z0-9_]+/gi, "").trim();
+  const fallbackMeta = safeLabel
+    ? `💬 ${safeLabel}${cleanSpeaker ? ` • ${cleanSpeaker}` : ""}`
+    : `💬 Arapça Cümle${cleanSpeaker ? ` • ${cleanSpeaker}` : ""}`;
+  return {
+    topBadge: "💬 Arapça Cümle",
+    promptQuestionTr:
+      "Aşağıdaki Arapça cümlenin doğru Türkçe çevirisi hangisidir?",
+    bottomMeta: fallbackMeta,
+    shortTitle: safeLabel || "💬 Arapça Cümle",
+  };
+}
 
 export interface WordItem {
   id: string;
@@ -254,49 +371,113 @@ export function generatePoolFrom1111Sentences(options?: {
   category?: string;
   level?: Level | "all";
   grammar?: string;
+  targetCount?: number;
 }): WordItem[] {
   const lvl = options?.level || "all";
   const category = options?.category || "all";
   const grammar = (options?.grammar || "all").trim();
+  const targetCount = options?.targetCount ?? 10;
 
   const normalizeKey = (s: string) =>
     s
       .toLocaleLowerCase("tr-TR")
       .replace(/[âîû]/g, (m) => ({ â: "a", î: "i", û: "u" }[m] || m))
+      .replace(/\s+/g, " ")
       .trim();
 
   const normGrammar = grammar !== "all" ? normalizeKey(grammar) : "";
-  const grammarKeywords = normGrammar
-    .split(/[\s,()/\-–:+]+/)
-    .filter((w) => w.length >= 3 && !["ile", "icin", "olan", "veya"].includes(w));
 
-  let filtered = cumleler1111.filter((item) => {
+  const baseCandidates = cumleler1111.filter((item) => {
     const itemLevel = item.seviye || item.cefr || "A1";
     if (lvl !== "all" && itemLevel !== lvl) return false;
     const itemCat = (item.tema || item.kategori || "").trim();
     if (category !== "all" && itemCat !== category) return false;
-    if (grammar !== "all" && normGrammar) {
-      const itemGrammar = normalizeKey(item.odak_kalip || "");
-      if (!itemGrammar) return false;
-      if (itemGrammar === normGrammar || itemGrammar.includes(normGrammar) || normGrammar.includes(itemGrammar)) {
-        return true;
-      }
-      if (grammarKeywords.length > 0 && grammarKeywords.some((kw) => itemGrammar.includes(kw))) {
-        return true;
-      }
-      return false;
-    }
     return true;
   });
 
-  if (filtered.length < 4 && grammar !== "all") {
-    filtered = cumleler1111.filter((item) => {
-      const itemLevel = item.seviye || item.cefr || "A1";
-      if (lvl !== "all" && itemLevel !== lvl) return false;
-      const itemCat = (item.tema || item.kategori || "").trim();
-      if (category !== "all" && itemCat !== category) return false;
-      return true;
+  let filtered = baseCandidates;
+
+  if (grammar !== "all" && normGrammar) {
+    // ADIM 1: Birebir aynı odak_kalip (veya tam kalıp ifadesini eksiksiz barındıran) cümleler
+    const exactMatches = baseCandidates.filter((item) => {
+      const itemGrammar = normalizeKey(item.odak_kalip || "");
+      return itemGrammar.length > 0 && itemGrammar === normGrammar;
     });
+
+    const phraseMatches =
+      normGrammar.length >= 6
+        ? baseCandidates.filter((item) => {
+            const itemGrammar = normalizeKey(item.odak_kalip || "");
+            return (
+              itemGrammar.length > 0 &&
+              itemGrammar !== normGrammar &&
+              itemGrammar.includes(normGrammar)
+            );
+          })
+        : [];
+
+    const primarySet = [...exactMatches, ...phraseMatches];
+    const pickedIds = new Set(primarySet.map((i) => i.id));
+
+    if (primarySet.length >= targetCount) {
+      filtered = primarySet;
+    } else {
+      // ADIM 2: Yalnızca tam eşleşmeler hedef soru sayısının (örn. 10) altındaysa,
+      // "+" veya "(" öncesindeki ANA GRAMER BAŞLIĞI (örn. "Muzâri Fiil") ile başlayanlarla tamamla.
+      // Asla "Fiil" gibi tek kelimelere bölüp yüzlerce alakasız cümleyi dahil etme!
+      const primaryPrefix = normGrammar.split(/[+(/—–:]/)[0].trim();
+      const genericSingleWords = new Set([
+        "fiil",
+        "isim",
+        "harf",
+        "edat",
+        "cumle",
+        "cümle",
+        "kalip",
+        "kalıp",
+        "zamir",
+      ]);
+      const canUsePrefix =
+        primaryPrefix.length >= 4 &&
+        (!genericSingleWords.has(primaryPrefix) ||
+          normGrammar === primaryPrefix);
+
+      const familySupplement = canUsePrefix
+        ? baseCandidates.filter((item) => {
+            if (pickedIds.has(item.id)) return false;
+            const itemGrammar = normalizeKey(item.odak_kalip || "");
+            return (
+              itemGrammar.length > 0 && itemGrammar.startsWith(primaryPrefix)
+            );
+          })
+        : [];
+
+      const needed = Math.max(0, targetCount - primarySet.length);
+      const combined = [
+        ...primarySet,
+        ...familySupplement.slice(0, needed),
+      ];
+
+      // Eğer seviye/kategori daraltması yüzünden < 4 kaldıysa aynı kalıbı tüm seviyelerde ara
+      if (combined.length < 4 && (lvl !== "all" || category !== "all")) {
+        const allLevelExact = cumleler1111.filter((item) => {
+          const itemGrammar = normalizeKey(item.odak_kalip || "");
+          return (
+            itemGrammar === normGrammar ||
+            (normGrammar.length >= 6 && itemGrammar.includes(normGrammar)) ||
+            (canUsePrefix && itemGrammar.startsWith(primaryPrefix))
+          );
+        });
+        filtered =
+          allLevelExact.length >= 4
+            ? allLevelExact.slice(0, Math.max(targetCount, exactMatches.length))
+            : combined.length > 0
+            ? combined
+            : baseCandidates;
+      } else {
+        filtered = combined.length > 0 ? combined : baseCandidates;
+      }
+    }
   }
 
   return filtered.map((item) => ({
@@ -432,7 +613,7 @@ export function getModuleCategoryList(
 
   return Array.from(counts.entries()).map(([category, count]) => ({
     category,
-    label: category.replace(/_/g, " "),
+    label: formatTurkishCategory(category),
     count,
   }));
 }

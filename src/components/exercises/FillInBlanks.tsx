@@ -44,6 +44,7 @@ import { useAudioStore } from "@/store/audioStore";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { formatArabicText, removeArabicHarakat } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import ArabicVirtualKeyboard from "@/components/ui/ArabicVirtualKeyboard";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { FeedbackMode, QuizContentType } from "./MultipleChoice";
@@ -1588,8 +1589,12 @@ export default function FillInBlanks({
 
         {/* TÜRKÇE ANLAM İPUCU VE İMLA HARF İPUCU TEK KOMPAKT SATIRDA */}
         <div className="mt-1.5 pt-2 border-t border-dashed border-[#E2D3B8] flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs sm:text-sm font-semibold text-[var(--muted)] flex-1 text-center sm:text-left">
-            “{currentQ.turkce}”
+          <p
+            dir="ltr"
+            lang="tr"
+            className="font-sans text-xs sm:text-sm font-semibold text-[var(--muted)] flex-1 text-center sm:text-left"
+          >
+            “<MixedText text={currentQ.turkce} />”
           </p>
 
           {subMode === "dictation" && feedback !== "correct" && (

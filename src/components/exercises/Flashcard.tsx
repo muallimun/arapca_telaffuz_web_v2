@@ -29,9 +29,13 @@ import {
   getMp3Path,
   VoiceOption,
 } from "@/lib/audio";
-import { shuffleArray } from "@/lib/quiz";
+import { shuffleArray, resolveSentenceSourceMeta } from "@/lib/quiz";
 import ShadowingModal from "@/components/ui/ShadowingModal";
-import { formatArabicText } from "@/lib/arabicTextUtils";
+import {
+  formatArabicText,
+  formatTurkishCategory,
+} from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import { QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
@@ -65,7 +69,6 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
   const items: FlashcardItem[] = [];
   dialogues.forEach((dlg) => {
     const isStandardDialogue = dlg.id.startsWith("dlg_");
-    const dlgNum = dlg.id.replace(/^(dlg_|metin_)/, "");
     dlg.satirlar.forEach((line) => {
       const ar = line.arapca.trim();
       const tr = line.turkce.trim();
@@ -73,22 +76,19 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
       const words = ar.split(/\s+/).filter(Boolean);
       const maxWords = isStandardDialogue ? 8 : 24;
       if (words.length >= 2 && words.length <= maxWords) {
-        const badgeText = dlg.id.startsWith("metin_")
-          ? `📖 Metin #${dlgNum}: ${dlg.baslik_tr}`
-          : dlg.id.startsWith("pool_1111")
-          ? `🗣️ 1111 Günlük Cümle · ${line.konusmaci}`
-          : dlg.id.startsWith("pool_proverbs")
-          ? `📜 Atasözü & Hikmet · ${line.konusmaci}`
-          : dlg.id.startsWith("pool_visual")
-          ? `🖼️ Görsel Kelime Örnek Cümlesi · ${line.konusmaci}`
-          : `💬 Diyalog #${dlgNum}: ${dlg.baslik_tr} · ${line.konusmaci}`;
+        const srcMeta = resolveSentenceSourceMeta(
+          dlg.id,
+          dlg.baslik_tr,
+          line.konusmaci
+        );
+        const cleanSpeaker = formatTurkishCategory(line.konusmaci);
         items.push({
           id: `sent_${dlg.id}_${line.sira}`,
           kind: "sentence",
           arabic: ar,
           turkish: tr,
-          badgeText,
-          subLabel: `${line.konusmaci} (${line.konusmaci_ar})`,
+          badgeText: srcMeta.bottomMeta,
+          subLabel: `${cleanSpeaker} (${line.konusmaci_ar})`,
           dialogueId: dlg.id,
           lineSira: line.sira,
           voice:
@@ -542,8 +542,12 @@ export default function Flashcard({
             )}
           </span>
         </div>
-        <span dir="ltr" className="text-[#065F46] dark:text-emerald-400 font-extrabold">
-          {currentCard.badgeText}
+        <span
+          dir="ltr"
+          lang="tr"
+          className="font-sans text-[#065F46] dark:text-emerald-400 font-extrabold"
+        >
+          <MixedText text={currentCard.badgeText} />
         </span>
       </div>
 
@@ -588,8 +592,12 @@ export default function Flashcard({
                   <span>{isFav ? "Kayıtlı" : "Kaydet"}</span>
                 </button>
               ) : (
-                <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[11px] font-extrabold text-[#6741D9]">
-                  {currentCard.badgeText}
+                <span
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[11px] font-extrabold text-[#6741D9]"
+                >
+                  <MixedText text={currentCard.badgeText} />
                 </span>
               )}
 
@@ -751,32 +759,48 @@ export default function Flashcard({
             </div>
 
             <div className="my-auto space-y-2.5 w-full">
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--foreground)] leading-snug">
-                {currentCard.turkish}
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-xl sm:text-2xl font-extrabold text-[var(--foreground)] leading-snug"
+              >
+                <MixedText text={currentCard.turkish} />
               </p>
 
               {currentCard.kind === "idiom" &&
                 (currentCard.literalTr || currentCard.usageNote) && (
                   <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#6741D9]/30 p-3 text-left text-xs space-y-1 max-w-md mx-auto">
                     {currentCard.literalTr && (
-                      <p className="font-bold text-[#4C28B5] dark:text-[#d0bfff]">
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans font-bold text-[#4C28B5] dark:text-[#d0bfff]"
+                      >
                         <span className="font-extrabold">✨ Harfiyen Anlamı:</span>{" "}
-                        {currentCard.literalTr}
+                        <MixedText text={currentCard.literalTr} />
                       </p>
                     )}
                     {currentCard.usageNote && (
-                      <p className="text-[var(--foreground)] font-semibold leading-snug">
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[var(--foreground)] font-semibold leading-snug"
+                      >
                         <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
                           💡 Kullanım İpucu:
                         </span>{" "}
-                        {currentCard.usageNote}
+                        <MixedText text={currentCard.usageNote} />
                       </p>
                     )}
                   </div>
                 )}
 
-              <p className="text-xs font-bold text-[var(--muted)]">
-                {currentCard.badgeText}
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-xs font-bold text-[var(--muted)]"
+              >
+                <MixedText text={currentCard.badgeText} />
               </p>
             </div>
           </div>

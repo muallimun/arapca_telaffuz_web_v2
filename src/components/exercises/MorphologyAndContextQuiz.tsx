@@ -1415,8 +1415,12 @@ export default function MorphologyAndContextQuiz({
                           <span dir="rtl" lang="ar" className="arabic font-bold">
                             {sib.arabic}
                           </span>
-                          <span className="text-[var(--muted)] font-semibold">
-                            ({sib.turkish})
+                          <span
+                            dir="ltr"
+                            lang="tr"
+                            className="font-sans text-[var(--muted)] font-semibold"
+                          >
+                            (<MixedText text={sib.turkish} />)
                           </span>
                         </button>
                       ))}
@@ -1506,15 +1510,24 @@ export default function MorphologyAndContextQuiz({
               {currentQuestion.subMode === "context_proverb_grammar" && (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   {currentQuestion.proverbMeta && (
-                    <div className="text-[11px] space-y-0.5">
+                    <div
+                      dir="ltr"
+                      lang="tr"
+                      className="font-sans text-[11px] space-y-0.5 text-left"
+                    >
                       <div className="font-extrabold text-[#065F46] dark:text-emerald-400">
                         📜 Türkçe Karşılığı:{" "}
                         <span className="text-[var(--foreground)]">
-                          {currentQuestion.proverbMeta.proverbTurkish}
+                          <MixedText
+                            text={currentQuestion.proverbMeta.proverbTurkish}
+                          />
                         </span>
                       </div>
                       <div className="text-[var(--muted)] font-semibold">
-                        Lafzî Çeviri: {currentQuestion.proverbMeta.literalTr}
+                        Lafzî Çeviri:{" "}
+                        <MixedText
+                          text={currentQuestion.proverbMeta.literalTr}
+                        />
                       </div>
                     </div>
                   )}
@@ -1709,11 +1722,18 @@ export default function MorphologyAndContextQuiz({
                       </span>
                       {opt.rootFormatted && opt.rootFormatted !== "-" && (
                         <span
-                          dir="rtl"
-                          lang="ar"
-                          className="arabic font-arabic px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-xs font-bold"
+                          dir="ltr"
+                          lang="tr"
+                          className="font-sans px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-[11px] font-bold inline-flex items-center gap-1"
                         >
-                          Kök: {opt.rootFormatted}
+                          <span>Kök:</span>
+                          <bdi
+                            dir="rtl"
+                            lang="ar"
+                            className="arabic font-arabic text-xs font-bold"
+                          >
+                            {opt.rootFormatted}
+                          </bdi>
                         </span>
                       )}
                     </div>

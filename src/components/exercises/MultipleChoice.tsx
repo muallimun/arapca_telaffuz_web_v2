@@ -9,7 +9,13 @@ import {
   playClick,
 } from "@/lib/sfxManager";
 import { Dialogue, DictionaryItem } from "@/types/data";
-import { shuffleArray, selectSmartWordDistractors } from "@/lib/quiz";
+import {
+  shuffleArray,
+  selectSmartWordDistractors,
+  resolveSentenceSourceMeta,
+  stripParentheticalArabicExamples,
+} from "@/lib/quiz";
+import { cumleler1111 } from "@/lib/data";
 import {
   CheckCircle2,
   XCircle,
@@ -20,7 +26,6 @@ import {
   Volume2,
   ArrowLeft,
   ArrowRight,
-  MessageSquareQuote,
   BookOpen,
   Play,
   Target,
@@ -35,6 +40,7 @@ import { speakHybrid, playTTS } from "@/lib/audio";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
@@ -48,6 +54,8 @@ export interface QuizQuestionItem {
   arabic: string;
   turkish: string;
   metaLabel: string;
+  topBadge?: string;
+  promptQuestionTr?: string;
   wordId?: string;
   literalTr?: string;
   usageNote?: string;
@@ -155,17 +163,25 @@ export default function MultipleChoice({
       arabic: string;
       turkish: string;
       metaLabel: string;
+      topBadge: string;
+      promptQuestionTr: string;
     }[] = [];
 
     dialogues.forEach((dlg) => {
-      const dlgNum = dlg.id.replace("dlg_", "");
       dlg.satirlar.forEach((line) => {
         if (line.arapca.trim() && line.turkce.trim()) {
+          const srcMeta = resolveSentenceSourceMeta(
+            dlg.id,
+            dlg.baslik_tr,
+            line.konusmaci
+          );
           sentencePool.push({
             id: `s-${dlg.id}-${line.sira}`,
             arabic: line.arapca.trim(),
             turkish: line.turkce.trim(),
-            metaLabel: `Diyalog #${dlgNum}: ${dlg.baslik_tr} (${line.konusmaci})`,
+            metaLabel: srcMeta.bottomMeta,
+            topBadge: srcMeta.topBadge,
+            promptQuestionTr: srcMeta.promptQuestionTr,
           });
         }
       });
@@ -246,13 +262,24 @@ export default function MultipleChoice({
     const buildSentenceQuestion = (
       target: (typeof sentencePool)[number]
     ): QuizQuestionItem => {
-      const distractors = shuffleArray(
-        sentencePool.filter(
-          (s) => s.id !== target.id && s.turkish !== target.turkish
-        )
-      )
+      let candidateTranslations = sentencePool
+        .filter((s) => s.id !== target.id && s.turkish !== target.turkish)
+        .map((s) => s.turkish);
+
+      if (candidateTranslations.length < 3) {
+        const extraFrom1111 = shuffleArray(
+          cumleler1111
+            .map((c) => (c.turkce || "").trim())
+            .filter((tr) => tr.length > 0 && tr !== target.turkish)
+        ).slice(0, 6);
+        candidateTranslations = Array.from(
+          new Set([...candidateTranslations, ...extraFrom1111])
+        );
+      }
+
+      const distractors = shuffleArray(candidateTranslations)
         .slice(0, 3)
-        .map((d) => ({ text: d.turkish, isCorrect: false }));
+        .map((tr) => ({ text: tr, isCorrect: false }));
 
       return {
         id: target.id,
@@ -260,6 +287,8 @@ export default function MultipleChoice({
         arabic: target.arabic,
         turkish: target.turkish,
         metaLabel: target.metaLabel,
+        topBadge: target.topBadge,
+        promptQuestionTr: target.promptQuestionTr,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -273,10 +302,16 @@ export default function MultipleChoice({
         .map(buildIdiomQuestion);
     }
 
-    if (contentType === "sentences" && sentencePool.length >= 4) {
-      return shuffleArray(sentencePool)
-        .slice(0, questionCount)
-        .map(buildSentenceQuestion);
+    if (contentType === "sentences" && sentencePool.length >= 1) {
+      const isFocused1111Pool =
+        dialogues.length === 1 && dialogues[0].id === "pool_1111";
+      const pickedSentences = isFocused1111Pool
+        ? shuffleArray(sentencePool.slice(0, Math.max(questionCount, 12))).slice(
+            0,
+            questionCount
+          )
+        : shuffleArray(sentencePool).slice(0, questionCount);
+      return pickedSentences.map(buildSentenceQuestion);
     }
 
     if (contentType === "mixed") {
@@ -725,8 +760,12 @@ export default function MultipleChoice({
               >
                 {formatArabicText(reviewQ.arabic, showHareke, arabicFont)}
               </h4>
-              <p className="text-[11px] font-bold text-[var(--muted)] mt-1">
-                {reviewQ.metaLabel}
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-[11px] font-bold text-[var(--muted)] mt-1"
+              >
+                <MixedText text={reviewQ.metaLabel} />
               </p>
             </div>
 
@@ -745,7 +784,9 @@ export default function MultipleChoice({
                         : "bg-[#F7EFE1]/50 dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)] opacity-75"
                     }`}
                   >
-                    <span>{opt.text}</span>
+                    <span dir="ltr" lang="tr" className="font-sans text-left">
+                      <MixedText text={opt.text} />
+                    </span>
                     {isRight && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 shrink-0">
                         <CheckCircle2 size={15} />
@@ -767,17 +808,25 @@ export default function MultipleChoice({
               (reviewQ.literalTr || reviewQ.usageNote) && (
                 <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 p-3 text-left text-xs space-y-1">
                   {reviewQ.literalTr && (
-                    <p className="font-bold text-[#4C28B5] dark:text-[#d0bfff]">
+                    <p
+                      dir="ltr"
+                      lang="tr"
+                      className="font-sans font-bold text-[#4C28B5] dark:text-[#d0bfff]"
+                    >
                       <span className="font-extrabold">✨ Harfiyen Anlamı:</span>{" "}
-                      {reviewQ.literalTr}
+                      <MixedText text={reviewQ.literalTr} />
                     </p>
                   )}
                   {reviewQ.usageNote && (
-                    <p className="text-[var(--foreground)] font-semibold">
+                    <p
+                      dir="ltr"
+                      lang="tr"
+                      className="font-sans text-[var(--foreground)] font-semibold"
+                    >
                       <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
                         💡 Kullanım İpucu:
                       </span>{" "}
-                      {reviewQ.usageNote}
+                      <MixedText text={reviewQ.usageNote} />
                     </p>
                   )}
                 </div>
@@ -918,10 +967,9 @@ export default function MultipleChoice({
               }`}
             >
               {currentQuestion.kind === "sentence" ? (
-                <>
-                  <MessageSquareQuote size={11} />
-                  <span>Diyalog Cümlesi</span>
-                </>
+                <span>
+                  {currentQuestion.topBadge || "💬 Diyalog Cümlesi"}
+                </span>
               ) : currentQuestion.kind === "idiom" ? (
                 <>
                   <Sparkles size={11} />
@@ -990,7 +1038,8 @@ export default function MultipleChoice({
         <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] border-b border-dashed border-[#E2D3B8] pb-2.5">
           <span className="text-left">
             {currentQuestion.kind === "sentence"
-              ? "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
+              ? currentQuestion.promptQuestionTr ||
+                "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
               : currentQuestion.kind === "idiom"
               ? "Aşağıdaki Arapça kalıp ifadenin doğru deyimsel anlamı hangisidir?"
               : "Aşağıdaki Arapça kelimenin Türkçe karşılığı nedir?"}
@@ -1018,8 +1067,12 @@ export default function MultipleChoice({
           {displayArabic}
         </h3>
 
-        <p className="text-xs font-bold text-[var(--muted)]">
-          {currentQuestion.metaLabel}
+        <p
+          dir="ltr"
+          lang="tr"
+          className="font-sans text-xs font-bold text-[var(--muted)]"
+        >
+          <MixedText text={currentQuestion.metaLabel} />
         </p>
       </div>
 
@@ -1032,6 +1085,12 @@ export default function MultipleChoice({
           const showWrong =
             feedbackMode === "instant" && isChosen && !opt.isCorrect;
           const showNeutralSelected = feedbackMode === "end" && isChosen;
+          const displayOptionText =
+            currentQuestion.kind === "word" &&
+            !selected &&
+            feedbackMode === "instant"
+              ? stripParentheticalArabicExamples(opt.text)
+              : opt.text;
 
           return (
             <button
@@ -1053,7 +1112,9 @@ export default function MultipleChoice({
                   : "bg-[#F7EFE1]/50 border-[#E6D7BE] text-[var(--muted)] opacity-65"
               }`}
             >
-              <span>{opt.text}</span>
+              <span dir="ltr" lang="tr" className="font-sans text-left">
+                <MixedText text={displayOptionText} />
+              </span>
               {showCorrect && (
                 <CheckCircle2 size={20} className="text-[#065F46] shrink-0" />
               )}
@@ -1077,17 +1138,25 @@ export default function MultipleChoice({
         (currentQuestion.literalTr || currentQuestion.usageNote) && (
           <div className="rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9]/40 p-3.5 text-left text-xs space-y-1.5 animate-in fade-in duration-150">
             {currentQuestion.literalTr && (
-              <p className="font-bold text-[#4C28B5] dark:text-[#d0bfff]">
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans font-bold text-[#4C28B5] dark:text-[#d0bfff]"
+              >
                 <span className="font-extrabold">✨ Harfiyen Anlamı:</span>{" "}
-                {currentQuestion.literalTr}
+                <MixedText text={currentQuestion.literalTr} />
               </p>
             )}
             {currentQuestion.usageNote && (
-              <p className="text-[var(--foreground)] font-semibold">
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-[var(--foreground)] font-semibold"
+              >
                 <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
                   💡 Kullanım İpucu:
                 </span>{" "}
-                {currentQuestion.usageNote}
+                <MixedText text={currentQuestion.usageNote} />
               </p>
             )}
           </div>

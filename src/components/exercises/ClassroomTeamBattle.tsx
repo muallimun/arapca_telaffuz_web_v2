@@ -14,7 +14,12 @@ import {
   atasozleri,
   cumleler1111,
 } from "@/lib/data";
-import { shuffleArray } from "@/lib/quiz";
+import {
+  shuffleArray,
+  stripParentheticalArabicExamples,
+} from "@/lib/quiz";
+import { MixedText } from "@/components/ui/MixedText";
+import { hasLatinCharacters } from "@/lib/arabicTextUtils";
 import {
   playClick,
   playStart,
@@ -869,15 +874,26 @@ export default function ClassroomTeamBattle({
                 "bg-rose-50 dark:bg-rose-950/70 border-rose-500 text-rose-900 dark:text-rose-200 opacity-75";
             }
 
-            const primaryText =
+            const rawPrimaryText =
               currentQuestion.primaryDisplayField === "arabic"
                 ? opt.arabic
                 : opt.turkish;
+            const displayPrimaryText =
+              currentQuestion.primaryDisplayField === "turkish" &&
+              !isRoundResolved
+                ? stripParentheticalArabicExamples(rawPrimaryText)
+                : rawPrimaryText;
             const secondaryText =
               currentQuestion.primaryDisplayField === "arabic"
                 ? opt.turkish
                 : opt.arabic;
-            const isPrimaryArabic = /[\u0600-\u06FF]/.test(primaryText);
+            const isPrimaryPureArabic =
+              currentQuestion.primaryDisplayField === "arabic" &&
+              /[\u0600-\u06FF]/.test(displayPrimaryText) &&
+              !hasLatinCharacters(displayPrimaryText);
+            const isSecondaryPureArabic =
+              /[\u0600-\u06FF]/.test(secondaryText) &&
+              !hasLatinCharacters(secondaryText);
 
             return (
               <button
@@ -918,36 +934,61 @@ export default function ClassroomTeamBattle({
                   )}
                 </div>
 
-                {/* Ana Seçenek Metni */}
-                <div
-                  dir={isPrimaryArabic ? "rtl" : "ltr"}
-                  lang={isPrimaryArabic ? "ar" : "tr"}
-                  className={`w-full font-black text-[var(--foreground)] leading-snug my-auto ${
-                    isPrimaryArabic
-                      ? "arabic text-lg sm:text-xl text-right"
-                      : "text-xs sm:text-sm"
-                  }`}
-                >
-                  {primaryText}
-                </div>
+                {/* Ana Seçenek Metni — Türkçe/Karma metinler kesinlikle LTR + MixedText ile izole edilir */}
+                {isPrimaryPureArabic ? (
+                  <div
+                    dir="rtl"
+                    lang="ar"
+                    className="w-full font-black text-[var(--foreground)] leading-snug my-auto arabic text-lg sm:text-xl text-right"
+                  >
+                    {displayPrimaryText}
+                  </div>
+                ) : (
+                  <div
+                    dir="ltr"
+                    lang="tr"
+                    className="w-full font-sans font-black text-[var(--foreground)] leading-snug my-auto text-xs sm:text-sm text-left"
+                  >
+                    <MixedText
+                      text={displayPrimaryText}
+                      arabicClassName="arabic font-arabic text-base font-bold mx-0.5 inline-block"
+                    />
+                  </div>
+                )}
 
                 {/* Cevap Sonrasında Hem Arapça Yazılışı Hem Türkçe Anlamı Net Olarak Gösterilir */}
                 {isRoundResolved && (
                   <div className="w-full pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-col gap-0.5">
-                    <span
-                      dir={/[\u0600-\u06FF]/.test(secondaryText) ? "rtl" : "ltr"}
-                      lang={/[\u0600-\u06FF]/.test(secondaryText) ? "ar" : "tr"}
-                      className={`font-bold text-[#065F46] dark:text-emerald-300 ${
-                        /[\u0600-\u06FF]/.test(secondaryText)
-                          ? "arabic text-sm text-right"
-                          : "text-[11px]"
-                      }`}
-                    >
-                      {secondaryText}
-                    </span>
+                    {isSecondaryPureArabic ? (
+                      <span
+                        dir="rtl"
+                        lang="ar"
+                        className="font-bold text-[#065F46] dark:text-emerald-300 arabic text-sm text-right"
+                      >
+                        {secondaryText}
+                      </span>
+                    ) : (
+                      <span
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans font-bold text-[#065F46] dark:text-emerald-300 text-[11px] text-left"
+                      >
+                        <MixedText
+                          text={secondaryText}
+                          arabicClassName="arabic font-arabic text-sm font-bold mx-0.5 inline-block"
+                        />
+                      </span>
+                    )}
                     {opt.metaNote && (
-                      <span className="text-[10px] font-semibold text-[var(--muted)]">
-                        {opt.metaNote}
+                      <span
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[10px] font-semibold text-[var(--muted)] text-left"
+                      >
+                        <MixedText
+                          text={opt.metaNote}
+                          arabicClassName="arabic font-arabic text-xs font-bold mx-0.5 inline-block"
+                        />
                       </span>
                     )}
                   </div>
@@ -984,7 +1025,7 @@ export default function ClassroomTeamBattle({
               }`}
             >
               <Zap size={11} />
-              <span>⚡ Aynı Anda (Hızlı Olan)</span>
+              <span>Aynı Anda (Hızlı Olan)</span>
             </button>
             <button
               type="button"
@@ -1152,13 +1193,21 @@ export default function ClassroomTeamBattle({
               )}
 
               {currentQuestion.promptTurkish && (
-                <div className="text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-300">
-                  {currentQuestion.promptTurkish}
+                <div
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-300"
+                >
+                  <MixedText text={currentQuestion.promptTurkish} />
                 </div>
               )}
 
-              <p className="text-[11px] sm:text-xs font-bold text-[var(--muted)] leading-snug">
-                {currentQuestion.promptTypeLabel}
+              <p
+                dir="ltr"
+                lang="tr"
+                className="font-sans text-[11px] sm:text-xs font-bold text-[var(--muted)] leading-snug"
+              >
+                <MixedText text={currentQuestion.promptTypeLabel} />
               </p>
             </div>
           </div>

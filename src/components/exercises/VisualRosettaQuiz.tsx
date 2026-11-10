@@ -38,6 +38,7 @@ import {
 } from "@/lib/sfxManager";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import {
   registerActiveMediaStream,
   stopAllActiveMediaStreams,
@@ -63,11 +64,15 @@ export function sanitizeArabicDisplayText(text: string): string {
  * Türkçe anlam zaten parantez içeriyorsa (örn. "Merdiven (taşınabilir)")
  * dışına tekrar parantez ekleyip "((...))" çift parantez hatası oluşturmasını önler.
  */
-function formatCleanCardSubtitleTr(rawTr: string): string {
-  const cleaned = (rawTr || "")
+function cleanDoubleParens(rawTr: string): string {
+  return (rawTr || "")
     .trim()
-    .replace(/^\(\(+/, "(")
-    .replace(/\)\)+$/, ")");
+    .replace(/\(\(+/g, "(")
+    .replace(/\)\)+/g, ")");
+}
+
+function formatCleanCardSubtitleTr(rawTr: string): string {
+  const cleaned = cleanDoubleParens(rawTr);
   if (!cleaned) return "";
   if (cleaned.includes("(") || cleaned.includes(")")) {
     return `• ${cleaned}`;
@@ -1974,7 +1979,7 @@ export default function VisualRosettaQuiz({
                 } else {
                   clearTimers();
                   stopAllAudio();
-                  startMatrixListening(activeMatrixCard, matrixStepIndex, 350);
+                  startMatrixListening(activeMatrixCard, matrixStepIndex, 400);
                 }
               }}
               disabled={isPlayingTargetAudio || isEvaluatingStt}
@@ -2015,8 +2020,14 @@ export default function VisualRosettaQuiz({
                 >
                   {formatAr(activeMatrixCard.arapca)}
                 </span>
-                <span className="text-[11px] sm:text-xs text-slate-300 font-semibold leading-tight">
-                  {formatCleanCardSubtitleTr(activeMatrixCard.turkce)}
+                <span
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-[11px] sm:text-xs text-slate-300 font-semibold leading-tight"
+                >
+                  <MixedText
+                    text={formatCleanCardSubtitleTr(activeMatrixCard.turkce)}
+                  />
                 </span>
               </div>
 
@@ -2084,8 +2095,8 @@ export default function VisualRosettaQuiz({
             </div>
           </div>
 
-          {/* Sağ Aksiyon Butonu ("Onayla ✓" | "🎙️ Tekrar Konuş" | "Sonrakine Geç ⏭") */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* Sağ Aksiyon Butonu ("Onayla ✓" | "🎙️ Dinleniyor... (Bitirmek için dokunun)" | "🎙️ Tekrar Konuş" | "Sonrakine Geç ⏭") */}
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0 ml-auto">
             {micFreeMode ? (
               <button
                 type="button"
@@ -2093,6 +2104,20 @@ export default function VisualRosettaQuiz({
                 className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer"
               >
                 <span>Onayla ✓</span>
+              </button>
+            ) : isListeningMic && !isEvaluatingStt ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (universalSttRef.current) {
+                    playClick();
+                    universalSttRef.current.stopManual();
+                  }
+                }}
+                className="h-7 sm:h-8 px-2.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white text-[10px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                title="Konuşmayı bitirip hemen değerlendirmek için dokunun"
+              >
+                <span>🎙️ Bitirmek için dokunun</span>
               </button>
             ) : failedAttempts >= 3 && !isEvaluatingStt ? (
               <>
@@ -2102,7 +2127,7 @@ export default function VisualRosettaQuiz({
                     playClick();
                     clearTimers();
                     stopAllAudio();
-                    startMatrixListening(activeMatrixCard, matrixStepIndex, 350);
+                    startMatrixListening(activeMatrixCard, matrixStepIndex, 400);
                   }}
                   className="h-7 sm:h-8 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
                 >
@@ -2127,7 +2152,7 @@ export default function VisualRosettaQuiz({
                   playClick();
                   clearTimers();
                   stopAllAudio();
-                  startMatrixListening(activeMatrixCard, matrixStepIndex, 350);
+                  startMatrixListening(activeMatrixCard, matrixStepIndex, 400);
                 }}
                 className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
               >
@@ -2694,13 +2719,13 @@ export default function VisualRosettaQuiz({
                   </div>
                 )}
 
-                {/* 1:1 KARE GÖRSEL KUTUSU — HİÇBİR ZAMAN KIRPILMAZ (w-full h-full object-contain) */}
-                <div className="relative flex-1 min-h-0 w-full flex items-center justify-center bg-white dark:bg-slate-900/60 rounded-xl overflow-hidden p-1 sm:p-1.5">
+                {/* 1:1 KARE GÖRSEL KUTUSU — HİÇBİR ZAMAN KIRPILMAZ (aspect-square + object-contain) */}
+                <div className="relative aspect-square w-full max-h-[135px] sm:max-h-[220px] flex-1 min-h-0 flex items-center justify-center bg-white dark:bg-slate-900/60 rounded-xl overflow-hidden p-1.5 mx-auto">
                   <img
                     src={resolveImageUrl(option.gorsel)}
-                    alt={option.turkce}
+                    alt={cleanDoubleParens(option.turkce)}
                     loading="eager"
-                    className="w-full h-full max-h-[140px] sm:max-h-[215px] lg:max-h-[265px] object-contain mx-auto rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
+                    className="w-full h-full object-contain mx-auto rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
                   />
 
                   {/* Sağ Üst Doğru / Yanlış Büyük Rozeti */}
@@ -2752,9 +2777,13 @@ export default function VisualRosettaQuiz({
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                        {option.turkce}
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate"
+                      >
+                        <MixedText text={cleanDoubleParens(option.turkce)} />
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-[#F7EFE1] dark:bg-[var(--background)] text-[10px] font-extrabold text-[var(--muted)] shrink-0">
                         {option.cefr}

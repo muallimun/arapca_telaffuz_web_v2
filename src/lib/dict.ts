@@ -3,6 +3,7 @@ import gorselKelimelerRaw from "@/data/gorselKelimeler_guncel.json";
 import diyaloglarRaw from "@/data/tum_diyaloglar_120.json";
 import metinlerRaw from "@/data/tum_metinler_60.json";
 import { SUPPLEMENT_DICTIONARY } from "./supplementDict";
+import { registerDictionaryRootResolver } from "./arabicNlpEngine";
 import {
   Dialogue,
   DictionaryItem,
@@ -20,6 +21,7 @@ export interface MorphologicalMatch {
   suffixLabel?: string;
   morphologyNote: string;
   matchStage: "exact" | "affix" | "ta-marbuta" | "verb" | "root";
+  alternativeMeanings?: DictionaryItem[];
 }
 
 export interface DialogueVocabularyEntry {
@@ -376,14 +378,71 @@ const gorselAsDictionaryItems: DictionaryItem[] = (
   };
 });
 
-// Sözlük + Görsel Kelimeler + Tamamlayıcı Sözlük Yamasını birleştir ve mükerrerleri (aynı kelime + aynı tür) kesin olarak tekilleştir
+function getInternalVocalizationSignature(rawWord: string): string {
+  const trimmed = (rawWord || "").trim().replace(/^(وَ|فَ)?[اٱ]لْ?/, "");
+  if (!/[\u064E\u064F\u0650\u0651\u0652]/.test(trimmed)) return "";
+  const units: Array<{ ch: string; marks: string }> = [];
+  for (let i = 0; i < trimmed.length; i++) {
+    const c = trimmed[i];
+    if (/[\u064B-\u065F\u0670]/.test(c)) {
+      if (units.length > 0) units[units.length - 1].marks += c;
+    } else if (/[\u0621-\u064A\u0671]/.test(c)) {
+      units.push({ ch: c, marks: "" });
+    }
+  }
+  if (units.length === 0) return "";
+  // Son harfin irab/tenvin harekesini hariç tut; iç hareke ve şedde örüntüsünü çıkar
+  const internalCount = units.length > 1 ? units.length - 1 : 1;
+  const sigParts: string[] = [];
+  for (let i = 0; i < internalCount; i++) {
+    const m = units[i].marks;
+    const sh = m.includes("\u0651") ? "sh+" : "";
+    const v = m.includes("\u0652")
+      ? "0"
+      : m.includes("\u064E") || m.includes("\u064B")
+      ? "a"
+      : m.includes("\u0650") || m.includes("\u064D")
+      ? "i"
+      : m.includes("\u064F") || m.includes("\u064C")
+      ? "u"
+      : "";
+    sigParts.push(`${sh}${v}`);
+  }
+  const joined = sigParts.join("-");
+  return /[aiu0]|sh\+/.test(joined) ? joined : "";
+}
+
+function hasOverlappingTurkishSense(s1: string, s2: string): boolean {
+  const tokenize = (s: string) =>
+    (s || "")
+      .toLocaleLowerCase("tr-TR")
+      .replace(/\(.*?\)/g, " ")
+      .split(/[,;/:\-]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length >= 2);
+  const t1 = tokenize(s1);
+  const t2 = tokenize(s2);
+  for (const a of t1) {
+    for (const b of t2) {
+      if (a === b) return true;
+      if (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Sözlük + Görsel Kelimeler + Tamamlayıcı Sözlük Yamasını birleştir:
+// Aynı kelime + aynı hareke/anlam kayıtlarını tekilleştirir; ancak harekesi ve anlamı tamamen farklı
+// eş yazılımlı (homograf) kelimeleri (örn. عِلْمٌ "İlim" vs عَلَمٌ "Bayrak", شِعْرٌ "Şiir" vs شَعْرٌ "Saç") ayrı korur!
 function buildUnifiedDictionary(): DictionaryItem[] {
   const combined = [
     ...SUPPLEMENT_DICTIONARY,
     ...gorselAsDictionaryItems,
     ...(sozlukRaw as DictionaryItem[]),
   ];
-  const seenByKey = new Map<string, DictionaryItem>();
+  const seenBuckets = new Map<string, Array<{ item: DictionaryItem; vocalSig: string }>>();
   const deduplicated: DictionaryItem[] = [];
 
   for (const item of combined) {
@@ -403,10 +462,17 @@ function buildUnifiedDictionary(): DictionaryItem[] {
       normPrimary = normPrimary.slice(2);
     }
 
-    const key = `${category}_${normPrimary}`;
-    const existing = seenByKey.get(key);
+    const baseKey = `${category}_${normPrimary}`;
+    const vocalSig = getInternalVocalizationSignature(primary);
+    const bucket = seenBuckets.get(baseKey) || [];
 
-    if (!existing) {
+    const matchingEntry = bucket.find((entry) => {
+      if (!entry.vocalSig || !vocalSig) return true;
+      if (entry.vocalSig === vocalSig) return true;
+      return hasOverlappingTurkishSense(entry.item.anlam_tr, item.anlam_tr);
+    });
+
+    if (!matchingEntry) {
       const canonicalItem: DictionaryItem = {
         ...item,
         tur: category,
@@ -414,10 +480,14 @@ function buildUnifiedDictionary(): DictionaryItem[] {
         mazi: item.mazi ? item.mazi.split("/")[0].trim() : item.mazi,
         anlam_tr: item.anlam_tr.trim(),
       };
-      seenByKey.set(key, canonicalItem);
+      bucket.push({ item: canonicalItem, vocalSig });
+      seenBuckets.set(baseKey, bucket);
       deduplicated.push(canonicalItem);
     } else {
-      // İlk kaydı koru; Türkçe anlamı mergeTurkishMeanings ile zenginleştir ve eksik alanları tamamla
+      const existing = matchingEntry.item;
+      if (!matchingEntry.vocalSig && vocalSig) {
+        matchingEntry.vocalSig = vocalSig;
+      }
       if (item.anlam_tr && item.anlam_tr.trim()) {
         existing.anlam_tr = mergeTurkishMeanings(
           existing.anlam_tr,
@@ -937,7 +1007,7 @@ const PREPOSITION_PREV_WORDS = new Set<string>([
   "عبر",
 ]);
 
-// KURAL 1.3-A: Kendisinden sonra gelen kelimenin %100 FİİL (Muzari Meczum / Menfi) olduğunu gösteren edatlar
+// KURAL 1.3-A: Kendisinden sonra gelen kelimenin %100 FİİL olduğunu gösteren edatlar (قَدْ، لَقَدْ، لَمْ، لَمَّا، لَنْ، سَوْفَ)
 const JUSSIVE_OR_VERB_PREV_WORDS = new Set<string>([
   "لم",
   "لما",
@@ -948,10 +1018,19 @@ const JUSSIVE_OR_VERB_PREV_WORDS = new Set<string>([
   "لن",
   "ولن",
   "فلن",
+  "قد",
+  "وقد",
+  "فقد",
+  "لقد",
+  "ولقد",
+  "فلقد",
+  "سوف",
+  "وسوف",
+  "فسوف",
 ]);
 
 /**
- * Tıklanan kelimenin cümle bağlamına (prevWordAr: لَمْ، لَمَّا، لَنْ، لَا الناهية/النافية)
+ * Tıklanan kelimenin cümle bağlamına (prevWordAr: قَدْ، لَقَدْ، لَمْ، لَمَّا، لَنْ، سَوْفَ، لَا الناهية/النافية)
  * veya gelecek zaman önekine (سَـ) göre %100 FİİL olup olmadığını tespit eder.
  */
 export function hasDefiniteVerbMarker(
@@ -960,6 +1039,11 @@ export function hasDefiniteVerbMarker(
 ): boolean {
   if (hasDefiniteNounMarker(cleanedRaw, prevWordAr)) {
     return false;
+  }
+
+  // سَـ + muzari harfi (سَيَعْلَمُ، سَنَذْهَبُ vb.)
+  if (/^(وَ|فَ)?(أَ)?سَ[أإآانيت]/.test(cleanedRaw)) {
+    return true;
   }
 
   if (prevWordAr) {
@@ -1061,8 +1145,16 @@ export function hasDefiniteNounMarker(
     }
   }
 
-  // 4. Başında harf-i cer بِـ (kesralı bi: بِمَعْرِفَتِكَ، بِسُرْعَةٍ، بِالْحَافِلَةِ)
+  // 4. Başında harf-i cer بِـ (بِمَعْرِفَتِكَ، بِسُرْعَةٍ) veya kesralı لِـ (لِطَالِبٍ، لِمُعَلِّمٍ — istek muzarisi hariç)
   if (/^(وَ|فَ)?بِ/.test(cleanedRaw) && norm.length >= 4) {
+    return true;
+  }
+  if (
+    /^(وَ|فَ)?لِ/.test(cleanedRaw) &&
+    norm.length >= 4 &&
+    !/^(وَ|فَ)?لِ[أإآانيت]/.test(stripHarakat(cleanedRaw)) &&
+    !/\u0652$/.test(cleanedRaw)
+  ) {
     return true;
   }
 
@@ -1210,17 +1302,17 @@ function computeDiacriticScore(
         }
       }
 
-      // Son harfin irab harekesi cümleye göre değişebilir, ancak ilk 2 harfin (özellikle 2. harfin sükun/hareke durumu) belirleyicidir
+      // Son harfin irab harekesi cümleye göre değişebilir, ancak ilk harflerin (عِلْمٌ vs عَلَمٌ، شِعْرٌ vs شَعْرٌ، بِرٌّ vs بَرٌّ vs بُرٌّ)
+      // hareke ve sükun durumu belirleyicidir!
       if (i < compareLen - 1 || compareLen <= 2) {
         if (wVowel && fVowel) {
           if (wVowel === fVowel) {
-            score += i === 1 ? 100 : 75;
+            score += i === 1 ? 135 : 115;
           } else {
-            // 2. harfte birinde sükun diğerinde hareke varsa (ظَهْر vs ظَهَرَ, قَبْل vs قَبِلَ, مِثْل vs مَثَّلَ) ağır ceza!
             if (wVowel === "sukun" || fVowel === "sukun") {
-              score -= 140;
+              score -= 175;
             } else {
-              score -= 90;
+              score -= 145;
             }
           }
         }
@@ -2925,12 +3017,78 @@ function matchStemWithRules(
  * 5 KADEMELİ BAĞLAMSAL, HAREKE VE GRAMER KORUMALI ARAPÇA MORFOLOJİK ÇÖZÜMLEYİCİ
  * @param rawWord Tıklanan veya analiz edilen Arapça kelime
  * @param contextSentenceTr Kelimenin geçtiği cümlenin Türkçe çevirisi (eş yazılımlı kelimelerde +500 bağlam puanı sağlar)
- * @param prevWordAr Cümlede bu kelimeden hemen önce gelen Arapça kelime (harf-i cer / zarf kontrolü için)
+ * @param prevWordAr Cümlede bu kelimeden hemen önce gelen Arapça kelime (harf-i cer / zarf / fiil edatı kontrolü için)
+ * @param nextWordAr Cümlede bu kelimeden hemen sonra gelen Arapça kelime (izafet / tamlanan kontrolü için)
  */
 export function analyzeAndMatchWord(
   rawWord: string,
   contextSentenceTr?: string,
-  prevWordAr?: string
+  prevWordAr?: string,
+  nextWordAr?: string
+): MorphologicalMatch | null {
+  const coreMatch = analyzeAndMatchWordCore(
+    rawWord,
+    contextSentenceTr,
+    prevWordAr,
+    nextWordAr
+  );
+  if (!coreMatch) return null;
+
+  const cleanedRaw = coreMatch.originalWord;
+  const hasInternalDiacritics = /[\u064E\u064F\u0650\u0651\u0652]/.test(
+    cleanedRaw
+  );
+
+  // Eğer tıklanan kelime harekesizse ve aynı ünsüz iskeletinde birden fazla olası eş yazılımlı (homograf) aday varsa,
+  // kullanıcıya şeffaf biçimde "Diğer olası anlam" listesini de sun:
+  if (!hasInternalDiacritics) {
+    const isDefNoun = hasDefiniteNounMarker(cleanedRaw, prevWordAr);
+    const isDefVerb = hasDefiniteVerbMarker(cleanedRaw, prevWordAr);
+    const lookupKeys = Array.from(
+      new Set([coreMatch.matchedStem, cleanArabicText(cleanedRaw)])
+    ).filter(Boolean);
+
+    const alternatives: DictionaryItem[] = [];
+    const seenIds = new Set<string>([coreMatch.item.id]);
+
+    for (const key of lookupKeys) {
+      const cands = dictMultiIndex.get(key) || [];
+      for (const c of cands) {
+        if (seenIds.has(c.item.id)) continue;
+        const cat = getWordCategory(c.item);
+        if (cat === "ozel-isim") continue;
+        if (isDefNoun && cat === "fiil" && !isItemMasdarForKey(c.item, key)) {
+          continue;
+        }
+        if (isDefVerb && cat !== "fiil") {
+          continue;
+        }
+        if (hasOverlappingTurkishSense(coreMatch.item.anlam_tr, c.item.anlam_tr)) {
+          continue;
+        }
+        seenIds.add(c.item.id);
+        alternatives.push(c.item);
+        if (alternatives.length >= 3) break;
+      }
+      if (alternatives.length >= 3) break;
+    }
+
+    if (alternatives.length > 0) {
+      return {
+        ...coreMatch,
+        alternativeMeanings: alternatives,
+      };
+    }
+  }
+
+  return coreMatch;
+}
+
+function analyzeAndMatchWordCore(
+  rawWord: string,
+  contextSentenceTr?: string,
+  prevWordAr?: string,
+  nextWordAr?: string
 ): MorphologicalMatch | null {
   const cleanedRaw = rawWord.replace(
     /^[.,!?؟،;؛:"'()\[\]{}\d]+|[.,!?؟،;؛:"'()\[\]{}\d]+$/g,
@@ -2943,7 +3101,16 @@ export function analyzeAndMatchWord(
   const normalized = cleanArabicText(cleanedRaw);
   if (normalized.length < 2) return null;
 
-  const isDefinitelyNoun = hasDefiniteNounMarker(cleanedRaw, prevWordAr);
+  // Sonraki kelime ال ile başlayan mecrur muzafun ileyh ise ve kelime fiil harfi taşımıyorsa isim ipucu güçlenir
+  const nextIsDefiniteIdafaGenitive =
+    Boolean(nextWordAr) &&
+    /^[اٱ]ل/.test(stripHarakat(nextWordAr || "")) &&
+    !/\u064B|\u064C|\u064D/.test(cleanedRaw) &&
+    !/^(يَ|يُ|تَ|تُ|نَ|نُ|أَ|أُ|سَ)/.test(cleanedRaw);
+
+  const isDefinitelyNoun =
+    hasDefiniteNounMarker(cleanedRaw, prevWordAr) ||
+    (nextIsDefiniteIdafaGenitive && /\u0650$/.test(nextWordAr || ""));
 
   // 0. Özel Lafzatullah kontrolü (اللّٰهَ، باللّٰهِ، واللّٰهِ، للّٰهِ، فاللّٰهِ)
   if (
@@ -4727,13 +4894,35 @@ export function analyzeAndMatchWord(
   return null;
 }
 
+// arabicNlpEngine kök çıkarıcısını doğrulanmış sözlük kökleriyle (kok) besle (döngüsel bağımlılık olmadan)
+registerDictionaryRootResolver((normalizedCore: string, rawWord: string) => {
+  const cleanKey = cleanArabicText(rawWord || normalizedCore);
+  const cands =
+    dictMultiIndex.get(cleanKey) ||
+    dictMultiIndex.get(normalizedCore) ||
+    [];
+  for (const c of cands) {
+    const rawKok = (c.item.kok || "").replace(/\s+/g, "").replace(/هـ/g, "ه").trim();
+    if (rawKok && rawKok !== "-" && rawKok.length >= 3) {
+      return rawKok;
+    }
+  }
+  return null;
+});
+
 // Bağlamsal + Hareke ve Gramer Korumalı lookupWord
 export function lookupWord(
   rawWord: string,
   contextSentenceTr?: string,
-  prevWordAr?: string
+  prevWordAr?: string,
+  nextWordAr?: string
 ): DictionaryItem | null {
-  const analysis = analyzeAndMatchWord(rawWord, contextSentenceTr, prevWordAr);
+  const analysis = analyzeAndMatchWord(
+    rawWord,
+    contextSentenceTr,
+    prevWordAr,
+    nextWordAr
+  );
   return analysis ? analysis.item : null;
 }
 

@@ -86,6 +86,7 @@ interface Props {
   voice?: VoiceOption;
   level?: string;
   onEvaluated?: (score: number, evaluatedText: string) => void;
+  onPracticedUnscored?: (practicedText: string) => void;
   onClose: () => void;
 }
 
@@ -100,6 +101,7 @@ export default function ShadowingModal({
   voice = "male",
   level = "A1",
   onEvaluated,
+  onPracticedUnscored,
   onClose,
 }: Props) {
   const [activeText, setActiveText] = useState<string>(text);
@@ -1335,6 +1337,7 @@ export default function ShadowingModal({
       setFluencyScore(null);
       setAdaptiveResult(null);
       setActiveWordTip(null);
+      onPracticedUnscored?.(activeText);
       playPartial();
       return;
     }

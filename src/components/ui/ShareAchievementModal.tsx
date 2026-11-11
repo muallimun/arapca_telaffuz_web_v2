@@ -15,8 +15,15 @@ import {
   QrCode,
   UserCheck,
   ShieldCheck,
+  Maximize2,
+  Trash2,
 } from "lucide-react";
 import { playClick, playSuccess, sfx } from "@/lib/sfxManager";
+import { generateQrMatrix, generateQrSvg } from "@/lib/qrCode";
+import {
+  buildHomeworkUrl,
+  clearStudentDeviceData,
+} from "@/lib/homeworkContract";
 
 export interface HomeworkWeakWordItem {
   arabic: string;
@@ -84,207 +91,6 @@ function computeVerificationCode(
 }
 
 /**
- * Reed-Solomon GF(256) QR Kod Üretici (Ödev Bağlantısı ve Karne Sağ Alt Köşesi için)
- */
-function computeReedSolomonEC(data: number[], ecCount: number): number[] {
-  const gfExp = new Array<number>(512);
-  const gfLog = new Array<number>(256);
-  let x = 1;
-  for (let i = 0; i < 255; i++) {
-    gfExp[i] = x;
-    gfLog[x] = i;
-    x <<= 1;
-    if (x & 0x100) x ^= 0x11d;
-  }
-  for (let i = 255; i < 512; i++) {
-    gfExp[i] = gfExp[i - 255];
-  }
-  const gfMul = (a: number, b: number) =>
-    a === 0 || b === 0 ? 0 : gfExp[gfLog[a] + gfLog[b]];
-
-  let gen = [1];
-  for (let i = 0; i < ecCount; i++) {
-    const next = new Array<number>(gen.length + 1).fill(0);
-    for (let j = 0; j < gen.length; j++) {
-      next[j] ^= gen[j];
-      next[j + 1] ^= gfMul(gen[j], gfExp[i]);
-    }
-    gen = next;
-  }
-
-  const msg = [...data, ...new Array<number>(ecCount).fill(0)];
-  for (let i = 0; i < data.length; i++) {
-    const coef = msg[i];
-    if (coef !== 0) {
-      for (let j = 0; j < gen.length; j++) {
-        msg[i + j] ^= gfMul(gen[j], coef);
-      }
-    }
-  }
-  return msg.slice(data.length);
-}
-
-function computeHomeworkQrMatrix(urlText: string): boolean[][] {
-  // Version 5-L (37x37): 108 data codewords (up to 106 UTF-8 bytes), 26 EC codewords
-  const N = 37;
-  const DATA_CODEWORDS = 108;
-  const EC_CODEWORDS = 26;
-
-  const utf8Bytes = Array.from(new TextEncoder().encode(urlText)).slice(
-    0,
-    DATA_CODEWORDS - 2
-  );
-
-  const bits: number[] = [];
-  const pushBits = (val: number, len: number) => {
-    for (let i = len - 1; i >= 0; i--) {
-      bits.push((val >> i) & 1);
-    }
-  };
-
-  pushBits(0b0100, 4);
-  pushBits(utf8Bytes.length, 8);
-  for (const b of utf8Bytes) pushBits(b, 8);
-  pushBits(0, Math.min(4, DATA_CODEWORDS * 8 - bits.length));
-  while (bits.length % 8 !== 0) bits.push(0);
-
-  const dataBytes: number[] = [];
-  for (let i = 0; i < bits.length; i += 8) {
-    let b = 0;
-    for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
-    dataBytes.push(b);
-  }
-
-  let padToggle = true;
-  while (dataBytes.length < DATA_CODEWORDS) {
-    dataBytes.push(padToggle ? 0xec : 0x11);
-    padToggle = !padToggle;
-  }
-
-  const ecBytes = computeReedSolomonEC(dataBytes, EC_CODEWORDS);
-  const allCodewords = [...dataBytes, ...ecBytes];
-  const fullBits: number[] = [];
-  for (const cw of allCodewords) {
-    for (let i = 7; i >= 0; i--) fullBits.push((cw >> i) & 1);
-  }
-  for (let i = 0; i < 7; i++) fullBits.push(0);
-
-  const grid: boolean[][] = Array.from({ length: N }, () =>
-    Array(N).fill(false)
-  );
-  const reserved: boolean[][] = Array.from({ length: N }, () =>
-    Array(N).fill(false)
-  );
-
-  const placeFinder = (r0: number, c0: number) => {
-    for (let r = -1; r <= 7; r++) {
-      for (let c = -1; c <= 7; c++) {
-        const rr = r0 + r;
-        const cc = c0 + c;
-        if (rr >= 0 && rr < N && cc >= 0 && cc < N) {
-          reserved[rr][cc] = true;
-          if (r >= 0 && r <= 6 && c >= 0 && c <= 6) {
-            const isBorder = r === 0 || r === 6 || c === 0 || c === 6;
-            const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-            grid[rr][cc] = isBorder || isInner;
-          }
-        }
-      }
-    }
-  };
-
-  placeFinder(0, 0);
-  placeFinder(0, N - 7);
-  placeFinder(N - 7, 0);
-
-  // Version 5 Alignment Pattern centered at (30, 30) -> top-left (28, 28)
-  for (let r = 28; r <= 32; r++) {
-    for (let c = 28; c <= 32; c++) {
-      reserved[r][c] = true;
-      const isBorder = r === 28 || r === 32 || c === 28 || c === 32;
-      const isCenter = r === 30 && c === 30;
-      grid[r][c] = isBorder || isCenter;
-    }
-  }
-
-  for (let i = 8; i < N - 8; i++) {
-    if (!reserved[6][i]) {
-      reserved[6][i] = true;
-      grid[6][i] = i % 2 === 0;
-    }
-    if (!reserved[i][6]) {
-      reserved[i][6] = true;
-      grid[i][6] = i % 2 === 0;
-    }
-  }
-
-  for (let i = 0; i < 9; i++) {
-    reserved[8][i] = true;
-    reserved[i][8] = true;
-  }
-  for (let i = 0; i < 8; i++) {
-    reserved[8][N - 1 - i] = true;
-    reserved[N - 1 - i][8] = true;
-  }
-  grid[N - 8][8] = true;
-
-  let bitIdx = 0;
-  let upward = true;
-  for (let col = N - 1; col > 0; col -= 2) {
-    if (col === 6) col--;
-    for (let step = 0; step < N; step++) {
-      const r = upward ? N - 1 - step : step;
-      for (let dc = 0; dc < 2; dc++) {
-        const c = col - dc;
-        if (!reserved[r][c]) {
-          const dataBit =
-            bitIdx < fullBits.length ? fullBits[bitIdx] === 1 : false;
-          bitIdx++;
-          const mask0 = (r + c) % 2 === 0;
-          grid[r][c] = dataBit !== mask0;
-        }
-      }
-    }
-    upward = !upward;
-  }
-
-  const formatBits = 0x77c4;
-  const fBit = (i: number) => ((formatBits >> i) & 1) === 1;
-  for (let i = 0; i <= 5; i++) grid[8][i] = fBit(i);
-  grid[8][7] = fBit(6);
-  grid[8][8] = fBit(7);
-  grid[7][8] = fBit(8);
-  for (let i = 9; i <= 14; i++) grid[14 - i][8] = fBit(i);
-  for (let i = 0; i <= 7; i++) grid[8][N - 1 - i] = fBit(i);
-  for (let i = 8; i <= 14; i++) grid[N - 15 + i][8] = fBit(i);
-
-  return grid;
-}
-
-function generateHomeworkQrSvg(urlText: string, size = 148): string {
-  const grid = computeHomeworkQrMatrix(urlText);
-  const N = grid.length;
-  const quietZone = 2;
-  const totalView = N + quietZone * 2;
-  const rects: string[] = [];
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      if (grid[r][c]) {
-        rects.push(
-          `<rect x="${c + quietZone}" y="${
-            r + quietZone
-          }" width="1" height="1" fill="#0f172a" />`
-        );
-      }
-    }
-  }
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalView} ${totalView}" width="${size}" height="${size}" shape-rendering="crispEdges" style="display:block;background:#ffffff;border:2px solid #cbd5e1;border-radius:12px;">${rects.join(
-    ""
-  )}</svg>`;
-}
-
-/**
  * ÖĞRETMEN İÇİN "🎓 ÖDEV OLUŞTUR" MODALI
  */
 export function TeacherHomeworkModal({
@@ -302,6 +108,7 @@ export function TeacherHomeworkModal({
   const [pronMinCount, setPronMinCount] = useState(3);
   const [taskQuiz, setTaskQuiz] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isFullscreenQrOpen, setIsFullscreenQrOpen] = useState(false);
 
   const isReadingText = dialogueId.startsWith("metin_");
   const itemNumberLabel = isReadingText
@@ -311,21 +118,15 @@ export function TeacherHomeworkModal({
   const homeworkUrl = useMemo(() => {
     const baseOrigin =
       typeof window !== "undefined" ? window.location.origin : APP_URL;
-    const params = new URLSearchParams();
-    params.set("hw", "1");
-    if (taskListen) params.set("listen", "1");
-    if (taskPron) params.set("pron", String(Math.max(1, pronMinCount)));
-    else params.set("pron", "0");
-    if (taskQuiz) params.set("quiz", "1");
-    else params.set("quiz", "0");
-    if (homeworkNote.trim()) {
-      params.set("title", homeworkNote.trim().slice(0, 45));
-    }
-    const routeSegment = isReadingText ? "metin" : "diyalog";
-    return `${baseOrigin}/${routeSegment}/${dialogueId}?${params.toString()}`;
+    return buildHomeworkUrl(baseOrigin, {
+      contentId: dialogueId,
+      listen: taskListen,
+      pronTargetCount: taskPron ? Math.max(1, pronMinCount) : 0,
+      quiz: taskQuiz,
+      title: homeworkNote.trim(),
+    });
   }, [
     dialogueId,
-    isReadingText,
     homeworkNote,
     taskListen,
     taskPron,
@@ -334,7 +135,12 @@ export function TeacherHomeworkModal({
   ]);
 
   const qrSvg = useMemo(
-    () => generateHomeworkQrSvg(homeworkUrl, 136),
+    () => generateQrSvg(homeworkUrl, 136, { quietZone: 2 }),
+    [homeworkUrl]
+  );
+
+  const fullscreenQrSvg = useMemo(
+    () => generateQrSvg(homeworkUrl, 640, { quietZone: 3, borderRadiusPx: 20 }),
     [homeworkUrl]
   );
 
@@ -419,7 +225,7 @@ export function TeacherHomeworkModal({
             value={homeworkNote}
             onChange={(e) => setHomeworkNote(e.target.value)}
             placeholder="Örn: 10-A Sınıfı Haftalık Arapça Ödevi"
-            maxLength={45}
+            maxLength={100}
             className="w-full h-9 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)] focus:outline-none focus:border-[#6741D9]"
           />
         </div>
@@ -515,10 +321,23 @@ export function TeacherHomeworkModal({
 
         {/* 3. Üretilen Ödev Bağlantısı + QR Kod */}
         <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col sm:flex-row items-center gap-3">
-          <div
-            className="shrink-0 bg-white p-1.5 rounded-xl border border-[#E6D7BE] shadow-2xs"
-            dangerouslySetInnerHTML={{ __html: qrSvg }}
-          />
+          <div className="shrink-0 flex flex-col items-center gap-1.5">
+            <div
+              className="bg-white p-1.5 rounded-xl border border-[#E6D7BE] shadow-2xs"
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsFullscreenQrOpen(true);
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold border-b-2 border-[#054432] active:translate-y-0.5 flex items-center justify-center gap-1 cursor-pointer"
+            >
+              <Maximize2 size={12} />
+              <span>🖥️ Tahtada Tam Ekran Büyüt</span>
+            </button>
+          </div>
           <div className="flex-1 min-w-0 space-y-1.5 text-center sm:text-left w-full">
             <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-400">
               <QrCode size={14} />
@@ -584,6 +403,53 @@ export function TeacherHomeworkModal({
           )}
         </div>
       </div>
+
+      {/* AKILLI TAHTA İÇİN TAM EKRAN DEV QR MODALI */}
+      {isFullscreenQrOpen && (
+        <div
+          className="fixed inset-0 z-[10020] bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 sm:p-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFullscreenQrOpen(false);
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-4 max-w-4xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 w-full max-w-[min(72vh,72vw)] text-white">
+              <div className="min-w-0">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 block">
+                  🎓 Akıllı Tahta Ödev QR Ekranı ({levelLabel})
+                </span>
+                <h4 className="text-base sm:text-xl font-black truncate">
+                  {homeworkNote.trim() || `${itemNumberLabel} ${dialogueTitleTr}`}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsFullscreenQrOpen(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
+              >
+                <X size={18} />
+                <span>✕ Kapat</span>
+              </button>
+            </div>
+
+            <div
+              className="w-[min(72vh,72vw)] h-[min(72vh,72vw)] bg-white p-3 sm:p-5 rounded-3xl shadow-2xl border-4 border-emerald-500 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+              dangerouslySetInnerHTML={{ __html: fullscreenQrSvg }}
+            />
+
+            <p className="text-xs sm:text-sm font-bold text-slate-300 text-center max-w-xl">
+              Sınıfın arka sıralarından telefon kamerasını bu QR koda tutarak ödevi doğrudan açabilirsiniz.
+            </p>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
@@ -636,6 +502,7 @@ export default function ShareAchievementModal({
     }
     return "";
   });
+  const [deviceClearedNotice, setDeviceClearedNotice] = useState(false);
 
   const isHomework = badgeType === "homework";
 
@@ -1128,9 +995,9 @@ export default function ShareAchievementModal({
       ctx.strokeStyle = "#087F5B";
       ctx.stroke();
 
-      const qrMatrix = computeHomeworkQrMatrix(effectiveQrUrl);
+      const qrMatrix = generateQrMatrix(effectiveQrUrl);
       const N = qrMatrix.length;
-      const cellPx = 4.6;
+      const cellPx = Math.min(4.8, 182 / N);
       const qrDrawSize = N * cellPx;
       const qrStartX = qrBoxX + (qrBoxSize - qrDrawSize) / 2;
       const qrStartY = qrBoxY + 18;
@@ -1142,8 +1009,8 @@ export default function ShareAchievementModal({
             ctx.fillRect(
               qrStartX + c * cellPx,
               qrStartY + r * cellPx,
-              Math.ceil(cellPx),
-              Math.ceil(cellPx)
+              cellPx + 0.35,
+              cellPx + 0.35
             );
           }
         }
@@ -1354,15 +1221,38 @@ export default function ShareAchievementModal({
         {/* Öğrenci Adı Soyadı ve Sınıf / Numara Giriş Kutucukları (Ödev Modunda) */}
         {isHomework && (
           <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/40 p-2.5 space-y-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff] flex items-center gap-1.5">
                 <UserCheck size={14} />
                 <span>Öğrenci Bilgileri (Karneye ve Doğrulama Koduna İşlenir):</span>
               </label>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-[#6741D9]/30 text-[10px] font-mono font-extrabold text-[#065F46] dark:text-emerald-300">
-                <ShieldCheck size={11} />#{verificationCode}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-[#6741D9]/30 text-[10px] font-mono font-extrabold text-[#065F46] dark:text-emerald-300">
+                  <ShieldCheck size={11} />#{verificationCode}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    clearStudentDeviceData();
+                    setStudentName("");
+                    setStudentClass("");
+                    setDeviceClearedNotice(true);
+                    setTimeout(() => setDeviceClearedNotice(false), 2600);
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-rose-300 dark:border-rose-700 text-[10px] font-extrabold text-rose-700 dark:text-rose-300 cursor-pointer"
+                  title="Ortak cihazda öğrenci bilgilerini ve ödev kaydını temizle"
+                >
+                  <Trash2 size={11} />
+                  <span>🧹 Bilgilerimi Cihazdan Temizle</span>
+                </button>
+              </div>
             </div>
+            {deviceClearedNotice && (
+              <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                Cihazdaki öğrenci ve ödev kayıtları temizlendi ✓
+              </p>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
                 type="text"

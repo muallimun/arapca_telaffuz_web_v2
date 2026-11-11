@@ -514,15 +514,213 @@ export function shapeArabic(
  * Örn: مَوْعِد (موعد) -> و ع د, مَوْقِف (موقف) -> و ق ف, مَوْضِع (موضع) -> و ض ع,
  * مَوْسِم (موسم) -> و س م, مَوْطِن (موطن) -> و ط ن, مَوْرِد (مورد) -> و ر د, مَوَاعِيد -> و ع د.
  */
+type DictionaryRootResolverFn = (
+  normalizedCore: string,
+  rawWord: string
+) => string | null;
+
+let externalDictionaryRootResolver: DictionaryRootResolverFn | null = null;
+
+export function registerDictionaryRootResolver(
+  resolver: DictionaryRootResolverFn
+): void {
+  externalDictionaryRootResolver = resolver;
+}
+
+const HOLLOW_AND_NAQIS_STEM_ROOTS: Record<string, string> = {
+  قال: "قول",
+  يقول: "قول",
+  تقول: "قول",
+  نقول: "قول",
+  اقول: "قول",
+  قل: "قول",
+  قيل: "قول",
+  قول: "قول",
+  كان: "كون",
+  يكون: "كون",
+  تكون: "كون",
+  نكون: "كون",
+  اكون: "كون",
+  كن: "كون",
+  زار: "زور",
+  يزور: "زور",
+  تزور: "زور",
+  نزور: "زور",
+  زياره: "زور",
+  زيار: "زور",
+  قام: "قوم",
+  يقوم: "قوم",
+  تقوم: "قوم",
+  نقوم: "قوم",
+  قيام: "قوم",
+  صام: "صوم",
+  يصوم: "صوم",
+  صيام: "صوم",
+  عاد: "عود",
+  يعود: "عود",
+  تعود: "عود",
+  نعود: "عود",
+  عوده: "عود",
+  مات: "موت",
+  يموت: "موت",
+  موت: "موت",
+  دار: "دور",
+  يدور: "دور",
+  طال: "طول",
+  يطول: "طول",
+  جاز: "جوز",
+  يجوز: "جوز",
+  قاد: "قود",
+  يقود: "قود",
+  حاز: "حوز",
+  يحوز: "حوز",
+  ذل: "ذلل",
+  خاف: "خوف",
+  يخاف: "خوف",
+  تخاف: "خوف",
+  خوف: "خوف",
+  نام: "نوم",
+  ينام: "نوم",
+  تنام: "نوم",
+  نوم: "نوم",
+  نال: "نيل",
+  ينال: "نيل",
+  باع: "بيع",
+  يبيع: "بيع",
+  تبيع: "بيع",
+  نبيع: "بيع",
+  بيع: "بيع",
+  سار: "سير",
+  يسير: "سير",
+  تسير: "سير",
+  سير: "سير",
+  طار: "طير",
+  يطير: "طير",
+  طير: "طير",
+  صار: "صير",
+  يصير: "صير",
+  عاش: "عيش",
+  يعيش: "عيش",
+  تعيش: "عيش",
+  نعيش: "عيش",
+  عيش: "عيش",
+  غاب: "غيب",
+  يغيب: "غيب",
+  زاد: "زيد",
+  يزيد: "زيد",
+  مال: "ميل",
+  يميل: "ميل",
+  ضاع: "ضيع",
+  يضيع: "ضيع",
+  ضاق: "ضيق",
+  يضيق: "ضيق",
+  طاب: "طيب",
+  يطيب: "طيب",
+  سال: "سيل",
+  يسيل: "سيل",
+  جاء: "جيأ",
+  يجيء: "جيأ",
+  شاء: "شيأ",
+  يشاء: "شيأ",
+  دعا: "دعو",
+  يدعو: "دعو",
+  رجا: "رجو",
+  يرجو: "رجو",
+  نجا: "نجو",
+  ينجو: "نجو",
+  عفو: "عفو",
+  عفا: "عفو",
+  تلا: "تلو",
+  بدا: "بدو",
+  مشي: "مشي",
+  يمشي: "مشي",
+  جري: "جري",
+  يجري: "جري",
+  بقي: "بقي",
+  يبقي: "بقي",
+  رمي: "رمي",
+  يرمي: "رمي",
+  بني: "بني",
+  يبني: "بني",
+  هدي: "هدي",
+  يهدي: "هدي",
+  قضي: "قضي",
+  يقضي: "قضي",
+  سعي: "سعي",
+  يسعي: "سعي",
+  رعي: "رعي",
+  يرعي: "رعي",
+  نسى: "نسي",
+  نسي: "نسي",
+  ينسي: "نسي",
+  رضي: "رضي",
+  يرضي: "رضي",
+  راي: "رأي",
+  يري: "رأي",
+};
+
+const HOLLOW_PARTICIPLE_ROOTS: Record<string, string> = {
+  قائل: "قول",
+  قايل: "قول",
+  بائع: "بيع",
+  بايع: "بيع",
+  زائر: "زور",
+  زاير: "زور",
+  سائر: "سير",
+  ساير: "سير",
+  قائم: "قوم",
+  قايم: "قوم",
+  صائم: "صوم",
+  صايم: "صوم",
+  نائم: "نوم",
+  نايم: "نوم",
+  خائف: "خوف",
+  خايف: "خوف",
+  عائد: "عود",
+  عايد: "عود",
+  طائر: "طير",
+  طاير: "طير",
+  غائب: "غيب",
+  غايب: "غيب",
+  دائم: "دوم",
+  دايم: "دوم",
+  فائز: "فوز",
+  فايز: "فوز",
+  سائل: "سأل",
+  سايل: "سأل",
+  قائد: "قود",
+  قايد: "قود",
+  رائد: "رود",
+  رايد: "رود",
+  زائد: "زيد",
+  زايد: "زيد",
+  مائل: "ميل",
+  مايل: "ميل",
+};
+
+/**
+ * Misal (وَعَدَ / وَلَدَ / وَصَلَ / وَالِد), Ecvef (قَالَ -> قول / بَاعَ -> بيع / كَانَ -> كون)
+ * ve Nâkıs (دَعَا -> دعو / مَشَى -> مشي) illetli kökleri koruyarak Arapça kelimenin 3 harfli kökünü çıkarır.
+ */
 export function extractArabicRoot(word: string): string {
   let core = normalizeForComparison(word).replace(/[^\u0600-\u06FF]/g, "");
   if (core.length <= 2) return core;
 
-  // Yaygın önekleri (ال، وال، بال، كال، لل، ول، فل، و، ف، ب، ل) soy — Gelecek zaman "س" isimlerden asla soyulmaz!
-  const prefixes = ["وبال", "وال", "فال", "بال", "كال", "ولل", "لل", "ال", "ول", "فل", "و", "ف", "ب", "ل"];
-  for (const pref of prefixes) {
+  // 0-A. Sözlük tabanlı doğrulanmış kök çözücü (varsa doğrudan sözlükteki kökü döndür)
+  if (externalDictionaryRootResolver) {
+    const dictResolved = externalDictionaryRootResolver(core, word);
+    if (dictResolved && dictResolved.length >= 3) {
+      return dictResolved;
+    }
+  }
+
+  // Çok harfli önekleri (وبال، وال، فال، بال، كال، ولل، لل، ال) önce soy
+  const multiPrefixes = ["وبال", "وال", "فال", "بال", "كال", "ولل", "لل", "ال"];
+  let strippedArticle = false;
+  for (const pref of multiPrefixes) {
     if (core.startsWith(pref) && core.length - pref.length >= 3) {
       core = core.slice(pref.length);
+      strippedArticle = true;
       break;
     }
   }
@@ -531,8 +729,11 @@ export function extractArabicRoot(word: string): string {
   const suffixes = ["كما", "هما", "كم", "هم", "نا", "ها", "وا", "ات", "ون", "ين", "ان", "ه", "ك", "ي", "ا"];
   for (const suff of suffixes) {
     if (core.endsWith(suff) && core.length - suff.length >= 3) {
+      // 3 harfli ecvef/nâkıs fiillerde sondaki asli "ا / ي" harfini sonek sanıp soyma (örn: دعا، مشي)
+      if ((suff === "ا" || suff === "ي") && core.length === 3) {
+        continue;
+      }
       core = core.slice(0, -suff.length);
-      // Yuvarlak Tâ (ة -> ت) + iyelik zamiri durumunda sondaki açık ت harfini de soy (örn: تذكرتك -> تذكرت -> تذكر -> ذكر)
       if (core.endsWith("ت") && core.length >= 4 && ["كما", "هما", "كم", "هم", "نا", "ها", "ه", "ك", "ي"].includes(suff)) {
         core = core.slice(0, -1);
       }
@@ -540,9 +741,59 @@ export function extractArabicRoot(word: string): string {
     }
   }
 
-  // 0. İstif'âl (استفعال / استفالة / استـ / نستـ / يستـ / تستـ) Bâbı Kök Çözümlemesi:
-  // "استمارة", "استراحة", "استشارة", "استقامة", "لنستعجل" gibi kelimelerde baştaki "است / نست / يست / تست" zâid önek olup
-  // "س" ve "ت" kök harfi değildir!
+  if (externalDictionaryRootResolver) {
+    const dictAfterAffix = externalDictionaryRootResolver(core, word);
+    if (dictAfterAffix && dictAfterAffix.length >= 3) {
+      return dictAfterAffix;
+    }
+  }
+
+  if (HOLLOW_AND_NAQIS_STEM_ROOTS[core]) {
+    return HOLLOW_AND_NAQIS_STEM_ROOTS[core];
+  }
+  if (HOLLOW_PARTICIPLE_ROOTS[core]) {
+    return HOLLOW_PARTICIPLE_ROOTS[core];
+  }
+
+  // Misal فَاعِل kalıbı (örn: والد -> ولد، واحد -> وحد، واضح -> وضح، واسع -> وسع، واقع -> وقع، واصل -> وصل، واقف -> وقف)
+  // DİKKAT: Baştaki "و" kök harfidir; atıf vav'ı olarak soyulmamalıdır!
+  const mithalFa3ilMatch = core.match(/^وا([^\u0627\u0648\u064A])([^\u0627\u0648\u064A])$/);
+  if (mithalFa3ilMatch) {
+    return `و${mithalFa3ilMatch[1]}${mithalFa3ilMatch[2]}`;
+  }
+
+  // Misal فُعُول / فِعَال mastar kalıbı (örn: وصول -> وصل، وجود -> وجد، وقوف -> وقف، وقوع -> وقع، وضوح -> وضح، ولاد -> ولد)
+  const mithalMasdarMatch = core.match(/^و([^\u0627\u0648\u064A])[واي]([^\u0627\u0648\u064A])$/);
+  if (mithalMasdarMatch) {
+    return `و${mithalMasdarMatch[1]}${mithalMasdarMatch[2]}`;
+  }
+
+  // Tek harfli atıf/harf-i cer öneklerini (ول، فل، و، ف، ب، ل) yalnızca harf-i tarif soyulmadıysa ve misal kökü bozmayacaksa soy
+  if (!strippedArticle) {
+    const singlePrefixes = ["ول", "فل", "ف", "ب", "ل", "و"];
+    for (const pref of singlePrefixes) {
+      if (core.startsWith(pref) && core.length - pref.length >= 3) {
+        const candidate = core.slice(pref.length);
+        if (HOLLOW_AND_NAQIS_STEM_ROOTS[candidate]) {
+          return HOLLOW_AND_NAQIS_STEM_ROOTS[candidate];
+        }
+        if (HOLLOW_PARTICIPLE_ROOTS[candidate]) {
+          return HOLLOW_PARTICIPLE_ROOTS[candidate];
+        }
+        core = candidate;
+        break;
+      }
+    }
+  }
+
+  if (HOLLOW_AND_NAQIS_STEM_ROOTS[core]) {
+    return HOLLOW_AND_NAQIS_STEM_ROOTS[core];
+  }
+  if (HOLLOW_PARTICIPLE_ROOTS[core]) {
+    return HOLLOW_PARTICIPLE_ROOTS[core];
+  }
+
+  // 0. İstif'âl (استفعال / استفالة / استـ / نستـ / يستـ / تستـ) Bâbı Kök Çözümlemesi
   if (core === "استمار" || core === "استماره") {
     return "أمر";
   }
@@ -578,7 +829,7 @@ export function extractArabicRoot(word: string): string {
       return afterIst;
     }
   }
-  if ((core === "استعد" || core === "يستعد" || core === "تستعد" || core === "نستعد") ) {
+  if (core === "استعد" || core === "يستعد" || core === "تستعد" || core === "نستعد") {
     return "عدد";
   }
   if (/^(انضم|ينضم|تنضم|ننضم|انضمام)$/.test(core)) {
@@ -599,7 +850,7 @@ export function extractArabicRoot(word: string): string {
   if (/^(اكل|ياكل|تاكل|ناكل)$/.test(core)) {
     return "أكل";
   }
-  const mithalMudariMatch = core.match(/^(س)?[انتي]?(زن|ضع|جد|صل|قع|ثق|جب|صف|قف|عد|دع)$/);
+  const mithalMudariMatch = core.match(/^(س)?[انتي]?(زن|ضع|جد|صل|قع|ثق|جب|صف|قف|عد|دع|لد|هب|رث)$/);
   if (mithalMudariMatch) {
     return `و${mithalMudariMatch[2]}`;
   }
@@ -617,7 +868,6 @@ export function extractArabicRoot(word: string): string {
   }
 
   // 3. Tekil مَفْعِل / مَفْعَل (Misal fiil ism-i zaman/mekân): م + و + C2 + C3 (4 harf)
-  // Örn: موعد، موقف، موضع، موسم، موطن، مورد، مولد، موقع، موجز، موهبه، موعظه
   const maw3ilMatch = core.match(/^مو([^\u0627\u0648\u064A])([^\u0627\u0648\u064A])$/);
   if (maw3ilMatch) {
     return `و${maw3ilMatch[1]}${maw3ilMatch[2]}`;
@@ -629,7 +879,13 @@ export function extractArabicRoot(word: string): string {
     return `${maf3uulMatch[1]}${maf3uulMatch[2]}${maf3uulMatch[3]}`;
   }
 
-  // 5. مَفْعَل / مَفْعِل / مُفْعِل (4 harfli mimli türevler): م + C1 + C2 + C3 -> C1 + C2 + C3
+  // 5. فَاعِل (ism-i fâil) kalıbı: C1 + ا + C2 + C3 (4 harf, örn: كاتب -> كتب، عالم -> علم)
+  const fa3ilMatch = core.match(/^([^\u0627\u0648\u064A])ا([^\u0627\u0648\u064A])([^\u0627\u0648\u064A])$/);
+  if (fa3ilMatch) {
+    return `${fa3ilMatch[1]}${fa3ilMatch[2]}${fa3ilMatch[3]}`;
+  }
+
+  // 6. مَفْعَل / مَفْعِل / مُفْعِل (4 harfli mimli türevler): م + C1 + C2 + C3 -> C1 + C2 + C3
   if (core.startsWith("م") && core.length === 4) {
     const withoutMim = core.slice(1);
     if (!/[اوي]/.test(withoutMim)) {
@@ -637,9 +893,17 @@ export function extractArabicRoot(word: string): string {
     }
   }
 
-  // Genel ünsüz iskeleti
-  const skeleton = core.replace(/[اوىي]/g, "");
-  return skeleton.length >= 2 ? skeleton : core;
+  // 3 harfli kelimelerde (ولد، وصل، وعد، بقي vb.) illet harflerini ASLA silme; kök zaten 3 harflidir!
+  if (core.length === 3) {
+    return core;
+  }
+
+  // 4+ harfli kelimelerde baştaki illet harfini (و/ي/ا) koruyarak iç uzatma harflerini sadeleştir
+  const preserveInitialWeak =
+    /^[وي]/.test(core)
+      ? core[0] + core.slice(1).replace(/[اوىي]/g, "")
+      : core.replace(/[اوىي]/g, "");
+  return preserveInitialWeak.length >= 3 ? preserveInitialWeak : core;
 }
 
 /**
@@ -1078,7 +1342,8 @@ export function evaluateDiacriticsAndShadda(
       penalty: 0,
       hasMismatch: false,
       diacriticsVerified: false,
-      verificationNote: "Hareke/Şedde: STT metninde yer almadığı için doğrulanmadı",
+      verificationNote:
+        "Kelime ünsüzleri eşleşti (Hareke/şedde ses motorunca doğrulanmadı)",
     };
   }
 
@@ -1135,7 +1400,7 @@ export function evaluateDiacriticsAndShadda(
     }
   }
 
-  // 2. Kısa ünlü hareke (\u064E fetha, \u0650 kesra, \u064F damme, tenvin ve iç sükûn) kontrolü
+  // 2. Kısa ünlü hareke (\u064E fetha, \u0650 kesra, \u064F damme, tenvin ve iç sükûn) kontrolü + >= %75 kapsama ölçümü
   const vowelSet = new Set([
     "\u064E",
     "\u064F",
@@ -1147,11 +1412,42 @@ export function evaluateDiacriticsAndShadda(
   ]);
   const minLen = Math.min(expUnits.length, spkUnits.length);
   let vowelMismatchCount = 0;
+  let expectedMarkedLetters = 0;
+  let recognizedVerifiedMarks = 0;
+
+  for (let i = 0; i < expUnits.length; i++) {
+    const isLastExp = i === expUnits.length - 1;
+    const expU = expUnits[i];
+    const hasExpMark =
+      Boolean(expU.hasShadda) ||
+      Boolean(expU.vowel && vowelSet.has(expU.vowel));
+    // Kelime sonu vakıfta düşebilen son harekeyi zorunlu paydaya yalnızca tek harfli kelimede dahil et
+    if (hasExpMark && (!isLastExp || expUnits.length === 1)) {
+      expectedMarkedLetters += 1;
+    }
+  }
 
   for (let i = 0; i < minLen; i++) {
     const isLastLetter = i === minLen - 1;
     const expV = expUnits[i].vowel;
     const spkV = spkUnits[i].vowel;
+
+    const expHasMark =
+      Boolean(expUnits[i].hasShadda) ||
+      Boolean(expV && vowelSet.has(expV));
+    const spkHasMark =
+      Boolean(spkUnits[i].hasShadda) ||
+      Boolean(spkV && vowelSet.has(spkV));
+
+    if (
+      expHasMark &&
+      spkHasMark &&
+      (!isLastLetter || expUnits.length === 1) &&
+      Boolean(expUnits[i].hasShadda) === Boolean(spkUnits[i].hasShadda) &&
+      (!expV || !spkV || expV === spkV)
+    ) {
+      recognizedVerifiedMarks += 1;
+    }
 
     // Kelime sonu vakıf (duruş) sükûnunu hareke hatası sayma
     if (isLastLetter && spkV === "\u0652") {
@@ -1171,15 +1467,25 @@ export function evaluateDiacriticsAndShadda(
   }
 
   const hasMismatch = warnings.length > 0 || penalty > 0;
+  const coverageRatio =
+    expectedMarkedLetters > 0
+      ? recognizedVerifiedMarks / expectedMarkedLetters
+      : 0;
+  const hasSufficientCoverage =
+    expectedMarkedLetters > 0 && coverageRatio >= 0.75;
+
+  const isTrulyVerified = !hasMismatch && hasSufficientCoverage;
 
   return {
     penalty,
     hasMismatch,
     warning: warnings.length > 0 ? warnings.join(" · ") : undefined,
-    diacriticsVerified: !hasMismatch,
+    diacriticsVerified: isTrulyVerified,
     verificationNote: hasMismatch
       ? "Algılanan metinde kısmi hareke uyumu"
-      : "Harekeler ve Şedde Doğrulandı",
+      : isTrulyVerified
+      ? "Harekeler ve Şedde Doğrulandı"
+      : "Kelime ünsüzleri eşleşti (Hareke/şedde ses motorunca doğrulanmadı)",
   };
 }
 

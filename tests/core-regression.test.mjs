@@ -250,3 +250,240 @@ test("4. Admin sabit şifresi kaldırılmış, API güvenlik kilitleri ve PWA or
     "PWA manifest orientation 'any' olmalıdır"
   );
 });
+
+// --- FAZ 2 Regresyon Testleri İçin Hafif TypeScript + @/ Alias Yükleyici ---
+import { registerHooks } from "node:module";
+import { pathToFileURL } from "node:url";
+import ts from "typescript";
+
+function resolveCandidateFile(basePath) {
+  const candidates = [
+    basePath,
+    `${basePath}.ts`,
+    `${basePath}.tsx`,
+    `${basePath}.js`,
+    `${basePath}.json`,
+    path.join(basePath, "index.ts"),
+    path.join(basePath, "index.js"),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c) && fs.statSync(c).isFile()) {
+      return c;
+    }
+  }
+  return null;
+}
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith("@/")) {
+      const target = resolveCandidateFile(
+        path.join(ROOT_DIR, "src", specifier.slice(2))
+      );
+      if (target) {
+        return { url: pathToFileURL(target).href, shortCircuit: true };
+      }
+    }
+    if (
+      (specifier.startsWith("./") || specifier.startsWith("../")) &&
+      context.parentURL?.startsWith("file:")
+    ) {
+      const parentDir = path.dirname(fileURLToPath(context.parentURL));
+      const target = resolveCandidateFile(path.resolve(parentDir, specifier));
+      if (target) {
+        return { url: pathToFileURL(target).href, shortCircuit: true };
+      }
+    }
+    return nextResolve(specifier, context);
+  },
+  load(url, context, nextLoad) {
+    if (url.startsWith("file:")) {
+      const filePath = fileURLToPath(url);
+      if (filePath.endsWith(".json")) {
+        const rawJson = fs.readFileSync(filePath, "utf8");
+        return {
+          format: "module",
+          source: `export default ${rawJson};`,
+          shortCircuit: true,
+        };
+      }
+      if (filePath.endsWith(".ts") || filePath.endsWith(".tsx")) {
+        const rawTs = fs.readFileSync(filePath, "utf8");
+        const transpiled = ts.transpileModule(rawTs, {
+          fileName: filePath,
+          compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ES2022,
+            jsx: ts.JsxEmit.ReactJSX,
+            esModuleInterop: true,
+          },
+        });
+        return {
+          format: "module",
+          source: transpiled.outputText,
+          shortCircuit: true,
+        };
+      }
+    }
+    return nextLoad(url, context);
+  },
+});
+
+test("5. FAZ 2 — Mahreç çiftleri (ق/ك، س/ص), vakıf (ة/ه), kelime sırası hizalaması, dürüst hareke onayı ve illetli kökler", async () => {
+  const { matchArabicPronunciation } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "universalStt.ts")).href
+  );
+  const { evaluateSentenceWords, extractArabicRoot } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicNlpEngine.ts")).href
+  );
+
+  // Kritik mahreç karışıklıkları reddedilmeli
+  const qalbVsKalb = matchArabicPronunciation("قَلْبٌ", ["كلب"]);
+  assert.equal(
+    qalbVsKalb.isMatch,
+    false,
+    "قَلْبٌ yerine كلب okunması yanlış-pozitif olarak kabul edilmemelidir"
+  );
+  assert.equal(qalbVsKalb.errorType, "makhraj");
+
+  const saraVsSwara = matchArabicPronunciation("سار", ["صار"]);
+  assert.equal(
+    saraVsSwara.isMatch,
+    false,
+    "سار yerine صار okunması mahreç hatası olarak reddedilmelidir"
+  );
+
+  // Vakıf halinde ة -> ه dönüşümü korunmalı
+  const waqfRes = matchArabicPronunciation("مَدْرَسَةٌ", ["مدرسه"]);
+  assert.equal(
+    waqfRes.isMatch,
+    true,
+    "Vakıf halinde ة -> ه (مَدْرَسَةٌ -> مدرسه) kabul edilmelidir"
+  );
+
+  // Ters kelime sırasıyla okunan cümle %100 veya geçerli eşleşme sayılmamalı
+  const reversedSentence = matchArabicPronunciation(
+    "ذَهَبَ عَلِيٌّ إِلَى الْبَيْتِ",
+    ["البيت إلى علي ذهب"]
+  );
+  assert.equal(reversedSentence.isExact100, false);
+  assert.equal(
+    reversedSentence.isMatch,
+    false,
+    "Ters kelime sırasıyla okunan cümle eşleşmiş sayılmamalıdır"
+  );
+
+  // Harekesiz STT çıktısında hareke doğrulanmış (diacriticsVerified: true) iddia edilmemeli
+  const unvocalizedSttEval = evaluateSentenceWords(
+    "ذَهَبَ الطَّالِبُ",
+    "ذهب الطالب"
+  );
+  assert.equal(
+    unvocalizedSttEval.words.every((w) => w.diacriticsVerified === false),
+    true,
+    "Harekesiz STT çıktısında diacriticsVerified: false olmalıdır"
+  );
+
+  // İlletli kökler korunmalı
+  assert.equal(extractArabicRoot("وَلَدٌ"), "ولد");
+  assert.equal(extractArabicRoot("قَالَ"), "قول");
+  assert.equal(extractArabicRoot("بَاعَ"), "بيع");
+});
+
+test("6. FAZ 2 — Harekeli eşyazımlı (homograf) sözlük ayrımı (عِلْمٌ vs عَلَمٌ، شِعْرٌ vs شَعْرٌ) ve çok kelimeli deyim tespiti", async () => {
+  const { analyzeAndMatchWord } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "dict.ts")).href
+  );
+  const { findIdiomSpanAtWordIndex } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicIdioms.ts")).href
+  );
+
+  const ilmMatch = analyzeAndMatchWord("عِلْمٌ");
+  assert.ok(ilmMatch.item, "عِلْمٌ sözlükte bulunmalıdır");
+  assert.equal(
+    /bayrak/i.test(ilmMatch.item.anlam_tr),
+    false,
+    "عِلْمٌ kelimesi 'bayrak' anlamıyla eşleşmemelidir"
+  );
+  assert.equal(
+    /ilim|bilgi|bilim/i.test(ilmMatch.item.anlam_tr),
+    true,
+    "عِلْمٌ kelimesi 'ilim/bilgi/bilim' anlamıyla eşleşmelidir"
+  );
+
+  const alamMatch = analyzeAndMatchWord("عَلَمٌ");
+  assert.ok(alamMatch.item, "عَلَمٌ sözlükte bulunmalıdır");
+  assert.equal(
+    /bayrak|sancak/i.test(alamMatch.item.anlam_tr),
+    true,
+    "عَلَمٌ kelimesi 'bayrak/sancak' anlamıyla eşleşmelidir"
+  );
+
+  const shiirMatch = analyzeAndMatchWord("شِعْرٌ");
+  assert.ok(shiirMatch.item, "شِعْرٌ sözlükte bulunmalıdır");
+  assert.equal(/şiir/i.test(shiirMatch.item.anlam_tr), true);
+
+  const shaarMatch = analyzeAndMatchWord("شَعْرٌ");
+  assert.ok(shaarMatch.item, "شَعْرٌ sözlükte bulunmalıdır");
+  assert.equal(/saç/i.test(shaarMatch.item.anlam_tr), true);
+
+  const idiomHit = findIdiomSpanAtWordIndex("السَّلَامُ عَلَيْكُمْ يَا أَخِي", 0);
+  assert.ok(
+    idiomHit && idiomHit.endWordIndex >= 1,
+    "Çok kelimeli kalıp ifade (السَّلَامُ عَلَيْكُمْ) tespit edilmelidir"
+  );
+});
+
+test("7. FAZ 2 — Kesilmeyen otomatik sürümlü QR matrisi (140+ bayt Türkçe başlıklı URL) ve ödev sözleşmesi (listen=0)", async () => {
+  const { generateQrMatrix } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "qrCode.ts")).href
+  );
+  const { buildHomeworkUrl, parseHomeworkParams } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "homeworkContract.ts")).href
+  );
+
+  const trTitle = "10-A Sınıfı Haftalık Arapça Diyalog ve Telaffuz Ödevi";
+  const longUrl = buildHomeworkUrl("https://app.muallimun.net", {
+    contentId: "dlg_014",
+    listen: false,
+    pronTargetCount: 5,
+    quiz: true,
+    title: trTitle,
+  });
+
+  const byteLen = Buffer.byteLength(longUrl, "utf8");
+  assert.ok(
+    byteLen >= 140,
+    `Üretilen ödev URL'si en az 140 UTF-8 bayt olmalıdır (ölçülen: ${byteLen})`
+  );
+
+  const matrix = generateQrMatrix(longUrl);
+  assert.ok(
+    Array.isArray(matrix) && matrix.length >= 45,
+    `140+ baytlık URL için QR matris boyutu V7+ (>=45) olmalıdır (ölçülen: ${matrix.length})`
+  );
+  assert.equal(
+    matrix.every((row) => row.length === matrix.length),
+    true,
+    "QR matrisi tam kare olmalıdır"
+  );
+
+  const parsedFromGenerated = parseHomeworkParams(
+    new URL(longUrl).search,
+    "dlg_014"
+  );
+  assert.equal(parsedFromGenerated.active, true);
+  assert.equal(parsedFromGenerated.listen, false);
+  assert.equal(parsedFromGenerated.pronTargetCount, 5);
+  assert.equal(parsedFromGenerated.quiz, true);
+  assert.equal(parsedFromGenerated.title, trTitle);
+
+  const parsedExplicitListenZero = parseHomeworkParams(
+    "?hw=1&listen=0&pron=3&quiz=1"
+  );
+  assert.equal(
+    parsedExplicitListenZero.listen,
+    false,
+    "?listen=0 gönderildiğinde dinleme görevi kapalı (false) olmalıdır"
+  );
+});

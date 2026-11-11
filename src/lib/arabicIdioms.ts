@@ -1461,3 +1461,80 @@ export function extractDialoguesIdioms(
   return Array.from(uniqueMap.values());
 }
 
+export interface MatchedSentenceIdiomSpan {
+  idiom: ArabicIdiom;
+  matchedPhrase: string;
+  startWordIndex: number;
+  endWordIndex: number;
+}
+
+/**
+ * Verilen Arapça cümlede tıklanan kelimenin (`wordIndex`) çok kelimeli (`>= 2` kelime) bir kalıp ifade / deyim
+ * bütününün parçası olup olmadığını tespit eder (örn: عَلَى الرَّحْبِ وَالسَّعَةِ، لَا بَأْسَ، إِنْ شَاءَ اللّٰهُ، السَّلَامُ عَلَيْكُمْ).
+ */
+export function findIdiomSpanAtWordIndex(
+  sentenceAr: string,
+  wordIndex: number
+): MatchedSentenceIdiomSpan | null {
+  if (!sentenceAr || wordIndex < 0) return null;
+  const rawTokens = sentenceAr.split(/\s+/).filter(Boolean);
+  if (rawTokens.length < 2 || wordIndex >= rawTokens.length) return null;
+
+  const normTokens = rawTokens.map((t) => normalizeForIdiomMatch(t));
+  if (!normTokens[wordIndex]) return null;
+
+  const catalog = getCombinedIdiomsCatalog();
+  let bestMatch: MatchedSentenceIdiomSpan | null = null;
+  let bestTokenLen = 0;
+
+  for (const idiom of catalog) {
+    const slashParts = idiom.arabic
+      .split("/")
+      .map((s) => s.replace(/\.\.\./g, "").trim())
+      .filter(Boolean);
+    const candidates = [
+      ...slashParts,
+      ...(idiom.variants || []).map((v) => v.replace(/\.\.\./g, "").trim()),
+    ];
+
+    for (const cand of candidates) {
+      const candNormWords = normalizeForIdiomMatch(cand)
+        .split(" ")
+        .filter(Boolean);
+      if (candNormWords.length < 2 || candNormWords.length > normTokens.length) {
+        continue;
+      }
+      if (candNormWords.length <= bestTokenLen) {
+        continue;
+      }
+
+      const maxStart = normTokens.length - candNormWords.length;
+      for (let s = 0; s <= maxStart; s++) {
+        const e = s + candNormWords.length - 1;
+        if (wordIndex < s || wordIndex > e) continue;
+
+        let allEqual = true;
+        for (let k = 0; k < candNormWords.length; k++) {
+          if (normTokens[s + k] !== candNormWords[k]) {
+            allEqual = false;
+            break;
+          }
+        }
+
+        if (allEqual) {
+          bestTokenLen = candNormWords.length;
+          bestMatch = {
+            idiom,
+            matchedPhrase: slashParts[0] || idiom.arabic,
+            startWordIndex: s,
+            endWordIndex: e,
+          };
+          break;
+        }
+      }
+    }
+  }
+
+  return bestMatch;
+}
+

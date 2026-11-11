@@ -20,9 +20,10 @@ import {
 interface Props {
   text: string;
   onOpenCoach?: () => void;
+  onRecorded?: () => void;
 }
 
-export default function ShadowingButton({ text, onOpenCoach }: Props) {
+export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -186,6 +187,7 @@ export default function ShadowingButton({ text, onOpenCoach }: Props) {
       try {
         const res = await activeSession.stop();
         setAudioUrl(res.wavUrl);
+        onRecorded?.();
       } catch {
         try {
           activeSession.getStream()?.getTracks().forEach((t) => t.stop());

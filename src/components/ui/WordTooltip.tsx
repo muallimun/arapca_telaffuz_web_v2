@@ -18,6 +18,7 @@ import ShadowingModal, { TargetForm } from "@/components/ui/ShadowingModal";
 import { DictionaryItem } from "@/types/data";
 import { formatArabicText, splitMixedBidiText } from "@/lib/arabicTextUtils";
 import { formatSrsBadgeInfo } from "@/lib/mistakeUtils";
+import { findIdiomSpanAtWordIndex } from "@/lib/arabicIdioms";
 
 interface Props {
   text: string;
@@ -405,10 +406,13 @@ export default function WordTooltip({
 
           const [, prefix, coreWord, suffix] = match;
           const prevWordAr = index > 0 ? words[index - 1] : undefined;
+          const nextWordAr =
+            index + 1 < words.length ? words[index + 1] : undefined;
           const analysis = analyzeAndMatchWord(
             coreWord,
             contextSentenceTr,
-            prevWordAr
+            prevWordAr,
+            nextWordAr
           );
 
           if (!analysis) {
@@ -424,10 +428,13 @@ export default function WordTooltip({
             );
           }
 
-          const { item: dictItem, morphologyNote } = analysis;
+          const { item: dictItem, morphologyNote, alternativeMeanings } = analysis;
           const category = getWordCategory(dictItem);
           const catStyle = getCategoryStyle(category);
           const isOpen = activeIndex === index;
+          const matchedIdiomSpan = isOpen
+            ? findIdiomSpanAtWordIndex(text, index)
+            : null;
           const isFav = isWordFavorite(dictItem.id);
           const isLearned = isWordLearned(dictItem.id);
           const srsRecord = mounted ? getSrsRecord(dictItem.id) : undefined;
@@ -525,6 +532,53 @@ export default function WordTooltip({
                       isClassroomMode ? "p-4.5 space-y-2.5" : "p-3.5 space-y-2"
                     } bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 ${catStyle.popoverLeftBorder} rounded-2xl shadow-2xl text-left font-sans z-[9999] block`}
                   >
+                    {/* 0. Çok Kelimeli Kalıp İfade / Deyim Bütünü Kartı (Kehribar / Altın Kutu) */}
+                    {matchedIdiomSpan && (
+                      <div
+                        dir="ltr"
+                        className="rounded-xl border-2 border-amber-300 dark:border-amber-600/70 bg-gradient-to-r from-amber-50 via-yellow-50/90 to-amber-100/70 dark:from-amber-950/65 dark:via-amber-900/40 dark:to-yellow-950/50 px-3 py-2 mb-2 shadow-xs"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[10px] font-sans font-extrabold tracking-wide uppercase text-amber-800 dark:text-amber-300">
+                            ✨ Kalıp İfade / Deyim Bütünü
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              handlePlayWord(
+                                e,
+                                matchedIdiomSpan.matchedPhrase
+                              )
+                            }
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-sans font-bold cursor-pointer"
+                          >
+                            <Volume2 size={10} />
+                            <span>İfadeyi Dinle</span>
+                          </button>
+                        </div>
+                        <div
+                          dir="rtl"
+                          className="arabic font-arabic text-lg sm:text-xl font-bold text-amber-950 dark:text-amber-200 text-right leading-relaxed"
+                        >
+                          {formatAr(matchedIdiomSpan.matchedPhrase)}
+                        </div>
+                        <div
+                          dir="ltr"
+                          className="text-xs font-sans font-extrabold text-amber-900 dark:text-amber-100 mt-0.5 text-left leading-snug"
+                        >
+                          {matchedIdiomSpan.idiom.meaningTr}
+                        </div>
+                        {matchedIdiomSpan.idiom.usageNote && (
+                          <div
+                            dir="ltr"
+                            className="text-[10px] font-sans font-medium text-amber-800/85 dark:text-amber-200/80 mt-0.5 text-left leading-snug line-clamp-2"
+                          >
+                            {matchedIdiomSpan.idiom.usageNote}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* 1. Üst Satır: Sol tarafta Kelime Türü Rozeti + KÖK Rozeti (tek satırda/whitespace-nowrap), Sağ köşede × Kapat Butonu */}
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -592,6 +646,42 @@ export default function WordTooltip({
                               <span key={sIdx}>{seg.text}</span>
                             )
                         )}
+                        {alternativeMeanings &&
+                          alternativeMeanings.length > 0 && (
+                            <div
+                              dir="ltr"
+                              className="mt-1.5 pt-1 border-t border-dotted border-[#D8C8AC] dark:border-slate-700 text-[11px] font-sans font-semibold text-stone-600 dark:text-slate-300 leading-snug"
+                            >
+                              <span className="font-extrabold text-amber-700 dark:text-amber-300">
+                                Diğer olası anlam:{" "}
+                              </span>
+                              {alternativeMeanings.map((alt, aIdx) => {
+                                const altAr = (
+                                  alt.mufret ||
+                                  alt.mazi ||
+                                  alt.muzari ||
+                                  ""
+                                )
+                                  .split("/")[0]
+                                  .trim();
+                                const altTr = alt.anlam_tr
+                                  .split(/[,;]/)[0]
+                                  .trim();
+                                return (
+                                  <span key={alt.id}>
+                                    {aIdx > 0 ? " · " : ""}
+                                    <bdi
+                                      dir="rtl"
+                                      className="arabic font-arabic text-xs font-bold mx-0.5 text-[var(--foreground)]"
+                                    >
+                                      {formatAr(altAr)}
+                                    </bdi>
+                                    <span>({altTr})</span>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
                       </div>
 
                       <div className="flex flex-col items-end shrink-0 text-right">

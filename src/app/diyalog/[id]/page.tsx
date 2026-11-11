@@ -79,7 +79,13 @@ import {
   getDialogueVocabulary,
   DialogueVocabularyEntry,
   getWordCategory,
+  cleanArabicText,
 } from "@/lib/dict";
+import {
+  parseHomeworkParams,
+  loadHomeworkProgress,
+  saveHomeworkProgress,
+} from "@/lib/homeworkContract";
 import {
   extractDialogueIdioms,
   ExtractedDialogueIdiom,
@@ -156,8 +162,6 @@ export default function DialogueDetailPage({
     toggleLearnedWord,
     isWordLearned,
     recordPronunciationScore,
-    pronunciationScores,
-    totalPronunciationAttempts,
     mistakeIds,
   } = useUserStore();
 
@@ -217,21 +221,24 @@ export default function DialogueDetailPage({
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Öğrenci Ödev Takip Modu (?hw=1&pron=3&quiz=1&title=...) State
+  // Öğrenci Ödev Takip Modu (?hw=1&listen=1&pron=3&quiz=1&title=...&aid=...) State
   const [hwConfig, setHwConfig] = useState<{
     active: boolean;
     title: string;
     requireListen: boolean;
     pronCount: number;
     requireQuiz: boolean;
+    aid: string;
   }>({
     active: false,
     title: "",
     requireListen: true,
     pronCount: 3,
     requireQuiz: true,
+    aid: "default",
   });
   const [hwListenedLines, setHwListenedLines] = useState<number[]>([]);
+  const [hwPracticedLines, setHwPracticedLines] = useState<number[]>([]);
   const [hwPronouncedCount, setHwPronouncedCount] = useState<number>(0);
   const [hwCollectedScores, setHwCollectedScores] = useState<number[]>([]);
   const [hwQuizCompleted, setHwQuizCompleted] = useState<boolean>(false);
@@ -240,7 +247,49 @@ export default function DialogueDetailPage({
     null
   );
   const [hwQuizCorrectCount, setHwQuizCorrectCount] = useState<number>(0);
-  const prevPronCountRef = useRef<number | null>(null);
+
+  const recordHwLinePractice = useCallback(
+    (
+      targetTextOrSira: string | number | undefined,
+      measuredScore?: number | null
+    ) => {
+      if (!hwConfig.active) return;
+      let lineId: number | null = null;
+      if (typeof targetTextOrSira === "number") {
+        lineId = targetTextOrSira;
+      } else if (typeof targetTextOrSira === "string" && targetTextOrSira.trim()) {
+        const cleaned = cleanArabicText(targetTextOrSira);
+        const matchedLine = dialogue.satirlar.find(
+          (s) => cleanArabicText(s.arapca) === cleaned
+        );
+        if (matchedLine) {
+          lineId = matchedLine.sira;
+        } else {
+          let h = 2166136261;
+          for (let i = 0; i < cleaned.length; i++) {
+            h ^= cleaned.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          lineId = -Math.max(1, (h >>> 0) % 100000);
+        }
+      }
+      if (lineId !== null) {
+        setHwPracticedLines((prev) => {
+          const next = prev.includes(lineId!) ? prev : [...prev, lineId!];
+          setHwPronouncedCount(next.length);
+          return next;
+        });
+      }
+      if (
+        typeof measuredScore === "number" &&
+        Number.isFinite(measuredScore) &&
+        measuredScore > 0
+      ) {
+        setHwCollectedScores((prev) => [...prev, measuredScore]);
+      }
+    },
+    [hwConfig.active, dialogue.satirlar]
+  );
 
   // Çevrimdışı Ders Paketi (Cache API) State
   const [isOfflineReady, setIsOfflineReady] = useState<boolean>(false);
@@ -451,37 +500,33 @@ export default function DialogueDetailPage({
 
     const raf = requestAnimationFrame(() => {
       setMounted(true);
-      // URL'den Öğretmen-Öğrenci Ödev Parametrelerini (?hw=1&pron=3&quiz=1&title=...) Çözümle
+      // URL'den Öğretmen-Öğrenci Ödev Parametrelerini (?hw=1&listen=1&pron=3&quiz=1&title=...&aid=...) Çözümle
       if (typeof window !== "undefined") {
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.get("hw") === "1") {
-          const titleParam = sp.get("title") || "";
-          const listenParam = sp.get("listen") !== "0";
-          const pronParam = Math.max(0, parseInt(sp.get("pron") || "3", 10) || 0);
-          const quizParam = sp.get("quiz") !== "0";
+        const parsedHw = parseHomeworkParams(
+          window.location.search,
+          resolvedParams.id
+        );
+        if (parsedHw.active) {
           setHwConfig({
             active: true,
-            title: titleParam,
-            requireListen: listenParam,
-            pronCount: pronParam,
-            requireQuiz: quizParam,
+            title: parsedHw.title,
+            requireListen: parsedHw.listen,
+            pronCount: parsedHw.pronTargetCount,
+            requireQuiz: parsedHw.quiz,
+            aid: parsedHw.aid,
           });
-          try {
-            const savedRaw = sessionStorage.getItem(
-              `muallimun-hw-${resolvedParams.id}`
+          const persisted = loadHomeworkProgress(
+            resolvedParams.id,
+            parsedHw.aid
+          );
+          if (persisted) {
+            setHwListenedLines(persisted.listened);
+            setHwPracticedLines(persisted.practicedLines);
+            setHwPronouncedCount(
+              Math.max(persisted.practicedLines.length, persisted.pronCount)
             );
-            if (savedRaw) {
-              const parsed = JSON.parse(savedRaw);
-              if (Array.isArray(parsed.listened))
-                setHwListenedLines(parsed.listened);
-              if (typeof parsed.pronCount === "number")
-                setHwPronouncedCount(parsed.pronCount);
-              if (Array.isArray(parsed.scores))
-                setHwCollectedScores(parsed.scores);
-              if (Boolean(parsed.quizDone)) setHwQuizCompleted(true);
-            }
-          } catch {
-            // ignore
+            setHwCollectedScores(persisted.scores);
+            if (persisted.quizDone) setHwQuizCompleted(true);
           }
         }
       }
@@ -498,56 +543,26 @@ export default function DialogueDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedParams.id]);
 
-  // Ödev ilerlemesini sessionStorage'da sakla
+  // Ödev ilerlemesini localStorage (muallimun-hw-v2-...) üzerinde kalıcı olarak sakla
   useEffect(() => {
     if (!hwConfig.active) return;
-    try {
-      sessionStorage.setItem(
-        `muallimun-hw-${resolvedParams.id}`,
-        JSON.stringify({
-          listened: hwListenedLines,
-          pronCount: hwPronouncedCount,
-          scores: hwCollectedScores,
-          quizDone: hwQuizCompleted,
-        })
-      );
-    } catch {
-      // ignore
-    }
+    saveHomeworkProgress(resolvedParams.id, hwConfig.aid, {
+      listened: hwListenedLines,
+      practicedLines: hwPracticedLines,
+      pronCount: Math.max(hwPracticedLines.length, hwPronouncedCount),
+      scores: hwCollectedScores,
+      quizDone: hwQuizCompleted,
+    });
   }, [
     hwConfig.active,
+    hwConfig.aid,
     resolvedParams.id,
     hwListenedLines,
+    hwPracticedLines,
     hwPronouncedCount,
     hwCollectedScores,
     hwQuizCompleted,
   ]);
-
-  // Cümle içi ShadowingButton veya telaffuz puanı kaydedildiğinde ödev telaffuz sayacını otomatik artır
-  useEffect(() => {
-    const attemptCount = Math.max(
-      totalPronunciationAttempts || 0,
-      pronunciationScores.length
-    );
-    if (prevPronCountRef.current === null) {
-      prevPronCountRef.current = attemptCount;
-      return;
-    }
-    if (attemptCount > prevPronCountRef.current) {
-      prevPronCountRef.current = attemptCount;
-      if (hwConfig.active) {
-        const lastScore =
-          pronunciationScores[pronunciationScores.length - 1] ?? 75;
-        const raf = requestAnimationFrame(() => {
-          setHwPronouncedCount((c) => c + 1);
-          if (lastScore >= 0) {
-            setHwCollectedScores((prev) => [...prev, lastScore]);
-          }
-        });
-        return () => cancelAnimationFrame(raf);
-      }
-    }
-  }, [totalPronunciationAttempts, pronunciationScores, hwConfig.active]);
 
   // Diyalog dinlerken, rol yaparken veya gölgeleme çalışırken mobil ekranın kararmasını önle
   const isWakeLockNeeded =
@@ -1170,6 +1185,7 @@ export default function DialogueDetailPage({
         ...prev,
         [line.sira]: computedScore,
       }));
+      recordHwLinePractice(line.sira, computedScore);
     } else {
       setRoleplayLineScores((prev) => {
         const next = { ...prev };
@@ -1902,10 +1918,14 @@ export default function DialogueDetailPage({
           voice={shadowingTarget.voice}
           forms={shadowingTarget.forms}
           level={dialogue.seviye}
-          onEvaluated={(score) => {
-            if (score > 0 && hwConfig.active) {
-              // pronunciationScores effect zaten sayacı artırır
-            }
+          onEvaluated={(score, evaluatedText) => {
+            recordHwLinePractice(
+              evaluatedText || shadowingTarget.text,
+              score > 0 ? score : null
+            );
+          }}
+          onPracticedUnscored={(practicedText) => {
+            recordHwLinePractice(practicedText || shadowingTarget.text, null);
           }}
           onClose={() => setShadowingTarget(null)}
         />
@@ -1958,6 +1978,9 @@ export default function DialogueDetailPage({
         quizCompleted={isHwQuizDone}
         weakWordsList={hwWeakWordsList}
         dialogueId={dialogue.id}
+        homeworkUrl={
+          typeof window !== "undefined" ? window.location.href : undefined
+        }
       />
 
       {/* BAŞARI KARTINI PAYLAŞ / İNDİR MODALI */}
@@ -4174,6 +4197,9 @@ export default function DialogueDetailPage({
                       >
                         <ShadowingButton
                           text={line.arapca}
+                          onRecorded={() =>
+                            recordHwLinePractice(line.sira, null)
+                          }
                           onOpenCoach={() => {
                             if (currentViewMode === "turkish-only") {
                               setRevealedArLines((prev) => ({

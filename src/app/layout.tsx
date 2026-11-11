@@ -14,6 +14,7 @@ import FeedbackModal, {
   FooterFeedbackButton,
 } from "@/components/ui/FeedbackModal";
 import VisitorCounterBadge from "@/components/ui/VisitorCounterBadge";
+import InAppBrowserBanner from "@/components/ui/InAppBrowserBanner";
 import { CONTENT_INVENTORY } from "@/lib/data";
 import "./globals.css";
 
@@ -135,6 +136,7 @@ export default function RootLayout({
         <GuideAndInfoModal />
         <ShareAppModal />
         <FeedbackModal />
+        <InAppBrowserBanner />
         <Header />
         <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-24 lg:pb-8">
           {children}

@@ -42,49 +42,148 @@ async function getServerTranscriber(): Promise<ServerAsrPipelineFn> {
   return serverTranscriberPromise;
 }
 
+class UnsupportedWavFormatError extends Error {
+  constructor(message = "Desteklenmeyen ses biçimi") {
+    super(message);
+    this.name = "UnsupportedWavFormatError";
+  }
+}
+
+function resampleMonoFloat32To16k(
+  samples: Float32Array,
+  sourceSampleRate: number
+): Float32Array {
+  const targetRate = 16000;
+  if (!samples || samples.length === 0) return new Float32Array(0);
+  if (sourceSampleRate === targetRate) return samples;
+  const ratio = sourceSampleRate / targetRate;
+  const outLength = Math.max(1, Math.round(samples.length / ratio));
+  const out = new Float32Array(outLength);
+  for (let i = 0; i < outLength; i++) {
+    const srcPos = i * ratio;
+    const i0 = Math.floor(srcPos);
+    const i1 = Math.min(samples.length - 1, i0 + 1);
+    const frac = srcPos - i0;
+    out[i] = samples[i0] * (1 - frac) + samples[i1] * frac;
+  }
+  return out;
+}
+
 /**
- * 16-bit PCM RIFF/WAVE ikili verisini (ArrayBuffer) 16000 Hz Float32Array dizisine dönüştürür.
+ * RIFF/WAVE ikili verisini (ArrayBuffer) doğrular (PCM 16/32-bit veya IEEE Float 32-bit,
+ * 1-2 kanal, 8000-48000 Hz), gerekiyorsa stereo -> mono birleştirir ve 16000 Hz Float32Array'e örnekler.
+ * Geçersiz veya WebM/Ogg gibi WAV-dışı verilerde UnsupportedWavFormatError (HTTP 415) fırlatır.
  */
 function parseWavBufferToFloat32(buffer: ArrayBuffer): Float32Array {
-  if (!buffer || buffer.byteLength <= 44) {
-    return new Float32Array(0);
+  if (!buffer || buffer.byteLength < 44) {
+    throw new UnsupportedWavFormatError("Desteklenmeyen ses biçimi: Geçersiz WAV başlığı.");
   }
   const view = new DataView(buffer);
-  let dataOffset = 44;
-  let dataLength = buffer.byteLength - 44;
 
-  // RIFF başlığı varsa "data" alt-parçasını (subchunk) bul
-  if (
+  const isRiff =
     view.getUint8(0) === 0x52 && // R
     view.getUint8(1) === 0x49 && // I
     view.getUint8(2) === 0x46 && // F
-    view.getUint8(3) === 0x46 // F
-  ) {
-    let offset = 12;
-    while (offset + 8 <= buffer.byteLength) {
-      const chunkId = String.fromCharCode(
-        view.getUint8(offset),
-        view.getUint8(offset + 1),
-        view.getUint8(offset + 2),
-        view.getUint8(offset + 3)
-      );
-      const chunkSize = view.getUint32(offset + 4, true);
-      if (chunkId === "data") {
-        dataOffset = offset + 8;
-        dataLength = Math.min(chunkSize, buffer.byteLength - dataOffset);
-        break;
-      }
-      offset += 8 + chunkSize + (chunkSize % 2);
-    }
+    view.getUint8(3) === 0x46;   // F
+  const isWave =
+    view.getUint8(8) === 0x57 &&  // W
+    view.getUint8(9) === 0x41 &&  // A
+    view.getUint8(10) === 0x56 && // V
+    view.getUint8(11) === 0x45;   // E
+
+  if (!isRiff || !isWave) {
+    throw new UnsupportedWavFormatError(
+      "Desteklenmeyen ses biçimi: Yalnızca RIFF/WAVE ses verisi kabul edilir."
+    );
   }
 
-  const numSamples = Math.floor(dataLength / 2);
-  const float32 = new Float32Array(numSamples);
-  for (let i = 0; i < numSamples; i++) {
-    const int16 = view.getInt16(dataOffset + i * 2, true);
-    float32[i] = int16 < 0 ? int16 / 0x8000 : int16 / 0x7fff;
+  let fmtFound = false;
+  let audioFormat = 0;
+  let numChannels = 0;
+  let sampleRate = 0;
+  let bitsPerSample = 0;
+
+  let dataOffset = -1;
+  let dataLength = 0;
+
+  let offset = 12;
+  while (offset + 8 <= buffer.byteLength) {
+    const chunkId = String.fromCharCode(
+      view.getUint8(offset),
+      view.getUint8(offset + 1),
+      view.getUint8(offset + 2),
+      view.getUint8(offset + 3)
+    );
+    const chunkSize = view.getUint32(offset + 4, true);
+    const chunkBodyStart = offset + 8;
+
+    if (chunkId === "fmt ") {
+      if (chunkSize < 16 || chunkBodyStart + 16 > buffer.byteLength) {
+        throw new UnsupportedWavFormatError("Desteklenmeyen ses biçimi: Bozuk fmt alt-parçası.");
+      }
+      fmtFound = true;
+      audioFormat = view.getUint16(chunkBodyStart, true);
+      numChannels = view.getUint16(chunkBodyStart + 2, true);
+      sampleRate = view.getUint32(chunkBodyStart + 4, true);
+      bitsPerSample = view.getUint16(chunkBodyStart + 14, true);
+    } else if (chunkId === "data") {
+      dataOffset = chunkBodyStart;
+      dataLength = Math.max(0, Math.min(chunkSize, buffer.byteLength - dataOffset));
+      break;
+    }
+
+    const paddedSize = chunkSize + (chunkSize % 2);
+    if (paddedSize < 0 || offset + 8 + paddedSize <= offset) break;
+    offset += 8 + paddedSize;
   }
-  return float32;
+
+  if (!fmtFound || dataOffset < 0) {
+    throw new UnsupportedWavFormatError(
+      "Desteklenmeyen ses biçimi: Eksik fmt veya data alt-parçası."
+    );
+  }
+
+  const validFormat =
+    (audioFormat === 1 && (bitsPerSample === 16 || bitsPerSample === 32)) ||
+    (audioFormat === 3 && bitsPerSample === 32);
+  const validChannels = numChannels === 1 || numChannels === 2;
+  const validRate = sampleRate >= 8000 && sampleRate <= 48000;
+
+  if (!validFormat || !validChannels || !validRate) {
+    throw new UnsupportedWavFormatError(
+      "Desteklenmeyen ses biçimi: Yalnızca 8-48kHz, 1-2 kanal, PCM 16/32 veya Float32 WAV desteklenir."
+    );
+  }
+
+  const bytesPerSample = bitsPerSample / 8;
+  const frameSize = bytesPerSample * numChannels;
+  const frameCount = Math.floor(dataLength / frameSize);
+  if (frameCount <= 0) {
+    return new Float32Array(0);
+  }
+
+  const mono = new Float32Array(frameCount);
+  for (let f = 0; f < frameCount; f++) {
+    let sum = 0;
+    for (let ch = 0; ch < numChannels; ch++) {
+      const samplePos = dataOffset + f * frameSize + ch * bytesPerSample;
+      let val = 0;
+      if (audioFormat === 1 && bitsPerSample === 16) {
+        const s16 = view.getInt16(samplePos, true);
+        val = s16 < 0 ? s16 / 0x8000 : s16 / 0x7fff;
+      } else if (audioFormat === 1 && bitsPerSample === 32) {
+        const s32 = view.getInt32(samplePos, true);
+        val = s32 < 0 ? s32 / 0x80000000 : s32 / 0x7fffffff;
+      } else {
+        const f32 = view.getFloat32(samplePos, true);
+        val = Number.isFinite(f32) ? Math.max(-1, Math.min(1, f32)) : 0;
+      }
+      sum += val;
+    }
+    mono[f] = sum / numChannels;
+  }
+
+  return resampleMonoFloat32To16k(mono, sampleRate);
 }
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
@@ -342,6 +441,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, text: recognizedText });
   } catch (err) {
+    if (err instanceof UnsupportedWavFormatError) {
+      return NextResponse.json(
+        { ok: false, text: "", error: "Desteklenmeyen ses biçimi" },
+        { status: 415 }
+      );
+    }
     const message =
       err instanceof Error ? err.message : "Sunucu STT çözümleme hatası";
     return NextResponse.json(

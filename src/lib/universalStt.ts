@@ -171,13 +171,23 @@ export function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | 
 // ESNEK ARAPÇA SES-KÖK (FONO-MORFOLOJİK) EŞLEŞTİRME MOTORU
 // ============================================================================
 
+const DEFECTIVE_ALIF_CANONICAL_MAP: Record<string, string> = {
+  هاذا: "هذا",
+  هاذه: "هذه",
+  هاؤلاء: "هؤلاء",
+  ذالك: "ذلك",
+  لاكن: "لكن",
+  لاكنما: "لكنما",
+  الرحمان: "الرحمن",
+};
+
 export function normalizeArabicForMatch(str: string): string {
   const withWesternDigits = (str || "").replace(
     /[٠-٩]/g,
     (d) => EASTERN_DIGIT_MAP[d] ?? d
   );
 
-  return withWesternDigits
+  const basic = withWesternDigits
     .replace(/[\u064B-\u065F\u0670\u0640]/g, "") // hareke, tenvin, şedde, tatweel
     .replace(/[أإآٱ]/g, "ا")
     .replace(/ة/g, "ه")
@@ -187,10 +197,183 @@ export function normalizeArabicForMatch(str: string): string {
     .replace(/[^\u0621-\u064A0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (!basic) return "";
+  return basic
+    .split(" ")
+    .map((w) => DEFECTIVE_ALIF_CANONICAL_MAP[w] ?? w)
+    .join(" ");
 }
 
 function stripLeadingAl(word: string): string {
   return word.startsWith("ال") && word.length > 3 ? word.slice(2) : word;
+}
+
+/**
+ * Mahreç kontrolü için harekeleri soyar; ancak ع/ء/أ/إ, ح/ه, ق/ك, ص/س, ط/ت, ض/د, ظ/ز, ذ/ز, ث/س, غ/خ
+ * ayrımlarını ve kelime sonundaki vakıf ة <-> ه denkliğini korur.
+ */
+function prepareWordForMakhrajCheck(rawWord: string): string {
+  const cleaned = (rawWord || "")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[^\u0621-\u064A]/g, "")
+    .trim();
+  if (!cleaned) return "";
+  const canonical = DEFECTIVE_ALIF_CANONICAL_MAP[cleaned] ?? cleaned;
+  return stripLeadingAl(canonical);
+}
+
+export const CRITICAL_MAKHRAJ_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["ق", "ك"],
+  ["ص", "س"],
+  ["ط", "ت"],
+  ["ض", "د"],
+  ["ظ", "ز"],
+  ["ذ", "ز"],
+  ["ث", "س"],
+  ["ح", "ه"],
+  ["ع", "ء"],
+  ["غ", "خ"],
+  ["ض", "ظ"],
+  ["ذ", "د"],
+];
+
+function toMakhrajClassChar(ch: string): string {
+  if (ch === "أ" || ch === "إ" || ch === "آ" || ch === "ٱ" || ch === "ؤ" || ch === "ئ") {
+    return "ء";
+  }
+  return ch;
+}
+
+function isCriticalMakhrajPair(expectedCh: string, spokenCh: string): boolean {
+  if (!expectedCh || !spokenCh || expectedCh === spokenCh) return false;
+  // Vakıf halinde kelime sonu ة <-> ه eşdeğerdir; mahreç hatası değildir
+  if (
+    (expectedCh === "ة" && spokenCh === "ه") ||
+    (expectedCh === "ه" && spokenCh === "ة")
+  ) {
+    return false;
+  }
+  // ة <-> ت (vasıl/açık tâ) ط <-> ت mahreç hatası değildir
+  if (
+    (expectedCh === "ة" && spokenCh === "ت") ||
+    (expectedCh === "ت" && spokenCh === "ة")
+  ) {
+    return false;
+  }
+
+  const cExp =
+    expectedCh === "ا" && spokenCh === "ع"
+      ? "ء"
+      : toMakhrajClassChar(expectedCh);
+  const cSpk =
+    spokenCh === "ا" && expectedCh === "ع"
+      ? "ء"
+      : toMakhrajClassChar(spokenCh);
+
+  if (cExp === cSpk) return false;
+
+  return CRITICAL_MAKHRAJ_PAIRS.some(
+    ([a, b]) => (cExp === a && cSpk === b) || (cExp === b && cSpk === a)
+  );
+}
+
+export interface MakhrajSubstitutionCheck {
+  hasSubstitution: boolean;
+  expectedChar?: string;
+  spokenChar?: string;
+  warning?: string;
+}
+
+export function detectCriticalMakhrajSubstitution(
+  targetWord: string,
+  spokenWord: string
+): MakhrajSubstitutionCheck {
+  const tPrep = prepareWordForMakhrajCheck(targetWord);
+  const sPrep = prepareWordForMakhrajCheck(spokenWord);
+  if (!tPrep || !sPrep) {
+    return { hasSubstitution: false };
+  }
+
+  // Vakıf sonu ة -> ه eşitlemesi (yalnızca son karakterde)
+  const tNormEnd = tPrep.replace(/ة$/, "ه");
+  const sNormEnd = sPrep.replace(/ة$/, "ه");
+  if (tNormEnd === sNormEnd) {
+    return { hasSubstitution: false };
+  }
+
+  const tChars = Array.from(tPrep);
+  const sChars = Array.from(sPrep);
+  const m = tChars.length;
+  const n = sChars.length;
+
+  // Needleman-Wunsch karakter hizalaması: eşleşme +3, mahreç/ünsüz değişimi -1, boşluk (med düşmesi/eklenmesi) -2
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    new Array<number>(n + 1).fill(0)
+  );
+  for (let i = 1; i <= m; i++) dp[i][0] = i * -2;
+  for (let j = 1; j <= n; j++) dp[0][j] = j * -2;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const tc = tChars[i - 1];
+      const sc = sChars[j - 1];
+      const isLast = i === m && j === n;
+      const sameChar =
+        tc === sc ||
+        (isLast && ((tc === "ة" && sc === "ه") || (tc === "ه" && sc === "ة"))) ||
+        (/[أإآٱا]/.test(tc) && /[أإآٱا]/.test(sc)) ||
+        (/[يى]/.test(tc) && /[يى]/.test(sc));
+
+      const diag = dp[i - 1][j - 1] + (sameChar ? 3 : -1);
+      const up = dp[i - 1][j] - 2;
+      const left = dp[i][j - 1] - 2;
+      dp[i][j] = Math.max(diag, up, left);
+    }
+  }
+
+  let i = m;
+  let j = n;
+  const alignedPairs: Array<[string, string, boolean]> = [];
+  while (i > 0 && j > 0) {
+    const tc = tChars[i - 1];
+    const sc = sChars[j - 1];
+    const isLast = i === m && j === n;
+    const sameChar =
+      tc === sc ||
+      (isLast && ((tc === "ة" && sc === "ه") || (tc === "ه" && sc === "ة"))) ||
+      (/[أإآٱا]/.test(tc) && /[أإآٱا]/.test(sc)) ||
+      (/[يى]/.test(tc) && /[يى]/.test(sc));
+    const scoreDiag = dp[i - 1][j - 1] + (sameChar ? 3 : -1);
+    if (dp[i][j] === scoreDiag) {
+      alignedPairs.push([tc, sc, isLast]);
+      i--;
+      j--;
+    } else if (dp[i][j] === dp[i - 1][j] - 2) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+  alignedPairs.reverse();
+
+  for (const [tc, sc, isLast] of alignedPairs) {
+    if (isLast && ((tc === "ة" && sc === "ه") || (tc === "ه" && sc === "ة"))) {
+      continue;
+    }
+    if (isCriticalMakhrajPair(tc, sc)) {
+      const dispExp = tc;
+      const dispSpk = sc;
+      return {
+        hasSubstitution: true,
+        expectedChar: dispExp,
+        spokenChar: dispSpk,
+        warning: `Yakın ancak mahreç farkı var: '${dispExp}' yerine '${dispSpk}' algılandı`,
+      };
+    }
+  }
+
+  return { hasSubstitution: false };
 }
 
 function canonicalizeNumbersForTarget(
@@ -254,22 +437,6 @@ function levenshteinDistance(a: string, b: string): number {
   return dp[m][n];
 }
 
-function isOrderedSubsequence(targetChars: string, spokenChars: string): boolean {
-  const tArr = Array.from(targetChars);
-  const sArr = Array.from(spokenChars);
-  if (tArr.length < 2 || sArr.length < tArr.length) return false;
-  // Alakasız çok uzun kelimelerde tesadüfi eşleşmeyi önle (en fazla +3 harf çekim/uzatma farkı)
-  if (sArr.length > tArr.length + 3) return false;
-
-  let tIdx = 0;
-  for (let sIdx = 0; sIdx < sArr.length && tIdx < tArr.length; sIdx++) {
-    if (sArr[sIdx] === tArr[tIdx]) {
-      tIdx++;
-    }
-  }
-  return tIdx === tArr.length;
-}
-
 function extractConsonantSkeleton(word: string): string {
   if (word.length <= 2) return word;
   return (
@@ -277,26 +444,33 @@ function extractConsonantSkeleton(word: string): string {
     word
       .slice(1)
       .replace(/[اوي]/g, "")
-      .replace(/[هت]$/, "")
   );
+}
+
+interface SingleWordMatchResult {
+  matched: boolean;
+  similarity: number;
+  distance: number;
+  makhrajWarning?: string;
 }
 
 function matchSingleWordFlexible(
   targetWord: string,
-  spokenWord: string
-): { matched: boolean; similarity: number; distance: number } {
+  spokenWord: string,
+  rawTargetWord?: string,
+  rawSpokenWord?: string
+): SingleWordMatchResult {
   if (!targetWord || !spokenWord) {
     return { matched: false, similarity: 0, distance: 99 };
   }
-  if (targetWord === spokenWord) {
-    return { matched: true, similarity: 100, distance: 0 };
-  }
+
+  const makhrajCheck = detectCriticalMakhrajSubstitution(
+    rawTargetWord || targetWord,
+    rawSpokenWord || spokenWord
+  );
 
   const bareTarget = stripLeadingAl(targetWord);
   const bareSpoken = stripLeadingAl(spokenWord);
-  if (bareTarget === bareSpoken && bareTarget.length >= 2) {
-    return { matched: true, similarity: 100, distance: 0 };
-  }
 
   const distRaw = levenshteinDistance(targetWord, spokenWord);
   const maxLenRaw = Math.max(
@@ -316,63 +490,53 @@ function matchSingleWordFlexible(
 
   const bestDist = distBare < distRaw ? distBare : distRaw;
   const bestSim = Math.max(simRaw, simBare);
+
+  // Kritik mahreç harfi ikamesi varsa (örn. قَلْبٌ vs كلب, سار vs صار, حَال vs هَال) ASLA doğru kabul etme!
+  if (makhrajCheck.hasSubstitution) {
+    return {
+      matched: false,
+      similarity: Math.min(bestSim, 68),
+      distance: Math.max(1, bestDist),
+      makhrajWarning: makhrajCheck.warning,
+    };
+  }
+
+  if (targetWord === spokenWord) {
+    return { matched: true, similarity: 100, distance: 0 };
+  }
+  if (bareTarget === bareSpoken && bareTarget.length >= 2) {
+    return { matched: true, similarity: 96, distance: 0 };
+  }
+
+  // Müennes kesra işbâ'ı (أنتِ -> انتي، لكِ -> لكي) veya yalnızca tek med harfi (ا/و/ي) farkı
+  const skelTarget = extractConsonantSkeleton(bareTarget);
+  const skelSpoken = extractConsonantSkeleton(bareSpoken);
+  if (
+    skelTarget.length >= 2 &&
+    skelTarget === skelSpoken &&
+    bestDist === 1
+  ) {
+    return {
+      matched: true,
+      similarity: bestSim,
+      distance: bestDist,
+    };
+  }
+
   const targetLen = Array.from(bareTarget).length;
-
-  // Kısa kelimelerde (2-4 harfli: سلم, سمع, فرن, فتح, يد vb.) kök harfleri sırayla mevcutsa veya benzerlik >= %72 ise DOĞRU!
-  if (targetLen >= 2 && targetLen <= 4) {
-    if (
-      isOrderedSubsequence(bareTarget, bareSpoken) ||
-      (targetLen >= 3 && isOrderedSubsequence(bareSpoken, bareTarget))
-    ) {
-      return {
-        matched: true,
-        similarity: Math.max(88, bestSim),
-        distance: Math.min(1, bestDist),
-      };
-    }
-
-    const skelTarget = extractConsonantSkeleton(bareTarget);
-    const skelSpoken = extractConsonantSkeleton(bareSpoken);
-    if (skelTarget.length >= 2 && skelTarget === skelSpoken) {
-      return {
-        matched: true,
-        similarity: Math.max(85, bestSim),
-        distance: Math.min(1, bestDist),
-      };
-    }
-
-    if (bestSim >= 72 || (targetLen >= 3 && bestDist <= 1)) {
-      return {
-        matched: true,
-        similarity: Math.max(72, bestSim),
-        distance: bestDist,
-      };
-    }
+  // 1-3 harfli kısa kelimelerde ünsüz değişimi (%67 ve altı) kabul edilmez
+  if (targetLen <= 3) {
+    return {
+      matched: bestDist === 0,
+      similarity: bestSim,
+      distance: bestDist,
+    };
   }
 
-  // 5+ harfli kelimelerde sıralı kök uyumu veya >= %72 benzerlik
-  if (targetLen >= 5) {
-    if (
-      isOrderedSubsequence(bareTarget, bareSpoken) ||
-      isOrderedSubsequence(bareSpoken, bareTarget)
-    ) {
-      return {
-        matched: true,
-        similarity: Math.max(86, bestSim),
-        distance: Math.min(1, bestDist),
-      };
-    }
-    if (bestSim >= 72 || bestDist <= 1) {
-      return {
-        matched: true,
-        similarity: Math.max(72, bestSim),
-        distance: bestDist,
-      };
-    }
-  }
-
+  // 4+ harfli kelimelerde yapay taban puan (85/86/88) olmadan gerçek Levenshtein benzerliği >= %78 ve en çok 1 harf farkı
+  const isAccepted = bestDist <= 1 && bestSim >= 78;
   return {
-    matched: bestDist === 0 || bestSim >= 72,
+    matched: isAccepted,
     similarity: bestSim,
     distance: bestDist,
   };
@@ -383,6 +547,8 @@ export interface ArabicMatchEvaluation {
   isExact100: boolean;
   similarity: number;
   matchedText: string;
+  makhrajWarning?: string;
+  errorType?: "makhraj";
 }
 
 export function evaluateSingleTranscriptMatch(
@@ -402,39 +568,157 @@ export function evaluateSingleTranscriptMatch(
     };
   }
 
-  if (normTarget === normSpoken) {
-    return {
-      isMatch: true,
-      isExact100: true,
-      similarity: 100,
-      matchedText: spokenTranscript,
-    };
-  }
-
   const targetWords = normTarget.split(" ").filter(Boolean);
   const spokenWords = normSpoken.split(" ").filter(Boolean);
 
+  const rawTargetTokens = (targetAr || "")
+    .replace(/[^\u0621-\u065F\u06700-9٠-٩\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+  const rawSpokenTokens = (spokenTranscript || "")
+    .replace(/[^\u0621-\u065F\u06700-9٠-٩\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
   if (targetWords.length === 1) {
     const tWord = targetWords[0];
-    let bestSingle = matchSingleWordFlexible(
+    const rawTWord = rawTargetTokens[0] || tWord;
+
+    if (spokenWords.length === 1) {
+      const single = matchSingleWordFlexible(
+        tWord,
+        spokenWords[0],
+        rawTWord,
+        rawSpokenTokens[0] || spokenWords[0]
+      );
+      return {
+        isMatch: single.matched,
+        isExact100: single.matched && single.similarity === 100 && !single.makhrajWarning,
+        similarity: single.similarity,
+        matchedText: spokenTranscript,
+        makhrajWarning: single.makhrajWarning,
+      };
+    }
+
+    // Tek kelime hedefe birden fazla kelime söylendiyse: birleşik yazımı da kontrol et ama fazladan kelime cezası uygula
+    const joinedEval = matchSingleWordFlexible(
       tWord,
-      normSpoken.replace(/\s+/g, "")
+      normSpoken.replace(/\s+/g, ""),
+      rawTWord,
+      rawSpokenTokens.join("")
     );
-    for (const sWord of spokenWords) {
-      const candidate = matchSingleWordFlexible(tWord, sWord);
-      if (
-        (candidate.matched && !bestSingle.matched) ||
-        candidate.similarity > bestSingle.similarity
-      ) {
-        bestSingle = candidate;
+    if (joinedEval.matched) {
+      return {
+        isMatch: true,
+        isExact100: joinedEval.similarity === 100 && !joinedEval.makhrajWarning,
+        similarity: joinedEval.similarity,
+        matchedText: spokenTranscript,
+      };
+    }
+
+    let bestExtra: SingleWordMatchResult = joinedEval;
+    for (let idx = 0; idx < spokenWords.length; idx++) {
+      const cand = matchSingleWordFlexible(
+        tWord,
+        spokenWords[idx],
+        rawTWord,
+        rawSpokenTokens[idx] || spokenWords[idx]
+      );
+      if (cand.similarity > bestExtra.similarity) {
+        bestExtra = cand;
       }
     }
+    const extraPenalty = Math.min(35, (spokenWords.length - 1) * 18);
+    const penalizedSim = Math.max(0, bestExtra.similarity - extraPenalty);
     return {
-      isMatch: bestSingle.matched,
-      isExact100: bestSingle.similarity === 100,
-      similarity: bestSingle.similarity,
+      isMatch: bestExtra.matched && spokenWords.length <= 2 && penalizedSim >= 78,
+      isExact100: false,
+      similarity: penalizedSim,
       matchedText: spokenTranscript,
+      makhrajWarning: bestExtra.makhrajWarning,
     };
+  }
+
+  // Çok kelimeli cümle/ifade: Needleman-Wunsch 1-e-1 monoton sıralı kelime hizalaması
+  // Ters kelime sırası ("البيت إلى علي ذهب") veya eksik tekrar ("هو" vs "هُوَ هُوَ") ASLA tam eşleşme alamaz!
+  const M = targetWords.length;
+  const N = spokenWords.length;
+  const GAP_PENALTY = -35;
+
+  const pairEvalGrid: SingleWordMatchResult[][] = Array.from(
+    { length: M },
+    (_, i) =>
+      Array.from({ length: N }, (__, j) =>
+        matchSingleWordFlexible(
+          targetWords[i],
+          spokenWords[j],
+          rawTargetTokens[i] || targetWords[i],
+          rawSpokenTokens[j] || spokenWords[j]
+        )
+      )
+  );
+
+  const dp: number[][] = Array.from({ length: M + 1 }, () =>
+    new Array<number>(N + 1).fill(0)
+  );
+  for (let i = 1; i <= M; i++) dp[i][0] = i * GAP_PENALTY;
+  for (let j = 1; j <= N; j++) dp[0][j] = j * GAP_PENALTY;
+
+  for (let i = 1; i <= M; i++) {
+    for (let j = 1; j <= N; j++) {
+      const cell = pairEvalGrid[i - 1][j - 1];
+      const pairScore = cell.matched
+        ? cell.similarity
+        : cell.similarity - 45;
+      dp[i][j] = Math.max(
+        dp[i - 1][j - 1] + pairScore,
+        dp[i - 1][j] + GAP_PENALTY,
+        dp[i][j - 1] + GAP_PENALTY
+      );
+    }
+  }
+
+  let ci = M;
+  let cj = N;
+  const alignedPairs: Array<{ tIdx: number; sIdx: number; eval: SingleWordMatchResult }> = [];
+  while (ci > 0 && cj > 0) {
+    const cell = pairEvalGrid[ci - 1][cj - 1];
+    const pairScore = cell.matched ? cell.similarity : cell.similarity - 45;
+    if (dp[ci][cj] === dp[ci - 1][cj - 1] + pairScore) {
+      alignedPairs.push({ tIdx: ci - 1, sIdx: cj - 1, eval: cell });
+      ci--;
+      cj--;
+    } else if (dp[ci][cj] === dp[ci - 1][cj] + GAP_PENALTY) {
+      ci--;
+    } else {
+      cj--;
+    }
+  }
+  alignedPairs.reverse();
+
+  let sequentialMatchedWords = 0;
+  let alignedSimilaritySum = 0;
+  let firstMakhrajWarning: string | undefined;
+  let allAlignedExact100 = alignedPairs.length === M && M === N;
+
+  for (const pair of alignedPairs) {
+    if (pair.eval.makhrajWarning && !firstMakhrajWarning) {
+      firstMakhrajWarning = pair.eval.makhrajWarning;
+    }
+    if (pair.eval.matched) {
+      sequentialMatchedWords++;
+      alignedSimilaritySum += pair.eval.similarity;
+      if (pair.eval.similarity < 100) {
+        allAlignedExact100 = false;
+      }
+    } else {
+      alignedSimilaritySum += Math.round(pair.eval.similarity * 0.5);
+      allAlignedExact100 = false;
+    }
   }
 
   const fullDist = levenshteinDistance(normTarget, normSpoken);
@@ -445,39 +729,35 @@ export function evaluateSingleTranscriptMatch(
   );
   const fullSimilarity = Math.round(((maxFullLen - fullDist) / maxFullLen) * 100);
 
-  let matchedWordCount = 0;
-  let wordSimSum = 0;
-  for (const tWord of targetWords) {
-    let bestWordMatch = { matched: false, similarity: 0, distance: 99 };
-    for (const sWord of spokenWords) {
-      const res = matchSingleWordFlexible(tWord, sWord);
-      if (
-        (res.matched && !bestWordMatch.matched) ||
-        res.similarity > bestWordMatch.similarity
-      ) {
-        bestWordMatch = res;
-      }
-    }
-    if (bestWordMatch.matched) matchedWordCount++;
-    wordSimSum += bestWordMatch.similarity;
-  }
+  const tokenDenom = Math.max(M, N, 1);
+  const sequentialWordScore = Math.round(alignedSimilaritySum / tokenDenom);
+  const effectiveSim = firstMakhrajWarning
+    ? Math.min(68, Math.round((sequentialWordScore + fullSimilarity) / 2))
+    : Math.round(sequentialWordScore * 0.65 + fullSimilarity * 0.35);
 
-  const avgWordSimilarity = Math.round(wordSimSum / targetWords.length);
-  const allTargetWordsPresent = matchedWordCount === targetWords.length;
-  const effectiveSim = Math.max(fullSimilarity, avgWordSimilarity);
+  const requiredSequentialMatches = M <= 3 ? M : Math.ceil(M * 0.8);
+  const extraWordsCount = Math.max(0, N - M);
 
   const isPhraseMatch =
-    (allTargetWordsPresent &&
-      (fullSimilarity >= 72 || avgWordSimilarity >= 72)) ||
+    !firstMakhrajWarning &&
+    sequentialMatchedWords >= requiredSequentialMatches &&
+    extraWordsCount <= 1 &&
+    sequentialWordScore >= 75 &&
     fullSimilarity >= 72;
+
+  const isExact100 =
+    !firstMakhrajWarning &&
+    M === N &&
+    sequentialMatchedWords === M &&
+    allAlignedExact100 &&
+    fullSimilarity >= 96;
 
   return {
     isMatch: isPhraseMatch,
-    isExact100:
-      allTargetWordsPresent &&
-      (fullSimilarity >= 95 || avgWordSimilarity === 100),
-    similarity: effectiveSim,
+    isExact100,
+    similarity: isExact100 ? 100 : effectiveSim,
     matchedText: spokenTranscript,
+    makhrajWarning: firstMakhrajWarning,
   };
 }
 
@@ -501,9 +781,14 @@ export function matchArabicPronunciation(
       (res.isMatch === best.isMatch && res.similarity > best.similarity)
     ) {
       best = res;
+    } else if (!best.makhrajWarning && res.makhrajWarning && !best.isMatch) {
+      best = res;
     }
   }
 
+  if (best.makhrajWarning && !best.isMatch) {
+    return { ...best, errorType: "makhraj" };
+  }
   return best;
 }
 
@@ -784,6 +1069,20 @@ export async function transcribePcmViaServerOrWorker(
 // 3 KATMANLI EVRENSEL OTURUM YÖNETİCİSİ (`startUniversalSttSession`)
 // ============================================================================
 
+export type UniversalSttErrorType =
+  | "in_app_webview"
+  | "unsupported_browser"
+  | "permission_denied"
+  | "device_busy"
+  | "network_error"
+  | "no_speech";
+
+export function isInAppWebViewBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /WhatsApp|Instagram|FBAN|FBAV|Line\/|Telegram/i.test(ua);
+}
+
 export interface UniversalSttResult {
   ok: boolean;
   isMatch: boolean;
@@ -793,6 +1092,8 @@ export interface UniversalSttResult {
   allCandidates: string[];
   timedOutNoSpeech: boolean;
   layerUsed: "webspeech" | "server-stt" | "whisper-worker" | "none";
+  makhrajWarning?: string;
+  errorType?: UniversalSttErrorType;
 }
 
 export interface UniversalSttOptions {
@@ -940,10 +1241,12 @@ export function startUniversalSttSession(
     const isBrave = await detectIsBraveBrowser();
     if (aborted || resolved) return;
 
+    const inAppWebView = isInAppWebViewBrowser();
     const SpeechRecCtor = getSpeechRecognitionCtor();
     const canUseLayer1 =
       Boolean(SpeechRecCtor) &&
       !isBrave &&
+      !inAppWebView &&
       !webSpeechBlockedInSession &&
       !options.forceRecorderLayer &&
       !options.localSttOnly;
@@ -991,6 +1294,7 @@ export function startUniversalSttSession(
           allCandidates: [],
           timedOutNoSpeech: true,
           layerUsed: "none",
+          errorType: inAppWebView ? "in_app_webview" : "unsupported_browser",
         });
         return;
       }
@@ -1009,7 +1313,16 @@ export function startUniversalSttSession(
       } catch {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch {
+        } catch (err) {
+          const errName =
+            err instanceof Error ? (err.name || "").toLowerCase() : "";
+          const classifiedError: UniversalSttErrorType = inAppWebView
+            ? "in_app_webview"
+            : errName.includes("notallowed") || errName.includes("permission")
+            ? "permission_denied"
+            : errName.includes("notreadable") || errName.includes("busy")
+            ? "device_busy"
+            : "unsupported_browser";
           emitFinalResult({
             ok: false,
             isMatch: false,
@@ -1019,6 +1332,7 @@ export function startUniversalSttSession(
             allCandidates: [],
             timedOutNoSpeech: true,
             layerUsed: "none",
+            errorType: classifiedError,
           });
           return;
         }
@@ -1185,6 +1499,7 @@ export function startUniversalSttSession(
             allCandidates: [],
             timedOutNoSpeech: true,
             layerUsed: "none",
+            errorType: "no_speech",
           });
           return;
         }
@@ -1210,6 +1525,7 @@ export function startUniversalSttSession(
             allCandidates: [],
             timedOutNoSpeech: true,
             layerUsed: "none",
+            errorType: "no_speech",
           });
           return;
         }
@@ -1236,11 +1552,12 @@ export function startUniversalSttSession(
             allCandidates: [],
             timedOutNoSpeech: true,
             layerUsed: source,
+            errorType: source === "none" ? "network_error" : "no_speech",
           });
           return;
         }
 
-        const evalRes = options.targetArabic
+        const evalRes: ArabicMatchEvaluation = options.targetArabic
           ? matchArabicPronunciation(options.targetArabic, [cleanedText])
           : {
               isMatch: true,
@@ -1258,6 +1575,7 @@ export function startUniversalSttSession(
           allCandidates: [cleanedText],
           timedOutNoSpeech: false,
           layerUsed: source,
+          makhrajWarning: evalRes.makhrajWarning,
         });
       };
 
@@ -1330,27 +1648,33 @@ export function startUniversalSttSession(
     if (canUseLayer1 && SpeechRecCtor) {
       stopAllActiveMediaStreams();
 
-      const candidateSet = new Set<string>();
+      const finalCandidateSet = new Set<string>();
       let lastInterimTranscript = "";
       let speechDetectedInLayer1 = false;
       let lastSpeechActivityMs = 0;
       let simAudioEnergy = 18;
       let fallingBackToLayer2 = false;
 
-      const collectAllCandidates = (): string[] => {
-        const list = Array.from(candidateSet);
-        if (
-          lastInterimTranscript &&
-          !candidateSet.has(lastInterimTranscript)
-        ) {
-          list.push(lastInterimTranscript);
+      const isSingleWordTarget =
+        normalizeArabicForMatch(options.targetArabic || "")
+          .split(" ")
+          .filter(Boolean).length <= 1;
+
+      const collectEvaluationCandidates = (): string[] => {
+        const finals = Array.from(finalCandidateSet).filter(Boolean);
+        if (finals.length > 0) {
+          return finals;
         }
-        return list.filter(Boolean);
+        // Yalnızca oturum kapandığında hiç isFinal sonuç gelmemişse ve hedef tek kelimeyse interim yedeğine izin ver
+        if (lastInterimTranscript && isSingleWordTarget) {
+          return [lastInterimTranscript];
+        }
+        return [];
       };
 
       const finishLayer1Evaluation = () => {
         if (aborted || resolved || fallingBackToLayer2) return;
-        const allCands = collectAllCandidates();
+        const allCands = collectEvaluationCandidates();
 
         if (allCands.length === 0) {
           emitFinalResult({
@@ -1362,6 +1686,7 @@ export function startUniversalSttSession(
             allCandidates: [],
             timedOutNoSpeech: true,
             layerUsed: "webspeech",
+            errorType: "no_speech",
           });
           return;
         }
@@ -1380,6 +1705,7 @@ export function startUniversalSttSession(
             allCandidates: allCands,
             timedOutNoSpeech: false,
             layerUsed: "webspeech",
+            makhrajWarning: matchRes.makhrajWarning,
           });
         } else {
           emitFinalResult({
@@ -1402,7 +1728,7 @@ export function startUniversalSttSession(
         }
         if (activeRec) {
           const r = activeRec;
-          // Son hecenin gelmesi için stop() çağırıp 320ms bekle
+          // Son hecenin isFinal olarak düşmesi için stop() çağırıp 320ms bekle
           try {
             r.stop();
           } catch {
@@ -1468,22 +1794,25 @@ export function startUniversalSttSession(
 
             let primaryLatest = "";
             let sawFinal = false;
-
-            // Tüm sonuçların tüm 5 alternatifini (maxAlternatives = 5) eksiksiz topla!
-            const maxAltSegments: string[][] = [[], [], [], [], []];
+            const previewCandidates = new Set<string>();
+            const finalAltSegments: string[][] = [[], [], [], [], []];
 
             for (let i = 0; i < evt.results.length; i++) {
               const resItem = evt.results[i];
               if (!resItem) continue;
-              if (resItem.isFinal) sawFinal = true;
+              const isItemFinal = resItem.isFinal === true;
+              if (isItemFinal) sawFinal = true;
 
               const altLen =
                 typeof resItem.length === "number" ? resItem.length : 1;
               for (let a = 0; a < Math.min(5, altLen); a++) {
                 const altText = (resItem[a]?.transcript || "").trim();
                 if (altText) {
-                  candidateSet.add(altText);
-                  maxAltSegments[a].push(altText);
+                  previewCandidates.add(altText);
+                  if (isItemFinal) {
+                    finalCandidateSet.add(altText);
+                    finalAltSegments[a].push(altText);
+                  }
                   if (a === 0) {
                     primaryLatest = altText;
                   }
@@ -1492,9 +1821,9 @@ export function startUniversalSttSession(
             }
 
             for (let a = 0; a < 5; a++) {
-              if (maxAltSegments[a].length > 1) {
-                const joined = maxAltSegments[a].join(" ").trim();
-                if (joined) candidateSet.add(joined);
+              if (finalAltSegments[a].length > 1) {
+                const joined = finalAltSegments[a].join(" ").trim();
+                if (joined) finalCandidateSet.add(joined);
               }
             }
 
@@ -1502,20 +1831,24 @@ export function startUniversalSttSession(
               lastInterimTranscript = primaryLatest;
             }
 
-            const currentCandidates = collectAllCandidates();
-            if (primaryLatest || currentCandidates.length > 0) {
+            const interimPreviewList = Array.from(previewCandidates).filter(Boolean);
+            if (primaryLatest || interimPreviewList.length > 0) {
               options.onInterimTranscript?.(
-                primaryLatest || currentCandidates[0],
-                currentCandidates
+                primaryLatest || interimPreviewList[0],
+                interimPreviewList
               );
             }
 
-            // Hedef Arapça kelime/cümle verilmişse tüm alternatifleri ANINDA kontrol et:
-            // Eşleştiği salisede kullanıcıyı bekletmeden DOĞRU kabul et!
-            if (options.targetArabic && currentCandidates.length > 0) {
+            // Erken otomatik bitirme YALNIZCA resItem.isFinal === true kesinleşmiş sonuçlar için çalışır!
+            const confirmedFinals = Array.from(finalCandidateSet).filter(Boolean);
+            if (
+              sawFinal &&
+              options.targetArabic &&
+              confirmedFinals.length > 0
+            ) {
               const quickEval = matchArabicPronunciation(
                 options.targetArabic,
-                currentCandidates
+                confirmedFinals
               );
               if (quickEval.isMatch) {
                 emitFinalResult({
@@ -1523,8 +1856,8 @@ export function startUniversalSttSession(
                   isMatch: true,
                   isExact100: quickEval.isExact100,
                   similarity: quickEval.similarity,
-                  transcript: quickEval.matchedText || primaryLatest,
-                  allCandidates: currentCandidates,
+                  transcript: quickEval.matchedText || confirmedFinals[0],
+                  allCandidates: confirmedFinals,
                   timedOutNoSpeech: false,
                   layerUsed: "webspeech",
                 });
@@ -1532,7 +1865,7 @@ export function startUniversalSttSession(
               }
             }
 
-            // Konuşma sonrası 1200ms sessizlikte değerlendirmeyi tamamla (erken kesmeyi önler)
+            // Konuşma sonrası sessizlikte değerlendirmeyi tamamla (interim hipotezle erken kesmeyi önler)
             if (speechSettleTimer) clearTimeout(speechSettleTimer);
             speechSettleTimer = setTimeout(
               () => {
@@ -1540,7 +1873,7 @@ export function startUniversalSttSession(
                   finalizeWebSpeechFn?.();
                 }
               },
-              sawFinal ? 750 : 1250
+              sawFinal ? 850 : 1450
             );
           };
 
@@ -1569,7 +1902,7 @@ export function startUniversalSttSession(
             if (
               code === "aborted" &&
               !manualStopRequested &&
-              collectAllCandidates().length === 0 &&
+              finalCandidateSet.size === 0 &&
               Date.now() - windowStartMs < 1800
             ) {
               webSpeechBlockedInSession = true;
@@ -1585,13 +1918,12 @@ export function startUniversalSttSession(
 
           rec.onend = () => {
             if (aborted || resolved || fallingBackToLayer2) return;
-            const allCands = collectAllCandidates();
+            const confirmedFinals = Array.from(finalCandidateSet).filter(Boolean);
 
-            // Eğer aday metinler yakalandıysa tüm alternatifleri + lastInterimTranscript'i kontrol et
-            if (allCands.length > 0 && options.targetArabic) {
+            if (confirmedFinals.length > 0 && options.targetArabic) {
               const check = matchArabicPronunciation(
                 options.targetArabic,
-                allCands
+                confirmedFinals
               );
               if (check.isMatch) {
                 emitFinalResult({
@@ -1599,8 +1931,8 @@ export function startUniversalSttSession(
                   isMatch: true,
                   isExact100: check.isExact100,
                   similarity: check.similarity,
-                  transcript: check.matchedText || allCands[0],
-                  allCandidates: allCands,
+                  transcript: check.matchedText || confirmedFinals[0],
+                  allCandidates: confirmedFinals,
                   timedOutNoSpeech: false,
                   layerUsed: "webspeech",
                 });
@@ -1613,9 +1945,9 @@ export function startUniversalSttSession(
               return;
             }
 
-            // Kullanıcı konuştuysa ve son kelimenin üzerinden >= 900ms geçtiyse değerlendir
+            // Kesinleşmiş sonuç geldiyse ve son ses üzerinden >= 900ms geçtiyse değerlendir
             if (
-              allCands.length > 0 &&
+              confirmedFinals.length > 0 &&
               Date.now() - lastSpeechActivityMs >= 900
             ) {
               finishLayer1Evaluation();

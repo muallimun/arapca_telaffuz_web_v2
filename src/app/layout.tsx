@@ -14,7 +14,10 @@ import FeedbackModal, {
   FooterFeedbackButton,
 } from "@/components/ui/FeedbackModal";
 import VisitorCounterBadge from "@/components/ui/VisitorCounterBadge";
+import { CONTENT_INVENTORY } from "@/lib/data";
 import "./globals.css";
+
+const APP_FULL_DESCRIPTION = `${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.muallimun.net"),
@@ -22,11 +25,11 @@ export const metadata: Metadata = {
     default: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
     template: "%s | Arapça Telaffuz ve Diyalog Asistanı",
   },
-  description:
-    "60 CEFR Arapça diyalog, 16kHz DSP & Whisper AI destekli 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, kalıp ifadeler, Dinle ve Sırala dahil 5 modlu alıştırma merkezi, Akıllı Hata Defteri ve A4 PDF çalışma kağıdı üreticisi.",
+  description: APP_FULL_DESCRIPTION,
   applicationName: "Arapça Telaffuz ve Diyalog Asistanı",
   keywords: [
     "Arapça diyaloglar",
+    "Arapça okuma metinleri",
     "Arapça telaffuz koçu",
     "Arapça mahreç eğitimi",
     "Arapça konuşma pratiği",
@@ -48,8 +51,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
-    description:
-      "60 CEFR diyalog, 38 çiftlik yapay zeka mahreç koçu, morfolojik sözlük, kalıp ifadeler, 5 modlu interaktif alıştırma merkezi ve akıllı A4 PDF çalışma kağıdı üreticisi.",
+    description: APP_FULL_DESCRIPTION,
     url: "https://app.muallimun.net",
     siteName: "Arapça Telaffuz ve Diyalog Asistanı",
     locale: "tr_TR",
@@ -66,8 +68,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
-    description:
-      "60 CEFR diyalog, 38 çiftlik yapay zeka mahreç koçu, morfolojik sözlük, kalıp ifadeler, 5 modlu alıştırma merkezi ve akıllı A4 PDF üreticisi.",
+    description: APP_FULL_DESCRIPTION,
     images: ["/opengraph-image"],
   },
   icons: {

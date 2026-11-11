@@ -123,8 +123,8 @@ export default function OpenGraphImage() {
             width: "100%",
           }}
         >
-          60 CEFR Diyalog (A1-B2) • 38 Çiftlik Yapay Zeka Mahreç Koçu • Kalıp
-          İfadeler • 5 Modlu Alıştırma • Akıllı A4 PDF
+          120 CEFR Diyalog • 60 Okuma Metni • 1111 Kalıp Cümle • 998 Görsel
+          Kelime • 8 Modüllü Alıştırma
         </div>
       </div>
     ),

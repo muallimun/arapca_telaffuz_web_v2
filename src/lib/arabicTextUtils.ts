@@ -138,12 +138,12 @@ export function formatArabicText(
 }
 
 export const ARABIC_CHAR_REGEX =
-  /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u25CC]/;
 
 export const LATIN_TR_CHAR_REGEX = /[a-zA-ZçğıöşüÇĞİÖŞÜâîûÂÎÛ]/;
 
 export const ARABIC_RUN_CAPTURE_REGEX =
-  /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
+  /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u25CC]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u25CC]+)*)/g;
 
 export function hasArabicCharacters(text?: string): boolean {
   if (!text) return false;

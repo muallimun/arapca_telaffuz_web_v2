@@ -10,8 +10,18 @@ import {
   Home,
   Sparkles,
 } from "lucide-react";
+import { CONTENT_INVENTORY } from "@/lib/data";
 
 export default function OfflinePage() {
+  const {
+    dialoguesCount,
+    readingsCount,
+    sentencesCount,
+    visualWordsCount,
+    dictionaryWordsCount,
+    exerciseModulesCount,
+  } = CONTENT_INVENTORY;
+
   return (
     <div className="min-h-[75vh] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-xl bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-5 sm:p-8 text-center space-y-5 shadow-lg">
@@ -37,8 +47,9 @@ export default function OfflinePage() {
           <p className="text-xs sm:text-sm font-medium text-[var(--muted)] leading-relaxed">
             İnternet bağlantınız şu an yok; ancak daha önce ziyaret ettiğiniz{" "}
             <strong className="text-[var(--foreground)]">
-              60 CEFR diyalog metni, morfolojik sözlük, ✨ kalıp ifadeler ve 5
-              modlu alıştırma merkezi
+              {dialoguesCount} CEFR diyalog, {readingsCount} okuma metni,{" "}
+              {sentencesCount} kalıp cümle, morfolojik sözlük ve{" "}
+              {exerciseModulesCount} modüllü alıştırma merkezi
             </strong>{" "}
             cihazınızın çevrimdışı önbelleğinden kesintisiz çalışmaya devam
             eder.
@@ -55,10 +66,10 @@ export default function OfflinePage() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Diyalog Kütüphanesi
+                Kütüphane
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                60 Diyalog & Kalıp İfadeler
+                {dialoguesCount} Diyalog &amp; {readingsCount} Okuma Metni
               </span>
             </div>
           </Link>
@@ -75,7 +86,7 @@ export default function OfflinePage() {
                 İnteraktif Sözlük
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                1494 Kelime & Kök Analizi
+                {dictionaryWordsCount} Sözlük &amp; {visualWordsCount} Görsel Kelime
               </span>
             </div>
           </Link>
@@ -92,7 +103,7 @@ export default function OfflinePage() {
                 Alıştırma Merkezi
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                5 Mod & Akıllı Hata Defteri
+                {exerciseModulesCount} Modül &amp; Akıllı Hata Defteri
               </span>
             </div>
           </Link>

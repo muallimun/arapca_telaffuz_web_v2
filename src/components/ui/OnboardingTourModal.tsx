@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { formatArabicText } from "@/lib/arabicTextUtils";
-import { sozluk } from "@/lib/data";
+import { CONTENT_INVENTORY, sozluk } from "@/lib/data";
 import { useSettings } from "@/store/settings";
 
 export const ONBOARDING_STORAGE_KEY = "arapca_onboarding_done_v1";
@@ -98,11 +98,11 @@ export default function OnboardingTourModal() {
         <div className="grid grid-cols-2 gap-2.5">
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-lg font-black text-[#065F46] block">
-              60 Sesli Diyalog
+              {CONTENT_INVENTORY.dialoguesCount} Diyalog &amp; {CONTENT_INVENTORY.readingsCount} Metin
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)]">
-              CEFR A1–B2 seviyelerinde özel görselli ve doğal seslendirmeli
-              günlük konuşmalar
+              CEFR A1–B2 seviyelerinde özel görselli, sesli diyaloglar, okuma
+              metinleri ve {CONTENT_INVENTORY.sentencesCount.toLocaleString("tr-TR")} kalıp cümle
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
@@ -340,7 +340,7 @@ export default function OnboardingTourModal() {
     },
     {
       badge: "ADIM 5 / 6 — ALIŞTIRMA MERKEZİ & SRS HAFIZA SİSTEMİ",
-      title: "6 İnteraktif Alıştırma & Aralıklı Tekrar (SRS)",
+      title: `${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi & Aralıklı Tekrar (SRS)`,
       subtitle:
         "🎯 'Bugün Ne Çalışmalıyım?' günlük 12 dk kişisel çalışma paketi ve 5 aşamalı (1, 3, 7, 14, 30 gün) akıllı hafıza sistemi:",
       visual: (

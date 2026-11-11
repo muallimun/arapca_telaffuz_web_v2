@@ -438,6 +438,28 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   };
 })();
 
+export interface ContentInventory {
+  dialoguesCount: number;
+  readingsCount: number;
+  sentencesCount: number;
+  proverbsCount: number;
+  visualWordsCount: number;
+  grammarNotesCount: number;
+  dictionaryWordsCount: number;
+  exerciseModulesCount: number;
+}
+
+export const CONTENT_INVENTORY: ContentInventory = {
+  dialoguesCount: DYNAMIC_CONTENT_STATS.dialogueCount,
+  readingsCount: DYNAMIC_CONTENT_STATS.readingCount,
+  sentencesCount: DYNAMIC_CONTENT_STATS.sentenceCount,
+  proverbsCount: DYNAMIC_CONTENT_STATS.proverbCount,
+  visualWordsCount: DYNAMIC_CONTENT_STATS.visualWordCount,
+  grammarNotesCount: DYNAMIC_CONTENT_STATS.grammarNoteCount,
+  dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
+  exerciseModulesCount: 8,
+};
+
 export function getDynamicContentStats(): DynamicContentStats {
   return DYNAMIC_CONTENT_STATS;
 }

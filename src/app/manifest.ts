@@ -1,16 +1,25 @@
 import { MetadataRoute } from "next";
+import { CONTENT_INVENTORY } from "@/lib/data";
 
 export default function manifest(): MetadataRoute.Manifest {
+  const {
+    dialoguesCount,
+    readingsCount,
+    sentencesCount,
+    visualWordsCount,
+    dictionaryWordsCount,
+    exerciseModulesCount,
+  } = CONTENT_INVENTORY;
+
   return {
     id: "/",
     name: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
     short_name: "Arapça Asistanı",
-    description:
-      "60 CEFR diyalog, 38 çiftlik yapay zeka mahreç koçu, morfolojik sözlük, kalıp ifadeler, 5 modlu interaktif alıştırma merkezi ve akıllı A4 PDF çalışma kağıdı üreticisi.",
+    description: `${dialoguesCount} CEFR diyalog, ${readingsCount} okuma metni, ${sentencesCount} kalıp cümle, ${visualWordsCount} görsel kelime, 38 çiftlik yapay zeka mahreç koçu, morfolojik sözlük ve ${exerciseModulesCount} modüllü interaktif alıştırma merkezi.`,
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait-primary",
+    orientation: "any",
     background_color: "#FAF6EE",
     theme_color: "#059669",
     categories: ["education", "books", "productivity"],
@@ -55,9 +64,9 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
-        name: "Diyalog Kütüphanesi",
-        short_name: "Diyaloglar",
-        description: "60 günlük konuşma diyaloğunu incele ve dinle",
+        name: "Diyalog ve Metin Kütüphanesi",
+        short_name: "Kütüphane",
+        description: `${dialoguesCount} sesli diyalog, ${readingsCount} okuma metni ve ${sentencesCount} kalıp cümleyi incele`,
         url: "/kutuphane",
         icons: [
           {
@@ -70,7 +79,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Alıştırma Merkezi",
         short_name: "Alıştırmalar",
-        description: "5 modlu kelime, cümle ve kalıp ifade alıştırmaları",
+        description: `${exerciseModulesCount} modüllü kelime, cümle, gramer ve telaffuz alıştırmaları`,
         url: "/alistirmalar",
         icons: [
           {
@@ -83,7 +92,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "İnteraktif Sözlük",
         short_name: "Sözlük",
-        description: "1494 kelime, kök analizi ve kalıp ifadeler",
+        description: `${dictionaryWordsCount} sözlük kaydı, ${visualWordsCount} görsel kelime ve kök analizi`,
         url: "/sozluk",
         icons: [
           {

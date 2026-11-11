@@ -60,7 +60,7 @@ interface DatasetMeta {
 const STUDIO_TABS: DatasetMeta[] = [
   {
     key: "gorsel_kelimeler",
-    label: "🖼️ 999 Görsel Kelime",
+    label: "🖼️ 998 Görsel Kelime",
     shortLabel: "Görsel Kelime",
     icon: "🖼️",
     fileName: "gorselKelimeler_guncel.json",
@@ -100,7 +100,7 @@ const STUDIO_TABS: DatasetMeta[] = [
   },
   {
     key: "sozluk",
-    label: "📚 3186 Sözlük",
+    label: "📚 1895 Sözlük",
     shortLabel: "Sözlük",
     icon: "📚",
     fileName: "yeni_tum_sozluk.json",
@@ -401,20 +401,19 @@ function getDefaultAudioPath(
   if (field) return String(field);
   const gFolder = gender === "female" ? "kadin" : "erkek";
   const num4 = String(rec.sira || idx + 1).padStart(4, "0");
-  const num3 = String(rec.sira || idx + 1).padStart(3, "0");
   if (tab === "gorsel_kelimeler") {
-    return `/sesler/kelimeler/${gFolder}/${num4}.mp3`;
+    return `/sesler/kelimeler/${gFolder}/${rec.id || num4}.wav`;
   }
   if (tab === "cumleler_1111") {
     return `/sesler/cumleler/${gFolder}/cumle_${num4}.mp3`;
   }
   if (tab === "atasozleri_508") {
-    return `/sesler/atasozleri/${gFolder}/ata_${num3}.mp3`;
+    return `/sesler/atasozleri/${gFolder}/ata_${num4}.wav`;
   }
   if (tab === "sozluk") {
-    return `/sesler/sozluk/${gFolder}/${rec.id || `kelime_${num4}`}.mp3`;
+    return `/sesler/kelimeler/${gFolder}/${rec.id || `kelime_${num4}`}.mp3`;
   }
-  return `/sesler/ozel/${gFolder}/${rec.id || `kayit_${num4}`}.mp3`;
+  return `/sesler/cumleler/${gFolder}/${rec.id || `kayit_${num4}`}.mp3`;
 }
 
 function isValidAdminToken(rawToken: string): boolean {
@@ -422,36 +421,97 @@ function isValidAdminToken(rawToken: string): boolean {
   return (
     (t.startsWith("github_pat_") && t.length >= 20) ||
     (t.startsWith("ghp_") && t.length >= 20) ||
-    t === "muallimun-admin-2026"
+    (t.startsWith("gho_") && t.length >= 20)
   );
 }
 
+/**
+ * MediaRecorder çıktısını (WebM/Opus, MP4/AAC vb.) AudioContext.decodeAudioData ile çözüp
+ * gerçek 16-bit Mono PCM RIFF WAVE (.wav) kapsayıcısına dönüştürür.
+ */
+async function convertRecordedBlobToMonoWav16(rawBlob: Blob): Promise<Blob> {
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext })
+      .webkitAudioContext;
+  const ctx = new AudioCtx();
+  try {
+    const arrayBuf = await rawBlob.arrayBuffer();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf.slice(0));
+    const numChannels = audioBuf.numberOfChannels;
+    const length = audioBuf.length;
+    const sampleRate = audioBuf.sampleRate;
+
+    const monoSamples = new Float32Array(length);
+    for (let ch = 0; ch < numChannels; ch++) {
+      const chData = audioBuf.getChannelData(ch);
+      for (let i = 0; i < length; i++) {
+        monoSamples[i] += chData[i] / numChannels;
+      }
+    }
+
+    const bytesPerSample = 2; // 16-bit PCM
+    const dataByteLength = length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataByteLength);
+    const view = new DataView(buffer);
+
+    const writeAscii = (offset: number, str: string) => {
+      for (let i = 0; i < str.length; i++) {
+        view.setUint8(offset + i, str.charCodeAt(i));
+      }
+    };
+
+    writeAscii(0, "RIFF");
+    view.setUint32(4, 36 + dataByteLength, true);
+    writeAscii(8, "WAVE");
+    writeAscii(12, "fmt ");
+    view.setUint32(16, 16, true); // PCM chunk size
+    view.setUint16(20, 1, true); // AudioFormat = 1 (PCM)
+    view.setUint16(22, 1, true); // NumChannels = 1 (Mono)
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * bytesPerSample, true); // ByteRate
+    view.setUint16(32, bytesPerSample, true); // BlockAlign
+    view.setUint16(34, 16, true); // BitsPerSample = 16
+    writeAscii(36, "data");
+    view.setUint32(40, dataByteLength, true);
+
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      const clamped = Math.max(-1, Math.min(1, monoSamples[i]));
+      const int16 = clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff;
+      view.setInt16(offset, int16, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: "audio/wav" });
+  } finally {
+    await ctx.close().catch(() => {});
+  }
+}
+
 export default function AdminStudioPage() {
-  // 1. GitHub & Depo Ayarları (localStorage destekli) ve Yönetici Kilit Ekranı
+  // 1. GitHub & Depo Ayarları (Yalnızca sessionStorage — sekme kapanınca silinir)
   const [githubToken, setGithubToken] = useState(() => {
     if (typeof window === "undefined") return "";
     try {
-      return window.localStorage.getItem("muallimun_admin_gh_token") || "";
+      return window.sessionStorage.getItem("muallimun_admin_gh_token") || "";
     } catch {
       return "";
     }
   });
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [adminSecret, setAdminSecret] = useState(() => {
+    if (typeof window === "undefined") return "";
     try {
-      const savedToken =
-        window.localStorage.getItem("muallimun_admin_gh_token") || "";
-      const unlockedFlag =
-        window.localStorage.getItem("muallimun_admin_unlocked") === "true";
-      return unlockedFlag && isValidAdminToken(savedToken);
+      return window.sessionStorage.getItem("muallimun_admin_secret") || "";
     } catch {
-      return false;
+      return "";
     }
   });
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [lockTokenInput, setLockTokenInput] = useState(() => {
     if (typeof window === "undefined") return "";
     try {
-      return window.localStorage.getItem("muallimun_admin_gh_token") || "";
+      return window.sessionStorage.getItem("muallimun_admin_gh_token") || "";
     } catch {
       return "";
     }
@@ -459,41 +519,17 @@ export default function AdminStudioPage() {
   const [lockError, setLockError] = useState<string | null>(null);
   const [verifyingToken, setVerifyingToken] = useState(false);
 
-  const [repoOwner, setRepoOwner] = useState(() => {
-    if (typeof window === "undefined") return "muallimun";
-    try {
-      return window.localStorage.getItem("muallimun_admin_gh_owner") || "muallimun";
-    } catch {
-      return "muallimun";
-    }
-  });
-  const [codeRepo, setCodeRepo] = useState(() => {
-    if (typeof window === "undefined") return "arapca_telaffuz_web_v2";
-    try {
-      return (
-        window.localStorage.getItem("muallimun_admin_code_repo") ||
-        "arapca_telaffuz_web_v2"
-      );
-    } catch {
-      return "arapca_telaffuz_web_v2";
-    }
-  });
-  const [mediaRepo, setMediaRepo] = useState(() => {
-    if (typeof window === "undefined") return "arapca_telaffuz_medya";
-    try {
-      return (
-        window.localStorage.getItem("muallimun_admin_media_repo") ||
-        "arapca_telaffuz_medya"
-      );
-    } catch {
-      return "arapca_telaffuz_medya";
-    }
-  });
+  const [repoOwner, setRepoOwner] = useState("muallimun");
+  const [codeRepo, setCodeRepo] = useState("arapca_telaffuz_web_v2");
+  const [mediaRepo, setMediaRepo] = useState("arapca_telaffuz_medya");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // 2. Aktif Sekme & Veri Durumu
   const [activeTab, setActiveTab] = useState<StudioTabKey>("gorsel_kelimeler");
   const [records, setRecords] = useState<GenericRecord[]>([]);
+  const [datasetBaseSha, setDatasetBaseSha] = useState<string | undefined>(
+    undefined
+  );
   const [loading, setLoading] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -522,33 +558,130 @@ export default function AdminStudioPage() {
   const [femaleAudioStatus, setFemaleAudioStatus] = useState<"unknown" | "ready" | "missing">("unknown");
   const [dialogueSelectedLineIdx, setDialogueSelectedLineIdx] = useState<number>(0);
 
-  // Mikrofon Kayıt Durumu (Tarayıcıdan doğrudan .mp3/ses kaydı)
+  // Mikrofon Kayıt Durumu (Gerçek 16-bit Mono PCM .wav dönüşümlü)
   const [recordingGender, setRecordingGender] = useState<"male" | "female" | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
 
-  // 5. Sağlık Taraması (Veri & Medya Denetleyicisi)
+  // 5. Sağlık Taraması & Eksik Ses Tamir Durumu
   const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
   const [brokenMediaIds, setBrokenMediaIds] = useState<Record<string, string>>({});
   const [checkingMediaHealth, setCheckingMediaHealth] = useState(false);
+  const [mediaProbeProgress, setMediaProbeProgress] = useState<{
+    checked: number;
+    total: number;
+  } | null>(null);
+  const [repairingMissingSentences, setRepairingMissingSentences] =
+    useState(false);
+  const [repairProgressText, setRepairProgressText] = useState<string | null>(
+    null
+  );
+
+  const buildAdminHeaders = useCallback(
+    (extra?: Record<string, string>): Record<string, string> => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...extra,
+      };
+      if (adminSecret.trim()) {
+        headers["x-admin-secret"] = adminSecret.trim();
+      }
+      return headers;
+    },
+    [adminSecret]
+  );
+
+  // Eski güvensiz localStorage anahtarlarını sayfa açılışında temizle ve varsa aktif sekme oturumunu sunucudan doğrula
+  useEffect(() => {
+    let active = true;
+    try {
+      window.localStorage.removeItem("muallimun_admin_gh_token");
+      window.localStorage.removeItem("muallimun_admin_unlocked");
+    } catch {
+      // ignore
+    }
+
+    const verifyExistingSession = async () => {
+      let savedToken = "";
+      let savedSecret = "";
+      try {
+        savedToken =
+          window.sessionStorage.getItem("muallimun_admin_gh_token") || "";
+        savedSecret =
+          window.sessionStorage.getItem("muallimun_admin_secret") || "";
+      } catch {
+        return;
+      }
+
+      if (!isValidAdminToken(savedToken)) return;
+      try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (savedSecret.trim()) {
+          headers["x-admin-secret"] = savedSecret.trim();
+        }
+        const res = await fetch("/api/admin", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            action: "verify_access",
+            githubToken: savedToken.trim(),
+            owner: "muallimun",
+            codeRepo: "arapca_telaffuz_web_v2",
+            mediaRepo: "arapca_telaffuz_medya",
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!active) return;
+        if (res.ok && json?.ok && json?.authorized === true) {
+          setGithubToken(savedToken.trim());
+          setIsAdminUnlocked(true);
+        } else {
+          window.sessionStorage.removeItem("muallimun_admin_gh_token");
+          window.sessionStorage.removeItem("muallimun_admin_unlocked");
+          setIsAdminUnlocked(false);
+        }
+      } catch {
+        // Ağ hatasında kilidi ASLA açma
+        if (active) {
+          setIsAdminUnlocked(false);
+        }
+      }
+    };
+
+    void verifyExistingSession();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const saveRepoSettingsToStorage = (
     token: string,
     owner: string,
     cRepo: string,
-    mRepo: string
+    mRepo: string,
+    secretVal?: string
   ) => {
     setGithubToken(token);
     setRepoOwner(owner);
     setCodeRepo(cRepo);
     setMediaRepo(mRepo);
+    if (secretVal !== undefined) {
+      setAdminSecret(secretVal);
+    }
     if (typeof window !== "undefined") {
       try {
-        window.localStorage.setItem("muallimun_admin_gh_token", token.trim());
-        window.localStorage.setItem("muallimun_admin_gh_owner", owner.trim());
-        window.localStorage.setItem("muallimun_admin_code_repo", cRepo.trim());
-        window.localStorage.setItem("muallimun_admin_media_repo", mRepo.trim());
+        window.localStorage.removeItem("muallimun_admin_gh_token");
+        window.localStorage.removeItem("muallimun_admin_unlocked");
+        window.sessionStorage.setItem("muallimun_admin_gh_token", token.trim());
+        if (secretVal !== undefined) {
+          window.sessionStorage.setItem(
+            "muallimun_admin_secret",
+            secretVal.trim()
+          );
+        }
       } catch {
         // ignore
       }
@@ -556,37 +689,49 @@ export default function AdminStudioPage() {
   };
 
   // Veri setini API'den yükle
-  const fetchDataset = useCallback(async (tabKey: StudioTabKey) => {
-    if (tabKey === "efect_manager") {
-      await Promise.resolve();
-      setRecords(EFECT_CATALOG);
-      setHasUnsavedChanges(false);
-      setCurrentPage(1);
-      return;
-    }
-    await Promise.resolve();
-    setLoading(true);
-    setStatusBanner(null);
-    try {
-      const res = await fetch(`/api/admin?dataset=${tabKey}`, {
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || "Veri seti yüklenemedi.");
+  const fetchDataset = useCallback(
+    async (tabKey: StudioTabKey) => {
+      if (tabKey === "efect_manager") {
+        await Promise.resolve();
+        setRecords(EFECT_CATALOG);
+        setDatasetBaseSha(undefined);
+        setHasUnsavedChanges(false);
+        setCurrentPage(1);
+        return;
       }
-      setRecords(Array.isArray(json.data) ? json.data : []);
-      setHasUnsavedChanges(false);
-      setCurrentPage(1);
-    } catch (err) {
-      setStatusBanner({
-        type: "error",
-        text: err instanceof Error ? err.message : "Veri okuma hatası",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      await Promise.resolve();
+      setLoading(true);
+      setStatusBanner(null);
+      try {
+        const reqHeaders: Record<string, string> = {};
+        if (githubToken.trim()) {
+          reqHeaders.Authorization = `Bearer ${githubToken.trim()}`;
+        }
+        const res = await fetch(`/api/admin?dataset=${tabKey}`, {
+          headers: reqHeaders,
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok || !json.ok) {
+          throw new Error(json.error || "Veri seti yüklenemedi.");
+        }
+        setRecords(Array.isArray(json.data) ? json.data : []);
+        setDatasetBaseSha(
+          typeof json.baseSha === "string" ? json.baseSha : undefined
+        );
+        setHasUnsavedChanges(false);
+        setCurrentPage(1);
+      } catch (err) {
+        setStatusBanner({
+          type: "error",
+          text: err instanceof Error ? err.message : "Veri okuma hatası",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [githubToken]
+  );
 
   useEffect(() => {
     if (!isAdminUnlocked) return;
@@ -610,45 +755,58 @@ export default function AdminStudioPage() {
     if (!isValidAdminToken(trimmed)) {
       playError();
       setLockError(
-        "Geçersiz erişim anahtarı! Lütfen geçerli bir GitHub Erişim Anahtarı (github_pat_... veya ghp_...) girin."
+        "Geçersiz erişim anahtarı! Lütfen geçerli bir GitHub Personal Access Token (github_pat_... veya ghp_...) girin."
       );
       return;
     }
 
-    if (trimmed.startsWith("github_pat_") || trimmed.startsWith("ghp_")) {
-      setVerifyingToken(true);
-      try {
-        const res = await fetch("https://api.github.com/user", {
-          headers: {
-            Authorization: `Bearer ${trimmed}`,
-            Accept: "application/vnd.github+json",
-          },
-        });
-        if (!res.ok) {
-          playError();
-          setLockError(
-            "GitHub erişim anahtarı doğrulanamadı (401 Unauthorized). Anahtarın süresinin dolmadığından emin olun."
-          );
-          setVerifyingToken(false);
-          return;
-        }
-      } catch {
-        // Çevrimdışı veya ağ kısıtlı ortamda format doğrulaması yeterlidir
-      } finally {
-        setVerifyingToken(false);
+    setVerifyingToken(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: buildAdminHeaders(),
+        body: JSON.stringify({
+          action: "verify_access",
+          githubToken: trimmed,
+          owner: repoOwner.trim(),
+          codeRepo: codeRepo.trim(),
+          mediaRepo: mediaRepo.trim(),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok || json?.authorized !== true) {
+        playError();
+        setLockError(
+          json?.error ||
+            "GitHub yazma (push) yetkisi doğrulanamadı. Anahtarın geçerli ve yetkili olduğundan emin olun."
+        );
+        return;
       }
-    }
 
-    saveRepoSettingsToStorage(trimmed, repoOwner, codeRepo, mediaRepo);
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem("muallimun_admin_unlocked", "true");
-      } catch {
-        // ignore
+      saveRepoSettingsToStorage(
+        trimmed,
+        repoOwner.trim(),
+        codeRepo.trim(),
+        mediaRepo.trim(),
+        adminSecret
+      );
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.setItem("muallimun_admin_unlocked", "true");
+        } catch {
+          // ignore
+        }
       }
+      playSuccess();
+      setIsAdminUnlocked(true);
+    } catch {
+      playError();
+      setLockError(
+        "Sunucu yetki doğrulama bağlantısı kurulamadı. Ağ hatası nedeniyle stüdyo kilidi açılmadı; lütfen internet bağlantınızı kontrol edip tekrar deneyin."
+      );
+    } finally {
+      setVerifyingToken(false);
     }
-    playSuccess();
-    setIsAdminUnlocked(true);
   };
 
   const handleLockAdminStudio = () => {
@@ -657,10 +815,13 @@ export default function AdminStudioPage() {
     setGithubToken("");
     setLockTokenInput("");
     setRecords([]);
+    setDatasetBaseSha(undefined);
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("muallimun_admin_unlocked");
         window.localStorage.removeItem("muallimun_admin_gh_token");
+        window.sessionStorage.removeItem("muallimun_admin_unlocked");
+        window.sessionStorage.removeItem("muallimun_admin_gh_token");
       } catch {
         // ignore
       }
@@ -779,37 +940,319 @@ export default function AdminStudioPage() {
     return issues;
   }, [records, activeTab, brokenMediaIds]);
 
-  // İlk 30 kaydın canlı medya (Görsel/Ses) 404 kontrolü
+  // Tüm kayıtların görsel ve ses (ses_erkek, ses_kadin, ses_dosyasi) URL'lerini kontrollü gruplar halinde tara
   const runLiveMediaProbe = async () => {
     playClick();
     setCheckingMediaHealth(true);
-    const nextBroken: Record<string, string> = {};
-    const sample = records.slice(0, 30);
+    setStatusBanner(null);
 
-    await Promise.all(
-      sample.map(async (rec, idx) => {
-        const id = getRecordId(rec, idx);
+    interface ProbeTarget {
+      id: string;
+      label: string;
+      url: string;
+      displayPath: string;
+    }
+
+    const targets: ProbeTarget[] = [];
+
+    records.forEach((rec, idx) => {
+      const id = getRecordId(rec, idx);
+      if (activeTab === "efect_manager") {
+        const tp = String(rec.targetPath || "").replace(/^\/+/, "");
+        if (tp) {
+          targets.push({
+            id,
+            label: "Efekt Sesi",
+            url: `https://raw.githubusercontent.com/muallimun/arapca_telaffuz_medya/main/${tp}`,
+            displayPath: `/${tp}`,
+          });
+        }
+        return;
+      }
+
+      if (
+        activeTab === "gorsel_kelimeler" ||
+        activeTab === "atasozleri_508" ||
+        activeTab === "diyaloglar_120" ||
+        activeTab === "metinler_60"
+      ) {
         const imgUrl = getPreviewImageUrl(activeTab, rec, idx, cacheBuster);
         if (imgUrl) {
+          targets.push({
+            id,
+            label: "Görsel",
+            url: imgUrl,
+            displayPath: getDefaultImagePath(activeTab, rec, idx),
+          });
+        }
+      }
+
+      if (
+        activeTab === "gorsel_kelimeler" ||
+        activeTab === "cumleler_1111" ||
+        activeTab === "atasozleri_508" ||
+        activeTab === "sozluk"
+      ) {
+        const checkDual = (
+          rawField: unknown,
+          gender: "male" | "female",
+          tag: string
+        ) => {
+          let rawPath =
+            typeof rawField === "string" && rawField.trim()
+              ? rawField.trim()
+              : activeTab !== "sozluk"
+              ? getDefaultAudioPath(activeTab, rec, gender, idx)
+              : "";
+          if (!rawPath) return;
+          if (
+            rawPath.includes("/kelimeler/") ||
+            rawPath.includes("/atasozleri/")
+          ) {
+            rawPath = rawPath.replace(/\.mp3$/i, ".wav");
+          }
+          targets.push({
+            id,
+            label: tag,
+            url: resolveAudioUrl(rawPath),
+            displayPath: rawPath,
+          });
+        };
+        checkDual(rec.ses_erkek, "male", "Erkek Sesi");
+        checkDual(rec.ses_kadin, "female", "Kadın Sesi");
+      }
+
+      if (
+        (activeTab === "diyaloglar_120" || activeTab === "metinler_60") &&
+        Array.isArray(rec.satirlar)
+      ) {
+        rec.satirlar.forEach((line: GenericRecord, lIdx: number) => {
+          const rawLineAudio =
+            typeof line.ses_dosyasi === "string" && line.ses_dosyasi.trim()
+              ? line.ses_dosyasi.trim()
+              : "";
+          if (rawLineAudio) {
+            targets.push({
+              id,
+              label: `Satır #${lIdx + 1} Sesi`,
+              url: resolveAudioUrl(rawLineAudio),
+              displayPath: rawLineAudio,
+            });
+          }
+        });
+      }
+    });
+
+    const nextBroken: Record<string, string> = {};
+    let checked = 0;
+    let missingCount = 0;
+    let networkErrorCount = 0;
+    const total = targets.length;
+    setMediaProbeProgress({ checked: 0, total });
+
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      const batch = targets.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (target) => {
           try {
-            const res = await fetch(imgUrl, { method: "HEAD" });
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 8000);
+            let res: Response;
+            try {
+              res = await fetch(target.url, {
+                method: "HEAD",
+                cache: "no-store",
+                signal: controller.signal,
+              });
+            } finally {
+              clearTimeout(timer);
+            }
             if (!res.ok) {
-              nextBroken[id] = `Görsel 404 (Bulunamadı): ${getDefaultImagePath(
-                activeTab,
-                rec,
-                idx
-              )}`;
+              missingCount += 1;
+              const msg = `${target.label} ${res.status} (Eksik): ${target.displayPath}`;
+              nextBroken[target.id] = nextBroken[target.id]
+                ? `${nextBroken[target.id]} | ${msg}`
+                : msg;
             }
           } catch {
-            // ağ hatası
+            networkErrorCount += 1;
+            const msg = `${target.label} Ağ/Bağlantı Hatası: ${target.displayPath}`;
+            nextBroken[target.id] = nextBroken[target.id]
+              ? `${nextBroken[target.id]} | ${msg}`
+              : msg;
+          } finally {
+            checked += 1;
           }
-        }
-      })
-    );
+        })
+      );
+      setMediaProbeProgress({ checked, total });
+    }
 
     setBrokenMediaIds(nextBroken);
     setCheckingMediaHealth(false);
-    playSuccess();
+    setMediaProbeProgress(null);
+
+    if (networkErrorCount > 0) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: `⚠️ Medya taraması sırasında ${networkErrorCount} bağlantıda ağ hatası ve ${missingCount} adet 404 eksik dosya tespit edildi. Ağ hatası nedeniyle tarama "Başarılı" sayılmadı.`,
+      });
+    } else if (missingCount > 0) {
+      playError();
+      setStatusBanner({
+        type: "info",
+        text: `🔍 Toplam ${total} medya adresi tarandı: ${missingCount} adet eksik (404) görsel/ses dosyası tespit edildi.`,
+      });
+    } else {
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text: `✅ Toplam ${total} görsel ve ses dosyası eksiksiz doğrulandı (0 kırık bağlantı).`,
+      });
+    }
+  };
+
+  // Eksik 17 Cümle Sesini (cumle_1103 kadın + cumle_1104..1111 erkek/kadın) Otomatik TTS ile Tamamla
+  const handleRepairMissingSentenceAudios = async () => {
+    playClick();
+    if (repairingMissingSentences) return;
+
+    let sentenceList = records;
+    if (activeTab !== "cumleler_1111" || sentenceList.length === 0) {
+      try {
+        const res = await fetch("/api/admin?dataset=cumleler_1111", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (res.ok && json?.ok && Array.isArray(json.data)) {
+          sentenceList = json.data;
+        }
+      } catch {
+        playError();
+        setStatusBanner({
+          type: "error",
+          text: "1111 Cümle veri seti okunamadı.",
+        });
+        return;
+      }
+    }
+
+    const repairJobs: Array<{
+      id: string;
+      arabicText: string;
+      gender: "male" | "female";
+      targetPath: string;
+    }> = [];
+
+    for (let num = 1103; num <= 1111; num++) {
+      const id = `cumle_${String(num).padStart(4, "0")}`;
+      const rec = sentenceList.find((r) => r.id === id);
+      if (!rec || !rec.arapca) continue;
+
+      if (num >= 1104) {
+        repairJobs.push({
+          id,
+          arabicText: String(rec.arapca),
+          gender: "male",
+          targetPath: String(
+            rec.ses_erkek || `/sesler/cumleler/erkek/${id}.mp3`
+          ),
+        });
+      }
+      repairJobs.push({
+        id,
+        arabicText: String(rec.arapca),
+        gender: "female",
+        targetPath: String(rec.ses_kadin || `/sesler/cumleler/kadin/${id}.mp3`),
+      });
+    }
+
+    if (repairJobs.length === 0) {
+      setStatusBanner({
+        type: "info",
+        text: "Onarılacak cumle_1103–1111 kaydı bulunamadı.",
+      });
+      return;
+    }
+
+    setRepairingMissingSentences(true);
+    let completed = 0;
+    let skippedExisting = 0;
+    let failed = 0;
+
+    for (let i = 0; i < repairJobs.length; i++) {
+      const job = repairJobs[i];
+      setRepairProgressText(
+        `🔊 (${i + 1}/${repairJobs.length}) ${job.id} (${
+          job.gender === "female" ? "kadın" : "erkek"
+        }) kontrol ediliyor...`
+      );
+
+      // Halihazırda medya deposunda mevcutsa tekrar üretmeden geç
+      try {
+        const probeRes = await fetch(resolveAudioUrl(job.targetPath), {
+          method: "HEAD",
+          cache: "no-store",
+        });
+        if (probeRes.ok) {
+          skippedExisting += 1;
+          continue;
+        }
+      } catch {
+        // Eksik veya erişilemiyor; TTS üretimine geç
+      }
+
+      setRepairProgressText(
+        `🎙️ (${i + 1}/${repairJobs.length}) ${job.id} (${
+          job.gender === "female" ? "kadın" : "erkek"
+        }) TTS üretilip yükleniyor...`
+      );
+
+      try {
+        const res = await fetch("/api/admin", {
+          method: "POST",
+          headers: buildAdminHeaders(),
+          body: JSON.stringify({
+            action: "generate_and_save_tts",
+            text: job.arabicText,
+            gender: job.gender,
+            targetPath: job.targetPath,
+            githubToken,
+            owner: repoOwner,
+            mediaRepo,
+            commitMessage: `fix(audio): ${job.id} (${job.gender}) eksik cümle sesi otomatik tamamlandı`,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json?.ok) {
+          completed += 1;
+        } else {
+          failed += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    setRepairingMissingSentences(false);
+    setRepairProgressText(null);
+    setCacheBuster((prev) => prev + 1);
+
+    if (failed > 0) {
+      playError();
+      setStatusBanner({
+        type: "error",
+        text: `⚠️ Eksik ses onarımı tamamlandı: ${completed} ses üretildi, ${skippedExisting} ses zaten mevcuttu, ${failed} ses yüklenemedi (GitHub Token / ağ yetkisini kontrol edin).`,
+      });
+    } else {
+      playSuccess();
+      setStatusBanner({
+        type: "success",
+        text: `✅ cumle_1103–1111 ses tamamlama başarılı! ${completed} yeni ses üretilip kaydedildi (${skippedExisting} ses zaten mevcuttu).`,
+      });
+    }
   };
 
   // Kayıt Düzenleme Modalını Aç
@@ -954,11 +1397,12 @@ export default function AdminStudioPage() {
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAdminHeaders(),
         body: JSON.stringify({
           action: "save_json",
           dataset: activeTab,
           data: payloadData,
+          baseSha: datasetBaseSha,
           githubToken,
           owner: repoOwner,
           codeRepo,
@@ -967,6 +1411,9 @@ export default function AdminStudioPage() {
       const json = await res.json();
       if (!res.ok || !json.ok) {
         throw new Error(json.error || "Kaydetme işlemi başarısız oldu.");
+      }
+      if (typeof json.newSha === "string") {
+        setDatasetBaseSha(json.newSha);
       }
       setHasUnsavedChanges(false);
       playSuccess();
@@ -1064,7 +1511,7 @@ export default function AdminStudioPage() {
       );
       const res = await fetch("/api/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAdminHeaders(),
         body: JSON.stringify({
           action: "upload_media",
           base64Content: webpBase64,
@@ -1101,7 +1548,7 @@ export default function AdminStudioPage() {
     }
   };
 
-  // Ses (.mp3) Dosyası Yükleme (Erkek / Kadın / Efect)
+  // Ses (.mp3 / .wav) Dosyası Yükleme (Erkek / Kadın / Efect)
   const handleUploadAudioBlobOrFile = async (
     blobOrFile: Blob,
     targetPath: string,
@@ -1119,7 +1566,7 @@ export default function AdminStudioPage() {
 
       const res = await fetch("/api/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAdminHeaders(),
         body: JSON.stringify({
           action: "upload_media",
           base64Content,
@@ -1135,10 +1582,24 @@ export default function AdminStudioPage() {
       }
 
       if (activeTab !== "efect_manager") {
-        const fieldName = gender === "female" ? "ses_kadin" : "ses_erkek";
-        const updatedDraft = { ...draftRecord, [fieldName]: targetPath };
-        setDraftRecord(updatedDraft);
-        setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+        if (
+          Array.isArray(draftRecord.satirlar) &&
+          draftRecord.satirlar[dialogueSelectedLineIdx]
+        ) {
+          const nextLines = [...draftRecord.satirlar];
+          nextLines[dialogueSelectedLineIdx] = {
+            ...nextLines[dialogueSelectedLineIdx],
+            ses_dosyasi: targetPath,
+          };
+          const updatedDraft = { ...draftRecord, satirlar: nextLines };
+          setDraftRecord(updatedDraft);
+          setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+        } else {
+          const fieldName = gender === "female" ? "ses_kadin" : "ses_erkek";
+          const updatedDraft = { ...draftRecord, [fieldName]: targetPath };
+          setDraftRecord(updatedDraft);
+          setRawJsonText(JSON.stringify(updatedDraft, null, 2));
+        }
       }
 
       if (gender === "female") setFemaleAudioStatus("ready");
@@ -1185,7 +1646,7 @@ export default function AdminStudioPage() {
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAdminHeaders(),
         body: JSON.stringify({
           action: "generate_and_save_tts",
           text: arabicText,
@@ -1233,7 +1694,7 @@ export default function AdminStudioPage() {
     }
   };
 
-  // Tarayıcı Mikrofonundan Kayıt Başlat / Durdur ve Yükle
+  // Tarayıcı Mikrofonundan Kayıt Başlat / Durdur ve Gerçek 16-bit Mono PCM .wav Olarak Yükle
   const handleToggleMicRecord = async (
     targetPath: string,
     gender: "male" | "female"
@@ -1257,13 +1718,30 @@ export default function AdminStudioPage() {
         }
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const audioBlob = new Blob(recordedChunksRef.current, {
-          type: "audio/mpeg",
+        const rawRecordedBlob = new Blob(recordedChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
         });
-        if (audioBlob.size > 100) {
-          void handleUploadAudioBlobOrFile(audioBlob, targetPath, gender);
+        if (rawRecordedBlob.size <= 100) return;
+
+        setMediaBusyLabel(
+          "Mikrofon kaydı 16-bit Mono PCM (.wav) formatına dönüştürülüyor..."
+        );
+        try {
+          const wavBlob = await convertRecordedBlobToMonoWav16(rawRecordedBlob);
+          const wavTargetPath = targetPath.replace(/\.(mp3|wav)$/i, ".wav");
+          await handleUploadAudioBlobOrFile(wavBlob, wavTargetPath, gender);
+        } catch (err) {
+          setMediaBusyLabel(null);
+          playError();
+          setStatusBanner({
+            type: "error",
+            text:
+              err instanceof Error
+                ? `WAV dönüştürme hatası: ${err.message}`
+                : "Mikrofon kaydı WAV formatına dönüştürülemedi.",
+          });
         }
       };
 
@@ -1741,6 +2219,23 @@ export default function AdminStudioPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {activeTab === "cumleler_1111" && (
+            <button
+              type="button"
+              disabled={repairingMissingSentences}
+              onClick={() => void handleRepairMissingSentenceAudios()}
+              className="h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-xs font-extrabold border-b-2 border-amber-800 flex items-center gap-1.5 cursor-pointer"
+              title="cumle_1103 kadın ve cumle_1104–1111 erkek/kadın eksik ses dosyalarını otomatik üretip medya deposuna yükler"
+            >
+              <Volume2 size={14} />
+              <span>
+                {repairingMissingSentences
+                  ? repairProgressText || "Eksik Sesler Üretiliyor..."
+                  : "🔊 Eksik Sesleri Tamamla (cumle_1103–1111)"}
+              </span>
+            </button>
+          )}
+
           {activeTab !== "efect_manager" && (
             <>
               <button
@@ -2806,7 +3301,22 @@ export default function AdminStudioPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {activeTab === "cumleler_1111" && (
+                  <button
+                    type="button"
+                    disabled={repairingMissingSentences}
+                    onClick={() => void handleRepairMissingSentenceAudios()}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Volume2 size={13} />
+                    <span>
+                      {repairingMissingSentences
+                        ? repairProgressText || "Tamamlanıyor..."
+                        : "🔊 Eksik Sesleri Tamamla (cumle_1103–1111)"}
+                    </span>
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={checkingMediaHealth}
@@ -2819,8 +3329,10 @@ export default function AdminStudioPage() {
                   />
                   <span>
                     {checkingMediaHealth
-                      ? "404 Medya Taranıyor..."
-                      : "🔍 Canlı 404 Medya Taraması Yap"}
+                      ? mediaProbeProgress
+                        ? `Taranıyor (${mediaProbeProgress.checked}/${mediaProbeProgress.total})...`
+                        : "404 Medya Taranıyor..."
+                      : "🔍 Tam Canlı 404 Medya Taraması Yap"}
                   </span>
                 </button>
                 <button

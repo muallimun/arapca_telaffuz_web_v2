@@ -5,8 +5,11 @@
 // Katman 3: Akıllı Web Speech API (Offline Fallback - en kaliteli Arapça sistem sesini seçer)
 
 import {
+  atasozleri,
+  cumleler1111,
   getDialogueById,
   getReadingTextById,
+  gorselKelimeler,
   resolveAudioUrl,
   sozluk,
 } from "@/lib/data";
@@ -419,19 +422,141 @@ export function setActiveAudioPlaybackRate(rate: number) {
   }
 }
 
+// 404 dönen uzak medya URL'lerini oturum boyunca hatırlayarak anında Neural TTS'e yönlendirir
+const missingRemoteAudioUrls = new Set<string>();
+const AUDIO_LOAD_TIMEOUT_MS = 4500;
+
+/**
+ * Bir ses dosyası URL'si 404 döndüğünde (örn. cumle_1103..1111 kadın/erkek MP3 dosyaları),
+ * URL yolundan ilgili Arapça metni ve ses cinsiyetini otomatik çözümler.
+ */
+function inferFallbackTextAndVoiceFromUrl(
+  url: string
+): { text: string; voice: VoiceOption } | null {
+  if (!url || url.startsWith("blob:") || url.includes("/api/tts")) {
+    return null;
+  }
+
+  const genderFromPath: VoiceOption = /\/kadin\/|_K\.mp3$/i.test(url)
+    ? "kadin"
+    : /\/erkek\/|_E\.mp3$/i.test(url)
+    ? "erkek"
+    : getPreferredVoiceGender();
+
+  // 1. 1111 Kalıp Cümle (cumle_XXXX)
+  const cumleMatch = url.match(/(cumle_\d{4})/i);
+  if (cumleMatch) {
+    const id = cumleMatch[1].toLowerCase();
+    const found = cumleler1111.find((c) => c.id.toLowerCase() === id);
+    if (found?.arapca) {
+      return { text: found.arapca, voice: genderFromPath };
+    }
+  }
+
+  // 2. 508 Atasözü (ata_XXXX)
+  const ataMatch = url.match(/(ata_\d{4})/i);
+  if (ataMatch) {
+    const id = ataMatch[1].toLowerCase();
+    const found = atasozleri.find((a) => a.id.toLowerCase() === id);
+    if (found?.arapca) {
+      return { text: found.arapca, voice: genderFromPath };
+    }
+  }
+
+  // 3. Diyalog satırı (/diyaloglar/dlg_XXX/satir_YY_E.mp3)
+  const dlgMatch = url.match(/\/diyaloglar\/(dlg_\d+)\/satir_(\d+)/i);
+  if (dlgMatch) {
+    const dlg = getDialogueById(dlgMatch[1].toLowerCase());
+    const sira = parseInt(dlgMatch[2], 10);
+    const line = dlg?.satirlar?.find((l) => l.sira === sira);
+    if (line?.arapca) {
+      return {
+        text: line.arapca,
+        voice: line.cinsiyet === "K" ? "kadin" : genderFromPath,
+      };
+    }
+  }
+
+  // 4. Okuma Metni satırı (/metinler/metin_XX/satir_YY.mp3)
+  const metinMatch = url.match(/\/metinler\/(metin_\d+)\/satir_(\d+)/i);
+  if (metinMatch) {
+    const txt = getReadingTextById(metinMatch[1].toLowerCase());
+    const sira = parseInt(metinMatch[2], 10);
+    const line = txt?.satirlar?.find((l) => l.sira === sira);
+    if (line?.arapca) {
+      return { text: line.arapca, voice: genderFromPath };
+    }
+  }
+
+  // 5. Görsel Kelime veya Sözlük (/kelimeler/{erkek|kadin}/XXXX_...)
+  const wordFileMatch = url.match(/\/kelimeler\/(?:erkek|kadin)\/([^/.?]+)/i);
+  if (wordFileMatch) {
+    const rawId = decodeURIComponent(wordFileMatch[1]);
+    const gk = gorselKelimeler.find((w) => w.id === rawId);
+    if (gk?.arapca) {
+      return { text: gk.arapca, voice: genderFromPath };
+    }
+    const dictWord = sozluk.find((w) => w.id === rawId);
+    const dictAr = dictWord?.mufret || dictWord?.mazi;
+    if (dictAr) {
+      return { text: dictAr, voice: genderFromPath };
+    }
+  }
+
+  return null;
+}
+
 function playSingleAudioUrl(url: string, rate: number = 1): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error("Empty audio URL"));
+      return;
+    }
+
+    const isBlobOrLocalApi =
+      url.startsWith("blob:") || url.startsWith("data:") || url.includes("/api/tts");
+
+    if (!isBlobOrLocalApi && missingRemoteAudioUrls.has(url)) {
+      reject(new Error("Known missing remote audio URL"));
+      return;
+    }
+
     stopAllAudio();
     const audio = new Audio(url);
     audio.preload = "auto";
     applyPlaybackRateAndPitch(audio, rate);
     activeAudio = audio;
 
+    let settled = false;
+    let loadWatchdog: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      if (activeAudio === audio) {
+        try {
+          audio.pause();
+          audio.src = "";
+        } catch {
+          // ignore
+        }
+        activeAudio = null;
+      }
+      reject(new Error("Audio startup timeout"));
+    }, AUDIO_LOAD_TIMEOUT_MS);
+
+    const clearWatchdog = () => {
+      if (loadWatchdog !== null) {
+        clearTimeout(loadWatchdog);
+        loadWatchdog = null;
+      }
+    };
+
     audio.onloadedmetadata = () => {
+      clearWatchdog();
       applyPlaybackRateAndPitch(audio, rate);
     };
 
     audio.oncanplay = () => {
+      clearWatchdog();
       applyPlaybackRateAndPitch(audio, rate);
     };
 
@@ -439,28 +564,41 @@ function playSingleAudioUrl(url: string, rate: number = 1): Promise<void> {
       applyPlaybackRateAndPitch(audio, rate);
     };
 
+    audio.onplaying = () => {
+      clearWatchdog();
+      applyPlaybackRateAndPitch(audio, rate);
+    };
+
     audio.onended = () => {
+      clearWatchdog();
+      if (settled) return;
+      settled = true;
       if (activeAudio === audio) activeAudio = null;
       resolve();
     };
 
     audio.onerror = () => {
+      clearWatchdog();
+      if (settled) return;
+      settled = true;
+      if (!isBlobOrLocalApi) {
+        missingRemoteAudioUrls.add(url);
+      }
       if (activeAudio === audio) activeAudio = null;
       reject(new Error("Audio playback failed"));
     };
 
     audio.play().catch((err) => {
+      clearWatchdog();
+      if (settled) return;
+      settled = true;
       if (activeAudio === audio) activeAudio = null;
       reject(err);
     });
   });
 }
 
-/**
- * Herhangi bir ses URL'sini (Yerel/CDN MP3 veya Neural TTS Blob URL) oynatır.
- * Eğer çevrimdışı ders paketi ("muallimun-offline-audio-v1") indirilmişse önbellekten okur.
- */
-export async function playAudioElement(
+async function playAudioElementCore(
   url: string,
   rate: number = 1
 ): Promise<void> {
@@ -487,6 +625,27 @@ export async function playAudioElement(
 }
 
 /**
+ * Herhangi bir ses URL'sini (Yerel/CDN MP3 veya Neural TTS Blob URL) oynatır.
+ * Eğer uzak MP3/WAV dosyası eksikse (örn. cumle_1103..1111) URL'den Arapça metni çözümleyip
+ * kullanıcıyı sessiz bırakmadan otomatik /api/tts -> Web Speech yedek zincirini devreye sokar.
+ */
+export async function playAudioElement(
+  url: string,
+  rate: number = 1
+): Promise<void> {
+  try {
+    await playAudioElementCore(url, rate);
+  } catch (err) {
+    const inferred = inferFallbackTextAndVoiceFromUrl(url);
+    if (inferred?.text) {
+      await playTTS(inferred.text, rate, inferred.voice);
+      return;
+    }
+    throw err;
+  }
+}
+
+/**
  * Ana TTS Fonksiyonu (Katman 2 Neural TTS -> Katman 3 Akıllı Web Speech Fallback)
  */
 export async function playTTS(
@@ -503,7 +662,7 @@ export async function playTTS(
   const neuralBlobUrl = await getOrFetchNeuralTtsBlobUrl(cleanText, gender);
   if (neuralBlobUrl) {
     try {
-      await playAudioElement(neuralBlobUrl, rate);
+      await playAudioElementCore(neuralBlobUrl, rate);
       return;
     } catch {
       // Oynatma hatası olursa Katman 3'e düş
@@ -530,12 +689,12 @@ export async function playDualGenderAudio(options: {
   const activeGender = gender || getPreferredVoiceGender();
   const mp3Url = getDualGenderAudioUrl({ id, ses_erkek, ses_kadin }, activeGender);
 
-  if (mp3Url) {
+  if (mp3Url && !missingRemoteAudioUrls.has(mp3Url)) {
     try {
-      await playAudioElement(mp3Url, rate);
+      await playAudioElementCore(mp3Url, rate);
       return;
     } catch {
-      // MP3 bulunamazsa Neural TTS'e geç
+      // MP3 bulunamazsa (örn. cumle_1103..1111) kesintisiz Neural TTS'e geç
     }
   }
 
@@ -567,11 +726,14 @@ export async function speakHybrid(options: {
 
   // Katman 1A: Diyalog veya Okuma Metni satırı MP3 kontrolü (/sesler/diyaloglar/... veya /sesler/metinler/...)
   if (dialogueId && lineSira !== undefined && hasMp3(dialogueId, lineSira)) {
-    try {
-      await playAudioElement(getMp3Path(dialogueId, lineSira), rate);
-      return;
-    } catch {
-      // MP3 yüklenemezse Katman 2 Neural TTS'e geç
+    const dlgMp3Url = getMp3Path(dialogueId, lineSira);
+    if (dlgMp3Url && !missingRemoteAudioUrls.has(dlgMp3Url)) {
+      try {
+        await playAudioElementCore(dlgMp3Url, rate);
+        return;
+      } catch {
+        // MP3 yüklenemezse Katman 2 Neural TTS'e geç
+      }
     }
   }
 
@@ -592,9 +754,9 @@ export async function speakHybrid(options: {
       },
       activeGender
     );
-    if (wordMp3) {
+    if (wordMp3 && !missingRemoteAudioUrls.has(wordMp3)) {
       try {
-        await playAudioElement(wordMp3, rate);
+        await playAudioElementCore(wordMp3, rate);
         return;
       } catch {
         // Katman 2'ye geç

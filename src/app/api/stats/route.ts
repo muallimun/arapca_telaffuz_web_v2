@@ -17,7 +17,8 @@ const COUNTER_API_BASE = "https://api.counterapi.dev/v1/muallimun_arapca_app";
 
 const SESSION_IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 dakika
 const MAX_TRACKED_VISITORS = 10_000;
-const MAX_CLIENT_SANITY_LIMIT = 10_000_000;
+const EXTERNAL_FETCH_TIMEOUT_MS = 1800;
+const READ_SYNC_COOLDOWN_MS = 60 * 1000; // Salt okunur GET için 60 sn arka plan yenileme aralığı
 
 interface VisitorSeenRecord {
   lastSessionId: string;
@@ -36,6 +37,8 @@ interface PersistentStatsStore {
 
 declare global {
   var __muallimunPersistentStats: PersistentStatsStore | undefined;
+  var __muallimunLastExternalSyncAt: number | undefined;
+  var __muallimunExternalSyncInFlight: boolean | undefined;
 }
 
 export function getIstanbulDateKey(): string {
@@ -136,15 +139,22 @@ function readStoreFromFile(filePath: string): PersistentStatsStore | null {
 
 function saveStoreToDisk(store: PersistentStatsStore): void {
   const serialized = JSON.stringify(store, null, 2);
-  for (const targetPath of [PRIMARY_STATS_FILE, BACKUP_STATS_FILE]) {
+  const targets =
+    process.env.NODE_ENV === "production"
+      ? [PRIMARY_STATS_FILE]
+      : [PRIMARY_STATS_FILE, BACKUP_STATS_FILE];
+
+  for (const targetPath of targets) {
     try {
       const dir = path.dirname(targetPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(targetPath, serialized, "utf8");
+      const tmpPath = `${targetPath}.${process.pid}.tmp`;
+      fs.writeFileSync(tmpPath, serialized, "utf8");
+      fs.renameSync(tmpPath, targetPath);
     } catch {
-      // Yazılamayan dizini atla, diğer yedek dizin veya bellek kullanılır
+      // Yazılamayan dizini atla, bellek içi depo aktif kalır
     }
   }
 }
@@ -217,7 +227,7 @@ function loadMergedPersistentStore(): PersistentStatsStore {
 
 async function fetchWithTimeout(
   url: string,
-  timeoutMs = 2200
+  timeoutMs = EXTERNAL_FETCH_TIMEOUT_MS
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -244,7 +254,7 @@ async function hitOrReadCounterKey(
     const suffix = increment ? "/up" : "/";
     const res = await fetchWithTimeout(
       `${COUNTER_API_BASE}/${key}${suffix}`,
-      2200
+      EXTERNAL_FETCH_TIMEOUT_MS
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -289,7 +299,7 @@ async function syncExternalCounters(
       (async () => {
         try {
           const targetUrl = `${GOOGLE_SCRIPT_URL}?action=hit&unique=${uniqueFlag}&today=${todayFlag}&session=${sessionFlag}`;
-          const res = await fetchWithTimeout(targetUrl, 2200);
+          const res = await fetchWithTimeout(targetUrl, EXTERNAL_FETCH_TIMEOUT_MS);
           if (!res.ok) return null;
           const text = await res.text();
           if (!text || text.trim().startsWith("<")) return null;
@@ -325,6 +335,67 @@ async function syncExternalCounters(
   }
 }
 
+/**
+ * İstemci yanıtını bloklamadan (non-blocking) arka planda harici sayaçları senkronize eder.
+ */
+function triggerBackgroundExternalSync(
+  incUnique: boolean,
+  incToday: boolean,
+  incSession: boolean
+): void {
+  const isIncrement = incUnique || incToday || incSession;
+  const now = Date.now();
+
+  if (!isIncrement) {
+    if (globalThis.__muallimunExternalSyncInFlight) return;
+    const lastSync = globalThis.__muallimunLastExternalSyncAt ?? 0;
+    if (now - lastSync < READ_SYNC_COOLDOWN_MS) return;
+  }
+
+  globalThis.__muallimunExternalSyncInFlight = true;
+  globalThis.__muallimunLastExternalSyncAt = now;
+
+  void syncExternalCounters(incUnique, incToday, incSession)
+    .then((ext) => {
+      if (!ext) return;
+      const current =
+        globalThis.__muallimunPersistentStats ?? loadMergedPersistentStore();
+      let changed = false;
+
+      if (ext.todayUsers > current.todayUsers) {
+        current.todayUsers = ext.todayUsers;
+        changed = true;
+      }
+      if (ext.totalUsers > current.totalUsers) {
+        current.totalUsers = ext.totalUsers;
+        changed = true;
+      }
+      if (ext.totalSessions > current.totalSessions) {
+        current.totalSessions = ext.totalSessions;
+        changed = true;
+      }
+
+      current.todayUsers = Math.max(1, current.todayUsers);
+      current.totalUsers = Math.max(current.totalUsers, current.todayUsers);
+      current.totalSessions = Math.max(
+        current.totalSessions,
+        current.totalUsers,
+        current.todayUsers
+      );
+
+      if (changed) {
+        globalThis.__muallimunPersistentStats = current;
+        saveStoreToDisk(current);
+      }
+    })
+    .catch(() => {
+      // Harici servis zaman aşımı veya ağ hatası sessizce yutulur
+    })
+    .finally(() => {
+      globalThis.__muallimunExternalSyncInFlight = false;
+    });
+}
+
 function buildStatsJsonResponse(store: PersistentStatsStore) {
   const todayUsers = Math.max(1, store.todayUsers);
   const totalUsers = Math.max(store.totalUsers, todayUsers);
@@ -354,41 +425,19 @@ function buildStatsJsonResponse(store: PersistentStatsStore) {
 }
 
 /**
- * GET /api/stats — Salt okunur (Read-Only): Sayaçları artırmadan en güncel istatistikleri döndürür.
+ * GET /api/stats — Salt okunur (Read-Only): Sayaçları artırmadan anında yerel depodan yanıt döner,
+ * harici senkronizasyonu bloklamadan arka planda tetikler.
  */
 export async function GET() {
   const store = loadMergedPersistentStore();
-  const ext = await syncExternalCounters(false, false, false);
-  if (ext) {
-    let changed = false;
-    if (ext.todayUsers > store.todayUsers) {
-      store.todayUsers = ext.todayUsers;
-      changed = true;
-    }
-    if (ext.totalUsers > store.totalUsers) {
-      store.totalUsers = ext.totalUsers;
-      changed = true;
-    }
-    if (ext.totalSessions > store.totalSessions) {
-      store.totalSessions = ext.totalSessions;
-      changed = true;
-    }
-    store.totalUsers = Math.max(store.totalUsers, store.todayUsers);
-    store.totalSessions = Math.max(
-      store.totalSessions,
-      store.totalUsers,
-      store.todayUsers
-    );
-    if (changed) {
-      saveStoreToDisk(store);
-    }
-  }
+  triggerBackgroundExternalSync(false, false, false);
   return buildStatsJsonResponse(store);
 }
 
 /**
- * POST /api/stats — Ziyaretçi kimliği (visitorId), sekme oturumu (sessionId) ve
- * istemcinin bildiği son sayaç yedeklerini (knownTotalUsers, knownTotalSessions) işler.
+ * POST /api/stats — Ziyaretçi kimliği (visitorId) ve sekme oturumu (sessionId) üzerinden
+ * yalnızca sunucu otoriteli sayaç artışı uygular. İstemciden gelen knownTotalUsers / knownTotalSessions
+ * değerlerine kesinlikle güvenilmez (sayaç şişirme koruması).
  */
 export async function POST(req: NextRequest) {
   const store = loadMergedPersistentStore();
@@ -403,8 +452,6 @@ export async function POST(req: NextRequest) {
 
   let visitorId = "";
   let sessionId = "";
-  let clientKnownTotalUsers = 0;
-  let clientKnownTotalSessions = 0;
   let legacyUnique = req.nextUrl.searchParams.get("unique") === "1";
   let legacyToday = req.nextUrl.searchParams.get("today") === "1";
   let legacySession = req.nextUrl.searchParams.get("session") === "1";
@@ -413,26 +460,17 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as Record<string, unknown>;
     if (body && typeof body === "object") {
       if (typeof body.visitorId === "string") {
-        visitorId = body.visitorId.trim().slice(0, 128);
+        // Yalnızca güvenli karakterlerden oluşan makul uzunluktaki visitorId kabul edilir
+        visitorId = body.visitorId
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, "")
+          .slice(0, 96);
       }
       if (typeof body.sessionId === "string") {
-        sessionId = body.sessionId.trim().slice(0, 128);
-      }
-      if (
-        typeof body.knownTotalUsers === "number" &&
-        Number.isFinite(body.knownTotalUsers) &&
-        body.knownTotalUsers > 0 &&
-        body.knownTotalUsers <= MAX_CLIENT_SANITY_LIMIT
-      ) {
-        clientKnownTotalUsers = Math.floor(body.knownTotalUsers);
-      }
-      if (
-        typeof body.knownTotalSessions === "number" &&
-        Number.isFinite(body.knownTotalSessions) &&
-        body.knownTotalSessions > 0 &&
-        body.knownTotalSessions <= MAX_CLIENT_SANITY_LIMIT
-      ) {
-        clientKnownTotalSessions = Math.floor(body.knownTotalSessions);
+        sessionId = body.sessionId
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, "")
+          .slice(0, 96);
       }
       if (body.unique === "1" || body.unique === true || body.unique === 1) {
         legacyUnique = true;
@@ -448,16 +486,6 @@ export async function POST(req: NextRequest) {
     // Boş gövde veya query param desteklenir
   }
 
-  // 1. Deploy Sonrası Sıfırlanma Koruması:
-  // Sunucu yeni deploy/restart sonrası sıfırlanmışsa istemcinin bildiği son toplam değerlerden devam et!
-  if (clientKnownTotalUsers > store.totalUsers) {
-    store.totalUsers = Math.max(store.totalUsers, clientKnownTotalUsers);
-  }
-  if (clientKnownTotalSessions > store.totalSessions) {
-    store.totalSessions = Math.max(store.totalSessions, clientKnownTotalSessions);
-  }
-
-  // 2. "Toplam Kişi", "Bugün" ve "Toplam Oturum" Ayrımı:
   let isNewUniqueVisitor = false;
   let isNewTodayVisitor = false;
   let isNewSessionVisit = false;
@@ -501,7 +529,7 @@ export async function POST(req: NextRequest) {
       lastTimestamp: now,
     };
   } else {
-    // Legacy istemci回退 (visitorId gönderilmeyen durumlar)
+    // Legacy istemci desteği (yalnızca +1 adımına izin verilir)
     if (legacyUnique) {
       isNewUniqueVisitor = true;
       store.totalUsers += 1;
@@ -516,41 +544,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Harici sayaçlarla da senkronize et
-  const ext = await syncExternalCounters(
-    isNewUniqueVisitor,
-    isNewTodayVisitor,
-    isNewSessionVisit
-  );
-  if (ext) {
-    if (ext.todayUsers > store.todayUsers) {
-      store.todayUsers = ext.todayUsers;
-    }
-    if (ext.totalUsers > store.totalUsers) {
-      store.totalUsers = ext.totalUsers;
-    }
-    if (ext.totalSessions > store.totalSessions) {
-      store.totalSessions = ext.totalSessions;
-    }
-  }
-
   // Değişmez kurallar: Toplam Kişi >= Bugün ve Toplam Oturum >= Toplam Kişi >= Bugün
   store.todayUsers = Math.max(1, store.todayUsers);
-  store.totalUsers = Math.max(
-    1,
-    store.totalUsers,
-    clientKnownTotalUsers,
-    store.todayUsers
-  );
+  store.totalUsers = Math.max(1, store.totalUsers, store.todayUsers);
   store.totalSessions = Math.max(
     store.totalSessions,
-    clientKnownTotalSessions,
     store.totalUsers,
     store.todayUsers
   );
 
   globalThis.__muallimunPersistentStats = store;
   saveStoreToDisk(store);
+
+  // Harici sayaçları istemciyi bekletmeden (non-blocking) arka planda senkronize et
+  triggerBackgroundExternalSync(
+    isNewUniqueVisitor,
+    isNewTodayVisitor,
+    isNewSessionVisit
+  );
 
   return buildStatsJsonResponse(store);
 }

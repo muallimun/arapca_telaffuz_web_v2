@@ -1147,5 +1147,194 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   assert.equal(classifyIrabRoleToBrush("Fiil + Fâil"), "verb_other");
 });
 
+test("16. FAZ 5A — Akıllı Tahta Konsolu, İkili Bilgi Boşluğu (A/B) Konuşma Kartları ve Yarışma Sonuç Raporu Doğrulaması", async () => {
+  // 1. SmartboardOverlay & InfoGapPairModal varlığı ve next/dynamic({ ssr: false }) disiplini
+  const smartboardOverlayPath = path.join(
+    ROOT_DIR,
+    "src",
+    "components",
+    "classroom",
+    "SmartboardOverlay.tsx"
+  );
+  const smartboardMountPath = path.join(
+    ROOT_DIR,
+    "src",
+    "components",
+    "classroom",
+    "SmartboardMount.tsx"
+  );
+  const infoGapModalPath = path.join(
+    ROOT_DIR,
+    "src",
+    "components",
+    "classroom",
+    "InfoGapPairModal.tsx"
+  );
+
+  assert.equal(
+    fs.existsSync(smartboardOverlayPath),
+    true,
+    "SmartboardOverlay.tsx mevcut olmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(smartboardMountPath),
+    true,
+    "SmartboardMount.tsx mevcut olmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(infoGapModalPath),
+    true,
+    "InfoGapPairModal.tsx mevcut olmalıdır"
+  );
+
+  const overlayCode = fs.readFileSync(smartboardOverlayPath, "utf8");
+  assert.equal(
+    overlayCode.includes("print:hidden"),
+    true,
+    "SmartboardOverlay yazdırma görünümünde gizlenmelidir (print:hidden)"
+  );
+  assert.equal(
+    overlayCode.includes("mixBlendMode"),
+    true,
+    "Fosforlu İ'rab vurgulayıcı harekeleri kapatmamak için mixBlendMode kullanmalıdır"
+  );
+  assert.equal(
+    overlayCode.includes("min-h-[48px]"),
+    true,
+    "Akıllı tahta butonları min-h-[48px] dokunma ergonomisine sahip olmalıdır"
+  );
+  assert.equal(
+    overlayCode.includes("Tahta Perdesi"),
+    true,
+    "Sürüklenebilir Tahta Perdesi bulunmalıdır"
+  );
+  assert.equal(
+    overlayCode.includes("Seçileni Bu Derste Tekrar Seçme"),
+    true,
+    "Kura çarkında tekrarsız seçim seçeneği bulunmalıdır"
+  );
+
+  const mountCode = fs.readFileSync(smartboardMountPath, "utf8");
+  assert.equal(
+    mountCode.includes('import("@/components/classroom/SmartboardOverlay")') &&
+      mountCode.includes("ssr: false"),
+    true,
+    "SmartboardOverlay next/dynamic({ ssr: false }) ile tembel yüklenmelidir"
+  );
+
+  const layoutCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    layoutCode.includes("SmartboardOverlay"),
+    false,
+    "layout.tsx ağır SmartboardOverlay bileşenini doğrudan statik import etmemelidir"
+  );
+  assert.equal(
+    layoutCode.includes("<SmartboardMount />"),
+    true,
+    "layout.tsx içinde <SmartboardMount /> yer almalıdır"
+  );
+
+  const diyalogPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    diyalogPageCode.includes('import("@/components/classroom/InfoGapPairModal")') &&
+      diyalogPageCode.includes("ssr: false"),
+    true,
+    "diyalog/[id]/page.tsx InfoGapPairModal bileşenini next/dynamic({ ssr: false }) ile yüklemelidir"
+  );
+
+  // 2. İkili Bilgi Boşluğu (A/B) Üreticisi: Tamamlayıcı satırlar ve sıfır kopya sızıntısı
+  const { buildInfoGapPairCards, PAIR_SPEAKING_RUBRIC_CRITERIA } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "infoGapBuilder.ts")).href
+  );
+  assert.equal(PAIR_SPEAKING_RUBRIC_CRITERIA.length, 4);
+  assert.equal(
+    PAIR_SPEAKING_RUBRIC_CRITERIA.reduce((acc, c) => acc + c.maxPoints, 0),
+    100
+  );
+
+  const { parsed: dialogues } = readDataJson("tum_diyaloglar_120.json");
+  const sampleDlg = dialogues[0];
+  const deck = buildInfoGapPairCards(sampleDlg, []);
+  assert.equal(deck.studentACard.length, sampleDlg.satirlar.length);
+  assert.equal(deck.studentBCard.length, sampleDlg.satirlar.length);
+
+  for (let i = 0; i < sampleDlg.satirlar.length; i++) {
+    const aLine = deck.studentACard[i];
+    const bLine = deck.studentBCard[i];
+    const metaLine = deck.lines[i];
+    const isOdd = (i + 1) % 2 === 1;
+
+    assert.equal(aLine.isFull, isOdd, `Satır #${i + 1} Öğrenci A tamlık durumu hatalı`);
+    assert.equal(bLine.isFull, !isOdd, `Satır #${i + 1} Öğrenci B tamlık durumu hatalı`);
+
+    const maskedCardLine = isOdd ? bLine : aLine;
+    assert.equal(
+      maskedCardLine.displayArabic.includes("[ .................. ]"),
+      true,
+      `Maskeli kart satırında boşluk yer tutucusu bulunmalıdır (#${i + 1})`
+    );
+    assert.ok(
+      metaLine.hiddenWordsAr.length >= 1,
+      `Her satırda en az 1 hedef kelime gizlenmelidir (#${i + 1})`
+    );
+    for (const hiddenAr of metaLine.hiddenWordsAr) {
+      assert.equal(
+        maskedCardLine.displayTurkishCue.includes(hiddenAr),
+        false,
+        `Türkçe ipucu alanında gizlenen Arapça kelime sızmamalıdır: ${hiddenAr}`
+      );
+    }
+  }
+
+  // 3. DialoguePdfModal A/B Eşli Kart Şablonu ve ClassroomTeamBattle PNG + A4 Özet Raporu
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    pdfModalCode.includes('"pair-infogap"'),
+    true,
+    "DialoguePdfModal içinde pair-infogap modu tanımlı olmalıdır"
+  );
+  assert.equal(
+    pdfModalCode.includes("Buradan Kesiniz"),
+    true,
+    "DialoguePdfModal eşli konuşma şablonunda kesme çizgisi (Buradan Kesiniz) bulunmalıdır"
+  );
+
+  const battleCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      "ClassroomTeamBattle.tsx"
+    ),
+    "utf8"
+  );
+  assert.equal(
+    battleCode.includes("Yarışma Sonuç Kartını İndir (PNG)"),
+    true,
+    "ClassroomTeamBattle içinde PNG sonuç kartı indirme butonu bulunmalıdır"
+  );
+  assert.equal(
+    battleCode.includes("Sınıfça Tekrar Edilecek Kelimeler"),
+    true,
+    "ClassroomTeamBattle özetinde Sınıfça Tekrar Edilecek Kelimeler bölümü bulunmalıdır"
+  );
+  assert.equal(
+    battleCode.includes("window.open"),
+    false,
+    "ClassroomTeamBattle iframe güvenliği için window.open kullanmamalıdır"
+  );
+});
+
+
 
 

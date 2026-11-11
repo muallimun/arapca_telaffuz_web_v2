@@ -49,6 +49,8 @@ import {
   Play,
   Users,
   Crown,
+  Download,
+  Printer,
 } from "lucide-react";
 
 export type BattlePlayMode = "simultaneous" | "turn_based";
@@ -94,6 +96,26 @@ interface ClassroomTeamBattleProps {
   onClose?: () => void;
 }
 
+interface BattleRoundSummary {
+  roundNumber: number;
+  categoryBadge: string;
+  promptTypeLabel: string;
+  targetArabic: string;
+  targetTurkish: string;
+  metaNote?: string;
+  winner: "A" | "B" | "none";
+  hadWrongAttempt: boolean;
+}
+
+function escapePrintHtml(raw: unknown): string {
+  return String(raw ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function formatRootDisplay(rawRoot?: string): string {
   if (!rawRoot || rawRoot === "-") return "";
   const letters = (rawRoot.match(/[\u0621-\u064A]/g) || []).join(" - ");
@@ -137,6 +159,8 @@ export default function ClassroomTeamBattle({
   const [roundWinner, setRoundWinner] = useState<"A" | "B" | "none" | null>(
     null
   );
+  const [roundHistory, setRoundHistory] = useState<BattleRoundSummary[]>([]);
+  const [matchDurationSec, setMatchDurationSec] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
   // Soru başına geri sayım (Süresiz seçildiğinde timeLimit === null veya 0 olur)
@@ -147,6 +171,7 @@ export default function ClassroomTeamBattle({
 
   const fanfarePlayedRef = useRef(false);
   const battleStartedAtRef = useRef<number>(0);
+  const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
   // Yarışma başlangıcında sfx.playStart() ve başlangıç zaman damgası
   useEffect(() => {
@@ -570,6 +595,34 @@ export default function ClassroomTeamBattle({
     }
   }, [currentQuestion, preferredVoiceGender, speechRate]);
 
+  const appendRoundSummary = useCallback(
+    (
+      q: BattleQuestion,
+      roundIdx: number,
+      winner: "A" | "B" | "none",
+      hadWrongAttempt: boolean
+    ) => {
+      const correctOpt = q.options.find((o) => o.isCorrect) || q.options[0];
+      const entry: BattleRoundSummary = {
+        roundNumber: roundIdx + 1,
+        categoryBadge: q.categoryBadge,
+        promptTypeLabel: q.promptTypeLabel,
+        targetArabic: correctOpt?.arabic || q.promptArabic || "",
+        targetTurkish: correctOpt?.turkish || q.promptTurkish || "",
+        metaNote: correctOpt?.metaNote,
+        winner,
+        hadWrongAttempt,
+      };
+      setRoundHistory((prev) => {
+        const filtered = prev.filter((r) => r.roundNumber !== entry.roundNumber);
+        return [...filtered, entry].sort(
+          (a, b) => a.roundNumber - b.roundNumber
+        );
+      });
+    },
+    []
+  );
+
   // Geri sayım sayacı (Süresiz modda çalışmaz)
   useEffect(() => {
     if (
@@ -584,13 +637,24 @@ export default function ClassroomTeamBattle({
       if (questionTimer <= 1) {
         setQuestionTimer(0);
         setRoundWinner("none");
+        if (currentQuestion) {
+          appendRoundSummary(currentQuestion, currentIndex, "none", true);
+        }
         void playWrong();
       } else {
         setQuestionTimer((prev) => Math.max(0, prev - 1));
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [isUnlimitedTime, questionTimer, isFinished, isRoundResolved]);
+  }, [
+    isUnlimitedTime,
+    questionTimer,
+    isFinished,
+    isRoundResolved,
+    currentQuestion,
+    currentIndex,
+    appendRoundSummary,
+  ]);
 
   // Yarışma bittiğinde gerçek geçen süreyi tek seferde kaydet ve fanfar çal
   useEffect(() => {
@@ -631,7 +695,10 @@ export default function ClassroomTeamBattle({
 
     if (option.isCorrect) {
       // Doğru cevap veren takım turu kazanır!
+      const otherTeamHadWrong =
+        team === "A" ? teamBChoiceId !== null : teamAChoiceId !== null;
       setRoundWinner(team);
+      appendRoundSummary(currentQuestion, currentIndex, team, otherTeamHadWrong);
 
       if (team === "A") {
         const nextStreak = teamAStreak + 1;
@@ -670,6 +737,7 @@ export default function ClassroomTeamBattle({
         team === "A" ? teamBChoiceId !== null : teamAChoiceId !== null;
       if (otherAlreadyWrong) {
         setRoundWinner("none");
+        appendRoundSummary(currentQuestion, currentIndex, "none", true);
         playTargetAudio();
       }
     }
@@ -680,6 +748,10 @@ export default function ClassroomTeamBattle({
     stopAllAudio();
     stopAllSfx();
     if (currentIndex + 1 >= battleQuestions.length) {
+      const startedAt = battleStartedAtRef.current || Date.now();
+      setMatchDurationSec(
+        Math.max(5, Math.round((Date.now() - startedAt) / 1000))
+      );
       setIsFinished(true);
     } else {
       setCurrentIndex((prev) => prev + 1);
@@ -707,6 +779,8 @@ export default function ClassroomTeamBattle({
     setTeamAChoiceId(null);
     setTeamBChoiceId(null);
     setRoundWinner(null);
+    setRoundHistory([]);
+    setMatchDurationSec(0);
     setQuestionTimer(perQuestionSeconds);
     setIsFinished(false);
   };
@@ -719,7 +793,7 @@ export default function ClassroomTeamBattle({
     );
   }
 
-  // YARIŞMA SONU KUPA EKRANI
+  // YARIŞMA SONU KUPA VE SINIF ÖZET RAPORU EKRANI
   if (isFinished) {
     const isTie = teamAScore === teamBScore;
     const winnerIsA = teamAScore > teamBScore;
@@ -729,15 +803,369 @@ export default function ClassroomTeamBattle({
       ? `🟦 ${teamAName}`
       : `🟧 ${teamBName}`;
 
+    const totalRounds = Math.max(1, battleQuestions.length);
+    const teamAWins = roundHistory.filter((r) => r.winner === "A").length;
+    const teamBWins = roundHistory.filter((r) => r.winner === "B").length;
+    const solvedRounds = teamAWins + teamBWins;
+    const accuracyPct = Math.round((solvedRounds / totalRounds) * 100);
+    const reviewNeededItems = roundHistory.filter(
+      (r) => r.winner === "none" || r.hadWrongAttempt
+    );
+    const mins = Math.floor(matchDurationSec / 60);
+    const secs = matchDurationSec % 60;
+    const durationText =
+      mins > 0 ? `${mins} dk ${secs} sn` : `${Math.max(1, secs)} sn`;
+    const formattedDate = new Intl.DateTimeFormat("tr-TR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+    const focusLabel =
+      questionFocus === "visual_to_ar"
+        ? "Görsel ↔ Arapça"
+        : questionFocus === "ar_to_tr"
+        ? "Arapça ↔ Türkçe"
+        : questionFocus === "root_and_plural"
+        ? "Kök & Çoğul (Sarf)"
+        : "Karışık (Görsel + Anlam + Sarf)";
+
+    const handleDownloadResultPng = () => {
+      playClick();
+      const canvas = document.createElement("canvas");
+      canvas.width = 1400;
+      canvas.height = 820;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Arka plan degrade
+      const bgGrad = ctx.createLinearGradient(0, 0, 1400, 820);
+      bgGrad.addColorStop(0, "#064E3B");
+      bgGrad.addColorStop(0.55, "#087F5B");
+      bgGrad.addColorStop(1, "#1E1B4B");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1400, 820);
+
+      // İç krem çerçeve kartı
+      ctx.fillStyle = "#FDFBF7";
+      ctx.beginPath();
+      ctx.roundRect(44, 44, 1312, 732, 32);
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#F59E0B";
+      ctx.stroke();
+
+      // Üst rozet
+      ctx.fillStyle = "#087F5B";
+      ctx.beginPath();
+      ctx.roundRect(440, 78, 520, 48, 24);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "800 22px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🏆 SINIF & TAHTA YARIŞMASI SONUÇ KARTI", 700, 110);
+
+      // Kazanan Başlığı
+      ctx.fillStyle = "#1E293B";
+      ctx.font = "900 44px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        isTie ? "🤝 Dostluk Kazandı (Berabere!)" : `👑 Kazanan: ${winnerName.replace(/^[🟦🟧]\s*/, "")}`,
+        700,
+        186
+      );
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = "700 21px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `Tarih: ${formattedDate}  •  Konu: ${focusLabel}  •  Seviye: ${
+          cefrFilter === "all" ? "Tüm Seviyeler" : cefrFilter
+        }  •  Süre: ${durationText}`,
+        700,
+        232
+      );
+
+      // A Takımı Kartı
+      ctx.fillStyle = "#EFF6FF";
+      ctx.beginPath();
+      ctx.roundRect(96, 276, 576, 300, 26);
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#2563EB";
+      ctx.stroke();
+
+      ctx.fillStyle = "#1D4ED8";
+      ctx.font = "800 28px system-ui, -apple-system, sans-serif";
+      ctx.fillText(teamAName.slice(0, 28), 384, 336);
+      ctx.fillStyle = "#1E3A8A";
+      ctx.font = "900 72px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`${teamAScore} Puan`, 384, 430);
+      ctx.fillStyle = "#334155";
+      ctx.font = "700 23px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `Doğru Tur: ${teamAWins}/${totalRounds}  •  En Uzun Seri: ${teamABestStreak}`,
+        384,
+        515
+      );
+
+      // B Takımı Kartı
+      ctx.fillStyle = "#FFF7ED";
+      ctx.beginPath();
+      ctx.roundRect(728, 276, 576, 300, 26);
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#EA580C";
+      ctx.stroke();
+
+      ctx.fillStyle = "#C2410C";
+      ctx.font = "800 28px system-ui, -apple-system, sans-serif";
+      ctx.fillText(teamBName.slice(0, 28), 1016, 336);
+      ctx.fillStyle = "#7C2D12";
+      ctx.font = "900 72px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`${teamBScore} Puan`, 1016, 430);
+      ctx.fillStyle = "#334155";
+      ctx.font = "700 23px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `Doğru Tur: ${teamBWins}/${totalRounds}  •  En Uzun Seri: ${teamBBestStreak}`,
+        1016,
+        515
+      );
+
+      // Alt İstatistik Şeridi
+      ctx.fillStyle = "#F3F0FF";
+      ctx.beginPath();
+      ctx.roundRect(96, 610, 1208, 78, 20);
+      ctx.fill();
+      ctx.fillStyle = "#4C28B5";
+      ctx.font = "800 23px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `📊 Sınıf Başarı Oranı: %${accuracyPct} (${solvedRounds}/${totalRounds} Soru)   •   📌 Tekrar Listesi: ${reviewNeededItems.length} Kelime`,
+        700,
+        658
+      );
+
+      // Alt Kurumsal İmza
+      ctx.fillStyle = "#087F5B";
+      ctx.font = "800 20px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        "Arapça Telaffuz ve Diyalog Asistanı — www.muallimun.net",
+        700,
+        738
+      );
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `sinif-yarisma-sonucu-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    const handlePrintBattleSummaryA4 = () => {
+      playClick();
+      const originStr =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const reviewRowsHtml =
+        reviewNeededItems.length > 0
+          ? reviewNeededItems
+              .map(
+                (item, idx) => `
+              <tr style="background:${idx % 2 === 0 ? "#fffbeb" : "#ffffff"};">
+                <td style="font-weight:800;color:#92400e;">#${item.roundNumber} (${escapePrintHtml(
+                  item.categoryBadge
+                )})</td>
+                <td dir="rtl" style="text-align:right;font-family:'ArakomFont','Amiri',serif;font-size:21px;font-weight:700;color:#087f5b;line-height:1.85;">${escapePrintHtml(
+                  item.targetArabic
+                )}</td>
+                <td style="font-weight:700;color:#1e293b;">${escapePrintHtml(
+                  item.targetTurkish
+                )}${
+                  item.metaNote
+                    ? ` <span style="font-size:10.5px;color:#64748b;">(${escapePrintHtml(
+                        item.metaNote
+                      )})</span>`
+                    : ""
+                }</td>
+                <td style="font-size:11px;font-weight:800;color:#dc2626;">${
+                  item.winner === "none"
+                    ? "Cevaplanamadı / Süre Doldu"
+                    : "Yanlış Deneme Sonrası Çözüldü"
+                }</td>
+              </tr>
+            `
+              )
+              .join("")
+          : "";
+
+      const allRowsHtml = roundHistory
+        .map(
+          (item, idx) => `
+          <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+            <td style="font-weight:800;">#${item.roundNumber}</td>
+            <td dir="rtl" style="text-align:right;font-family:'ArakomFont','Amiri',serif;font-size:19px;font-weight:700;color:#0f172a;line-height:1.8;">${escapePrintHtml(
+              item.targetArabic
+            )}</td>
+            <td style="font-weight:600;color:#1e293b;">${escapePrintHtml(
+              item.targetTurkish
+            )}</td>
+            <td style="font-weight:800;color:${
+              item.winner === "A"
+                ? "#1d4ed8"
+                : item.winner === "B"
+                ? "#c2410c"
+                : "#dc2626"
+            };">${
+              item.winner === "A"
+                ? escapePrintHtml(teamAName)
+                : item.winner === "B"
+                ? escapePrintHtml(teamBName)
+                : "Puan Alınamadı"
+            }</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      const htmlDoc = `<!DOCTYPE html>
+      <html lang="tr">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Sınıf Yarışması Özeti ve Tekrar Listesi | Muallimun</title>
+        <style>
+          @font-face {
+            font-family: "ArakomFont";
+            src: url("${originStr}/fonts/Arakom.ttf") format("truetype");
+            font-weight: 100 900;
+            font-style: normal;
+          }
+          @page { size: A4 portrait; margin: 11mm 13mm; }
+          * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; margin: 0; font-size: 12px; }
+          .header { border: 2px solid #087f5b; border-bottom-width: 4px; border-radius: 14px; padding: 12px 16px; background: #fdfbf7; margin-bottom: 12px; }
+          .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+          .score-card { border-radius: 12px; padding: 10px 14px; border: 2px solid #cbd5e1; }
+          .section-title { font-size: 12.5px; font-weight: 800; padding: 6px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
+          table { width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; margin-bottom: 14px; }
+          th, td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+          th { background: #f1f5f9; font-size: 11px; font-weight: 800; }
+          tr { page-break-inside: avoid; break-inside: avoid; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div style="font-size:10.5px;font-weight:800;color:#087f5b;margin-bottom:4px;">🏆 SINIF &amp; TAHTA YARIŞMASI SONUÇ RAPORU • ${escapePrintHtml(
+            formattedDate
+          )}</div>
+          <div style="font-size:18px;font-weight:900;color:#0f172a;">${escapePrintHtml(
+            winnerName
+          )}</div>
+          <div style="font-size:11px;color:#475569;margin-top:4px;font-weight:600;">
+            Odak: ${escapePrintHtml(focusLabel)} • Seviye: ${escapePrintHtml(
+        cefrFilter === "all" ? "Tüm Seviyeler" : cefrFilter
+      )} • Süre: ${escapePrintHtml(
+        durationText
+      )} • Sınıf Başarı Oranı: %${accuracyPct} (${solvedRounds}/${totalRounds})
+          </div>
+        </div>
+
+        <div class="score-grid">
+          <div class="score-card" style="background:#eff6ff;border-color:#2563eb;">
+            <div style="font-weight:800;color:#1d4ed8;">🟦 ${escapePrintHtml(
+              teamAName
+            )}</div>
+            <div style="font-size:22px;font-weight:900;color:#1e3a8a;margin:3px 0;">${teamAScore} Puan</div>
+            <div style="font-size:11px;color:#334155;font-weight:700;">Kazanılan Tur: ${teamAWins} • En Uzun Seri: ${teamABestStreak}</div>
+          </div>
+          <div class="score-card" style="background:#fff7ed;border-color:#ea580c;">
+            <div style="font-weight:800;color:#c2410c;">🟧 ${escapePrintHtml(
+              teamBName
+            )}</div>
+            <div style="font-size:22px;font-weight:900;color:#7c2d12;margin:3px 0;">${teamBScore} Puan</div>
+            <div style="font-size:11px;color:#334155;font-weight:700;">Kazanılan Tur: ${teamBWins} • En Uzun Seri: ${teamBBestStreak}</div>
+          </div>
+        </div>
+
+        <div class="section-title" style="background:#fffbeb;border-color:#f59e0b;color:#92400e;">
+          📌 Sınıfça Tekrar Edilecek Kelimeler &amp; İfadeler (${
+            reviewNeededItems.length
+          } Öğe)
+        </div>
+        ${
+          reviewNeededItems.length > 0
+            ? `
+          <table>
+            <thead>
+              <tr>
+                <th style="width:16%;">Tur / Kategori</th>
+                <th style="width:34%;text-align:right;" dir="rtl">Arapça Hedef İfade</th>
+                <th style="width:30%;">Türkçe Anlamı</th>
+                <th style="width:20%;">Durum</th>
+              </tr>
+            </thead>
+            <tbody>${reviewRowsHtml}</tbody>
+          </table>
+        `
+            : `<div style="padding:10px 14px;border:1px solid #a7f3d0;background:#ecfdf5;border-radius:10px;color:#065f46;font-weight:800;margin-bottom:14px;">🎉 Harika! Sınıftaki tüm sorular ilk denemede hatasız cevaplandı.</div>`
+        }
+
+        <div class="section-title" style="background:#f8fafc;color:#087f5b;">
+          📋 Yarışmada Sorulan Tüm Kelimeler (${roundHistory.length} Soru)
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:10%;">Soru</th>
+              <th style="width:36%;text-align:right;" dir="rtl">Arapça Kelime / İfade</th>
+              <th style="width:32%;">Türkçe Doğru Karşılığı</th>
+              <th style="width:22%;">Turu Kazanan</th>
+            </tr>
+          </thead>
+          <tbody>${allRowsHtml}</tbody>
+        </table>
+
+        <footer style="margin-top:12px;padding-top:8px;border-top:2px solid #087f5b;display:flex;justify-content:space-between;font-size:10.5px;color:#475569;font-weight:700;">
+          <span>Arapça Telaffuz ve Diyalog Asistanı — Sınıf Yarışması Çalışma Özeti</span>
+          <span style="color:#087f5b;font-weight:800;">www.muallimun.net</span>
+        </footer>
+      </body>
+      </html>`;
+
+      const iframe = printIframeRef.current;
+      if (iframe) {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(htmlDoc);
+          doc.close();
+          const runPrint = () => {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+          };
+          if (doc.fonts && typeof doc.fonts.ready?.then === "function") {
+            doc.fonts.ready
+              .then(() => setTimeout(runPrint, 120))
+              .catch(() => setTimeout(runPrint, 150));
+          } else {
+            setTimeout(runPrint, 150);
+          }
+        }
+      }
+    };
+
     return (
-      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-5 sm:p-7 text-center max-w-2xl mx-auto space-y-4">
+      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-5 sm:p-7 text-center max-w-3xl mx-auto space-y-4">
+        <iframe
+          ref={printIframeRef}
+          title="Sınıf Yarışması A4 Özet Yazdırma Katmanı"
+          className="fixed w-0 h-0 border-0 opacity-0 pointer-events-none"
+        />
+
         <div className="w-20 h-20 rounded-3xl bg-amber-100 dark:bg-amber-950/70 border-2 border-amber-400 flex items-center justify-center mx-auto text-amber-500 shadow-md">
           <Trophy size={42} />
         </div>
 
         <div className="space-y-1">
           <span className="text-xs font-black uppercase tracking-wider text-[#6741D9] dark:text-indigo-300">
-            🏆 Sınıf & Tahta Yarışması Tamamlandı
+            🏆 Sınıf &amp; Tahta Yarışması Tamamlandı • Başarı: %{accuracyPct} • Süre: {durationText}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-[var(--foreground)] flex items-center justify-center gap-2">
             <Crown className="text-amber-500 shrink-0" size={26} />
@@ -745,7 +1173,7 @@ export default function ClassroomTeamBattle({
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+        <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto">
           {/* A Takımı Sonuç Kartı */}
           <div
             className={`rounded-2xl p-4 border-2 ${
@@ -761,7 +1189,7 @@ export default function ClassroomTeamBattle({
               {teamAScore} Puan
             </div>
             <div className="text-[11px] font-bold text-[var(--muted)]">
-              En İyi Seri: 🔥 {teamABestStreak}
+              Doğru Tur: {teamAWins} • En İyi Seri: 🔥 {teamABestStreak}
             </div>
           </div>
 
@@ -780,16 +1208,70 @@ export default function ClassroomTeamBattle({
               {teamBScore} Puan
             </div>
             <div className="text-[11px] font-bold text-[var(--muted)]">
-              En İyi Seri: 🔥 {teamBBestStreak}
+              Doğru Tur: {teamBWins} • En İyi Seri: 🔥 {teamBBestStreak}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        {/* 📌 Sınıfça Tekrar Edilecek Kelimeler Önizlemesi */}
+        {reviewNeededItems.length > 0 && (
+          <div className="rounded-2xl bg-amber-50/90 dark:bg-amber-950/35 border-2 border-amber-300 dark:border-amber-700 p-3.5 text-left space-y-2 max-w-2xl mx-auto">
+            <div className="text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
+              <span>
+                📌 Sınıfça Tekrar Edilecek Kelimeler ({reviewNeededItems.length})
+              </span>
+              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                Yanlış yapılan / süresi dolan sorular
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {reviewNeededItems.map((item) => (
+                <div
+                  key={item.roundNumber}
+                  className="rounded-xl bg-white dark:bg-[var(--background)] border border-amber-200 dark:border-amber-800 px-3 py-2 flex items-center justify-between gap-2"
+                >
+                  <span className="text-xs font-bold text-[var(--foreground)]">
+                    #{item.roundNumber} {item.targetTurkish}
+                  </span>
+                  <span
+                    dir="rtl"
+                    lang="ar"
+                    className="arabic text-lg font-bold text-[#065F46] dark:text-emerald-300 leading-[1.95] shrink-0"
+                  >
+                    {item.targetArabic}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PNG Sonuç Kartı & A4 Özet Yazdırma Aksiyonları */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={handleDownloadResultPng}
+            className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs sm:text-sm font-extrabold border-b-3 border-[#422399] inline-flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <Download size={16} />
+            <span>🖼️ Yarışma Sonuç Kartını İndir (PNG)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrintBattleSummaryA4}
+            className="min-h-[48px] px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-extrabold border-b-3 border-amber-800 inline-flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <Printer size={16} />
+            <span>🖨️ Yarışma Özeti &amp; Tekrar Listesi Yazdır (A4)</span>
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
           <button
             type="button"
             onClick={handleRestartMatch}
-            className="px-5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs sm:text-sm font-extrabold border-b-3 border-[#065F46] inline-flex items-center gap-2 cursor-pointer"
+            className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs sm:text-sm font-extrabold border-b-3 border-[#065F46] inline-flex items-center gap-2 cursor-pointer"
           >
             <RefreshCcw size={16} />
             <span>Rövanş Maçı Başlat</span>
@@ -798,7 +1280,7 @@ export default function ClassroomTeamBattle({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] text-xs sm:text-sm font-extrabold text-[var(--foreground)] hover:border-[#6741D9] cursor-pointer"
+              className="min-h-[48px] px-4 py-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] text-xs sm:text-sm font-extrabold text-[var(--foreground)] hover:border-[#6741D9] cursor-pointer"
             >
               Alıştırma Merkezine Dön
             </button>

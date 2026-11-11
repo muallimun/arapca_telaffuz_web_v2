@@ -58,6 +58,7 @@ import {
   WordTrackingStyle,
   PauseBetweenLines,
 } from "@/store/settings";
+import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { useUserStore } from "@/store/userStore";
 import {
   playClick,
@@ -93,6 +94,11 @@ const ShareContentCardModal = dynamic(
   () => import("@/components/ui/ShareContentCardModal"),
   { ssr: false }
 );
+const InfoGapPairModal = dynamic(
+  () => import("@/components/classroom/InfoGapPairModal"),
+  { ssr: false }
+);
+import type { PdfDocMode } from "@/components/ui/DialoguePdfModal";
 import {
   getDialogueVocabulary,
   DialogueVocabularyEntry,
@@ -234,6 +240,9 @@ export default function DialogueDetailPage({
   // Lightbox (Kapak Görseli Büyütme), PDF Modal, Paylaşım Modalı, Öğretmen Ödev Modalı ve "⋯" Diğer Menüsü State
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
+  const [pdfInitialDocMode, setPdfInitialDocMode] =
+    useState<PdfDocMode>("handout");
+  const [isInfoGapModalOpen, setIsInfoGapModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [isTeacherHwModalOpen, setIsTeacherHwModalOpen] =
     useState<boolean>(false);
@@ -1964,7 +1973,25 @@ export default function DialogueDetailPage({
           vocabEntries={dialogueVocabEntries}
           imagePath={imagePath}
           rawNum={rawNum}
-          onClose={() => setIsPdfModalOpen(false)}
+          initialDocMode={pdfInitialDocMode}
+          onClose={() => {
+            setIsPdfModalOpen(false);
+            setPdfInitialDocMode("handout");
+          }}
+        />
+      )}
+
+      {/* İKİLİ BİLGİ BOŞLUĞU (A / B EŞLİ KONUŞMA) KARTLARI MODALI */}
+      {isInfoGapModalOpen && (
+        <InfoGapPairModal
+          dialogue={dialogue}
+          vocabEntries={dialogueVocabEntries}
+          onClose={() => setIsInfoGapModalOpen(false)}
+          onOpenPrintPairSheet={() => {
+            setIsInfoGapModalOpen(false);
+            setPdfInitialDocMode("pair-infogap");
+            setIsPdfModalOpen(true);
+          }}
         />
       )}
 
@@ -2818,6 +2845,18 @@ export default function DialogueDetailPage({
                     <Eye size={12} />
                     <span>Rol Metnimi Gizle: {hideRoleplayUserText ? "Açık" : "Kapalı"}</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsInfoGapModalOpen(true);
+                    }}
+                    title="Sınıf içi A / B eşli konuşma (bilgi boşluğu) kartlarını aç"
+                    className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-800 text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0"
+                  >
+                    <span>🗣️ İkili Konuşma Kartı (A/B)</span>
+                  </button>
                 </>
               )}
 
@@ -2888,12 +2927,25 @@ export default function DialogueDetailPage({
                         onClick={() => {
                           playClick();
                           setIsMoreMenuOpen(false);
+                          setPdfInitialDocMode("handout");
                           setIsPdfModalOpen(true);
                         }}
                         className="col-span-2 py-2 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
                       >
                         <FileText size={13} className="text-[#065F46] shrink-0" />
                         <span>PDF / Çalışma Kağıdı</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIsMoreMenuOpen(false);
+                          setIsInfoGapModalOpen(true);
+                        }}
+                        className="col-span-2 py-2 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-400/60 text-rose-800 dark:text-rose-200 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
+                      >
+                        <span>🗣️ İkili Bilgi Boşluğu Kartları (A/B)</span>
                       </button>
 
                       <button
@@ -3203,6 +3255,19 @@ export default function DialogueDetailPage({
                     </button>
                   </div>
 
+                  {/* 🗣️ Eşli Konuşma (Bilgi Boşluğu A/B) Hızlı Erişim Butonu */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsMoreMenuOpen(false);
+                      setIsInfoGapModalOpen(true);
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#087F5B] to-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <span>🗣️ İkili Bilgi Boşluğu Kartları (Öğrenci A / B)</span>
+                  </button>
+
                   {/* 💡 Rehber Bilgisi */}
                   <div className="text-[11px] py-2 px-2.5 rounded-xl bg-[#087F5B]/10 border border-[#087F5B]/30 font-semibold text-[#065F46] dark:text-emerald-400 leading-snug">
                     💡 <strong>Rehber:</strong> Diyaloğu doğal sesle dinleyin. Morfolojik kök analizi için Arapça kelimelere tıklayın; mikrofon ikonuyla telaffuz ve 38 mahreç analizini açın.
@@ -3474,6 +3539,30 @@ export default function DialogueDetailPage({
                   ? "👁️ Arapçaları Netleştir"
                   : "👁️ Arapçaları Bulanıklaştır"}
               </span>
+            </button>
+
+            {/* 🗣️ İkili Bilgi Boşluğu Kartları (A / B Eşli Konuşma) */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsInfoGapModalOpen(true);
+              }}
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <span>🗣️ İkili Kart (A/B)</span>
+            </button>
+
+            {/* 🖍️ Tahta Kalemi, İ'rab Vurgulayıcı, Perde, Kura & Sayaç */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                useClassroomToolsStore.getState().toggleToolbar();
+              }}
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <span>🖍️ Tahta Kalemi &amp; Araçlar</span>
             </button>
 
             {/* ✕ Sınıf Modundan Çık */}

@@ -32,9 +32,11 @@ import {
   Gamepad2,
   BookMarked,
   Compass,
+  PenTool,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode } from "@/store/settings";
+import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { getArabicFontConfig } from "@/lib/arabicTextUtils";
@@ -71,6 +73,8 @@ export default function Header() {
     arabicFont,
     arabicFontSize,
   } = useSettings();
+  const { isOpen: smartboardOpen, toggleToolbar: toggleSmartboardToolbar } =
+    useClassroomToolsStore();
   const { isInstallable, isInstalled, isIOS, installApp } = usePwaInstall();
 
   const mounted = useSyncExternalStore(
@@ -778,6 +782,26 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => {
+                        playClick();
+                        setMobileToolsOpen(false);
+                        toggleSmartboardToolbar();
+                      }}
+                      className={`col-span-2 px-3 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer ${
+                        smartboardOpen
+                          ? "bg-[#6741D9] border-[#5230B5] text-white"
+                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)]"
+                      }`}
+                    >
+                      <PenTool size={13} className="shrink-0" />
+                      <span>
+                        🖍️ Tahta Kalemi &amp; Araçlar{" "}
+                        {smartboardOpen ? "(Açık)" : ""}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setMobileToolsOpen(false);
                         handleToggleMicModal();
                       }}
@@ -861,6 +885,26 @@ export default function Header() {
               }`}
             >
               <Mic size={14} strokeWidth={2.4} />
+            </button>
+
+            {/* 6.5. Akıllı Tahta Kalemi, İ'rab Vurgulayıcı, Perde, Kura & Sayaç Konsolu (Masaüstü/Tablet md+) */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                toggleSmartboardToolbar();
+              }}
+              data-tooltip="🖍️ Tahta Kalemi, Fosforlu İ'rab Vurgulayıcı, Perde, Kura & Sayaç"
+              data-tooltip-pos="bottom"
+              data-tooltip-align="right"
+              aria-label="Tahta Kalemi ve Sınıf Araçları"
+              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                smartboardOpen
+                  ? "bg-[#087F5B] border-[#065F46] text-white"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
+              }`}
+            >
+              <PenTool size={14} strokeWidth={2.4} />
             </button>
 
             {/* 7. Kullanım Kılavuzu & İnfo [❓] (Masaüstü/Tablet md+) */}

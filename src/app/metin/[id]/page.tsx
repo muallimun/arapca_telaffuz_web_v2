@@ -55,12 +55,8 @@ import {
   getDialogueAudioUrls,
 } from "@/lib/offlineManager";
 import { useAudioStore } from "@/store/audioStore";
-import {
-  useSettings,
-  ViewMode,
-  WordTrackingStyle,
-  PauseBetweenLines,
-} from "@/store/settings";
+import { useSettings, ViewMode, WordTrackingStyle, PauseBetweenLines } from "@/store/settings";
+import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { useUserStore } from "@/store/userStore";
 import {
   playClick,
@@ -2806,6 +2802,17 @@ export default function ReadingTextDetailPage({
                   ? "👁️ Arapçaları Netleştir"
                   : "👁️ Arapçaları Bulanıklaştır"}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                useClassroomToolsStore.getState().toggleToolbar();
+              }}
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <span>🖍️ Tahta Kalemi &amp; Araçlar</span>
             </button>
 
             <button

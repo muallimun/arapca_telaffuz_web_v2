@@ -27,6 +27,10 @@ import {
 } from "@/lib/arabicTextUtils";
 import { useSettings } from "@/store/settings";
 import { generateQrSvg } from "@/lib/qrCode";
+import {
+  buildInfoGapPairCards,
+  PAIR_SPEAKING_RUBRIC_CRITERIA,
+} from "@/lib/infoGapBuilder";
 
 interface DialoguePdfModalProps {
   dialogue: Dialogue;
@@ -34,6 +38,7 @@ interface DialoguePdfModalProps {
   imagePath: string;
   rawNum: number;
   readingQuestions?: ReadingTextQuestion[];
+  initialDocMode?: PdfDocMode;
   onClose: () => void;
 }
 
@@ -51,7 +56,8 @@ export type PdfDocMode =
   | "handout"
   | "quiz-sheet"
   | "unvocalized-rubric"
-  | "flashcards";
+  | "flashcards"
+  | "pair-infogap";
 
 export function escapeHtml(raw: unknown): string {
   return String(raw ?? "")
@@ -281,6 +287,7 @@ export default function DialoguePdfModal({
   imagePath,
   rawNum,
   readingQuestions,
+  initialDocMode,
   onClose,
 }: DialoguePdfModalProps) {
   const { arabicFont } = useSettings();
@@ -331,8 +338,10 @@ export default function DialoguePdfModal({
     useState<SideBySideOrder>("ar-right");
   const [showAdvancedLayout, setShowAdvancedLayout] = useState<boolean>(false);
 
-  // ADIM 3: Üst Mod Seçici (4 Öğretmen Şablonu) + A/B Kitapçık Grubu + Gelişmiş Ayar Çekmecesi
-  const [pdfDocMode, setPdfDocMode] = useState<PdfDocMode>("handout");
+  // ADIM 3: Üst Mod Seçici (5 Öğretmen Şablonu) + A/B Kitapçık Grubu + Gelişmiş Ayar Çekmecesi
+  const [pdfDocMode, setPdfDocMode] = useState<PdfDocMode>(
+    initialDocMode ?? "handout"
+  );
   const [bookletGroup, setBookletGroup] = useState<"A" | "B">("A");
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
@@ -340,12 +349,18 @@ export default function DialoguePdfModal({
     "3x3" | "3x4" | "4x4"
   >("3x3");
 
+  const infoGapDeck = useMemo(
+    () => buildInfoGapPairCards(dialogue, vocabEntries),
+    [dialogue, vocabEntries]
+  );
+
   const applyTeacherPreset = (
     preset:
       | "student-handout"
       | "exam-ab"
       | "unvocalized-rubric"
       | "cut-fold-cards"
+      | "pair-infogap"
   ) => {
     playClick();
     if (preset === "student-handout") {
@@ -378,6 +393,13 @@ export default function DialoguePdfModal({
       setClozeMode(false);
       setIncludeStudentHeader(false);
       setIncludeAnswerKey(false);
+    } else if (preset === "pair-infogap") {
+      setPdfDocMode("pair-infogap");
+      setIncludeHarakat(true);
+      setImageMode("hide");
+      setIncludeQrCode(false);
+      setIncludeStudentHeader(false);
+      setIncludeAnswerKey(true);
     }
   };
 
@@ -390,6 +412,7 @@ export default function DialoguePdfModal({
   const hasAnyBlankActivity =
     pdfDocMode === "quiz-sheet" ||
     pdfDocMode === "unvocalized-rubric" ||
+    pdfDocMode === "pair-infogap" ||
     clozeMode ||
     translationMode === "dotted" ||
     translationMode === "ar-dotted" ||
@@ -403,7 +426,7 @@ export default function DialoguePdfModal({
   useEffect(() => {
     if (hasAnyBlankActivity) {
       const raf = requestAnimationFrame(() => {
-        if (pdfDocMode !== "flashcards") {
+        if (pdfDocMode !== "flashcards" && pdfDocMode !== "pair-infogap") {
           setIncludeStudentHeader(true);
         }
         setIncludeAnswerKey(true);
@@ -1584,6 +1607,80 @@ export default function DialoguePdfModal({
       </div>
     `;
 
+    const renderPairStudentHalfHtml = (
+      role: "A" | "B",
+      cardLines: typeof infoGapDeck.studentACard
+    ) => {
+      const isA = role === "A";
+      const borderColor = isA ? "#087f5b" : "#6741d9";
+      const headerBg = isA ? "#ecfdf5" : "#f3f0ff";
+      const headerColor = isA ? "#065f46" : "#4c28b5";
+      return `
+        <div style="border:2px solid ${borderColor};border-radius:12px;overflow:hidden;background:#ffffff;page-break-inside:avoid;break-inside:avoid;">
+          <div style="background:${headerBg};border-bottom:1.5px solid ${borderColor};padding:6px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="font-size:11px;font-weight:800;color:${headerColor};">
+              ${isA ? "🅰️ ÖĞRENCİ A KONUŞMA KARTI" : "🅱️ ÖĞRENCİ B KONUŞMA KARTI"} • ${escapeHtml(
+        dialogue.baslik_tr
+      )} (${escapeHtml(dialogue.seviye)})
+            </div>
+            <div style="font-size:10px;font-weight:700;color:#334155;">
+              Adı Soyadı: .................................
+            </div>
+          </div>
+          <div style="padding:4px 8px;">
+            ${cardLines
+              .map(
+                (ln, idx) => `
+              <div style="padding:3.5px 4px;border-bottom:${
+                idx < cardLines.length - 1 ? "1px dashed #cbd5e1" : "none"
+              };display:flex;flex-direction:column;gap:1.5px;">
+                <div dir="rtl" style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;text-align:right;font-family:${
+                  fontConfig.cssFamily
+                };font-size:${Math.round(
+                  16.5 * fontConfig.scale
+                )}px;font-weight:700;color:#0f172a;line-height:1.55;">
+                  <div>
+                    <span style="color:${borderColor};font-size:13px;margin-left:4px;">#${
+                  ln.lineNumber
+                } ${formatArHtml(ln.speakerAr)}:</span>
+                    ${formatArHtml(ln.displayArabic)}
+                  </div>
+                  <span dir="ltr" style="font-family:sans-serif;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;white-space:nowrap;${
+                    ln.isFull
+                      ? "background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;"
+                      : "background:#fef3c7;color:#92400e;border:1px solid #fcd34d;"
+                  }">
+                    ${ln.isFull ? "Sıra Sizde" : "Bilgi Boşluğu"}
+                  </span>
+                </div>
+                <div style="font-size:9.5px;color:${
+                  ln.isFull ? "#475569" : "#92400e"
+                };font-weight:${ln.isFull ? "600" : "700"};">
+                  ${escapeHtml(ln.displayTurkishCue)}
+                </div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+    };
+
+    const pairInfoGapSectionHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${renderPairStudentHalfHtml("A", infoGapDeck.studentACard)}
+        <div style="display:flex;align-items:center;gap:10px;margin:3px 0;">
+          <div style="flex:1;border-top:2px dashed #087f5b;"></div>
+          <span style="font-size:10px;font-weight:800;color:#065f46;background:#ecfdf5;border:1px dashed #087f5b;padding:2px 10px;border-radius:999px;white-space:nowrap;">
+            ✂️ Buradan Kesiniz — Üst Kart: Öğrenci A • Alt Kart: Öğrenci B
+          </span>
+          <div style="flex:1;border-top:2px dashed #087f5b;"></div>
+        </div>
+        ${renderPairStudentHalfHtml("B", infoGapDeck.studentBCard)}
+      </div>
+    `;
+
     // 🔑 ÖĞRETMEN CEVAP ANAHTARI HTML ÜRETİMİ
     const renderHighlightedClozeSentenceHtml = (
       fullArabic: string,
@@ -1789,6 +1886,76 @@ export default function DialoguePdfModal({
                       `
                       )
                       .join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+              : pdfDocMode === "pair-infogap"
+              ? `
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ İkili Bilgi Boşluğu (Öğrenci A &amp; B) Tam Diyalog ve Gizlenen Kelimeler Anahtarı</div>
+                <table class="two-col-table" style="font-size:11px;">
+                  <thead>
+                    <tr>
+                      <th style="width:16%;">Boşluk Kimde?</th>
+                      <th style="width:34%;text-align:left;">Tam Türkçe Anlamı</th>
+                      <th style="width:50%;text-align:right;" dir="rtl">Tam Arapça Cümle &amp; Gizlenen Hedef Kelime</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${infoGapDeck.lines
+                      .map(
+                        (ln, idx) => `
+                        <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                          <td style="font-weight:800;color:${
+                            ln.lineNumber % 2 === 1 ? "#6741d9" : "#087f5b"
+                          };">#${ln.lineNumber} (${
+                          ln.lineNumber % 2 === 1
+                            ? "Öğrenci B'de Boş"
+                            : "Öğrenci A'da Boş"
+                        })</td>
+                          <td style="font-weight:600;color:#1e293b;"><strong>${escapeHtml(
+                            ln.speakerTr
+                          )}:</strong> ${escapeHtml(ln.turkishFull)}</td>
+                          <td dir="rtl" style="text-align:right;font-family:${
+                            fontConfig.cssFamily
+                          };font-size:18px;font-weight:700;color:#0f172a;">
+                            ${formatArHtml(ln.fullArabic)}
+                            <span style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:0 5px;margin-right:6px;font-size:15px;">
+                              [${formatArHtml(ln.hiddenWordsAr.join(" ، "))}]
+                            </span>
+                          </td>
+                        </tr>
+                      `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+              <div class="section-block" style="margin-bottom:8px;">
+                <div class="section-title">📊 Öğretmen Eşli Konuşma Değerlendirme Rubriği (100 Puan)</div>
+                <table class="two-col-table" style="font-size:11px;">
+                  <thead>
+                    <tr>
+                      <th style="width:28%;">Ölçüt</th>
+                      <th style="width:54%;">Beklenen İletişimsel Kazanım</th>
+                      <th style="width:18%;text-align:center;">Puan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${PAIR_SPEAKING_RUBRIC_CRITERIA.map(
+                      (c, idx) => `
+                      <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                        <td style="font-weight:800;color:#065f46;">${escapeHtml(
+                          c.titleTr
+                        )}</td>
+                        <td>${escapeHtml(c.descriptionTr)}</td>
+                        <td style="text-align:center;font-weight:800;">.... / ${
+                          c.maxPoints
+                        }</td>
+                      </tr>
+                    `
+                    ).join("")}
                   </tbody>
                 </table>
               </div>
@@ -2861,6 +3028,8 @@ export default function DialoguePdfModal({
           ${studentHeaderHtml}
           ${flashcardsSectionHtml}
         `
+            : pdfDocMode === "pair-infogap"
+            ? pairInfoGapSectionHtml
             : `
           ${studentHeaderHtml}
           ${bannerImageHtml}
@@ -2884,6 +3053,8 @@ export default function DialoguePdfModal({
                 ? "A4 Harekesiz Yazılı Yoklama + Maarif Rubriği"
                 : pdfDocMode === "flashcards"
                 ? `A4 Kes-Katla Kelime Kartları (${flashcardGridSize})`
+                : pdfDocMode === "pair-infogap"
+                ? "A4 İkili Bilgi Boşluğu Konuşma Kartları (Öğrenci A & B)"
                 : "Arapça Öğrenci Ders Föyü"
             }</span>
           <a href="https://www.muallimun.net" target="_blank" rel="noopener noreferrer" class="corporate-brand" style="text-decoration:none;">www.muallimun.net</a>
@@ -3097,6 +3268,17 @@ export default function DialoguePdfModal({
                 }`}
               >
                 ✂️ Kes-Katla Kelime Kartları
+              </button>
+              <button
+                type="button"
+                onClick={() => applyTeacherPreset("pair-infogap")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                  pdfDocMode === "pair-infogap"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                🗣️ Eşli Konuşma Kartı (Öğrenci A &amp; B)
               </button>
             </div>
 
@@ -4332,6 +4514,93 @@ export default function DialoguePdfModal({
                   })}
                 </div>
               </div>
+            ) : pdfDocMode === "pair-infogap" ? (
+              <div className="space-y-3">
+                {(
+                  [
+                    {
+                      role: "A" as const,
+                      title: "🅰️ ÖĞRENCİ A KONUŞMA KARTI",
+                      borderCls: "border-[#087F5B]",
+                      headCls: "bg-emerald-50 text-[#065F46] border-[#087F5B]",
+                      items: infoGapDeck.studentACard,
+                    },
+                    {
+                      role: "B" as const,
+                      title: "🅱️ ÖĞRENCİ B KONUŞMA KARTI",
+                      borderCls: "border-[#6741D9]",
+                      headCls: "bg-[#F3F0FF] text-[#4C28B5] border-[#6741D9]",
+                      items: infoGapDeck.studentBCard,
+                    },
+                  ] as const
+                ).map((half, hIdx) => (
+                  <div key={half.role} className="space-y-3">
+                    {hIdx === 1 && (
+                      <div className="flex items-center gap-3 py-1">
+                        <div className="flex-1 border-t-2 border-dashed border-[#087F5B]" />
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 border border-dashed border-[#087F5B] text-[11px] font-extrabold text-[#065F46] whitespace-nowrap">
+                          ✂️ Buradan Kesiniz — Üst Kart: Öğrenci A • Alt Kart: Öğrenci B
+                        </span>
+                        <div className="flex-1 border-t-2 border-dashed border-[#087F5B]" />
+                      </div>
+                    )}
+                    <div
+                      className={`rounded-2xl border-2 ${half.borderCls} bg-white overflow-hidden break-inside-avoid`}
+                    >
+                      <div
+                        className={`px-3.5 py-2 border-b ${half.headCls} flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold`}
+                      >
+                        <span>
+                          {half.title} • {dialogue.baslik_tr}
+                        </span>
+                        <span className="text-slate-700 font-bold">
+                          Adı Soyadı: .................................
+                        </span>
+                      </div>
+                      <div className="divide-y divide-dashed divide-slate-200 px-3 py-1">
+                        {half.items.map((ln) => (
+                          <div
+                            key={`${half.role}-${ln.lineNumber}`}
+                            className="py-1.5 space-y-0.5"
+                          >
+                            <div
+                              dir="rtl"
+                              lang="ar"
+                              className="flex items-baseline justify-between gap-2 text-right arabic text-xl font-bold text-slate-900 leading-[1.95]"
+                            >
+                              <div>
+                                <span className="text-sm text-[#065F46] ml-1.5">
+                                  #{ln.lineNumber} {formatAr(ln.speakerAr)}:
+                                </span>
+                                {formatAr(ln.displayArabic)}
+                              </div>
+                              <span
+                                dir="ltr"
+                                className={`font-sans text-[10px] font-extrabold px-2 py-0.5 rounded shrink-0 ${
+                                  ln.isFull
+                                    ? "bg-emerald-50 text-[#065F46] border border-emerald-200"
+                                    : "bg-amber-50 text-amber-900 border border-amber-300"
+                                }`}
+                              >
+                                {ln.isFull ? "Sıra Sizde" : "Bilgi Boşluğu"}
+                              </span>
+                            </div>
+                            <div
+                              className={`text-[11px] ${
+                                ln.isFull
+                                  ? "text-slate-600 font-semibold"
+                                  : "text-amber-900 font-bold"
+                              }`}
+                            >
+                              {ln.displayTurkishCue}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
             {/* PDF-1: Geniş Banner Görsel Modu (width: 100%, max-height: 135px, object-fit: cover) */}
@@ -5205,6 +5474,41 @@ export default function DialoguePdfModal({
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              ) : pdfDocMode === "pair-infogap" ? (
+                <div className="space-y-3">
+                  <div className="text-xs font-extrabold text-[#065F46] bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+                    🗣️ Eşli Konuşma Kartları (Öğrenci A &amp; B) Gizlenen Hedef Kelimeler ve Tam Çözüm Anahtarı
+                  </div>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
+                    {infoGapDeck.lines.map((ln) => (
+                      <div
+                        key={ln.lineNumber}
+                        className="p-2.5 grid grid-cols-1 sm:grid-cols-2 items-center gap-2 odd:bg-slate-50"
+                      >
+                        <div className="text-xs text-slate-800">
+                          <strong className="text-[#065F46] mr-1">
+                            #{ln.lineNumber} (
+                            {ln.lineNumber % 2 === 1
+                              ? "Öğrenci B'de Boş"
+                              : "Öğrenci A'da Boş"}
+                            ) {ln.speakerTr}:
+                          </strong>
+                          <span className="font-semibold">{ln.turkishFull}</span>
+                        </div>
+                        <div
+                          dir="rtl"
+                          lang="ar"
+                          className="text-right arabic text-lg font-bold text-slate-900 leading-[1.95]"
+                        >
+                          {formatAr(ln.fullArabic)}{" "}
+                          <span className="text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-0.5 text-base">
+                            [{formatAr(ln.hiddenWordsAr.join(" ، "))}]
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : (

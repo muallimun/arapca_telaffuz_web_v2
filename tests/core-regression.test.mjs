@@ -964,4 +964,188 @@ test("14. FAZ 4A — Şık karıştırma kilidi, sade terim dönüştürücü, L
   );
 });
 
+test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynamic Yükleme, Gramer Kısayolları ve Sıfır Dış Veri Havuzu Doğrulaması", async () => {
+  const newExerciseFiles = [
+    "ErrorHunter.tsx",
+    "BlindDictation.tsx",
+    "ClozeDialogueRoleplay.tsx",
+    "GenderSortingGame.tsx",
+    "ReadingEvidenceHunter.tsx",
+    "IrabColorPainter.tsx",
+  ];
+
+  // 1. Altı yeni bileşen dosyası mevcut ve RTL / dokunmatik kurallarına uyumlu olmalı
+  for (const fileName of newExerciseFiles) {
+    const fullPath = path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      fileName
+    );
+    assert.equal(
+      fs.existsSync(fullPath),
+      true,
+      `src/components/exercises/${fileName} dosyası mevcut olmalıdır`
+    );
+    const code = fs.readFileSync(fullPath, "utf8");
+    assert.equal(
+      code.includes('dir="rtl"'),
+      true,
+      `${fileName} içinde Arapça RTL yönlendirmesi bulunmalıdır`
+    );
+    assert.equal(
+      code.includes("min-h-[48px]"),
+      true,
+      `${fileName} içinde dokunmatik/tahta ergonomisi (min-h-[48px]) bulunmalıdır`
+    );
+    assert.equal(
+      code.includes("recordSkillAttempt"),
+      true,
+      `${fileName} beceri haritasına (recordSkillAttempt) veri kaydetmelidir`
+    );
+  }
+
+  // 2. Alıştırma Merkezi 6 yeni modülü next/dynamic ile yüklemeli ve 14 modül sayısını yansıtmalı
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  for (const modName of [
+    "ErrorHunter",
+    "BlindDictation",
+    "ClozeDialogueRoleplay",
+    "GenderSortingGame",
+    "ReadingEvidenceHunter",
+    "IrabColorPainter",
+  ]) {
+    assert.equal(
+      alistirmalarCode.includes(`@/components/exercises/${modName}`),
+      true,
+      `alistirmalar/page.tsx içinde ${modName} dinamik import edilmelidir`
+    );
+  }
+
+  for (const modeId of [
+    "error-hunter",
+    "blind-dictation",
+    "cloze-roleplay",
+    "gender-sorting",
+    "evidence-hunter",
+    "irab-painter",
+  ]) {
+    assert.equal(
+      alistirmalarCode.includes(`"${modeId}"`),
+      true,
+      `alistirmalar/page.tsx içinde "${modeId}" modu tanımlı olmalıdır`
+    );
+  }
+
+  // Kategori filtre sekmeleri
+  assert.equal(alistirmalarCode.includes("Kelime & Görsel"), true);
+  assert.equal(alistirmalarCode.includes("Gramer & İ'rab"), true);
+  assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Okuma"), true);
+  assert.equal(alistirmalarCode.includes("Sınıf Yarışması"), true);
+
+  // CONTENT_INVENTORY.exerciseModulesCount === 14
+  const dataTsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "data.ts"),
+    "utf8"
+  );
+  assert.equal(
+    dataTsCode.includes("exerciseModulesCount: 14"),
+    true,
+    "CONTENT_INVENTORY.exerciseModulesCount 14 olarak güncellenmelidir"
+  );
+
+  // GrammarHapBilgiPanel kısayol bağlantıları
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  assert.equal(grammarPanelCode.includes("mode=error-hunter"), true);
+  assert.equal(grammarPanelCode.includes("mode=irab-painter"), true);
+
+  // 3. Altı modülün sıfır dış veriyle beslendiği yerel JSON havuzları dolu ve geçerli olmalı
+  const { parsed: dlgGrammar } = readDataJson("diyaloglar_gramer_hap_bilgi.json");
+  const { parsed: mtnGrammar } = readDataJson("metinler_gramer_hap_bilgi.json");
+  const allGrammar = [...dlgGrammar, ...mtnGrammar];
+
+  const errorHunterNotes = allGrammar.filter(
+    (g) =>
+      g.ayrintili_anlatim?.dikkat_sik_hata?.yanlis &&
+      g.ayrintili_anlatim?.dikkat_sik_hata?.dogru
+  );
+  assert.equal(
+    errorHunterNotes.length,
+    180,
+    "Hata Avcısı 180 gramer notunun tamamından beslenebilmelidir"
+  );
+
+  const irabNotes = allGrammar.filter(
+    (g) =>
+      Array.isArray(g.ayrintili_anlatim?.irab_tahlili) &&
+      g.ayrintili_anlatim.irab_tahlili.length >= 2
+  );
+  assert.equal(
+    irabNotes.length,
+    180,
+    "İ'rab Boyama 180 gramer notunun tamamından beslenebilmelidir"
+  );
+
+  const { parsed: visualWords } = readDataJson("gorselKelimeler_guncel.json");
+  const mascNouns = visualWords.filter(
+    (w) => w.tur === "isim" && w.soru_kalibi === "مَا هَذَا؟"
+  );
+  const femNouns = visualWords.filter(
+    (w) => w.tur === "isim" && w.soru_kalibi === "مَا هَذِهِ؟"
+  );
+  assert.ok(mascNouns.length > 200, "Müzekker görsel isim havuzu > 200 olmalıdır");
+  assert.ok(femNouns.length > 150, "Müennes görsel isim havuzu > 150 olmalıdır");
+  assert.equal(
+    mascNouns.length + femNouns.length,
+    640,
+    "Toplam müzekker + müennes görsel isim havuzu 640 olmalıdır"
+  );
+
+  const { parsed: dialogues } = readDataJson("tum_diyaloglar_120.json");
+  const totalPairs = dialogues.reduce(
+    (acc, d) => acc + Math.max(0, (d.satirlar?.length || 0) - 1),
+    0
+  );
+  assert.ok(totalPairs > 500, "Diyalog boş replik çifti havuzu > 500 olmalıdır");
+
+  const { parsed: readings } = readDataJson("tum_metinler_60.json");
+  const totalReadingQuestions = readings.reduce(
+    (acc, m) => acc + (m.sorular?.length || 0),
+    0
+  );
+  assert.ok(
+    totalReadingQuestions >= 120,
+    "Metin Kanıt Dedektifi soru havuzu >= 120 olmalıdır"
+  );
+
+  // 4. İ'rab 5 Kanonik Fırça Sınıflandırıcısı Doğrulaması
+  const { classifyIrabRoleToBrush } = await import(
+    pathToFileURL(
+      path.join(
+        ROOT_DIR,
+        "src",
+        "components",
+        "exercises",
+        "IrabColorPainter.tsx"
+      )
+    ).href
+  );
+  assert.equal(classifyIrabRoleToBrush("Mübteda (Özne)"), "merfu_subject");
+  assert.equal(classifyIrabRoleToBrush("Haber (Yüklem)"), "haber_predicate");
+  assert.equal(classifyIrabRoleToBrush("Mef'ûlün Bih (Nesne)"), "mansub_object");
+  assert.equal(
+    classifyIrabRoleToBrush("Muzafun İleyh"),
+    "mecrur_genitive"
+  );
+  assert.equal(classifyIrabRoleToBrush("Fiil + Fâil"), "verb_other");
+});
+
+
 

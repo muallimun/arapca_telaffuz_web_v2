@@ -1734,10 +1734,28 @@ export function GrammarDeepDiveModal({
                   : ""
               }`}
               onClick={() => onClose()}
-              className="px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-black inline-flex items-center gap-1.5"
+              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-black inline-flex items-center gap-1.5"
             >
               <Gamepad2 className="w-4 h-4 shrink-0" />
               <span>Bu Kalıpla Alıştırma Yap</span>
+            </Link>
+            <Link
+              href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
+                grammarNote.konu_basligi || activeGrammarQuery || ""
+              )}&autostart=1`}
+              onClick={() => onClose()}
+              className="min-h-[40px] px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 border-b-2 border-amber-700 text-xs font-black inline-flex items-center gap-1.5"
+            >
+              <span>🕵️ Hata Avcısı</span>
+            </Link>
+            <Link
+              href={`/alistirmalar?mode=irab-painter&grammar=${encodeURIComponent(
+                grammarNote.konu_basligi || activeGrammarQuery || ""
+              )}&autostart=1`}
+              onClick={() => onClose()}
+              className="min-h-[40px] px-3 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-2 border-[#4C28B5] text-xs font-black inline-flex items-center gap-1.5"
+            >
+              <span>🎨 İ&apos;rab Boyama</span>
             </Link>
           </div>
 
@@ -2285,16 +2303,14 @@ export function GrammarHapBilgiPanel({
         <div
           className={
             isCompactDrawer
-              ? "grid grid-cols-1 gap-2.5 w-full"
-              : linkedLessonUrl
-              ? "grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full"
-              : "grid grid-cols-1 gap-2.5 w-full"
+              ? "grid grid-cols-1 gap-2 w-full"
+              : "grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full"
           }
         >
           {linkedLessonUrl && (
             <Link
               href={linkedLessonUrl}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold text-center whitespace-normal transition-all"
+              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold text-center whitespace-normal transition-all"
             >
               <span>📖 İlgili Derse Git</span>
             </Link>
@@ -2305,9 +2321,25 @@ export function GrammarHapBilgiPanel({
                 ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
                 : ""
             }`}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold text-center whitespace-normal shadow-sm transition-all"
+            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold text-center whitespace-normal shadow-sm transition-all"
           >
             <span>🎮 Bu Kalıpla Alıştırma Yap</span>
+          </Link>
+          <Link
+            href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
+              activeNote.konu_basligi || activeGrammarQuery || ""
+            )}&autostart=1`}
+            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-amber-300/50 text-xs sm:text-sm font-bold text-center whitespace-normal transition-all"
+          >
+            <span>🕵️ Hata Avcısı (Bu Kural)</span>
+          </Link>
+          <Link
+            href={`/alistirmalar?mode=irab-painter&grammar=${encodeURIComponent(
+              activeNote.konu_basligi || activeGrammarQuery || ""
+            )}&autostart=1`}
+            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-500/80 hover:bg-indigo-500 text-white border border-indigo-300/50 text-xs sm:text-sm font-bold text-center whitespace-normal transition-all"
+          >
+            <span>🎨 İ&apos;rab Renkleriyle Boya</span>
           </Link>
         </div>
       </div>

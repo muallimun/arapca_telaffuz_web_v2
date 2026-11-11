@@ -457,7 +457,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   visualWordsCount: DYNAMIC_CONTENT_STATS.visualWordCount,
   grammarNotesCount: DYNAMIC_CONTENT_STATS.grammarNoteCount,
   dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
-  exerciseModulesCount: 8,
+  exerciseModulesCount: 14,
 };
 
 export function getDynamicContentStats(): DynamicContentStats {

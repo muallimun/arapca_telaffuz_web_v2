@@ -20,6 +20,12 @@ import {
   GitBranch,
   Trophy,
   Compass,
+  ShieldAlert,
+  Headphones,
+  MessageSquare,
+  Scale,
+  Search,
+  Paintbrush,
   X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
@@ -28,6 +34,8 @@ import {
   metinler,
   sozluk,
   gorselKelimeler,
+  diyalogGramerNotlari,
+  metinGramerNotlari,
   getDynamicContentStats,
   getMainVisualCategory,
 } from "@/lib/data";
@@ -142,6 +150,48 @@ const ClassroomTeamBattle = dynamic(
     loading: () => <ExerciseModuleLoadingSkeleton />,
   }
 );
+const ErrorHunter = dynamic(
+  () => import("@/components/exercises/ErrorHunter"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const BlindDictation = dynamic(
+  () => import("@/components/exercises/BlindDictation"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const ClozeDialogueRoleplay = dynamic(
+  () => import("@/components/exercises/ClozeDialogueRoleplay"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const GenderSortingGame = dynamic(
+  () => import("@/components/exercises/GenderSortingGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const ReadingEvidenceHunter = dynamic(
+  () => import("@/components/exercises/ReadingEvidenceHunter"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const IrabColorPainter = dynamic(
+  () => import("@/components/exercises/IrabColorPainter"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
 
 type ExerciseType =
   | "flashcard"
@@ -151,7 +201,20 @@ type ExerciseType =
   | "sentence-builder"
   | "visual-rosetta"
   | "morphology-context"
-  | "classroom-battle";
+  | "classroom-battle"
+  | "error-hunter"
+  | "blind-dictation"
+  | "cloze-roleplay"
+  | "gender-sorting"
+  | "evidence-hunter"
+  | "irab-painter";
+
+type ExerciseCategoryTab =
+  | "all"
+  | "vocab_visual"
+  | "grammar_irab"
+  | "listen_dialogue_read"
+  | "classroom";
 
 export type PoolSourceId =
   | "full_dict"
@@ -279,12 +342,58 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
   ) {
     return "classroom-battle";
   }
+  if (
+    val === "error-hunter" ||
+    val === "hata-avcisi" ||
+    val === "error"
+  ) {
+    return "error-hunter";
+  }
+  if (
+    val === "blind-dictation" ||
+    val === "kor-dikte" ||
+    val === "tashkeel" ||
+    val === "dikte"
+  ) {
+    return "blind-dictation";
+  }
+  if (
+    val === "cloze-roleplay" ||
+    val === "replik" ||
+    val === "dialogue-cloze"
+  ) {
+    return "cloze-roleplay";
+  }
+  if (
+    val === "gender-sorting" ||
+    val === "muzekker-muennes" ||
+    val === "sepet" ||
+    val === "gender"
+  ) {
+    return "gender-sorting";
+  }
+  if (
+    val === "evidence-hunter" ||
+    val === "kanit-dedektifi" ||
+    val === "evidence"
+  ) {
+    return "evidence-hunter";
+  }
+  if (
+    val === "irab-painter" ||
+    val === "irab-boyama" ||
+    val === "irab"
+  ) {
+    return "irab-painter";
+  }
   return null;
 }
 
 function ExercisesPageContent() {
   const searchParams = useSearchParams();
   const [selectedType, setSelectedType] = useState<ExerciseType>("flashcard");
+  const [exerciseCategoryFilter, setExerciseCategoryFilter] =
+    useState<ExerciseCategoryTab>("all");
   const [isPlaying, setIsPlaying] = useState(false);
   const [frozenPools, setFrozenPools] = useState<{
     vocabulary: DictionaryItem[];
@@ -358,6 +467,7 @@ function ExercisesPageContent() {
     const readingParam =
       searchParams.get("readingId") || searchParams.get("metinId");
     const planParam = searchParams.get("plan");
+    const autostartParam = searchParams.get("autostart");
 
     const raf = requestAnimationFrame(() => {
       if (planParam === "daily") {
@@ -511,6 +621,7 @@ function ExercisesPageContent() {
       const resolvedMode = normalizeModeParam(modeParam);
       if (resolvedMode) {
         setSelectedType(resolvedMode);
+        setExerciseCategoryFilter("all");
         if (resolvedMode === "sentence-builder") {
           setContentType("sentences");
           if (!resolvedPool) {
@@ -529,6 +640,21 @@ function ExercisesPageContent() {
             setRangePreset("visual_words");
           }
           setContentType("words");
+        } else if (resolvedMode === "cloze-roleplay") {
+          if (!resolvedPool) {
+            setRangePreset("all_dialogues");
+          }
+        } else if (resolvedMode === "evidence-hunter") {
+          if (!resolvedPool) {
+            setRangePreset("reading_texts");
+          }
+        } else if (resolvedMode === "gender-sorting") {
+          if (!resolvedPool) {
+            setRangePreset("visual_words");
+          }
+        }
+        if (autostartParam === "1") {
+          setIsPlaying(true);
         }
       }
     });
@@ -1203,6 +1329,7 @@ function ExercisesPageContent() {
 
   const exerciseCards: {
     id: ExerciseType;
+    category: Exclude<ExerciseCategoryTab, "all">;
     title: string;
     arabicBadge: string;
     subtitle: string;
@@ -1210,6 +1337,7 @@ function ExercisesPageContent() {
   }[] = [
     {
       id: "flashcard",
+      category: "vocab_visual",
       title: "Kelime & Cümle Kartları",
       arabicBadge: "البِطَاقَات",
       subtitle:
@@ -1218,6 +1346,7 @@ function ExercisesPageContent() {
     },
     {
       id: "multiple-choice",
+      category: "vocab_visual",
       title: "Çoktan Seçmeli Test",
       arabicBadge: "الاخْتِبَار",
       subtitle:
@@ -1226,13 +1355,15 @@ function ExercisesPageContent() {
     },
     {
       id: "fill-in-blanks",
+      category: "listen_dialogue_read",
       title: "Boşluk Doldurma & İmla",
       arabicBadge: "الفَرَاغَات",
-      subtitle: "Seçmeli sürükle-bırak veya dinleyip klavyeyle yazma",
+      subtitle: "Seçmeli yerleştirme veya dinleyip klavyeyle yazma",
       icon: PenTool,
     },
     {
       id: "matching",
+      category: "vocab_visual",
       title: "Ok Çizerek Eşleştirme",
       arabicBadge: "المُطَابَقَة",
       subtitle:
@@ -1241,6 +1372,7 @@ function ExercisesPageContent() {
     },
     {
       id: "sentence-builder",
+      category: "grammar_irab",
       title: "Cümle Kurma (Kelime Sıralama)",
       arabicBadge: "تَرْتِيبُ الْجُمَل",
       subtitle:
@@ -1249,6 +1381,7 @@ function ExercisesPageContent() {
     },
     {
       id: "visual-rosetta",
+      category: "vocab_visual",
       title: "Görsel & Sesli Eşleştirme",
       arabicBadge: "الصُّوَرُ وَالتَّلَفُّظ",
       subtitle:
@@ -1256,7 +1389,35 @@ function ExercisesPageContent() {
       icon: ImageIcon,
     },
     {
+      id: "gender-sorting",
+      category: "vocab_visual",
+      title: "Müzekker / Müennes Sepeti",
+      arabicBadge: "هَذَا وَهَذِهِ",
+      subtitle:
+        "640 görsel ismi tek dokunuşla هَذَا ve هَذِهِ sepetlerine ayırın, semâî ipuçlarını görün",
+      icon: Scale,
+    },
+    {
+      id: "error-hunter",
+      category: "grammar_irab",
+      title: "Hata Avcısı (Cümle Onarımı)",
+      arabicBadge: "صَيْدُ الْأَخْطَاء",
+      subtitle:
+        "180 gramer notundan iki aşamalı hatalı kelimeyi bulma ve doğru hareke/formla onarma",
+      icon: ShieldAlert,
+    },
+    {
+      id: "irab-painter",
+      category: "grammar_irab",
+      title: "Cümleyi İ'rab Renkleriyle Boya",
+      arabicBadge: "تَلْوِينُ الْإِعْرَاب",
+      subtitle:
+        "5 renkli i'rab fırçasıyla cümle ögelerini boyayın ve hareke nedenini keşfedin",
+      icon: Paintbrush,
+    },
+    {
       id: "morphology-context",
+      category: "grammar_irab",
       title: "Sarf, Kök & Bağlam Atölyesi",
       arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
       subtitle:
@@ -1264,7 +1425,35 @@ function ExercisesPageContent() {
       icon: GitBranch,
     },
     {
+      id: "blind-dictation",
+      category: "listen_dialogue_read",
+      title: "Kör Dikte & Harekeleme Atölyesi",
+      arabicBadge: "الْإِمْلَاءُ وَالتَّشْكِيل",
+      subtitle:
+        "Sesi dinleyip cümleyi kurun veya son harfin i'rab hareke taşını yerleştirin",
+      icon: Headphones,
+    },
+    {
+      id: "cloze-roleplay",
+      category: "listen_dialogue_read",
+      title: "Diyalog Boş Replik Tamamlama",
+      arabicBadge: "إِكْمَالُ الْحِوَار",
+      subtitle:
+        "120 diyalogdan bağlama uygun repliği tamamlayın ve kendi sesinizle gölgeleyin",
+      icon: MessageSquare,
+    },
+    {
+      id: "evidence-hunter",
+      category: "listen_dialogue_read",
+      title: "Metin Kanıt Dedektifi",
+      arabicBadge: "دَلِيلُ النَّصّ",
+      subtitle:
+        "60 okuma metninde soruyu cevaplayın ve cevabın geçtiği kanıt satırını işaretleyin",
+      icon: Search,
+    },
+    {
       id: "classroom-battle",
+      category: "classroom",
       title: "Sınıf & Tahta Yarışması",
       arabicBadge: "المُسَابَقَةُ الصَّفِّيَّة",
       subtitle:
@@ -1272,6 +1461,40 @@ function ExercisesPageContent() {
       icon: Trophy,
     },
   ];
+
+  const exerciseCategoryTabs: {
+    id: ExerciseCategoryTab;
+    label: string;
+    count: number;
+  }[] = [
+    { id: "all", label: "✨ Tümü", count: exerciseCards.length },
+    {
+      id: "vocab_visual",
+      label: "🖼️ Kelime & Görsel",
+      count: exerciseCards.filter((c) => c.category === "vocab_visual").length,
+    },
+    {
+      id: "grammar_irab",
+      label: "🎨 Gramer & İ'rab",
+      count: exerciseCards.filter((c) => c.category === "grammar_irab").length,
+    },
+    {
+      id: "listen_dialogue_read",
+      label: "🎧 Dinleme, Diyalog & Okuma",
+      count: exerciseCards.filter((c) => c.category === "listen_dialogue_read")
+        .length,
+    },
+    {
+      id: "classroom",
+      label: "🏆 Sınıf Yarışması",
+      count: exerciseCards.filter((c) => c.category === "classroom").length,
+    },
+  ];
+
+  const visibleExerciseCards =
+    exerciseCategoryFilter === "all"
+      ? exerciseCards
+      : exerciseCards.filter((c) => c.category === exerciseCategoryFilter);
 
   const contentStats = getDynamicContentStats();
 
@@ -1346,6 +1569,14 @@ function ExercisesPageContent() {
 
   const quickPoolPills = poolOptions.slice(0, 8);
 
+  const isSelfSourcedSpecialMode =
+    selectedType === "error-hunter" ||
+    selectedType === "blind-dictation" ||
+    selectedType === "cloze-roleplay" ||
+    selectedType === "gender-sorting" ||
+    selectedType === "evidence-hunter" ||
+    selectedType === "irab-painter";
+
   const isPoolCompatibleWithSelectedMode = (poolId: PoolSourceId): boolean => {
     if (selectedType === "visual-rosetta") {
       return (
@@ -1358,21 +1589,32 @@ function ExercisesPageContent() {
     if (selectedType === "sentence-builder") {
       return poolId !== "full_dict";
     }
+    if (selectedType === "gender-sorting") {
+      return poolId === "visual_words";
+    }
+    if (selectedType === "cloze-roleplay") {
+      return poolId === "all_dialogues";
+    }
+    if (selectedType === "evidence-hunter") {
+      return poolId === "reading_texts";
+    }
+    if (selectedType === "blind-dictation") {
+      return (
+        poolId === "all_dialogues" ||
+        poolId === "sentences_1111" ||
+        poolId === "reading_texts"
+      );
+    }
     return true;
   };
 
   const isMistakesEmpty =
-    rangePreset === "mistakes" && mistakeIds.length === 0;
+    !isSelfSourcedSpecialMode &&
+    rangePreset === "mistakes" &&
+    mistakeIds.length === 0;
 
   const handlePoolSelectChange = (presetId: PoolSourceId) => {
-    if (
-      selectedType === "visual-rosetta" &&
-      !isPoolCompatibleWithSelectedMode(presetId)
-    ) {
-      playClick();
-      return;
-    }
-    if (selectedType === "sentence-builder" && presetId === "full_dict") {
+    if (!isPoolCompatibleWithSelectedMode(presetId)) {
       playClick();
       return;
     }
@@ -1433,6 +1675,7 @@ function ExercisesPageContent() {
 
   const handleStartExercise = () => {
     if (
+      !isSelfSourcedSpecialMode &&
       combinedVocabulary.length < 4 &&
       sentenceCountInPool < 2 &&
       idiomsPool.length < 1 &&
@@ -1461,6 +1704,7 @@ function ExercisesPageContent() {
 
   const showSmartContentTypeSelector =
     !isSentencesOnlyMode &&
+    !isSelfSourcedSpecialMode &&
     selectedType !== "visual-rosetta" &&
     selectedType !== "morphology-context" &&
     selectedType !== "classroom-battle" &&
@@ -1507,6 +1751,80 @@ function ExercisesPageContent() {
 
   // Seçili havuz, kategori, seviye ve alıştırma moduna göre gerçek zamanlı öğe sayısı
   const { activeItemCount, activePoolCountLabel } = useMemo(() => {
+    if (selectedType === "error-hunter") {
+      const cnt = diyalogGramerNotlari.length + metinGramerNotlari.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Hata Avcısı Kalıbı`,
+      };
+    }
+
+    if (selectedType === "irab-painter") {
+      const cnt = diyalogGramerNotlari.length + metinGramerNotlari.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} İ'rab Tahlili Cümlesi`,
+      };
+    }
+
+    if (selectedType === "blind-dictation") {
+      const cnt =
+        active1111SentencesWordItems.length +
+        diyalogGramerNotlari.length +
+        metinGramerNotlari.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} Dikte & Hareke Cümlesi`,
+      };
+    }
+
+    if (selectedType === "gender-sorting") {
+      const nounPool = (
+        filteredVisualWordsPool.length > 0
+          ? filteredVisualWordsPool
+          : gorselKelimeler
+      ).filter(
+        (item) =>
+          item.tur === "isim" &&
+          (item.soru_kalibi === "مَا هَذَا؟" ||
+            item.soru_kalibi === "مَا هَذِهِ؟")
+      );
+      const cnt = nounPool.length || 640;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Müzekker/Müennes İsim`,
+      };
+    }
+
+    if (selectedType === "cloze-roleplay") {
+      const pairCount = selectedDialogues.reduce(
+        (sum, d) => sum + Math.max(0, (d.satirlar?.length || 0) - 1),
+        0
+      );
+      const cnt = pairCount || selectedDialogues.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Diyalog Replik Çifti`,
+      };
+    }
+
+    if (selectedType === "evidence-hunter") {
+      const targetReadings =
+        singleReadingId !== "all"
+          ? metinler.filter((m) => m.id === singleReadingId)
+          : cefrFilter === "all"
+          ? metinler
+          : metinler.filter((m) => m.seviye === cefrFilter);
+      const qCount = targetReadings.reduce(
+        (sum, m) => sum + (m.sorular?.length || 0),
+        0
+      );
+      return {
+        activeItemCount: qCount || metinler.length,
+        activePoolCountLabel: `${qCount || metinler.length} Kanıt Sorusu`,
+      };
+    }
+
     if (selectedType === "visual-rosetta") {
       const cnt = filteredVisualWordsPool.length || gorselKelimeler.length;
       const labelSuffix =
@@ -1650,12 +1968,14 @@ function ExercisesPageContent() {
     effectiveContentType,
     cefrFilter,
     wordPosFilter,
-    filteredVisualWordsPool.length,
+    filteredVisualWordsPool,
     activeVisualWordsWordItems,
     active1111SentencesWordItems,
     activeProverbsWordItems,
     activeReadingsWordItems,
     activeDialoguesWordItems,
+    selectedDialogues,
+    singleReadingId,
     sentenceCountInPool,
     combinedVocabulary.length,
     idiomsPool.length,
@@ -1732,7 +2052,10 @@ function ExercisesPageContent() {
 
         <div className="flex items-center gap-1.5 shrink-0">
           {isPlaying &&
-            rangePreset === "sentences_1111" &&
+            (rangePreset === "sentences_1111" ||
+              selectedType === "error-hunter" ||
+              selectedType === "irab-painter" ||
+              selectedType === "blind-dictation") &&
             grammarFilter !== "all" && (
               <div
                 dir="ltr"
@@ -1784,10 +2107,49 @@ function ExercisesPageContent() {
 
       {!isPlaying ? (
         <>
-          {/* 1. ÜSTTE SİMETRİK 8 MODÜLLÜ (4x2 MASAÜSTÜ / 2x4 MOBİL) KOMPAKT ALIŞTIRMA TÜRÜ SEÇİM IZGARASI (ZERO-SCROLL) */}
-          <section aria-label="Alıştırma Türü Seçimi">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {exerciseCards.map((card) => {
+          {/* 1. 14 MODÜLLÜ KATEGORİ SEKMELİ ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
+          <section aria-label="Alıştırma Türü Seçimi" className="space-y-2">
+            {/* Kategori Filtre Çubuğu */}
+            <div
+              role="tablist"
+              aria-label="Alıştırma Kategorileri"
+              className="flex flex-wrap items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-1.5"
+            >
+              {exerciseCategoryTabs.map((tab) => {
+                const active = exerciseCategoryFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      playClick();
+                      setExerciseCategoryFilter(tab.id);
+                    }}
+                    className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                      active
+                        ? "bg-[#6741D9] text-white shadow-2xs"
+                        : "bg-white/80 dark:bg-[var(--background)] text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tabular-nums ${
+                        active
+                          ? "bg-white/20 text-white"
+                          : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#6741D9] dark:text-indigo-300"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              {visibleExerciseCards.map((card) => {
                 const isSelected = selectedType === card.id;
                 const Icon = card.icon;
 
@@ -1815,9 +2177,22 @@ function ExercisesPageContent() {
                           setRangePreset("visual_words");
                         }
                         setContentType("words");
+                      } else if (card.id === "gender-sorting") {
+                        setRangePreset("visual_words");
+                      } else if (card.id === "cloze-roleplay") {
+                        setRangePreset("all_dialogues");
+                      } else if (card.id === "evidence-hunter") {
+                        setRangePreset("reading_texts");
+                      } else if (
+                        card.id === "blind-dictation" &&
+                        rangePreset !== "all_dialogues" &&
+                        rangePreset !== "sentences_1111" &&
+                        rangePreset !== "reading_texts"
+                      ) {
+                        setRangePreset("sentences_1111");
                       }
                     }}
-                    className={`text-left p-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
+                    className={`min-h-[48px] text-left p-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
@@ -1838,7 +2213,7 @@ function ExercisesPageContent() {
                         <span
                           lang="ar"
                           dir="rtl"
-                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-none"
+                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-[1.95]"
                         >
                           {card.arabicBadge}
                         </span>
@@ -1943,7 +2318,11 @@ function ExercisesPageContent() {
             )}
 
             {/* Gramer Kalıbı filtresi aktifse belirgin üst rozet */}
-            {rangePreset === "sentences_1111" && grammarFilter !== "all" && (
+            {(rangePreset === "sentences_1111" ||
+              selectedType === "error-hunter" ||
+              selectedType === "irab-painter" ||
+              selectedType === "blind-dictation") &&
+              grammarFilter !== "all" && (
               <div
                 dir="ltr"
                 lang="tr"
@@ -1954,9 +2333,12 @@ function ExercisesPageContent() {
                   <strong className="text-amber-950 dark:text-amber-100">
                     <MixedText text={grammarFilter} />
                   </strong>
-                  <span className="text-amber-700 dark:text-amber-300 font-bold">
-                    ({active1111SentencesWordItems.length} cümle)
-                  </span>
+                  {rangePreset === "sentences_1111" &&
+                    !isSelfSourcedSpecialMode && (
+                      <span className="text-amber-700 dark:text-amber-300 font-bold">
+                        ({active1111SentencesWordItems.length} cümle)
+                      </span>
+                    )}
                 </span>
                 <button
                   type="button"
@@ -2255,7 +2637,8 @@ function ExercisesPageContent() {
               )}
 
               {/* 3. Değerlendirme Zamanı Seçicisi (⚡ Hemen | 🏁 Bitince) */}
-              {selectedType !== "flashcard" &&
+              {!isSelfSourcedSpecialMode &&
+                selectedType !== "flashcard" &&
                 selectedType !== "visual-rosetta" &&
                 selectedType !== "morphology-context" &&
                 selectedType !== "classroom-battle" && (
@@ -2353,12 +2736,13 @@ function ExercisesPageContent() {
                 onClick={handleStartExercise}
                 disabled={
                   isMistakesEmpty ||
-                  (combinedVocabulary.length < 4 &&
+                  (!isSelfSourcedSpecialMode &&
+                    combinedVocabulary.length < 4 &&
                     sentenceCountInPool < 2 &&
                     idiomsPool.length < 1 &&
                     filteredVisualWordsPool.length < 4)
                 }
-                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto h-10 sm:h-9 px-4 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto min-h-[48px] sm:min-h-[40px] px-4 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
               >
                 <Play size={14} fill="currentColor" className="shrink-0" />
                 <span className="truncate">
@@ -2557,6 +2941,60 @@ function ExercisesPageContent() {
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
               visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
               cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "error-hunter" && (
+            <ErrorHunter
+              cefrFilter={cefrFilter}
+              grammarFilter={grammarFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "blind-dictation" && (
+            <BlindDictation
+              cefrFilter={cefrFilter}
+              grammarFilter={grammarFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "cloze-roleplay" && (
+            <ClozeDialogueRoleplay
+              dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "gender-sorting" && (
+            <GenderSortingGame
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "evidence-hunter" && (
+            <ReadingEvidenceHunter
+              readingId={singleReadingId}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "irab-painter" && (
+            <IrabColorPainter
+              cefrFilter={cefrFilter}
+              grammarFilter={grammarFilter}
               questionCount={questionCount}
               timeLimit={timeLimit}
               onClose={handleCloseExercise}

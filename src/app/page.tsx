@@ -571,7 +571,7 @@ export default function HomePage() {
               label: `📖 ${contentStats.readingCount} Okuma Metni`,
               sub: "Sorulu & Gramerli",
               href: "/kutuphane?tab=metinler",
-              badge: "Yeni",
+              badge: "A1-B2",
             },
             {
               label: `🗣️ ${contentStats.sentenceCount} Günlük Cümle`,
@@ -644,7 +644,7 @@ export default function HomePage() {
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">
               {mounted && detectedCefrLevel
-                ? "180 soruluk doğrulanmış havuzdan 13 konu tarama testi çözün veya kur bitirme sınavıyla seviye atlayın."
+                ? "180 soruluk doğrulanmış havuzdan konu tarama testleri çözün veya kur bitirme sınavıyla seviye atlayın."
                 : "Henüz seviye tespiti yapmadınız. 16+2 soruluk adaptif testle A1–B2 seviyenizi belirleyip günlük çalışma planınızı kişiselleştirin."}
             </p>
           </div>
@@ -958,16 +958,14 @@ export default function HomePage() {
                 const badgeCls =
                   dw.badgeTone === "mistake"
                     ? "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-200 dark:border-rose-700"
-                    : dw.badgeTone === "due"
-                    ? "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-700"
-                    : "bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-700";
+                    : "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-700";
 
                 const compactStatusText =
                   dw.badgeTone === "mistake"
                     ? "⚡ Hata"
                     : dw.badgeTone === "due"
-                    ? "⏰ Tekrar"
-                    : "✨ Yeni";
+                    ? "⏱ Tekrar"
+                    : null;
 
                 return (
                   <button
@@ -980,7 +978,7 @@ export default function HomePage() {
                     data-tooltip="Kelimeyi sesli dinlemek için tıklayın"
                     className="flex flex-col justify-between p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-left gap-1.5 transition-colors cursor-pointer"
                   >
-                    {/* Üst Satır: Sol tarafta hoparlör, sağ tarafta durum rozeti */}
+                    {/* Üst Satır: Sol tarafta hoparlör, yalnızca tekrar/hata durumunda rozet */}
                     <div className="flex items-center justify-between gap-1 w-full">
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
                         <Volume2
@@ -988,11 +986,13 @@ export default function HomePage() {
                           className="text-[#065F46] dark:text-emerald-400 shrink-0"
                         />
                       </span>
-                      <span
-                        className={`inline-block whitespace-nowrap text-[9px] font-extrabold px-1.5 py-0.5 rounded border shrink-0 ${badgeCls}`}
-                      >
-                        {compactStatusText}
-                      </span>
+                      {compactStatusText && (
+                        <span
+                          className={`inline-block whitespace-nowrap text-[9px] font-extrabold px-1.5 py-0.5 rounded border shrink-0 ${badgeCls}`}
+                        >
+                          {compactStatusText}
+                        </span>
+                      )}
                     </div>
 
                     {/* Orta Satır: Tam genişlikte harekeli Arapça kelime (ASLA truncate uygulanmaz!) */}

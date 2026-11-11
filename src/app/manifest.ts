@@ -13,9 +13,9 @@ export default function manifest(): MetadataRoute.Manifest {
 
   return {
     id: "/",
-    name: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
-    short_name: "Arapça Asistanı",
-    description: `${dialoguesCount} CEFR diyalog, ${readingsCount} okuma metni, ${sentencesCount} kalıp cümle, ${visualWordsCount} görsel kelime, 38 çiftlik yapay zeka mahreç koçu, morfolojik sözlük ve ${exerciseModulesCount} modüllü interaktif alıştırma merkezi.`,
+    name: "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu",
+    short_name: "Muallimun Arapça",
+    description: `İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu — ${dialoguesCount} CEFR diyalog, ${readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${sentencesCount} kalıp cümle, ${visualWordsCount} görsel kelime, morfolojik sözlük ve ${exerciseModulesCount} modüllü interaktif alıştırma merkezi.`,
     start_url: "/",
     scope: "/",
     display: "standalone",

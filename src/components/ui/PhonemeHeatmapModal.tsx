@@ -335,7 +335,7 @@ export function evaluatePhonemeHeatTier(rec?: PhonemeStatRecord): {
       tier: "untested",
       accuracy: null,
       labelTr: "Henüz Denenmedi",
-      shortBadgeTr: "Yeni",
+      shortBadgeTr: "—",
     };
   }
   const accuracy = Math.round((rec.cleanHits / rec.attempts) * 100);

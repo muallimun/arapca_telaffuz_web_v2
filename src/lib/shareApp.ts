@@ -1,9 +1,9 @@
 import { CONTENT_INVENTORY } from "@/lib/data";
 
 export const SHARE_APP_TITLE =
-  "Arapça Telaffuz ve Diyalog Asistanı — Muallimun";
+  "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
 
-export const SHARE_APP_TEXT = `🎙️ Arapça Telaffuz ve Diyalog Asistanı: ${CONTENT_INVENTORY.dialoguesCount} günlük konuşma diyaloğu, ${CONTENT_INVENTORY.readingsCount} okuma metni, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu ve ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkeziyle ücretsiz Arapça pratiği yapın!`;
+export const SHARE_APP_TEXT = `🎙️ Muallimun Arapça (İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu): ${CONTENT_INVENTORY.dialoguesCount} günlük konuşma diyaloğu, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Sınavı, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime ve ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkeziyle ücretsiz Arapça çalışın!`;
 
 export const SHARE_APP_URL = "https://app.muallimun.net/";
 

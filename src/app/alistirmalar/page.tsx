@@ -215,7 +215,6 @@ type ExerciseType =
 
 type ExerciseCategoryTab =
   | "all"
-  | "new_games"
   | "vocab_visual"
   | "grammar_irab"
   | "listen_dialogue_read"
@@ -1335,8 +1334,7 @@ function ExercisesPageContent() {
 
   const exerciseCards: {
     id: ExerciseType;
-    category: Exclude<ExerciseCategoryTab, "all" | "new_games">;
-    isNewGame?: boolean;
+    category: Exclude<ExerciseCategoryTab, "all">;
     title: string;
     arabicBadge: string;
     subtitle: string;
@@ -1398,7 +1396,6 @@ function ExercisesPageContent() {
     {
       id: "gender-sorting",
       category: "vocab_visual",
-      isNewGame: true,
       title: "Müzekker / Müennes Sepeti",
       arabicBadge: "هَذَا وَهَذِهِ",
       subtitle:
@@ -1408,7 +1405,6 @@ function ExercisesPageContent() {
     {
       id: "error-hunter",
       category: "grammar_irab",
-      isNewGame: true,
       title: "Hata Avcısı (Cümle Onarımı)",
       arabicBadge: "صَيْدُ الْأَخْطَاء",
       subtitle:
@@ -1418,7 +1414,6 @@ function ExercisesPageContent() {
     {
       id: "irab-painter",
       category: "grammar_irab",
-      isNewGame: true,
       title: "Cümleyi İ'rab Renkleriyle Boya",
       arabicBadge: "تَلْوِينُ الْإِعْرَاب",
       subtitle:
@@ -1428,7 +1423,6 @@ function ExercisesPageContent() {
     {
       id: "blind-dictation",
       category: "listen_dialogue_read",
-      isNewGame: true,
       title: "Kör Dikte & Harekeleme Atölyesi",
       arabicBadge: "الْإِمْلَاءُ وَالتَّشْكِيل",
       subtitle:
@@ -1438,7 +1432,6 @@ function ExercisesPageContent() {
     {
       id: "cloze-roleplay",
       category: "listen_dialogue_read",
-      isNewGame: true,
       title: "Diyalog Boş Replik Tamamlama",
       arabicBadge: "إِكْمَالُ الْحِوَار",
       subtitle:
@@ -1448,7 +1441,6 @@ function ExercisesPageContent() {
     {
       id: "evidence-hunter",
       category: "listen_dialogue_read",
-      isNewGame: true,
       title: "Metin Kanıt Dedektifi",
       arabicBadge: "دَلِيلُ النَّصّ",
       subtitle:
@@ -1475,51 +1467,38 @@ function ExercisesPageContent() {
     },
   ];
 
-  // Tümü (14) vitrininde 6 yeni interaktif oyunu en üst sırada öne çıkar
-  const allOrderedExerciseCards = [
-    ...exerciseCards.filter((c) => c.isNewGame),
-    ...exerciseCards.filter((c) => !c.isNewGame),
-  ];
-
   const exerciseCategoryTabs: {
     id: ExerciseCategoryTab;
     label: string;
     count: number;
   }[] = [
-    { id: "all", label: "✨ Tümü", count: exerciseCards.length },
-    {
-      id: "new_games",
-      label: "🆕 Yeni İnteraktif Oyunlar",
-      count: exerciseCards.filter((c) => c.isNewGame).length,
-    },
+    { id: "all", label: "Tümü", count: exerciseCards.length },
     {
       id: "vocab_visual",
-      label: "🖼️ Kelime & Görsel",
+      label: "Kelime & Görsel",
       count: exerciseCards.filter((c) => c.category === "vocab_visual").length,
     },
     {
       id: "grammar_irab",
-      label: "🎨 Gramer & İ'rab",
+      label: "Gramer & İ'rab",
       count: exerciseCards.filter((c) => c.category === "grammar_irab").length,
     },
     {
       id: "listen_dialogue_read",
-      label: "🎧 Dinleme, Diyalog & Okuma",
+      label: "Dinleme, Diyalog & Okuma",
       count: exerciseCards.filter((c) => c.category === "listen_dialogue_read")
         .length,
     },
     {
       id: "classroom",
-      label: "🏆 Sınıf Yarışması",
+      label: "Sınıf Yarışması",
       count: exerciseCards.filter((c) => c.category === "classroom").length,
     },
   ];
 
   const visibleExerciseCards =
     exerciseCategoryFilter === "all"
-      ? allOrderedExerciseCards
-      : exerciseCategoryFilter === "new_games"
-      ? exerciseCards.filter((c) => c.isNewGame)
+      ? exerciseCards
       : exerciseCards.filter((c) => c.category === exerciseCategoryFilter);
 
   const contentStats = getDynamicContentStats();
@@ -2257,11 +2236,6 @@ function ExercisesPageContent() {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        {card.isNewGame && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs shrink-0">
-                            ✨ YENİ
-                          </span>
-                        )}
                         <span
                           lang="ar"
                           dir="rtl"

@@ -1578,9 +1578,10 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
   );
   assert.equal(
     headerCode.includes('aria-label="Ana Navigasyon"') &&
-      headerCode.includes("SlidersHorizontal"),
+      headerCode.includes("MoreHorizontal") &&
+      headerCode.includes("Muallimun Arapça"),
     true,
-    "Header.tsx 3 esnek bölgeye ve kompakt Araçlar menüsüne sahip olmalıdır"
+    "Header.tsx 3 esnek bölgeye, Muallimun Arapça markasına ve kompakt Diğer Araçlar menüsüne sahip olmalıdır"
   );
 
   // Ana sayfa 14 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
@@ -1691,17 +1692,17 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
     "SmartboardOverlay içinde taşmaya yol açan uzun 'Özne / Merfû' buton metinleri yerine BOARD_COLOR_SWATCHES dairesel paleti kullanılmalıdır"
   );
 
-  // 4. Alıştırma Merkezi: Yeni İnteraktif Oyunlar (6) sekmesi ve ✨ YENİ rozeti
+  // 4. Alıştırma Merkezi: 14 modül vitrini korunurken geçici 'Yeni İnteraktif Oyunlar' sekmesi ve '✨ YENİ' rozetleri kaldırılmış olmalı
   const alistirmalarCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
     "utf8"
   );
   assert.equal(
-    alistirmalarCode.includes('"new_games"') &&
-      alistirmalarCode.includes("Yeni İnteraktif Oyunlar") &&
+    alistirmalarCode.includes('"new_games"') ||
+      alistirmalarCode.includes("Yeni İnteraktif Oyunlar") ||
       alistirmalarCode.includes("✨ YENİ"),
-    true,
-    "Alıştırma Merkezi 'Yeni İnteraktif Oyunlar (6)' sekmesi ve '✨ YENİ' rozetlerini içermelidir"
+    false,
+    "Alıştırma Merkezinde geçici 'Yeni İnteraktif Oyunlar' sekmesi ve '✨ YENİ' rozetleri bulunmamalıdır"
   );
 });
 
@@ -1807,5 +1808,207 @@ test("19. SEVİYE TESPİT İYİLEŞTİRMELERİ — Çok Satırlı Diyalog Konuş
     );
   }
 });
+
+test("20. ÜST BAR SIFIR ÇAKIŞMA & MUALLİMUN ARAPÇA MARKASI, EXCALIDRAW SINIFI AKILLI TAHTA İKON DOCK + GEOMETRİK SİLGİ ÇARPIŞMASI VE ROZET HİJYENİ", async () => {
+  // 1. Muallimun Arapça isimlendirmesi, 6 kompakt masaüstü sekme, 4 sağ ikon ve MobileNav 5 sekme
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const mobileNavCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "MobileNav.tsx"),
+    "utf8"
+  );
+  const layoutCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+
+  assert.equal(
+    headerCode.includes("Muallimun Arapça") &&
+      !headerCode.includes("Arapça Telaffuz & Diyalog") &&
+      headerCode.includes("data-tooltip={item.tooltip}") &&
+      headerCode.includes('tooltip: "Ana Sayfa"') &&
+      headerCode.includes('tooltip: "İnteraktif Kök Sözlüğü"') &&
+      headerCode.includes('tooltip: "Uygulama Ayarları"') &&
+      headerCode.includes('data-tooltip="Arapça Font ve Yazı Boyutu"') &&
+      headerCode.includes('data-tooltip="Tahta Çizim ve Sınıf Araçları"') &&
+      headerCode.includes('data-tooltip="Diğer Araçlar ve Yardım"'),
+    true,
+    "Header.tsx Muallimun Arapça başlığına, ikon+etiket karma orta menüye ve 4 kompakt sağ araç ikonuna sahip olmalıdır"
+  );
+  assert.equal(
+    mobileNavCode.includes('href: "/seviye-tespit"') &&
+      mobileNavCode.includes('label: "Sınav"'),
+    true,
+    "MobileNav.tsx 5 temel sekme içinde 'Sınav' (/seviye-tespit) bağlantısını sunmalıdır"
+  );
+  assert.equal(
+    layoutCode.includes("Muallimun Arapça") &&
+      layoutCode.includes(
+        "İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu"
+      ),
+    true,
+    "layout.tsx metadata ve footer alanları Muallimun Arapça kurumsal kimliğini içermelidir"
+  );
+  assert.equal(
+    globalsCss.includes("z-index: 120") &&
+      globalsCss.includes('[data-tooltip][data-tooltip-pos="bottom"]::after'),
+    true,
+    "globals.css kesilmeyen yüksek z-index'li tooltip konumlandırmasını desteklemelidir"
+  );
+
+  // 2. SmartboardOverlay: Geometrik şekil silgi çarpışma testi (isItemHitByEraser) ve kilitlenmeyen z-[80]/z-[90] İkon Dock mimarisi
+  const { pointToSegmentDistance, isItemHitByEraser } = await import(
+    pathToFileURL(
+      path.join(
+        ROOT_DIR,
+        "src",
+        "components",
+        "classroom",
+        "SmartboardOverlay.tsx"
+      )
+    ).href
+  );
+
+  assert.equal(
+    Math.round(pointToSegmentDistance({ x: 50, y: 10 }, { x: 0, y: 0 }, { x: 100, y: 0 })),
+    10,
+    "pointToSegmentDistance doğru parçasına dik uzaklığı doğru hesaplamalıdır"
+  );
+
+  // Düz çizgi ve ok silme testi
+  const lineEl = {
+    id: "line-1",
+    kind: "line",
+    color: "#ef4444",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 100 },
+      { x: 300, y: 100 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(lineEl, { x: 200, y: 108 }, 14), true);
+  assert.equal(isItemHitByEraser(lineEl, { x: 200, y: 160 }, 14), false);
+
+  const arrowEl = {
+    id: "arrow-1",
+    kind: "arrow",
+    color: "#3b82f6",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 200 },
+      { x: 260, y: 200 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(arrowEl, { x: 255, y: 206 }, 14), true);
+  assert.equal(isItemHitByEraser(arrowEl, { x: 50, y: 50 }, 14), false);
+
+  // Dikdörtgen ve kare kenar silme testi (içi boş merkez silinmez, kenar silinir)
+  const rectEl = {
+    id: "rect-1",
+    kind: "rect",
+    color: "#10b981",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 100 },
+      { x: 300, y: 260 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(rectEl, { x: 100, y: 180 }, 14), true, "Dikdörtgen sol kenarı silgiyle yakalanmalıdır");
+  assert.equal(isItemHitByEraser(rectEl, { x: 200, y: 180 }, 14), false, "Dikdörtgenin boş iç merkezi uzaktaysa silinmemelidir");
+
+  const squareEl = {
+    id: "sq-1",
+    kind: "square",
+    color: "#f59e0b",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 100 },
+      { x: 240, y: 220 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(squareEl, { x: 240, y: 160 }, 14), true, "Kare sağ kenarı silgiyle yakalanmalıdır");
+
+  // Üçgen hipotenüs/kenar silme testi
+  const triEl = {
+    id: "tri-1",
+    kind: "triangle",
+    color: "#8b5cf6",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 100 },
+      { x: 300, y: 300 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(triEl, { x: 200, y: 300 }, 14), true, "Üçgen taban kenarı silgiyle yakalanmalıdır");
+  assert.equal(isItemHitByEraser(triEl, { x: 150, y: 200 }, 14), true, "Üçgen sol yan kenarı silgiyle yakalanmalıdır");
+
+  // Daire/elips çevre silme testi
+  const circleEl = {
+    id: "cir-1",
+    kind: "circle",
+    color: "#ec4899",
+    strokeWidth: 4,
+    points: [
+      { x: 100, y: 100 },
+      { x: 300, y: 300 },
+    ],
+  };
+  assert.equal(isItemHitByEraser(circleEl, { x: 300, y: 200 }, 14), true, "Daire sağ tepe çevresi silgiyle yakalanmalıdır");
+  assert.equal(isItemHitByEraser(circleEl, { x: 200, y: 200 }, 14), false, "Dairenin boş merkezi silinmemelidir");
+
+  const smartboardCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "classroom",
+      "SmartboardOverlay.tsx"
+    ),
+    "utf8"
+  );
+  assert.equal(
+    smartboardCode.includes("z-[80]") &&
+      smartboardCode.includes("z-[90]") &&
+      smartboardCode.includes("stopPropagation") &&
+      smartboardCode.includes("w-[38px] h-[38px]") &&
+      smartboardCode.includes("w-[46px] h-[46px]"),
+    true,
+    "SmartboardOverlay z-[80]/z-[90] katman izolasyonuna, 38x38 metinsiz İkon Dock butonlarına ve 46x46 küçültülmüş rozete sahip olmalıdır"
+  );
+
+  // 3. Uygulama genelinde gereksiz 'YENİ' / '✨ Yeni' rozetleri temizlenmiş olmalı
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    homeCode.includes('badge: "Yeni"') ||
+      homeCode.includes("✨ Yeni") ||
+      alistirmalarCode.includes("✨ YENİ") ||
+      sozlukCode.includes('>Yeni<'),
+    false,
+    "Ana Sayfa, Alıştırmalar ve Sözlük ekranlarında gereksiz 'YENİ' rozetleri bulunmamalıdır"
+  );
+  assert.equal(
+    homeCode.includes('badge: "A1-B2"'),
+    true,
+    "Ana sayfadaki 60 Okuma Metni kartı 'A1-B2' seviye etiketi taşımalıdır"
+  );
+});
+
 
 

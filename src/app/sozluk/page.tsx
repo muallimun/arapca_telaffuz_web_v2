@@ -859,7 +859,7 @@ export default function DictionaryPage() {
                   id: "learned",
                   label: `Öğrendim (${mounted ? learnedWords.length : 0})`,
                 },
-                { id: "unlearned", label: "Yeni" },
+                { id: "unlearned", label: "Çalışılmadı" },
                 {
                   id: "favorites",
                   label: `Favori (${mounted ? favoriteWords.length : 0})`,
@@ -1049,7 +1049,7 @@ export default function DictionaryPage() {
                     id: "learned",
                     label: `Öğrendim (${mounted ? learnedWords.length : 0})`,
                   },
-                  { id: "unlearned", label: "Yeni" },
+                  { id: "unlearned", label: "Çalışılmadı" },
                   {
                     id: "favorites",
                     label: `Favori (${mounted ? favoriteWords.length : 0})`,

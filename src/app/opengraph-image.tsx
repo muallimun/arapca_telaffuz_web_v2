@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Arapça Telaffuz ve Diyalog Asistanı — Muallimun";
+export const alt =
+  "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
 export const size = {
   width: 1200,
   height: 630,
@@ -88,7 +89,7 @@ export default function OpenGraphImage() {
               display: "flex",
             }}
           >
-            Arapça Telaffuz ve Diyalog Asistanı
+            Muallimun Arapça
           </div>
 
           <div
@@ -100,9 +101,8 @@ export default function OpenGraphImage() {
               display: "flex",
             }}
           >
-            Doğal Sesli Günlük Konuşma Diyalogları, 16kHz DSP &amp; Whisper Yapay
-            Zeka Mahreç Analizi, Morfolojik Kök Sözlüğü ve İnteraktif Alıştırma
-            Stüdyosu
+            İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu —
+            Sesli Diyaloglar, Mahreç Analizi, Kök Sözlüğü ve Çalışma Stüdyosu
           </div>
         </div>
 
@@ -123,8 +123,8 @@ export default function OpenGraphImage() {
             width: "100%",
           }}
         >
-          120 CEFR Diyalog • 60 Okuma Metni • 1111 Kalıp Cümle • 998 Görsel
-          Kelime • 8 Modüllü Alıştırma
+          120 Diyalog • 60 Okuma Metni • 180 Soruluk Sınav • 1111 Cümle • 14
+          Modüllü Oyun &amp; Alıştırma
         </div>
       </div>
     ),

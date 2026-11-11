@@ -557,7 +557,7 @@ export function buildDailyStudyPackage(params: {
     pickedWordIds.add(w.id);
     dailyWords.push({
       item: w,
-      statusBadge: "✨ Yeni kelime",
+      statusBadge: "Günlük kelime",
       badgeTone: "new",
     });
   }
@@ -574,7 +574,7 @@ export function buildDailyStudyPackage(params: {
     pickedWordIds.add(w.id);
     dailyWords.push({
       item: w,
-      statusBadge: "✨ Yeni kelime",
+      statusBadge: "Günlük kelime",
       badgeTone: "new",
     });
   }

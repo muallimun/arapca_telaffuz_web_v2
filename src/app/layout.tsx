@@ -19,27 +19,30 @@ import SmartboardMount from "@/components/classroom/SmartboardMount";
 import { CONTENT_INVENTORY } from "@/lib/data";
 import "./globals.css";
 
-const APP_FULL_DESCRIPTION = `${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü interaktif alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
+const APP_SUBTITLE =
+  "İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
+
+const APP_FULL_DESCRIPTION = `${APP_SUBTITLE} — ${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü interaktif alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.muallimun.net"),
   title: {
-    default: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
-    template: "%s | Arapça Telaffuz ve Diyalog Asistanı",
+    default: `Muallimun Arapça — ${APP_SUBTITLE}`,
+    template: "%s | Muallimun Arapça",
   },
   description: APP_FULL_DESCRIPTION,
-  applicationName: "Arapça Telaffuz ve Diyalog Asistanı",
+  applicationName: "Muallimun Arapça",
   keywords: [
+    "Muallimun Arapça",
     "Arapça diyaloglar",
     "Arapça okuma metinleri",
+    "Arapça seviye tespit sınavı",
+    "Arapça konu tarama testleri",
     "Arapça telaffuz koçu",
     "Arapça mahreç eğitimi",
-    "Arapça konuşma pratiği",
-    "Arapça kalıp ifadeler",
     "morfolojik Arapça sözlük",
-    "Arapça cümle kurma",
+    "Arapça interaktif oyunlar",
     "Arapça çalışma kağıdı PDF",
-    "Muallimun Arapça",
     "CEFR Arapça A1 A2 B1 B2",
   ],
   authors: [{ name: "Muallimun", url: "https://muallimun.net" }],
@@ -49,13 +52,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Arapça Asistanı",
+    title: "Muallimun Arapça",
   },
   openGraph: {
-    title: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
+    title: `Muallimun Arapça — ${APP_SUBTITLE}`,
     description: APP_FULL_DESCRIPTION,
     url: "https://app.muallimun.net",
-    siteName: "Arapça Telaffuz ve Diyalog Asistanı",
+    siteName: "Muallimun Arapça",
     locale: "tr_TR",
     type: "website",
     images: [
@@ -63,13 +66,13 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
+        alt: `Muallimun Arapça — ${APP_SUBTITLE}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Arapça Telaffuz ve Diyalog Asistanı — Muallimun",
+    title: `Muallimun Arapça — ${APP_SUBTITLE}`,
     description: APP_FULL_DESCRIPTION,
     images: ["/opengraph-image"],
   },
@@ -157,9 +160,20 @@ export default function RootLayout({
                   className="w-6 h-6 object-contain rounded-md"
                 />
               </div>
-              <span className="font-semibold text-xs text-[var(--muted)] whitespace-nowrap">
-                © 2026 Arapça Telaffuz &amp; Diyalog
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-extrabold text-xs text-[var(--foreground)] whitespace-nowrap shrink-0">
+                  © 2026 Muallimun Arapça
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="hidden xl:inline text-[var(--muted)]"
+                >
+                  ·
+                </span>
+                <span className="hidden xl:inline font-semibold text-xs text-[var(--muted)] truncate">
+                  {APP_SUBTITLE}
+                </span>
+              </div>
               <VisitorCounterBadge variant="footer" />
             </div>
 

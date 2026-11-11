@@ -63,7 +63,7 @@ export default function AppIntroSplash() {
   return (
     <div
       role="dialog"
-      aria-label="Arapça Diyalog ve Telaffuz Atölyesi Giriş Ekranı"
+      aria-label="Muallimun Arapça Giriş Ekranı"
       className={`fixed inset-0 z-[100] print:hidden flex flex-col items-center justify-center px-6 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white transition-all duration-500 ${
         fadingOut
           ? "opacity-0 pointer-events-none"
@@ -85,7 +85,7 @@ export default function AppIntroSplash() {
         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/95 p-3 shadow-2xl shadow-emerald-500/20 ring-2 ring-emerald-400/30 flex items-center justify-center transition-transform duration-500">
           <img
             src="/icons/android-chrome-192x192.png"
-            alt="Arapça Telaffuz ve Diyalog Asistanı Logosu"
+            alt="Muallimun Arapça Logosu"
             className="w-full h-full object-contain rounded-2xl"
           />
         </div>
@@ -99,10 +99,10 @@ export default function AppIntroSplash() {
             أَهْلًا وَسَهْلًا
           </p>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-            Arapça Telaffuz &amp; Diyalog
+            Muallimun Arapça
           </h1>
           <p className="text-xs sm:text-sm font-medium text-emerald-200/85">
-            Arapça Diyalog ve Telaffuz Atölyesi
+            İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu
           </p>
         </div>
 

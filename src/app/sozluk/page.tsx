@@ -58,6 +58,10 @@ const ShareContentCardModal = dynamic(
   () => import("@/components/ui/ShareContentCardModal"),
   { ssr: false }
 );
+const PhonemeHeatmapModal = dynamic(
+  () => import("@/components/ui/PhonemeHeatmapModal"),
+  { ssr: false }
+);
 import {
   formatArabicText,
   splitMixedBidiText,
@@ -69,6 +73,10 @@ import {
   extractDialogueIdioms,
 } from "@/lib/arabicIdioms";
 import { resolveMistakesPool, formatSrsBadgeInfo } from "@/lib/mistakeUtils";
+import {
+  getClassicalBridgeForRoot,
+  getCognateInfoForDictionaryItem,
+} from "@/lib/classicalBridgeData";
 
 type StatusFilter = "all" | "learned" | "unlearned" | "favorites" | "mistakes";
 type TypeFilter =
@@ -138,6 +146,10 @@ export default function DictionaryPage() {
     return map;
   }, []);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [bridgeFilter, setBridgeFilter] = useState<
+    "none" | "cognates" | "classical"
+  >("none");
+  const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
   const [rootFilter, setRootFilter] = useState<string | null>(null);
   const [expandedCardIds, setExpandedCardIds] = useState<
     Record<string, boolean>
@@ -189,9 +201,11 @@ export default function DictionaryPage() {
         const durum = params.get("durum");
         const dlg = params.get("diyalog");
         const kokParam = params.get("kok");
+        const qParam = params.get("q");
         if (durum === "learned") setStatusFilter("learned");
         if (dlg) setSelectedDialogueId(dlg);
         if (kokParam) setRootFilter(kokParam);
+        if (qParam) setSearch(qParam);
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -479,6 +493,13 @@ export default function DictionaryPage() {
       }
     }
 
+    // 2.6. Türkçeyle Ortak Kelimeler veya Kur'ân & Klasik Köprü Hızlı Filtresi
+    if (bridgeFilter === "cognates") {
+      result = result.filter((w) => Boolean(getCognateInfoForDictionaryItem(w)));
+    } else if (bridgeFilter === "classical") {
+      result = result.filter((w) => Boolean(getClassicalBridgeForRoot(w.kok)));
+    }
+
     // 3. Arapça (çekimli/yalın/harekesiz/fonetik) veya Türkçe Anlık Arama
     if (search.trim()) {
       const qLower = search.trim().toLowerCase();
@@ -527,6 +548,7 @@ export default function DictionaryPage() {
     basePool,
     dialogueContextMap,
     typeFilter,
+    bridgeFilter,
     rootFilter,
     statusFilter,
     search,
@@ -666,6 +688,7 @@ export default function DictionaryPage() {
     selectedDialogueId !== "all" ||
     statusFilter !== "all" ||
     typeFilter !== "all" ||
+    bridgeFilter !== "none" ||
     Boolean(rootFilter);
 
   return (
@@ -702,7 +725,18 @@ export default function DictionaryPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setShowPhonemeHeatmap(true);
+            }}
+            className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-4 text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff] hover:opacity-95 transition-all cursor-pointer shrink-0"
+          >
+            🗣️ 28 Harf Mahreç Haritam
+          </button>
+
           <div className="flex items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--surface)] p-1 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
             <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 hidden sm:inline">
               Ses:
@@ -920,6 +954,44 @@ export default function DictionaryPage() {
               </button>
             );
           })}
+
+          {/* Hızlı Filtre: 🤝 Türkçeyle Ortak Kelimeler */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setBridgeFilter((prev) =>
+                prev === "cognates" ? "none" : "cognates"
+              );
+              setVisibleCount(48);
+            }}
+            className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
+              bridgeFilter === "cognates"
+                ? "bg-emerald-700 border-emerald-800 text-white font-bold shadow-2xs"
+                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-emerald-800 dark:text-emerald-300 font-semibold hover:border-emerald-500"
+            }`}
+          >
+            🤝 Türkçeyle Ortak Kelimeler
+          </button>
+
+          {/* Hızlı Filtre: 🕌 Kur'ân & Klasik Köprü */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setBridgeFilter((prev) =>
+                prev === "classical" ? "none" : "classical"
+              );
+              setVisibleCount(48);
+            }}
+            className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
+              bridgeFilter === "classical"
+                ? "bg-[#92400E] border-[#78350F] text-white font-bold shadow-2xs"
+                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[#92400E] dark:text-amber-300 font-semibold hover:border-amber-500"
+            }`}
+          >
+            🕌 Kur&apos;ân &amp; Klasik Köprü
+          </button>
 
           {/* Hızlı Filtre: ⚡ Zorlandıklarım (Hem Mobil Hem Masaüstünde Tek Dokunuşla) */}
           <button
@@ -1392,9 +1464,13 @@ export default function DictionaryPage() {
                     </div>
                   )}
 
-                  {/* Sözlük Kartı Altında Açılır/Kapanır "📖 Örnek Cümleler & Kök Ailesi" Çekmecesi */}
+                  {/* Sözlük Kartı Altında Ortak Kelime / Yalancı Eşdeğer Uyarısı + Açılır/Kapanır Çekmece */}
                   {(() => {
-                    const isDrawerOpen = Boolean(expandedCardIds[word.id]);
+                    const cognateInfo = getCognateInfoForDictionaryItem(word);
+                    const classicalBridge = getClassicalBridgeForRoot(word.kok);
+                    const isDrawerOpen =
+                      Boolean(expandedCardIds[word.id]) ||
+                      bridgeFilter === "classical";
                     const rootSiblings =
                       isDrawerOpen && word.kok && word.kok !== "-"
                         ? getWordsByRoot(word.kok, word.id)
@@ -1404,7 +1480,36 @@ export default function DictionaryPage() {
                       : [];
 
                     return (
-                      <div className="pt-1">
+                      <div className="pt-1 space-y-2">
+                        {cognateInfo && (
+                          <div
+                            className={`rounded-xl border px-2.5 py-1.5 text-[11px] space-y-1 ${
+                              cognateInfo.isFalseFriend
+                                ? "bg-amber-50 dark:bg-amber-950/45 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-100"
+                                : "bg-emerald-50/70 dark:bg-emerald-950/35 border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-1">
+                              <span className="font-extrabold">
+                                🤝 Türkçeyle Ortak:{" "}
+                                <strong className="underline decoration-dotted">
+                                  {cognateInfo.turkishCognate}
+                                </strong>
+                              </span>
+                              {cognateInfo.isFalseFriend && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-100 text-[10px] font-black">
+                                  ⚠️ Yalancı Eşdeğer / Anlam Farkı
+                                </span>
+                              )}
+                            </div>
+                            {cognateInfo.nuanceNoteTr && (
+                              <p className="text-[11px] font-medium leading-snug opacity-95">
+                                {cognateInfo.nuanceNoteTr}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => {
@@ -1420,7 +1525,11 @@ export default function DictionaryPage() {
                               : "bg-white/75 dark:bg-[var(--background)]/75 border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[#6741D9]/60"
                           }`}
                         >
-                          <span>📖 Örnek Cümleler &amp; Kök Ailesi</span>
+                          <span>
+                            {classicalBridge
+                              ? "🕌 Kur'ân Köprüsü, Kök & Örnekler"
+                              : "📖 Örnek Cümleler & Kök Ailesi"}
+                          </span>
                           {isDrawerOpen ? (
                             <ChevronUp size={13} />
                           ) : (
@@ -1430,6 +1539,90 @@ export default function DictionaryPage() {
 
                         {isDrawerOpen && (
                           <div className="mt-2 p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] space-y-2.5 text-left animate-in fade-in duration-150">
+                            {/* 0. Fasih ↔ Kur'ân ve Klasik Metin Köprüsü */}
+                            {classicalBridge && (
+                              <div className="rounded-xl bg-gradient-to-br from-emerald-50 via-[#FDFBF7] to-amber-50/80 dark:from-emerald-950/45 dark:via-[var(--surface)] dark:to-amber-950/30 border-2 border-emerald-300/80 dark:border-emerald-700/70 p-2.5 space-y-2">
+                                <div className="flex items-center justify-between gap-2 border-b border-emerald-200/80 dark:border-emerald-800/60 pb-1.5">
+                                  <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200">
+                                    🕌 Fasih ↔ Kur&apos;ân ve Klasik Metin Köprüsü
+                                  </span>
+                                  <span
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="arabic font-arabic text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
+                                  >
+                                    {classicalBridge.rootSpaced}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+                                  <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-emerald-200/70 dark:border-emerald-800/60 p-2 space-y-0.5">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+                                      Günlük Fasih Kullanım
+                                    </span>
+                                    <p
+                                      dir="rtl"
+                                      lang="ar"
+                                      className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                    >
+                                      {getDisplayArabic(classicalBridge.modernUsageAr)}
+                                    </p>
+                                    <p className="text-[11px] font-medium text-[var(--muted)]">
+                                      {classicalBridge.modernUsageTr}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-amber-200/80 dark:border-amber-800/60 p-2 space-y-0.5">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
+                                      Klasik Istılah
+                                    </span>
+                                    <p
+                                      dir="rtl"
+                                      lang="ar"
+                                      className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                    >
+                                      {getDisplayArabic(classicalBridge.classicalTermAr)}
+                                    </p>
+                                    <p className="text-[11px] font-medium text-[var(--muted)]">
+                                      {classicalBridge.classicalTermTr}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="rounded-lg bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/70 p-2 space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                                      📖 Kur&apos;ân-ı Kerîm&apos;den Örnek ({classicalBridge.surahRef})
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        playClick();
+                                        void playTTS(
+                                          classicalBridge.quranicExampleAr,
+                                          mounted ? speechRate : 1
+                                        );
+                                      }}
+                                      className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-amber-300 dark:border-amber-700 text-[10px] font-extrabold text-amber-900 dark:text-amber-200 inline-flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Volume2 size={11} />
+                                      <span>Dinle</span>
+                                    </button>
+                                  </div>
+                                  <p
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="arabic font-arabic text-base font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.95] text-right"
+                                  >
+                                    ﴿ {getDisplayArabic(classicalBridge.quranicExampleAr)} ﴾
+                                  </p>
+                                  <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-100 leading-snug">
+                                    &ldquo;{classicalBridge.quranicExampleTr}&rdquo;
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
                             {/* 1. Aynı Kökten Türeyen Kelimeler (Kök Ailesi / İştikak) */}
                             {word.kok && word.kok !== "-" && (
                               <div className="space-y-1.5">
@@ -1679,6 +1872,9 @@ export default function DictionaryPage() {
                         level: word.cefr,
                         category: isIdiomCard ? "Kalıp İfade" : theme.badgeText,
                         imageUrl: matchedVisualImg,
+                        deepLink: `https://app.muallimun.net/sozluk?q=${encodeURIComponent(
+                          mainArabic
+                        )}`,
                       });
                     }}
                     data-tooltip="Görsel Kart Olarak Paylaş"
@@ -1721,6 +1917,13 @@ export default function DictionaryPage() {
         <ShareContentCardModal
           payload={shareCardTarget}
           onClose={() => setShareCardTarget(null)}
+        />
+      )}
+
+      {showPhonemeHeatmap && (
+        <PhonemeHeatmapModal
+          isOpen={showPhonemeHeatmap}
+          onClose={() => setShowPhonemeHeatmap(false)}
         />
       )}
     </div>

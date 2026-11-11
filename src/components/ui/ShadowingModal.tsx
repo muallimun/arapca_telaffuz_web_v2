@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useUserStore } from "@/store/userStore";
+import {
+  useUserStore,
+  buildPhonemeAttemptsFromEvaluatedWords,
+} from "@/store/userStore";
 import { useSettings, SpeechRate } from "@/store/settings";
 import { useAudioStore } from "@/store/audioStore";
 import { diyaloglar, sozluk } from "@/lib/data";
@@ -21,6 +24,7 @@ import {
   isWebSpeechBlocked,
   registerActiveMediaStream,
   stopAllActiveMediaStreams,
+  detectCriticalMakhrajSubstitution,
 } from "@/lib/universalStt";
 import {
   X,
@@ -92,6 +96,95 @@ interface Props {
 }
 
 const DEFAULT_BARS = Array(48).fill(0.08);
+
+function smoothEnvelope48(bars: number[]): number[] {
+  const n = bars.length;
+  if (n === 0) return [];
+  return bars.map((v, idx) => {
+    const prev = bars[Math.max(0, idx - 1)] ?? v;
+    const next = bars[Math.min(n - 1, idx + 1)] ?? v;
+    return Math.max(0.05, Math.min(1, prev * 0.25 + v * 0.5 + next * 0.25));
+  });
+}
+
+function buildSmoothSvgCurve(
+  values: number[],
+  width: number,
+  height: number,
+  topPad = 10,
+  bottomPad = 10
+): { strokePath: string; areaPath: string; points: Array<{ x: number; y: number }> } {
+  const n = values.length;
+  const usableH = Math.max(20, height - topPad - bottomPad);
+  const baselineY = height - bottomPad;
+  if (n === 0) {
+    return { strokePath: "", areaPath: "", points: [] };
+  }
+  const pts = values.map((v, idx) => {
+    const x = n === 1 ? width / 2 : (idx / (n - 1)) * width;
+    const y = baselineY - Math.max(0.04, Math.min(1, v)) * usableH;
+    return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+  });
+
+  let stroke = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const curr = pts[i];
+    const next = pts[i + 1];
+    const midX = Number(((curr.x + next.x) / 2).toFixed(1));
+    const midY = Number(((curr.y + next.y) / 2).toFixed(1));
+    if (i === 0) {
+      stroke += ` Q ${curr.x} ${curr.y} ${midX} ${midY}`;
+    } else {
+      stroke += ` Q ${curr.x} ${curr.y} ${midX} ${midY}`;
+    }
+  }
+  const last = pts[pts.length - 1];
+  stroke += ` T ${last.x} ${last.y}`;
+  const area = `${stroke} L ${last.x} ${baselineY} L ${pts[0].x} ${baselineY} Z`;
+  return { strokePath: stroke, areaPath: area, points: pts };
+}
+
+function detectEnvelopeDropOffIndices(
+  refSmooth: number[],
+  userSmooth: number[]
+): number[] {
+  const len = Math.min(refSmooth.length, userSmooth.length);
+  if (len < 8) return [];
+  const rawIndices: number[] = [];
+  for (let i = 3; i < len - 2; i++) {
+    const r = refSmooth[i];
+    const u = userSmooth[i];
+    if (r >= 0.38 && r - u >= 0.22) {
+      rawIndices.push(i);
+    }
+  }
+  if (rawIndices.length === 0) return [];
+  // Komşu indeksleri kümele ve her bölgedeki en belirgin fark noktasını seç (en fazla 3 işaretçi)
+  const clusters: number[][] = [];
+  for (const idx of rawIndices) {
+    const prevCluster = clusters[clusters.length - 1];
+    if (prevCluster && idx - prevCluster[prevCluster.length - 1] <= 3) {
+      prevCluster.push(idx);
+    } else {
+      clusters.push([idx]);
+    }
+  }
+  return clusters
+    .filter((c) => c.length >= 2)
+    .map((cluster) => {
+      let bestIdx = cluster[0];
+      let bestGap = -1;
+      for (const idx of cluster) {
+        const gap = refSmooth[idx] - userSmooth[idx];
+        if (gap > bestGap) {
+          bestGap = gap;
+          bestIdx = idx;
+        }
+      }
+      return bestIdx;
+    })
+    .slice(0, 3);
+}
 
 export default function ShadowingModal({
   text,
@@ -166,6 +259,7 @@ export default function ShadowingModal({
     addMistake,
     recordItemAttempt,
     recordPronunciationScore,
+    recordPhonemeAttempt,
     pronunciationScores,
   } = useUserStore();
   const {
@@ -183,6 +277,9 @@ export default function ShadowingModal({
   const [isRecording, setIsRecording] = useState(false);
   const [isMicPreparing, setIsMicPreparing] = useState(false);
   const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
+  const [waveformViewMode, setWaveformViewMode] = useState<
+    "side-by-side" | "overlay"
+  >("side-by-side");
   const [userWavBlob, setUserWavBlob] = useState<Blob | null>(null);
   const [isPlayingRef, setIsPlayingRef] = useState(false);
   const [isPlayingUser, setIsPlayingUser] = useState(false);
@@ -1376,6 +1473,13 @@ export default function ShadowingModal({
     setEvaluation(result);
     if (result.isEvaluated !== false && result.overallScore >= 0) {
       recordPronunciationScore(result.overallScore);
+      const phonemeObs = buildPhonemeAttemptsFromEvaluatedWords(
+        result.words,
+        detectCriticalMakhrajSubstitution
+      );
+      if (phonemeObs.length > 0) {
+        recordPhonemeAttempt(phonemeObs);
+      }
     }
     onEvaluated?.(result.overallScore, activeText);
 
@@ -1825,129 +1929,345 @@ export default function ShadowingModal({
           {/* BİRLEŞTİRİLMİŞ RİTİM & DALGA FORMU KARTI (REFERANS + SİZİN SESİNİZ TEK KARTTA) */}
           <div
             ref={waveformCardRef}
-            className={`rounded-2xl border-2 border-b-4 p-2 sm:p-3 transition-all ${
+            className={`rounded-2xl border-2 border-b-4 p-2 sm:p-3 transition-all space-y-2 ${
               isRecording
                 ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9]"
                 : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
             }`}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              {/* Üst / Sol Bölüm: Referans Ses + Süre + Küçük Hız Seçici (Tek Satır) */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1 shrink-0 min-w-0">
-                    <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 flex items-center gap-1 whitespace-nowrap">
-                      <Volume2 size={13} className="shrink-0" />
-                      <span>Referans Ses</span>
-                    </span>
-                    <span className="text-[11px] font-semibold text-[var(--muted)] tabular-nums whitespace-nowrap shrink-0">
-                      {refDuration > 0 ? `${refDuration.toFixed(1)}s` : "Hazır"}
-                    </span>
+            {/* Görünüm Seçici: Yan Yana | Üst Üste Eğri */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1 truncate">
+                <Activity size={13} className="shrink-0 text-[#087F5B]" />
+                <span>Ses Zarfı &amp; Süre Karşılaştırması</span>
+              </span>
+              <div
+                role="tablist"
+                aria-label="Ses Dalgası Görünüm Seçici"
+                className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-0.5 shrink-0"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={waveformViewMode === "side-by-side"}
+                  onClick={() => {
+                    playClick();
+                    setWaveformViewMode("side-by-side");
+                  }}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    waveformViewMode === "side-by-side"
+                      ? "bg-[#087F5B] text-white shadow-2xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  📊 Yan Yana
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={waveformViewMode === "overlay"}
+                  onClick={() => {
+                    playClick();
+                    setWaveformViewMode("overlay");
+                  }}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    waveformViewMode === "overlay"
+                      ? "bg-[#6741D9] text-white shadow-2xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  📈 Üst Üste Eğri
+                </button>
+              </div>
+            </div>
+
+            {waveformViewMode === "side-by-side" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                {/* Üst / Sol Bölüm: Referans Ses + Süre + Küçük Hız Seçici (Tek Satır) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1 shrink-0 min-w-0">
+                      <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 flex items-center gap-1 whitespace-nowrap">
+                        <Volume2 size={13} className="shrink-0" />
+                        <span>Referans Ses</span>
+                      </span>
+                      <span className="text-[11px] font-semibold text-[var(--muted)] tabular-nums whitespace-nowrap shrink-0">
+                        {refDuration > 0 ? `${refDuration.toFixed(1)}s` : "Hazır"}
+                      </span>
+                    </div>
+                    <div className="bg-white dark:bg-[var(--background)] rounded-lg p-0.5 border border-[#E6D7BE] flex items-center gap-0.5 shrink-0">
+                      {([0.5, 0.75, 1, 1.25] as SpeechRate[]).map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setSpeechRate(r);
+                          }}
+                          className={`px-1.5 py-0.5 rounded text-[11px] tabular-nums transition-all cursor-pointer ${
+                            speechRate === r
+                              ? "bg-[#087F5B] text-white font-bold"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {r}x
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="bg-white dark:bg-[var(--background)] rounded-lg p-0.5 border border-[#E6D7BE] flex items-center gap-0.5 shrink-0">
-                    {([0.5, 0.75, 1, 1.25] as SpeechRate[]).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setSpeechRate(r);
+
+                  {/* 48 Bar Referans Zarfı */}
+                  <div className="w-full h-11 sm:h-14 bg-white dark:bg-[var(--background)] rounded-xl p-2 border border-[#E6D7BE] flex items-end justify-between gap-0.5">
+                    {refBars.map((val, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          height: `${Math.max(12, Math.round(val * 100))}%`,
                         }}
-                        className={`px-1.5 py-0.5 rounded text-[11px] tabular-nums transition-all cursor-pointer ${
-                          speechRate === r
-                            ? "bg-[#087F5B] text-white font-bold"
-                            : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                        className={`flex-1 rounded-full transition-all ${
+                          isPlayingRef ? "bg-[#087F5B]" : "bg-[#087F5B]/65"
                         }`}
-                      >
-                        {r}x
-                      </button>
+                      />
                     ))}
                   </div>
                 </div>
 
-                {/* 48 Bar Referans Zarfı */}
-                <div className="w-full h-11 sm:h-14 bg-white dark:bg-[var(--background)] rounded-xl p-2 border border-[#E6D7BE] flex items-end justify-between gap-0.5">
-                  {refBars.map((val, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        height: `${Math.max(12, Math.round(val * 100))}%`,
-                      }}
-                      className={`flex-1 rounded-full transition-all ${
-                        isPlayingRef ? "bg-[#087F5B]" : "bg-[#087F5B]/65"
-                      }`}
-                    />
-                  ))}
+                {/* Alt / Sağ Bölüm: Sizin Ses Ritminiz (16kHz) */}
+                <div className="space-y-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pt-1.5 sm:border-t-0 sm:border-l sm:pl-3 sm:pt-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] flex items-center gap-1 truncate">
+                      <Mic size={13} className="shrink-0" />
+                      <span className="truncate">
+                        {isRecording
+                          ? "16kHz Kaydediliyor..."
+                          : "Sizin Kaydınız"}
+                      </span>
+                    </span>
+                    <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                      {evaluation &&
+                        (evaluation.isTextRecognized !== false ||
+                          evaluation.isAcousticFallback) &&
+                        !isRecording &&
+                        !isAnalyzing && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums whitespace-nowrap shadow-2xs">
+                            🎯 %
+                            {fluencyScore ??
+                              evaluation.fluencyScore ??
+                              evaluation.overallScore}
+                          </span>
+                        )}
+                      <span className="text-[11px] font-bold text-[var(--muted)] tabular-nums whitespace-nowrap shrink-0">
+                        {userDuration > 0 ? `${userDuration.toFixed(1)}s` : "0.0s"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 48 Bar Canlı RMS / Kullanıcı Zarfı */}
+                  <div
+                    className={`w-full h-11 sm:h-14 bg-white dark:bg-[var(--background)] rounded-xl p-2 border flex items-end justify-between gap-0.5 transition-all ${
+                      isRecording
+                        ? "border-[#087F5B] ring-2 ring-[#087F5B]/30"
+                        : "border-[#E6D7BE]"
+                    }`}
+                  >
+                    {userBars.map((val, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          height: `${Math.max(12, Math.round(val * 100))}%`,
+                        }}
+                        className={`flex-1 rounded-full transition-all duration-75 ${
+                          isRecording
+                            ? val > 0.12
+                              ? "bg-[#087F5B]"
+                              : "bg-[#6741D9]"
+                            : userAudioUrl
+                            ? "bg-[#6741D9]/80"
+                            : "bg-[#E6D7BE]"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {isRecording && liveInterimText && (
+                    <div className="text-[11px] font-bold text-[#4C28B5] dark:text-[#d0bfff] flex items-center justify-center gap-1.5 truncate">
+                      <span className="w-2 h-2 rounded-full bg-[#087F5B] animate-ping shrink-0" />
+                      <span lang="ar" dir="rtl" className="arabic truncate">
+                        Algılanan: {liveInterimText}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+            ) : (
+              (() => {
+                const svgW = 480;
+                const svgH = 112;
+                const refSmooth = smoothEnvelope48(refBars);
+                const userSmooth = smoothEnvelope48(userBars);
+                const refCurve = buildSmoothSvgCurve(refSmooth, svgW, svgH);
+                const userCurve = buildSmoothSvgCurve(userSmooth, svgW, svgH);
+                const hasStudentRecord = Boolean(userAudioUrl) && !isRecording;
+                const dropOffIndices = hasStudentRecord
+                  ? detectEnvelopeDropOffIndices(refSmooth, userSmooth)
+                  : [];
+                const isOverallDurationShort =
+                  hasStudentRecord &&
+                  refDuration > 0.6 &&
+                  userDuration > 0 &&
+                  userDuration < refDuration * 0.72;
 
-              {/* Alt / Sağ Bölüm: Sizin Ses Ritminiz (16kHz) */}
-              <div className="space-y-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pt-1.5 sm:border-t-0 sm:border-l sm:pl-3 sm:pt-0">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] flex items-center gap-1 truncate">
-                    <Mic size={13} className="shrink-0" />
-                    <span className="truncate">
-                      {isRecording
-                        ? "16kHz Kaydediliyor..."
-                        : "Sizin Kaydınız"}
-                    </span>
-                  </span>
-                  <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                    {evaluation &&
-                      (evaluation.isTextRecognized !== false ||
-                        evaluation.isAcousticFallback) &&
-                      !isRecording &&
-                      !isAnalyzing && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold tabular-nums whitespace-nowrap shadow-2xs">
-                          🎯 %
-                          {fluencyScore ??
-                            evaluation.fluencyScore ??
-                            evaluation.overallScore}
+                return (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="inline-flex items-center gap-1.5 font-extrabold text-[#065F46] dark:text-emerald-300 tabular-nums">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#087F5B] inline-block" />
+                          Referans Ses ({refDuration > 0 ? `${refDuration.toFixed(1)}s` : "Hazır"})
                         </span>
-                      )}
-                    <span className="text-[11px] font-bold text-[var(--muted)] tabular-nums whitespace-nowrap shrink-0">
-                      {userDuration > 0 ? `${userDuration.toFixed(1)}s` : "0.0s"}
-                    </span>
-                  </div>
-                </div>
+                        <span className="inline-flex items-center gap-1.5 font-extrabold text-[#6741D9] dark:text-[#d0bfff] tabular-nums">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#6741D9] inline-block" />
+                          Sizin Kaydınız ({userDuration > 0 ? `${userDuration.toFixed(1)}s` : "0.0s"})
+                        </span>
+                      </div>
 
-                {/* 48 Bar Canlı RMS / Kullanıcı Zarfı */}
-                <div
-                  className={`w-full h-11 sm:h-14 bg-white dark:bg-[var(--background)] rounded-xl p-2 border flex items-end justify-between gap-0.5 transition-all ${
-                    isRecording
-                      ? "border-[#087F5B] ring-2 ring-[#087F5B]/30"
-                      : "border-[#E6D7BE]"
-                  }`}
-                >
-                  {userBars.map((val, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        height: `${Math.max(12, Math.round(val * 100))}%`,
-                      }}
-                      className={`flex-1 rounded-full transition-all duration-75 ${
-                        isRecording
-                          ? val > 0.12
-                            ? "bg-[#087F5B]"
-                            : "bg-[#6741D9]"
-                          : userAudioUrl
-                          ? "bg-[#6741D9]/80"
-                          : "bg-[#E6D7BE]"
-                      }`}
-                    />
-                  ))}
-                </div>
+                      <div className="bg-white dark:bg-[var(--background)] rounded-lg p-0.5 border border-[#E6D7BE] flex items-center gap-0.5 shrink-0">
+                        {([0.5, 0.75, 1, 1.25] as SpeechRate[]).map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setSpeechRate(r);
+                            }}
+                            className={`px-1.5 py-0.5 rounded text-[11px] tabular-nums transition-all cursor-pointer ${
+                              speechRate === r
+                                ? "bg-[#087F5B] text-white font-bold"
+                                : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                            }`}
+                          >
+                            {r}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                {isRecording && liveInterimText && (
-                  <div className="text-[11px] font-bold text-[#4C28B5] dark:text-[#d0bfff] flex items-center justify-center gap-1.5 truncate">
-                    <span className="w-2 h-2 rounded-full bg-[#087F5B] animate-ping shrink-0" />
-                    <span lang="ar" dir="rtl" className="arabic truncate">
-                      Algılanan: {liveInterimText}
-                    </span>
+                    <div className="w-full rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2 overflow-hidden">
+                      <svg
+                        viewBox={`0 0 ${svgW} ${svgH}`}
+                        className="w-full h-24 sm:h-28 block"
+                        role="img"
+                        aria-label="Referans ses ve öğrenci kaydı üst üste ses zarfı karşılaştırması"
+                      >
+                        {/* Yatay kılavuz çizgileri */}
+                        <line
+                          x1={0}
+                          y1={svgH * 0.35}
+                          x2={svgW}
+                          y2={svgH * 0.35}
+                          stroke="currentColor"
+                          strokeOpacity={0.08}
+                          strokeDasharray="4 4"
+                        />
+                        <line
+                          x1={0}
+                          y1={svgH * 0.68}
+                          x2={svgW}
+                          y2={svgH * 0.68}
+                          stroke="currentColor"
+                          strokeOpacity={0.08}
+                          strokeDasharray="4 4"
+                        />
+
+                        {/* Referans Ses (Zümrüt/Altın yumuşatılmış eğri) */}
+                        {refCurve.areaPath && (
+                          <path
+                            d={refCurve.areaPath}
+                            fill="#087F5B"
+                            fillOpacity={0.18}
+                          />
+                        )}
+                        {refCurve.strokePath && (
+                          <path
+                            d={refCurve.strokePath}
+                            fill="none"
+                            stroke="#087F5B"
+                            strokeWidth={2.8}
+                            strokeLinecap="round"
+                          />
+                        )}
+
+                        {/* Öğrenci Kaydı (Mor/İndigo yumuşatılmış eğri) */}
+                        {userCurve.areaPath && (
+                          <path
+                            d={userCurve.areaPath}
+                            fill="#6741D9"
+                            fillOpacity={hasStudentRecord || isRecording ? 0.22 : 0.08}
+                          />
+                        )}
+                        {userCurve.strokePath && (
+                          <path
+                            d={userCurve.strokePath}
+                            fill="none"
+                            stroke="#6741D9"
+                            strokeWidth={2.6}
+                            strokeDasharray={hasStudentRecord || isRecording ? undefined : "5 4"}
+                            strokeLinecap="round"
+                          />
+                        )}
+
+                        {/* Erken düşüş (uzatma/med veya şedde kısa kalma) kehribar işaretçileri */}
+                        {dropOffIndices.map((idx) => {
+                          const refPt = refCurve.points[idx];
+                          const usrPt = userCurve.points[idx];
+                          if (!refPt || !usrPt) return null;
+                          return (
+                            <g key={idx}>
+                              <line
+                                x1={refPt.x}
+                                y1={refPt.y}
+                                x2={usrPt.x}
+                                y2={usrPt.y}
+                                stroke="#D97706"
+                                strokeWidth={2}
+                                strokeDasharray="3 2"
+                              />
+                              <circle
+                                cx={refPt.x}
+                                cy={refPt.y}
+                                r={5.5}
+                                fill="#F59E0B"
+                                stroke="#FFFFFF"
+                                strokeWidth={1.8}
+                              />
+                              <circle
+                                cx={usrPt.x}
+                                cy={usrPt.y}
+                                r={4.5}
+                                fill="#D97706"
+                                stroke="#FFFFFF"
+                                strokeWidth={1.5}
+                              />
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    </div>
+
+                    {(dropOffIndices.length > 0 || isOverallDurationShort) && (
+                      <div className="rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 px-2.5 py-1.5 text-[11px] font-extrabold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                        <span>
+                          💡 Bu bölgede uzatma/vurgu referanstan daha kısa kaldı
+                        </span>
+                        <span className="text-[10px] font-semibold text-amber-800 dark:text-amber-300 hidden sm:inline">
+                          (Med uzatmalarını ve şeddeli harfleri acele etmeden tutun)
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                );
+              })()
+            )}
 
             {userAudioUrl && (
               <audio

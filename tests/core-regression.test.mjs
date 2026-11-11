@@ -276,6 +276,9 @@ function resolveCandidateFile(basePath) {
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === "next/dynamic") {
+      return nextResolve("next/dynamic.js", context);
+    }
     if (specifier.startsWith("@/")) {
       const target = resolveCandidateFile(
         path.join(ROOT_DIR, "src", specifier.slice(2))
@@ -1334,6 +1337,234 @@ test("16. FAZ 5A — Akıllı Tahta Konsolu, İkili Bilgi Boşluğu (A/B) Konuş
     "ClassroomTeamBattle iframe güvenliği için window.open kullanmamalıdır"
   );
 });
+
+test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahreç Haritası, Çift Ses Eğrisi ve Sosyal Kart Motoru doğrulanır", async () => {
+  // 1. Classical Bridge & Turkish-Arabic Cognates: >=45 kök, >=60 ortak kelime, %100 NFC, 0 tatweel
+  const {
+    CLASSICAL_ROOT_BRIDGE,
+    TURKISH_ARABIC_COGNATES,
+    getClassicalBridgeForRoot,
+    getCognateInfoForArabicWord,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "classicalBridgeData.ts")).href
+  );
+
+  const rootKeys = Object.keys(CLASSICAL_ROOT_BRIDGE);
+  const cognateKeys = Object.keys(TURKISH_ARABIC_COGNATES);
+  assert.ok(
+    rootKeys.length >= 45,
+    `CLASSICAL_ROOT_BRIDGE en az 45 sülâsî kök içermelidir (bulunan: ${rootKeys.length})`
+  );
+  assert.ok(
+    cognateKeys.length >= 60,
+    `TURKISH_ARABIC_COGNATES en az 60 ortak kelime içermelidir (bulunan: ${cognateKeys.length})`
+  );
+
+  for (const key of rootKeys) {
+    const entry = CLASSICAL_ROOT_BRIDGE[key];
+    for (const field of [
+      "root",
+      "rootSpaced",
+      "modernUsageAr",
+      "modernUsageTr",
+      "classicalTermAr",
+      "classicalTermTr",
+      "quranicExampleAr",
+      "quranicExampleTr",
+      "surahRef",
+    ]) {
+      const val = entry[field];
+      assert.ok(
+        typeof val === "string" && val.trim().length > 0,
+        `CLASSICAL_ROOT_BRIDGE[${key}].${field} boş olmamalıdır`
+      );
+      assert.equal(
+        val.includes("\u0640"),
+        false,
+        `CLASSICAL_ROOT_BRIDGE[${key}].${field} tatweel (\\u0640) içermemelidir`
+      );
+      assert.equal(
+        val,
+        val.normalize("NFC"),
+        `CLASSICAL_ROOT_BRIDGE[${key}].${field} NFC formunda olmalıdır`
+      );
+    }
+  }
+
+  for (const key of cognateKeys) {
+    const entry = TURKISH_ARABIC_COGNATES[key];
+    for (const field of ["arabicKey", "arabicVocalized", "turkishCognate", "meaningTr"]) {
+      const val = entry[field];
+      assert.ok(
+        typeof val === "string" && val.trim().length > 0,
+        `TURKISH_ARABIC_COGNATES[${key}].${field} boş olmamalıdır`
+      );
+      assert.equal(
+        val.includes("\u0640"),
+        false,
+        `TURKISH_ARABIC_COGNATES[${key}].${field} tatweel içermemelidir`
+      );
+      assert.equal(
+        val,
+        val.normalize("NFC"),
+        `TURKISH_ARABIC_COGNATES[${key}].${field} NFC formunda olmalıdır`
+      );
+    }
+    if (entry.nuanceNoteTr) {
+      assert.equal(entry.nuanceNoteTr, entry.nuanceNoteTr.normalize("NFC"));
+    }
+  }
+
+  // Boşluklu sözlük kökü ("ع ل م") ve bitişik kök ("علم") aynı kaydı döndürmeli
+  const ilmSpaced = getClassicalBridgeForRoot("ع ل م");
+  const ilmCompact = getClassicalBridgeForRoot("علم");
+  assert.ok(ilmSpaced && ilmCompact, "ع ل م kökü klasik köprüde bulunmalıdır");
+  assert.equal(ilmSpaced.surahRef, ilmCompact.surahRef);
+
+  // Yalancı eşdeğer (مُسَافِرٌ -> yolcu) uyarısı doğrulanmalı
+  const musafirCognate = getCognateInfoForArabicWord("مُسَافِرٌ");
+  assert.ok(musafirCognate, "مُسَافِرٌ ortak kelimeler tablosunda yer almalıdır");
+  assert.equal(musafirCognate.isFalseFriend, true);
+  assert.ok(
+    musafirCognate.nuanceNoteTr && musafirCognate.nuanceNoteTr.includes("yolcu"),
+    "مُسَافِرٌ nüans notu 'yolcu' anlam farkını açıklamalıdır"
+  );
+
+  // 2. 28 Harf Kişisel Mahreç Motoru (userStore + universalStt)
+  const {
+    useUserStore,
+    ARABIC_28_LETTERS,
+    buildPhonemeAttemptsFromEvaluatedWords,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "store", "userStore.ts")).href
+  );
+  const { detectCriticalMakhrajSubstitution } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "universalStt.ts")).href
+  );
+
+  assert.equal(ARABIC_28_LETTERS.length, 28, "Arap alfabesi 28 temel harf içermelidir");
+
+  const evaluatedSample = [
+    {
+      targetWord: "قَلْبٌ",
+      spokenWord: "كَلْبٌ",
+      status: "wrong",
+      score: 40,
+    },
+    {
+      targetWord: "سَلَامٌ",
+      spokenWord: "سَلَامٌ",
+      status: "correct",
+      score: 100,
+    },
+  ];
+  const batch = buildPhonemeAttemptsFromEvaluatedWords(
+    evaluatedSample,
+    detectCriticalMakhrajSubstitution
+  );
+  const qafAttempt = batch.find((b) => b.letter === "ق");
+  assert.ok(qafAttempt, "ق harfi deneme listesinde yer almalıdır");
+  assert.equal(qafAttempt.ok, false);
+  assert.equal(qafAttempt.confusedWith, "ك");
+
+  useUserStore.getState().resetProgress();
+  useUserStore.getState().recordPhonemeAttempt(batch);
+  const afterStats = useUserStore.getState().phonemeStats;
+  assert.equal(afterStats["ق"].attempts, 1);
+  assert.equal(afterStats["ق"].cleanHits, 0);
+  assert.equal(afterStats["ق"].confusions, 1);
+  assert.equal(afterStats["ق"].lastConfusedWith, "ك");
+  assert.equal(afterStats["س"].cleanHits, 1);
+
+  const exportedJson = useUserStore.getState().exportProgress();
+  useUserStore.getState().resetProgress();
+  assert.deepEqual(useUserStore.getState().phonemeStats, {});
+  const importRes = useUserStore.getState().importProgress(exportedJson, "overwrite");
+  assert.equal(importRes, true);
+  assert.equal(useUserStore.getState().phonemeStats["ق"].lastConfusedWith, "ك");
+
+  // 3. PhonemeHeatmapModal 28 harf rehberi ve 3 giriş noktasında next/dynamic kontrolü
+  const { PHONEME_28_GUIDE } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "components", "ui", "PhonemeHeatmapModal.tsx")
+    ).href
+  );
+  for (const ltr of ARABIC_28_LETTERS) {
+    assert.ok(
+      PHONEME_28_GUIDE[ltr] && PHONEME_28_GUIDE[ltr].articulationDetailTr.length > 10,
+      `${ltr} harfi için Türkçe mahreç açıklaması tanımlı olmalıdır`
+    );
+  }
+
+  for (const relPage of [
+    ["src", "app", "page.tsx"],
+    ["src", "app", "alistirmalar", "page.tsx"],
+    ["src", "app", "sozluk", "page.tsx"],
+  ]) {
+    const code = fs.readFileSync(path.join(ROOT_DIR, ...relPage), "utf8");
+    assert.equal(
+      code.includes('import("@/components/ui/PhonemeHeatmapModal")') &&
+        code.includes("28 Harf Mahreç Haritam"),
+      true,
+      `${relPage.join("/")} içinde next/dynamic PhonemeHeatmapModal ve '28 Harf Mahreç Haritam' butonu bulunmalıdır`
+    );
+  }
+
+  // 4. ShadowingModal çift ses dalgası eğrisi & ShareContentCardModal 1:1 / 9:16 / Çift Kart / Mini QR / Blob temizliği
+  const shadowingCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShadowingModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    shadowingCode.includes("Üst Üste Eğri") &&
+      shadowingCode.includes("Bu bölgede uzatma/vurgu referanstan daha kısa kaldı"),
+    true,
+    "ShadowingModal içinde Üst Üste Eğri modu ve erken sönümlenme uyarısı bulunmalıdır"
+  );
+
+  const shareCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShareContentCardModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    shareCardCode.includes("Soru → Cevap Çift Kart") &&
+      shareCardCode.includes("generateQrMatrix") &&
+      shareCardCode.includes("URL.revokeObjectURL") &&
+      shareCardCode.includes("1920"),
+    true,
+    "ShareContentCardModal 1:1/9:16 (1920px), Soru->Cevap Çift Kart, Mini QR ve ObjectURL temizliği içermelidir"
+  );
+  assert.equal(
+    shareCardCode.includes("toDataURL("),
+    false,
+    "ShareContentCardModal bellek sızıntısını önlemek için toDataURL yerine toBlob + ObjectURL kullanmalıdır"
+  );
+
+  // 5. layout.tsx güncel açıklama doğrulaması
+  const { CONTENT_INVENTORY } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
+  );
+  assert.equal(CONTENT_INVENTORY.dialoguesCount, 120);
+  assert.equal(CONTENT_INVENTORY.readingsCount, 60);
+  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 14);
+
+  const layoutSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    layoutSrc.includes("180 soruluk Seviye Tespit & Konu Tarama Merkezi") &&
+      layoutSrc.includes("modüllü interaktif alıştırma merkezi"),
+    true,
+    "layout.tsx APP_FULL_DESCRIPTION güncel 180 soruluk tarama ve 14 modüllü alıştırma bilgisini içermelidir"
+  );
+  assert.equal(
+    layoutSrc.includes("60 CEFR") || layoutSrc.includes("5 modlu"),
+    false,
+    "layout.tsx içinde eski '60 CEFR' veya '5 modlu' ifadeleri bulunmamalıdır"
+  );
+});
+
 
 
 

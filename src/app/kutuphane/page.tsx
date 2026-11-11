@@ -2210,6 +2210,8 @@ export default function LibraryPage() {
                               currentVisual.kategori_tr
                             ),
                             imageUrl: imageUrl || undefined,
+                            deepLink:
+                              "https://app.muallimun.net/kutuphane?tab=gorsel-kelimeler",
                             initialShowTranslation: isModalTrVisible,
                           });
                         } else if (currentProverb) {
@@ -2225,6 +2227,8 @@ export default function LibraryPage() {
                               ? formatTurkishCategory(currentProverb.tema)
                               : undefined,
                             imageUrl: imageUrl || undefined,
+                            deepLink:
+                              "https://app.muallimun.net/kutuphane?tab=atasozleri",
                             initialShowTranslation: isModalTrVisible,
                           });
                         } else if (currentSentence) {
@@ -2239,6 +2243,8 @@ export default function LibraryPage() {
                             category: currentSentence.tema
                               ? formatTurkishCategory(currentSentence.tema)
                               : undefined,
+                            deepLink:
+                              "https://app.muallimun.net/kutuphane?tab=cumleler",
                             initialShowTranslation: isModalTrVisible,
                           });
                         }
@@ -3885,6 +3891,7 @@ export default function LibraryPage() {
                               level: dlg.seviye,
                               category: dlg.tema,
                               imageUrl: imagePath,
+                              deepLink: `https://app.muallimun.net/diyalog/${dlg.id}`,
                             });
                           }}
                           title="Diyaloğu Görsel Kart Olarak Paylaş"
@@ -4125,6 +4132,7 @@ export default function LibraryPage() {
                               level: txt.seviye,
                               category: txt.tema,
                               imageUrl: imagePath,
+                              deepLink: `https://app.muallimun.net/metin/${txt.id}`,
                             });
                           }}
                           title="Okuma Metnini Görsel Kart Olarak Paylaş"
@@ -4443,6 +4451,8 @@ export default function LibraryPage() {
                           category: item.tema
                             ? formatTurkishCategory(item.tema)
                             : undefined,
+                          deepLink:
+                            "https://app.muallimun.net/kutuphane?tab=cumleler",
                           initialShowTranslation: isTrVisible,
                         });
                       }}
@@ -4787,6 +4797,8 @@ export default function LibraryPage() {
                             ? formatTurkishCategory(item.tema)
                             : undefined,
                           imageUrl: imgUrl,
+                          deepLink:
+                            "https://app.muallimun.net/kutuphane?tab=atasozleri",
                           initialShowTranslation: isTrVisible,
                         });
                       }}
@@ -5256,6 +5268,8 @@ export default function LibraryPage() {
                           level: item.cefr,
                           category: formatVisualCategoryBadge(item.kategori_tr),
                           imageUrl: imgUrl,
+                          deepLink:
+                            "https://app.muallimun.net/kutuphane?tab=gorsel-kelimeler",
                           initialShowTranslation: isTrVisible,
                         });
                       }}
@@ -5598,6 +5612,16 @@ export default function LibraryPage() {
                                 level: word.cefr,
                                 category: word.kategori_tr,
                                 imageUrl: word.gorsel,
+                                deepLink:
+                                  kind === "proverbs"
+                                    ? "https://app.muallimun.net/kutuphane?tab=atasozleri"
+                                    : kind === "sentences"
+                                    ? "https://app.muallimun.net/kutuphane?tab=cumleler"
+                                    : kind === "visual-words"
+                                    ? "https://app.muallimun.net/kutuphane?tab=gorsel-kelimeler"
+                                    : `https://app.muallimun.net/sozluk?q=${encodeURIComponent(
+                                        mainAr
+                                      )}`,
                               });
                             }}
                             title="Görsel Kart Olarak Paylaş"

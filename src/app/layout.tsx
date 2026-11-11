@@ -19,7 +19,7 @@ import SmartboardMount from "@/components/classroom/SmartboardMount";
 import { CONTENT_INVENTORY } from "@/lib/data";
 import "./globals.css";
 
-const APP_FULL_DESCRIPTION = `${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
+const APP_FULL_DESCRIPTION = `${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü interaktif alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.muallimun.net"),

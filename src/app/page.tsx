@@ -63,6 +63,10 @@ const ShareContentCardModal = dynamic(
   () => import("@/components/ui/ShareContentCardModal"),
   { ssr: false }
 );
+const PhonemeHeatmapModal = dynamic(
+  () => import("@/components/ui/PhonemeHeatmapModal"),
+  { ssr: false }
+);
 import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage, getLeechSrsItems } from "@/lib/mistakeUtils";
 import {
@@ -220,6 +224,7 @@ export default function HomePage() {
   } | null>(null);
   const [shareCardTarget, setShareCardTarget] =
     useState<ShareCardPayload | null>(null);
+  const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
 
   const contentStats = getDynamicContentStats();
 
@@ -1120,6 +1125,7 @@ export default function HomePage() {
                         : undefined,
                       level: dailySentenceItem.cefr,
                       category: formatSentenceThemeLabel(dailySentenceItem.tema),
+                      deepLink: "https://app.muallimun.net/kutuphane?tab=cumleler",
                       initialShowTranslation: isTranslationVisible,
                     });
                   }}
@@ -1236,6 +1242,7 @@ export default function HomePage() {
                         : dailyProverbItem.kullanim_baglami,
                       level: dailyProverbItem.cefr,
                       imageUrl: dailyProverbCoverSrc,
+                      deepLink: "https://app.muallimun.net/kutuphane?tab=atasozleri",
                       initialShowTranslation: isTranslationVisible,
                     });
                   }}
@@ -1326,6 +1333,7 @@ export default function HomePage() {
                   imageUrl:
                     featuredDialogue.dlg.gorsel ||
                     getDialogueCoverUrl(featuredDialogue.dlg.id),
+                  deepLink: `https://app.muallimun.net/diyalog/${featuredDialogue.dlg.id}`,
                   initialShowTranslation: isTranslationVisible,
                 });
               }}
@@ -1514,16 +1522,29 @@ export default function HomePage() {
             </span>
           </div>
 
-          <Link
-            href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
-              recommendedDiagnosticTopic.ust_konu
-            )}`}
-            onClick={() => playClick()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] shrink-0"
-          >
-            <span>{recommendedDiagnosticTopic.icon}</span>
-            <span>Önerilen Tarama: {recommendedDiagnosticTopic.ust_konu} →</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowPhonemeHeatmap(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-300 shrink-0 cursor-pointer"
+            >
+              <span>🗣️ 28 Harf Mahreç Haritam</span>
+            </button>
+
+            <Link
+              href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                recommendedDiagnosticTopic.ust_konu
+              )}`}
+              onClick={() => playClick()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] shrink-0"
+            >
+              <span>{recommendedDiagnosticTopic.icon}</span>
+              <span>Önerilen Tarama: {recommendedDiagnosticTopic.ust_konu} →</span>
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
@@ -1592,6 +1613,13 @@ export default function HomePage() {
         <ShareContentCardModal
           payload={shareCardTarget}
           onClose={() => setShareCardTarget(null)}
+        />
+      )}
+
+      {showPhonemeHeatmap && (
+        <PhonemeHeatmapModal
+          isOpen={showPhonemeHeatmap}
+          onClose={() => setShowPhonemeHeatmap(false)}
         />
       )}
     </div>

@@ -405,6 +405,205 @@ function sanitizeSkillStats(raw: unknown): Record<SkillKey, SkillStatRecord> {
   return base;
 }
 
+export const ARABIC_28_LETTERS = [
+  "ا",
+  "ب",
+  "ت",
+  "ث",
+  "ج",
+  "ح",
+  "خ",
+  "د",
+  "ذ",
+  "ر",
+  "ز",
+  "س",
+  "ش",
+  "ص",
+  "ض",
+  "ط",
+  "ظ",
+  "ع",
+  "غ",
+  "ف",
+  "ق",
+  "ك",
+  "ل",
+  "م",
+  "ن",
+  "ه",
+  "و",
+  "ي",
+] as const;
+
+export type Arabic28Letter = (typeof ARABIC_28_LETTERS)[number];
+
+const ARABIC_28_SET = new Set<string>(ARABIC_28_LETTERS);
+
+export function normalizeToArabic28Letter(rawChar: string): Arabic28Letter | null {
+  if (!rawChar || typeof rawChar !== "string") return null;
+  const ch = rawChar
+    .normalize("NFC")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .trim()
+    .charAt(0);
+  if (!ch) return null;
+  if (/[أإآٱءؤئا]/.test(ch)) return "ا";
+  if (ch === "ى") return "ي";
+  if (ch === "ة") return "ت";
+  if (ARABIC_28_SET.has(ch)) return ch as Arabic28Letter;
+  return null;
+}
+
+export function extractUniqueArabic28Letters(arabicText: string): Arabic28Letter[] {
+  if (!arabicText || typeof arabicText !== "string") return [];
+  const cleaned = arabicText
+    .normalize("NFC")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "");
+  const seen = new Set<Arabic28Letter>();
+  const out: Arabic28Letter[] = [];
+  for (const ch of cleaned) {
+    const norm = normalizeToArabic28Letter(ch);
+    if (norm && !seen.has(norm)) {
+      seen.add(norm);
+      out.push(norm);
+    }
+  }
+  return out;
+}
+
+export interface PhonemeStatRecord {
+  attempts: number;
+  cleanHits: number;
+  confusions: number;
+  lastConfusedWith?: string;
+}
+
+export interface PhonemeAttemptInput {
+  letter: string;
+  ok: boolean;
+  confusedWith?: string;
+}
+
+export function buildPhonemeAttemptsFromEvaluatedWords(
+  words: Array<{
+    targetWord?: string;
+    word?: string;
+    spokenWord?: string;
+    status?: string;
+    score?: number;
+  }>,
+  detectSubstitutionFn?: (
+    targetWord: string,
+    spokenWord: string
+  ) => {
+    hasSubstitution: boolean;
+    expectedChar?: string;
+    spokenChar?: string;
+  }
+): PhonemeAttemptInput[] {
+  if (!Array.isArray(words) || words.length === 0) return [];
+  const observations: PhonemeAttemptInput[] = [];
+
+  for (const w of words) {
+    const rawTarget = w?.targetWord || w?.word || "";
+    if (!rawTarget) continue;
+    const targetLetters = extractUniqueArabic28Letters(rawTarget);
+    if (targetLetters.length === 0) continue;
+
+    const spokenRaw = (w.spokenWord || "").trim();
+    const sub =
+      spokenRaw && detectSubstitutionFn
+        ? detectSubstitutionFn(rawTarget, spokenRaw)
+        : { hasSubstitution: false };
+
+    if (sub.hasSubstitution && sub.expectedChar) {
+      const expNorm = normalizeToArabic28Letter(sub.expectedChar);
+      for (const ltr of targetLetters) {
+        if (ltr === expNorm) {
+          observations.push({
+            letter: ltr,
+            ok: false,
+            confusedWith: sub.spokenChar || undefined,
+          });
+        } else if ((w.score ?? 0) >= 65) {
+          observations.push({ letter: ltr, ok: true });
+        }
+      }
+      continue;
+    }
+
+    if (w.status === "correct" || (w.score ?? 0) >= 80) {
+      for (const ltr of targetLetters) {
+        observations.push({ letter: ltr, ok: true });
+      }
+      continue;
+    }
+
+    if (spokenRaw.length > 0) {
+      const spokenSet = new Set(extractUniqueArabic28Letters(spokenRaw));
+      for (const ltr of targetLetters) {
+        if (spokenSet.has(ltr) && (w.score ?? 0) >= 55) {
+          observations.push({ letter: ltr, ok: true });
+        } else if (!spokenSet.has(ltr)) {
+          observations.push({ letter: ltr, ok: false });
+        }
+      }
+    }
+  }
+
+  return observations;
+}
+
+function sanitizePhonemeStats(raw: unknown): Record<string, PhonemeStatRecord> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const safeMap: Record<string, PhonemeStatRecord> = Object.create(null);
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const normKey = normalizeToArabic28Letter(key);
+    if (!normKey || FORBIDDEN_OBJECT_KEYS.has(key.trim())) continue;
+    if (typeof val !== "object" || val === null || Array.isArray(val)) continue;
+    const rec = val as Record<string, unknown>;
+    const rawAttempts = Number(rec.attempts);
+    const rawClean = Number(rec.cleanHits);
+    const rawConf = Number(rec.confusions);
+    const attempts = Number.isFinite(rawAttempts)
+      ? Math.max(0, Math.min(1000000, Math.floor(rawAttempts)))
+      : 0;
+    if (attempts <= 0) continue;
+    const cleanHits = Number.isFinite(rawClean)
+      ? Math.max(0, Math.min(attempts, Math.floor(rawClean)))
+      : 0;
+    const confusions = Number.isFinite(rawConf)
+      ? Math.max(0, Math.min(attempts, Math.floor(rawConf)))
+      : Math.max(0, attempts - cleanHits);
+    const lastConfusedWith =
+      typeof rec.lastConfusedWith === "string" &&
+      rec.lastConfusedWith.trim().length > 0
+        ? rec.lastConfusedWith.normalize("NFC").trim().slice(0, 4)
+        : undefined;
+    const prev = safeMap[normKey];
+    if (!prev) {
+      safeMap[normKey] = {
+        attempts,
+        cleanHits,
+        confusions,
+        ...(lastConfusedWith ? { lastConfusedWith } : {}),
+      };
+    } else {
+      const sumAttempts = Math.min(1000000, prev.attempts + attempts);
+      safeMap[normKey] = {
+        attempts: sumAttempts,
+        cleanHits: Math.min(sumAttempts, prev.cleanHits + cleanHits),
+        confusions: Math.min(sumAttempts, prev.confusions + confusions),
+        ...((lastConfusedWith || prev.lastConfusedWith)
+          ? { lastConfusedWith: lastConfusedWith || prev.lastConfusedWith }
+          : {}),
+      };
+    }
+  }
+  return { ...safeMap };
+}
+
 interface UserState {
   favoriteDialogues: string[];
   completedDialogues: string[];
@@ -427,6 +626,7 @@ interface UserState {
   topicMastery: Record<string, TopicMasteryRecord>;
   skillStats: Record<SkillKey, SkillStatRecord>;
   completedLevelExams: Level[];
+  phonemeStats: Record<string, PhonemeStatRecord>;
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
@@ -463,6 +663,7 @@ interface UserState {
   recordTopicAttempt: (topic: string, isCorrect: boolean) => void;
   recordSkillAttempt: (skill: SkillKey, isCorrect: boolean) => void;
   markLevelExamCompleted: (level: Level) => void;
+  recordPhonemeAttempt: (letters: PhonemeAttemptInput[]) => void;
 
   exportProgress: () => string;
   importProgress: (jsonData: string, mode?: "merge" | "overwrite") => boolean;
@@ -499,6 +700,7 @@ export const useUserStore = create<UserState>()(
       topicMastery: {},
       skillStats: createDefaultSkillStats(),
       completedLevelExams: [],
+      phonemeStats: {},
 
       toggleFavoriteDialogue: (id) =>
         set((state) => ({
@@ -1095,6 +1297,50 @@ export const useUserStore = create<UserState>()(
           };
         }),
 
+      recordPhonemeAttempt: (letters) =>
+        set((state) => {
+          if (!Array.isArray(letters) || letters.length === 0) return state;
+          const nextMap = sanitizePhonemeStats(state.phonemeStats);
+          let mutated = false;
+
+          for (const entry of letters) {
+            if (!entry || typeof entry.letter !== "string") continue;
+            const norm = normalizeToArabic28Letter(entry.letter);
+            if (!norm) continue;
+
+            const prev = nextMap[norm] || {
+              attempts: 0,
+              cleanHits: 0,
+              confusions: 0,
+            };
+            const attempts = Math.min(1000000, prev.attempts + 1);
+            const cleanHits = entry.ok
+              ? Math.min(attempts, prev.cleanHits + 1)
+              : prev.cleanHits;
+            const confusions = !entry.ok
+              ? Math.min(attempts, prev.confusions + 1)
+              : prev.confusions;
+
+            const rawConfused =
+              !entry.ok &&
+              typeof entry.confusedWith === "string" &&
+              entry.confusedWith.trim().length > 0
+                ? entry.confusedWith.normalize("NFC").trim().slice(0, 4)
+                : prev.lastConfusedWith;
+
+            nextMap[norm] = {
+              attempts,
+              cleanHits,
+              confusions,
+              ...(rawConfused ? { lastConfusedWith: rawConfused } : {}),
+            };
+            mutated = true;
+          }
+
+          if (!mutated) return state;
+          return { phonemeStats: nextMap };
+        }),
+
       exportProgress: () => {
         const state = get();
         const history = sanitizePronunciationHistory(
@@ -1126,6 +1372,7 @@ export const useUserStore = create<UserState>()(
           topicMastery: sanitizeTopicMastery(state.topicMastery),
           skillStats: sanitizeSkillStats(state.skillStats),
           completedLevelExams: sanitizeCefrLevelArray(state.completedLevelExams),
+          phonemeStats: sanitizePhonemeStats(state.phonemeStats),
         };
         return JSON.stringify(payload, null, 2);
       },
@@ -1188,6 +1435,7 @@ export const useUserStore = create<UserState>()(
             "topicMastery",
             "skillStats",
             "completedLevelExams",
+            "phonemeStats",
           ];
           if (!knownKeys.some((k) => k in data)) {
             return false;
@@ -1389,6 +1637,7 @@ export const useUserStore = create<UserState>()(
           const importedCompletedExams = sanitizeCefrLevelArray(
             data.completedLevelExams
           );
+          const importedPhonemeStats = sanitizePhonemeStats(data.phonemeStats);
 
           if (mode === "overwrite") {
             set({
@@ -1416,6 +1665,7 @@ export const useUserStore = create<UserState>()(
               topicMastery: importedTopicMastery,
               skillStats: importedSkillStats,
               completedLevelExams: importedCompletedExams,
+              phonemeStats: importedPhonemeStats,
             });
             return true;
           }
@@ -1598,6 +1848,39 @@ export const useUserStore = create<UserState>()(
               ...(current.completedLevelExams || []),
               ...importedCompletedExams,
             ]),
+            phonemeStats: (() => {
+              const mergedPhonemes: Record<string, PhonemeStatRecord> = {
+                ...sanitizePhonemeStats(current.phonemeStats),
+              };
+              for (const [ltr, inc] of Object.entries(importedPhonemeStats)) {
+                const cur = mergedPhonemes[ltr];
+                if (!cur) {
+                  mergedPhonemes[ltr] = inc;
+                } else {
+                  const attempts = Math.max(cur.attempts, inc.attempts);
+                  const cleanHits = Math.min(
+                    attempts,
+                    Math.max(cur.cleanHits, inc.cleanHits)
+                  );
+                  const confusions = Math.min(
+                    attempts,
+                    Math.max(cur.confusions, inc.confusions)
+                  );
+                  mergedPhonemes[ltr] = {
+                    attempts,
+                    cleanHits,
+                    confusions,
+                    ...((inc.lastConfusedWith || cur.lastConfusedWith)
+                      ? {
+                          lastConfusedWith:
+                            inc.lastConfusedWith || cur.lastConfusedWith,
+                        }
+                      : {}),
+                  };
+                }
+              }
+              return mergedPhonemes;
+            })(),
           });
           return true;
         } catch {
@@ -1639,6 +1922,7 @@ export const useUserStore = create<UserState>()(
           topicMastery: {},
           skillStats: createDefaultSkillStats(),
           completedLevelExams: [],
+          phonemeStats: {},
         }),
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
@@ -1730,6 +2014,7 @@ export const useUserStore = create<UserState>()(
           topicMastery: sanitizeTopicMastery(raw.topicMastery),
           skillStats: sanitizeSkillStats(raw.skillStats),
           completedLevelExams: sanitizeCefrLevelArray(raw.completedLevelExams),
+          phonemeStats: sanitizePhonemeStats(raw.phonemeStats),
         };
       },
     }

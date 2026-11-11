@@ -192,6 +192,10 @@ const IrabColorPainter = dynamic(
     loading: () => <ExerciseModuleLoadingSkeleton />,
   }
 );
+const PhonemeHeatmapModal = dynamic(
+  () => import("@/components/ui/PhonemeHeatmapModal"),
+  { ssr: false }
+);
 
 type ExerciseType =
   | "flashcard"
@@ -432,6 +436,7 @@ function ExercisesPageContent() {
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>("instant");
   const [fillSubMode, setFillSubMode] = useState<FillSubMode>("choices");
+  const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
 
   const dailyPackage = useMemo(
     () =>
@@ -2082,15 +2087,30 @@ function ExercisesPageContent() {
             )}
 
           {!isPlaying && (
-            <Link
-              href="/seviye-tespit"
-              onClick={() => playClick()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 shrink-0"
-            >
-              <Compass size={13} className="shrink-0" />
-              <span className="hidden md:inline">Seviye &amp; 13 Konu Tarama</span>
-              <span className="md:hidden">Tarama</span>
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowPhonemeHeatmap(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:opacity-95 shrink-0 cursor-pointer"
+              >
+                <span>🗣️</span>
+                <span className="hidden md:inline">28 Harf Mahreç Haritam</span>
+                <span className="md:hidden">Mahreç</span>
+              </button>
+
+              <Link
+                href="/seviye-tespit"
+                onClick={() => playClick()}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 shrink-0"
+              >
+                <Compass size={13} className="shrink-0" />
+                <span className="hidden md:inline">Seviye &amp; 13 Konu Tarama</span>
+                <span className="md:hidden">Tarama</span>
+              </Link>
+            </>
           )}
 
           <div
@@ -3001,6 +3021,13 @@ function ExercisesPageContent() {
             />
           )}
         </div>
+      )}
+
+      {showPhonemeHeatmap && (
+        <PhonemeHeatmapModal
+          isOpen={showPhonemeHeatmap}
+          onClose={() => setShowPhonemeHeatmap(false)}
+        />
       )}
     </div>
   );

@@ -59,7 +59,10 @@ import {
   PauseBetweenLines,
 } from "@/store/settings";
 import { useClassroomToolsStore } from "@/store/classroomToolsStore";
-import { useUserStore } from "@/store/userStore";
+import {
+  useUserStore,
+  buildPhonemeAttemptsFromEvaluatedWords,
+} from "@/store/userStore";
 import {
   playClick,
   playSuccess,
@@ -124,6 +127,7 @@ import {
 } from "@/lib/audioAnalysis";
 import { HybridSpeechManager } from "@/lib/speechManager";
 import { evaluateSentenceWords } from "@/lib/arabicNlpEngine";
+import { detectCriticalMakhrajSubstitution } from "@/lib/universalStt";
 import {
   formatArabicByHarekeMode,
   splitMixedBidiText,
@@ -190,6 +194,7 @@ export default function DialogueDetailPage({
     toggleLearnedWord,
     isWordLearned,
     recordPronunciationScore,
+    recordPhonemeAttempt,
     mistakeIds,
   } = useUserStore();
 
@@ -1204,6 +1209,13 @@ export default function DialogueDetailPage({
             : 0;
         if (evalRes.isEvaluated !== false && computedScore > 0) {
           recordPronunciationScore(computedScore);
+          const phonemeBatch = buildPhonemeAttemptsFromEvaluatedWords(
+            evalRes.words,
+            detectCriticalMakhrajSubstitution
+          );
+          if (phonemeBatch.length > 0) {
+            recordPhonemeAttempt(phonemeBatch);
+          }
         }
       }
     }
@@ -2687,6 +2699,7 @@ export default function DialogueDetailPage({
                     category: dialogue.tema,
                     imageUrl:
                       dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                    deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                     initialShowTranslation:
                       currentViewMode !== "arabic-only" && !clickToRevealTr,
                   });
@@ -2989,6 +3002,7 @@ export default function DialogueDetailPage({
                             imageUrl:
                               dialogue.gorsel ||
                               getDialogueCoverUrl(dialogue.id),
+                            deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                             initialShowTranslation:
                               currentViewMode !== "arabic-only" &&
                               !clickToRevealTr,
@@ -4362,6 +4376,7 @@ export default function DialogueDetailPage({
                           category: dialogue.tema,
                           imageUrl:
                             dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                          deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                           initialShowTranslation:
                             currentViewMode !== "arabic-only" &&
                             (!clickToRevealTr ||

@@ -23,6 +23,11 @@ import {
 } from "@/lib/arabicTextUtils";
 import { formatSrsBadgeInfo } from "@/lib/mistakeUtils";
 import { findIdiomSpanAtWordIndex } from "@/lib/arabicIdioms";
+import {
+  getClassicalBridgeForRoot,
+  getCognateInfoForArabicWord,
+  getCognateInfoForDictionaryItem,
+} from "@/lib/classicalBridgeData";
 
 interface Props {
   text: string;
@@ -157,6 +162,9 @@ export default function WordTooltip({
     forms: TargetForm[];
   } | null>(null);
   const [showDesktopRootFamily, setShowDesktopRootFamily] = useState(false);
+  const [expandedBridgeIndex, setExpandedBridgeIndex] = useState<number | null>(
+    null
+  );
   const [mounted, setMounted] = useState(false);
 
   const containerRef = useRef<HTMLSpanElement>(null);
@@ -969,6 +977,80 @@ export default function WordTooltip({
                           </div>
                         );
                       })()}
+
+                    {/* Türkçeyle Ortak Kelime Nüansı & Klasik / Kur'ân Köprüsü */}
+                    {(() => {
+                      const cognateHit =
+                        getCognateInfoForDictionaryItem(dictItem) ||
+                        getCognateInfoForArabicWord(primaryAr);
+                      const bridgeHit = getClassicalBridgeForRoot(dictItem.kok);
+                      const isBridgeOpen = expandedBridgeIndex === index;
+
+                      if (!cognateHit?.nuanceNoteTr && !bridgeHit) return null;
+
+                      return (
+                        <div
+                          dir="ltr"
+                          className="space-y-1.5 py-1 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] font-sans"
+                        >
+                          {cognateHit?.nuanceNoteTr && (
+                            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 px-2 py-1.5 text-[10px] leading-snug text-amber-950 dark:text-amber-100">
+                              <span className="font-black block">
+                                ⚠️ Ortak Kelime Notu ({cognateHit.turkishCognate}):
+                              </span>
+                              <span>{cognateHit.nuanceNoteTr}</span>
+                            </div>
+                          )}
+
+                          {bridgeHit && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  playClick();
+                                  setExpandedBridgeIndex((prev) =>
+                                    prev === index ? null : index
+                                  );
+                                }}
+                                className="w-full flex items-center justify-between px-2 py-1 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/45 border border-emerald-300 dark:border-emerald-700 text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200 transition-all cursor-pointer"
+                              >
+                                <span>
+                                  🕌 Klasik &amp; Kur&apos;ân Köprüsü{" "}
+                                  {isBridgeOpen ? "▴" : "▾"}
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                                  {bridgeHit.surahRef}
+                                </span>
+                              </button>
+
+                              {isBridgeOpen && (
+                                <div className="mt-1.5 rounded-lg bg-white/95 dark:bg-[var(--background)] border border-emerald-200 dark:border-emerald-800 p-2 space-y-1 text-[10px]">
+                                  <div>
+                                    <span className="font-extrabold text-amber-900 dark:text-amber-300">
+                                      Klasik Istılah:{" "}
+                                    </span>
+                                    <span className="text-[var(--foreground)] font-medium">
+                                      {bridgeHit.classicalTermTr}
+                                    </span>
+                                  </div>
+                                  <p
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="arabic font-arabic text-sm font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.9] text-right"
+                                  >
+                                    ﴿ {formatAr(bridgeHit.quranicExampleAr)} ﴾
+                                  </p>
+                                  <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug">
+                                    &ldquo;{bridgeHit.quranicExampleTr}&rdquo; ({bridgeHit.surahRef})
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Alt Aksiyon Butonları (Dinle | Telaffuz | Kartlar | Öğrendim) */}
                     <div className="pt-1 flex items-center gap-1.5 w-full font-sans">

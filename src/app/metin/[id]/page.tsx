@@ -2095,6 +2095,7 @@ export default function ReadingTextDetailPage({
                     imageUrl:
                       readingText.gorsel ||
                       getReadingTextCoverUrl(readingText.id),
+                    deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                     initialShowTranslation:
                       currentViewMode !== "arabic-only" && !clickToRevealTr,
                   });
@@ -2327,6 +2328,7 @@ export default function ReadingTextDetailPage({
                             imageUrl:
                               readingText.gorsel ||
                               getReadingTextCoverUrl(readingText.id),
+                            deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                             initialShowTranslation:
                               currentViewMode !== "arabic-only" &&
                               !clickToRevealTr,
@@ -3533,6 +3535,7 @@ export default function ReadingTextDetailPage({
                       imageUrl:
                         readingText.gorsel ||
                         getReadingTextCoverUrl(readingText.id),
+                      deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                       initialShowTranslation:
                         currentViewMode !== "arabic-only" && !clickToRevealTr,
                       initialShowHareke:
@@ -3988,6 +3991,7 @@ export default function ReadingTextDetailPage({
                           imageUrl:
                             readingText.gorsel ||
                             getReadingTextCoverUrl(readingText.id),
+                          deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                           initialShowTranslation:
                             currentViewMode !== "arabic-only" &&
                             (!clickToRevealTr ||

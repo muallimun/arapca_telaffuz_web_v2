@@ -33,13 +33,18 @@ import {
   BookMarked,
   Compass,
   PenTool,
+  SlidersHorizontal,
+  Lightbulb,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode } from "@/store/settings";
 import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
-import { getArabicFontConfig } from "@/lib/arabicTextUtils";
+import {
+  getArabicFontConfig,
+  ARABIC_FONT_SIZE_PRESETS,
+} from "@/lib/arabicTextUtils";
 import { triggerGuideModal } from "@/components/ui/GuideAndInfoModal";
 import { getDynamicContentStats } from "@/lib/data";
 import {
@@ -72,6 +77,10 @@ export default function Header() {
     cycleSpeechRate,
     arabicFont,
     arabicFontSize,
+    arabicFontSizePreset,
+    setArabicFontSizePreset,
+    showTooltips,
+    toggleTooltips,
   } = useSettings();
   const { isOpen: smartboardOpen, toggleToolbar: toggleSmartboardToolbar } =
     useClassroomToolsStore();
@@ -137,21 +146,21 @@ export default function Header() {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-      if (streamRef.current) {
-        try {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-        } catch {
-          // ignore
-        }
-        streamRef.current = null;
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore
       }
-      stopAllActiveMediaStreams();
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
-        audioCtxRef.current = null;
-      }
-      setMicLevel(0);
-    }, []);
+      streamRef.current = null;
+    }
+    stopAllActiveMediaStreams();
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+    setMicLevel(0);
+  }, []);
 
   const stopMicTest = useCallback(() => {
     micTestSessionIdRef.current += 1;
@@ -207,10 +216,8 @@ export default function Header() {
   const startMicTest = async () => {
     setMicStatus("testing");
     setMicMessage("Mikrofona doğru Arapça bir kelime söyleyin...");
-    // 1. Önce eski medya akışını kapat (sessionId artırmadan!)
     closeMicTestResourcesOnly();
 
-    // 2. Sonra yeni oturum numarasını artır
     const sessionId = ++micTestSessionIdRef.current;
     let acquiredStream: MediaStream | null = null;
     try {
@@ -341,7 +348,6 @@ export default function Header() {
         }
       }
     } catch {
-      // Desteklenmeyen iOS tarayıcılarda veya iFrame kısıtlamasında hata fırlatmadan geç
       if (isIOS && !isInstalled) {
         setIosInstallOpen(true);
       }
@@ -354,36 +360,42 @@ export default function Header() {
     {
       href: "/",
       label: "Ana Sayfa",
+      shortLabel: "Ana Sayfa",
       Icon: Home,
       tooltip: "Günlük Çalışma Planı ve Modül Merkezi",
     },
     {
       href: "/kutuphane",
       label: "Kütüphane",
+      shortLabel: "Kütüphane",
       Icon: BookOpen,
       tooltip: `Eğitim Kütüphanesi Vitrini (${contentStats.dialogueCount} Diyalog, ${contentStats.readingCount} Metin, ${contentStats.sentenceCount} Cümle, ${contentStats.proverbCount} Atasözü, ${contentStats.visualWordCount} Görsel Kelime)`,
     },
     {
       href: "/alistirmalar",
       label: "Alıştırmalar",
+      shortLabel: "Alıştırmalar",
       Icon: Gamepad2,
-      tooltip: "8 Farklı Etkileşimli Kelime, Cümle ve Görsel-Sesli Alıştırma",
+      tooltip: "14 Farklı Etkileşimli Kelime, Cümle, İ'rab ve Oyun Alıştırması",
     },
     {
       href: "/seviye-tespit",
       label: "Seviye & Tarama",
+      shortLabel: "Seviye",
       Icon: Compass,
       tooltip: "Adaptif Seviye Tespit Sınavı, 13 Konu Tarama ve Kur Bitirme Merkezi (180 Soru)",
     },
     {
       href: "/sozluk",
       label: "Sözlük",
+      shortLabel: "Sözlük",
       Icon: BookMarked,
       tooltip: `Morfolojik Kök Ailesi ve Sesli Arapça-Türkçe Sözlük (${contentStats.dictionaryWordCount} Kelime)`,
     },
     {
       href: "/ayarlar",
       label: "Ayarlar",
+      shortLabel: "Ayarlar",
       Icon: Settings,
       tooltip: "Yazı Boyutu, Ses Motoru, Yedekleme ve Çevrimdışı Paket Ayarları",
     },
@@ -405,13 +417,15 @@ export default function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 print:hidden w-full h-12 py-1.5 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center">
-        <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 xl:px-6 h-full flex items-center justify-between gap-1 sm:gap-2">
-          {/* SOL: Sabit Uygulama Logosu + Mobilde Kompakt "Arapça Telaffuz" Başlığı + Masaüstü Menü */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-1.5 lg:gap-2 min-w-0">
+          {/* =============================================================== */}
+          {/* 1. BÖLGE (SOL): Logo + Başlık + PWA Kur Butonu (Asla Çakışmaz)  */}
+          {/* =============================================================== */}
+          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/"
               onClick={() => playClick()}
-              className="flex items-center gap-2 group min-w-0"
+              className="flex items-center gap-1.5 sm:gap-2 group shrink-0"
               data-tooltip="Ana Sayfaya Dön"
               data-tooltip-pos="bottom"
               data-tooltip-align="left"
@@ -424,17 +438,15 @@ export default function Header() {
                   className="w-6 h-6 object-contain rounded-lg"
                 />
               </div>
-              <span className="md:hidden text-xs font-extrabold tracking-tight text-[var(--foreground)] truncate leading-tight">
+              <span className="md:hidden text-xs font-extrabold tracking-tight text-[var(--foreground)] whitespace-nowrap leading-tight">
                 Arapça Telaffuz
               </span>
-              <div className="hidden xl:block min-w-0">
-                <span className="block text-xs sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] truncate leading-tight">
-                  Arapça Telaffuz &amp; Diyalog
-                </span>
-              </div>
+              <span className="hidden 2xl:block text-xs xl:text-sm font-extrabold tracking-tight text-[var(--foreground)] whitespace-nowrap leading-tight">
+                Arapça Telaffuz &amp; Diyalog
+              </span>
             </Link>
 
-            {/* PWA Uygulamayı Kur Butonu (Masaüstü/Tablet; mobilde Görünüm & Araçlar menüsündedir) */}
+            {/* PWA Uygulamayı Kur Butonu (Logonun sağında temiz blok, asla üstüne binmez) */}
             {mounted && canInstall && (
               <button
                 type="button"
@@ -446,59 +458,74 @@ export default function Header() {
                     setIosInstallOpen(true);
                   }
                 }}
-                data-tooltip="Uygulamayı Bilgisayarınıza Yükleyin (İnternetsiz Çalışma Desteği)"
+                data-tooltip="Uygulamayı Cihazınıza Yükleyin (İnternetsiz Çalışma Desteği)"
                 data-tooltip-pos="bottom"
                 data-tooltip-align="left"
                 aria-label="Uygulamayı Cihaza Kur"
-                className="hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto xl:px-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all items-center justify-center gap-1 text-xs font-extrabold cursor-pointer shrink-0"
+                className="hidden md:inline-flex min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] 2xl:px-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all items-center justify-center gap-1 text-xs font-extrabold cursor-pointer shrink-0"
               >
                 <Download size={14} className="shrink-0" />
-                <span className="hidden xl:inline">Kur</span>
+                <span className="hidden 2xl:inline">Kur</span>
               </button>
             )}
-
-            {/* Masaüstü Navigasyon (lg ve üzeri) */}
-            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 ml-1 bg-slate-200/50 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700/60">
-              {navLinks.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
-                const NavIcon = item.Icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      playClick();
-                      if (
-                        item.href === "/kutuphane" &&
-                        typeof window !== "undefined"
-                      ) {
-                        window.dispatchEvent(
-                          new CustomEvent("muallimun:kutuphane-vitrin")
-                        );
-                      }
-                    }}
-                    data-tooltip={item.tooltip}
-                    data-tooltip-pos="bottom"
-                    className={
-                      isActive
-                        ? "px-2.5 py-1.5 text-xs xl:text-sm xl:px-3 rounded-lg font-bold bg-[#087F5B] text-white shadow-sm flex items-center gap-1 xl:gap-1.5 whitespace-nowrap transition-all"
-                        : "px-2.5 py-1.5 text-xs xl:text-sm xl:px-3 rounded-lg font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/60 hover:text-[#065F46] transition-all flex items-center gap-1 xl:gap-1.5 whitespace-nowrap"
-                    }
-                  >
-                    <NavIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
 
-          {/* SAĞ: Mobilde Sadece 3 Net Hızlı Buton ([1x] [🌙] [⚙️]), Masaüstünde Tam Araç Çubuğu */}
-          <div className="flex items-center gap-1.5 xl:gap-1.5 shrink-0">
-            {/* 1. 3 Kademeli Hareke Modu İkonu (Masaüstü/Tablet md+) */}
+          {/* =============================================================== */}
+          {/* 2. BÖLGE (ORTA): Esnek Masaüstü Navigasyon (Sıfır Absolute!)    */}
+          {/* =============================================================== */}
+          <nav
+            aria-label="Ana Navigasyon"
+            className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1 min-w-0 bg-slate-200/55 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700/60"
+          >
+            {navLinks.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+              const NavIcon = item.Icon;
+              const hasShort = item.shortLabel !== item.label;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => {
+                    playClick();
+                    if (
+                      item.href === "/kutuphane" &&
+                      typeof window !== "undefined"
+                    ) {
+                      window.dispatchEvent(
+                        new CustomEvent("muallimun:kutuphane-vitrin")
+                      );
+                    }
+                  }}
+                  data-tooltip={item.tooltip}
+                  data-tooltip-pos="bottom"
+                  className={
+                    isActive
+                      ? "px-2 xl:px-2.5 py-1.5 text-xs xl:text-[13px] rounded-lg font-bold bg-[#087F5B] text-white shadow-sm flex items-center gap-1 xl:gap-1.5 whitespace-nowrap transition-all shrink-0"
+                      : "px-2 xl:px-2.5 py-1.5 text-xs xl:text-[13px] rounded-lg font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/60 hover:text-[#065F46] transition-all flex items-center gap-1 xl:gap-1.5 whitespace-nowrap shrink-0"
+                  }
+                >
+                  <NavIcon className="w-3.5 h-3.5 shrink-0" />
+                  {hasShort ? (
+                    <>
+                      <span className="hidden xl:inline">{item.label}</span>
+                      <span className="xl:hidden">{item.shortLabel}</span>
+                    </>
+                  ) : (
+                    <span>{item.label}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* =============================================================== */}
+          {/* 3. BÖLGE (SAĞ): Hızlı Kontroller + Dar/Orta Ekran Araçlar Menüsü*/}
+          {/* =============================================================== */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* 1. 3 Kademeli Hareke Modu (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={() => {
@@ -514,7 +541,7 @@ export default function Header() {
               } — Değiştirmek için tıklayın`}
               data-tooltip-pos="bottom"
               aria-label="Hareke Modunu Değiştir"
-              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] px-2 rounded-xl border-2 border-b-3 items-center justify-center gap-1 active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`hidden md:flex group relative min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] px-2 rounded-xl border-2 border-b-3 items-center justify-center gap-1 active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 activeHarekeMode === "full"
                   ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                   : activeHarekeMode === "irab-only"
@@ -528,7 +555,7 @@ export default function Header() {
               </span>
             </button>
 
-            {/* 2. Çeviri Görünümü İkonu + Popover Menü (Masaüstü/Tablet md+) */}
+            {/* 2. Çeviri Görünümü & Yazı Boyutu Popover (Masaüstü/Tablet md+) */}
             <div className="hidden md:block relative shrink-0" ref={viewMenuRef}>
               <button
                 type="button"
@@ -536,10 +563,10 @@ export default function Header() {
                   playClick();
                   setViewMenuOpen((o) => !o);
                 }}
-                data-tooltip="Türkçe Çevirileri Göster / Gizle"
+                data-tooltip="Çeviri Görünümü ve Arapça Yazı Boyutu"
                 data-tooltip-pos="bottom"
-                aria-label="Türkçe Çevirileri Göster / Gizle"
-                className={`group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer ${
+                aria-label="Çeviri Görünümü ve Arapça Yazı Boyutu"
+                className={`group relative min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer ${
                   currentViewMode !== "arabic-only"
                     ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
@@ -549,37 +576,70 @@ export default function Header() {
               </button>
 
               {viewMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 shadow-2xl z-50 space-y-1">
-                  <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)] border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-                    <span>Görünüm Modu</span>
+                <div className="absolute right-0 top-full mt-2 w-68 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 shadow-2xl z-50 space-y-2">
+                  <div className="space-y-1">
+                    <span className="block px-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                      Arapça Yazı Boyutu
+                    </span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {ARABIC_FONT_SIZE_PRESETS.map((preset) => {
+                        const active =
+                          mounted && arabicFontSizePreset === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setArabicFontSizePreset(preset.id);
+                            }}
+                            className={`py-1.5 rounded-xl text-xs font-extrabold border cursor-pointer transition-all ${
+                              active
+                                ? "bg-[#087F5B] border-[#065F46] text-white"
+                                : "bg-white/80 dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map((mode) => {
-                    const active = currentViewMode === mode;
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setViewMode(mode);
-                          setViewMenuOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
-                          active
-                            ? "bg-[#087F5B] text-white"
-                            : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-[var(--background)]"
-                        }`}
-                      >
-                        <span>{VIEW_MODE_LABELS[mode]}</span>
-                        {active && <Check size={14} strokeWidth={3} />}
-                      </button>
-                    );
-                  })}
+
+                  <div className="flex items-center justify-between px-1 pt-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)] border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                    <span>Çeviri Görünüm Modu</span>
+                  </div>
+                  <div className="space-y-1">
+                    {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map(
+                      (mode) => {
+                        const active = currentViewMode === mode;
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setViewMode(mode);
+                              setViewMenuOpen(false);
+                            }}
+                            className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                              active
+                                ? "bg-[#087F5B] text-white"
+                                : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-[var(--background)]"
+                            }`}
+                          >
+                            <span>{VIEW_MODE_LABELS[mode]}</span>
+                            {active && <Check size={14} strokeWidth={3} />}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* 3. TTS Okuma Hızı (Mobil + Masaüstü Ortak Hızlı Buton #1) */}
+            {/* 3. TTS Okuma Hızı (Mobilde ve 2xl+ Geniş Masaüstünde Doğrudan, Orta Laptopta Araçlar İçinde) */}
             <button
               type="button"
               onClick={() => {
@@ -589,18 +649,18 @@ export default function Header() {
               data-tooltip="Seslendirme Hızını Değiştir (0.5x – 1.5x)"
               data-tooltip-pos="bottom"
               aria-label="Seslendirme Hızını Değiştir"
-              className="group relative h-9 min-w-[38px] sm:min-w-[40px] sm:min-h-[40px] xl:w-auto px-2 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center gap-1 text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="md:hidden 2xl:inline-flex group relative h-9 min-w-[36px] sm:min-w-[38px] sm:min-h-[38px] px-2 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center gap-1 text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               <Gauge
                 size={13}
-                className="hidden xl:inline text-[#065F46] dark:text-emerald-400 shrink-0"
+                className="hidden 2xl:inline text-[#065F46] dark:text-emerald-400 shrink-0"
               />
               <span className="text-[11px] font-extrabold tabular-nums">
                 {mounted ? `${speechRate}x` : "1x"}
               </span>
             </button>
 
-            {/* 4. Tema Değiştirici (Mobil + Masaüstü Ortak Hızlı Buton #2) */}
+            {/* 4. Tema Değiştirici (Tüm Ekranlarda Sabit) */}
             <button
               type="button"
               onClick={() => {
@@ -610,7 +670,7 @@ export default function Header() {
               data-tooltip="Gece / Gündüz Görünüm Modunu Değiştir"
               data-tooltip-pos="bottom"
               aria-label="Gece / Gündüz Görünüm Modunu Değiştir"
-              className="group relative h-9 w-9 sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+              className="group relative h-9 w-9 sm:min-w-[38px] sm:min-h-[38px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] md:border-2 md:border-b-3 dark:border-[var(--border)] flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
             >
               {isDark ? (
                 <Sun size={15} strokeWidth={2.4} className="text-amber-400" />
@@ -619,32 +679,130 @@ export default function Header() {
               )}
             </button>
 
-            {/* MOBİL [⚙️ Araçlar] Açılır Menü Butonu (< md için 3. ve son buton) */}
-            <div className="relative md:hidden shrink-0" ref={mobileToolsRef}>
+            {/* 5. Akıllı Tahta Kalemi & Sınıf Araçları (Masaüstü/Tablet md+) */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                toggleSmartboardToolbar();
+              }}
+              data-tooltip="🖍️ Tahta Kalemi, Şekiller, Perde, Kura & Sayaç"
+              data-tooltip-pos="bottom"
+              data-tooltip-align="right"
+              aria-label="Tahta Kalemi ve Sınıf Araçları"
+              className={`hidden md:flex group relative min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                smartboardOpen
+                  ? "bg-[#087F5B] border-[#065F46] text-white"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
+              }`}
+            >
+              <PenTool size={14} strokeWidth={2.4} />
+            </button>
+
+            {/* 6. Kullanım Kılavuzu & İnfo [❓] (Masaüstü/Tablet md+) */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                triggerGuideModal("quickstart");
+              }}
+              data-tooltip="Uygulama Kullanım Rehberi ve İletişim / Hata Bildirimi"
+              data-tooltip-pos="bottom"
+              data-tooltip-align="right"
+              aria-label="Uygulama Kullanım Rehberi"
+              className="hidden md:flex group relative min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 items-center justify-center text-[#6741D9] dark:text-[#d0bfff] hover:bg-[#e8e2ff] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+            >
+              <HelpCircle size={14} strokeWidth={2.4} />
+            </button>
+
+            {/* 7. Geniş Masaüstü (2xl+) İkincil Butonlar: Efekt, Mikrofon, Tam Ekran */}
+            <button
+              type="button"
+              onClick={() => {
+                toggleSfx();
+                playClick();
+              }}
+              data-tooltip="Arayüz Ses Efektlerini Aç / Kapat"
+              data-tooltip-pos="bottom"
+              aria-label="Arayüz Ses Efektlerini Aç / Kapat"
+              className={`group relative hidden 2xl:inline-flex min-w-[38px] min-h-[38px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                mounted && sfxEnabled
+                  ? "text-[#065F46] dark:text-emerald-400"
+                  : "text-[var(--muted)] opacity-75"
+              }`}
+            >
+              {mounted && sfxEnabled ? (
+                <Volume2 size={14} strokeWidth={2.4} />
+              ) : (
+                <VolumeX size={14} strokeWidth={2.4} />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleMicModal}
+              data-tooltip="Mikrofon ve Ses Seviyesi Testi"
+              data-tooltip-pos="bottom"
+              data-tooltip-align="right"
+              aria-label="Mikrofon Testi"
+              className={`hidden 2xl:flex group relative min-w-[38px] min-h-[38px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                micModalOpen
+                  ? "bg-[#F3F0FF] border-[#6741D9] text-[#6741D9]"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
+              }`}
+            >
+              <Mic size={14} strokeWidth={2.4} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleFullscreen}
+              data-tooltip="Tam Ekran Moduna Geç / Çık"
+              data-tooltip-pos="bottom"
+              data-tooltip-align="right"
+              aria-label="Tam Ekran Moduna Geç / Çık"
+              className="group relative hidden 2xl:inline-flex min-w-[38px] min-h-[38px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+            >
+              {isFullscreen ? (
+                <Minimize2 size={14} strokeWidth={2.4} />
+              ) : (
+                <Maximize2 size={14} strokeWidth={2.4} />
+              )}
+            </button>
+
+            {/* 8. KOMPAKT [🎛️ Araçlar] Açılır Menüsü (Mobil < md VE Orta Ekran Laptop md..2xl için taşma önleyici) */}
+            <div className="relative 2xl:hidden shrink-0" ref={mobileToolsRef}>
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setMobileToolsOpen((prev) => !prev);
                 }}
-                aria-label="Görünüm ve Araçlar Menüsü"
-                className={`h-9 px-2.5 rounded-xl border flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                data-tooltip="Hız, Ses Efekti, Mikrofon, İpucu ve Tam Ekran Araçları"
+                data-tooltip-pos="bottom"
+                data-tooltip-align="right"
+                aria-label="Görünüm ve Hızlı Araçlar Menüsü"
+                className={`h-9 md:min-h-[38px] px-2 sm:px-2.5 rounded-xl border md:border-2 md:border-b-3 flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0 ${
                   mobileToolsOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
-                    : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                    : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
                 }`}
               >
-                <Settings size={14} strokeWidth={2.4} className="shrink-0" />
-                <span className="hidden min-[360px]:inline text-[11px] font-extrabold">
+                <SlidersHorizontal
+                  size={14}
+                  strokeWidth={2.4}
+                  className="shrink-0"
+                />
+                <span className="hidden min-[360px]:inline md:hidden xl:inline text-[11px] font-extrabold">
                   Araçlar
                 </span>
               </button>
 
               {mobileToolsOpen && (
-                <div className="fixed right-2.5 left-2.5 top-13 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 p-3 shadow-2xl z-50 space-y-2.5">
+                <div className="fixed md:absolute right-2.5 md:right-0 left-2.5 md:left-auto top-13 md:top-full md:mt-2 md:w-80 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 border-b-4 p-3 shadow-2xl z-50 space-y-2.5 max-h-[82dvh] overflow-y-auto">
                   <div className="flex items-center justify-between pb-1.5 border-b border-[#E6D7BE]/80 dark:border-slate-800">
                     <span className="text-xs font-extrabold text-[var(--foreground)]">
-                      Görünüm &amp; Hızlı Araçlar
+                      🎛️ Hızlı Araçlar &amp; Görünüm
                     </span>
                     <button
                       type="button"
@@ -656,53 +814,22 @@ export default function Header() {
                     </button>
                   </div>
 
-                  {/* Hızlı Anahtarlar: 3 Kademeli Hareke, Çeviri & Ses Efektleri */}
+                  {/* İkincil Hızlı Anahtarlar: Okuma Hızı, Ses Efekti, Kelime İpucu */}
                   <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
-                        cycleHarekeMode();
+                        cycleSpeechRate();
                         playClick();
                       }}
-                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
-                        activeHarekeMode === "full"
-                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
-                          : activeHarekeMode === "irab-only"
-                          ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
-                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
-                      }`}
+                      className="px-2 py-2 rounded-xl border bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer text-[var(--foreground)]"
                     >
                       <span className="flex items-center gap-1">
-                        <Sparkles size={12} />
-                        <span>Hareke</span>
+                        <Gauge size={12} className="text-[#087F5B]" />
+                        <span>Hız</span>
                       </span>
-                      <span className="text-[10px] font-extrabold">
-                        {harekeShortLabel}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setViewMode(
-                          currentViewMode === "arabic-only"
-                            ? "stacked"
-                            : "arabic-only"
-                        );
-                      }}
-                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
-                        currentViewMode !== "arabic-only"
-                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
-                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
-                      }`}
-                    >
-                      <span className="flex items-center gap-1">
-                        <Languages size={12} />
-                        <span>Çeviri</span>
-                      </span>
-                      <span className="text-[10px] font-extrabold">
-                        {currentViewMode !== "arabic-only" ? "Açık" : "Kapalı"}
+                      <span className="text-[10px] font-extrabold tabular-nums text-[#065F46] dark:text-emerald-300">
+                        {mounted ? `${speechRate}x` : "1x"}
                       </span>
                     </button>
 
@@ -730,50 +857,151 @@ export default function Header() {
                         {mounted && sfxEnabled ? "Açık" : "Kapalı"}
                       </span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleTooltips();
+                        playClick();
+                      }}
+                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                        mounted && showTooltips
+                          ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                          : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1">
+                        <Lightbulb size={12} />
+                        <span>İpucu</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold">
+                        {mounted && showTooltips ? "Açık" : "Kapalı"}
+                      </span>
+                    </button>
                   </div>
 
-                  {/* Çeviri & Metin Görünüm Seçici */}
-                  <div className="space-y-1">
-                    <span className="block px-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
-                      Çeviri &amp; Metin Görünümü
-                    </span>
-                    <div className="grid grid-cols-1 gap-1">
-                      {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map(
-                        (mode) => {
-                          const active = currentViewMode === mode;
-                          return (
-                            <button
-                              key={mode}
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setViewMode(mode);
-                                setMobileToolsOpen(false);
-                              }}
-                              className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between cursor-pointer ${
-                                active
-                                  ? "bg-[#087F5B] text-white"
-                                  : "bg-[#F7EFE1]/80 dark:bg-slate-800/80 text-[var(--foreground)]"
-                              }`}
-                            >
-                              <span>{VIEW_MODE_LABELS[mode]}</span>
-                              {active && <Check size={13} strokeWidth={3} />}
-                            </button>
+                  {/* Mobilde ek olarak Hareke & Çeviri Görünüm Seçici */}
+                  <div className="md:hidden space-y-2 pt-1 border-t border-[#E6D7BE]/80 dark:border-slate-800">
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          cycleHarekeMode();
+                          playClick();
+                        }}
+                        className={`px-2.5 py-2 rounded-xl border text-[11px] font-bold flex items-center justify-between cursor-pointer ${
+                          activeHarekeMode === "full"
+                            ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                            : activeHarekeMode === "irab-only"
+                            ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
+                            : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                        }`}
+                      >
+                        <span className="flex items-center gap-1">
+                          <Sparkles size={12} />
+                          <span>Hareke</span>
+                        </span>
+                        <span className="text-[10px] font-extrabold">
+                          {harekeShortLabel}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setViewMode(
+                            currentViewMode === "arabic-only"
+                              ? "stacked"
+                              : "arabic-only"
                           );
-                        }
-                      )}
+                        }}
+                        className={`px-2.5 py-2 rounded-xl border text-[11px] font-bold flex items-center justify-between cursor-pointer ${
+                          currentViewMode !== "arabic-only"
+                            ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                            : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
+                        }`}
+                      >
+                        <span className="flex items-center gap-1">
+                          <Languages size={12} />
+                          <span>Çeviri</span>
+                        </span>
+                        <span className="text-[10px] font-extrabold">
+                          {currentViewMode !== "arabic-only" ? "Açık" : "Kapalı"}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="block px-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                        Çeviri &amp; Metin Görünümü
+                      </span>
+                      <div className="grid grid-cols-1 gap-1">
+                        {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map(
+                          (mode) => {
+                            const active = currentViewMode === mode;
+                            return (
+                              <button
+                                key={mode}
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setViewMode(mode);
+                                  setMobileToolsOpen(false);
+                                }}
+                                className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between cursor-pointer ${
+                                  active
+                                    ? "bg-[#087F5B] text-white"
+                                    : "bg-[#F7EFE1]/80 dark:bg-slate-800/80 text-[var(--foreground)]"
+                                }`}
+                              >
+                                <span>{VIEW_MODE_LABELS[mode]}</span>
+                                {active && <Check size={13} strokeWidth={3} />}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Seviye Tespit, Mikrofon Testi, Uygulama Rehberi ve Kurulum */}
+                  {/* Mikrofon Testi, Tam Ekran ve Mobil Kısayollar */}
                   <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#E6D7BE]/80 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileToolsOpen(false);
+                        handleToggleMicModal();
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-bold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Mic size={13} className="text-[#087F5B] shrink-0" />
+                      <span>Mikrofon Testi</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileToolsOpen(false);
+                        handleToggleFullscreen();
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-bold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {isFullscreen ? (
+                        <Minimize2 size={13} className="shrink-0" />
+                      ) : (
+                        <Maximize2 size={13} className="shrink-0" />
+                      )}
+                      <span>{isFullscreen ? "Küçült" : "Tam Ekran"}</span>
+                    </button>
+
                     <Link
                       href="/seviye-tespit"
                       onClick={() => {
                         playClick();
                         setMobileToolsOpen(false);
                       }}
-                      className="col-span-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#087F5B] to-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-2xs"
+                      className="lg:hidden col-span-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#087F5B] to-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <Compass size={14} className="shrink-0" />
                       <span>🧭 Seviye Tespit &amp; 13 Konu Tarama</span>
@@ -786,7 +1014,7 @@ export default function Header() {
                         setMobileToolsOpen(false);
                         toggleSmartboardToolbar();
                       }}
-                      className={`col-span-2 px-3 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer ${
+                      className={`md:hidden col-span-2 px-3 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer ${
                         smartboardOpen
                           ? "bg-[#6741D9] border-[#5230B5] text-white"
                           : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)]"
@@ -802,26 +1030,14 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => {
-                        setMobileToolsOpen(false);
-                        handleToggleMicModal();
-                      }}
-                      className="px-2.5 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-bold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Mic size={13} className="text-[#087F5B]" />
-                      <span>Mikrofon Testi</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
                         playClick();
                         setMobileToolsOpen(false);
                         triggerGuideModal("quickstart");
                       }}
-                      className="px-2.5 py-2 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/50 border border-[#6741D9]/50 text-xs font-bold text-[#6741D9] dark:text-purple-300 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="md:hidden col-span-2 px-2.5 py-2 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/50 border border-[#6741D9]/50 text-xs font-bold text-[#6741D9] dark:text-purple-300 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <HelpCircle size={13} />
-                      <span>Rehber (?)</span>
+                      <span>Uygulama Kullanım Rehberi (?)</span>
                     </button>
 
                     {mounted && canInstall && (
@@ -836,7 +1052,7 @@ export default function Header() {
                             setIosInstallOpen(true);
                           }
                         }}
-                        className="col-span-2 px-3 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="md:hidden col-span-2 px-3 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Download size={14} />
                         <span>Uygulamayı Cihaza Yükle (Kur)</span>
@@ -847,99 +1063,6 @@ export default function Header() {
               )}
             </div>
 
-            {/* 5. Ses Efektleri Aç/Kapa (Masaüstü/Tablet md+) */}
-            <button
-              type="button"
-              onClick={() => {
-                toggleSfx();
-                playClick();
-              }}
-              data-tooltip="Arayüz Ses Efektlerini Aç / Kapat"
-              data-tooltip-pos="bottom"
-              aria-label="Arayüz Ses Efektlerini Aç / Kapat"
-              className={`group relative hidden md:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
-                mounted && sfxEnabled
-                  ? "text-[#065F46] dark:text-emerald-400"
-                  : "text-[var(--muted)] opacity-75"
-              }`}
-            >
-              {mounted && sfxEnabled ? (
-                <Volume2 size={14} strokeWidth={2.4} />
-              ) : (
-                <VolumeX size={14} strokeWidth={2.4} />
-              )}
-            </button>
-
-            {/* 6. Mikrofon Testi (Masaüstü/Tablet md+) */}
-            <button
-              type="button"
-              onClick={handleToggleMicModal}
-              data-tooltip="Serbest Telaffuz ve 38 Çiftlik Mahreç Koçunu Aç"
-              data-tooltip-pos="bottom"
-              data-tooltip-align="right"
-              aria-label="Serbest Telaffuz ve Mahreç Koçu"
-              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
-                micModalOpen
-                  ? "bg-[#F3F0FF] border-[#6741D9] text-[#6741D9]"
-                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
-              }`}
-            >
-              <Mic size={14} strokeWidth={2.4} />
-            </button>
-
-            {/* 6.5. Akıllı Tahta Kalemi, İ'rab Vurgulayıcı, Perde, Kura & Sayaç Konsolu (Masaüstü/Tablet md+) */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                toggleSmartboardToolbar();
-              }}
-              data-tooltip="🖍️ Tahta Kalemi, Fosforlu İ'rab Vurgulayıcı, Perde, Kura & Sayaç"
-              data-tooltip-pos="bottom"
-              data-tooltip-align="right"
-              aria-label="Tahta Kalemi ve Sınıf Araçları"
-              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
-                smartboardOpen
-                  ? "bg-[#087F5B] border-[#065F46] text-white"
-                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE]"
-              }`}
-            >
-              <PenTool size={14} strokeWidth={2.4} />
-            </button>
-
-            {/* 7. Kullanım Kılavuzu & İnfo [❓] (Masaüstü/Tablet md+) */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                triggerGuideModal("quickstart");
-              }}
-              data-tooltip="Uygulama Kullanım Rehberi ve İletişim / Hata Bildirimi"
-              data-tooltip-pos="bottom"
-              data-tooltip-align="right"
-              aria-label="Uygulama Kullanım Rehberi ve İletişim / Hata Bildirimi"
-              className="hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 items-center justify-center text-[#6741D9] dark:text-[#d0bfff] hover:bg-[#e8e2ff] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
-            >
-              <HelpCircle size={14} strokeWidth={2.4} />
-            </button>
-
-            {/* 8. Tam Ekran (Masaüstü/Tablet md+) */}
-            <button
-              type="button"
-              onClick={handleToggleFullscreen}
-              data-tooltip="Tam Ekran Moduna Geç / Çık"
-              data-tooltip-pos="bottom"
-              data-tooltip-align="right"
-              aria-label="Tam Ekran Moduna Geç / Çık"
-              className="group relative hidden md:inline-flex min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
-            >
-              {isFullscreen ? (
-                <Minimize2 size={14} strokeWidth={2.4} />
-              ) : (
-                <Maximize2 size={14} strokeWidth={2.4} />
-              )}
-            </button>
-
             {/* 9. Ayarlar Kısayolu (Tabletlerde hızlı erişim: hidden md:flex lg:hidden) */}
             <Link
               href="/ayarlar"
@@ -948,7 +1071,7 @@ export default function Header() {
               data-tooltip-pos="bottom"
               data-tooltip-align="right"
               aria-label="Ayarlar"
-              className={`hidden md:flex lg:hidden min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all shrink-0 ${
+              className={`hidden md:flex lg:hidden min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all shrink-0 ${
                 pathname === "/ayarlar"
                   ? "bg-[#F3F0FF] border-[#6741D9] text-[#6741D9]"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"

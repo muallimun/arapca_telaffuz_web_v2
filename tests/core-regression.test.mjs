@@ -1565,7 +1565,143 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
   );
 });
 
+test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font & Sayfa Kırılımı, Sürüklenebilir Geometrik Akıllı Tahta ve 6 Yeni Oyun Vitrini", async () => {
+  // 1. Header.tsx: absolute çakışma kaldırılmış, 3 esnek bölge ve Araçlar menüsü mevcut
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    headerCode.includes("left-1/2 -translate-x-1/2"),
+    false,
+    "Header.tsx orta menüsünde çakışmaya yol açan absolute left-1/2 -translate-x-1/2 kalmamalıdır"
+  );
+  assert.equal(
+    headerCode.includes('aria-label="Ana Navigasyon"') &&
+      headerCode.includes("SlidersHorizontal"),
+    true,
+    "Header.tsx 3 esnek bölgeye ve kompakt Araçlar menüsüne sahip olmalıdır"
+  );
 
+  // Ana sayfa 14 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    homeCode.includes("14 Farklı Modül • Görsel & Sesli"),
+    true,
+    "Ana sayfa Kelime Alıştırmaları kartı '14 Farklı Modül • Görsel & Sesli' göstermelidir"
+  );
+  assert.equal(
+    homeCode.includes("6 Farklı Modül • Görsel & Sesli"),
+    false,
+    "Ana sayfada eski '6 Farklı Modül' metni kalmamalıdır"
+  );
 
+  // OnboardingTourModal RTL mahreç çifti izolasyonu ve 88dvh mobil kaydırma koruması
+  const tourCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    tourCode.includes("max-h-[88dvh]") &&
+      /dir="rtl"\s+lang="ar"/.test(tourCode),
+    true,
+    "OnboardingTourModal mobil 88dvh koruması ve izole RTL mahreç çiftleri içermelidir"
+  );
 
+  // 2. Yaprak Test: WinSoftPrint kaldırılmış, Inter + Noto Naskh Arabic ayrımı, B kitapçığı break-before: page ve 2 düzen modu
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    seviyeCode.includes("WinSoftPrint"),
+    false,
+    "Yaprak Test yazdırma şablonunda Türkçe karakterleri bozan WinSoftPrint kullanılmamalıdır"
+  );
+  assert.equal(
+    seviyeCode.includes(".booklet-sheet + .booklet-sheet") &&
+      seviyeCode.includes("break-before: page !important") &&
+      seviyeCode.includes("page-break-before: always !important"),
+    true,
+    "B Kitapçığı ve Cevap Anahtarı her zaman yeni A4 sayfasından başlamalıdır"
+  );
+  assert.equal(
+    seviyeCode.includes('"single-tight"') && seviyeCode.includes('"two-column"'),
+    true,
+    "Yaprak Test modalında Tek Sütun Sıkı ve Çift Sütun Klasik düzen seçicisi bulunmalıdır"
+  );
+
+  // 3. SmartboardOverlay: Serbest sürükleme, 6 geometrik şekil ve dairesel renk paleti + özel renk seçici
+  const smartboardCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "classroom",
+      "SmartboardOverlay.tsx"
+    ),
+    "utf8"
+  );
+  const { BOARD_COLOR_SWATCHES } = await import(
+    pathToFileURL(
+      path.join(
+        ROOT_DIR,
+        "src",
+        "components",
+        "classroom",
+        "SmartboardOverlay.tsx"
+      )
+    ).href
+  );
+  assert.equal(
+    Array.isArray(BOARD_COLOR_SWATCHES) && BOARD_COLOR_SWATCHES.length === 10,
+    true,
+    "SmartboardOverlay 10 dairesel renk paleti (5x2) sunmalıdır"
+  );
+  for (const shapeTool of [
+    '"circle"',
+    '"square"',
+    '"rect"',
+    '"triangle"',
+    '"line"',
+    '"arrow"',
+  ]) {
+    assert.equal(
+      smartboardCode.includes(shapeTool),
+      true,
+      `SmartboardOverlay ${shapeTool} geometrik çizim aracını desteklemelidir`
+    );
+  }
+  assert.equal(
+    smartboardCode.includes('type="color"'),
+    true,
+    "SmartboardOverlay özel renk seçici (<input type=\"color\">) içermelidir"
+  );
+  const smartboardComponentBody = smartboardCode.slice(
+    smartboardCode.indexOf("export default function SmartboardOverlay")
+  );
+  assert.equal(
+    smartboardComponentBody.includes("BOARD_COLOR_SWATCHES.map") &&
+      !smartboardComponentBody.includes("IRAB_SEMANTIC_PALETTE.map") &&
+      !smartboardComponentBody.includes("Özne / Merfû"),
+    true,
+    "SmartboardOverlay içinde taşmaya yol açan uzun 'Özne / Merfû' buton metinleri yerine BOARD_COLOR_SWATCHES dairesel paleti kullanılmalıdır"
+  );
+
+  // 4. Alıştırma Merkezi: Yeni İnteraktif Oyunlar (6) sekmesi ve ✨ YENİ rozeti
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    alistirmalarCode.includes('"new_games"') &&
+      alistirmalarCode.includes("Yeni İnteraktif Oyunlar") &&
+      alistirmalarCode.includes("✨ YENİ"),
+    true,
+    "Alıştırma Merkezi 'Yeni İnteraktif Oyunlar (6)' sekmesi ve '✨ YENİ' rozetlerini içermelidir"
+  );
+});
 

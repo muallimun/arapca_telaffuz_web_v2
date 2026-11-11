@@ -4,7 +4,12 @@ export type SmartboardTool =
   | "navigate"
   | "pen"
   | "highlighter"
+  | "line"
   | "arrow"
+  | "circle"
+  | "square"
+  | "rect"
+  | "triangle"
   | "eraser";
 
 export type IrabSemanticColorId =
@@ -23,6 +28,7 @@ interface ClassroomToolsState {
   isCollapsed: boolean;
   activeTool: SmartboardTool;
   activeColorId: IrabSemanticColorId;
+  activeColorHex: string;
   penWidth: PenWidthPreset;
   dockZone: DockReachZone;
   curtainOpen: boolean;
@@ -37,6 +43,7 @@ interface ClassroomToolsState {
   setCollapsed: (collapsed: boolean) => void;
   setActiveTool: (tool: SmartboardTool) => void;
   setActiveColorId: (colorId: IrabSemanticColorId) => void;
+  setActiveColorHex: (hex: string) => void;
   setPenWidth: (width: PenWidthPreset) => void;
   setDockZone: (zone: DockReachZone) => void;
   toggleCurtain: () => void;
@@ -54,6 +61,7 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
   isCollapsed: false,
   activeTool: "navigate",
   activeColorId: "merfu",
+  activeColorHex: "#EF4444",
   penWidth: "medium",
   dockZone: "bottom",
   curtainOpen: false,
@@ -94,6 +102,7 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
   setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setActiveColorId: (colorId) => set({ activeColorId: colorId }),
+  setActiveColorHex: (hex) => set({ activeColorHex: hex }),
   setPenWidth: (width) => set({ penWidth: width }),
   setDockZone: (zone) => set({ dockZone: zone }),
   toggleCurtain: () =>

@@ -6,6 +6,11 @@ import {
   PenTool,
   Highlighter,
   MoveUpRight,
+  Minus,
+  Circle,
+  Square,
+  RectangleHorizontal,
+  Triangle,
   Eraser,
   Undo2,
   Trash2,
@@ -26,6 +31,7 @@ import {
   PanelRight,
   Users,
   Sparkles,
+  Palette,
 } from "lucide-react";
 import {
   useClassroomToolsStore,
@@ -89,6 +95,19 @@ export const IRAB_SEMANTIC_PALETTE: SemanticColorOption[] = [
   },
 ];
 
+export const BOARD_COLOR_SWATCHES: { hex: string; label: string }[] = [
+  { hex: "#EF4444", label: "Kırmızı" },
+  { hex: "#059669", label: "Zümrüt Yeşil" },
+  { hex: "#2563EB", label: "Mavi" },
+  { hex: "#F97316", label: "Turuncu" },
+  { hex: "#EAB308", label: "Fosforlu Sarı" },
+  { hex: "#7C3AED", label: "Mor" },
+  { hex: "#EC4899", label: "Pembe" },
+  { hex: "#06B6D4", label: "Turkuaz" },
+  { hex: "#0F172A", label: "Siyah" },
+  { hex: "#FFFFFF", label: "Beyaz" },
+];
+
 const PEN_WIDTH_PX: Record<PenWidthPreset, number> = {
   thin: 3,
   medium: 5.5,
@@ -100,9 +119,19 @@ interface Point2D {
   y: number;
 }
 
+type DrawingElementKind =
+  | "pen"
+  | "highlighter"
+  | "line"
+  | "arrow"
+  | "circle"
+  | "square"
+  | "rect"
+  | "triangle";
+
 interface DrawingElement {
   id: string;
-  kind: "pen" | "highlighter" | "arrow";
+  kind: DrawingElementKind;
   colorId: IrabSemanticColorId;
   colorHex: string;
   strokeWidth: number;
@@ -111,6 +140,34 @@ interface DrawingElement {
 
 const ROSTER_STORAGE_KEY = "muallimun_classroom_roster_v1";
 const ROSTER_RANGE_KEY = "muallimun_classroom_range_v1";
+
+function isTwoPointGeometricKind(kind: DrawingElementKind): boolean {
+  return (
+    kind === "line" ||
+    kind === "arrow" ||
+    kind === "circle" ||
+    kind === "square" ||
+    kind === "rect" ||
+    kind === "triangle"
+  );
+}
+
+function computeSquareBounds(p0: Point2D, p1: Point2D) {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const side = Math.max(Math.abs(dx), Math.abs(dy));
+  const x = dx >= 0 ? p0.x : p0.x - side;
+  const y = dy >= 0 ? p0.y : p0.y - side;
+  return { x, y, w: side, h: side };
+}
+
+function computeRectBounds(p0: Point2D, p1: Point2D) {
+  const x = Math.min(p0.x, p1.x);
+  const y = Math.min(p0.y, p1.y);
+  const w = Math.abs(p1.x - p0.x);
+  const h = Math.abs(p1.y - p0.y);
+  return { x, y, w, h };
+}
 
 function buildSmoothSvgPath(points: Point2D[]): string {
   if (points.length === 0) return "";
@@ -139,21 +196,95 @@ function distanceToSegmentSquared(p: Point2D, v: Point2D, w: Point2D): number {
   return (p.x - projX) ** 2 + (p.y - projY) ** 2;
 }
 
-function hitTestElement(el: DrawingElement, pt: Point2D, radius = 22): boolean {
-  const thresholdSq = (radius + el.strokeWidth * 0.5) ** 2;
-  if (el.points.length === 1) {
-    const dSq = (pt.x - el.points[0].x) ** 2 + (pt.y - el.points[0].y) ** 2;
-    return dSq <= thresholdSq;
-  }
-  for (let i = 0; i < el.points.length - 1; i++) {
+function hitTestSegments(
+  pt: Point2D,
+  vertices: Point2D[],
+  closed: boolean,
+  thresholdSq: number
+): boolean {
+  for (let i = 0; i < vertices.length - 1; i++) {
     if (
-      distanceToSegmentSquared(pt, el.points[i], el.points[i + 1]) <=
-      thresholdSq
+      distanceToSegmentSquared(pt, vertices[i], vertices[i + 1]) <= thresholdSq
     ) {
       return true;
     }
   }
+  if (
+    closed &&
+    vertices.length >= 3 &&
+    distanceToSegmentSquared(
+      pt,
+      vertices[vertices.length - 1],
+      vertices[0]
+    ) <= thresholdSq
+  ) {
+    return true;
+  }
   return false;
+}
+
+function hitTestElement(el: DrawingElement, pt: Point2D, radius = 22): boolean {
+  const thresholdSq = (radius + el.strokeWidth * 0.5) ** 2;
+  if (el.points.length === 0) return false;
+  if (el.points.length === 1) {
+    const dSq = (pt.x - el.points[0].x) ** 2 + (pt.y - el.points[0].y) ** 2;
+    return dSq <= thresholdSq;
+  }
+
+  const p0 = el.points[0];
+  const p1 = el.points[1];
+
+  if (el.kind === "rect" || el.kind === "square") {
+    const b =
+      el.kind === "square"
+        ? computeSquareBounds(p0, p1)
+        : computeRectBounds(p0, p1);
+    return hitTestSegments(
+      pt,
+      [
+        { x: b.x, y: b.y },
+        { x: b.x + b.w, y: b.y },
+        { x: b.x + b.w, y: b.y + b.h },
+        { x: b.x, y: b.y + b.h },
+      ],
+      true,
+      thresholdSq
+    );
+  }
+
+  if (el.kind === "triangle") {
+    const b = computeRectBounds(p0, p1);
+    return hitTestSegments(
+      pt,
+      [
+        { x: b.x + b.w / 2, y: b.y },
+        { x: b.x + b.w, y: b.y + b.h },
+        { x: b.x, y: b.y + b.h },
+      ],
+      true,
+      thresholdSq
+    );
+  }
+
+  if (el.kind === "circle") {
+    const b = computeRectBounds(p0, p1);
+    const cx = b.x + b.w / 2;
+    const cy = b.y + b.h / 2;
+    const rx = Math.max(2, b.w / 2);
+    const ry = Math.max(2, b.h / 2);
+    const samplePts: Point2D[] = [];
+    const steps = 24;
+    for (let s = 0; s < steps; s++) {
+      const ang = (s / steps) * Math.PI * 2;
+      samplePts.push({
+        x: cx + rx * Math.cos(ang),
+        y: cy + ry * Math.sin(ang),
+      });
+    }
+    return hitTestSegments(pt, samplePts, true, thresholdSq);
+  }
+
+  return hitTestSegments(pt, el.points, false, thresholdSq);
 }
 
 function formatTimerClock(totalSec: number): string {
@@ -168,6 +299,7 @@ export default function SmartboardOverlay() {
     isCollapsed,
     activeTool,
     activeColorId,
+    activeColorHex,
     penWidth,
     dockZone,
     curtainOpen,
@@ -178,7 +310,7 @@ export default function SmartboardOverlay() {
     closeToolbar,
     setCollapsed,
     setActiveTool,
-    setActiveColorId,
+    setActiveColorHex,
     setPenWidth,
     setDockZone,
     toggleCurtain,
@@ -198,6 +330,28 @@ export default function SmartboardOverlay() {
   const [elements, setElements] = useState<DrawingElement[]>([]);
   const [draftElement, setDraftElement] = useState<DrawingElement | null>(null);
   const isPointerDrawingRef = useRef(false);
+
+  // Serbest Sürükle-Bırak (Hem Küçültülmüş Hap Hem Açık Konsol İçin)
+  const [floatingPos, setFloatingPos] = useState<Point2D | null>(null);
+  const dockBoxRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    active: boolean;
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    originLeft: number;
+    originTop: number;
+    moved: boolean;
+  }>({
+    active: false,
+    pointerId: -1,
+    startClientX: 0,
+    startClientY: 0,
+    originLeft: 0,
+    originTop: 0,
+    moved: false,
+  });
+  const suppressNextToggleClickRef = useRef(false);
 
   // Perde sürükleme referansı
   const isDraggingCurtainRef = useRef(false);
@@ -256,12 +410,85 @@ export default function SmartboardOverlay() {
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const [timerFinishedFlash, setTimerFinishedFlash] = useState<boolean>(false);
 
-  const selectedColorObj = useMemo(
-    () =>
-      IRAB_SEMANTIC_PALETTE.find((c) => c.id === activeColorId) ||
-      IRAB_SEMANTIC_PALETTE[0],
-    [activeColorId]
-  );
+  // Küçültülmüş hap açıldığında veya ekran boyutu değiştiğinde kutuyu ekran sınırlarına kilitle
+  useEffect(() => {
+    if (!isOpen || !floatingPos) return;
+    const clampIntoScreen = () => {
+      const box = dockBoxRef.current;
+      if (!box) return;
+      const rect = box.getBoundingClientRect();
+      const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+      const maxY = Math.max(8, window.innerHeight - rect.height - 8);
+      const clampedX = Math.min(maxX, Math.max(8, floatingPos.x));
+      const clampedY = Math.min(maxY, Math.max(8, floatingPos.y));
+      if (clampedX !== floatingPos.x || clampedY !== floatingPos.y) {
+        setFloatingPos({ x: Math.round(clampedX), y: Math.round(clampedY) });
+      }
+    };
+    const raf = requestAnimationFrame(clampIntoScreen);
+    window.addEventListener("resize", clampIntoScreen);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", clampIntoScreen);
+    };
+  }, [isOpen, isCollapsed, floatingPos]);
+
+  const handleDockDragPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const box = dockBoxRef.current;
+    if (!box) return;
+    const rect = box.getBoundingClientRect();
+    dragStateRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      originLeft: rect.left,
+      originTop: rect.top,
+      moved: false,
+    };
+    suppressNextToggleClickRef.current = false;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDockDragPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const st = dragStateRef.current;
+    if (!st.active || st.pointerId !== e.pointerId) return;
+    const dx = e.clientX - st.startClientX;
+    const dy = e.clientY - st.startClientY;
+    const dist = Math.hypot(dx, dy);
+    if (!st.moved && dist <= 6) return;
+
+    st.moved = true;
+    suppressNextToggleClickRef.current = true;
+    e.preventDefault();
+
+    const box = dockBoxRef.current;
+    const boxW = box ? box.offsetWidth : 220;
+    const boxH = box ? box.offsetHeight : 56;
+    const maxX = Math.max(8, window.innerWidth - boxW - 8);
+    const maxY = Math.max(8, window.innerHeight - boxH - 8);
+    const nextX = Math.min(maxX, Math.max(8, st.originLeft + dx));
+    const nextY = Math.min(maxY, Math.max(8, st.originTop + dy));
+    setFloatingPos({ x: Math.round(nextX), y: Math.round(nextY) });
+  };
+
+  const handleDockDragPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+    const st = dragStateRef.current;
+    if (!st.active || st.pointerId !== e.pointerId) return;
+    st.active = false;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   // Sınıf listesini ve numara aralığını localStorage'da güncelle
   const handleRosterTextChange = (val: string) => {
@@ -334,7 +561,7 @@ export default function SmartboardOverlay() {
     };
   }, []);
 
-  // ⏱️ Ders Zamanlayıcısı Tiki (setState yalnızca setTimeout callback içinde!)
+  // ⏱️ Ders Zamanlayıcısı Tiki
   useEffect(() => {
     if (!timerRunning) return;
     const handle = setTimeout(() => {
@@ -448,29 +675,37 @@ export default function SmartboardOverlay() {
       return;
     }
 
-    const isHighlighter = activeTool === "highlighter";
-    const strokeWidth = isHighlighter
-      ? 26
-      : activeTool === "arrow"
-      ? 4.5
-      : PEN_WIDTH_PX[penWidth];
+    const kind: DrawingElementKind =
+      activeTool === "highlighter"
+        ? "highlighter"
+        : activeTool === "line"
+        ? "line"
+        : activeTool === "arrow"
+        ? "arrow"
+        : activeTool === "circle"
+        ? "circle"
+        : activeTool === "square"
+        ? "square"
+        : activeTool === "rect"
+        ? "rect"
+        : activeTool === "triangle"
+        ? "triangle"
+        : "pen";
 
-    const colorHex = isHighlighter
-      ? selectedColorObj.highlighterHex
-      : selectedColorObj.hex;
+    const strokeWidth =
+      kind === "highlighter"
+        ? 26
+        : isTwoPointGeometricKind(kind)
+        ? Math.max(3.5, PEN_WIDTH_PX[penWidth])
+        : PEN_WIDTH_PX[penWidth];
 
     const newEl: DrawingElement = {
       id: `sb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      kind:
-        activeTool === "arrow"
-          ? "arrow"
-          : isHighlighter
-          ? "highlighter"
-          : "pen",
+      kind,
       colorId: activeColorId,
-      colorHex,
+      colorHex: activeColorHex,
       strokeWidth,
-      points: activeTool === "arrow" ? [pt, pt] : [pt],
+      points: isTwoPointGeometricKind(kind) ? [pt, pt] : [pt],
     };
 
     setDraftElement(newEl);
@@ -489,7 +724,7 @@ export default function SmartboardOverlay() {
 
     setDraftElement((prev) => {
       if (!prev) return null;
-      if (prev.kind === "arrow") {
+      if (isTwoPointGeometricKind(prev.kind)) {
         return {
           ...prev,
           points: [prev.points[0], pt],
@@ -518,11 +753,11 @@ export default function SmartboardOverlay() {
 
     if (draftElement) {
       const shouldKeep =
-        draftElement.kind !== "arrow" ||
+        !isTwoPointGeometricKind(draftElement.kind) ||
         (draftElement.points.length >= 2 &&
           (draftElement.points[1].x - draftElement.points[0].x) ** 2 +
             (draftElement.points[1].y - draftElement.points[0].y) ** 2 >
-            100);
+            64);
       if (shouldKeep) {
         setElements((prev) => [...prev, draftElement]);
       }
@@ -582,22 +817,24 @@ export default function SmartboardOverlay() {
     ? [...elements, draftElement]
     : elements;
 
-  const dockContainerClasses =
-    dockZone === "right"
-      ? "fixed right-2 sm:right-3 top-1/2 -translate-y-1/2 z-[58] max-h-[90vh] overflow-y-auto"
-      : dockZone === "left"
-      ? "fixed left-2 sm:left-3 top-1/2 -translate-y-1/2 z-[58] max-h-[90vh] overflow-y-auto"
-      : "fixed bottom-16 md:bottom-3 left-1/2 -translate-x-1/2 z-[58] max-w-[calc(100vw-1rem)]";
+  const isVerticalDock =
+    !floatingPos && (dockZone === "right" || dockZone === "left");
 
-  const isVerticalDock = dockZone === "right" || dockZone === "left";
+  const dockContainerClasses = floatingPos
+    ? "fixed z-[58] max-w-[calc(100vw-1rem)]"
+    : dockZone === "right"
+    ? "fixed right-2 sm:right-3 top-1/2 -translate-y-1/2 z-[58] max-w-[calc(100vw-1rem)]"
+    : dockZone === "left"
+    ? "fixed left-2 sm:left-3 top-1/2 -translate-y-1/2 z-[58] max-w-[calc(100vw-1rem)]"
+    : "fixed bottom-16 md:bottom-3 left-1/2 -translate-x-1/2 z-[58] max-w-[calc(100vw-1rem)]";
 
   return (
     <div className="print:hidden">
       {/* =================================================================== */}
-      {/* 1. DOM DOSTU BAĞIMSIZ SVG ÇİZİM VE İ'RAB FOSFORLU VURGULAMA KATMANI */}
+      {/* 1. DOM DOSTU BAĞIMSIZ SVG ÇİZİM VE GEOMETRİK ŞEKİL KATMANI          */}
       {/* =================================================================== */}
       <svg
-        aria-label="Akıllı Tahta Çizim ve İ'rab Boyama Katmanı"
+        aria-label="Akıllı Tahta Çizim ve Şekil Katmanı"
         onPointerDown={handleSvgPointerDown}
         onPointerMove={handleSvgPointerMove}
         onPointerUp={handleSvgPointerUp}
@@ -611,39 +848,111 @@ export default function SmartboardOverlay() {
         }`}
       >
         <defs>
-          {IRAB_SEMANTIC_PALETTE.map((col) => (
-            <marker
-              key={`arrow-marker-${col.id}`}
-              id={`sb-arrow-${col.id}`}
-              viewBox="0 0 12 12"
-              refX="9.5"
-              refY="6"
-              markerWidth="7"
-              markerHeight="7"
-              orient="auto-start-reverse"
-            >
-              <path d="M 1 1.5 L 10.5 6 L 1 10.5 z" fill={col.hex} />
-            </marker>
-          ))}
+          {allRenderedElements
+            .filter((el) => el.kind === "arrow")
+            .map((el) => (
+              <marker
+                key={`arrow-marker-${el.id}`}
+                id={`sb-arrow-${el.id}`}
+                viewBox="0 0 12 12"
+                refX="9.5"
+                refY="6"
+                markerWidth="6.5"
+                markerHeight="6.5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 1 1.5 L 10.5 6 L 1 10.5 z" fill={el.colorHex} />
+              </marker>
+            ))}
         </defs>
 
         {allRenderedElements.map((el) => {
-          if (el.kind === "arrow" && el.points.length >= 2) {
+          if (el.points.length >= 2 && isTwoPointGeometricKind(el.kind)) {
             const p0 = el.points[0];
             const p1 = el.points[1];
-            return (
-              <line
-                key={el.id}
-                x1={p0.x}
-                y1={p0.y}
-                x2={p1.x}
-                y2={p1.y}
-                stroke={el.colorHex}
-                strokeWidth={el.strokeWidth}
-                strokeLinecap="round"
-                markerEnd={`url(#sb-arrow-${el.colorId})`}
-              />
-            );
+
+            if (el.kind === "arrow") {
+              return (
+                <line
+                  key={el.id}
+                  x1={p0.x}
+                  y1={p0.y}
+                  x2={p1.x}
+                  y2={p1.y}
+                  stroke={el.colorHex}
+                  strokeWidth={el.strokeWidth}
+                  strokeLinecap="round"
+                  markerEnd={`url(#sb-arrow-${el.id})`}
+                />
+              );
+            }
+
+            if (el.kind === "line") {
+              return (
+                <line
+                  key={el.id}
+                  x1={p0.x}
+                  y1={p0.y}
+                  x2={p1.x}
+                  y2={p1.y}
+                  stroke={el.colorHex}
+                  strokeWidth={el.strokeWidth}
+                  strokeLinecap="round"
+                />
+              );
+            }
+
+            if (el.kind === "rect" || el.kind === "square") {
+              const b =
+                el.kind === "square"
+                  ? computeSquareBounds(p0, p1)
+                  : computeRectBounds(p0, p1);
+              return (
+                <rect
+                  key={el.id}
+                  x={b.x}
+                  y={b.y}
+                  width={Math.max(1, b.w)}
+                  height={Math.max(1, b.h)}
+                  rx={4}
+                  fill="none"
+                  stroke={el.colorHex}
+                  strokeWidth={el.strokeWidth}
+                  strokeLinejoin="round"
+                />
+              );
+            }
+
+            if (el.kind === "circle") {
+              const b = computeRectBounds(p0, p1);
+              return (
+                <ellipse
+                  key={el.id}
+                  cx={b.x + b.w / 2}
+                  cy={b.y + b.h / 2}
+                  rx={Math.max(1, b.w / 2)}
+                  ry={Math.max(1, b.h / 2)}
+                  fill="none"
+                  stroke={el.colorHex}
+                  strokeWidth={el.strokeWidth}
+                />
+              );
+            }
+
+            if (el.kind === "triangle") {
+              const b = computeRectBounds(p0, p1);
+              const ptsStr = `${(b.x + b.w / 2).toFixed(1)},${b.y.toFixed(1)} ${(b.x + b.w).toFixed(1)},${(b.y + b.h).toFixed(1)} ${b.x.toFixed(1)},${(b.y + b.h).toFixed(1)}`;
+              return (
+                <polygon
+                  key={el.id}
+                  points={ptsStr}
+                  fill="none"
+                  stroke={el.colorHex}
+                  strokeWidth={el.strokeWidth}
+                  strokeLinejoin="round"
+                />
+              );
+            }
           }
 
           const pathData = buildSmoothSvgPath(el.points);
@@ -659,7 +968,7 @@ export default function SmartboardOverlay() {
                 strokeWidth={el.strokeWidth}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={isDark ? 0.34 : 0.42}
+                opacity={isDark ? 0.36 : 0.42}
                 style={{
                   mixBlendMode: isDark ? "screen" : "multiply",
                 }}
@@ -770,7 +1079,6 @@ export default function SmartboardOverlay() {
             </div>
           </div>
 
-          {/* Perde Gövdesi Bilgi Deseni */}
           {curtainAxis === "vertical" && (
             <div className="flex-1 flex flex-col items-center justify-center p-4 text-center pointer-events-none opacity-80">
               <Blinds size={34} className="text-emerald-300 mb-2" />
@@ -827,7 +1135,6 @@ export default function SmartboardOverlay() {
             </button>
           </div>
 
-          {/* Büyük Dijital Saat Göstergesi */}
           <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] py-3 px-4 text-center">
             <div
               className={`text-4xl sm:text-5xl font-black tabular-nums tracking-wider ${
@@ -847,7 +1154,6 @@ export default function SmartboardOverlay() {
             )}
           </div>
 
-          {/* Hazır Süre Butonları */}
           <div className="grid grid-cols-3 gap-1.5">
             {[
               { sec: 30, label: "30 sn" },
@@ -886,7 +1192,6 @@ export default function SmartboardOverlay() {
             </button>
           </div>
 
-          {/* Başlat / Duraklat / Sıfırla */}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -970,7 +1275,6 @@ export default function SmartboardOverlay() {
             </div>
 
             <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
-              {/* Kaynak Mod Seçici */}
               <div className="grid grid-cols-2 gap-2 bg-[#F7EFE1] dark:bg-[var(--background)] p-1.5 rounded-2xl border border-[#E6D7BE] dark:border-[var(--border)]">
                 <button
                   type="button"
@@ -1007,7 +1311,6 @@ export default function SmartboardOverlay() {
                 </button>
               </div>
 
-              {/* Numara Aralığı veya İsim Listesi Girişi */}
               {pickerMode === "numbers" ? (
                 <div className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
@@ -1070,7 +1373,6 @@ export default function SmartboardOverlay() {
                 </div>
               )}
 
-              {/* Seçilen Büyük Öğrenci Kartı */}
               <div className="rounded-3xl bg-gradient-to-br from-[#087F5B] via-emerald-700 to-teal-800 text-white p-5 text-center shadow-lg border-2 border-emerald-400/50 min-h-[128px] flex flex-col items-center justify-center">
                 {isRollingPicker ? (
                   <>
@@ -1098,7 +1400,6 @@ export default function SmartboardOverlay() {
                 )}
               </div>
 
-              {/* Tekrarsız Seçim Kutusu ve Tur Sıfırlama */}
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] px-3.5 py-2.5">
                 <label className="flex items-center gap-2.5 cursor-pointer text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
                   <input
@@ -1135,7 +1436,6 @@ export default function SmartboardOverlay() {
                 )}
               </div>
 
-              {/* 🎲 Öğrenci Seç Ana Aksiyon Butonu */}
               <button
                 type="button"
                 disabled={isRollingPicker || fullCandidatePool.length === 0}
@@ -1151,82 +1451,234 @@ export default function SmartboardOverlay() {
       )}
 
       {/* =================================================================== */}
-      {/* 5. AKILLI TAHTA ERİŞİM BÖLGESİ YÜZEN KONSOLU (ALT / SAĞ / SOL)      */}
+      {/* 5. SERBEST SÜRÜKLENEBİLİR & ŞEKİL ÇİZİMLİ TAHTA KONSOLU             */}
       {/* =================================================================== */}
-      <div className={dockContainerClasses}>
+      <div
+        ref={dockBoxRef}
+        style={
+          floatingPos
+            ? {
+                left: `${floatingPos.x}px`,
+                top: `${floatingPos.y}px`,
+              }
+            : undefined
+        }
+        className={dockContainerClasses}
+      >
         {isCollapsed ? (
-          <div className="flex items-center gap-1.5 rounded-2xl bg-[#0F172A]/95 text-white border-2 border-emerald-400/70 p-1.5 shadow-2xl">
+          <div
+            onPointerDown={handleDockDragPointerDown}
+            onPointerMove={handleDockDragPointerMove}
+            onPointerUp={handleDockDragPointerUp}
+            onPointerCancel={handleDockDragPointerUp}
+            className="touch-none select-none cursor-grab active:cursor-grabbing flex items-center gap-1 rounded-2xl bg-[#0F172A]/95 text-white border-2 border-emerald-400/75 p-1 shadow-2xl"
+          >
+            <span
+              title="Kutuyu istediğiniz yere sürükleyin"
+              className="px-1.5 text-emerald-300 flex items-center justify-center shrink-0"
+            >
+              <GripHorizontal size={15} />
+            </span>
             <button
               type="button"
               onClick={() => {
+                if (suppressNextToggleClickRef.current) {
+                  suppressNextToggleClickRef.current = false;
+                  return;
+                }
                 playClick();
                 setCollapsed(false);
               }}
-              className="min-h-[48px] px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold flex items-center gap-2 cursor-pointer"
+              className="min-h-[44px] sm:min-h-[48px] px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
             >
-              <PenTool size={16} />
+              <PenTool size={15} />
               <span>🖍️ Tahta Araçlarını Aç</span>
-              <ChevronUp size={15} />
+              <ChevronUp size={14} />
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                if (suppressNextToggleClickRef.current) {
+                  suppressNextToggleClickRef.current = false;
+                  return;
+                }
                 playClick();
                 closeToolbar();
               }}
               aria-label="Tahta Konsolunu Kapat"
-              className="min-w-[48px] min-h-[48px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center cursor-pointer"
+              className="min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center cursor-pointer"
             >
-              <X size={17} />
+              <X size={16} />
             </button>
           </div>
         ) : (
           <div
-            className={`rounded-3xl bg-[#FDFBF7]/98 dark:bg-[#0F172A]/98 backdrop-blur-md border-2 border-[#087F5B] border-b-4 shadow-2xl p-2 sm:p-2.5 flex ${
-              isVerticalDock
-                ? "flex-col items-stretch gap-2 w-[230px]"
-                : "flex-col gap-2"
+            className={`rounded-2xl sm:rounded-3xl bg-[#FDFBF7]/98 dark:bg-[#0F172A]/98 backdrop-blur-md border-2 border-[#087F5B] border-b-4 shadow-2xl p-2 sm:p-2.5 flex flex-col gap-1.5 ${
+              isVerticalDock ? "w-[238px]" : "w-auto max-w-[calc(100vw-1rem)]"
             }`}
           >
-            {/* Üst Araç Butonları Satırı */}
+            {/* Üst Sürükleme Başlığı + Konum Kısayolları + Küçült / Kapat */}
+            <div className="flex items-center justify-between gap-2 pb-1 border-b border-dashed border-[#E2D3B8] dark:border-slate-700">
+              <div
+                onPointerDown={handleDockDragPointerDown}
+                onPointerMove={handleDockDragPointerMove}
+                onPointerUp={handleDockDragPointerUp}
+                onPointerCancel={handleDockDragPointerUp}
+                title="Tahta konsolunu ekranın istediğiniz köşesine sürükleyin"
+                className="touch-none select-none cursor-grab active:cursor-grabbing flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-lg hover:bg-[#F7EFE1] dark:hover:bg-slate-800 text-[11px] font-extrabold text-[var(--foreground)]"
+              >
+                <GripHorizontal
+                  size={15}
+                  className="text-[#087F5B] dark:text-emerald-400 shrink-0"
+                />
+                <span className="truncate">🖍️ Tahta Konsolu (Sürükle)</span>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                <div className="hidden md:flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-slate-800 p-0.5 rounded-lg border border-[#E6D7BE] dark:border-slate-700">
+                  {(
+                    [
+                      {
+                        id: "left" as DockReachZone,
+                        icon: PanelLeft,
+                        title: "Sol Kenara Yasla",
+                      },
+                      {
+                        id: "bottom" as DockReachZone,
+                        icon: PanelBottom,
+                        title: "Alt Ortaya Yasla",
+                      },
+                      {
+                        id: "right" as DockReachZone,
+                        icon: PanelRight,
+                        title: "Sağ Kenara Yasla",
+                      },
+                    ] as const
+                  ).map((z) => {
+                    const ZIcon = z.icon;
+                    const isPinnedHere = !floatingPos && dockZone === z.id;
+                    return (
+                      <button
+                        key={z.id}
+                        type="button"
+                        title={z.title}
+                        onClick={() => {
+                          playClick();
+                          setFloatingPos(null);
+                          setDockZone(z.id);
+                        }}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center cursor-pointer ${
+                          isPinnedHere
+                            ? "bg-[#087F5B] text-white"
+                            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        <ZIcon size={13} />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  title="Konsolu Küçült (Çizimler ekranda kalır)"
+                  onClick={() => {
+                    playClick();
+                    setActiveTool("navigate");
+                    setCollapsed(true);
+                  }}
+                  className="h-7 px-2 rounded-lg bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-0.5 cursor-pointer"
+                >
+                  <ChevronDown size={14} />
+                  <span className="hidden sm:inline text-[11px]">Küçült</span>
+                </button>
+
+                <button
+                  type="button"
+                  title="Tahta Araçlarını Kapat"
+                  onClick={() => {
+                    playClick();
+                    closeToolbar();
+                  }}
+                  className="h-7 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-extrabold flex items-center justify-center gap-0.5 cursor-pointer"
+                >
+                  <X size={13} />
+                  <span className="hidden sm:inline">Kapat</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 1. Satır: Çizim, Fosforlu ve Geometrik Şekil Araçları */}
             <div
-              className={`flex items-center gap-1.5 ${
-                isVerticalDock ? "flex-col items-stretch" : "flex-wrap justify-center"
+              className={`grid gap-1 ${
+                isVerticalDock
+                  ? "grid-cols-2"
+                  : "grid-cols-5 sm:flex sm:flex-wrap sm:items-center"
               }`}
             >
               {(
                 [
                   {
                     id: "navigate" as SmartboardTool,
-                    label: "Gezinme",
+                    label: "Gezin",
                     title:
-                      "👆 Etkileşim / Gezinme Modu (Çizimler kalır, alttaki kelimelere ve seslere tıklanabilir)",
+                      "👆 Etkileşim / Gezinme Modu (Alttaki kelimelere ve seslere tıklanabilir)",
                     icon: MousePointer2,
                   },
                   {
                     id: "pen" as SmartboardTool,
                     label: "Kalem",
-                    title: "🖊️ İnce Tahta Kalemi",
+                    title: "🖊️ Serbest Tahta Kalemi",
                     icon: PenTool,
                   },
                   {
                     id: "highlighter" as SmartboardTool,
-                    label: "Fosforlu İ'rab",
+                    label: "Fosforlu",
                     title:
-                      "🖍️ Fosforlu İ'rab Vurgulayıcı (Harekeleri kapatmaz)",
+                      "🖍️ Fosforlu Vurgulayıcı (Harekeleri kapatmaz)",
                     icon: Highlighter,
                   },
                   {
+                    id: "line" as SmartboardTool,
+                    label: "Çizgi",
+                    title: "╱ Düz Çizgi (Alt çizme ve ayırma)",
+                    icon: Minus,
+                  },
+                  {
                     id: "arrow" as SmartboardTool,
-                    label: "Bağlantı Oku",
-                    title:
-                      "↗️ Bağlantı Oku & Çizgi Aracı (Zamir mercii ve sıfat-mevsûf bağlantıları için)",
+                    label: "Ok",
+                    title: "↗ Bağlantı Oku (Zamir ve öge bağlantıları)",
                     icon: MoveUpRight,
+                  },
+                  {
+                    id: "rect" as SmartboardTool,
+                    label: "Dikdörtgen",
+                    title: "▭ Dikdörtgen (İçi şeffaf kelime/terkip çerçevesi)",
+                    icon: RectangleHorizontal,
+                  },
+                  {
+                    id: "square" as SmartboardTool,
+                    label: "Kare",
+                    title: "⬜ Eşit Kenarlı Kare Kutu (İçi şeffaf)",
+                    icon: Square,
+                  },
+                  {
+                    id: "circle" as SmartboardTool,
+                    label: "Daire",
+                    title: "◯ Daire / Elips (İçi şeffaf vurgu halkası)",
+                    icon: Circle,
+                  },
+                  {
+                    id: "triangle" as SmartboardTool,
+                    label: "Üçgen",
+                    title: "△ Üçgen Şema Aracı (İçi şeffaf)",
+                    icon: Triangle,
                   },
                   {
                     id: "eraser" as SmartboardTool,
                     label: "Silgi",
-                    title: "🧽 Silgi (Dokunduğunuz çizgiyi veya oku siler)",
+                    title: "🧽 Silgi (Dokunduğunuz çizgi veya şekli siler)",
                     icon: Eraser,
                   },
                 ] as const
@@ -1242,249 +1694,200 @@ export default function SmartboardOverlay() {
                       playClick();
                       setActiveTool(tool.id);
                     }}
-                    className={`min-h-[48px] px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                    className={`min-h-[38px] sm:min-h-[40px] px-2 sm:px-2.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                       active
                         ? tool.id === "navigate"
-                          ? "bg-[#087F5B] border-[#065F46] text-white shadow-sm"
-                          : "bg-[#6741D9] border-[#5230B5] text-white shadow-sm"
+                          ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
+                          : "bg-[#6741D9] border-[#5230B5] text-white shadow-xs"
                         : "bg-white dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
                     }`}
                   >
-                    <Icon size={16} className="shrink-0" />
-                    <span>{tool.label}</span>
+                    <Icon size={14} className="shrink-0" />
+                    <span className="hidden sm:inline">{tool.label}</span>
                   </button>
                 );
               })}
-
-              {/* Geri Al & Temizle */}
-              <button
-                type="button"
-                disabled={elements.length === 0}
-                onClick={handleUndo}
-                title="↩️ Son Çizimi Geri Al (Undo)"
-                className="min-h-[48px] min-w-[48px] px-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 disabled:opacity-40 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <Undo2 size={16} />
-                <span className="hidden xl:inline">Geri Al</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={elements.length === 0}
-                onClick={handleClearAll}
-                title="🗑️ Tüm Çizimleri Temizle"
-                className="min-h-[48px] min-w-[48px] px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 disabled:opacity-40 text-xs font-extrabold text-rose-700 dark:text-rose-300 flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <Trash2 size={16} />
-                <span className="hidden xl:inline">Temizle</span>
-              </button>
-
-              {/* Ayırıcı */}
-              {!isVerticalDock && (
-                <span
-                  aria-hidden="true"
-                  className="hidden sm:inline-block w-px h-7 bg-[#E6D7BE] dark:bg-slate-700 mx-0.5"
-                />
-              )}
-
-              {/* 🎭 Tahta Perdesi, 🎡 Kura Çarkı, ⏱️ Zamanlayıcı */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleCurtain();
-                }}
-                title="🎭 Sürüklenebilir Tahta Perdesi (Ekranın altını veya yanını kapatır)"
-                className={`min-h-[48px] px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                  curtainOpen
-                    ? "bg-amber-500 border-amber-700 text-slate-950 shadow-sm"
-                    : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-amber-500"
-                }`}
-              >
-                <Blinds size={16} className="shrink-0" />
-                <span>Perde</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  togglePicker();
-                }}
-                title="🎡 Sınıf Kura Çarkı (Rastgele Öğrenci Seçici)"
-                className={`min-h-[48px] px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                  pickerOpen
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-sm"
-                    : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#6741D9]"
-                }`}
-              >
-                <Dices size={16} className="shrink-0" />
-                <span>Kura</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleTimer();
-                }}
-                title="⏱️ Ders Zamanlayıcısı ve Kronometre"
-                className={`min-h-[48px] px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                  timerOpen
-                    ? "bg-[#087F5B] border-[#065F46] text-white shadow-sm"
-                    : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
-                }`}
-              >
-                <Timer size={16} className="shrink-0" />
-                <span>
-                  {timerRunning ? formatTimerClock(timerSeconds) : "Sayaç"}
-                </span>
-              </button>
             </div>
 
-            {/* Alt Satır: 5 Semantik İ'rab Renk Paleti + Kalem Kalınlığı + Tahta Konumu + Küçült/Kapat */}
+            {/* 2. Satır: 5x2 Görsel Renk Paleti + 🎨 Özel Renk + Kalınlık + Geri Al/Temizle + Perde/Kura/Sayaç */}
             <div
-              className={`flex items-center justify-between gap-2 pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-slate-700 ${
+              className={`flex items-center justify-between gap-2 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-slate-700 ${
                 isVerticalDock ? "flex-col items-stretch" : "flex-wrap"
               }`}
             >
-              {/* Semantik İ'rab Renk Uçları */}
-              <div
-                className={`flex items-center gap-1 ${
-                  isVerticalDock ? "flex-col items-stretch" : "flex-wrap"
-                }`}
-              >
-                {IRAB_SEMANTIC_PALETTE.map((col) => {
-                  const isSelected = activeColorId === col.id;
-                  return (
-                    <button
-                      key={col.id}
-                      type="button"
-                      title={`${col.badgeDot} ${col.pedagogicalRole}`}
-                      onClick={() => {
-                        playClick();
-                        setActiveColorId(col.id);
-                        if (
-                          activeTool === "navigate" ||
-                          activeTool === "eraser"
-                        ) {
-                          setActiveTool("highlighter");
-                        }
-                      }}
-                      className={`min-h-[48px] px-2.5 rounded-xl border-2 text-[11px] font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                        isSelected
-                          ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 border-emerald-500 shadow-sm"
-                          : "bg-white dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)]"
-                      }`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        style={{ backgroundColor: col.hex }}
-                        className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/15"
-                      />
-                      <span>{col.pedagogicalRole}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Kalem Kalınlığı (Kalem seçiliyse) + Erişim Bölgesi Konumu + Küçült/Kapat */}
-              <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                {activeTool === "pen" && (
-                  <div className="flex items-center gap-1 bg-[#F7EFE1] dark:bg-slate-800 p-1 rounded-xl border border-[#E6D7BE] dark:border-slate-700">
-                    {(
-                      [
-                        { id: "thin" as PenWidthPreset, label: "İnce" },
-                        { id: "medium" as PenWidthPreset, label: "Orta" },
-                        { id: "thick" as PenWidthPreset, label: "Kalın" },
-                      ] as const
-                    ).map((w) => (
-                      <button
-                        key={w.id}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setPenWidth(w.id);
-                        }}
-                        className={`min-h-[40px] px-2.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
-                          penWidth === w.id
-                            ? "bg-[#6741D9] text-white"
-                            : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                        }`}
-                      >
-                        {w.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Akıllı Tahta Erişim Bölgesi Seçici (Sol / Alt / Sağ) */}
-                <div className="hidden md:flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-slate-800 p-1 rounded-xl border border-[#E6D7BE] dark:border-slate-700">
-                  {(
-                    [
-                      {
-                        id: "left" as DockReachZone,
-                        icon: PanelLeft,
-                        title: "Konsolu Sol Kenara Yasla",
-                      },
-                      {
-                        id: "bottom" as DockReachZone,
-                        icon: PanelBottom,
-                        title: "Konsolu Alt Ortaya Yasla",
-                      },
-                      {
-                        id: "right" as DockReachZone,
-                        icon: PanelRight,
-                        title: "Konsolu Sağ Kenara Yasla",
-                      },
-                    ] as const
-                  ).map((z) => {
-                    const ZIcon = z.icon;
+              {/* 5x2 Yuvarlak Görsel Renk Paleti + 🎨 Özel Renk Seçici */}
+              <div className="flex items-center gap-2">
+                <div className="grid grid-cols-5 gap-1.5 bg-[#F7EFE1]/80 dark:bg-slate-800/90 p-1.5 rounded-xl border border-[#E6D7BE] dark:border-slate-700">
+                  {BOARD_COLOR_SWATCHES.map((sw) => {
+                    const isSelected =
+                      activeColorHex.toUpperCase() === sw.hex.toUpperCase();
                     return (
                       <button
-                        key={z.id}
+                        key={sw.hex}
                         type="button"
-                        title={z.title}
+                        title={`Renk: ${sw.label}`}
+                        aria-label={`Renk: ${sw.label}`}
                         onClick={() => {
                           playClick();
-                          setDockZone(z.id);
+                          setActiveColorHex(sw.hex);
+                          if (
+                            activeTool === "navigate" ||
+                            activeTool === "eraser"
+                          ) {
+                            setActiveTool("pen");
+                          }
                         }}
-                        className={`min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center cursor-pointer ${
-                          dockZone === z.id
-                            ? "bg-[#087F5B] text-white"
-                            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                        style={{ backgroundColor: sw.hex }}
+                        className={`w-6 h-6 rounded-full cursor-pointer transition-transform ${
+                          sw.hex === "#FFFFFF"
+                            ? "border-2 border-slate-400"
+                            : "border border-black/20"
+                        } ${
+                          isSelected
+                            ? "ring-2 ring-offset-1 ring-[#6741D9] scale-110"
+                            : "hover:scale-105"
                         }`}
-                      >
-                        <ZIcon size={15} />
-                      </button>
+                      />
                     );
                   })}
                 </div>
 
+                {/* 🎨 Özel Renk Seçici (<input type="color">) */}
+                <label
+                  title="🎨 Özel Renk Seçici"
+                  className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 via-amber-400 to-indigo-600 p-0.5 flex items-center justify-center cursor-pointer shadow-2xs shrink-0"
+                >
+                  <span className="w-full h-full rounded-[10px] bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-[var(--foreground)]">
+                    <Palette size={15} />
+                  </span>
+                  <input
+                    type="color"
+                    value={activeColorHex}
+                    onChange={(e) => {
+                      setActiveColorHex(e.target.value);
+                      if (
+                        activeTool === "navigate" ||
+                        activeTool === "eraser"
+                      ) {
+                        setActiveTool("pen");
+                      }
+                    }}
+                    aria-label="Özel Renk Seçici"
+                    className="sr-only"
+                  />
+                </label>
+
+                {/* Çizgi / Kalem Kalınlığı */}
+                {activeTool !== "navigate" &&
+                  activeTool !== "eraser" &&
+                  activeTool !== "highlighter" && (
+                    <div className="flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-slate-800 p-1 rounded-xl border border-[#E6D7BE] dark:border-slate-700">
+                      {(
+                        [
+                          { id: "thin" as PenWidthPreset, label: "İnce" },
+                          { id: "medium" as PenWidthPreset, label: "Orta" },
+                          { id: "thick" as PenWidthPreset, label: "Kalın" },
+                        ] as const
+                      ).map((w) => (
+                        <button
+                          key={w.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setPenWidth(w.id);
+                          }}
+                          className={`h-7 px-2 rounded-lg text-[10px] font-extrabold cursor-pointer ${
+                            penWidth === w.id
+                              ? "bg-[#6741D9] text-white"
+                              : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {w.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+              </div>
+
+              {/* Geri Al / Temizle + Sınıf Araçları (Perde, Kura, Sayaç) */}
+              <div
+                className={`flex items-center gap-1 flex-wrap ${
+                  isVerticalDock ? "justify-between" : "justify-end"
+                }`}
+              >
                 <button
                   type="button"
-                  title="Konsolu Küçült (Çizimler ekranda kalır)"
-                  onClick={() => {
-                    playClick();
-                    setActiveTool("navigate");
-                    setCollapsed(true);
-                  }}
-                  className="min-h-[48px] min-w-[48px] px-2.5 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1 cursor-pointer"
+                  disabled={elements.length === 0}
+                  onClick={handleUndo}
+                  title="↩️ Son Çizimi Geri Al"
+                  className="h-9 px-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 disabled:opacity-40 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <ChevronDown size={16} />
+                  <Undo2 size={14} />
+                  <span className="hidden xl:inline text-[11px]">Geri</span>
                 </button>
 
                 <button
                   type="button"
-                  title="Tahta Araçlarını Kapat"
+                  disabled={elements.length === 0}
+                  onClick={handleClearAll}
+                  title="🗑️ Tüm Çizimleri Temizle"
+                  className="h-9 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 disabled:opacity-40 text-xs font-extrabold text-rose-700 dark:text-rose-300 flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span className="hidden xl:inline text-[11px]">Temizle</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => {
                     playClick();
-                    closeToolbar();
+                    toggleCurtain();
                   }}
-                  className="min-h-[48px] px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold flex items-center justify-center gap-1 cursor-pointer"
+                  title="🎭 Sürüklenebilir Tahta Perdesi"
+                  className={`h-9 px-2.5 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                    curtainOpen
+                      ? "bg-amber-500 border-amber-700 text-slate-950 shadow-xs"
+                      : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-amber-500"
+                  }`}
                 >
-                  <X size={16} />
-                  <span>Kapat</span>
+                  <Blinds size={14} className="shrink-0" />
+                  <span>Perde</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    togglePicker();
+                  }}
+                  title="🎡 Sınıf Kura Çarkı (Öğrenci Seçici)"
+                  className={`h-9 px-2.5 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                    pickerOpen
+                      ? "bg-[#6741D9] border-[#5230B5] text-white shadow-xs"
+                      : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#6741D9]"
+                  }`}
+                >
+                  <Dices size={14} className="shrink-0" />
+                  <span>Kura</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    toggleTimer();
+                  }}
+                  title="⏱️ Ders Zamanlayıcısı ve Kronometre"
+                  className={`h-9 px-2.5 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                    timerOpen
+                      ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
+                      : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
+                  }`}
+                >
+                  <Timer size={14} className="shrink-0" />
+                  <span>
+                    {timerRunning ? formatTimerClock(timerSeconds) : "Sayaç"}
+                  </span>
                 </button>
               </div>
             </div>

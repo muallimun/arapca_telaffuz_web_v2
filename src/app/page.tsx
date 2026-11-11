@@ -256,9 +256,11 @@ export default function HomePage() {
         id: "alistirmalar",
         title: "Kelime Alıştırmaları",
         arabicBadge: "التَّدْرِيبَات",
-        subtitle: "Kartlar, çoktan seçmeli test, eşleştirme, boşluk doldurma ve görsel-sesli pratik",
-        meta: "6 Farklı Modül • Görsel & Sesli",
-        tooltip: "Kelime kartları, test, eşleştirme, boşluk doldurma, cümle sıralama ve görsel-sesli eşleştirme",
+        subtitle:
+          "Kartlar, test, i'rab boyama, hata avcısı, kör dikte ve görsel-sesli 14 interaktif oyun",
+        meta: "14 Farklı Modül • Görsel & Sesli",
+        tooltip:
+          "14 farklı interaktif kelime, cümle, i'rab boyama, diyalog ve okuma oyunu",
         icon: Gamepad2,
         targetHref: "/alistirmalar",
         accentColor: "emerald",
@@ -978,29 +980,32 @@ export default function HomePage() {
                     data-tooltip="Kelimeyi sesli dinlemek için tıklayın"
                     className="flex flex-col justify-between p-2.5 rounded-xl bg-[#F7EFE1]/65 dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-left gap-1.5 transition-colors cursor-pointer"
                   >
-                    {/* Üst Satır: Sol tarafta hoparlör + yanında ✨ Yeni / ⏰ Tekrar rozeti; sağ tarafta belirgin Arapça kelime */}
+                    {/* Üst Satır: Sol tarafta hoparlör, sağ tarafta durum rozeti */}
                     <div className="flex items-center justify-between gap-1 w-full">
-                      <div className="flex items-center gap-1 shrink-0">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
                         <Volume2
-                          size={13}
+                          size={12}
                           className="text-[#065F46] dark:text-emerald-400 shrink-0"
                         />
-                        <span
-                          className={`inline-block whitespace-nowrap text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${badgeCls}`}
-                        >
-                          {compactStatusText}
-                        </span>
-                      </div>
+                      </span>
                       <span
-                        dir="rtl"
-                        className="arabic font-arabic text-xl font-bold text-emerald-950 dark:text-emerald-300 leading-none truncate"
+                        className={`inline-block whitespace-nowrap text-[9px] font-extrabold px-1.5 py-0.5 rounded border shrink-0 ${badgeCls}`}
                       >
-                        {displayArabic(ar)}
+                        {compactStatusText}
                       </span>
                     </div>
 
+                    {/* Orta Satır: Tam genişlikte harekeli Arapça kelime (ASLA truncate uygulanmaz!) */}
+                    <div
+                      dir="rtl"
+                      lang="ar"
+                      className="w-full arabic font-arabic text-xl sm:text-2xl font-bold text-emerald-950 dark:text-emerald-300 leading-[1.9] text-right break-words"
+                    >
+                      {displayArabic(ar)}
+                    </div>
+
                     {/* Alt Satır: Türkçe anlam */}
-                    <span className="text-xs text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug font-medium">
+                    <span className="w-full text-xs text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug font-medium">
                       {dw.item.anlam_tr}
                     </span>
                   </button>

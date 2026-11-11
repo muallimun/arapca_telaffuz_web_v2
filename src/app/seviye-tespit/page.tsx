@@ -410,6 +410,9 @@ function AssessmentPrintModal({
   const [questionCount, setQuestionCount] = useState<10 | 15 | 20>(10);
   const [bookletMode, setBookletMode] = useState<"A" | "B" | "AB">("AB");
   const [printScope, setPrintScope] = useState<"both" | "student" | "key">("both");
+  const [printLayoutMode, setPrintLayoutMode] = useState<
+    "single-tight" | "two-column"
+  >("single-tight");
   const [institutionTitle, setInstitutionTitle] = useState<string>(
     "Arapça Ölçme, Konu Tarama ve Değerlendirme Yaprak Testi"
   );
@@ -452,6 +455,9 @@ function AssessmentPrintModal({
           ? "Seviye: A1–B2 Genel Tarama"
           : `Seviye: CEFR ${selectedLevel}`;
 
+      const getVisibleOptionLength = (rawText: string): number =>
+        rawText.replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim().length;
+
       const preparedBooklets = bookletsToRender.map((bk) => {
         const bkRng = mulberry32(
           hashStringSeed(`${baseSeed}_booklet_${bk}`)
@@ -476,64 +482,107 @@ function AssessmentPrintModal({
         return { booklet: bk, items };
       });
 
+      const renderQuestionCardHtml = ({
+        num,
+        q,
+        opts,
+      }: {
+        num: number;
+        q: AssessmentQuestion;
+        opts: ReturnType<typeof prepareQuestionOptions>;
+      }) => {
+        const normalizedStemAr = q.soru_metni_ar
+          .replace(/\r?\n+/g, "   •   ")
+          .trim();
+        const formattedAr = escapeHtml(normalizedStemAr).replace(
+          /_{3,}/g,
+          '<span class="blank-slot">..........</span>'
+        );
+
+        const maxOptVisibleLen = Math.max(
+          ...opts.map((o) => getVisibleOptionLength(o.metin))
+        );
+        const gridColsClass =
+          printLayoutMode === "two-column"
+            ? maxOptVisibleLen <= 10
+              ? "opts-grid-4"
+              : maxOptVisibleLen <= 26
+              ? "opts-grid-2"
+              : "opts-grid-1"
+            : maxOptVisibleLen <= 22
+            ? "opts-grid-4"
+            : "opts-grid-2";
+
+        const isArOpts = q.secenek_dili === "ar";
+        const optsHtml = opts
+          .map((o) => {
+            return `<div class="opt-cell ${isArOpts ? "opt-ar" : "opt-tr"}">
+              <span class="opt-letter">${escapeHtml(o.displayHarf)})</span>
+              <span class="${isArOpts ? "ar-text opt-ar-span" : "tr-text"}" ${
+              isArOpts ? 'dir="rtl" lang="ar"' : 'dir="ltr" lang="tr"'
+            }>${escapeHtml(o.metin)}</span>
+            </div>`;
+          })
+          .join("");
+
+        return `<div class="q-block">
+          <div class="q-head">
+            <span class="q-num">${num}.</span>
+            <span class="q-prompt">${escapeHtml(q.soru_yonergesi_tr)}</span>
+            <span class="q-meta">[${escapeHtml(q.seviye)} · ${escapeHtml(q.ust_konu)}]</span>
+          </div>
+          ${
+            q.soru_baglam_tr
+              ? `<div class="q-context">Bağlam: ${escapeHtml(q.soru_baglam_tr)}</div>`
+              : ""
+          }
+          <div class="q-arabic ar-text" dir="rtl" lang="ar">${formattedAr}</div>
+          <div class="opts-grid ${gridColsClass} ${isArOpts ? "opts-grid-ar" : "opts-grid-tr"}">
+            ${optsHtml}
+          </div>
+        </div>`;
+      };
+
       const studentPagesHtml =
         printScope === "key"
           ? ""
           : preparedBooklets
-              .map(({ booklet, items }, bIdx) => {
-                const pageBreakCls =
-                  bIdx > 0 || printScope === "both" ? "page-break-after" : "";
-                const questionsHtml = items
-                  .map(({ num, q, opts }) => {
-                    const formattedAr = escapeHtml(q.soru_metni_ar).replace(
-                      /_{3,}/g,
-                      '<span class="blank-slot">..........</span>'
-                    );
-                    const optsHtml = opts
-                      .map((o) => {
-                        const isAr = q.secenek_dili === "ar";
-                        return `<div class="opt-cell ${isAr ? "opt-ar" : "opt-tr"}">
-                          <span class="opt-letter">${escapeHtml(o.displayHarf)})</span>
-                          <span class="${isAr ? "ar-text" : "tr-text"}" dir="${isAr ? "rtl" : "ltr"}">${escapeHtml(o.metin)}</span>
-                        </div>`;
-                      })
-                      .join("");
-
-                    return `<div class="q-block">
-                      <div class="q-head">
-                        <span class="q-num">${num}.</span>
-                        <span class="q-prompt">${escapeHtml(q.soru_yonergesi_tr)}</span>
-                        <span class="q-meta">[${escapeHtml(q.seviye)} · ${escapeHtml(q.ust_konu)}]</span>
-                      </div>
-                      ${
-                        q.soru_baglam_tr
-                          ? `<div class="q-context">Bağlam: ${escapeHtml(q.soru_baglam_tr)}</div>`
-                          : ""
-                      }
-                      <div class="q-arabic ar-text" dir="rtl" lang="ar">${formattedAr}</div>
-                      <div class="opts-grid ${q.secenek_dili === "ar" ? "opts-grid-ar" : "opts-grid-tr"}">
-                        ${optsHtml}
-                      </div>
-                    </div>`;
-                  })
-                  .join("");
-
-                return `<section class="sheet-section ${pageBreakCls}">
-                  <header class="sheet-header">
-                    <div>
-                      <div class="sheet-title">${escapeHtml(institutionTitle)}</div>
-                      <div class="sheet-sub">${escapeHtml(scopeSubtitle)} • Toplam ${items.length} Soru</div>
+              .map(({ booklet, items }) => {
+                let questionsBodyHtml = "";
+                if (printLayoutMode === "two-column" && items.length >= 2) {
+                  const splitIdx = Math.ceil(items.length / 2);
+                  const leftItems = items.slice(0, splitIdx);
+                  const rightItems = items.slice(splitIdx);
+                  questionsBodyHtml = `<div class="two-col-questions">
+                    <div class="col-pane col-pane-left">
+                      ${leftItems.map(renderQuestionCardHtml).join("")}
                     </div>
-                    <div class="booklet-badge">${booklet} KİTAPÇIĞI</div>
+                    <div class="col-pane col-pane-right">
+                      ${rightItems.map(renderQuestionCardHtml).join("")}
+                    </div>
+                  </div>`;
+                } else {
+                  questionsBodyHtml = `<div class="questions-container">
+                    ${items.map(renderQuestionCardHtml).join("")}
+                  </div>`;
+                }
+
+                return `<section class="sheet-section booklet-sheet">
+                  <header class="compact-sheet-top">
+                    <div class="sheet-header-row">
+                      <div class="sheet-title-group">
+                        <span class="sheet-title">${escapeHtml(institutionTitle)}</span>
+                        <span class="sheet-sub">${escapeHtml(scopeSubtitle)} • ${items.length} Soru</span>
+                      </div>
+                      <div class="booklet-badge">${booklet} KİTAPÇIĞI</div>
+                    </div>
+                    <div class="student-info-bar">
+                      <span><strong>Adı Soyadı:</strong> ..............................................</span>
+                      <span><strong>Sınıf / No:</strong> ......................</span>
+                      <span><strong>Puan:</strong> ........ / 100</span>
+                    </div>
                   </header>
-                  <div class="student-info-bar">
-                    <div>Adı Soyadı: ....................................................</div>
-                    <div>Sınıf / No: ..........................</div>
-                    <div>Puan: .......... / 100</div>
-                  </div>
-                  <div class="questions-container">
-                    ${questionsHtml}
-                  </div>
+                  ${questionsBodyHtml}
                 </section>`;
               })
               .join("");
@@ -541,13 +590,15 @@ function AssessmentPrintModal({
       const answerKeyHtml =
         printScope === "student"
           ? ""
-          : `<section class="sheet-section key-section">
-              <header class="sheet-header">
-                <div>
-                  <div class="sheet-title">Öğretmen Gerekçeli Cevap Anahtarı</div>
-                  <div class="sheet-sub">${escapeHtml(scopeSubtitle)} • ${preparedBooklets.map((b) => `${b.booklet} Kitapçığı`).join(" & ")}</div>
+          : `<section class="sheet-section answer-key-sheet">
+              <header class="compact-sheet-top">
+                <div class="sheet-header-row">
+                  <div class="sheet-title-group">
+                    <span class="sheet-title">Öğretmen Gerekçeli Cevap Anahtarı</span>
+                    <span class="sheet-sub">${escapeHtml(scopeSubtitle)} • ${preparedBooklets.map((b) => `${b.booklet} Kitapçığı`).join(" & ")}</span>
+                  </div>
+                  <div class="booklet-badge key-badge">ÇÖZÜMLÜ ANAHTAR</div>
                 </div>
-                <div class="booklet-badge key-badge">ÇÖZÜMLÜ ANAHTAR</div>
               </header>
 
               <div class="quick-key-strips">
@@ -589,176 +640,268 @@ function AssessmentPrintModal({
 <head>
   <meta charset="UTF-8" />
   <title>${escapeHtml(institutionTitle)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Naskh+Arabic:wght@500;700&display=swap" />
   <style>
     @font-face {
       font-family: "ArakomPrint";
       src: url("/fonts/Arakom.ttf") format("truetype");
       font-weight: normal;
       font-style: normal;
-    }
-    @font-face {
-      font-family: "WinSoftPrint";
-      src: url("/fonts/WinSoftPro-Med.otf") format("opentype");
-      font-weight: 500;
-      font-style: normal;
+      font-display: swap;
     }
     @page {
       size: A4 portrait;
-      margin: 11mm 12mm;
+      margin: 7mm 9mm;
     }
-    * { box-sizing: border-box; }
-    body {
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
       margin: 0;
       padding: 0;
-      font-family: "WinSoftPrint", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
       color: #111827;
-      font-size: 10.5pt;
-      line-height: 1.4;
+      font-size: 9pt;
+      line-height: 1.3;
       background: #fff;
     }
+    .tr-text,
+    .sheet-title,
+    .sheet-sub,
+    .student-info-bar,
+    .q-head,
+    .q-context,
+    .opt-tr,
+    .opt-letter,
+    .quick-strip,
+    .sol-card {
+      font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    }
+    [lang="ar"],
     .ar-text {
-      font-family: "ArakomPrint", "Traditional Arabic", "Amiri", serif;
-      font-size: 14.5pt;
-      line-height: 1.95;
+      font-family: "Noto Naskh Arabic", "ArakomPrint", "Amiri", serif;
     }
-    .page-break-after {
-      page-break-after: always;
-      break-after: page;
+    @media print {
+      html, body, .print-root {
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
     }
-    .sheet-header {
+    .sheet-section {
+      display: block;
+      width: 100%;
+    }
+    .booklet-sheet + .booklet-sheet,
+    .booklet-sheet ~ .answer-key-sheet {
+      break-before: page !important;
+      page-break-before: always !important;
+    }
+    .compact-sheet-top {
+      border: 1.5px solid #065F46;
+      border-radius: 6px;
+      padding: 3.5px 8px;
+      margin-bottom: 2.5mm;
+      background: #fdfbf7;
+    }
+    .sheet-header-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 2px solid #065F46;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .sheet-title-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
     }
     .sheet-title {
-      font-size: 13pt;
+      font-size: 10.2pt;
       font-weight: 800;
       color: #065F46;
+      line-height: 1.2;
     }
     .sheet-sub {
-      font-size: 9pt;
+      font-size: 8pt;
+      font-weight: 600;
       color: #4b5563;
-      margin-top: 2px;
+      line-height: 1.2;
     }
     .booklet-badge {
-      padding: 4px 10px;
-      border: 2px solid #065F46;
-      border-radius: 8px;
+      padding: 1.5px 8px;
+      border: 1.5px solid #065F46;
+      border-radius: 5px;
       font-weight: 800;
-      font-size: 10pt;
+      font-size: 8.6pt;
       color: #065F46;
+      background: #ecfdf5;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .key-badge {
       border-color: #6741D9;
       color: #6741D9;
+      background: #f3f0ff;
     }
     .student-info-bar {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 6px 10px;
-      border: 1px dashed #9ca3af;
-      border-radius: 6px;
-      font-size: 9.5pt;
-      margin-bottom: 10px;
-      background: #f9fafb;
+      gap: 10px;
+      padding-top: 2.5px;
+      margin-top: 2.5px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 8.2pt;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+    .questions-container {
+      display: block;
+      width: 100%;
+    }
+    .two-col-questions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0 5mm;
+      align-items: start;
+    }
+    .col-pane-left {
+      padding-right: 2.5mm;
+      border-right: 1px solid #cbd5e1;
+    }
+    .col-pane-right {
+      padding-left: 0.5mm;
     }
     .q-block {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 7px 10px;
-      margin-bottom: 8px;
+      border: 1px solid #dfe5ec;
+      border-radius: 6px;
+      padding: 3.5px 7px;
+      margin-bottom: 3px;
       break-inside: avoid;
       page-break-inside: avoid;
+      background: #ffffff;
     }
     .q-head {
       display: flex;
       align-items: baseline;
-      gap: 6px;
-      font-size: 9.5pt;
+      gap: 4px;
+      font-size: 8.6pt;
+      line-height: 1.22;
+      margin-bottom: 1px;
     }
     .q-num {
       font-weight: 800;
       color: #065F46;
+      flex-shrink: 0;
     }
     .q-prompt {
       font-weight: 700;
+      color: #111827;
       flex: 1;
     }
     .q-meta {
-      font-size: 8pt;
+      font-size: 7.2pt;
+      font-weight: 600;
       color: #6b7280;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .q-context {
-      font-size: 8.5pt;
+      font-size: 7.8pt;
       color: #4b5563;
       font-style: italic;
-      margin-top: 2px;
+      line-height: 1.2;
+      margin: 0.5px 0 1px 0;
     }
     .q-arabic {
-      margin: 4px 0 6px 0;
-      padding: 4px 8px;
+      font-size: 11.8pt;
+      line-height: 1.48;
+      margin: 1px 0 2.5px 0;
+      padding: 2px 6px;
       background: #fdfbf7;
-      border-right: 3px solid #087F5B;
+      border-right: 2.5px solid #087F5B;
       border-radius: 4px;
       text-align: right;
     }
     .blank-slot {
-      font-family: sans-serif;
+      font-family: "Inter", sans-serif;
       font-weight: 700;
       color: #065F46;
-      padding: 0 4px;
+      padding: 0 3px;
     }
     .opts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px 12px;
+    }
+    .opts-grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2px 5px;
+    }
+    .opts-grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 6px;
+    }
+    .opts-grid-1 {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
     }
     .opt-cell {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       padding: 2px 6px;
-      border: 1px solid #f3f4f6;
-      border-radius: 5px;
+      border: 1px solid #eef2f6;
+      border-radius: 4px;
+      font-size: 8.6pt;
+      line-height: 1.25;
+      min-width: 0;
     }
     .opt-ar {
       justify-content: space-between;
     }
+    .opt-ar-span {
+      font-size: 10.8pt;
+      line-height: 1.38;
+      text-align: right;
+    }
     .opt-letter {
       font-weight: 800;
-      font-size: 9.5pt;
+      font-size: 8.5pt;
       color: #374151;
       flex-shrink: 0;
     }
     .tr-text {
-      font-size: 9.5pt;
+      font-size: 8.5pt;
+      line-height: 1.25;
     }
     .quick-key-strips {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 10px;
+      gap: 4px;
+      margin-bottom: 7px;
     }
     .quick-strip {
-      padding: 6px 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
       background: #f8fafc;
-      font-size: 9pt;
+      font-size: 8.6pt;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
     }
     .sol-card {
       border: 1px solid #e5e7eb;
-      border-radius: 7px;
-      padding: 6px 9px;
-      margin-bottom: 6px;
-      font-size: 9pt;
+      border-radius: 6px;
+      padding: 5px 8px;
+      margin-bottom: 5px;
+      font-size: 8.6pt;
+      line-height: 1.32;
       break-inside: avoid;
       page-break-inside: avoid;
     }
@@ -766,18 +909,20 @@ function AssessmentPrintModal({
       display: flex;
       justify-content: space-between;
       border-bottom: 1px dashed #e5e7eb;
-      padding-bottom: 3px;
-      margin-bottom: 3px;
+      padding-bottom: 2px;
+      margin-bottom: 2px;
       color: #065F46;
     }
     .sol-row {
-      margin-top: 2px;
+      margin-top: 1.5px;
     }
   </style>
 </head>
 <body>
-  ${studentPagesHtml}
-  ${answerKeyHtml}
+  <div class="print-root">
+    ${studentPagesHtml}
+    ${answerKeyHtml}
+  </div>
 </body>
 </html>`;
 
@@ -803,6 +948,19 @@ function AssessmentPrintModal({
       doc.close();
 
       const waitAssetsPromise = (async () => {
+        const links = Array.from(
+          doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+        );
+        await Promise.all(
+          links.map(
+            (lnk) =>
+              new Promise<void>((res) => {
+                if (lnk.sheet) return res();
+                lnk.onload = () => res();
+                lnk.onerror = () => res();
+              })
+          )
+        );
         const imgs = Array.from(doc.images || []);
         await Promise.all(
           imgs.map(
@@ -821,7 +979,7 @@ function AssessmentPrintModal({
 
       await Promise.race([
         waitAssetsPromise,
-        new Promise<void>((res) => setTimeout(res, 1500)),
+        new Promise<void>((res) => setTimeout(res, 1800)),
       ]);
 
       iframe.contentWindow.focus();
@@ -861,7 +1019,7 @@ function AssessmentPrintModal({
                 A4 Yaprak Test &amp; Çözümlü Anahtar Yazdır
               </h2>
               <p className="text-[11px] font-semibold text-[var(--muted)]">
-                A/B kitapçık karıştırmalı, Arakom fontlu ve gerekçeli öğretmen anahtarlı A4 çıktı
+                1 A4 yüzüne 10 soru sığdıran, A/B kitapçık ayrımlı ve çözümlü anahtarlı çıktı
               </p>
             </div>
           </div>
@@ -875,7 +1033,7 @@ function AssessmentPrintModal({
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-3.5 overflow-y-auto">
           {/* Başlık */}
           <div className="space-y-1">
             <label className="block text-xs font-extrabold text-[var(--foreground)]">
@@ -1011,6 +1169,43 @@ function AssessmentPrintModal({
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Sayfa Yerleşim Modu Seçici (Tek Sütun Sıkı vs Çift Sütun Yaprak Test) */}
+          <div className="space-y-1">
+            <span className="block text-xs font-extrabold text-[var(--foreground)]">
+              Sayfa Yerleşimi (Mizanpaj)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPrintLayoutMode("single-tight");
+                }}
+                className={`py-2 px-2.5 rounded-xl border-2 text-left text-xs font-extrabold cursor-pointer transition-all ${
+                  printLayoutMode === "single-tight"
+                    ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                }`}
+              >
+                📄 Tek Sütun Sıkı (1 Sayfada 10 Soru - Varsayılan)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPrintLayoutMode("two-column");
+                }}
+                className={`py-2 px-2.5 rounded-xl border-2 text-left text-xs font-extrabold cursor-pointer transition-all ${
+                  printLayoutMode === "two-column"
+                    ? "bg-[#6741D9]/15 border-[#6741D9] text-[#6741D9] dark:text-indigo-300"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                }`}
+              >
+                📰 Çift Sütun Klasik Yaprak Test (Sol 1-5 | Sağ 6-10)
+              </button>
             </div>
           </div>
 

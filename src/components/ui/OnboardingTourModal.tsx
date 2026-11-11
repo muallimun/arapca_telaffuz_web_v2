@@ -100,38 +100,74 @@ export default function OnboardingTourModal() {
       visual: (
         <div className="grid grid-cols-2 gap-2.5">
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
-            <span className="text-lg font-black text-[#065F46] block">
-              {CONTENT_INVENTORY.dialoguesCount} Diyalog &amp; {CONTENT_INVENTORY.readingsCount} Metin
+            <span className="text-base sm:text-lg font-black text-[#065F46] dark:text-emerald-400 leading-tight block">
+              {CONTENT_INVENTORY.dialoguesCount} Diyalog &amp;{" "}
+              <span className="whitespace-nowrap">
+                {CONTENT_INVENTORY.readingsCount} Metin
+              </span>
             </span>
-            <p className="text-[11px] font-semibold text-[var(--muted)]">
+            <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
               CEFR A1–B2 seviyelerinde özel görselli, sesli diyaloglar, okuma
-              metinleri ve {CONTENT_INVENTORY.sentencesCount.toLocaleString("tr-TR")} kalıp cümle
+              metinleri ve{" "}
+              {CONTENT_INVENTORY.sentencesCount.toLocaleString("tr-TR")} kalıp
+              cümle
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
-            <span className="text-lg font-black text-[#6741D9] block">
+            <span className="text-base sm:text-lg font-black text-[#6741D9] dark:text-[#d0bfff] leading-tight block">
               {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük Kaydı
             </span>
-            <p className="text-[11px] font-semibold text-[var(--muted)]">
+            <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
               5 kademeli morfolojik çözümleyici ile cümle içinden kök, müfret ve
               cemî analizi
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
-            <span className="text-lg font-black text-amber-600 block">
+            <span className="text-base sm:text-lg font-black text-amber-600 leading-tight block">
               16kHz DSP Analiz
             </span>
-            <p className="text-[11px] font-semibold text-[var(--muted)]">
+            <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
               Gerçek zamanlı ses dalga formu, ritim ve tempo uyumu karşılaştırması
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
-            <span className="text-lg font-black text-rose-600 block">
+            <span className="text-base sm:text-lg font-black text-rose-600 leading-tight block">
               38 Mahreç Çifti
             </span>
-            <p className="text-[11px] font-semibold text-[var(--muted)]">
-              Türk öğrencilerin sık karıştırdığı ح/ه, ص/س, ذ/ز, ض/د harflerine
-              özel koçluk
+            <p className="text-[11px] font-semibold text-[var(--muted)] leading-relaxed">
+              Türk öğrencilerin sık karıştırdığı{" "}
+              <span
+                dir="rtl"
+                lang="ar"
+                className="arabic inline-block font-semibold text-rose-700 dark:text-rose-300 mx-0.5"
+              >
+                ح/ه
+              </span>
+              ,{" "}
+              <span
+                dir="rtl"
+                lang="ar"
+                className="arabic inline-block font-semibold text-rose-700 dark:text-rose-300 mx-0.5"
+              >
+                ص/س
+              </span>
+              ,{" "}
+              <span
+                dir="rtl"
+                lang="ar"
+                className="arabic inline-block font-semibold text-rose-700 dark:text-rose-300 mx-0.5"
+              >
+                ذ/ز
+              </span>
+              ,{" "}
+              <span
+                dir="rtl"
+                lang="ar"
+                className="arabic inline-block font-semibold text-rose-700 dark:text-rose-300 mx-0.5"
+              >
+                ظ/ض
+              </span>{" "}
+              harflerine özel koçluk
             </p>
           </div>
         </div>
@@ -496,19 +532,19 @@ export default function OnboardingTourModal() {
       onClick={handleComplete}
     >
       <div
-        className="w-full max-w-lg bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ÜST BAR */}
-        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-5 py-3.5 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 shrink-0">
-          <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold tracking-wider uppercase">
+        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-3 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 shrink-0">
+          <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold tracking-wider uppercase truncate">
             {current.badge}
           </span>
 
           <button
             type="button"
             onClick={handleComplete}
-            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] flex items-center gap-1 cursor-pointer shrink-0"
           >
             <span>Turu Atla</span>
             <X size={13} />
@@ -516,7 +552,7 @@ export default function OnboardingTourModal() {
         </div>
 
         {/* GÖVDE */}
-        <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto flex-1">
+        <div className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-1">
             <h2 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] leading-snug">
               {current.title}

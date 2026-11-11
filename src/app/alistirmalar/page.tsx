@@ -215,6 +215,7 @@ type ExerciseType =
 
 type ExerciseCategoryTab =
   | "all"
+  | "new_games"
   | "vocab_visual"
   | "grammar_irab"
   | "listen_dialogue_read"
@@ -1334,7 +1335,8 @@ function ExercisesPageContent() {
 
   const exerciseCards: {
     id: ExerciseType;
-    category: Exclude<ExerciseCategoryTab, "all">;
+    category: Exclude<ExerciseCategoryTab, "all" | "new_games">;
+    isNewGame?: boolean;
     title: string;
     arabicBadge: string;
     subtitle: string;
@@ -1396,6 +1398,7 @@ function ExercisesPageContent() {
     {
       id: "gender-sorting",
       category: "vocab_visual",
+      isNewGame: true,
       title: "Müzekker / Müennes Sepeti",
       arabicBadge: "هَذَا وَهَذِهِ",
       subtitle:
@@ -1405,6 +1408,7 @@ function ExercisesPageContent() {
     {
       id: "error-hunter",
       category: "grammar_irab",
+      isNewGame: true,
       title: "Hata Avcısı (Cümle Onarımı)",
       arabicBadge: "صَيْدُ الْأَخْطَاء",
       subtitle:
@@ -1414,6 +1418,7 @@ function ExercisesPageContent() {
     {
       id: "irab-painter",
       category: "grammar_irab",
+      isNewGame: true,
       title: "Cümleyi İ'rab Renkleriyle Boya",
       arabicBadge: "تَلْوِينُ الْإِعْرَاب",
       subtitle:
@@ -1421,17 +1426,9 @@ function ExercisesPageContent() {
       icon: Paintbrush,
     },
     {
-      id: "morphology-context",
-      category: "grammar_irab",
-      title: "Sarf, Kök & Bağlam Atölyesi",
-      arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
-      subtitle:
-        "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam",
-      icon: GitBranch,
-    },
-    {
       id: "blind-dictation",
       category: "listen_dialogue_read",
+      isNewGame: true,
       title: "Kör Dikte & Harekeleme Atölyesi",
       arabicBadge: "الْإِمْلَاءُ وَالتَّشْكِيل",
       subtitle:
@@ -1441,6 +1438,7 @@ function ExercisesPageContent() {
     {
       id: "cloze-roleplay",
       category: "listen_dialogue_read",
+      isNewGame: true,
       title: "Diyalog Boş Replik Tamamlama",
       arabicBadge: "إِكْمَالُ الْحِوَار",
       subtitle:
@@ -1450,11 +1448,21 @@ function ExercisesPageContent() {
     {
       id: "evidence-hunter",
       category: "listen_dialogue_read",
+      isNewGame: true,
       title: "Metin Kanıt Dedektifi",
       arabicBadge: "دَلِيلُ النَّصّ",
       subtitle:
         "60 okuma metninde soruyu cevaplayın ve cevabın geçtiği kanıt satırını işaretleyin",
       icon: Search,
+    },
+    {
+      id: "morphology-context",
+      category: "grammar_irab",
+      title: "Sarf, Kök & Bağlam Atölyesi",
+      arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
+      subtitle:
+        "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam",
+      icon: GitBranch,
     },
     {
       id: "classroom-battle",
@@ -1467,12 +1475,23 @@ function ExercisesPageContent() {
     },
   ];
 
+  // Tümü (14) vitrininde 6 yeni interaktif oyunu en üst sırada öne çıkar
+  const allOrderedExerciseCards = [
+    ...exerciseCards.filter((c) => c.isNewGame),
+    ...exerciseCards.filter((c) => !c.isNewGame),
+  ];
+
   const exerciseCategoryTabs: {
     id: ExerciseCategoryTab;
     label: string;
     count: number;
   }[] = [
     { id: "all", label: "✨ Tümü", count: exerciseCards.length },
+    {
+      id: "new_games",
+      label: "🆕 Yeni İnteraktif Oyunlar",
+      count: exerciseCards.filter((c) => c.isNewGame).length,
+    },
     {
       id: "vocab_visual",
       label: "🖼️ Kelime & Görsel",
@@ -1498,7 +1517,9 @@ function ExercisesPageContent() {
 
   const visibleExerciseCards =
     exerciseCategoryFilter === "all"
-      ? exerciseCards
+      ? allOrderedExerciseCards
+      : exerciseCategoryFilter === "new_games"
+      ? exerciseCards.filter((c) => c.isNewGame)
       : exerciseCards.filter((c) => c.category === exerciseCategoryFilter);
 
   const contentStats = getDynamicContentStats();
@@ -1582,7 +1603,13 @@ function ExercisesPageContent() {
     selectedType === "evidence-hunter" ||
     selectedType === "irab-painter";
 
+  const isGrammarCorpusLockedMode =
+    selectedType === "error-hunter" || selectedType === "irab-painter";
+
   const isPoolCompatibleWithSelectedMode = (poolId: PoolSourceId): boolean => {
+    if (selectedType === "error-hunter" || selectedType === "irab-painter") {
+      return false;
+    }
     if (selectedType === "visual-rosetta") {
       return (
         poolId === "visual_words" ||
@@ -2230,6 +2257,11 @@ function ExercisesPageContent() {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        {card.isNewGame && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs shrink-0">
+                            ✨ YENİ
+                          </span>
+                        )}
                         <span
                           lang="ar"
                           dir="rtl"
@@ -2266,58 +2298,85 @@ function ExercisesPageContent() {
 
           {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
           <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 sm:p-3 space-y-2">
-            {/* 8 Ana Veri Kaynağı Izgarası (4x2 Ferah Izgara — Metin Kesilmesi Yok) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-              {quickPoolPills.map((pill) => {
-                const isActive = rangePreset === pill.id;
-                const isCompatible = isPoolCompatibleWithSelectedMode(pill.id);
-                const incompatibilityHint =
-                  selectedType === "visual-rosetta" && !isCompatible
-                    ? "Bu modül görselli havuzlarla (Görsel Kelimeler, Atasözleri, Diyaloglar, Metinler) çalışır"
-                    : selectedType === "sentence-builder" && !isCompatible
-                    ? "Bu modül cümle içeren havuzlarla (Günlük Cümleler, Diyaloglar, Okuma Metinleri, Atasözleri, Görsel Kelimeler) çalışır"
+            {/* Hata Avcısı & İ'rab Boyama için doğrudan Gramer Külliyatı bilgi şeridi; diğerleri için 8 Havuz Izgarası */}
+            {isGrammarCorpusLockedMode ? (
+              <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/40 border-2 border-[#087F5B]/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#065F46] dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1.5">
+                  <span>📚 Özel Veri Kaynağı:</span>
+                  <strong className="font-extrabold">
+                    {selectedType === "error-hunter"
+                      ? "120 Diyalog + 60 Okuma Metni Doğrulanmış Gramer Notları"
+                      : "120 Diyalog + 60 Okuma Metni İ'rab Tahlilli Örnek Cümleler"}
+                  </strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black tabular-nums">
+                  {activePoolCountLabel}
+                </span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                {quickPoolPills.map((pill) => {
+                  const isActive = rangePreset === pill.id;
+                  const isCompatible = isPoolCompatibleWithSelectedMode(
+                    pill.id
+                  );
+                  const incompatibilityHint = !isCompatible
+                    ? selectedType === "visual-rosetta"
+                      ? "Bu modül görselli havuzlarla (Görsel Kelimeler, Atasözleri, Diyaloglar, Metinler) çalışır"
+                      : selectedType === "sentence-builder"
+                      ? "Bu modül cümle içeren havuzlarla çalışır"
+                      : selectedType === "gender-sorting"
+                      ? "Müzekker / Müennes Sepeti 640 Görsel İsim havuzuyla çalışır"
+                      : selectedType === "cloze-roleplay"
+                      ? "Diyalog Boş Replik Tamamlama 120 Diyalog havuzuyla çalışır"
+                      : selectedType === "evidence-hunter"
+                      ? "Metin Kanıt Dedektifi 60 Okuma Metni havuzuyla çalışır"
+                      : selectedType === "blind-dictation"
+                      ? "Kör Dikte sesli cümle havuzlarıyla (Günlük Cümleler, Diyaloglar, Metinler) çalışır"
+                      : undefined
                     : undefined;
 
-                const activeStyle =
-                  pill.id === "srs_due"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                  const activeStyle =
+                    pill.id === "srs_due"
+                      ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                      : pill.id === "mistakes"
+                      ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
+                      : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
+
+                  const badgeStyle = isActive
+                    ? "bg-white/20 text-white border-white/30"
+                    : pill.id === "srs_due"
+                    ? "bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-300 border-[#6741D9]/30"
                     : pill.id === "mistakes"
-                    ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
-                    : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
+                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"
+                    : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-400 border-[#E6D7BE]";
 
-                const badgeStyle = isActive
-                  ? "bg-white/20 text-white border-white/30"
-                  : pill.id === "srs_due"
-                  ? "bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-300 border-[#6741D9]/30"
-                  : pill.id === "mistakes"
-                  ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"
-                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-400 border-[#E6D7BE]";
-
-                return (
-                  <button
-                    key={pill.id}
-                    type="button"
-                    title={incompatibilityHint}
-                    data-tooltip={incompatibilityHint}
-                    onClick={() => handlePoolSelectChange(pill.id)}
-                    className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-2 text-left transition-all ${
-                      !isCompatible
-                        ? "opacity-45 bg-white/60 dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] cursor-not-allowed"
-                        : isActive
-                        ? `${activeStyle} cursor-pointer`
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B] cursor-pointer"
-                    }`}
-                  >
-                    <span className="leading-snug">{pill.title}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
+                  return (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      title={incompatibilityHint}
+                      data-tooltip={incompatibilityHint}
+                      onClick={() => handlePoolSelectChange(pill.id)}
+                      className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-2 text-left transition-all ${
+                        !isCompatible
+                          ? "opacity-45 bg-white/60 dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] cursor-not-allowed"
+                          : isActive
+                          ? `${activeStyle} cursor-pointer`
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B] cursor-pointer"
+                      }`}
                     >
-                      {pill.countBadge}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      <span className="leading-snug">{pill.title}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
+                      >
+                        {pill.countBadge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Kütüphane Defterim veya Mahreç Tekrarı URL'sinden gelindiyse aktif kaynak göstergesi */}
             {(rangePreset === "favorites" || rangePreset === "weak-words") && (
@@ -2558,7 +2617,9 @@ function ExercisesPageContent() {
               )}
 
               {/* Kural C: 📚 Tüm Sözlük Seçildiğinde Kelime Türü Filtresi ([Tümü] [İsimler] [Fiiller] [Edat & Kalıplar]) */}
-              {rangePreset === "full_dict" && !isSentencesOnlyMode && (
+              {!isSelfSourcedSpecialMode &&
+                rangePreset === "full_dict" &&
+                !isSentencesOnlyMode && (
                 <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
                   <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
                     Kelime Türü:
@@ -2782,10 +2843,29 @@ function ExercisesPageContent() {
                 <span>
                   Kaynak:{" "}
                   <strong className="text-[#6741D9] dark:text-indigo-300">
-                    {poolOptions
-                      .find((p) => p.id === rangePreset)
-                      ?.title.replace(/^[^\s]+\s/, "") || "Tüm Sözlük"}{" "}
-                    ({activePoolCountLabel})
+                    {selectedType === "error-hunter"
+                      ? `180 Gramer Notu (${activePoolCountLabel})`
+                      : selectedType === "irab-painter"
+                      ? `Gramer İ'rab Külliyatı (${activePoolCountLabel})`
+                      : selectedType === "gender-sorting"
+                      ? `Görsel İsim Havuzu (${activePoolCountLabel})`
+                      : selectedType === "cloze-roleplay"
+                      ? `120 Diyalog (${activePoolCountLabel})`
+                      : selectedType === "evidence-hunter"
+                      ? `60 Okuma Metni (${activePoolCountLabel})`
+                      : selectedType === "blind-dictation"
+                      ? `${
+                          rangePreset === "all_dialogues"
+                            ? "120 Diyalog"
+                            : rangePreset === "reading_texts"
+                            ? "60 Okuma Metni"
+                            : "Sesli Cümle & Gramer Havuzu"
+                        } (${activePoolCountLabel})`
+                      : `${
+                          poolOptions
+                            .find((p) => p.id === rangePreset)
+                            ?.title.replace(/^[^\s]+\s/, "") || "Tüm Sözlük"
+                        } (${activePoolCountLabel})`}
                   </strong>
                 </span>
                 <span className="text-[var(--muted)]">•</span>

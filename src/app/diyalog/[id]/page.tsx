@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, notFound } from "next/navigation";
 import {
@@ -67,14 +68,31 @@ import {
 } from "@/lib/sfxManager";
 import WordTooltip from "@/components/ui/WordTooltip";
 import ShadowingButton from "@/components/ui/ShadowingButton";
-import ShadowingModal from "@/components/ui/ShadowingModal";
-import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
-import ShareAchievementModal, {
-  TeacherHomeworkModal,
-} from "@/components/ui/ShareAchievementModal";
-import ShareContentCardModal, {
-  ShareCardPayload,
-} from "@/components/ui/ShareContentCardModal";
+import type { ShareCardPayload } from "@/components/ui/ShareContentCardModal";
+
+const ShadowingModal = dynamic(
+  () => import("@/components/ui/ShadowingModal"),
+  { ssr: false }
+);
+const DialoguePdfModal = dynamic(
+  () => import("@/components/ui/DialoguePdfModal"),
+  { ssr: false }
+);
+const ShareAchievementModal = dynamic(
+  () => import("@/components/ui/ShareAchievementModal"),
+  { ssr: false }
+);
+const TeacherHomeworkModal = dynamic(
+  () =>
+    import("@/components/ui/ShareAchievementModal").then(
+      (m) => m.TeacherHomeworkModal
+    ),
+  { ssr: false }
+);
+const ShareContentCardModal = dynamic(
+  () => import("@/components/ui/ShareContentCardModal"),
+  { ssr: false }
+);
 import {
   getDialogueVocabulary,
   DialogueVocabularyEntry,
@@ -1742,7 +1760,7 @@ export default function DialogueDetailPage({
     playClick();
     setIsDownloadingOffline(true);
     setOfflineProgressPct(5);
-    const ok = await downloadDialogueOfflinePack(
+    const res = await downloadDialogueOfflinePack(
       dialogue.id,
       (percent, _completed, _total, estMb) => {
         setOfflineProgressPct(percent);
@@ -1750,7 +1768,7 @@ export default function DialogueDetailPage({
       }
     );
     setIsDownloadingOffline(false);
-    if (ok) {
+    if (res.ok) {
       setIsOfflineReady(true);
       setShowOfflineNotice(true);
       playSuccess();
@@ -1943,69 +1961,75 @@ export default function DialogueDetailPage({
       )}
 
       {/* ÖĞRETMEN İÇİN "🎓 ÖDEV OLUŞTUR" MODALI */}
-      <TeacherHomeworkModal
-        isOpen={isTeacherHwModalOpen}
-        onClose={() => setIsTeacherHwModalOpen(false)}
-        dialogueId={dialogue.id}
-        dialogueTitleTr={dialogue.baslik_tr}
-        dialogueTitleAr={getDisplayText(dialogue.baslik_ar)}
-        levelLabel={dialogue.seviye}
-        totalLines={dialogue.satirlar.length}
-        onOpenCertificate={() => {
-          setHwConfig((prev) => ({ ...prev, active: true }));
-          setIsHwReportModalOpen(true);
-        }}
-      />
+      {isTeacherHwModalOpen && (
+        <TeacherHomeworkModal
+          isOpen={isTeacherHwModalOpen}
+          onClose={() => setIsTeacherHwModalOpen(false)}
+          dialogueId={dialogue.id}
+          dialogueTitleTr={dialogue.baslik_tr}
+          dialogueTitleAr={getDisplayText(dialogue.baslik_ar)}
+          levelLabel={dialogue.seviye}
+          totalLines={dialogue.satirlar.length}
+          onOpenCertificate={() => {
+            setHwConfig((prev) => ({ ...prev, active: true }));
+            setIsHwReportModalOpen(true);
+          }}
+        />
+      )}
 
       {/* ÖĞRENCİ ÖDEV TAMAMLAMA VE DOĞRULAMA RAPORU MODALI */}
-      <ShareAchievementModal
-        isOpen={isHwReportModalOpen}
-        onClose={() => setIsHwReportModalOpen(false)}
-        title={dialogue.baslik_tr}
-        arabicTitle={getDisplayText(dialogue.baslik_ar)}
-        subtitle={`Diyalog #${String(rawNum).padStart(2, "0")} • ${dialogue.satirlar.length} Cümle • ${dialogueVocabEntries.length} Kelime`}
-        levelLabel={dialogue.seviye}
-        scorePercent={hwAverageScore}
-        pointsText={`${hwCompletedTasks}/${hwTotalTasks} Görev`}
-        wordsCount={dialogueVocabEntries.length}
-        badgeType="homework"
-        homeworkTitle={hwConfig.title || `${dialogue.baslik_tr} Ödevi`}
-        completionPercent={hwCompletionRatioPct}
-        listenedCount={hwListenedLines.length}
-        totalLinesCount={dialogue.satirlar.length}
-        pronPracticedCount={hwPronouncedCount}
-        pronTargetCount={hwConfig.pronCount}
-        quizCompleted={isHwQuizDone}
-        weakWordsList={hwWeakWordsList}
-        dialogueId={dialogue.id}
-        homeworkUrl={
-          typeof window !== "undefined" ? window.location.href : undefined
-        }
-      />
+      {isHwReportModalOpen && (
+        <ShareAchievementModal
+          isOpen={isHwReportModalOpen}
+          onClose={() => setIsHwReportModalOpen(false)}
+          title={dialogue.baslik_tr}
+          arabicTitle={getDisplayText(dialogue.baslik_ar)}
+          subtitle={`Diyalog #${String(rawNum).padStart(2, "0")} • ${dialogue.satirlar.length} Cümle • ${dialogueVocabEntries.length} Kelime`}
+          levelLabel={dialogue.seviye}
+          scorePercent={hwAverageScore}
+          pointsText={`${hwCompletedTasks}/${hwTotalTasks} Görev`}
+          wordsCount={dialogueVocabEntries.length}
+          badgeType="homework"
+          homeworkTitle={hwConfig.title || `${dialogue.baslik_tr} Ödevi`}
+          completionPercent={hwCompletionRatioPct}
+          listenedCount={hwListenedLines.length}
+          totalLinesCount={dialogue.satirlar.length}
+          pronPracticedCount={hwPronouncedCount}
+          pronTargetCount={hwConfig.pronCount}
+          quizCompleted={isHwQuizDone}
+          weakWordsList={hwWeakWordsList}
+          dialogueId={dialogue.id}
+          homeworkUrl={
+            typeof window !== "undefined" ? window.location.href : undefined
+          }
+        />
+      )}
 
       {/* BAŞARI KARTINI PAYLAŞ / İNDİR MODALI */}
-      <ShareAchievementModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title={dialogue.baslik_tr}
-        arabicTitle={getDisplayText(dialogue.baslik_ar)}
-        subtitle={`Diyalog #${String(rawNum).padStart(2, "0")} • ${dialogue.satirlar.length} Cümle • ${dialogueVocabEntries.length} Kelime`}
-        levelLabel={dialogue.seviye}
-        scorePercent={(() => {
-          const userLines = dialogue.satirlar.filter(
-            (l) => l.konusmaci === selectedRoleSpeaker
-          );
-          const measuredScores = userLines
-            .map((l) => roleplayLineScores[l.sira])
-            .filter((s): s is number => typeof s === "number" && s > 0);
-          if (measuredScores.length === 0) return null;
-          const total = measuredScores.reduce((acc, s) => acc + s, 0);
-          return Math.round(total / measuredScores.length);
-        })()}
-        pointsText={`${dialogue.satirlar.length} Cümle`}
-        wordsCount={dialogueVocabEntries.length}
-        badgeType="dialogue"
-      />
+      {isShareModalOpen && (
+        <ShareAchievementModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={dialogue.baslik_tr}
+          arabicTitle={getDisplayText(dialogue.baslik_ar)}
+          subtitle={`Diyalog #${String(rawNum).padStart(2, "0")} • ${dialogue.satirlar.length} Cümle • ${dialogueVocabEntries.length} Kelime`}
+          levelLabel={dialogue.seviye}
+          scorePercent={(() => {
+            const userLines = dialogue.satirlar.filter(
+              (l) => l.konusmaci === selectedRoleSpeaker
+            );
+            const measuredScores = userLines
+              .map((l) => roleplayLineScores[l.sira])
+              .filter((s): s is number => typeof s === "number" && s > 0);
+            if (measuredScores.length === 0) return null;
+            const total = measuredScores.reduce((acc, s) => acc + s, 0);
+            return Math.round(total / measuredScores.length);
+          })()}
+          pointsText={`${dialogue.satirlar.length} Cümle`}
+          wordsCount={dialogueVocabEntries.length}
+          badgeType="dialogue"
+        />
+      )}
 
       {/* ÖDEV İÇİ HIZLI ALIŞTIRMA (BOŞLUK DOLDURMA & EŞLEŞTİRME) MODALI */}
       {isHwQuizModalOpen && hwMiniQuizQuestions.length > 0 && (
@@ -4936,10 +4960,12 @@ export default function DialogueDetailPage({
         onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
       />
 
-      <ShareContentCardModal
-        payload={shareCardTarget}
-        onClose={() => setShareCardTarget(null)}
-      />
+      {shareCardTarget && (
+        <ShareContentCardModal
+          payload={shareCardTarget}
+          onClose={() => setShareCardTarget(null)}
+        />
+      )}
     </div>
   );
 }

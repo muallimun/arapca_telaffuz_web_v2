@@ -89,8 +89,18 @@ let activeModelId: string = isMobile
 let currentActiveRequestId: string | undefined = undefined;
 let latestTranscribeRequestId: string | undefined = undefined;
 const abortedRequestIds = new Set<string>();
+const MAX_ABORTED_REQUEST_IDS = 100;
 const requestQueue: WhisperWorkerRequest[] = [];
 let isProcessingQueue = false;
+
+function trackAbortedRequestId(id: string) {
+  abortedRequestIds.add(id);
+  while (abortedRequestIds.size > MAX_ABORTED_REQUEST_IDS) {
+    const oldest = abortedRequestIds.values().next().value;
+    if (oldest === undefined) break;
+    abortedRequestIds.delete(oldest);
+  }
+}
 
 const MODEL_CANDIDATES = isMobile
   ? [
@@ -533,6 +543,7 @@ async function handleSingleRequest(req: WhisperWorkerRequest) {
       }
 
       const ignored = isRequestStaleOrAborted(requestId);
+      if (requestId) abortedRequestIds.delete(requestId);
       self.postMessage({
         requestId,
         status: "completed",
@@ -545,10 +556,12 @@ async function handleSingleRequest(req: WhisperWorkerRequest) {
         error instanceof Error
           ? error.message
           : `Whisper (${activeModelId}) ses çözümleme hatası`;
+      const ignored = isRequestStaleOrAborted(requestId);
+      if (requestId) abortedRequestIds.delete(requestId);
       self.postMessage({
         requestId,
         status: "error",
-        ignored: isRequestStaleOrAborted(requestId),
+        ignored,
         error: errMsg,
       } satisfies WhisperWorkerResponse);
     }
@@ -574,7 +587,7 @@ self.onmessage = (event: MessageEvent<WhisperWorkerRequest>) => {
 
   if (data.type === "abort") {
     if (data.requestId) {
-      abortedRequestIds.add(data.requestId);
+      trackAbortedRequestId(data.requestId);
     }
     return;
   }
@@ -585,7 +598,7 @@ self.onmessage = (event: MessageEvent<WhisperWorkerRequest>) => {
     for (let i = requestQueue.length - 1; i >= 0; i--) {
       const queued = requestQueue[i];
       if (queued.type === "transcribe" && queued.requestId) {
-        abortedRequestIds.add(queued.requestId);
+        trackAbortedRequestId(queued.requestId);
         self.postMessage({
           requestId: queued.requestId,
           status: "completed",
@@ -593,6 +606,7 @@ self.onmessage = (event: MessageEvent<WhisperWorkerRequest>) => {
           ignored: true,
           device: activeDevice,
         } satisfies WhisperWorkerResponse);
+        abortedRequestIds.delete(queued.requestId);
         requestQueue.splice(i, 1);
       }
     }

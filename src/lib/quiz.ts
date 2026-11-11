@@ -635,9 +635,15 @@ export function selectSmartWordDistractors(
   const targetArLen = getWordPrimaryArabic(correctItem).length || 4;
   const targetTrLen = (correctItem.anlam_tr || "").trim().length || 6;
 
+  const normalizeMeaningKey = (raw?: string) =>
+    stripParentheticalArabicExamples(raw || "")
+      .trim()
+      .toLocaleLowerCase("tr-TR");
+
   const uniqueCandidates: DictionaryItem[] = [];
   const seenMeanings = new Set<string>([
     (correctItem.anlam_tr || "").trim().toLowerCase(),
+    normalizeMeaningKey(correctItem.anlam_tr),
   ]);
   const seenArabic = new Set<string>([
     getWordPrimaryArabic(correctItem).toLowerCase(),
@@ -645,50 +651,63 @@ export function selectSmartWordDistractors(
 
   for (const item of allVocabulary) {
     if (!item || item.id === correctItem.id) continue;
-    const meaningKey = (item.anlam_tr || "").trim().toLowerCase();
+    const rawMeaningKey = (item.anlam_tr || "").trim().toLowerCase();
+    const strippedMeaningKey = normalizeMeaningKey(item.anlam_tr);
     const arKey = getWordPrimaryArabic(item).toLowerCase();
-    if (!meaningKey || seenMeanings.has(meaningKey)) continue;
+    if (
+      !rawMeaningKey ||
+      !strippedMeaningKey ||
+      seenMeanings.has(rawMeaningKey) ||
+      seenMeanings.has(strippedMeaningKey)
+    ) {
+      continue;
+    }
     if (arKey && seenArabic.has(arKey)) continue;
-    seenMeanings.add(meaningKey);
+    seenMeanings.add(rawMeaningKey);
+    seenMeanings.add(strippedMeaningKey);
     if (arKey) seenArabic.add(arKey);
     uniqueCandidates.push(item);
   }
 
-  const scoreProximity = (candidate: DictionaryItem): number => {
-    const arLen = getWordPrimaryArabic(candidate).length || 4;
-    const trLen = (candidate.anlam_tr || "").trim().length || 6;
-    const lenDiff =
-      Math.abs(arLen - targetArLen) * 1.5 + Math.abs(trLen - targetTrLen) * 0.4;
-    return lenDiff + Math.random() * 2.2;
-  };
-
   // Sadece aynı sözcük türündeki (isim <-> isim, fiil <-> fiil) adaylar
-  const samePosCandidates = uniqueCandidates.filter(
-    (c) => normalizeWordPartOfSpeech(c.tur) === targetTur
-  );
+  // Yakınlık + rastgelelik puanı .sort() dışında tek seferde hesaplanır
+  const scoredSamePos = uniqueCandidates
+    .filter((c) => normalizeWordPartOfSpeech(c.tur) === targetTur)
+    .map((candidate) => {
+      const arLen = getWordPrimaryArabic(candidate).length || 4;
+      const trLen = (candidate.anlam_tr || "").trim().length || 6;
+      const lenDiff =
+        Math.abs(arLen - targetArLen) * 1.5 +
+        Math.abs(trLen - targetTrLen) * 0.4;
+      const cefrNum = CEFR_ORDER[candidate.cefr || "A1"] ?? 1;
+      return {
+        item: candidate,
+        cefrNum,
+        score: lenDiff + Math.random() * 2.2,
+      };
+    });
 
   // Katman 1: Aynı tür + aynı CEFR seviyesi
-  const tier1 = samePosCandidates
-    .filter((c) => (CEFR_ORDER[c.cefr || "A1"] ?? 1) === targetCefrNum)
-    .sort((a, b) => scoreProximity(a) - scoreProximity(b));
+  const tier1 = scoredSamePos
+    .filter((entry) => entry.cefrNum === targetCefrNum)
+    .sort((a, b) => a.score - b.score)
+    .map((entry) => entry.item);
 
   // Katman 2: Aynı tür + komşu CEFR seviyesi (|fark| === 1)
-  const tier2 = samePosCandidates
-    .filter(
-      (c) => Math.abs((CEFR_ORDER[c.cefr || "A1"] ?? 1) - targetCefrNum) === 1
-    )
-    .sort((a, b) => scoreProximity(a) - scoreProximity(b));
+  const tier2 = scoredSamePos
+    .filter((entry) => Math.abs(entry.cefrNum - targetCefrNum) === 1)
+    .sort((a, b) => a.score - b.score)
+    .map((entry) => entry.item);
 
   // Katman 3: Aynı tür + diğer CEFR seviyeleri
-  const tier3 = samePosCandidates
-    .filter(
-      (c) => Math.abs((CEFR_ORDER[c.cefr || "A1"] ?? 1) - targetCefrNum) > 1
-    )
-    .sort((a, b) => scoreProximity(a) - scoreProximity(b));
+  const tier3 = scoredSamePos
+    .filter((entry) => Math.abs(entry.cefrNum - targetCefrNum) > 1)
+    .sort((a, b) => a.score - b.score)
+    .map((entry) => entry.item);
 
   // Katman 4: Yalnızca aynı türden toplam aday sayısı < count ise acil yedek
   const tier4 =
-    samePosCandidates.length >= count
+    scoredSamePos.length >= count
       ? []
       : shuffleArray(
           uniqueCandidates.filter(
@@ -848,6 +867,12 @@ export function generateMultipleChoiceOptions(
   ]);
 }
 
+function countBaseArabicLetters(word: string): number {
+  return word
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[^\u0621-\u064A]/g, "").length;
+}
+
 // Boşluk Doldurma için cümle ve akıllı şıklar üret
 export function generateFillInBlanks(
   lines: DialogueLine[],
@@ -864,10 +889,20 @@ export function generateFillInBlanks(
   }[] = [];
 
   lines.forEach((line) => {
-    const words = line.arapca.split(" ");
+    const words = line.arapca.split(/\s+/).filter(Boolean);
 
-    words.forEach((word) => {
-      const cleanWord = word.replace(/[.,!?؟،]/g, "");
+    words.forEach((word, wordIndex) => {
+      const m = word.match(
+        /^([.,!?؟،؛:"'«»()[\]…]*)([\s\S]*?)([.,!?؟،؛:"'«»()[\]…]*)$/
+      );
+      const leadingPunct = m ? m[1] || "" : "";
+      const cleanWord = (m ? m[2] || "" : word)
+        .replace(/[.,!?؟،؛:"'«»()[\]…]/g, "")
+        .trim();
+      const trailingPunct = m ? m[3] || "" : "";
+
+      if (countBaseArabicLetters(cleanWord) < 2) return;
+
       const vocabItem = vocabulary.find(
         (v) =>
           v.mufret?.includes(cleanWord) ||
@@ -875,8 +910,12 @@ export function generateFillInBlanks(
           cleanWord.includes(v.mufret || "___")
       );
 
-      if (vocabItem && cleanWord.length > 2) {
-        const sentenceWithBlank = line.arapca.replace(word, "______");
+      if (vocabItem) {
+        const sentenceWithBlank = words
+          .map((tok, idx) =>
+            idx === wordIndex ? `${leadingPunct}______${trailingPunct}` : tok
+          )
+          .join(" ");
         const correctText = cleanWord;
         const wrongOptions = selectSmartWordDistractors(
           vocabItem,

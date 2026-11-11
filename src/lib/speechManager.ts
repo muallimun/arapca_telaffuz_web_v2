@@ -197,13 +197,14 @@ export class HybridSpeechManager {
   private isWebSpeechActive = false;
   private shouldKeepListening = false;
   private startedTimer: ReturnType<typeof setTimeout> | null = null;
+  private unsubscribeSettings: (() => void) | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
       this.initWorker();
       // Kullanıcı kayıt devam ederken "Yalnızca Cihazda İşle" (localSttOnly) seçeneğini açarsa
       // veya motoru "whisper" yaparsa çalışan SpeechRecognition oturumunu anında iptal et ve çevrimiçi metin tamponunu temizle.
-      useSettings.subscribe((state, prevState) => {
+      this.unsubscribeSettings = useSettings.subscribe((state, prevState) => {
         if (
           (state.localSttOnly && !prevState.localSttOnly) ||
           (state.sttEngine === "whisper" && prevState.sttEngine !== "whisper")
@@ -1007,6 +1008,10 @@ export class HybridSpeechManager {
   }
 
   public terminate() {
+    if (this.unsubscribeSettings) {
+      this.unsubscribeSettings();
+      this.unsubscribeSettings = null;
+    }
     this.stopLiveWebSpeech();
     if (this.worker) {
       this.worker.terminate();

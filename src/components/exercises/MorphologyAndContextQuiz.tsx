@@ -207,6 +207,11 @@ export default function MorphologyAndContextQuiz({
     topic: string;
     sourceId?: string;
   } | null>(null);
+  const [showLiteralHint, setShowLiteralHint] = useState<boolean>(false);
+  const [expandedScopeKey, setExpandedScopeKey] = useState<string | null>(null);
+
+  const currentScopeKey = `${cefrFilter}::${subMode}`;
+  const isScopeExpanded = expandedScopeKey === currentScopeKey;
 
   const fanfarePlayedRef = useRef(false);
 
@@ -269,19 +274,18 @@ export default function MorphologyAndContextQuiz({
     return map;
   }, []);
 
-  // Havuz hazırlığı (Seviye filtresi ve aktif görsel havuz uyumu)
+  // Havuz hazırlığı (Seviye filtresi ve aktif görsel havuz uyumu — sessiz seviye karıştırma yok)
   const effectiveVisualPool = useMemo(() => {
     const base =
-      visualPool && visualPool.length >= 8
+      visualPool && visualPool.length >= 4
         ? visualPool.filter((gk) =>
             gorselKelimeler.some((orig) => orig.id === gk.id)
           )
         : [];
-    const pool = base.length >= 8 ? base : gorselKelimeler;
-    if (cefrFilter === "all") return pool;
-    const filtered = pool.filter((gk) => gk.cefr === cefrFilter);
-    return filtered.length >= 8 ? filtered : pool;
-  }, [visualPool, cefrFilter]);
+    const pool = base.length >= 4 ? base : gorselKelimeler;
+    if (cefrFilter === "all" || isScopeExpanded) return pool;
+    return pool.filter((gk) => gk.cefr === cefrFilter);
+  }, [visualPool, cefrFilter, isScopeExpanded]);
 
   // 1. Mod 1 Soru Üreticisi: Kök & Müştakât Avcısı (root_hunter)
   const buildRootHunterQuestions = useCallback(
@@ -291,12 +295,17 @@ export default function MorphologyAndContextQuiz({
         return rKey.length >= 3;
       });
 
+      const allowGlobalFallback = cefrFilter === "all" || isScopeExpanded;
       const sourceList =
-        candidates.length >= 8
+        candidates.length >= 4
           ? shuffleArray([...candidates])
-          : shuffleArray(
-              gorselKelimeler.filter((gk) => normalizeRootKey(gk.kok).length >= 3)
-            );
+          : allowGlobalFallback
+          ? shuffleArray(
+              gorselKelimeler.filter(
+                (gk) => normalizeRootKey(gk.kok).length >= 3
+              )
+            )
+          : [];
 
       const questions: WorkshopQuestion[] = [];
       const usedIds = new Set<string>();
@@ -446,7 +455,7 @@ export default function MorphologyAndContextQuiz({
 
       return questions;
     },
-    [effectiveVisualPool, rootGroupsMap]
+    [effectiveVisualPool, rootGroupsMap, cefrFilter, isScopeExpanded]
   );
 
   // 2. Mod 2 Soru Üreticisi: Sarf Dönüştürücü (Müfret–Cemî & Mâzî–Muzâri–Masdar)
@@ -457,16 +466,19 @@ export default function MorphologyAndContextQuiz({
           isValidMorphForm(gk.ikincil_form) || isValidMorphForm(gk.ucuncul_form)
       );
 
+      const allowGlobalFallback = cefrFilter === "all" || isScopeExpanded;
       const sourceList =
-        candidates.length >= 8
+        candidates.length >= 4
           ? shuffleArray([...candidates])
-          : shuffleArray(
+          : allowGlobalFallback
+          ? shuffleArray(
               gorselKelimeler.filter(
                 (gk) =>
                   isValidMorphForm(gk.ikincil_form) ||
                   isValidMorphForm(gk.ucuncul_form)
               )
-            );
+            )
+          : [];
 
       const questions: WorkshopQuestion[] = [];
 
@@ -666,7 +678,7 @@ export default function MorphologyAndContextQuiz({
 
       return questions;
     },
-    [effectiveVisualPool]
+    [effectiveVisualPool, cefrFilter, isScopeExpanded]
   );
 
   // 3. Mod 3 Soru Üreticisi: Soru Kalıbı & Görsel Cevap (question_prompt_match)
@@ -676,15 +688,18 @@ export default function MorphologyAndContextQuiz({
         (gk) => gk.soru_kalibi && gk.soru_kalibi.trim().length > 0 && gk.gorsel
       );
 
+      const allowGlobalFallback = cefrFilter === "all" || isScopeExpanded;
       const sourceList =
-        candidates.length >= 8
+        candidates.length >= 4
           ? shuffleArray([...candidates])
-          : shuffleArray(
+          : allowGlobalFallback
+          ? shuffleArray(
               gorselKelimeler.filter(
                 (gk) =>
                   gk.soru_kalibi && gk.soru_kalibi.trim().length > 0 && gk.gorsel
               )
-            );
+            )
+          : [];
 
       const questions: WorkshopQuestion[] = [];
 
@@ -767,27 +782,34 @@ export default function MorphologyAndContextQuiz({
 
       return questions;
     },
-    [effectiveVisualPool]
+    [effectiveVisualPool, cefrFilter, isScopeExpanded]
   );
 
   // 4. Mod 4 Soru Üreticisi: Bağlamdan Atasözü & Kalıp Bulma (context_proverb_grammar)
   const buildContextProverbAndGrammarQuestions = useCallback(
     (count: number): WorkshopQuestion[] => {
-      const proverbPool =
-        cefrFilter === "all"
-          ? atasozleri
-          : atasozleri.filter((a) => a.cefr === cefrFilter);
+      const allowGlobalFallback = cefrFilter === "all" || isScopeExpanded;
+      const proverbPool = allowGlobalFallback
+        ? atasozleri
+        : atasozleri.filter((a) => a.cefr === cefrFilter);
       const effectiveProverbs =
-        proverbPool.length >= 6 ? proverbPool : atasozleri;
+        proverbPool.length >= 4
+          ? proverbPool
+          : allowGlobalFallback
+          ? atasozleri
+          : [];
 
-      const sentencePool =
-        cefrFilter === "all"
-          ? cumleler1111
-          : cumleler1111.filter(
-              (c) => c.seviye === cefrFilter || c.cefr === cefrFilter
-            );
+      const sentencePool = allowGlobalFallback
+        ? cumleler1111
+        : cumleler1111.filter(
+            (c) => c.seviye === cefrFilter || c.cefr === cefrFilter
+          );
       const effectiveSentences =
-        sentencePool.length >= 6 ? sentencePool : cumleler1111;
+        sentencePool.length >= 4
+          ? sentencePool
+          : allowGlobalFallback
+          ? cumleler1111
+          : [];
 
       const allGrammarTopics = Array.from(
         new Set(cumleler1111.map((c) => c.odak_kalip).filter(Boolean))
@@ -848,7 +870,9 @@ export default function MorphologyAndContextQuiz({
             subMode: "context_proverb_grammar",
             badgeTitle: "💡 Bağlamdan Atasözü Bulma",
             promptTitleTr: `💡 Kullanım Bağlamı (Senaryo): "${target.kullanim_baglami}"`,
-            promptSubtitleTr: `Lafzî İpucu: "${target.lafzi_ceviri}"`,
+            promptSubtitleTr: `Tema: ${formatTurkishCategory(
+              target.tema || "Atasözü & Hikmet"
+            )} — Senaryoya uygun atasözünü seçin`,
             imageUrl:
               target.gorsel ||
               resolveImageUrl(
@@ -949,7 +973,7 @@ export default function MorphologyAndContextQuiz({
 
       return questions;
     },
-    [cefrFilter]
+    [cefrFilter, isScopeExpanded]
   );
 
   // Seçili alt moda göre soru dizisini oluştur
@@ -1063,6 +1087,7 @@ export default function MorphologyAndContextQuiz({
     setSubMode(nextMode);
     setCurrentIndex(0);
     setSelectedOptionId(null);
+    setShowLiteralHint(false);
     setScore(0);
     setStreak(0);
     setIsFinished(false);
@@ -1109,6 +1134,7 @@ export default function MorphologyAndContextQuiz({
     playClick();
     stopAllAudio();
     stopAllSfx();
+    setShowLiteralHint(false);
     if (currentIndex + 1 >= questions.length) {
       setIsFinished(true);
     } else {
@@ -1122,6 +1148,7 @@ export default function MorphologyAndContextQuiz({
     playClick();
     stopAllAudio();
     stopAllSfx();
+    setShowLiteralHint(false);
     setCurrentIndex((prev) => prev - 1);
     setSelectedOptionId(null);
   };
@@ -1134,6 +1161,7 @@ export default function MorphologyAndContextQuiz({
     setSessionSeed((s) => s + 1);
     setCurrentIndex(0);
     setSelectedOptionId(null);
+    setShowLiteralHint(false);
     setScore(0);
     setStreak(0);
     setIsFinished(false);
@@ -1179,19 +1207,41 @@ export default function MorphologyAndContextQuiz({
 
   if (!currentQuestion) {
     return (
-      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] p-6 text-center space-y-3">
-        <p className="text-sm font-bold text-[var(--foreground)]">
-          Seçili filtrede yeterli sarf/bağlam sorusu bulunamadı.
+      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] p-6 text-center space-y-3 max-w-lg mx-auto">
+        <p className="text-sm font-extrabold text-[var(--foreground)]">
+          {cefrFilter !== "all" && !isScopeExpanded
+            ? `Seçili seviyede (${cefrFilter}) bu mod için yeterli soru bulunamadı.`
+            : "Seçili filtrede yeterli sarf/bağlam sorusu bulunamadı."}
         </p>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
-          >
-            Ayarlara Dön
-          </button>
-        )}
+        <p className="text-xs font-semibold text-[var(--muted)]">
+          Üst seviyelerdeki soruları gizlice karıştırmak yerine kapsamı sizin onayınızla genişletebilirsiniz.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          {cefrFilter !== "all" && !isScopeExpanded && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setExpandedScopeKey(currentScopeKey);
+                setCurrentIndex(0);
+                setSelectedOptionId(null);
+                setShowLiteralHint(false);
+              }}
+              className="px-4 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold cursor-pointer"
+            >
+              🔓 Kapsamı Genişlet (Tüm Seviyeler)
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
+            >
+              Ayarlara Dön
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -1292,6 +1342,13 @@ export default function MorphologyAndContextQuiz({
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          {cefrFilter !== "all" &&
+            !isScopeExpanded &&
+            questions.length < questionCount && (
+              <span className="hidden sm:inline-flex items-center px-2 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 text-[10px] font-extrabold text-amber-800 dark:text-amber-200">
+                ℹ️ {cefrFilter}: {questions.length} soru
+              </span>
+            )}
           <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] tabular-nums">
             Soru {currentIndex + 1} / {questions.length}
           </span>
@@ -1378,6 +1435,37 @@ export default function MorphologyAndContextQuiz({
                     text={currentQuestion.promptSubtitleTr}
                     arabicClassName="arabic font-arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
                   />
+                </div>
+              )}
+
+              {!isAnswered && currentQuestion.proverbMeta?.literalTr && (
+                <div className="pt-1 flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowLiteralHint((prev) => !prev);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 text-[11px] font-extrabold text-amber-800 dark:text-amber-200 hover:bg-amber-100 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Lightbulb size={12} />
+                    <span>
+                      {showLiteralHint
+                        ? "Lafzî İpucunu Gizle"
+                        : "💡 Lafzî İpucunu Göster"}
+                    </span>
+                  </button>
+                  {showLiteralHint && (
+                    <div
+                      dir="ltr"
+                      lang="tr"
+                      className="w-full rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 px-2.5 py-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-200 text-center"
+                    >
+                      Lafzî İpucu: &ldquo;
+                      <MixedText text={currentQuestion.proverbMeta.literalTr} />
+                      &rdquo;
+                    </div>
+                  )}
                 </div>
               )}
             </div>

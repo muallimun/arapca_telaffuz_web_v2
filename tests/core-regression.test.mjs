@@ -487,3 +487,260 @@ test("7. FAZ 2 — Kesilmeyen otomatik sürümlü QR matrisi (140+ bayt Türkçe
     "?listen=0 gönderildiğinde dinleme görevi kapalı (false) olmalıdır"
   );
 });
+
+test("8. FAZ 3 — Yerel Arapça font varlıkları (Arakom.ttf & WinSoftPro-Med.otf) ve globals.css @font-face doğrulaması", () => {
+  const arakomPath = path.join(ROOT_DIR, "public", "fonts", "Arakom.ttf");
+  const winsoftPath = path.join(
+    ROOT_DIR,
+    "public",
+    "fonts",
+    "WinSoftPro-Med.otf"
+  );
+
+  assert.equal(
+    fs.existsSync(arakomPath),
+    true,
+    "public/fonts/Arakom.ttf mevcut olmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(winsoftPath),
+    true,
+    "public/fonts/WinSoftPro-Med.otf mevcut olmalıdır"
+  );
+  assert.ok(
+    fs.statSync(arakomPath).size > 50_000,
+    "public/fonts/Arakom.ttf geçerli boyutta olmalıdır"
+  );
+  assert.ok(
+    fs.statSync(winsoftPath).size > 50_000,
+    "public/fonts/WinSoftPro-Med.otf geçerli boyutta olmalıdır"
+  );
+
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  assert.equal(globalsCss.includes("/fonts/WinSoftPro-Med.otf"), true);
+  assert.equal(globalsCss.includes("/fonts/Arakom.ttf"), true);
+});
+
+test("9. FAZ 3 — Tekil useSfxStore birleştirmesi, bellek abonelik temizliği ve kanonik çevrimdışı ses anahtarı", async () => {
+  const sfxManagerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "sfxManager.ts"),
+    "utf8"
+  );
+  assert.equal(
+    sfxManagerCode.includes("create<"),
+    false,
+    "sfxManager.ts içinde mükerrer Zustand store tanımlanmamalıdır"
+  );
+  assert.equal(
+    sfxManagerCode.includes("setRecordingMuted"),
+    true,
+    "sfxManager.ts mikrofon kaydı sırasında SFX susturma (setRecordingMuted) sunmalıdır"
+  );
+
+  const speechManagerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "speechManager.ts"),
+    "utf8"
+  );
+  assert.equal(
+    speechManagerCode.includes("unsubscribeSettings"),
+    true,
+    "HybridSpeechManager.terminate() içinde store aboneliği temizlenmelidir"
+  );
+
+  const { toCanonicalAudioCacheKey } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "audio.ts")).href
+  );
+  assert.equal(
+    toCanonicalAudioCacheKey(
+      "https://cdn.jsdelivr.net/gh/muallimun/arapca_telaffuz_medya@main/public/sesler/diyaloglar/dlg_001_01.mp3"
+    ),
+    "/sesler/diyaloglar/dlg_001_01.mp3"
+  );
+  assert.equal(
+    toCanonicalAudioCacheKey("sesler/diyaloglar/dlg_001_01.mp3"),
+    "/sesler/diyaloglar/dlg_001_01.mp3"
+  );
+});
+
+test("10. FAZ 3 — Alıştırma çeldirici kalitesi, tam indeksli boşluk doldurma, ipucu kilidi ve süresiz sınıf kapışması", async () => {
+  const { generateFillInBlanks, selectSmartWordDistractors } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "quiz.ts")).href
+  );
+
+  const { parsed: sozluk } = readDataJson("yeni_tum_sozluk.json");
+  const sampleTargetWord = (sozluk.find((item) => item.mufret && item.mufret.length >= 3) || sozluk[0]).mufret.trim();
+
+  // Tam kelime indeksiyle boşluk bırakma: önceki birleşik kelimenin alt-dizgesini bozmamalı
+  const sampleLines = [
+    {
+      sira: 1,
+      konusmaci: "Ali",
+      konusmaci_ar: "عَلِيٌّ",
+      arapca: `${sampleTargetWord}ي وَ${sampleTargetWord} جَدِيدٌ، ${sampleTargetWord}.`,
+      turkce: "Test cümlesi.",
+    },
+  ];
+  const blanks = generateFillInBlanks(sampleLines, sozluk);
+  assert.ok(blanks.length >= 1, "Boşluk doldurma sorusu üretilmelidir");
+  for (const blankQ of blanks) {
+    assert.equal(
+      (blankQ.sentenceWithBlank.match(/______/g) || []).length,
+      1,
+      "Cümlede yalnızca tek bir hedef kelime (tam indeks) boşluğa dönüştürülmelidir"
+    );
+    assert.equal(
+      blankQ.sentenceWithBlank.includes("______ي") ||
+        blankQ.sentenceWithBlank.includes("وَ______"),
+      false,
+      "Önceki kelimenin alt-dizgesi kısmi olarak silinmemelidir"
+    );
+  }
+
+  const distractors = selectSmartWordDistractors(sozluk[0], sozluk, 3);
+  assert.equal(distractors.length, 3);
+  const uniqueAnlam = new Set(distractors.map((d) => d.anlam_tr));
+  assert.equal(
+    uniqueAnlam.size,
+    3,
+    "Seçilen 3 kelime çeldiricisinin Türkçe anlamları birbirinden farklı olmalıdır"
+  );
+
+  const morphCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      "MorphologyAndContextQuiz.tsx"
+    ),
+    "utf8"
+  );
+  assert.equal(
+    morphCode.includes("showLiteralHint"),
+    true,
+    "MorphologyAndContextQuiz cevap öncesi lafzî ipucunu gizlemelidir"
+  );
+
+  const battleCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      "ClassroomTeamBattle.tsx"
+    ),
+    "utf8"
+  );
+  assert.equal(
+    battleCode.includes("isUnlimitedTime"),
+    true,
+    "ClassroomTeamBattle süresiz (timeLimit === null || 0) modunu desteklemelidir"
+  );
+});
+
+test("11. FAZ 3 — A4 PDF Üreticisi: escapeHtml, Arakom.ttf, tohumlu A/B Kitapçık PRNG, tam 100 puan dağıtıcı ve Maarif rubriği", async () => {
+  const pdfModalPath = path.join(
+    ROOT_DIR,
+    "src",
+    "components",
+    "ui",
+    "DialoguePdfModal.tsx"
+  );
+  const pdfCode = fs.readFileSync(pdfModalPath, "utf8");
+
+  assert.equal(
+    pdfCode.includes("Arakom-Regular.ttf") ||
+      pdfCode.includes("Arakom-Bold.ttf"),
+    false,
+    "DialoguePdfModal içinde var olmayan Arakom-Regular/Bold.ttf yolları kalmamalıdır"
+  );
+  assert.equal(
+    pdfCode.includes("/fonts/Arakom.ttf"),
+    true,
+    "DialoguePdfModal /fonts/Arakom.ttf yolunu kullanmalıdır"
+  );
+  assert.equal(
+    pdfCode.includes("doc.fonts"),
+    true,
+    "DialoguePdfModal yazdırma öncesi doc.fonts.ready beklemelidir"
+  );
+
+  const {
+    escapeHtml,
+    hashStringSeed,
+    mulberry32,
+    seededShuffle,
+    allocateExam100Points,
+    MAARIF_RUBRIC_CRITERIA,
+  } = await import(pathToFileURL(pdfModalPath).href);
+
+  assert.equal(
+    escapeHtml(`<img src=x onerror="alert('xss')">&`),
+    "&lt;img src=x onerror=&quot;alert(&#39;xss&#39;)&quot;&gt;&amp;"
+  );
+
+  // Tohumlu A/B kitapçık determinizmi ve farklılığı
+  const items = ["S1", "S2", "S3", "S4", "S5", "S6"];
+  const orderA1 = seededShuffle(
+    items,
+    mulberry32(hashStringSeed("dlg_001::BOOKLET_A::v3"))
+  );
+  const orderA2 = seededShuffle(
+    items,
+    mulberry32(hashStringSeed("dlg_001::BOOKLET_A::v3"))
+  );
+  const orderB = seededShuffle(
+    items,
+    mulberry32(hashStringSeed("dlg_001::BOOKLET_B::v3"))
+  );
+  assert.deepEqual(
+    orderA1,
+    orderA2,
+    "Aynı kitapçık tohumu her zaman birebir aynı soru sırasını üretmelidir"
+  );
+  assert.notDeepEqual(
+    orderA1,
+    orderB,
+    "A ve B kitapçıkları birbirinden farklı soru sırası üretmelidir"
+  );
+
+  // Kısa veya tam diyaloglarda her zaman tam 100 tam sayı puan
+  for (const [cA, cB, cC] of [
+    [6, 5, 4],
+    [3, 2, 1],
+    [4, 0, 3],
+    [2, 2, 0],
+    [1, 1, 1],
+  ]) {
+    const alloc = allocateExam100Points(cA, cB, cC);
+    assert.equal(
+      alloc.grandTotal,
+      100,
+      `(${cA},${cB},${cC}) soru dağılımında toplam puan tam 100 olmalıdır`
+    );
+    assert.equal(
+      alloc.perQuestionA.every((n) => Number.isInteger(n) && n > 0),
+      true
+    );
+    assert.equal(
+      alloc.perQuestionB.every((n) => Number.isInteger(n) && n > 0),
+      true
+    );
+    assert.equal(
+      alloc.perQuestionC.every((n) => Number.isInteger(n) && n > 0),
+      true
+    );
+  }
+
+  // Maarif 4 beceri rubriği (4 x 25 = 100 puan)
+  assert.equal(MAARIF_RUBRIC_CRITERIA.length, 4);
+  const rubricSum = MAARIF_RUBRIC_CRITERIA.reduce(
+    (s, r) => s + r.maxPoints,
+    0
+  );
+  assert.equal(rubricSum, 100);
+});
+

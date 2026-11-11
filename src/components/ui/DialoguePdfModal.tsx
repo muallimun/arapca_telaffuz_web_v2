@@ -46,6 +46,166 @@ type VocabLanguageMode = "both" | "ar-only" | "tr-only";
 type FitMode = "auto" | "normal" | "compact" | "ultra";
 type DensityLevel = "normal" | "compact" | "tight" | "ultra";
 
+export type PdfPrintScope = "student" | "answer-key" | "both";
+export type PdfDocMode =
+  | "handout"
+  | "quiz-sheet"
+  | "unvocalized-rubric"
+  | "flashcards";
+
+export function escapeHtml(raw: unknown): string {
+  return String(raw ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function hashStringSeed(input: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function seededShuffle<T>(items: readonly T[], rng: () => number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
+export function allocateExam100Points(
+  countA: number,
+  countB: number,
+  countC: number
+): {
+  perQuestionA: number[];
+  perQuestionB: number[];
+  perQuestionC: number[];
+  totalA: number;
+  totalB: number;
+  totalC: number;
+  grandTotal: number;
+} {
+  const cA = Math.max(0, Math.floor(countA));
+  const cB = Math.max(0, Math.floor(countB));
+  const cC = Math.max(0, Math.floor(countC));
+  if (cA + cB + cC === 0) {
+    return {
+      perQuestionA: [],
+      perQuestionB: [],
+      perQuestionC: [],
+      totalA: 0,
+      totalB: 0,
+      totalC: 0,
+      grandTotal: 0,
+    };
+  }
+
+  const rawWeights = [cA > 0 ? 30 : 0, cB > 0 ? 40 : 0, cC > 0 ? 30 : 0];
+  const weightSum = rawWeights[0] + rawWeights[1] + rawWeights[2];
+  const exactShares = rawWeights.map((w) => (100 * w) / weightSum);
+  const sectionTotals = exactShares.map((s) => Math.floor(s));
+  let sectionRem =
+    100 - (sectionTotals[0] + sectionTotals[1] + sectionTotals[2]);
+
+  const orderByFrac = [0, 1, 2]
+    .filter((idx) => rawWeights[idx] > 0)
+    .sort(
+      (i, j) =>
+        exactShares[j] - sectionTotals[j] - (exactShares[i] - sectionTotals[i])
+    );
+
+  let cursor = 0;
+  while (sectionRem > 0 && orderByFrac.length > 0) {
+    const targetIdx = orderByFrac[cursor % orderByFrac.length];
+    sectionTotals[targetIdx] += 1;
+    sectionRem -= 1;
+    cursor += 1;
+  }
+
+  const splitIntoIntegers = (sectionTotal: number, count: number): number[] => {
+    if (count <= 0 || sectionTotal <= 0) return [];
+    const base = Math.floor(sectionTotal / count);
+    const rem = sectionTotal % count;
+    return Array.from({ length: count }, (_, idx) =>
+      idx < rem ? base + 1 : base
+    );
+  };
+
+  const perQuestionA = splitIntoIntegers(sectionTotals[0], cA);
+  const perQuestionB = splitIntoIntegers(sectionTotals[1], cB);
+  const perQuestionC = splitIntoIntegers(sectionTotals[2], cC);
+
+  const totalA = perQuestionA.reduce((s, n) => s + n, 0);
+  const totalB = perQuestionB.reduce((s, n) => s + n, 0);
+  const totalC = perQuestionC.reduce((s, n) => s + n, 0);
+
+  return {
+    perQuestionA,
+    perQuestionB,
+    perQuestionC,
+    totalA,
+    totalB,
+    totalC,
+    grandTotal: totalA + totalB + totalC,
+  };
+}
+
+export const MAARIF_RUBRIC_CRITERIA = [
+  {
+    skillTr: "1. Dinleme / Anlama",
+    skillAr: "الِاسْتِمَاعُ وَالْفَهْمُ",
+    developing: "Ana fikri kısmen yakalar (0–10p)",
+    proficient: "Bağlamı ve temel yargıları anlar (11–18p)",
+    advanced: "Nüansları ve kalıp ifadeleri tam çözer (19–25p)",
+    maxPoints: 25,
+  },
+  {
+    skillTr: "2. Konuşma & Mahreç",
+    skillAr: "الْمُحَادَثَةُ وَمَخَارِجُ الْحُرُوفِ",
+    developing: "Belirgin mahreç/akıcılık hatası var (0–10p)",
+    proficient: "Anlaşılır telaffuz ve doğru vurgu (11–18p)",
+    advanced: "Sahih mahreç, med ve doğal tonlama (19–25p)",
+    maxPoints: 25,
+  },
+  {
+    skillTr: "3. Okuma & Harekeleme",
+    skillAr: "الْقِرَاءَةُ وَالضَّبْطُ بِالشَّكْلِ",
+    developing: "Temel kelime harekelerinde eksikler var (0–10p)",
+    proficient: "Bina ve kelime içi harekeleri doğru koyar (11–18p)",
+    advanced: "Son harf i'rab harekelerini eksiksiz zabteder (19–25p)",
+    maxPoints: 25,
+  },
+  {
+    skillTr: "4. Yazma, İmla & İ'rab",
+    skillAr: "الْكِتَابَةُ وَالْإِعْرَابُ الْوَظِيفِيُّ",
+    developing: "Harf birleştirme/hemze hataları görülür (0–10p)",
+    proficient: "Doğru imla ve anlaşılır Türkçe tercüme (11–18p)",
+    advanced: "Kurallı imla, tam tercüme ve doğru i'rab tahlili (19–25p)",
+    maxPoints: 25,
+  },
+] as const;
+
 export function stripHarakat(text: string): string {
   return removeArabicHarakat(text);
 }
@@ -171,13 +331,55 @@ export default function DialoguePdfModal({
     useState<SideBySideOrder>("ar-right");
   const [showAdvancedLayout, setShowAdvancedLayout] = useState<boolean>(false);
 
-  // ADIM 3: Üst Mod Seçici ("handout": 📄 Ders Föyü | "quiz-sheet": 📝 Çalışma & Quiz Yaprağı | "flashcards": ✂️ Kes-Yapıştır Kartlar)
-  const [pdfDocMode, setPdfDocMode] = useState<
-    "handout" | "quiz-sheet" | "flashcards"
-  >("handout");
+  // ADIM 3: Üst Mod Seçici (4 Öğretmen Şablonu) + A/B Kitapçık Grubu + Gelişmiş Ayar Çekmecesi
+  const [pdfDocMode, setPdfDocMode] = useState<PdfDocMode>("handout");
+  const [bookletGroup, setBookletGroup] = useState<"A" | "B">("A");
+  const [showAdvancedSettings, setShowAdvancedSettings] =
+    useState<boolean>(false);
   const [flashcardGridSize, setFlashcardGridSize] = useState<
     "3x3" | "3x4" | "4x4"
   >("3x3");
+
+  const applyTeacherPreset = (
+    preset:
+      | "student-handout"
+      | "exam-ab"
+      | "unvocalized-rubric"
+      | "cut-fold-cards"
+  ) => {
+    playClick();
+    if (preset === "student-handout") {
+      setPdfDocMode("handout");
+      setIncludeHarakat(true);
+      setTranslationMode("show");
+      setClozeMode(false);
+      setIncludeVocabulary(true);
+      setVocabLanguageMode("both");
+      setIdiomsBlankMode(false);
+      setIncludeWorksheet(false);
+      setIncludeQrCode(true);
+      setIncludeStudentHeader(false);
+      setIncludeAnswerKey(false);
+    } else if (preset === "exam-ab") {
+      setPdfDocMode("quiz-sheet");
+      setIncludeHarakat(true);
+      setIncludeStudentHeader(true);
+      setIncludeAnswerKey(true);
+    } else if (preset === "unvocalized-rubric") {
+      setPdfDocMode("unvocalized-rubric");
+      setIncludeHarakat(false);
+      setIncludeStudentHeader(true);
+      setIncludeAnswerKey(true);
+    } else if (preset === "cut-fold-cards") {
+      setPdfDocMode("flashcards");
+      setIncludeHarakat(true);
+      setTranslationMode("show");
+      setVocabLanguageMode("both");
+      setClozeMode(false);
+      setIncludeStudentHeader(false);
+      setIncludeAnswerKey(false);
+    }
+  };
 
   // Otomatik Sığdırma (Auto-Fit) Motoru State'leri
   const [fitMode, setFitMode] = useState<FitMode>("auto");
@@ -187,6 +389,7 @@ export default function DialoguePdfModal({
 
   const hasAnyBlankActivity =
     pdfDocMode === "quiz-sheet" ||
+    pdfDocMode === "unvocalized-rubric" ||
     clozeMode ||
     translationMode === "dotted" ||
     translationMode === "ar-dotted" ||
@@ -225,6 +428,7 @@ export default function DialoguePdfModal({
     fitMode,
     dialogue.id,
     pdfDocMode,
+    bookletGroup,
     flashcardGridSize,
     imageMode,
     translationMode,
@@ -526,13 +730,21 @@ export default function DialoguePdfModal({
     return items;
   }, [dialogue]);
 
-  // Aşama 2.3: Öğretmen İçin "📝 Çalışma & Quiz Yaprağı (100 Puanlık Sınıf İçi Etkinlik / Sınav)" Otomatik Üreticisi
+  // Aşama 2.3: Öğretmen İçin A/B Kitapçıklı 100 Puanlık Yazılı Sınav & Cevap Anahtarı Otomatik Üreticisi
   const a4QuizSheetData = useMemo(() => {
     const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    const seedValue = hashStringSeed(
+      `${dialogue.id}::BOOKLET_${bookletGroup}::v3`
+    );
+    const rng = mulberry32(seedValue);
+    const formCode = `${bookletGroup}-${seedValue
+      .toString(16)
+      .toUpperCase()
+      .padStart(4, "0")
+      .slice(-4)}`;
 
-    // Bölüm A — Kelime Eşleştirme (30 Puan): 6-8 önemli kelime
     const rawVocab = vocabEntries.slice(0, 7);
-    const matchingSource =
+    const baseMatchingSource =
       rawVocab.length >= 6
         ? rawVocab.map((v) => ({
             ar: (v.item.mufret || v.item.mazi || v.contextWord || "")
@@ -553,47 +765,29 @@ export default function DialoguePdfModal({
             })),
           ].slice(0, 6);
 
-    // Sağ sütundaki Türkçe anlamları deterministik olarak karıştır
-    const shuffledIndices = matchingSource.map((_, i) => i);
-    for (let i = shuffledIndices.length - 1; i > 0; i--) {
-      const j = (i * 5 + 2) % (i + 1);
-      const tmp = shuffledIndices[i];
-      shuffledIndices[i] = shuffledIndices[j];
-      shuffledIndices[j] = tmp;
+    const matchingSource = seededShuffle(baseMatchingSource, rng);
+    let shuffledIndices = seededShuffle(
+      matchingSource.map((_, i) => i),
+      rng
+    );
+    if (
+      shuffledIndices.length >= 2 &&
+      shuffledIndices.every((val, idx) => val === idx)
+    ) {
+      shuffledIndices = [...shuffledIndices.slice(1), shuffledIndices[0]];
     }
 
-    const sectionAMatching = matchingSource.map((item, idx) => {
-      const rightMeaningIdx = shuffledIndices[idx];
-      const correctLetterPos = shuffledIndices.indexOf(idx);
-      const correctLetter = letters[correctLetterPos] || "A";
-      return {
-        num: idx + 1,
-        arabic: item.ar,
-        letter: letters[idx] || String(idx + 1),
-        shuffledTr: matchingSource[rightMeaningIdx]?.tr || item.tr,
-        correctLetter,
-        correctTr: item.tr,
-      };
-    });
+    const baseSectionB = seededShuffle(miniWorksheetQuestions.slice(0, 5), rng);
+    const wordBank = seededShuffle(
+      baseSectionB.map((q) => q.answer),
+      rng
+    );
 
-    // Bölüm B — Boşluk Doldurma (40 Puan): 5 cümle + üstte karışık Kelime Havuzu
-    const sectionBFillBlanks = miniWorksheetQuestions.slice(0, 5);
-    const wordBank = [...sectionBFillBlanks.map((q) => q.answer)];
-    for (let i = wordBank.length - 1; i > 0; i--) {
-      const j = (i * 3 + 1) % (i + 1);
-      const tmp = wordBank[i];
-      wordBank[i] = wordBank[j];
-      wordBank[j] = tmp;
-    }
-
-    // Bölüm C — Kalıp İfadeler ve Anlama (30 Puan): 3-4 çoktan seçmeli/çeviri sorusu
-    const sectionCMultipleChoice: {
-      num: number;
+    const rawMultipleChoice: {
       typeLabel: string;
       arabicPrompt: string;
       questionTr: string;
-      options: { letter: string; text: string }[];
-      correctLetter: string;
+      rawOpts: string[];
       correctText: string;
     }[] = [];
 
@@ -609,33 +803,22 @@ export default function DialoguePdfModal({
         "Nasılsınız, iyi misiniz?",
         "Yarın görüşmek üzere.",
       ].slice(idx * 2, idx * 2 + 2);
-      const rawOpts = [idm.meaningTr, ...distractors].slice(0, 3);
-      // Deterministik şık sıralaması
-      const rot = (idx + 1) % rawOpts.length;
-      const ordered = [
-        ...rawOpts.slice(rot),
-        ...rawOpts.slice(0, rot),
-      ];
-      const cIdx = ordered.indexOf(idm.meaningTr);
-      const optLetters = ["A", "B", "C"];
-      sectionCMultipleChoice.push({
-        num: sectionCMultipleChoice.length + 1,
+      const rawOpts = Array.from(new Set([idm.meaningTr, ...distractors])).slice(
+        0,
+        3
+      );
+      rawMultipleChoice.push({
         typeLabel: "Kalıp İfade",
         arabicPrompt: idm.matchedPhrase || idm.arabic,
         questionTr: "Yukarıdaki kalıp ifadenin Türkçe anlamı hangisidir?",
-        options: ordered.map((t, oIdx) => ({
-          letter: optLetters[oIdx] || "A",
-          text: t,
-        })),
-        correctLetter: optLetters[cIdx >= 0 ? cIdx : 0],
+        rawOpts,
         correctText: idm.meaningTr,
       });
     });
 
-    // Okuma metni soruları varsa Bölüm C'ye ekle
     if (readingQuestions && readingQuestions.length > 0) {
       readingQuestions.slice(0, 4).forEach((rq, rqIdx) => {
-        if (sectionCMultipleChoice.length >= 4) return;
+        if (rawMultipleChoice.length >= 4) return;
         const otherQs = readingQuestions
           .filter((_, i) => i !== rqIdx)
           .map((o) => `${o.cevap_ar} (${o.cevap_tr})`);
@@ -648,29 +831,19 @@ export default function DialoguePdfModal({
             "فِي الصَّبَاحِ الْبَاكِرِ. (Sabah erkenden.)",
           ])
         ).slice(0, 3);
-        const rot = (rqIdx + 1) % rawOpts.length;
-        const ordered = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
-        const cIdx = ordered.indexOf(correctStr);
-        const optLetters = ["A", "B", "C"];
-        sectionCMultipleChoice.push({
-          num: sectionCMultipleChoice.length + 1,
+        rawMultipleChoice.push({
           typeLabel: "Okuduğunu Anlama",
           arabicPrompt: rq.soru_ar,
           questionTr: rq.soru_tr,
-          options: ordered.map((t, oIdx) => ({
-            letter: optLetters[oIdx] || "A",
-            text: t,
-          })),
-          correctLetter: optLetters[cIdx >= 0 ? cIdx : 0],
+          rawOpts,
           correctText: correctStr,
         });
       });
     }
 
-    // Kalan soruları diyalog cümlelerinden tamamla (toplam 4 soru)
     for (
       let i = 0;
-      i < dialogue.satirlar.length && sectionCMultipleChoice.length < 4;
+      i < dialogue.satirlar.length && rawMultipleChoice.length < 4;
       i++
     ) {
       const ln = dialogue.satirlar[i];
@@ -690,34 +863,96 @@ export default function DialoguePdfModal({
           "Affedersiniz, yardımcı olabilir misiniz?",
         ])
       ).slice(0, 3);
-      const rot = (i + 2) % rawOpts.length;
-      const ordered = [
-        ...rawOpts.slice(rot),
-        ...rawOpts.slice(0, rot),
-      ];
-      const cIdx = ordered.indexOf(ln.turkce);
-      const optLetters = ["A", "B", "C"];
-      sectionCMultipleChoice.push({
-        num: sectionCMultipleChoice.length + 1,
+      rawMultipleChoice.push({
         typeLabel: `Metin Anlama (Cümle #${ln.sira})`,
         arabicPrompt: ln.arapca,
         questionTr: "Metinde geçen bu cümlenin doğru Türkçe çevirisi hangisidir?",
+        rawOpts,
+        correctText: ln.turkce,
+      });
+    }
+
+    const shuffledMcItems = seededShuffle(rawMultipleChoice, rng);
+
+    const pointsAllocation = allocateExam100Points(
+      matchingSource.length,
+      baseSectionB.length,
+      shuffledMcItems.length
+    );
+
+    const sectionAMatching = matchingSource.map((item, idx) => {
+      const rightMeaningIdx = shuffledIndices[idx];
+      const correctLetterPos = shuffledIndices.indexOf(idx);
+      const correctLetter = letters[correctLetterPos] || "A";
+      return {
+        num: idx + 1,
+        points: pointsAllocation.perQuestionA[idx] ?? 0,
+        arabic: item.ar,
+        letter: letters[idx] || String(idx + 1),
+        shuffledTr: matchingSource[rightMeaningIdx]?.tr || item.tr,
+        correctLetter,
+        correctTr: item.tr,
+      };
+    });
+
+    const sectionBFillBlanks = baseSectionB.map((q, idx) => ({
+      ...q,
+      points: pointsAllocation.perQuestionB[idx] ?? 0,
+    }));
+
+    const optLetters = ["A", "B", "C", "D"];
+    const sectionCMultipleChoice = shuffledMcItems.map((item, idx) => {
+      const ordered = seededShuffle(item.rawOpts, rng);
+      const cIdx = ordered.indexOf(item.correctText);
+      return {
+        num: idx + 1,
+        points: pointsAllocation.perQuestionC[idx] ?? 0,
+        typeLabel: item.typeLabel,
+        arabicPrompt: item.arabicPrompt,
+        questionTr: item.questionTr,
         options: ordered.map((t, oIdx) => ({
           letter: optLetters[oIdx] || "A",
           text: t,
         })),
         correctLetter: optLetters[cIdx >= 0 ? cIdx : 0],
-        correctText: ln.turkce,
-      });
-    }
+        correctText: item.correctText,
+      };
+    });
 
     return {
+      bookletGroup,
+      formCode,
+      pointsAllocation,
       sectionAMatching,
       sectionBFillBlanks,
       wordBank,
       sectionCMultipleChoice,
     };
-  }, [vocabEntries, dialogue, miniWorksheetQuestions, dialogueIdioms, readingQuestions]);
+  }, [
+    vocabEntries,
+    dialogue,
+    miniWorksheetQuestions,
+    dialogueIdioms,
+    readingQuestions,
+    bookletGroup,
+  ]);
+
+  const unvocalizedRubricItems = useMemo(() => {
+    const selected = dialogue.satirlar.slice(0, 6);
+    const count = selected.length;
+    const basePts = count > 0 ? Math.floor(100 / count) : 0;
+    const remPts = count > 0 ? 100 % count : 0;
+    return selected.map((line, idx) => ({
+      num: idx + 1,
+      sira: line.sira,
+      konusmaci: line.konusmaci,
+      konusmaciAr: line.konusmaci_ar,
+      unvocalizedAr: stripHarakat(line.arapca),
+      vocalizedAr: line.arapca,
+      turkce: line.turkce,
+      points: idx < remPts ? basePts + 1 : basePts,
+    }));
+  }, [dialogue.satirlar]);
 
   const { dialogueUrl, shortDisplayUrl } = useMemo(
     () => buildDialogueQrUrl(dialogue.id, rawNum),
@@ -740,20 +975,27 @@ export default function DialoguePdfModal({
 
   const effectiveImageMode: ImagePrintMode = imgError ? "hide" : imageMode;
 
-  const handleGenerateAndPrintPdf = () => {
+  const handleGenerateAndPrintPdf = (printScope: PdfPrintScope = "student") => {
     playClick();
     playSuccess();
 
-    const formattedDate = new Date().toLocaleDateString("tr-TR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    const formatArHtml = (text: string) => escapeHtml(formatAr(text));
+    const formatVocalizedArHtml = (text: string) =>
+      escapeHtml(formatArabicText(text, true, arabicFont));
 
-    const absoluteImgUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${imagePath}`
-        : imagePath;
+    const formattedDate = escapeHtml(
+      new Date().toLocaleDateString("tr-TR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    );
+
+    const originStr =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const absoluteImgUrl = escapeHtml(
+      originStr ? `${originStr}${imagePath}` : imagePath
+    );
 
     const speakers = Array.from(
       new Set(dialogue.satirlar.map((l) => l.konusmaci))
@@ -772,7 +1014,7 @@ export default function DialoguePdfModal({
             ${clozeData.helperWords
               .map(
                 (w) =>
-                  `<span class="helper-word-chip">${formatAr(w)}</span>`
+                  `<span class="helper-word-chip">${formatArHtml(w)}</span>`
               )
               .join("")}
           </div>
@@ -781,18 +1023,21 @@ export default function DialoguePdfModal({
         : "";
 
     // Türkçe hücresi veya noktalı yazı alanı üretici
-    const renderTrContentHtml = (line: Dialogue["satirlar"][0], badgeCls: string) => {
+    const renderTrContentHtml = (
+      line: Dialogue["satirlar"][0],
+      badgeCls: string
+    ) => {
       if (translationMode === "dotted") {
         return `
           <div class="tr-dotted-wrap">
-            <span class="speaker-tr ${badgeCls}">${line.konusmaci}:</span>
+            <span class="speaker-tr ${badgeCls}">${escapeHtml(line.konusmaci)}:</span>
             <div class="tr-dotted-line">........................................................................</div>
           </div>
         `;
       }
       return `
-        <span class="speaker-tr ${badgeCls}">${line.konusmaci}</span>
-        <span class="tr-text">${line.turkce}</span>
+        <span class="speaker-tr ${badgeCls}">${escapeHtml(line.konusmaci)}</span>
+        <span class="tr-text">${escapeHtml(line.turkce)}</span>
       `;
     };
 
@@ -804,8 +1049,8 @@ export default function DialoguePdfModal({
       numbered?: boolean
     ) => {
       const speakerLabel = numbered
-        ? `${line.sira}. ${formatAr(line.konusmaci_ar)}`
-        : formatAr(line.konusmaci_ar);
+        ? `${line.sira}. ${formatArHtml(line.konusmaci_ar)}`
+        : formatArHtml(line.konusmaci_ar);
       if (translationMode === "ar-dotted") {
         return `
           <div class="ar-dotted-wrap" dir="rtl">
@@ -816,7 +1061,7 @@ export default function DialoguePdfModal({
       }
       return `
         <span class="speaker-ar ${badgeCls}">${speakerLabel}</span>
-        <span class="ar-text">${formatAr(arLineText)}</span>
+        <span class="ar-text">${formatArHtml(arLineText)}</span>
       `;
     };
 
@@ -824,7 +1069,6 @@ export default function DialoguePdfModal({
     let dialogueBodyHtml = "";
 
     if (translationMode === "hide") {
-      // Sadece Arapça (hiçbir çeviri boşluk modu aktif değilse)
       dialogueBodyHtml = `
         <div class="lines-container">
           ${dialogue.satirlar
@@ -932,7 +1176,6 @@ export default function DialoguePdfModal({
         </div>
       `;
     } else {
-      // Sonda Toplu (grouped-end)
       const trPageBreakStyle =
         translationPageBreak === "new"
           ? "page-break-before: always; break-before: page; margin-top: 0; padding-top: 6px;"
@@ -968,13 +1211,13 @@ export default function DialoguePdfModal({
                 translationMode === "dotted"
                   ? `
               <div class="end-tr-item">
-                <strong>${line.sira}. ${line.konusmaci}:</strong>
+                <strong>${line.sira}. ${escapeHtml(line.konusmaci)}:</strong>
                 <div class="tr-dotted-line" style="display:inline-block;width:75%;vertical-align:bottom;">......................................................</div>
               </div>
             `
                   : `
               <div class="end-tr-item">
-                <strong>${line.sira}. ${line.konusmaci}:</strong> ${line.turkce}
+                <strong>${line.sira}. ${escapeHtml(line.konusmaci)}:</strong> ${escapeHtml(line.turkce)}
               </div>
             `
               )
@@ -984,7 +1227,7 @@ export default function DialoguePdfModal({
       `;
     }
 
-    // Opsiyonel: 📚 Diyalog Kelime Hazinesi (المفردات) — 2 Sütunlu Şık Tablo
+    // Opsiyonel: 📚 Diyalog Kelime Hazinesi (المفردات)
     let vocabSectionHtml = "";
     if (includeVocabulary && vocabEntries.length > 0) {
       const vocabCells = vocabEntries.map((entry) => {
@@ -998,27 +1241,25 @@ export default function DialoguePdfModal({
             ? `<span class="pos-badge pos-edat">Edat</span>`
             : `<span class="pos-badge pos-isim">İsim</span>`;
         const rootText =
-          w.kok && w.kok !== "-" ? `Kök: ${formatAr(w.kok)}` : "";
+          w.kok && w.kok !== "-" ? `Kök: ${formatArHtml(w.kok)}` : "";
 
         const trDisplayHtml =
           vocabLanguageMode === "ar-only"
             ? `<div class="vocab-dotted-blank" title="Türkçe anlamı yazınız">............................................</div>`
-            : `<div class="vocab-meaning">${w.anlam_tr}</div>`;
+            : `<div class="vocab-meaning">${escapeHtml(w.anlam_tr)}</div>`;
 
         const arDisplayHtml =
           vocabLanguageMode === "tr-only"
             ? `<div class="vocab-dotted-blank-ar" dir="rtl" title="Arapça karşılığını yazınız">....................................</div>`
-            : `<span class="vocab-ar">${formatAr(mainAr)}</span>`;
+            : `<span class="vocab-ar">${formatArHtml(mainAr)}</span>`;
 
-        const itemThumbUrl = w.gorsel
+        const rawThumbUrl = w.gorsel
           ? w.gorsel.startsWith("http")
             ? w.gorsel
-            : `${typeof window !== "undefined" ? window.location.origin : ""}${
-                w.gorsel.startsWith("/") ? "" : "/"
-              }${w.gorsel}`
+            : `${originStr}${w.gorsel.startsWith("/") ? "" : "/"}${w.gorsel}`
           : "";
-        const itemThumbHtml = itemThumbUrl
-          ? `<img src="${itemThumbUrl}" alt="" loading="eager" style="width:36px;height:36px;aspect-ratio:1/1;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;flex-shrink:0;" onerror="this.style.display='none'" />`
+        const itemThumbHtml = rawThumbUrl
+          ? `<img src="${escapeHtml(rawThumbUrl)}" alt="" loading="eager" style="width:36px;height:36px;aspect-ratio:1/1;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;flex-shrink:0;" onerror="this.style.display='none'" />`
           : "";
 
         return `
@@ -1066,7 +1307,7 @@ export default function DialoguePdfModal({
       `;
     }
 
-    // Opsiyonel: ✨ Bu Diyalogdaki Kalıp İfadeler (التعبيرات الاصطلاحية) Tablosu
+    // Opsiyonel: ✨ Kalıp İfadeler Tablosu
     let idiomsSectionHtml = "";
     if (includeIdioms && idioms.length > 0) {
       const idiomRowsHtml = idioms
@@ -1074,14 +1315,14 @@ export default function DialoguePdfModal({
           const rowBg = idx % 2 === 0 ? "#f8fafc" : "#ffffff";
           const meaningCellHtml = idiomsBlankMode
             ? `<div class="idiom-dotted-line">......................................................</div>`
-            : `<strong>${idm.meaningTr}</strong>`;
+            : `<strong>${escapeHtml(idm.meaningTr)}</strong>`;
           return `
             <tr style="background: ${rowBg};">
-              <td class="idiom-ar-cell" dir="rtl">${formatAr(idm.arabic)}</td>
+              <td class="idiom-ar-cell" dir="rtl">${formatArHtml(idm.arabic)}</td>
               <td class="idiom-tr-cell" dir="ltr">${meaningCellHtml}</td>
               <td class="idiom-note-cell" dir="ltr">
-                <div><strong>Harfiyen:</strong> ${idm.literalTr}</div>
-                <div style="color:#475569;margin-top:2px;">💡 ${idm.usageNote}</div>
+                <div><strong>Harfiyen:</strong> ${escapeHtml(idm.literalTr)}</div>
+                <div style="color:#475569;margin-top:2px;">💡 ${escapeHtml(idm.usageNote)}</div>
               </td>
             </tr>
           `;
@@ -1102,7 +1343,7 @@ export default function DialoguePdfModal({
               <tr>
                 <th style="width: 30%; text-align: right;" dir="rtl">1. Kalıp İfade (Arapça)</th>
                 <th style="width: 30%; text-align: left;">2. Deyimsel Anlamı (Türkçe)</th>
-                <th style="width: 40%; text-align: left;">3. Harfiyen Anlamı & Kullanım İpucu</th>
+                <th style="width: 40%; text-align: left;">3. Harfiyen Anlamı &amp; Kullanım İpucu</th>
               </tr>
             </thead>
             <tbody>
@@ -1121,11 +1362,11 @@ export default function DialoguePdfModal({
           (q) => `
           <div class="quiz-row">
             <div class="quiz-ar" dir="rtl">
-              <strong>${q.sira}.</strong> ${formatAr(q.blankSentence)}
+              <strong>${q.sira}.</strong> ${formatArHtml(q.blankSentence)}
             </div>
             ${
               translationMode === "show"
-                ? `<div class="quiz-tr">İpucu: “${q.turkce}”</div>`
+                ? `<div class="quiz-tr">İpucu: “${escapeHtml(q.turkce)}”</div>`
                 : ""
             }
           </div>
@@ -1134,7 +1375,7 @@ export default function DialoguePdfModal({
         .join("");
 
       const wordBank = miniWorksheetQuestions
-        .map((q) => formatAr(q.answer))
+        .map((q) => formatArHtml(q.answer))
         .join("  •  ");
 
       worksheetSectionHtml = `
@@ -1150,36 +1391,133 @@ export default function DialoguePdfModal({
       `;
     }
 
-    // Öğrenci Bilgi Şeridi (Ad-Soyad / Sınıf / Tarih / Puan)
+    // Öğrenci Bilgi Şeridi
     const studentHeaderHtml = includeStudentHeader
       ? `
         <div class="student-info-strip">
           <span><strong>Adı Soyadı:</strong> ....................................</span>
           <span><strong>Sınıf / No:</strong> ....................</span>
           <span><strong>Tarih:</strong> .... / .... / 2026</span>
-          <span><strong>Puan:</strong> .........</span>
+          <span><strong>Puan:</strong> ......... / 100</span>
         </div>
       `
       : "";
 
-    // ✂️ Kes-Yapıştır Kelime & Cümle Kartları Şablonu HTML Üretimi
+    // ✍️ Harekesiz Yazılı Yoklama + Maarif 4 Beceri Değerlendirme Rubriği HTML Üretimi
+    const unvocalizedRubricSectionHtml = `
+      <div class="student-header-strip">
+        <span><strong>Adı Soyadı:</strong> .......................................</span>
+        <span><strong>Sınıfı / No:</strong> ..................</span>
+        <span><strong>Tarih:</strong> .... / .... / 2026</span>
+        <span><strong>Toplam Puan:</strong> ........ / 100</span>
+      </div>
+
+      <div class="section-block" style="margin-bottom:10px;">
+        <div class="section-title">
+          <span>BÖLÜM 1 — Harekesiz Metni Harekeleme, Tercüme ve İ'rab Yoklaması</span>
+          <span class="section-title-ar" dir="rtl">أ. الضَّبْطُ بِالشَّكْلِ وَالتَّرْجَمَةُ وَالْإِعْرَابُ</span>
+        </div>
+        <div style="font-size:10.5px;color:#475569;margin-bottom:6px;font-weight:600;">
+          Yönerge: Aşağıdaki harekesiz Arapça cümleleri tam harekeleyiniz (ضبط بالشكل), altı çizili veya temel ögelerin i'rabını belirterek Türkçe tercümesini noktalı alana yazınız.
+        </div>
+        <div style="border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;">
+          ${unvocalizedRubricItems
+            .map(
+              (item, idx) => `
+            <div style="padding:8px 12px;border-bottom:${
+              idx < unvocalizedRubricItems.length - 1
+                ? "1px solid #e2e8f0"
+                : "none"
+            };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};page-break-inside:avoid;break-inside:avoid;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;" dir="rtl">
+                <div style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
+                23 * fontConfig.scale
+              )}px;font-weight:700;color:#0f172a;line-height:2.25;text-align:right;flex:1;">
+                  <span style="font-size:14px;color:#087f5b;margin-left:6px;">${
+                    item.num
+                  }.</span>
+                  ${escapeHtml(
+                    formatArabicText(item.unvocalizedAr, false, arabicFont)
+                  )}
+                </div>
+                <span dir="ltr" style="font-size:9.5px;font-weight:800;color:#6741d9;background:#f3f0ff;border:1px solid #d0bfff;padding:1px 6px;border-radius:5px;flex-shrink:0;">
+                  ${item.points}p
+                </span>
+              </div>
+              <div style="margin-top:4px;display:flex;align-items:flex-end;gap:6px;font-size:10.5px;color:#475569;">
+                <strong style="flex-shrink:0;">Tercüme &amp; İ'rab Notu:</strong>
+                <div style="flex:1;border-bottom:1.5px dotted #94a3b8;height:18px;"></div>
+              </div>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+      </div>
+
+      <div class="section-block" style="margin-top:12px;page-break-inside:avoid;break-inside:avoid;">
+        <div class="section-title" style="border-left-color:#6741d9;color:#4c28b5;">
+          <span>📊 Maarif Modeli 4 Temel Dil Becerisi Değerlendirme Ölçeği (Rubrik — Toplam 100 Puan)</span>
+          <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:15px;">مِقْيَاسُ التَّقْوِيمِ الشَّامِلِ</span>
+        </div>
+        <table class="two-col-table" style="font-size:10.5px;">
+          <thead>
+            <tr>
+              <th style="width:24%;text-align:left;">Temel Dil Becerisi</th>
+              <th style="width:22%;text-align:left;">Geliştirilmeli (0–10p)</th>
+              <th style="width:22%;text-align:left;">Yeterli (11–18p)</th>
+              <th style="width:20%;text-align:left;">Yetkin (19–25p)</th>
+              <th style="width:12%;text-align:center;">Puan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${MAARIF_RUBRIC_CRITERIA.map(
+              (r, idx) => `
+              <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                <td>
+                  <div style="font-weight:800;color:#0f172a;">${escapeHtml(r.skillTr)}</div>
+                  <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:13px;color:#087f5b;font-weight:700;">${escapeHtml(
+                r.skillAr
+              )}</div>
+                </td>
+                <td style="color:#475569;">${escapeHtml(r.developing)}</td>
+                <td style="color:#334155;">${escapeHtml(r.proficient)}</td>
+                <td style="color:#065f46;font-weight:700;">${escapeHtml(r.advanced)}</td>
+                <td style="text-align:center;font-weight:800;color:#1e293b;">.... / ${r.maxPoints}</td>
+              </tr>
+            `
+            ).join("")}
+            <tr style="background:#ecfdf5;">
+              <td colspan="4" style="font-weight:800;color:#065f46;text-align:right;">
+                Öğretmen Genel Değerlendirmesi &amp; Toplam Bütüncül Puan:
+              </td>
+              <td style="text-align:center;font-weight:800;color:#065f46;font-size:11.5px;">
+                ...... / 100
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // ✂️ Kes-Katla Kelime & Cümle Kartları Şablonu HTML Üretimi
     const flashcardGridCols =
       flashcardGridSize === "4x4" ? "repeat(4, 1fr)" : "repeat(3, 1fr)";
     const flashcardImgPx = flashcardGridSize === "3x3" ? 76 : 54;
     const flashcardsSectionHtml = `
       <div style="margin-bottom:8px;padding:6px 12px;border-radius:10px;background:#f8fafc;border:1.5px dashed #94a3b8;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:#334155;">
-        <span>✂️ Kesikli çizgilerden makasla keserek çift yönlü ezber veya sıra üstü eşleştirme kartı olarak kullanabilirsiniz.</span>
+        <span>✂️ Kesikli çizgilerden makasla keserek veya ortadan katlayarak çift yönlü kelime kartı olarak kullanabilirsiniz.</span>
         <span style="color:#087f5b;font-weight:800;">${flashcardGridSize} Şablon (${flashcardItems.length} Kart)</span>
       </div>
       <div style="display:grid;grid-template-columns:${flashcardGridCols};gap:10px;">
         ${flashcardItems
           .map((fc, idx) => {
-            const absFcImg = fc.imageUrl
+            const rawFcImg = fc.imageUrl
               ? fc.imageUrl.startsWith("http")
                 ? fc.imageUrl
-                : `${typeof window !== "undefined" ? window.location.origin : ""}${
-                    fc.imageUrl.startsWith("/") ? "" : "/"
-                  }${fc.imageUrl}`
+                : `${originStr}${fc.imageUrl.startsWith("/") ? "" : "/"}${
+                    fc.imageUrl
+                  }`
               : "";
             return `
               <div style="border:2px dashed #94a3b8;border-radius:14px;padding:${
@@ -1192,19 +1530,19 @@ export default function DialoguePdfModal({
                   : "145px"
               };position:relative;">
                 <div style="width:100%;display:flex;align-items:center;justify-content:space-between;font-size:9.5px;font-weight:800;color:#64748b;margin-bottom:4px;">
-                  <span>✂️ #${idx + 1} • ${fc.posLabel}</span>
+                  <span>✂️ #${idx + 1} • ${escapeHtml(fc.posLabel)}</span>
                   ${
                     fc.kok
-                      ? `<span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:13px;color:#6741d9;background:#f3f0ff;padding:0 6px;border-radius:5px;border:1px solid #d0bfff;">${formatAr(
+                      ? `<span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:13px;color:#6741d9;background:#f3f0ff;padding:0 6px;border-radius:5px;border:1px solid #d0bfff;">${formatArHtml(
                           fc.kok
                         )}</span>`
-                      : `<span>${dialogue.seviye}</span>`
+                      : `<span>${escapeHtml(dialogue.seviye)}</span>`
                   }
                 </div>
 
                 ${
-                  absFcImg && effectiveImageMode !== "hide"
-                    ? `<img src="${absFcImg}" alt="" loading="eager" style="width:${flashcardImgPx}px;height:${flashcardImgPx}px;aspect-ratio:1/1;object-fit:contain;margin:2px auto;display:block;border-radius:8px;border:1px solid #e2e8f0;background:#ffffff;" onerror="this.style.display='none'" />`
+                  rawFcImg && effectiveImageMode !== "hide"
+                    ? `<img src="${escapeHtml(rawFcImg)}" alt="" loading="eager" style="width:${flashcardImgPx}px;height:${flashcardImgPx}px;aspect-ratio:1/1;object-fit:contain;margin:2px auto;display:block;border-radius:8px;border:1px solid #e2e8f0;background:#ffffff;" onerror="this.style.display='none'" />`
                     : ""
                 }
 
@@ -1212,16 +1550,16 @@ export default function DialoguePdfModal({
                   ${
                     translationMode === "ar-dotted"
                       ? `<div style="border-bottom:1.5px dotted #64748b;height:26px;width:88%;margin:6px auto;">................</div>`
-                      : `<div style="font-family:'${fontConfig.cssFamily}',serif;font-size:${Math.round(
+                      : `<div style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
                           (flashcardGridSize === "3x3" ? 25 : 20) *
                             fontConfig.scale
-                        )}px;font-weight:700;color:#087f5b;line-height:1.45;">${formatAr(
+                        )}px;font-weight:700;color:#087f5b;line-height:1.45;">${formatArHtml(
                           fc.arabic
                         )}</div>`
                   }
                   ${
                     fc.morphInfo && translationMode !== "ar-dotted"
-                      ? `<div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:12px;font-weight:700;color:#475569;margin-top:2px;">${formatAr(
+                      ? `<div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:12px;font-weight:700;color:#475569;margin-top:2px;">${formatArHtml(
                           fc.morphInfo
                         )}</div>`
                       : ""
@@ -1234,9 +1572,9 @@ export default function DialoguePdfModal({
                       ? `<div style="font-size:11px;color:#64748b;letter-spacing:1px;padding-top:4px;">....................................</div>`
                       : `<div style="font-size:${
                           flashcardGridSize === "3x3" ? "12px" : "11px"
-                        };font-weight:800;color:#1e293b;line-height:1.3;">${
+                        };font-weight:800;color:#1e293b;line-height:1.3;">${escapeHtml(
                           fc.turkish
-                        }</div>`
+                        )}</div>`
                   }
                 </div>
               </div>
@@ -1246,14 +1584,14 @@ export default function DialoguePdfModal({
       </div>
     `;
 
-    // 🔑 2. SAYFA ÖĞRETMEN CEVAP ANAHTARI (Ayrı 2. A4 Sayfası: page-break-before: always; break-before: page)
+    // 🔑 ÖĞRETMEN CEVAP ANAHTARI HTML ÜRETİMİ
     const renderHighlightedClozeSentenceHtml = (
       fullArabic: string,
       targetWord: string | null
     ) => {
-      if (!targetWord) return formatAr(fullArabic);
-      const formattedFull = formatAr(fullArabic);
-      const formattedTarget = formatAr(targetWord);
+      if (!targetWord) return formatArHtml(fullArabic);
+      const formattedFull = formatArHtml(fullArabic);
+      const formattedTarget = formatArHtml(targetWord);
       if (formattedFull.includes(formattedTarget)) {
         return formattedFull.replace(
           formattedTarget,
@@ -1263,21 +1601,36 @@ export default function DialoguePdfModal({
       return `${formattedFull} <u style="color:#dc2626;font-weight:800;">(${formattedTarget})</u>`;
     };
 
-    const secondPageAnswerKeyHtml = includeAnswerKey
+    const shouldRenderAnswerKey =
+      printScope === "answer-key" ||
+      (printScope === "both" && includeAnswerKey);
+    const answerKeyPageBreakStyle =
+      printScope === "both"
+        ? "page-break-before: always; break-before: page; padding-top: 4px;"
+        : "padding-top: 0;";
+
+    const secondPageAnswerKeyHtml = shouldRenderAnswerKey
       ? `
-        <div class="teacher-answer-key-page" style="page-break-before: always; break-before: page; padding-top: 4px;">
+        <div class="teacher-answer-key-page" style="${answerKeyPageBreakStyle}">
           <div class="header-card" style="border-color:#087f5b;background:#ecfdf5;margin-bottom:12px;">
             <div class="header-left">
               <div class="badge-row">
-                <span class="badge" style="background:#087f5b;">🔑 2. SAYFA • ÖĞRETMEN CEVAP ANAHTARI</span>
-                <span class="badge-cefr">CEFR ${dialogue.seviye}</span>
+                <span class="badge" style="background:#087f5b;">🔑 ÖĞRETMEN CEVAP ANAHTARI</span>
+                <span class="badge-cefr">CEFR ${escapeHtml(dialogue.seviye)}</span>
+                ${
+                  pdfDocMode === "quiz-sheet"
+                    ? `<span class="badge" style="background:#6741d9;">KİTAPÇIK: ${a4QuizSheetData.bookletGroup} GRUBU (FORM #${escapeHtml(
+                        a4QuizSheetData.formCode
+                      )})</span>`
+                    : ""
+                }
                 <span class="badge-outline">مِفْتَاحُ الْإِجَابَاتِ لِلْمُعَلِّمِ</span>
               </div>
               <div class="title-row">
-                <h2 class="title-tr" style="font-size:16px;">🔑 ÖĞRETMEN CEVAP ANAHTARI — ${
+                <h2 class="title-tr" style="font-size:16px;">🔑 Öğretmen Cevap Anahtarı — ${escapeHtml(
                   dialogue.baslik_tr
-                }</h2>
-                <span class="title-ar" dir="rtl" style="font-size:22px;">${formatAr(
+                )}</h2>
+                <span class="title-ar" dir="rtl" style="font-size:22px;">${formatArHtml(
                   dialogue.baslik_ar
                 )}</span>
               </div>
@@ -1287,14 +1640,13 @@ export default function DialoguePdfModal({
           ${
             pdfDocMode === "quiz-sheet"
               ? `
-              <!-- BÖLÜM A CEVAPLARI -->
               <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm A — Kelime Eşleştirme Doğru Cevapları (30 Puan)</div>
+                <div class="section-title">✅ Bölüm A — Kelime Eşleştirme Doğru Cevapları (${a4QuizSheetData.pointsAllocation.totalA} Puan)</div>
                 <table class="two-col-table" style="font-size:11.5px;">
                   <thead>
                     <tr>
-                      <th style="width:12%;">Soru</th>
-                      <th style="width:38%;text-align:right;" dir="rtl">Arapça Kelime</th>
+                      <th style="width:14%;">Soru / Puan</th>
+                      <th style="width:36%;text-align:right;" dir="rtl">Arapça Kelime</th>
                       <th style="width:18%;text-align:center;">Doğru Şık</th>
                       <th style="width:32%;text-align:left;">Türkçe Karşılığı</th>
                     </tr>
@@ -1304,14 +1656,14 @@ export default function DialoguePdfModal({
                       .map(
                         (m, idx) => `
                         <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                          <td style="font-weight:800;">#${m.num}</td>
-                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#087f5b;">${formatAr(
+                          <td style="font-weight:800;">#${m.num} (${m.points}p)</td>
+                          <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:18px;font-weight:700;color:#087f5b;">${formatArHtml(
                           m.arabic
                         )}</td>
                           <td style="text-align:center;"><span style="background:#ecfdf5;color:#065f46;border:1px solid #087f5b;padding:2px 8px;border-radius:6px;font-weight:800;">${
                             m.num
-                          } → ${m.correctLetter}</span></td>
-                          <td style="font-weight:700;color:#1e293b;">${m.correctTr}</td>
+                          } → ${escapeHtml(m.correctLetter)}</span></td>
+                          <td style="font-weight:700;color:#1e293b;">${escapeHtml(m.correctTr)}</td>
                         </tr>
                       `
                       )
@@ -1320,15 +1672,16 @@ export default function DialoguePdfModal({
                 </table>
               </div>
 
-              <!-- BÖLÜM B CEVAPLARI (Hedef Kelimeler Renkli ve Altı Çizili) -->
               <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm B — Boşluk Doldurma Tam Cümle Çözümleri (40 Puan)</div>
+                <div class="section-title">✅ Bölüm B — Boşluk Doldurma Tam Cümle Çözümleri (${a4QuizSheetData.pointsAllocation.totalB} Puan)</div>
                 <div style="border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;">
                   ${a4QuizSheetData.sectionBFillBlanks
                     .map((b, idx) => {
-                      const highlightedSentence = formatAr(b.blankSentence).replace(
+                      const highlightedSentence = formatArHtml(
+                        b.blankSentence
+                      ).replace(
                         /\.{6,}/g,
-                        `<u style="color:#dc2626;background:#fef2f2;padding:0 6px;border-radius:4px;font-weight:800;text-decoration:underline;">${formatAr(
+                        `<u style="color:#dc2626;background:#fef2f2;padding:0 6px;border-radius:4px;font-weight:800;text-decoration:underline;">${formatArHtml(
                           b.answer
                         )}</u>`
                       );
@@ -1339,13 +1692,13 @@ export default function DialoguePdfModal({
                             : "none"
                         };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};display:flex;align-items:center;justify-content:space-between;gap:12px;">
                           <div style="font-size:11px;color:#334155;">
-                            <strong>${idx + 1}. Doğru Kelime:</strong>
-                            <span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:17px;font-weight:800;color:#dc2626;margin:0 6px;"><u>${formatAr(
+                            <strong>${idx + 1}. (${b.points}p) Doğru Kelime:</strong>
+                            <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:800;color:#dc2626;margin:0 6px;"><u>${formatArHtml(
                               b.answer
                             )}</u></span>
-                            <span>(${b.turkce})</span>
+                            <span>(${escapeHtml(b.turkce)})</span>
                           </div>
-                          <div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#0f172a;text-align:right;">
+                          <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:18px;font-weight:700;color:#0f172a;text-align:right;">
                             ${idx + 1}. ${highlightedSentence}
                           </div>
                         </div>
@@ -1355,21 +1708,20 @@ export default function DialoguePdfModal({
                 </div>
               </div>
 
-              <!-- BÖLÜM C CEVAPLARI -->
               <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm C — Kalıp İfadeler ve Metin Anlama Çözümleri (30 Puan)</div>
+                <div class="section-title">✅ Bölüm C — Kalıp İfadeler ve Metin Anlama Çözümleri (${a4QuizSheetData.pointsAllocation.totalC} Puan)</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                   ${a4QuizSheetData.sectionCMultipleChoice
                     .map(
                       (c) => `
                       <div style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;background:#f8fafc;">
-                        <div style="font-size:11px;font-weight:800;color:#6741d9;">Soru ${c.num} (${c.typeLabel})</div>
-                        <div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:16px;font-weight:700;color:#087f5b;margin:2px 0;">${formatAr(
+                        <div style="font-size:11px;font-weight:800;color:#6741d9;">Soru ${c.num} • ${escapeHtml(c.typeLabel)} (${c.points}p)</div>
+                        <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:16px;font-weight:700;color:#087f5b;margin:2px 0;">${formatArHtml(
                         c.arabicPrompt
                       )}</div>
-                        <div style="font-size:11.5px;font-weight:800;color:#065f46;">✓ Doğru Şık: ${
+                        <div style="font-size:11.5px;font-weight:800;color:#065f46;">✓ Doğru Şık: ${escapeHtml(
                           c.correctLetter
-                        }) ${c.correctText}</div>
+                        )}) ${escapeHtml(c.correctText)}</div>
                       </div>
                     `
                     )
@@ -1377,10 +1729,40 @@ export default function DialoguePdfModal({
                 </div>
               </div>
             `
+              : pdfDocMode === "unvocalized-rubric"
+              ? `
+              <div class="section-block" style="margin-bottom:10px;">
+                <div class="section-title">✅ Harekesiz Yoklama Tam Harekeli (الضبط الكامل) ve Tercüme Anahtarı</div>
+                <table class="two-col-table" style="font-size:11.5px;">
+                  <thead>
+                    <tr>
+                      <th style="width:46%;text-align:left;">Tam Türkçe Tercümesi</th>
+                      <th style="width:54%;text-align:right;" dir="rtl">Tam Harekeli Doğru Metin (النَّصُّ الْمَشْكُولُ)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${unvocalizedRubricItems
+                      .map(
+                        (item, idx) => `
+                        <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                          <td style="font-weight:600;color:#1e293b;"><strong>${item.num}. (${item.points}p) ${escapeHtml(
+                          item.konusmaci
+                        )}:</strong> ${escapeHtml(item.turkce)}</td>
+                          <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:20px;font-weight:700;color:#087f5b;line-height:2;">
+                            ${item.num}. ${formatVocalizedArHtml(item.vocalizedAr)}
+                          </td>
+                        </tr>
+                      `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
               : pdfDocMode === "flashcards"
               ? `
               <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Kes-Yapıştır Kelime &amp; Cümle Kartları Tam Cevap Listesi (${flashcardItems.length} Kart)</div>
+                <div class="section-title">✅ Kes-Katla Kelime Kartları Tam Cevap Listesi (${flashcardItems.length} Kart)</div>
                 <table class="two-col-table" style="font-size:11.5px;">
                   <thead>
                     <tr>
@@ -1395,14 +1777,14 @@ export default function DialoguePdfModal({
                       .map(
                         (fc, idx) => `
                         <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                          <td style="font-weight:800;">#${idx + 1} (${fc.posLabel})</td>
-                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:19px;font-weight:700;color:#087f5b;"><u style="text-decoration-color:#087f5b;">${formatAr(
+                          <td style="font-weight:800;">#${idx + 1} (${escapeHtml(fc.posLabel)})</td>
+                          <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:19px;font-weight:700;color:#087f5b;"><u style="text-decoration-color:#087f5b;">${formatArHtml(
                           fc.arabic
                         )}</u></td>
-                          <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:14px;color:#6741d9;font-weight:700;">${
-                          fc.kok ? `Kök: ${formatAr(fc.kok)}` : "-"
-                        } ${fc.morphInfo ? `• ${formatAr(fc.morphInfo)}` : ""}</td>
-                          <td style="font-weight:800;color:#1e293b;">${fc.turkish}</td>
+                          <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:14px;color:#6741d9;font-weight:700;">${
+                          fc.kok ? `Kök: ${formatArHtml(fc.kok)}` : "-"
+                        } ${fc.morphInfo ? `• ${formatArHtml(fc.morphInfo)}` : ""}</td>
+                          <td style="font-weight:800;color:#1e293b;">${escapeHtml(fc.turkish)}</td>
                         </tr>
                       `
                       )
@@ -1412,7 +1794,6 @@ export default function DialoguePdfModal({
               </div>
             `
               : `
-              <!-- DERS FÖYÜ TAM METİN, BOŞLUK DOLDURMA VE SÖZLÜK CEVAP ANAHTARI -->
               <div class="section-block" style="margin-bottom:10px;">
                 <div class="section-title">✅ 1. Diyalog / Metin Tam Cümleleri ve Boşluk Doldurma (Cloze) Çözümleri</div>
                 <table class="two-col-table" style="font-size:11.5px;">
@@ -1428,13 +1809,13 @@ export default function DialoguePdfModal({
                         const targetW = clozeData.lineTargetWords[idx] || null;
                         return `
                           <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                            <td style="font-weight:600;color:#1e293b;"><strong>${line.sira}. ${
+                            <td style="font-weight:600;color:#1e293b;"><strong>${line.sira}. ${escapeHtml(
                               line.konusmaci
-                            }:</strong> ${line.turkce}</td>
-                            <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:18px;font-weight:700;color:#0f172a;">
+                            )}:</strong> ${escapeHtml(line.turkce)}</td>
+                            <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:18px;font-weight:700;color:#0f172a;">
                               <span style="color:#087f5b;font-size:14px;margin-left:6px;">${
                                 line.sira
-                              }. ${formatAr(line.konusmaci_ar)}:</span>
+                              }. ${formatArHtml(line.konusmaci_ar)}:</span>
                               ${renderHighlightedClozeSentenceHtml(
                                 line.arapca,
                                 targetW
@@ -1463,10 +1844,10 @@ export default function DialoguePdfModal({
                               <div class="vocab-left">
                                 <span style="font-size:11px;font-weight:800;color:#1e293b;">${
                                   idx + 1
-                                }. ${w.anlam_tr}</span>
+                                }. ${escapeHtml(w.anlam_tr)}</span>
                               </div>
                               <div class="vocab-right" dir="rtl">
-                                <span class="vocab-ar" style="font-size:18px;"><u style="color:#087f5b;">${formatAr(
+                                <span class="vocab-ar" style="font-size:18px;"><u style="color:#087f5b;">${formatArHtml(
                                   mainAr
                                 )}</u></span>
                               </div>
@@ -1489,9 +1870,9 @@ export default function DialoguePdfModal({
                       ${miniWorksheetQuestions
                         .map(
                           (q) =>
-                            `<span style="margin-right:14px;"><strong>${q.sira})</strong> <span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:17px;font-weight:800;color:#dc2626;"><u>${formatAr(
+                            `<span style="margin-right:14px;"><strong>${q.sira})</strong> <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:800;color:#dc2626;"><u>${formatArHtml(
                               q.answer
-                            )}</u></span> (${q.turkce})</span>`
+                            )}</u></span> (${escapeHtml(q.turkce)})</span>`
                         )
                         .join(" ")}
                     </div>
@@ -1501,6 +1882,12 @@ export default function DialoguePdfModal({
               }
             `
           }
+          <footer class="corporate-footer">
+            <span>🔑 Öğretmen Cevap Anahtarı — ${escapeHtml(dialogue.baslik_tr)} (${escapeHtml(
+          dialogue.seviye
+        )})</span>
+            <a href="https://www.muallimun.net" target="_blank" rel="noopener noreferrer" class="corporate-brand" style="text-decoration:none;">www.muallimun.net</a>
+          </footer>
         </div>
       `
       : "";
@@ -1508,20 +1895,20 @@ export default function DialoguePdfModal({
     // Görsel & QR Kod HTML blokları
     const compactImageHtml =
       effectiveImageMode === "compact"
-        ? `<img src="${absoluteImgUrl}" alt="${dialogue.baslik_tr}" loading="eager" class="cover-img-compact" onerror="this.style.display='none'" />`
+        ? `<img src="${absoluteImgUrl}" alt="${escapeHtml(dialogue.baslik_tr)}" loading="eager" class="cover-img-compact" onerror="this.style.display='none'" />`
         : "";
 
     const bannerImageHtml =
       effectiveImageMode === "banner"
-        ? `<div class="banner-img-wrap"><img src="${absoluteImgUrl}" alt="${dialogue.baslik_tr}" loading="eager" class="cover-img-banner" onerror="this.parentElement.style.display='none'" /></div>`
+        ? `<div class="banner-img-wrap"><img src="${absoluteImgUrl}" alt="${escapeHtml(dialogue.baslik_tr)}" loading="eager" class="cover-img-banner" onerror="this.parentElement.style.display='none'" /></div>`
         : "";
 
     const qrBlockHtml = includeQrCode
       ? `
-        <a href="${dialogueUrl}" target="_blank" rel="noopener noreferrer" class="qr-code-container" title="${dialogueUrl}">
+        <a href="${escapeHtml(dialogueUrl)}" target="_blank" rel="noopener noreferrer" class="qr-code-container" title="${escapeHtml(dialogueUrl)}">
           ${qrSvgMarkup}
           <span class="qr-caption">Dinlemek için okutun</span>
-          <span class="qr-short-url">${shortDisplayUrl}</span>
+          <span class="qr-short-url">${escapeHtml(shortDisplayUrl)}</span>
         </a>
       `
       : "";
@@ -1534,28 +1921,26 @@ export default function DialoguePdfModal({
       <html lang="tr">
       <head>
         <meta charset="UTF-8" />
-        <title>Diyalog #${String(rawNum).padStart(2, "0")} - ${
+        <title>Diyalog #${String(rawNum).padStart(2, "0")} - ${escapeHtml(
       dialogue.baslik_tr
-    } | www.muallimun.net</title>
+    )} | www.muallimun.net</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Lateef:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
         <style>
           @font-face {
             font-family: "ArakomFont";
-            src: url("${
-              typeof window !== "undefined" ? window.location.origin : ""
-            }/fonts/Arakom-Regular.ttf") format("truetype");
-            font-weight: 400;
+            src: url("${originStr}/fonts/Arakom.ttf") format("truetype");
+            font-weight: 100 900;
             font-style: normal;
+            font-display: swap;
           }
           @font-face {
-            font-family: "ArakomFont";
-            src: url("${
-              typeof window !== "undefined" ? window.location.origin : ""
-            }/fonts/Arakom-Bold.ttf") format("truetype");
-            font-weight: 700;
+            font-family: "WinSoftPro";
+            src: url("${originStr}/fonts/WinSoftPro-Med.otf") format("opentype");
+            font-weight: 100 900;
             font-style: normal;
+            font-display: swap;
           }
           @page {
             size: A4 portrait;
@@ -2269,6 +2654,9 @@ export default function DialoguePdfModal({
         </style>
       </head>
       <body class="density-${activeDensity}">
+        ${
+          printScope !== "answer-key"
+            ? `
         <div class="header-card">
           <div class="header-left">
             <div class="badge-row">
@@ -2279,12 +2667,21 @@ export default function DialoguePdfModal({
                   ? `OKUMA METNİ #${String(rawNum).padStart(2, "0")}`
                   : `DİYALOG #${String(rawNum).padStart(2, "0")}`
               }</span>
-              <span class="badge-cefr">CEFR ${dialogue.seviye}</span>
+              <span class="badge-cefr">CEFR ${escapeHtml(dialogue.seviye)}</span>
+              ${
+                pdfDocMode === "quiz-sheet"
+                  ? `<span class="badge" style="background:#6741d9;">Kitapçık: ${a4QuizSheetData.bookletGroup} Grubu (Form Kodu: #${escapeHtml(
+                      a4QuizSheetData.formCode
+                    )})</span>`
+                  : ""
+              }
               <span class="badge-outline">${
                 pdfDocMode === "quiz-sheet"
-                  ? "SINIF İÇİ ETKİNLİK & QUİZ YAPRAĞI (100 PUAN)"
+                  ? `YAZILI SINAV (${a4QuizSheetData.pointsAllocation.grandTotal} PUAN)`
+                  : pdfDocMode === "unvocalized-rubric"
+                  ? "HAREKESİZ YOKLAMA & MAARİF RUBRİĞİ (100 PUAN)"
                   : pdfDocMode === "flashcards"
-                  ? `✂️ KES-YAPIŞTIR KELİME & CÜMLE KARTLARI (${flashcardGridSize})`
+                  ? `✂️ KES-KATLA KELİME KARTLARI (${flashcardGridSize})`
                   : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`
               }</span>
               <span class="badge-outline">${
@@ -2292,15 +2689,15 @@ export default function DialoguePdfModal({
               }</span>
             </div>
             <div class="title-row">
-              <h1 class="title-tr">${dialogue.baslik_tr}</h1>
-              <span class="title-ar" dir="rtl">${formatAr(
+              <h1 class="title-tr">${escapeHtml(dialogue.baslik_tr)}</h1>
+              <span class="title-ar" dir="rtl">${formatArHtml(
                 dialogue.baslik_ar
               )}</span>
             </div>
             <div class="header-submeta">
-              Tarih: ${formattedDate} • Font: ${
-      fontConfig.name.split(" (")[0]
-    } • www.muallimun.net
+              Tarih: ${formattedDate} • Font: ${escapeHtml(
+                fontConfig.name.split(" (")[0]
+              )} • www.muallimun.net
             </div>
           </div>
           ${
@@ -2321,14 +2718,19 @@ export default function DialoguePdfModal({
           <div class="student-header-strip">
             <span><strong>Adı Soyadı:</strong> .......................................</span>
             <span><strong>Sınıfı / No:</strong> ..................</span>
-            <span><strong>Tarih:</strong> .... / .... / 2026</span>
-            <span><strong>Puan:</strong> ........ / 100</span>
+            <span><strong>Kitapçık:</strong> ${a4QuizSheetData.bookletGroup} Grubu (#${escapeHtml(
+                a4QuizSheetData.formCode
+              )})</span>
+            <span><strong>Puan:</strong> ........ / ${
+              a4QuizSheetData.pointsAllocation.grandTotal
+            }</span>
           </div>
 
-          <!-- BÖLÜM A: KELİME EŞLEŞTİRME (30 PUAN) -->
           <div class="section-block" style="margin-bottom:10px;">
             <div class="section-title">
-              <span>BÖLÜM A — Kelime Eşleştirme (Her soru 5 puan • Toplam 30 Puan)</span>
+              <span>BÖLÜM A — Kelime Eşleştirme (Toplam ${
+                a4QuizSheetData.pointsAllocation.totalA
+              } Puan)</span>
               <span class="section-title-ar" dir="rtl">أ. تَوْصِيلُ الْمُفْرَدَاتِ</span>
             </div>
             <table class="vocab-table" style="width:100%;border-collapse:collapse;">
@@ -2344,16 +2746,18 @@ export default function DialoguePdfModal({
                   .map(
                     (row) => `
                   <tr>
-                    <td dir="rtl" style="text-align:right;font-family:'${fontConfig.cssFamily}',serif;font-size:${Math.round(
+                    <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:${Math.round(
                       18 * fontConfig.scale
                     )}px;font-weight:700;color:#087f5b;padding:4px 8px;">
-                      ${row.num}. ${formatAr(row.arabic)}
+                      ${row.num}. ${formatArHtml(row.arabic)} <span dir="ltr" style="font-size:9.5px;color:#64748b;font-family:sans-serif;">(${row.points}p)</span>
                     </td>
                     <td style="text-align:center;font-weight:800;font-size:11px;color:#334155;padding:4px;">
                       ( &nbsp;&nbsp;&nbsp; )
                     </td>
                     <td style="text-align:left;font-size:11px;font-weight:700;color:#1e293b;padding:4px 8px;">
-                      <strong>${row.letter})</strong> ${row.shuffledTr}
+                      <strong>${escapeHtml(row.letter)})</strong> ${escapeHtml(
+                      row.shuffledTr
+                    )}
                     </td>
                   </tr>
                 `
@@ -2363,10 +2767,11 @@ export default function DialoguePdfModal({
             </table>
           </div>
 
-          <!-- BÖLÜM B: BOŞLUK DOLDURMA (40 PUAN) -->
           <div class="section-block" style="margin-bottom:10px;">
             <div class="section-title">
-              <span>BÖLÜM B — Boşluk Doldurma (Her cümle 8 puan • Toplam 40 Puan)</span>
+              <span>BÖLÜM B — Boşluk Doldurma (Toplam ${
+                a4QuizSheetData.pointsAllocation.totalB
+              } Puan)</span>
               <span class="section-title-ar" dir="rtl">ب. امْلَأِ الْفَرَاغَاتِ</span>
             </div>
             <div class="helper-words-box" style="margin-bottom:6px;padding:6px 10px;">
@@ -2378,7 +2783,7 @@ export default function DialoguePdfModal({
                 ${a4QuizSheetData.wordBank
                   .map(
                     (w) =>
-                      `<span class="helper-word-chip">${formatAr(w)}</span>`
+                      `<span class="helper-word-chip">${formatArHtml(w)}</span>`
                   )
                   .join("")}
               </div>
@@ -2392,13 +2797,13 @@ export default function DialoguePdfModal({
                     ? "1px solid #e2e8f0"
                     : "none"
                 };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                  <div dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:${Math.round(
+                  <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
                     18 * fontConfig.scale
                   )}px;font-weight:700;color:#0f172a;text-align:right;">
-                    ${idx + 1}. ${formatAr(q.blankSentence)}
+                    ${idx + 1}. ${formatArHtml(q.blankSentence)} <span dir="ltr" style="font-size:9.5px;color:#6741d9;font-family:sans-serif;">(${q.points}p)</span>
                   </div>
                   <div style="font-size:10px;color:#475569;margin-top:1px;">
-                    <em>İpucu (${q.turkce})</em>
+                    <em>İpucu (${escapeHtml(q.turkce)})</em>
                   </div>
                 </div>
               `
@@ -2407,10 +2812,11 @@ export default function DialoguePdfModal({
             </div>
           </div>
 
-          <!-- BÖLÜM C: KALIP İFADELER VE ANLAMA (30 PUAN) -->
           <div class="section-block" style="margin-bottom:10px;">
             <div class="section-title">
-              <span>BÖLÜM C — Kalıp İfadeler ve Diyalog Anlama (Toplam 30 Puan)</span>
+              <span>BÖLÜM C — Kalıp İfadeler ve Diyalog Anlama (Toplam ${
+                a4QuizSheetData.pointsAllocation.totalC
+              } Puan)</span>
               <span class="section-title-ar" dir="rtl">ج. التَّعْبِيرَاتُ وَالْفَهْمُ</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -2419,21 +2825,25 @@ export default function DialoguePdfModal({
                   (mc) => `
                 <div style="border:1px solid #cbd5e1;border-radius:10px;padding:6px 9px;background:#ffffff;break-inside:avoid;">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:3px;">
-                    <span style="font-size:10px;font-weight:800;color:#6741d9;">Soru ${mc.num} (${mc.typeLabel})</span>
-                    <span dir="rtl" style="font-family:'${fontConfig.cssFamily}',serif;font-size:${Math.round(
+                    <span style="font-size:10px;font-weight:800;color:#6741d9;">Soru ${mc.num} (${escapeHtml(
+                    mc.typeLabel
+                  )} • ${mc.points}p)</span>
+                    <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
                     17 * fontConfig.scale
-                  )}px;font-weight:700;color:#087f5b;">${formatAr(
+                  )}px;font-weight:700;color:#087f5b;">${formatArHtml(
                     mc.arabicPrompt
                   )}</span>
                   </div>
-                  <div style="font-size:10px;font-weight:700;color:#334155;margin-bottom:4px;">${
+                  <div style="font-size:10px;font-weight:700;color:#334155;margin-bottom:4px;">${escapeHtml(
                     mc.questionTr
-                  }</div>
+                  )}</div>
                   <div style="font-size:10.5px;color:#1e293b;display:flex;flex-direction:column;gap:2px;">
                     ${mc.options
                       .map(
                         (o) =>
-                          `<div><strong>${o.letter})</strong> ${o.text}</div>`
+                          `<div><strong>${escapeHtml(o.letter)})</strong> ${escapeHtml(
+                            o.text
+                          )}</div>`
                       )
                       .join("")}
                   </div>
@@ -2444,6 +2854,8 @@ export default function DialoguePdfModal({
             </div>
           </div>
         `
+            : pdfDocMode === "unvocalized-rubric"
+            ? unvocalizedRubricSectionHtml
             : pdfDocMode === "flashcards"
             ? `
           ${studentHeaderHtml}
@@ -2463,17 +2875,22 @@ export default function DialoguePdfModal({
         <footer class="corporate-footer">
           <span>${
             dialogue.id.startsWith("kutuphane_")
-              ? `${dialogue.baslik_tr} (${dialogue.seviye})`
-              : `${dialogue.id.startsWith("metin_") ? "Metin" : "Diyalog"} #${String(rawNum).padStart(2, "0")}: ${dialogue.baslik_tr} (${dialogue.seviye})`
+              ? `${escapeHtml(dialogue.baslik_tr)} (${escapeHtml(dialogue.seviye)})`
+              : `${dialogue.id.startsWith("metin_") ? "Metin" : "Diyalog"} #${String(rawNum).padStart(2, "0")}: ${escapeHtml(dialogue.baslik_tr)} (${escapeHtml(dialogue.seviye)})`
           } — ${
-      pdfDocMode === "quiz-sheet"
-        ? "A4 Sınıf İçi Çalışma & Quiz Yaprağı"
-        : pdfDocMode === "flashcards"
-        ? `A4 Kes-Yapıştır Kelime & Cümle Kartları (${flashcardGridSize})`
-        : "Arapça Çalışma Kağıdı"
-    }</span>
+              pdfDocMode === "quiz-sheet"
+                ? `A4 Yazılı Sınav • Kitapçık ${a4QuizSheetData.bookletGroup}`
+                : pdfDocMode === "unvocalized-rubric"
+                ? "A4 Harekesiz Yazılı Yoklama + Maarif Rubriği"
+                : pdfDocMode === "flashcards"
+                ? `A4 Kes-Katla Kelime Kartları (${flashcardGridSize})`
+                : "Arapça Öğrenci Ders Föyü"
+            }</span>
           <a href="https://www.muallimun.net" target="_blank" rel="noopener noreferrer" class="corporate-brand" style="text-decoration:none;">www.muallimun.net</a>
         </footer>
+        `
+            : ""
+        }
 
         ${secondPageAnswerKeyHtml}
       </body>
@@ -2489,7 +2906,6 @@ export default function DialoguePdfModal({
         doc.write(htmlDocument);
         doc.close();
 
-        // Görsel varsa yüklenmesini bekle, ardından print() tetikle
         const triggerPrint = () => {
           iframe.contentWindow?.focus();
           iframe.contentWindow?.print();
@@ -2497,26 +2913,37 @@ export default function DialoguePdfModal({
 
         const imgs = Array.from(doc.images || []);
         const pendingImgs = imgs.filter((img) => !img.complete);
-        if (pendingImgs.length === 0) {
-          setTimeout(triggerPrint, 250);
-        } else {
-          let settled = false;
-          const done = () => {
-            if (settled) return;
-            settled = true;
-            setTimeout(triggerPrint, 150);
-          };
-          let loadedCount = 0;
-          pendingImgs.forEach((img) => {
-            const onFinish = () => {
-              loadedCount++;
-              if (loadedCount >= pendingImgs.length) done();
-            };
-            img.addEventListener("load", onFinish, { once: true });
-            img.addEventListener("error", onFinish, { once: true });
-          });
-          setTimeout(done, 1200);
-        }
+        const imagesReadyPromise =
+          pendingImgs.length === 0
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                let loadedCount = 0;
+                pendingImgs.forEach((img) => {
+                  const onFinish = () => {
+                    loadedCount++;
+                    if (loadedCount >= pendingImgs.length) resolve();
+                  };
+                  img.addEventListener("load", onFinish, { once: true });
+                  img.addEventListener("error", onFinish, { once: true });
+                });
+              });
+
+        const fontsReadyPromise =
+          doc.fonts && typeof doc.fonts.ready?.then === "function"
+            ? doc.fonts.ready.then(() => undefined).catch(() => undefined)
+            : Promise.resolve();
+
+        let printed = false;
+        const finalizePrint = () => {
+          if (printed) return;
+          printed = true;
+          setTimeout(triggerPrint, 120);
+        };
+
+        Promise.race([
+          Promise.all([imagesReadyPromise, fontsReadyPromise]),
+          new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+        ]).then(finalizePrint);
       }
     }
   };
@@ -2564,11 +2991,11 @@ export default function DialoguePdfModal({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handleGenerateAndPrintPdf}
+              onClick={() => handleGenerateAndPrintPdf("student")}
               className="hidden sm:flex px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#087F5B] active:translate-y-0.5 transition-all items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Printer size={15} />
-              <span>Yazdır / PDF İndir</span>
+              <span>🖨️ Öğrenci Kağıdını Yazdır</span>
             </button>
             <button
               type="button"
@@ -2624,86 +3051,137 @@ export default function DialoguePdfModal({
               : "hidden md:block shrink-0"
           }`}
         >
-          {/* 0. Satır: ADIM 3 Üst Şablon Seçici (3 Ana Mod: 📄 Ders Föyü | 📝 Çalışma & Quiz Yaprağı | ✂️ Kes-Yapıştır Kartlar) + 🔑 2. Sayfa Cevap Anahtarı */}
+          {/* 0. Satır: 4 Tek Tık Öğretmen Şablonu + A/B Kitapçık Seçici + ⚙️ Gelişmiş Mizanpaj Ayarları */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
             <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setPdfDocMode("handout");
-                }}
+                onClick={() => applyTeacherPreset("student-handout")}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                   pdfDocMode === "handout"
                     ? "bg-[#087F5B] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                📄 Ders Föyü (Diyalog &amp; Sözlük Özeti)
+                📄 Öğrenci Ders Föyü
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setPdfDocMode("quiz-sheet");
-                  setIncludeAnswerKey(true);
-                }}
+                onClick={() => applyTeacherPreset("exam-ab")}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                   pdfDocMode === "quiz-sheet"
                     ? "bg-[#6741D9] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                📝 Çalışma &amp; Quiz Yaprağı (Sınıf İçi Etkinlik / Sınav)
+                📝 Yazılı Sınav (A / B Kitapçık)
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setPdfDocMode("flashcards");
-                }}
+                onClick={() => applyTeacherPreset("unvocalized-rubric")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                  pdfDocMode === "unvocalized-rubric"
+                    ? "bg-teal-700 text-white shadow-xs"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                ✍️ Harekesiz Yazılı Yoklama + Maarif Rubriği
+              </button>
+              <button
+                type="button"
+                onClick={() => applyTeacherPreset("cut-fold-cards")}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                   pdfDocMode === "flashcards"
                     ? "bg-amber-600 text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                ✂️ Kes-Yapıştır Kartlar (3x3 / 4x4 Kelime &amp; Cümle Kartı)
+                ✂️ Kes-Katla Kelime Kartları
               </button>
             </div>
 
-            {pdfDocMode === "flashcards" && (
-              <div className="flex flex-wrap items-center gap-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-xl border border-amber-300 dark:border-amber-700">
-                <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
-                  ✂️ Izgara:
+            <div className="flex flex-wrap items-center gap-1.5">
+              {pdfDocMode === "quiz-sheet" && (
+                <div className="flex items-center gap-1 bg-violet-50 dark:bg-violet-950/50 px-2 py-1 rounded-xl border border-violet-300 dark:border-violet-700">
+                  <span className="text-[11px] font-extrabold text-violet-900 dark:text-violet-200">
+                    Kitapçık:
+                  </span>
+                  {(["A", "B"] as const).map((grp) => (
+                    <button
+                      key={grp}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setBookletGroup(grp);
+                      }}
+                      className={`px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                        bookletGroup === grp
+                          ? "bg-[#6741D9] text-white shadow-2xs"
+                          : "text-violet-900 dark:text-violet-200 hover:bg-violet-100"
+                      }`}
+                    >
+                      {grp} Grubu
+                    </button>
+                  ))}
+                  <span className="text-[10px] font-mono font-bold text-violet-700 dark:text-violet-300 pl-1">
+                    #{a4QuizSheetData.formCode}
+                  </span>
+                </div>
+              )}
+
+              {pdfDocMode === "flashcards" && (
+                <div className="flex flex-wrap items-center gap-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-xl border border-amber-300 dark:border-amber-700">
+                  <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
+                    ✂️ Izgara:
+                  </span>
+                  {(
+                    [
+                      { id: "3x3", label: "3x3 (9 Kart)" },
+                      { id: "3x4", label: "3x4 (12 Kart)" },
+                      { id: "4x4", label: "4x4 (16 Kart)" },
+                    ] as const
+                  ).map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setFlashcardGridSize(g.id);
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                        flashcardGridSize === g.id
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : "text-amber-900 dark:text-amber-200 hover:bg-amber-100/70"
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowAdvancedSettings((v) => !v);
+                }}
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+                  showAdvancedSettings
+                    ? "bg-[#6741D9] text-white border-[#5230B5]"
+                    : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
+                }`}
+              >
+                <span>
+                  ⚙️ Gelişmiş Mizanpaj Ayarları{" "}
+                  {showAdvancedSettings ? "▲" : "▼"}
                 </span>
-                {(
-                  [
-                    { id: "3x3", label: "3x3 (9 Kart - Büyük Görselli)" },
-                    { id: "3x4", label: "3x4 (12 Kart - Kompakt)" },
-                    { id: "4x4", label: "4x4 (16 Kart - Yoğun)" },
-                  ] as const
-                ).map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setFlashcardGridSize(g.id);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                      flashcardGridSize === g.id
-                        ? "bg-amber-600 text-white shadow-2xs"
-                        : "text-amber-900 dark:text-amber-200 hover:bg-amber-100/70"
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-            )}
+              </button>
+            </div>
           </div>
 
+          {showAdvancedSettings && (
+            <div className="space-y-1.5 pt-1">
           {/* 1. Satır: Görsel Modu + Çeviri Modu + Sayfaya Sığdır */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* PDF-1: Görsel Seçici */}
@@ -2947,7 +3425,7 @@ export default function DialoguePdfModal({
                 </span>
               </button>
 
-              {/* 🔑 Öğretmen Cevap Anahtarı (2. Sayfa) Toggle — Her zaman erişilebilir */}
+              {/* 🔑 Öğretmen Cevap Anahtarı Önizleme Toggle */}
               <button
                 type="button"
                 onClick={() => {
@@ -2961,7 +3439,8 @@ export default function DialoguePdfModal({
                 }`}
               >
                 <span>
-                  🔑 Cevap Anahtarı: {includeAnswerKey ? "Açık (2. Sayfa)" : "Kapalı"}
+                  🔑 Öğretmen Cevap Anahtarı:{" "}
+                  {includeAnswerKey ? "Önizlemede Açık" : "Gizli"}
                 </span>
               </button>
             </div>
@@ -3207,6 +3686,8 @@ export default function DialoguePdfModal({
               </div>
             </div>
           )}
+            </div>
+          )}
         </div>
 
         {/* CANLI A4 ÇALIŞMA KAĞIDI ÖNİZLEME ALANI */}
@@ -3276,9 +3757,18 @@ export default function DialoguePdfModal({
                   <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold">
                     CEFR {dialogue.seviye}
                   </span>
+                  {pdfDocMode === "quiz-sheet" && (
+                    <span className="px-2 py-0.5 rounded-md bg-violet-700 text-white text-[10px] font-extrabold">
+                      Kitapçık: {a4QuizSheetData.bookletGroup} Grubu (Form Kodu: #
+                      {a4QuizSheetData.formCode})
+                    </span>
+                  )}
                   <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
-                    {dialogue.satirlar.length} Cümle • {vocabEntries.length}{" "}
-                    Kelime
+                    {pdfDocMode === "quiz-sheet"
+                      ? `Yazılı Sınav • ${a4QuizSheetData.pointsAllocation.grandTotal} Puan`
+                      : pdfDocMode === "unvocalized-rubric"
+                      ? "Harekesiz Yoklama + Maarif Rubriği • 100 Puan"
+                      : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`}
                   </span>
                   <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
                     {includeHarakat ? "Harekeli" : "Harekesiz"}
@@ -3378,8 +3868,10 @@ export default function DialoguePdfModal({
               )}
             </div>
 
-            {/* 👤 ÖĞRENCİ BİLGİ ŞERİDİ (Ad-Soyad / Sınıf / Tarih / Puan) */}
-            {(includeStudentHeader || pdfDocMode === "quiz-sheet") && (
+            {/* 👤 ÖĞRENCİ BİLGİ ŞERİDİ (Ad-Soyad / Sınıf / Kitapçık veya Tarih / Puan) */}
+            {(includeStudentHeader ||
+              pdfDocMode === "quiz-sheet" ||
+              pdfDocMode === "unvocalized-rubric") && (
               <div
                 className={`border border-slate-300 rounded-xl bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-slate-800 ${
                   activeDensity === "ultra"
@@ -3401,24 +3893,40 @@ export default function DialoguePdfModal({
                   <strong>Sınıfı / No:</strong>{" "}
                   <span className="text-slate-600">.................</span>
                 </span>
-                <span>
-                  <strong>Tarih:</strong>{" "}
-                  <span className="text-slate-600">.... / .... / 2026</span>
-                </span>
+                {pdfDocMode === "quiz-sheet" ? (
+                  <span>
+                    <strong>Kitapçık:</strong>{" "}
+                    <span className="font-extrabold text-[#6741D9]">
+                      {a4QuizSheetData.bookletGroup} Grubu (#
+                      {a4QuizSheetData.formCode})
+                    </span>
+                  </span>
+                ) : (
+                  <span>
+                    <strong>Tarih:</strong>{" "}
+                    <span className="text-slate-600">.... / .... / 2026</span>
+                  </span>
+                )}
                 <span>
                   <strong>Puan:</strong>{" "}
-                  <span className="text-slate-600">....... / 100</span>
+                  <span className="text-slate-600">
+                    ....... /{" "}
+                    {pdfDocMode === "quiz-sheet"
+                      ? a4QuizSheetData.pointsAllocation.grandTotal
+                      : 100}
+                  </span>
                 </span>
               </div>
             )}
 
             {pdfDocMode === "quiz-sheet" ? (
               <div className="space-y-4">
-                {/* BÖLÜM A — KELİME EŞLEŞTİRME (30 PUAN) */}
+                {/* BÖLÜM A — KELİME EŞLEŞTİRME */}
                 <div className="space-y-1.5 break-inside-avoid">
                   <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
                     <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM A — Kelime Eşleştirme (30 Puan)
+                      BÖLÜM A — Kelime Eşleştirme (
+                      {a4QuizSheetData.pointsAllocation.totalA} Puan)
                     </span>
                     <span
                       dir="rtl"
@@ -3455,7 +3963,13 @@ export default function DialoguePdfModal({
                               dir="rtl"
                               className="py-1 px-3 text-right arabic text-xl font-bold text-[#065F46] dark:text-emerald-400"
                             >
-                              {row.num}. {formatAr(row.arabic)}
+                              {row.num}. {formatAr(row.arabic)}{" "}
+                              <span
+                                dir="ltr"
+                                className="text-[10px] font-sans text-slate-500"
+                              >
+                                ({row.points}p)
+                              </span>
                             </td>
                             <td className="py-1 px-2 text-center font-extrabold text-slate-700 border-x border-dashed border-slate-200">
                               ( &nbsp;&nbsp;&nbsp; )
@@ -3473,11 +3987,12 @@ export default function DialoguePdfModal({
                   </div>
                 </div>
 
-                {/* BÖLÜM B — BOŞLUK DOLDURMA (40 PUAN) */}
+                {/* BÖLÜM B — BOŞLUK DOLDURMA */}
                 <div className="space-y-2 break-inside-avoid">
                   <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
                     <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM B — Boşluk Doldurma (40 Puan)
+                      BÖLÜM B — Boşluk Doldurma (
+                      {a4QuizSheetData.pointsAllocation.totalB} Puan)
                     </span>
                     <span
                       dir="rtl"
@@ -3487,7 +4002,6 @@ export default function DialoguePdfModal({
                     </span>
                   </div>
 
-                  {/* Üstte Karışık Kelime Havuzu Kutusu */}
                   <div className="bg-[#F3F0FF] border-2 border-dashed border-[#6741D9] rounded-xl p-2.5 space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-extrabold text-[#4C28B5]">
                       <span>
@@ -3522,7 +4036,13 @@ export default function DialoguePdfModal({
                           dir="rtl"
                           className="arabic text-xl font-bold text-slate-900 text-right"
                         >
-                          {idx + 1}. {formatAr(q.blankSentence)}
+                          {idx + 1}. {formatAr(q.blankSentence)}{" "}
+                          <span
+                            dir="ltr"
+                            className="text-[10px] font-sans text-[#6741D9]"
+                          >
+                            ({q.points}p)
+                          </span>
                         </div>
                         <div className="text-[11px] font-medium text-slate-600">
                           İpucu: {q.turkce}
@@ -3532,11 +4052,12 @@ export default function DialoguePdfModal({
                   </div>
                 </div>
 
-                {/* BÖLÜM C — KALIP İFADELER VE ANLAMA (30 PUAN) */}
+                {/* BÖLÜM C — KALIP İFADELER VE ANLAMA */}
                 <div className="space-y-1.5 break-inside-avoid">
                   <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
                     <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM C — Kalıp İfadeler ve Anlama (30 Puan)
+                      BÖLÜM C — Kalıp İfadeler ve Anlama (
+                      {a4QuizSheetData.pointsAllocation.totalC} Puan)
                     </span>
                     <span
                       dir="rtl"
@@ -3554,7 +4075,7 @@ export default function DialoguePdfModal({
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-[10px] font-extrabold text-[#6741D9] bg-[#F3F0FF] px-2 py-0.5 rounded-md">
-                            Soru {mc.num} • {mc.typeLabel}
+                            Soru {mc.num} • {mc.typeLabel} ({mc.points}p)
                           </span>
                           <span
                             dir="rtl"
@@ -3580,7 +4101,141 @@ export default function DialoguePdfModal({
                     ))}
                   </div>
                 </div>
+              </div>
+            ) : pdfDocMode === "unvocalized-rubric" ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5 break-inside-avoid">
+                  <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-teal-700 px-3 py-1.5 rounded-lg">
+                    <span className="text-xs font-extrabold text-slate-900">
+                      BÖLÜM 1 — Harekesiz Metni Harekeleme, Tercüme ve İ&apos;rab Yoklaması
+                    </span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base font-bold text-teal-800"
+                    >
+                      أ. الضَّبْطُ بِالشَّكْلِ وَالتَّرْجَمَةُ وَالْإِعْرَابُ
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-600 px-1">
+                    Yönerge: Aşağıdaki harekesiz Arapça cümleleri tam harekeleyiniz, temel ögelerin i&apos;rabını belirterek Türkçe tercümesini noktalı alana yazınız.
+                  </p>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
+                    {unvocalizedRubricItems.map((item) => (
+                      <div
+                        key={item.num}
+                        className="p-3 bg-white odd:bg-slate-50/70 space-y-1.5"
+                      >
+                        <div
+                          dir="rtl"
+                          className="flex items-baseline justify-between gap-3"
+                        >
+                          <div className="arabic text-2xl font-bold text-slate-900 leading-loose text-right flex-1">
+                            <span className="text-sm text-[#065F46] ml-1.5">
+                              {item.num}.
+                            </span>
+                            {formatArabicText(
+                              item.unvocalizedAr,
+                              false,
+                              arabicFont
+                            )}
+                          </div>
+                          <span
+                            dir="ltr"
+                            className="text-[10px] font-extrabold text-[#6741D9] bg-[#F3F0FF] border border-[#D0BFFF] px-2 py-0.5 rounded-md shrink-0"
+                          >
+                            {item.points}p
+                          </span>
+                        </div>
+                        <div className="flex items-end gap-2 text-[11px] text-slate-600">
+                          <strong className="shrink-0">
+                            Tercüme &amp; İ&apos;rab Notu:
+                          </strong>
+                          <div className="flex-1 border-b border-dotted border-slate-400 h-5" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
+                <div className="space-y-1.5 break-inside-avoid">
+                  <div className="flex items-center justify-between bg-[#F3F0FF] border border-[#D0BFFF] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
+                    <span className="text-xs font-extrabold text-[#4C28B5]">
+                      📊 Maarif Modeli 4 Temel Dil Becerisi Değerlendirme Ölçeği (Rubrik — Toplam 100 Puan)
+                    </span>
+                    <span
+                      dir="rtl"
+                      className="arabic text-base font-bold text-[#4C28B5]"
+                    >
+                      مِقْيَاسُ التَّقْوِيمِ الشَّامِلِ
+                    </span>
+                  </div>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden">
+                    <table className="w-full border-collapse text-[11px] text-left">
+                      <thead>
+                        <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
+                          <th className="py-1.5 px-2.5 w-[24%]">
+                            Temel Dil Becerisi
+                          </th>
+                          <th className="py-1.5 px-2 w-[22%]">
+                            Geliştirilmeli (0–10p)
+                          </th>
+                          <th className="py-1.5 px-2 w-[22%]">
+                            Yeterli (11–18p)
+                          </th>
+                          <th className="py-1.5 px-2 w-[20%]">
+                            Yetkin (19–25p)
+                          </th>
+                          <th className="py-1.5 px-2 text-center w-[12%]">
+                            Puan
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {MAARIF_RUBRIC_CRITERIA.map((r) => (
+                          <tr
+                            key={r.skillTr}
+                            className="bg-white odd:bg-slate-50/70"
+                          >
+                            <td className="py-1.5 px-2.5">
+                              <div className="font-extrabold text-slate-900">
+                                {r.skillTr}
+                              </div>
+                              <div
+                                dir="rtl"
+                                className="arabic text-sm font-bold text-[#065F46]"
+                              >
+                                {r.skillAr}
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-2 text-slate-600">
+                              {r.developing}
+                            </td>
+                            <td className="py-1.5 px-2 text-slate-700">
+                              {r.proficient}
+                            </td>
+                            <td className="py-1.5 px-2 text-[#065F46] font-bold">
+                              {r.advanced}
+                            </td>
+                            <td className="py-1.5 px-2 text-center font-extrabold text-slate-900">
+                              .... / {r.maxPoints}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bg-emerald-50">
+                          <td
+                            colSpan={4}
+                            className="py-1.5 px-2.5 text-right font-extrabold text-[#065F46]"
+                          >
+                            Öğretmen Genel Değerlendirmesi &amp; Toplam Puan:
+                          </td>
+                          <td className="py-1.5 px-2 text-center font-extrabold text-[#065F46]">
+                            ...... / 100
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             ) : pdfDocMode === "flashcards" ? (
               <div className="space-y-3">
@@ -4354,14 +5009,22 @@ export default function DialoguePdfModal({
               style={{ pageBreakBefore: "always", breakBefore: "page" }}
               className="mt-6 max-w-[210mm] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#087F5B] shadow-lg p-4 sm:p-7 space-y-4 print:shadow-none print:border-0 print:p-0"
             >
-              {/* 2. Sayfa Kurumsal Başlığı */}
+              {/* Öğretmen Cevap Anahtarı Kurumsal Başlığı */}
               <div className="pb-3 border-b-2 border-[#087F5B] flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 mb-1">
-                    2. SAYFA • ÖĞRETMEN NÜSHASI (مفتاح الإجابات للمعلم)
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                    <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      ÖĞRETMEN CEVAP ANAHTARI (مفتاح الإجابات للمعلم)
+                    </span>
+                    {pdfDocMode === "quiz-sheet" && (
+                      <span className="inline-block text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-violet-100 text-violet-900 border border-violet-300">
+                        Kitapçık: {a4QuizSheetData.bookletGroup} Grubu (#
+                        {a4QuizSheetData.formCode})
+                      </span>
+                    )}
+                  </div>
                   <h3 className="text-base sm:text-lg font-extrabold text-[#065F46]">
-                    🔑 ÖĞRETMEN CEVAP ANAHTARI — {dialogue.baslik_tr}
+                    🔑 Öğretmen Cevap Anahtarı — {dialogue.baslik_tr}
                   </h3>
                 </div>
                 <div
@@ -4376,7 +5039,8 @@ export default function DialoguePdfModal({
                 <div className="space-y-3 text-xs text-slate-800">
                   <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 space-y-1.5">
                     <div className="font-extrabold text-[#065F46] text-xs">
-                      A) Kelime Eşleştirme Cevapları (30 Puan):
+                      A) Kelime Eşleştirme Cevapları (
+                      {a4QuizSheetData.pointsAllocation.totalA} Puan):
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
                       {a4QuizSheetData.sectionAMatching.map((m) => (
@@ -4385,7 +5049,7 @@ export default function DialoguePdfModal({
                           className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-white border border-emerald-200"
                         >
                           <span className="font-bold text-slate-800">
-                            {m.num} →{" "}
+                            {m.num} ({m.points}p) →{" "}
                             <strong className="text-[#065F46]">
                               {m.correctLetter}) {m.correctTr}
                             </strong>
@@ -4403,7 +5067,8 @@ export default function DialoguePdfModal({
 
                   <div className="rounded-xl border border-violet-300 bg-violet-50/40 p-3 space-y-1.5">
                     <div className="font-extrabold text-[#4C28B5] text-xs">
-                      B) Cümle Tamamlama / Boşluk Doldurma Cevapları (40 Puan):
+                      B) Cümle Tamamlama / Boşluk Doldurma Cevapları (
+                      {a4QuizSheetData.pointsAllocation.totalB} Puan):
                     </div>
                     <div className="space-y-1.5 pt-1">
                       {a4QuizSheetData.sectionBFillBlanks.map((b, idx) => {
@@ -4418,7 +5083,7 @@ export default function DialoguePdfModal({
                           >
                             <div className="text-[11px] text-slate-700">
                               <strong className="text-[#4C28B5]">
-                                {idx + 1}. (Satır #{b.sira}):
+                                {idx + 1}. ({b.points}p • Satır #{b.sira}):
                               </strong>{" "}
                               {b.turkce}
                             </div>
@@ -4448,7 +5113,8 @@ export default function DialoguePdfModal({
 
                   <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-1.5">
                     <div className="font-extrabold text-amber-900 text-xs">
-                      C) Çoktan Seçmeli Soruların Cevapları (30 Puan):
+                      C) Çoktan Seçmeli Soruların Cevapları (
+                      {a4QuizSheetData.pointsAllocation.totalC} Puan):
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                       {a4QuizSheetData.sectionCMultipleChoice.map((c) => (
@@ -4457,7 +5123,7 @@ export default function DialoguePdfModal({
                           className="p-2 rounded-lg bg-white border border-amber-200"
                         >
                           <div className="font-extrabold text-amber-900">
-                            Soru {c.num}: Şık {c.correctLetter}
+                            Soru {c.num} ({c.points}p): Şık {c.correctLetter}
                           </div>
                           <div className="text-[11px] font-bold text-slate-700 mt-0.5">
                             {c.correctText}
@@ -4465,6 +5131,33 @@ export default function DialoguePdfModal({
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              ) : pdfDocMode === "unvocalized-rubric" ? (
+                <div className="space-y-2">
+                  <div className="text-xs font-extrabold text-[#065F46]">
+                    ✅ Harekesiz Yoklama Tam Harekeli Çözüm ve Tercüme Anahtarı
+                  </div>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
+                    {unvocalizedRubricItems.map((item) => (
+                      <div
+                        key={item.num}
+                        className="p-2.5 grid grid-cols-1 sm:grid-cols-2 items-center gap-2 odd:bg-slate-50"
+                      >
+                        <div className="text-xs text-slate-800">
+                          <strong className="text-[#065F46] mr-1">
+                            {item.num}. ({item.points}p) {item.konusmaci}:
+                          </strong>
+                          <span className="font-semibold">{item.turkce}</span>
+                        </div>
+                        <div
+                          dir="rtl"
+                          className="text-right arabic text-xl font-bold text-[#065F46]"
+                        >
+                          {formatArabicText(item.vocalizedAr, true, arabicFont)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : pdfDocMode === "flashcards" ? (
@@ -4616,30 +5309,43 @@ export default function DialoguePdfModal({
           )}
         </div>
 
-        {/* MODAL ALT AKSİYON ÇUBUĞU (print:hidden - Her iki sekmede de sabit görünür) */}
-        <div className="print:hidden bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-2.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3 shrink-0">
-          <span className="text-xs font-extrabold text-[#065F46] dark:text-emerald-400 hidden sm:inline">
-            www.muallimun.net • Kurumsal A4 Vektörel Çalışma Kağıdı
-          </span>
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        {/* MODAL ALT AKSİYON ÇUBUĞU: Öğrenci Nüshası ve Öğretmen Cevap Anahtarı Ayrı Basım Seçenekleri */}
+        <div className="print:hidden bg-[#F7EFE1] dark:bg-[var(--background)] px-3 sm:px-5 py-2.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              onClose();
+            }}
+            className="px-3.5 py-2 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+          >
+            Kapat
+          </button>
+
+          <div className="flex flex-wrap items-center gap-2 justify-end flex-1">
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                onClose();
-              }}
-              className="px-4 py-2 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+              onClick={() => handleGenerateAndPrintPdf("student")}
+              className="px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >
-              Vazgeç
+              <Printer size={15} />
+              <span>🖨️ Öğrenci Kağıdını Yazdır (Cevapsız)</span>
             </button>
 
             <button
               type="button"
-              onClick={handleGenerateAndPrintPdf}
-              className="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs sm:text-sm border-b-4 border-[#087F5B] active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              onClick={() => handleGenerateAndPrintPdf("answer-key")}
+              className="px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-extrabold text-xs border-b-3 border-[#4C28B5] active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >
-              <Printer size={17} />
-              <span>Yazdır / PDF Kaydet</span>
+              <span>🔑 Sadece Cevap Anahtarını Yazdır</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerateAndPrintPdf("both")}
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs border-b-3 border-amber-800 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <span>📚 İkisini Birlikte Yazdır</span>
             </button>
           </div>
         </div>

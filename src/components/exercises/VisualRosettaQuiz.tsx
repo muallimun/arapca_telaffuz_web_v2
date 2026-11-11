@@ -201,8 +201,12 @@ function selectBalancedTargets(
 function buildVisualQuestions(
   pool: ResimliKelime[],
   count: number,
-  selectedMode: VisualInteractionMode
+  selectedMode: VisualInteractionMode,
+  allowGlobalFallback = false
 ): VisualQuestion[] {
+  if (pool.length < 4 && !allowGlobalFallback) {
+    return [];
+  }
   const safePool = pool.length >= 4 ? pool : gorselKelimeler;
   const targets = selectBalancedTargets(safePool, count);
 
@@ -243,10 +247,15 @@ export default function VisualRosettaQuiz({
   const [revealHint, setRevealHint] = useState<boolean>(false);
   const [micFreeMode, setMicFreeMode] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [expandedScopeKey, setExpandedScopeKey] = useState<string | null>(null);
+
+  const currentScopeKey = `${cefrFilter}::${selectedCategory}`;
+  const isScopeExpanded = expandedScopeKey === currentScopeKey;
 
   const activePool = useMemo(() => {
     const base =
       visualPool && visualPool.length >= 4 ? visualPool : gorselKelimeler;
+    if (isScopeExpanded) return base;
     return base.filter((item) => {
       if (
         selectedCategory !== "all" &&
@@ -258,7 +267,7 @@ export default function VisualRosettaQuiz({
       if (cefrFilter !== "all" && item.cefr !== cefrFilter) return false;
       return true;
     });
-  }, [visualPool, selectedCategory, cefrFilter]);
+  }, [visualPool, selectedCategory, cefrFilter, isScopeExpanded]);
 
   const categories = useMemo(() => {
     const base =
@@ -273,7 +282,12 @@ export default function VisualRosettaQuiz({
   }, [visualPool]);
 
   const [questions, setQuestions] = useState<VisualQuestion[]>(() =>
-    buildVisualQuestions(activePool, questionCount, "mixed")
+    buildVisualQuestions(
+      activePool,
+      questionCount,
+      "mixed",
+      cefrFilter === "all" && selectedCategory === "all"
+    )
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -1167,7 +1181,11 @@ export default function VisualRosettaQuiz({
   }, [stopSpeechRecognition, stopCalibrationResources, clearTimers]);
 
   const restartQuiz = useCallback(
-    (customPool?: ResimliKelime[], customMode?: VisualInteractionMode) => {
+    (
+      customPool?: ResimliKelime[],
+      customMode?: VisualInteractionMode,
+      forceGlobalFallback?: boolean
+    ) => {
       sfx.stopAllSfx();
       void playStart();
       stopAllAudio();
@@ -1181,10 +1199,15 @@ export default function VisualRosettaQuiz({
       initialAudioDelayRef.current = 700;
       const targetPool = customPool || activePool;
       const targetMode = customMode || interactionMode;
+      const allowFallback =
+        forceGlobalFallback ??
+        (isScopeExpanded ||
+          (cefrFilter === "all" && selectedCategory === "all"));
       const built = buildVisualQuestions(
         targetPool,
         questionCount,
-        targetMode
+        targetMode,
+        allowFallback
       );
       setQuestions(built);
       setCurrentIndex(0);
@@ -1211,6 +1234,9 @@ export default function VisualRosettaQuiz({
     [
       activePool,
       interactionMode,
+      isScopeExpanded,
+      cefrFilter,
+      selectedCategory,
       questionCount,
       stopSpeechRecognition,
       clearTimers,
@@ -1405,10 +1431,41 @@ export default function VisualRosettaQuiz({
 
   if (!currentQuestion) {
     return (
-      <div className="p-6 text-center bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE]">
-        <p className="text-sm font-bold text-[var(--muted)]">
-          Bu filtrede yeterli görsel öğe bulunamadı.
+      <div className="p-6 text-center bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] max-w-lg mx-auto space-y-3">
+        <p className="text-sm font-extrabold text-[var(--foreground)]">
+          Bu filtrede yeterli görsel öğe bulunamadı (en az 4 görsel gerekir).
         </p>
+        <p className="text-xs font-semibold text-[var(--muted)]">
+          Farklı seviyelerdeki görselleri gizlice karıştırmak yerine kapsamı tek tıkla genişletebilirsiniz.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          {!isScopeExpanded && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                const fullBase =
+                  visualPool && visualPool.length >= 4
+                    ? visualPool
+                    : gorselKelimeler;
+                setExpandedScopeKey(currentScopeKey);
+                restartQuiz(fullBase, interactionMode, true);
+              }}
+              className="px-4 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold cursor-pointer"
+            >
+              🔓 Kapsamı Genişlet (Tüm Görseller)
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
+            >
+              Ayarlara Dön
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -1846,6 +1903,13 @@ export default function VisualRosettaQuiz({
 
         {/* Sağ Kontroller: Yalnızca Mikrofonlu Modda "Mikrofonu Test Et" + Erkek/Kadın Ses + Kategori */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          {!isScopeExpanded &&
+            questions.length < questionCount &&
+            (cefrFilter !== "all" || selectedCategory !== "all") && (
+              <span className="hidden lg:inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 text-[10px] font-extrabold text-amber-800 dark:text-amber-200">
+                ℹ️ {questions.length} görsel
+              </span>
+            )}
           {activeConcreteMode === "listen_speak_matrix" && (
             <button
               type="button"

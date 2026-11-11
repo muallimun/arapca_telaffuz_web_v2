@@ -15,7 +15,7 @@ import {
   resolveSentenceSourceMeta,
   stripParentheticalArabicExamples,
 } from "@/lib/quiz";
-import { cumleler1111 } from "@/lib/data";
+import { cumleler1111, atasozleri } from "@/lib/data";
 import {
   CheckCircle2,
   XCircle,
@@ -192,22 +192,50 @@ export default function MultipleChoice({
       vocabById.set(w.id, w);
     }
 
+    const normalizeStrippedTr = (txt: string) =>
+      stripParentheticalArabicExamples(txt || "")
+        .trim()
+        .toLocaleLowerCase("tr-TR");
+
+    const pickUniqueDistractorTexts = (
+      correctTr: string,
+      candidateTexts: string[],
+      needed = 3
+    ): { text: string; isCorrect: boolean }[] => {
+      const seen = new Set<string>([normalizeStrippedTr(correctTr)]);
+      const picked: { text: string; isCorrect: boolean }[] = [];
+      for (const raw of candidateTexts) {
+        if (picked.length >= needed) break;
+        const key = normalizeStrippedTr(raw);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        picked.push({ text: raw, isCorrect: false });
+      }
+      return picked;
+    };
+
     const buildWordQuestion = (
       target: (typeof wordPool)[number]
     ): QuizQuestionItem => {
       const targetItem = vocabById.get(target.wordId);
-      const distractors = targetItem
-        ? selectSmartWordDistractors(targetItem, vocabulary, 3).map((d) => ({
-            text: d.anlam_tr,
-            isCorrect: false,
-          }))
+      const rawCandidateTexts = targetItem
+        ? [
+            ...selectSmartWordDistractors(targetItem, vocabulary, 6).map(
+              (d) => d.anlam_tr
+            ),
+            ...shuffleArray(
+              wordPool.filter((w) => w.id !== target.id).map((w) => w.turkish)
+            ),
+          ]
         : shuffleArray(
-            wordPool.filter(
-              (w) => w.id !== target.id && w.turkish !== target.turkish
-            )
-          )
-            .slice(0, 3)
-            .map((d) => ({ text: d.turkish, isCorrect: false }));
+            wordPool.filter((w) => w.id !== target.id).map((w) => w.turkish)
+          );
+
+      const distractors = pickUniqueDistractorTexts(
+        target.turkish,
+        rawCandidateTexts,
+        3
+      );
 
       return {
         id: target.id,
@@ -226,23 +254,35 @@ export default function MultipleChoice({
     const buildIdiomQuestion = (
       target: (typeof idiomPool)[number]
     ): QuizQuestionItem => {
-      let distractorCandidates = idiomPool.filter(
-        (i) => i.id !== target.id && i.turkish !== target.turkish
+      const targetLen = target.turkish.length || 24;
+      const inPoolCandidates = shuffleArray(
+        idiomPool
+          .filter((i) => i.id !== target.id && i.turkish !== target.turkish)
+          .map((i) => i.turkish)
       );
-      if (distractorCandidates.length < 3) {
-        const fallbackWords = wordPool
-          .filter((w) => w.turkish !== target.turkish)
-          .map((w) => ({
-            id: w.id,
-            arabic: w.arabic,
-            turkish: w.turkish,
-            metaLabel: w.metaLabel,
-          }));
-        distractorCandidates = [...distractorCandidates, ...fallbackWords];
-      }
-      const distractors = shuffleArray(distractorCandidates)
-        .slice(0, 3)
-        .map((d) => ({ text: d.turkish, isCorrect: false }));
+
+      // Atasözü/kalıp ifade şıkları asla tek kelimelik sözlük öğeleriyle doldurulmaz;
+      // havuz darsa benzer uzunluktaki atasözü veya günlük kalıp cümle çevirileri kullanılır
+      const fallbackPhraseCandidates =
+        inPoolCandidates.length >= 4
+          ? []
+          : [
+              ...atasozleri.map((a) => (a.turkce || "").trim()),
+              ...cumleler1111.map((c) => (c.turkce || "").trim()),
+            ]
+              .filter((tr) => tr.length >= 8 && tr !== target.turkish)
+              .map((tr) => ({
+                tr,
+                score: Math.abs(tr.length - targetLen) + Math.random() * 6,
+              }))
+              .sort((a, b) => a.score - b.score)
+              .map((entry) => entry.tr);
+
+      const distractors = pickUniqueDistractorTexts(
+        target.turkish,
+        [...inPoolCandidates, ...fallbackPhraseCandidates],
+        3
+      );
 
       return {
         id: target.id,
@@ -262,24 +302,32 @@ export default function MultipleChoice({
     const buildSentenceQuestion = (
       target: (typeof sentencePool)[number]
     ): QuizQuestionItem => {
-      let candidateTranslations = sentencePool
-        .filter((s) => s.id !== target.id && s.turkish !== target.turkish)
-        .map((s) => s.turkish);
+      const targetLen = target.turkish.length || 24;
+      const inPoolCandidates = shuffleArray(
+        sentencePool
+          .filter((s) => s.id !== target.id && s.turkish !== target.turkish)
+          .map((s) => s.turkish)
+      );
 
-      if (candidateTranslations.length < 3) {
-        const extraFrom1111 = shuffleArray(
-          cumleler1111
-            .map((c) => (c.turkce || "").trim())
-            .filter((tr) => tr.length > 0 && tr !== target.turkish)
-        ).slice(0, 6);
-        candidateTranslations = Array.from(
-          new Set([...candidateTranslations, ...extraFrom1111])
-        );
-      }
+      const fallbackFrom1111 =
+        inPoolCandidates.length >= 4
+          ? []
+          : cumleler1111
+              .map((c) => (c.turkce || "").trim())
+              .filter((tr) => tr.length > 0 && tr !== target.turkish)
+              .map((tr) => ({
+                tr,
+                score: Math.abs(tr.length - targetLen) + Math.random() * 6,
+              }))
+              .sort((a, b) => a.score - b.score)
+              .map((entry) => entry.tr)
+              .slice(0, 8);
 
-      const distractors = shuffleArray(candidateTranslations)
-        .slice(0, 3)
-        .map((tr) => ({ text: tr, isCorrect: false }));
+      const distractors = pickUniqueDistractorTexts(
+        target.turkish,
+        [...inPoolCandidates, ...fallbackFrom1111],
+        3
+      );
 
       return {
         id: target.id,
@@ -983,6 +1031,12 @@ export default function MultipleChoice({
               )}
             </span>
           </div>
+
+          {!customQuestions && questions.length < questionCount && (
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-300 text-[10px] font-bold text-amber-800 dark:text-amber-200">
+              ℹ️ Seçili kapsamda {questions.length} soru bulundu
+            </span>
+          )}
 
           {timeLeft !== null && (
             <div

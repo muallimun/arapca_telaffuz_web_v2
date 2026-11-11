@@ -9,6 +9,7 @@ import {
   calculateWordPhoneticWeights,
   getWordIndexAtProgress,
   WordTimingSegment,
+  toCanonicalAudioCacheKey,
 } from "@/lib/audio";
 import { requestWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 
@@ -256,30 +257,47 @@ export const useAudioStore = create<AudioState>((set, get) => {
       const startedAt =
         typeof performance !== "undefined" ? performance.now() : Date.now();
 
-      const resolveCachedUrlIfAvailable = async (rawUrl: string) => {
+      const resolveCachedUrlIfAvailable = async (
+        rawUrl: string
+      ): Promise<{ url: string; revokeOnFinish: boolean }> => {
+        const canonicalKey = toCanonicalAudioCacheKey(rawUrl);
         if (
           typeof window !== "undefined" &&
           "caches" in window &&
-          rawUrl.startsWith("/")
+          canonicalKey
         ) {
           try {
             const cache = await caches.open("muallimun-offline-audio-v1");
-            const matched = await cache.match(rawUrl);
+            const matched =
+              (await cache.match(canonicalKey)) || (await cache.match(rawUrl));
             if (matched && matched.ok) {
               const blob = await matched.blob();
               if (blob.size > 128) {
-                return URL.createObjectURL(blob);
+                return {
+                  url: URL.createObjectURL(blob),
+                  revokeOnFinish: true,
+                };
               }
             }
           } catch {
             // ignore
           }
         }
-        return rawUrl;
+        return { url: rawUrl, revokeOnFinish: false };
       };
 
       const tryPlayUrl = async (targetUrl: string) => {
-        const playableUrl = await resolveCachedUrlIfAvailable(targetUrl);
+        const { url: playableUrl, revokeOnFinish } =
+          await resolveCachedUrlIfAvailable(targetUrl);
+        const cleanupTempBlob = () => {
+          if (revokeOnFinish) {
+            try {
+              URL.revokeObjectURL(playableUrl);
+            } catch {
+              // ignore
+            }
+          }
+        };
         return new Promise<void>((resolve, reject) => {
           currentResolve = resolve;
           const audio = new Audio(playableUrl);
@@ -308,6 +326,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
           };
 
           audio.onended = () => {
+            cleanupTempBlob();
             stopWordTrackingLoop();
             void releaseWakeLock("audio");
             const durSec =
@@ -331,6 +350,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
           };
 
           audio.onerror = () => {
+            cleanupTempBlob();
             stopWordTrackingLoop();
             void releaseWakeLock("audio");
             setActiveAudio(null);
@@ -345,6 +365,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
           };
 
           audio.play().catch((err) => {
+            cleanupTempBlob();
             stopWordTrackingLoop();
             void releaseWakeLock("audio");
             setActiveAudio(null);

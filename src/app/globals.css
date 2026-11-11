@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: "WinSoftPro";
-  src: url("/fonts/Arakom.ttf") format("truetype");
+  src: url("/fonts/WinSoftPro-Med.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;

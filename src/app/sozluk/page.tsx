@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Search,
@@ -47,10 +48,16 @@ import { useAudioStore } from "@/store/audioStore";
 import { useUserStore } from "@/store/userStore";
 import { useSettings, VoiceGender } from "@/store/settings";
 import { playClick } from "@/lib/sfxManager";
-import ShadowingModal from "@/components/ui/ShadowingModal";
-import ShareContentCardModal, {
-  ShareCardPayload,
-} from "@/components/ui/ShareContentCardModal";
+import type { ShareCardPayload } from "@/components/ui/ShareContentCardModal";
+
+const ShadowingModal = dynamic(
+  () => import("@/components/ui/ShadowingModal"),
+  { ssr: false }
+);
+const ShareContentCardModal = dynamic(
+  () => import("@/components/ui/ShareContentCardModal"),
+  { ssr: false }
+);
 import {
   formatArabicText,
   splitMixedBidiText,
@@ -1710,10 +1717,12 @@ export default function DictionaryPage() {
         </>
       )}
 
-      <ShareContentCardModal
-        payload={shareCardTarget}
-        onClose={() => setShareCardTarget(null)}
-      />
+      {shareCardTarget && (
+        <ShareContentCardModal
+          payload={shareCardTarget}
+          onClose={() => setShareCardTarget(null)}
+        />
+      )}
     </div>
   );
 }

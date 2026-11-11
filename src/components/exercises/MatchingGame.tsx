@@ -8,7 +8,8 @@ import {
   playClick,
 } from "@/lib/sfxManager";
 import { Dialogue, DictionaryItem } from "@/types/data";
-import { shuffleArray } from "@/lib/quiz";
+import { shuffleArray, stripParentheticalArabicExamples } from "@/lib/quiz";
+import { atasozleri } from "@/lib/data";
 import {
   RotateCcw,
   Trophy,
@@ -210,17 +211,46 @@ export default function MatchingGame({
     const sentencePairs =
       shortSentencePairs.length >= 4 ? shortSentencePairs : allSentencePairs;
 
-    if (contentType === "idioms" && idiomPairs.length > 0) {
-      if (idiomPairs.length >= pairTarget) {
-        return shuffleArray(idiomPairs).slice(0, pairTarget);
+    const dedupePairs = (pairs: PairDefinition[]): PairDefinition[] => {
+      const seenAr = new Set<string>();
+      const seenTr = new Set<string>();
+      const out: PairDefinition[] = [];
+      for (const p of pairs) {
+        const arKey = p.arText.trim().toLowerCase();
+        const trKey = stripParentheticalArabicExamples(p.trText)
+          .trim()
+          .toLocaleLowerCase("tr-TR");
+        if (!arKey || !trKey || seenAr.has(arKey) || seenTr.has(trKey)) continue;
+        seenAr.add(arKey);
+        seenTr.add(trKey);
+        out.push(p);
       }
-      return shuffleArray([
-        ...idiomPairs,
-        ...shuffleArray(wordPairs).slice(0, pairTarget - idiomPairs.length),
-      ]);
+      return out;
+    };
+
+    if (contentType === "idioms" && idiomPairs.length > 0) {
+      const uniqueIdioms = dedupePairs(shuffleArray(idiomPairs));
+      if (uniqueIdioms.length >= pairTarget) {
+        return uniqueIdioms.slice(0, pairTarget);
+      }
+      if (uniqueIdioms.length >= 2) {
+        return uniqueIdioms;
+      }
+      const fallbackProverbs: PairDefinition[] = atasozleri
+        .map((a) => ({
+          matchId: `ata_${a.id}`,
+          arText: (a.arapca || "").trim(),
+          trText: (a.turkce || "").trim(),
+          isSentence: true,
+        }))
+        .filter((p) => p.arText.length > 0 && p.trText.length > 0);
+      return dedupePairs([
+        ...uniqueIdioms,
+        ...shuffleArray(fallbackProverbs),
+      ]).slice(0, pairTarget);
     }
     if (contentType === "sentences" && sentencePairs.length >= 2) {
-      return shuffleArray(sentencePairs).slice(0, pairTarget);
+      return dedupePairs(shuffleArray(sentencePairs)).slice(0, pairTarget);
     }
     if (contentType === "mixed") {
       const combined = [
@@ -228,9 +258,9 @@ export default function MatchingGame({
         ...shuffleArray(idiomPairs).slice(0, 2),
         ...shuffleArray(wordPairs).slice(0, 3),
       ];
-      return shuffleArray(combined).slice(0, pairTarget);
+      return dedupePairs(shuffleArray(combined)).slice(0, pairTarget);
     }
-    return shuffleArray(wordPairs).slice(0, pairTarget);
+    return dedupePairs(shuffleArray(wordPairs)).slice(0, pairTarget);
   }, [vocabulary, idioms, dialogues, contentType, pairTarget]);
 
   const buildPairPoolRef = useRef(buildPairPool);

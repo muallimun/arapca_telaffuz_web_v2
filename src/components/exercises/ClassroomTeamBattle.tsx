@@ -139,15 +139,18 @@ export default function ClassroomTeamBattle({
   );
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
-  // Soru başına geri sayım (varsayılan 20sn veya üst bardan seçilen timeLimit)
-  const perQuestionSeconds = timeLimit || 25;
+  // Soru başına geri sayım (Süresiz seçildiğinde timeLimit === null veya 0 olur)
+  const isUnlimitedTime = timeLimit === null || timeLimit === 0;
+  const perQuestionSeconds = isUnlimitedTime ? 0 : timeLimit;
   const [questionTimer, setQuestionTimer] =
     useState<number>(perQuestionSeconds);
 
   const fanfarePlayedRef = useRef(false);
+  const battleStartedAtRef = useRef<number>(0);
 
-  // Yarışma başlangıcında sfx.playStart()
+  // Yarışma başlangıcında sfx.playStart() ve başlangıç zaman damgası
   useEffect(() => {
+    battleStartedAtRef.current = Date.now();
     void playStart();
     return () => {
       stopAllAudio();
@@ -567,9 +570,16 @@ export default function ClassroomTeamBattle({
     }
   }, [currentQuestion, preferredVoiceGender, speechRate]);
 
-  // Geri sayım sayacı
+  // Geri sayım sayacı (Süresiz modda çalışmaz)
   useEffect(() => {
-    if (isFinished || isRoundResolved || questionTimer <= 0) return;
+    if (
+      isUnlimitedTime ||
+      isFinished ||
+      isRoundResolved ||
+      questionTimer <= 0
+    ) {
+      return;
+    }
     const timer = setTimeout(() => {
       if (questionTimer <= 1) {
         setQuestionTimer(0);
@@ -580,15 +590,21 @@ export default function ClassroomTeamBattle({
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [questionTimer, isFinished, isRoundResolved]);
+  }, [isUnlimitedTime, questionTimer, isFinished, isRoundResolved]);
 
-  // Yarışma bittiğinde kazanan takım kupasıyla birlikte sfx.playFanfare(100) çalsın
+  // Yarışma bittiğinde gerçek geçen süreyi tek seferde kaydet ve fanfar çal
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
+      const startedAt = battleStartedAtRef.current || Date.now();
+      const elapsedMinutes = Math.max(
+        1,
+        Math.min(30, Math.round((Date.now() - startedAt) / 60000))
+      );
+      addStudyMinutes(elapsedMinutes);
       void playFanfare(100);
     }
-  }, [isFinished]);
+  }, [isFinished, addStudyMinutes]);
 
   const handleTeamSelectOption = async (
     team: "A" | "B",
@@ -616,7 +632,6 @@ export default function ClassroomTeamBattle({
     if (option.isCorrect) {
       // Doğru cevap veren takım turu kazanır!
       setRoundWinner(team);
-      addStudyMinutes(1);
 
       if (team === "A") {
         const nextStreak = teamAStreak + 1;
@@ -680,6 +695,7 @@ export default function ClassroomTeamBattle({
     stopAllAudio();
     stopAllSfx();
     fanfarePlayedRef.current = false;
+    battleStartedAtRef.current = Date.now();
     setSessionSeed((s) => s + 1);
     setCurrentIndex(0);
     setTeamAScore(0);
@@ -1146,13 +1162,13 @@ export default function ClassroomTeamBattle({
             <div className="flex items-center gap-1.5">
               <span
                 className={`px-2 py-0.5 rounded-lg text-xs font-black inline-flex items-center gap-1 tabular-nums ${
-                  questionTimer <= 5
+                  !isUnlimitedTime && questionTimer <= 5
                     ? "bg-rose-100 text-rose-700 animate-pulse"
                     : "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
                 }`}
               >
                 <Timer size={13} />
-                {questionTimer}s
+                {isUnlimitedTime ? "∞ Süresiz" : `${questionTimer}s`}
               </span>
 
               {currentQuestion.audioSpec && (

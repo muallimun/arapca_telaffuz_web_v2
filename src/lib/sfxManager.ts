@@ -1,8 +1,6 @@
 // src/lib/sfxManager.ts
 // 14 MP3 Ses Efekti (`efect/` klasörü) + Web Audio API yedekli akıllı ses efekt motoru
 
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { useSettings } from "@/store/settings";
 
 type Waveform = OscillatorType;
@@ -20,37 +18,6 @@ export interface PlayCorrectOptions {
   streak?: number;
   gender?: "male" | "female" | "erkek" | "kadin";
 }
-
-interface SfxStoreState {
-  sfxEnabled: boolean;
-  setSfxEnabled: (enabled: boolean) => void;
-  toggleSfx: () => void;
-}
-
-export const useSfxStore = create<SfxStoreState>()(
-  persist(
-    (set, get) => ({
-      sfxEnabled: true,
-      setSfxEnabled: (enabled: boolean) => {
-        sfx.setEnabled(enabled);
-        set({ sfxEnabled: enabled });
-      },
-      toggleSfx: () => {
-        const next = !get().sfxEnabled;
-        sfx.setEnabled(next);
-        set({ sfxEnabled: next });
-      },
-    }),
-    {
-      name: "sfx-settings-v2",
-      onRehydrateStorage: () => (state) => {
-        if (state && typeof state.sfxEnabled === "boolean") {
-          sfx.setEnabled(state.sfxEnabled);
-        }
-      },
-    }
-  )
-);
 
 const EFECT_FILES = {
   click: "butonsesi.mp3",
@@ -81,6 +48,7 @@ function buildEfectCandidateUrls(fileName: string): string[] {
 class SoundEffectsManager {
   private ctx: AudioContext | null = null;
   private enabled = true;
+  private recordingMuted = false;
   private unlockBound = false;
 
   // HTMLAudioElement önbelleği (sıfır gecikme için) ve aktif çalan ses havuzu
@@ -182,8 +150,19 @@ class SoundEffectsManager {
     return window.speechSynthesis.speaking || window.speechSynthesis.pending;
   }
 
+  setRecordingMuted(muted: boolean) {
+    this.recordingMuted = muted;
+    if (muted) {
+      this.stopAllSfx();
+    }
+  }
+
+  isRecordingMuted(): boolean {
+    return this.recordingMuted;
+  }
+
   private canPlay(): boolean {
-    return this.enabled;
+    return this.enabled && !this.recordingMuted;
   }
 
   /**

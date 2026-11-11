@@ -28,9 +28,69 @@ export type VoiceOption =
 let activeAudio: HTMLAudioElement | null = null;
 let audioManifest: Record<string, string[]> | null = null;
 
-// İstemci tarafı bellek içi Blob URL önbelleği (Tekrar tıklamalarda 0ms gecikme)
+// İstemci tarafı bellek içi Blob URL önbelleği (50 öğelik LRU sınırı + URL.revokeObjectURL)
+const MEMORY_BLOB_CACHE_MAX = 50;
 const memoryBlobUrlCache = new Map<string, string>();
 const TTS_CACHE_STORAGE_NAME = "arabic-neural-tts-cache-v2";
+
+function getMemoryBlobUrl(cacheKey: string): string | null {
+  const existing = memoryBlobUrlCache.get(cacheKey);
+  if (!existing) return null;
+  // LRU yenilemesi: anahtarı en sona taşı
+  memoryBlobUrlCache.delete(cacheKey);
+  memoryBlobUrlCache.set(cacheKey, existing);
+  return existing;
+}
+
+function setMemoryBlobUrl(cacheKey: string, blobUrl: string): void {
+  if (memoryBlobUrlCache.has(cacheKey)) {
+    const prev = memoryBlobUrlCache.get(cacheKey);
+    if (prev && prev !== blobUrl) {
+      try {
+        URL.revokeObjectURL(prev);
+      } catch {
+        // ignore
+      }
+    }
+    memoryBlobUrlCache.delete(cacheKey);
+  }
+  while (memoryBlobUrlCache.size >= MEMORY_BLOB_CACHE_MAX) {
+    const oldestKey = memoryBlobUrlCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    const oldestUrl = memoryBlobUrlCache.get(oldestKey);
+    memoryBlobUrlCache.delete(oldestKey);
+    if (oldestUrl) {
+      try {
+        URL.revokeObjectURL(oldestUrl);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  memoryBlobUrlCache.set(cacheKey, blobUrl);
+}
+
+/**
+ * Hem tam CDN URL'lerini (https://raw.githubusercontent.com/.../public/sesler/... veya jsDelivr)
+ * hem de göreli /sesler/... yollarını tekil kanonik "/sesler/..." Cache API anahtarına dönüştürür.
+ */
+export function toCanonicalAudioCacheKey(rawUrl: string): string {
+  if (!rawUrl || rawUrl.startsWith("blob:") || rawUrl.startsWith("data:")) {
+    return "";
+  }
+  const clean = rawUrl.trim().split("?")[0].split("#")[0];
+  const seslerIdx = clean.indexOf("/sesler/");
+  if (seslerIdx !== -1) {
+    return clean.slice(seslerIdx);
+  }
+  if (clean.startsWith("sesler/")) {
+    return `/${clean}`;
+  }
+  if (clean.startsWith("/")) {
+    return clean;
+  }
+  return "";
+}
 
 export async function loadAudioManifest(): Promise<Record<string, string[]>> {
   if (audioManifest) return audioManifest;
@@ -281,7 +341,18 @@ export function playWebSpeechFallback(
     const isArabic = /[\u0600-\u06FF]/.test(text);
     const targetLang = langOverride || (isArabic ? "ar-SA" : "tr-TR");
 
+    let hasSpokenOnce = false;
+    let fallbackVoiceTimer: ReturnType<typeof setTimeout> | null = null;
+
     const speakNow = () => {
+      if (hasSpokenOnce) return;
+      hasSpokenOnce = true;
+      if (fallbackVoiceTimer !== null) {
+        clearTimeout(fallbackVoiceTimer);
+        fallbackVoiceTimer = null;
+      }
+      window.speechSynthesis.onvoiceschanged = null;
+
       const utterance = new SpeechSynthesisUtterance(text);
       if (targetLang === "ar-SA") {
         const bestVoice = pickBestArabicVoice(gender);
@@ -312,10 +383,9 @@ export function playWebSpeechFallback(
 
     if (window.speechSynthesis.getVoices().length === 0) {
       window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.onvoiceschanged = null;
         speakNow();
       };
-      setTimeout(speakNow, 250);
+      fallbackVoiceTimer = setTimeout(speakNow, 250);
     } else {
       speakNow();
     }
@@ -337,8 +407,9 @@ async function getOrFetchNeuralTtsBlobUrl(
   if (!cleanText) return null;
 
   const cacheKey = `${gender}:${cleanText}`;
-  if (memoryBlobUrlCache.has(cacheKey)) {
-    return memoryBlobUrlCache.get(cacheKey)!;
+  const cachedMemUrl = getMemoryBlobUrl(cacheKey);
+  if (cachedMemUrl) {
+    return cachedMemUrl;
   }
 
   const requestUrl = `/api/tts?text=${encodeURIComponent(
@@ -354,7 +425,7 @@ async function getOrFetchNeuralTtsBlobUrl(
           const blob = await cachedRes.blob();
           if (blob.size > 128) {
             const blobUrl = URL.createObjectURL(blob);
-            memoryBlobUrlCache.set(cacheKey, blobUrl);
+            setMemoryBlobUrl(cacheKey, blobUrl);
             return blobUrl;
           }
         }
@@ -388,7 +459,7 @@ async function getOrFetchNeuralTtsBlobUrl(
     }
 
     const blobUrl = URL.createObjectURL(blob);
-    memoryBlobUrlCache.set(cacheKey, blobUrl);
+    setMemoryBlobUrl(cacheKey, blobUrl);
     return blobUrl;
   } catch {
     return null;
@@ -603,25 +674,39 @@ async function playAudioElementCore(
   rate: number = 1
 ): Promise<void> {
   let effectiveUrl = url;
+  let tempOfflineBlobUrl: string | null = null;
+  const canonicalKey = toCanonicalAudioCacheKey(url);
   if (
     typeof window !== "undefined" &&
     "caches" in window &&
-    url.startsWith("/")
+    canonicalKey
   ) {
     try {
       const cache = await caches.open("muallimun-offline-audio-v1");
-      const matched = await cache.match(url);
+      const matched =
+        (await cache.match(canonicalKey)) || (await cache.match(url));
       if (matched && matched.ok) {
         const blob = await matched.blob();
         if (blob.size > 128) {
-          effectiveUrl = URL.createObjectURL(blob);
+          tempOfflineBlobUrl = URL.createObjectURL(blob);
+          effectiveUrl = tempOfflineBlobUrl;
         }
       }
     } catch {
       // ignore cache lookup failure
     }
   }
-  await playSingleAudioUrl(effectiveUrl, rate);
+  try {
+    await playSingleAudioUrl(effectiveUrl, rate);
+  } finally {
+    if (tempOfflineBlobUrl) {
+      try {
+        URL.revokeObjectURL(tempOfflineBlobUrl);
+      } catch {
+        // ignore
+      }
+    }
+  }
 }
 
 /**

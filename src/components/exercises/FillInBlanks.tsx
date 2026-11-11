@@ -185,6 +185,9 @@ export default function FillInBlanks({
     const stripPunct = (w: string) =>
       w.replace(/[.,!?؟،؛:"'«»()[\]…]/g, "").trim();
 
+    const countBaseArabicLetters = (w: string) =>
+      removeArabicHarakat(stripPunct(w)).replace(/[^\u0621-\u064A]/g, "").length;
+
     const splitWordPunctuation = (rawToken: string) => {
       const m = rawToken.match(
         /^([.,!?؟،؛:"'«»()[\]…]*)([\s\S]*?)([.,!?؟،؛:"'«»()[\]…]*)$/
@@ -200,30 +203,192 @@ export default function FillInBlanks({
       };
     };
 
-    const replaceTokenKeepingPunctuation = (
-      sentence: string,
-      rawToken: string
+    const replaceTokenAtIndexKeepingPunctuation = (
+      tokens: string[],
+      tokenIndex: number
     ) => {
-      const { leadingPunct, trailingPunct } = splitWordPunctuation(rawToken);
-      return sentence.replace(
-        rawToken,
-        `${leadingPunct} [ ? ] ${trailingPunct}`
-      );
+      return tokens
+        .map((tok, idx) => {
+          if (idx !== tokenIndex) return tok;
+          const { leadingPunct, trailingPunct } = splitWordPunctuation(tok);
+          return `${leadingPunct} [ ? ] ${trailingPunct}`;
+        })
+        .join(" ");
     };
 
-    const vocabDistractorPool = Array.from(
-      new Set([
-        ...vocabulary
-          .map((v) =>
-            stripPunct((v.mufret || v.mazi || "").split("/")[0].trim())
-          )
-          .filter(Boolean),
-        ...idioms
-          .flatMap((idm) => idm.arabic.split(/\s+/))
-          .map(stripPunct)
-          .filter((w) => w.length > 2),
-      ])
-    );
+    interface TypedDistractorEntry {
+      word: string;
+      pos: "isim" | "fiil" | "edat";
+    }
+
+    const normalizePos = (raw?: string): "isim" | "fiil" | "edat" => {
+      const t = (raw || "").trim().toLowerCase();
+      if (t === "fiil") return "fiil";
+      if (t === "edat" || t === "harf" || t === "zarf") return "edat";
+      return "isim";
+    };
+
+    const typedPool: TypedDistractorEntry[] = [];
+    const seenDistractorWords = new Set<string>();
+    const posLookupByBare = new Map<string, "isim" | "fiil" | "edat">();
+
+    for (const v of vocabulary) {
+      const pos = normalizePos(v.tur);
+      const primary = stripPunct((v.mufret || v.mazi || "").split("/")[0].trim());
+      if (primary && countBaseArabicLetters(primary) >= 2) {
+        const normKey = normalizeArabicSpelling(primary);
+        if (normKey && !seenDistractorWords.has(normKey)) {
+          seenDistractorWords.add(normKey);
+          typedPool.push({ word: primary, pos });
+        }
+      }
+      const allForms = [v.mufret, v.cemi, v.mazi, v.muzari, v.masdar];
+      for (const f of allForms) {
+        if (!f || f === "-") continue;
+        for (const p of f.split("/")) {
+          const cl = stripPunct(p);
+          if (countBaseArabicLetters(cl) >= 2) {
+            const bare = removeArabicHarakat(cl);
+            posLookupByBare.set(bare, pos);
+            if (bare.startsWith("ال") && bare.length > 3) {
+              posLookupByBare.set(bare.slice(2), pos);
+            }
+          }
+        }
+      }
+    }
+
+    for (const idm of idioms) {
+      for (const rawTok of idm.arabic.split(/\s+/)) {
+        const cl = stripPunct(rawTok);
+        if (countBaseArabicLetters(cl) >= 2) {
+          const normKey = normalizeArabicSpelling(cl);
+          if (normKey && !seenDistractorWords.has(normKey)) {
+            seenDistractorWords.add(normKey);
+            const bare = removeArabicHarakat(cl);
+            const inferredPos =
+              posLookupByBare.get(bare) ||
+              (bare.startsWith("ال") ? "isim" : "isim");
+            typedPool.push({ word: cl, pos: inferredPos });
+          }
+        }
+      }
+    }
+
+    const adaptDistractorToTargetSurface = (
+      rawCandidate: string,
+      targetHasAl: boolean,
+      targetPos: "isim" | "fiil" | "edat",
+      targetEndingHaraka: string
+    ): string => {
+      let adapted = rawCandidate.trim();
+      const bareCand = removeArabicHarakat(adapted);
+      const candHasAl = bareCand.startsWith("ال") && bareCand.length > 3;
+
+      if (targetPos === "isim") {
+        if (targetHasAl && !candHasAl) {
+          // Tanwin varsa tek harekeye indir ve başına ال ekle
+          adapted = adapted
+            .replace(/\u064B$/, "\u064E")
+            .replace(/\u064C$/, "\u064F")
+            .replace(/\u064D$/, "\u0650");
+          adapted = `ال${adapted}`;
+        } else if (!targetHasAl && candHasAl) {
+          adapted = adapted.replace(/^ا[\u064B-\u0652]*ل[\u064B-\u0652]*/, "");
+        }
+      }
+
+      // Son hareke uyumu (örn. ikisi de merfû/mansûb/mecrûr görünsün ki sadece son harekeden şık elenmesin)
+      if (targetEndingHaraka && adapted.length >= 2) {
+        const isTargetTanwin = /[\u064B\u064C\u064D]/.test(targetEndingHaraka);
+        const adaptedBare = removeArabicHarakat(adapted);
+        const adaptedHasAl =
+          adaptedBare.startsWith("ال") && adaptedBare.length > 3;
+
+        if (!(isTargetTanwin && adaptedHasAl)) {
+          if (/[\u064B-\u0652]+$/.test(adapted)) {
+            adapted = adapted.replace(/[\u064B-\u0652]+$/, targetEndingHaraka);
+          } else {
+            adapted = `${adapted}${targetEndingHaraka}`;
+          }
+        }
+      }
+
+      return adapted;
+    };
+
+    const selectInflectionMatchedDistractors = (
+      cleanTarget: string,
+      needed = 3
+    ): string[] => {
+      const targetNorm = normalizeArabicSpelling(cleanTarget);
+      const bareTarget = removeArabicHarakat(cleanTarget);
+      const targetHasAl = bareTarget.startsWith("ال") && bareTarget.length > 3;
+      const bareNoAl = targetHasAl ? bareTarget.slice(2) : bareTarget;
+      const targetPos: "isim" | "fiil" | "edat" = targetHasAl
+        ? "isim"
+        : posLookupByBare.get(bareTarget) ||
+          posLookupByBare.get(bareNoAl) ||
+          (/^[يتأن]/.test(bareTarget) && !targetHasAl ? "isim" : "isim");
+      const trailingMatch = cleanTarget.match(/[\u064B-\u0652]+$/);
+      const targetEndingHaraka = trailingMatch ? trailingMatch[0] : "";
+
+      const samePosAndAl = shuffleArray(
+        typedPool.filter((entry) => {
+          if (entry.pos !== targetPos) return false;
+          const b = removeArabicHarakat(entry.word);
+          const hasAl = b.startsWith("ال") && b.length > 3;
+          return hasAl === targetHasAl;
+        })
+      );
+
+      const samePosOther = shuffleArray(
+        typedPool.filter((entry) => {
+          if (entry.pos !== targetPos) return false;
+          const b = removeArabicHarakat(entry.word);
+          const hasAl = b.startsWith("ال") && b.length > 3;
+          return hasAl !== targetHasAl;
+        })
+      );
+
+      const fallbackOtherPos = shuffleArray(
+        typedPool.filter((entry) => entry.pos !== targetPos)
+      );
+
+      const picked: string[] = [];
+      const seenNorm = new Set<string>([targetNorm]);
+
+      for (const bucket of [samePosAndAl, samePosOther, fallbackOtherPos]) {
+        for (const entry of bucket) {
+          if (picked.length >= needed) break;
+          const surface =
+            entry.pos === targetPos
+              ? adaptDistractorToTargetSurface(
+                  entry.word,
+                  targetHasAl,
+                  targetPos,
+                  targetEndingHaraka
+                )
+              : entry.word;
+          const surfNorm = normalizeArabicSpelling(surface);
+          const rawNorm = normalizeArabicSpelling(entry.word);
+          if (
+            !surfNorm ||
+            seenNorm.has(surfNorm) ||
+            seenNorm.has(rawNorm) ||
+            countBaseArabicLetters(surface) < 2
+          ) {
+            continue;
+          }
+          seenNorm.add(surfNorm);
+          seenNorm.add(rawNorm);
+          picked.push(surface);
+        }
+        if (picked.length >= needed) break;
+      }
+
+      return picked;
+    };
 
     if (contentType === "idioms") {
       // 1) Diyalog cümlelerinde geçen kalıp ifadelerden boşluk doldurma üret
@@ -232,34 +397,29 @@ export default function FillInBlanks({
         const idiomWords = ext.arabic
           .split(/\s+/)
           .map(stripPunct)
-          .filter((w) => w.length >= 2);
-        const lineWords = ext.lineArabic.split(/\s+/);
-        // Cümlede kalıp ifadeye ait olan kelimeyi bul
-        const matchedLineWord = lineWords.find((lw) => {
+          .filter((w) => countBaseArabicLetters(w) >= 2);
+        const lineWords = ext.lineArabic.split(/\s+/).filter(Boolean);
+        let targetIndex = lineWords.findIndex((lw) => {
+          if (countBaseArabicLetters(lw) < 2) return false;
           const cleanLw = normalizeArabicSpelling(lw);
           return idiomWords.some(
-            (iw) =>
-              normalizeArabicSpelling(iw) === cleanLw && cleanLw.length >= 2
+            (iw) => normalizeArabicSpelling(iw) === cleanLw && cleanLw.length >= 2
           );
         });
-        const targetRaw =
-          matchedLineWord ||
-          lineWords.find((lw) => stripPunct(lw).length > 2);
-        if (!targetRaw) continue;
-        const cleanTarget = stripPunct(targetRaw);
-        const distractors = shuffleArray(
-          vocabDistractorPool.filter(
-            (w) =>
-              normalizeArabicSpelling(w) !==
-              normalizeArabicSpelling(cleanTarget)
-          )
-        ).slice(0, 3);
+        if (targetIndex < 0) {
+          targetIndex = lineWords.findIndex(
+            (lw) => countBaseArabicLetters(lw) >= 2
+          );
+        }
+        if (targetIndex < 0) continue;
+        const cleanTarget = stripPunct(lineWords[targetIndex]);
+        const distractors = selectInflectionMatchedDistractors(cleanTarget, 3);
         if (distractors.length === 3) {
           generated.push({
             id: `fill_idm_dlg_${ext.id}_${ext.lineNumber}`,
-            sentenceWithBlank: replaceTokenKeepingPunctuation(
-              ext.lineArabic,
-              targetRaw
+            sentenceWithBlank: replaceTokenAtIndexKeepingPunctuation(
+              lineWords,
+              targetIndex
             ),
             fullArabic: ext.lineArabic,
             correctWord: cleanTarget,
@@ -274,24 +434,20 @@ export default function FillInBlanks({
 
       // 2) Çok kelimeli kalıp ifadelerin kendisinden boşluk doldurma üret
       for (const idm of idioms) {
-        const words = idm.arabic.trim().split(/\s+/);
-        const validWords = words.filter((w) => stripPunct(w).length >= 2);
-        if (validWords.length < 2) continue;
-        const chosenWord = shuffleArray(validWords)[0];
-        const cleanTarget = stripPunct(chosenWord);
-        const distractors = shuffleArray(
-          vocabDistractorPool.filter(
-            (w) =>
-              normalizeArabicSpelling(w) !==
-              normalizeArabicSpelling(cleanTarget)
-          )
-        ).slice(0, 3);
+        const words = idm.arabic.trim().split(/\s+/).filter(Boolean);
+        const validIndices = words
+          .map((w, idx) => ({ w, idx }))
+          .filter((item) => countBaseArabicLetters(item.w) >= 2);
+        if (validIndices.length < 2) continue;
+        const chosen = shuffleArray(validIndices)[0];
+        const cleanTarget = stripPunct(chosen.w);
+        const distractors = selectInflectionMatchedDistractors(cleanTarget, 3);
         if (distractors.length === 3) {
           generated.push({
             id: `fill_idm_${idm.id}`,
-            sentenceWithBlank: replaceTokenKeepingPunctuation(
-              idm.arabic,
-              chosenWord
+            sentenceWithBlank: replaceTokenAtIndexKeepingPunctuation(
+              words,
+              chosen.idx
             ),
             fullArabic: idm.arabic,
             correctWord: cleanTarget,
@@ -318,7 +474,7 @@ export default function FillInBlanks({
         if (!f || f === "-") continue;
         for (const part of f.split("/")) {
           const clean = stripPunct(part);
-          if (clean.length > 1) {
+          if (countBaseArabicLetters(clean) >= 2) {
             vocabFormsSet.add(clean);
             vocabFormsSet.add(removeArabicHarakat(clean));
           }
@@ -328,18 +484,20 @@ export default function FillInBlanks({
 
     for (const dlg of dialogues) {
       for (const line of dlg.satirlar) {
-        const words = line.arapca.split(/\s+/);
-        const validCandidates = words.filter((w) => stripPunct(w).length > 2);
+        const words = line.arapca.split(/\s+/).filter(Boolean);
+        const validCandidates = words
+          .map((w, idx) => ({ w, idx }))
+          .filter((item) => countBaseArabicLetters(item.w) >= 2);
         if (validCandidates.length === 0) continue;
 
-        const vocabMatchedCandidates = validCandidates.filter((w) => {
+        const vocabMatchedCandidates = validCandidates.filter(({ w }) => {
           const clean = stripPunct(w);
           const bare = removeArabicHarakat(clean);
           const bareNoAl = bare.startsWith("ال") ? bare.slice(2) : bare;
           return (
             vocabFormsSet.has(clean) ||
             vocabFormsSet.has(bare) ||
-            (bareNoAl.length > 2 && vocabFormsSet.has(bareNoAl))
+            (bareNoAl.length >= 2 && vocabFormsSet.has(bareNoAl))
           );
         });
 
@@ -347,24 +505,20 @@ export default function FillInBlanks({
           vocabMatchedCandidates.length > 0
             ? vocabMatchedCandidates
             : validCandidates;
-        const candidateWord = shuffleArray(candidatePool)[0];
+        const chosenCandidate = shuffleArray(candidatePool)[0];
 
-        if (candidateWord) {
-          const cleanTarget = stripPunct(candidateWord);
-          const distractorWords = shuffleArray(vocabDistractorPool)
-            .filter(
-              (w) =>
-                w &&
-                normalizeArabicSpelling(w) !==
-                  normalizeArabicSpelling(cleanTarget)
-            )
-            .slice(0, 3);
+        if (chosenCandidate) {
+          const cleanTarget = stripPunct(chosenCandidate.w);
+          const distractorWords = selectInflectionMatchedDistractors(
+            cleanTarget,
+            3
+          );
 
           if (distractorWords.length === 3) {
             const allOptions = shuffleArray([cleanTarget, ...distractorWords]);
-            const sentenceWithBlank = replaceTokenKeepingPunctuation(
-              line.arapca,
-              candidateWord
+            const sentenceWithBlank = replaceTokenAtIndexKeepingPunctuation(
+              words,
+              chosenCandidate.idx
             );
             generated.push({
               id: `fill_${dlg.id}_${line.sira}`,
@@ -1467,13 +1621,16 @@ export default function FillInBlanks({
                   type="button"
                   onClick={() => {
                     playClick();
-                    setShowKeyboard((v) => {
-                      const next = !v;
-                      if (next) setUseDeviceKeyboard(false);
-                      return next;
-                    });
+                    if (showKeyboard && !useDeviceKeyboard) {
+                      setShowKeyboard(false);
+                      setUseDeviceKeyboard(true);
+                    } else {
+                      setUseDeviceKeyboard(false);
+                      setShowKeyboard(true);
+                    }
+                    setTimeout(() => inputRef.current?.focus(), 40);
                   }}
-                  title="Arapça Sanal Klavyeyi Aç/Kapat"
+                  title="Ekran Sanal Klavyesi / Cihaz Sistem Klavyesi Arasında Geçiş Yap"
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl border font-extrabold transition-all cursor-pointer ${
                     showKeyboard && !useDeviceKeyboard
                       ? "bg-[#6741D9] border-[#5230B5] text-white"
@@ -1481,7 +1638,11 @@ export default function FillInBlanks({
                   }`}
                 >
                   <Keyboard size={13} />
-                  <span>Klavye</span>
+                  <span>
+                    {showKeyboard && !useDeviceKeyboard
+                      ? "⌨️ Ekran Klavyesi"
+                      : "📱 Sistem Klavyesi"}
+                  </span>
                 </button>
               </>
             )}

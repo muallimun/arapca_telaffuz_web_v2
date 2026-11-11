@@ -64,6 +64,7 @@ import {
   RecordingSession16kHz,
 } from "@/lib/audioAnalysis";
 import {
+  sfx,
   playRecordStart,
   playRecordStop,
   playCorrect,
@@ -318,6 +319,7 @@ export default function ShadowingModal({
   const cleanupMediaResources = useCallback(() => {
     recordingSessionIdRef.current += 1;
     isStartingRef.current = false;
+    sfx.setRecordingMuted(false);
     stopPreviousMediaOnly();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -619,6 +621,18 @@ export default function ShadowingModal({
       }
     }
 
+    // Kayıt başlangıç efektini mikrofon akışı açılmadan ÖNCE çal ve kayıt boyunca tüm SFX seslerini sustur (mikrofona sızmayı %100 önler)
+    sfx.setRecordingMuted(false);
+    playRecordStart();
+    await new Promise((r) => setTimeout(r, 140));
+    if (
+      !isMountedRef.current ||
+      sessionId !== recordingSessionIdRef.current
+    ) {
+      return;
+    }
+    sfx.setRecordingMuted(true);
+
     if (userAudioUrl) URL.revokeObjectURL(userAudioUrl);
     setUserAudioUrl(null);
     setUserWavBlob(null);
@@ -657,7 +671,6 @@ export default function ShadowingModal({
       }
       micActivated = true;
       setIsMicPreparing(false);
-      playRecordStart();
       recordingStartTimeRef.current = Date.now();
       lastMobileVoiceTimeRef.current = Date.now();
       recordingElapsedSecRef.current = 0;
@@ -939,6 +952,7 @@ export default function ShadowingModal({
           // ignore
         }
       }
+      sfx.setRecordingMuted(false);
       stopPreviousMediaOnly();
       setIsRecording(false);
       setIsMicPreparing(false);
@@ -965,7 +979,6 @@ export default function ShadowingModal({
     // Son hecenin işlenmesi için 400ms bekle ve liveTranscriptRef.current içindeki metni doğrudan değerlendirmeye gönder (WASM'a düşme!)
     if (isMobileWebSpeechOnlyRef.current) {
       isMobileWebSpeechOnlyRef.current = false;
-      playRecordStop();
       setIsRecording(false);
       setIsAnalyzing(true);
       setWhisperStatus("");
@@ -974,6 +987,8 @@ export default function ShadowingModal({
         const stoppedWebSpeechText = speechManagerRef.current
           ? await speechManagerRef.current.stopAndWaitForFinalResult(400)
           : "";
+        sfx.setRecordingMuted(false);
+        playRecordStop();
         const combinedRefs = (
           finalTranscriptRef.current +
           " " +
@@ -1035,6 +1050,7 @@ export default function ShadowingModal({
     }
 
     if (!recordingSessionRef.current) {
+      sfx.setRecordingMuted(false);
       setIsRecording(false);
       return;
     }
@@ -1046,7 +1062,6 @@ export default function ShadowingModal({
       rafIdRef.current = null;
     }
 
-    playRecordStop();
     setIsRecording(false);
     setIsAnalyzing(true);
 
@@ -1072,6 +1087,9 @@ export default function ShadowingModal({
           ? speechManagerRef.current.stopAndWaitForFinalResult(400)
           : Promise.resolve(""),
       ]);
+
+      sfx.setRecordingMuted(false);
+      playRecordStop();
 
       mediaStreamRef.current = null;
       audioContextRef.current = null;

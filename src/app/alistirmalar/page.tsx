@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -58,19 +59,87 @@ import {
 import { formatTurkishCategory } from "@/lib/arabicTextUtils";
 import { MixedText } from "@/components/ui/MixedText";
 
-import Flashcard from "@/components/exercises/Flashcard";
-import MultipleChoice, {
+import type {
   FeedbackMode,
   QuizContentType,
 } from "@/components/exercises/MultipleChoice";
-import FillInBlanks, {
-  FillSubMode,
-} from "@/components/exercises/FillInBlanks";
-import MatchingGame from "@/components/exercises/MatchingGame";
-import SentenceBuilder from "@/components/exercises/SentenceBuilder";
-import VisualRosettaQuiz from "@/components/exercises/VisualRosettaQuiz";
-import MorphologyAndContextQuiz from "@/components/exercises/MorphologyAndContextQuiz";
-import ClassroomTeamBattle from "@/components/exercises/ClassroomTeamBattle";
+import type { FillSubMode } from "@/components/exercises/FillInBlanks";
+
+function ExerciseModuleLoadingSkeleton() {
+  return (
+    <div className="w-full max-w-3xl mx-auto rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDFBF7] dark:bg-[var(--surface)] p-6 sm:p-8 shadow-sm space-y-4 animate-pulse">
+      <div className="flex items-center justify-between gap-4">
+        <div className="h-5 w-44 rounded-xl bg-[#E6D7BE]/70 dark:bg-slate-700" />
+        <div className="h-5 w-20 rounded-xl bg-[#E6D7BE]/70 dark:bg-slate-700" />
+      </div>
+      <div className="h-36 rounded-2xl bg-[#F7EFE1] dark:bg-slate-800/70 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center">
+        <span className="text-xs sm:text-sm font-extrabold text-[#087F5B] dark:text-emerald-400">
+          ⏳ Alıştırma modülü hazırlanıyor...
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="h-12 rounded-2xl bg-[#E6D7BE]/50 dark:bg-slate-800" />
+        <div className="h-12 rounded-2xl bg-[#E6D7BE]/50 dark:bg-slate-800" />
+        <div className="h-12 rounded-2xl bg-[#E6D7BE]/50 dark:bg-slate-800" />
+        <div className="h-12 rounded-2xl bg-[#E6D7BE]/50 dark:bg-slate-800" />
+      </div>
+    </div>
+  );
+}
+
+const Flashcard = dynamic(() => import("@/components/exercises/Flashcard"), {
+  ssr: false,
+  loading: () => <ExerciseModuleLoadingSkeleton />,
+});
+const MultipleChoice = dynamic(
+  () => import("@/components/exercises/MultipleChoice"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const FillInBlanks = dynamic(
+  () => import("@/components/exercises/FillInBlanks"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const MatchingGame = dynamic(
+  () => import("@/components/exercises/MatchingGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const SentenceBuilder = dynamic(
+  () => import("@/components/exercises/SentenceBuilder"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const VisualRosettaQuiz = dynamic(
+  () => import("@/components/exercises/VisualRosettaQuiz"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const MorphologyAndContextQuiz = dynamic(
+  () => import("@/components/exercises/MorphologyAndContextQuiz"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const ClassroomTeamBattle = dynamic(
+  () => import("@/components/exercises/ClassroomTeamBattle"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
 
 type ExerciseType =
   | "flashcard"

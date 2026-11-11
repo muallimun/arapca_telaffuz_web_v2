@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, notFound } from "next/navigation";
 import {
@@ -68,14 +69,31 @@ import {
 } from "@/lib/sfxManager";
 import WordTooltip from "@/components/ui/WordTooltip";
 import ShadowingButton from "@/components/ui/ShadowingButton";
-import ShadowingModal from "@/components/ui/ShadowingModal";
-import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
-import ShareAchievementModal, {
-  TeacherHomeworkModal,
-} from "@/components/ui/ShareAchievementModal";
-import ShareContentCardModal, {
-  ShareCardPayload,
-} from "@/components/ui/ShareContentCardModal";
+import type { ShareCardPayload } from "@/components/ui/ShareContentCardModal";
+
+const ShadowingModal = dynamic(
+  () => import("@/components/ui/ShadowingModal"),
+  { ssr: false }
+);
+const DialoguePdfModal = dynamic(
+  () => import("@/components/ui/DialoguePdfModal"),
+  { ssr: false }
+);
+const ShareAchievementModal = dynamic(
+  () => import("@/components/ui/ShareAchievementModal"),
+  { ssr: false }
+);
+const TeacherHomeworkModal = dynamic(
+  () =>
+    import("@/components/ui/ShareAchievementModal").then(
+      (m) => m.TeacherHomeworkModal
+    ),
+  { ssr: false }
+);
+const ShareContentCardModal = dynamic(
+  () => import("@/components/ui/ShareContentCardModal"),
+  { ssr: false }
+);
 import {
   getReadingTextVocabulary,
   DialogueVocabularyEntry,
@@ -1134,7 +1152,7 @@ export default function ReadingTextDetailPage({
     playClick();
     setIsDownloadingOffline(true);
     setOfflineProgressPct(5);
-    const ok = await downloadDialogueOfflinePack(
+    const res = await downloadDialogueOfflinePack(
       readingText.id,
       (percent, _completed, _total, estMb) => {
         setOfflineProgressPct(percent);
@@ -1142,7 +1160,7 @@ export default function ReadingTextDetailPage({
       }
     );
     setIsDownloadingOffline(false);
-    if (ok) {
+    if (res.ok) {
       setIsOfflineReady(true);
       setShowOfflineNotice(true);
       playSuccess();
@@ -1380,66 +1398,72 @@ export default function ReadingTextDetailPage({
       )}
 
       {/* ÖĞRETMEN İÇİN "🎓 ÖDEV OLUŞTUR" MODALI */}
-      <TeacherHomeworkModal
-        isOpen={isTeacherHwModalOpen}
-        onClose={() => setIsTeacherHwModalOpen(false)}
-        dialogueId={readingText.id}
-        dialogueTitleTr={readingText.baslik_tr}
-        dialogueTitleAr={getDisplayText(readingText.baslik_ar)}
-        levelLabel={readingText.seviye}
-        totalLines={readingText.satirlar.length}
-        onOpenCertificate={() => {
-          setHwConfig((prev) => ({ ...prev, active: true }));
-          setIsHwReportModalOpen(true);
-        }}
-      />
+      {isTeacherHwModalOpen && (
+        <TeacherHomeworkModal
+          isOpen={isTeacherHwModalOpen}
+          onClose={() => setIsTeacherHwModalOpen(false)}
+          dialogueId={readingText.id}
+          dialogueTitleTr={readingText.baslik_tr}
+          dialogueTitleAr={getDisplayText(readingText.baslik_ar)}
+          levelLabel={readingText.seviye}
+          totalLines={readingText.satirlar.length}
+          onOpenCertificate={() => {
+            setHwConfig((prev) => ({ ...prev, active: true }));
+            setIsHwReportModalOpen(true);
+          }}
+        />
+      )}
 
       {/* ÖĞRENCİ ÖDEV TAMAMLAMA VE DOĞRULAMA RAPORU MODALI */}
-      <ShareAchievementModal
-        isOpen={isHwReportModalOpen}
-        onClose={() => setIsHwReportModalOpen(false)}
-        title={readingText.baslik_tr}
-        arabicTitle={getDisplayText(readingText.baslik_ar)}
-        subtitle={`Metin #${String(rawNum).padStart(2, "0")} • ${readingText.satirlar.length} Cümle • ${textVocabEntries.length} Kelime`}
-        levelLabel={readingText.seviye}
-        scorePercent={hwAverageScore}
-        pointsText={`${hwCompletedTasks}/${hwTotalTasks} Görev`}
-        wordsCount={textVocabEntries.length}
-        badgeType="homework"
-        homeworkTitle={hwConfig.title || `${readingText.baslik_tr} Ödevi`}
-        completionPercent={hwCompletionRatioPct}
-        listenedCount={hwListenedLines.length}
-        totalLinesCount={readingText.satirlar.length}
-        pronPracticedCount={hwPronouncedCount}
-        pronTargetCount={hwConfig.pronCount}
-        quizCompleted={isHwQuizDone}
-        weakWordsList={hwWeakWordsList}
-        dialogueId={readingText.id}
-        homeworkUrl={
-          typeof window !== "undefined" ? window.location.href : undefined
-        }
-      />
+      {isHwReportModalOpen && (
+        <ShareAchievementModal
+          isOpen={isHwReportModalOpen}
+          onClose={() => setIsHwReportModalOpen(false)}
+          title={readingText.baslik_tr}
+          arabicTitle={getDisplayText(readingText.baslik_ar)}
+          subtitle={`Metin #${String(rawNum).padStart(2, "0")} • ${readingText.satirlar.length} Cümle • ${textVocabEntries.length} Kelime`}
+          levelLabel={readingText.seviye}
+          scorePercent={hwAverageScore}
+          pointsText={`${hwCompletedTasks}/${hwTotalTasks} Görev`}
+          wordsCount={textVocabEntries.length}
+          badgeType="homework"
+          homeworkTitle={hwConfig.title || `${readingText.baslik_tr} Ödevi`}
+          completionPercent={hwCompletionRatioPct}
+          listenedCount={hwListenedLines.length}
+          totalLinesCount={readingText.satirlar.length}
+          pronPracticedCount={hwPronouncedCount}
+          pronTargetCount={hwConfig.pronCount}
+          quizCompleted={isHwQuizDone}
+          weakWordsList={hwWeakWordsList}
+          dialogueId={readingText.id}
+          homeworkUrl={
+            typeof window !== "undefined" ? window.location.href : undefined
+          }
+        />
+      )}
 
       {/* BAŞARI KARTINI PAYLAŞ / İNDİR MODALI */}
-      <ShareAchievementModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title={readingText.baslik_tr}
-        arabicTitle={getDisplayText(readingText.baslik_ar)}
-        subtitle={`Metin #${String(rawNum).padStart(2, "0")} • ${readingText.satirlar.length} Cümle • ${readingText.sorular.length} Soru • ${textVocabEntries.length} Kelime`}
-        levelLabel={readingText.seviye}
-        scorePercent={
-          readingText.sorular.length > 0 &&
-          Object.keys(selectedAnswers).length > 0
-            ? Math.round(
-                (correctQuizCount / readingText.sorular.length) * 100
-              )
-            : hwAverageScore
-        }
-        pointsText={`${readingText.satirlar.length} Cümle`}
-        wordsCount={textVocabEntries.length}
-        badgeType="dialogue"
-      />
+      {isShareModalOpen && (
+        <ShareAchievementModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={readingText.baslik_tr}
+          arabicTitle={getDisplayText(readingText.baslik_ar)}
+          subtitle={`Metin #${String(rawNum).padStart(2, "0")} • ${readingText.satirlar.length} Cümle • ${readingText.sorular.length} Soru • ${textVocabEntries.length} Kelime`}
+          levelLabel={readingText.seviye}
+          scorePercent={
+            readingText.sorular.length > 0 &&
+            Object.keys(selectedAnswers).length > 0
+              ? Math.round(
+                  (correctQuizCount / readingText.sorular.length) * 100
+                )
+              : hwAverageScore
+          }
+          pointsText={`${readingText.satirlar.length} Cümle`}
+          wordsCount={textVocabEntries.length}
+          badgeType="dialogue"
+        />
+      )}
 
       {/* ÖDEV İÇİ HIZLI ALIŞTIRMA (BOŞLUK DOLDURMA & EŞLEŞTİRME) MODALI */}
       {isHwQuizModalOpen && hwMiniQuizQuestions.length > 0 && (
@@ -4441,10 +4465,12 @@ export default function ReadingTextDetailPage({
         onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
       />
 
-      <ShareContentCardModal
-        payload={shareCardTarget}
-        onClose={() => setShareCardTarget(null)}
-      />
+      {shareCardTarget && (
+        <ShareContentCardModal
+          payload={shareCardTarget}
+          onClose={() => setShareCardTarget(null)}
+        />
+      )}
     </div>
   );
 }

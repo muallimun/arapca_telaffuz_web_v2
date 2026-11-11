@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Search,
@@ -72,13 +73,25 @@ import {
   getDownloadedDialogueIds,
   downloadDialogueOfflinePack,
 } from "@/lib/offlineManager";
-import ShadowingModal from "@/components/ui/ShadowingModal";
 import WordTooltip from "@/components/ui/WordTooltip";
-import DialoguePdfModal from "@/components/ui/DialoguePdfModal";
-import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
-import ShareContentCardModal, {
-  ShareCardPayload,
-} from "@/components/ui/ShareContentCardModal";
+import type { ShareCardPayload } from "@/components/ui/ShareContentCardModal";
+
+const ShadowingModal = dynamic(
+  () => import("@/components/ui/ShadowingModal"),
+  { ssr: false }
+);
+const DialoguePdfModal = dynamic(
+  () => import("@/components/ui/DialoguePdfModal"),
+  { ssr: false }
+);
+const ShareAchievementModal = dynamic(
+  () => import("@/components/ui/ShareAchievementModal"),
+  { ssr: false }
+);
+const ShareContentCardModal = dynamic(
+  () => import("@/components/ui/ShareContentCardModal"),
+  { ssr: false }
+);
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
 
@@ -323,11 +336,11 @@ export default function LibraryPage() {
     playClick();
     setDownloadingId(dlgId);
     setDownloadingPct(5);
-    const ok = await downloadDialogueOfflinePack(dlgId, (pct) => {
+    const res = await downloadDialogueOfflinePack(dlgId, (pct) => {
       setDownloadingPct(pct);
     });
     setDownloadingId(null);
-    if (ok) {
+    if (res.ok) {
       setOfflineIds((prev) => (prev.includes(dlgId) ? prev : [...prev, dlgId]));
       playSuccess();
     }
@@ -1520,33 +1533,35 @@ export default function LibraryPage() {
       )}
 
       {/* 🏅 DOĞRULAMA KODLU ÖDEV TAMAMLAMA KARNESİ MODALI */}
-      <ShareAchievementModal
-        isOpen={isHwCertificateOpen}
-        onClose={() => setIsHwCertificateOpen(false)}
-        title={
-          categoryFilter === "all"
-            ? "Genel Çalışma Paketi"
-            : categoryFilter.replace(/_/g, " ")
-        }
-        moduleLabel={getModuleHumanLabel()}
-        levelLabel={levelFilter === "all" ? "A1-B2" : levelFilter}
-        scorePercent={100}
-        wordsCount={Math.max(hwInspectedIds.length, 6)}
-        badgeType="homework"
-        homeworkTitle={`${getModuleHumanLabel()} Ödev Paketi`}
-        completionPercent={100}
-        listenedCount={Math.max(hwInspectedIds.length, 6)}
-        totalLinesCount={Math.max(
-          Math.min(activeModalListLength || 12, 24),
-          hwInspectedIds.length,
-          6
-        )}
-        pronPracticedCount={Math.max(Math.min(hwInspectedIds.length, 3), 1)}
-        pronTargetCount={3}
-        quizCompleted={true}
-        dialogueId={`kutuphane_${activeSection}`}
-        homeworkUrl={buildHomeworkShareUrl()}
-      />
+      {isHwCertificateOpen && (
+        <ShareAchievementModal
+          isOpen={isHwCertificateOpen}
+          onClose={() => setIsHwCertificateOpen(false)}
+          title={
+            categoryFilter === "all"
+              ? "Genel Çalışma Paketi"
+              : categoryFilter.replace(/_/g, " ")
+          }
+          moduleLabel={getModuleHumanLabel()}
+          levelLabel={levelFilter === "all" ? "A1-B2" : levelFilter}
+          scorePercent={100}
+          wordsCount={Math.max(hwInspectedIds.length, 6)}
+          badgeType="homework"
+          homeworkTitle={`${getModuleHumanLabel()} Ödev Paketi`}
+          completionPercent={100}
+          listenedCount={Math.max(hwInspectedIds.length, 6)}
+          totalLinesCount={Math.max(
+            Math.min(activeModalListLength || 12, 24),
+            hwInspectedIds.length,
+            6
+          )}
+          pronPracticedCount={Math.max(Math.min(hwInspectedIds.length, 3), 1)}
+          pronTargetCount={3}
+          quizCompleted={true}
+          dialogueId={`kutuphane_${activeSection}`}
+          homeworkUrl={buildHomeworkShareUrl()}
+        />
+      )}
 
       {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 999 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
       {selectedCardIndex !== null &&
@@ -5889,10 +5904,12 @@ export default function LibraryPage() {
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />
 
-      <ShareContentCardModal
-        payload={shareCardTarget}
-        onClose={() => setShareCardTarget(null)}
-      />
+      {shareCardTarget && (
+        <ShareContentCardModal
+          payload={shareCardTarget}
+          onClose={() => setShareCardTarget(null)}
+        />
+      )}
     </div>
   );
 }

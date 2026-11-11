@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   BookOpen,
@@ -46,11 +47,17 @@ import {
   getMp3Path,
 } from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
-import ShadowingModal from "@/components/ui/ShadowingModal";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
-import ShareContentCardModal, {
-  ShareCardPayload,
-} from "@/components/ui/ShareContentCardModal";
+import type { ShareCardPayload } from "@/components/ui/ShareContentCardModal";
+
+const ShadowingModal = dynamic(
+  () => import("@/components/ui/ShadowingModal"),
+  { ssr: false }
+);
+const ShareContentCardModal = dynamic(
+  () => import("@/components/ui/ShareContentCardModal"),
+  { ssr: false }
+);
 import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
 import { formatArabicText, formatTurkishCategory } from "@/lib/arabicTextUtils";
@@ -1367,10 +1374,12 @@ export default function HomePage() {
         }
       />
 
-      <ShareContentCardModal
-        payload={shareCardTarget}
-        onClose={() => setShareCardTarget(null)}
-      />
+      {shareCardTarget && (
+        <ShareContentCardModal
+          payload={shareCardTarget}
+          onClose={() => setShareCardTarget(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, notFound } from "next/navigation";
@@ -519,6 +520,19 @@ export default function DialogueDetailPage({
       window.removeEventListener("pagehide", handleBackgroundStop);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Telefon ekranlarında (< 768px) Sınıf / Tahta Modu açık kaldıysa otomatik kapat
+  useEffect(() => {
+    const checkViewportForClassroom = () => {
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setIsClassroomMode(false);
+      }
+    };
+    checkViewportForClassroom();
+    window.addEventListener("resize", checkViewportForClassroom);
+    return () =>
+      window.removeEventListener("resize", checkViewportForClassroom);
   }, []);
 
   useEffect(() => {
@@ -1985,9 +1999,11 @@ export default function DialogueDetailPage({
               grammarSplitSide === "left"
                 ? "lg:grid-cols-[400px_minmax(0,1fr)]"
                 : "lg:grid-cols-[minmax(0,1fr)_400px]"
-            } lg:gap-4 xl:gap-5 lg:items-start pb-28 md:pb-10 transition-all duration-200`
+            } lg:gap-4 xl:gap-5 lg:items-start ${
+              isClassroomMode ? "pb-28" : "pb-28 md:pb-10"
+            } transition-all duration-200`
           : isClassroomMode
-          ? "space-y-4 max-w-7xl w-full lg:w-[min(80rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 px-1 sm:px-4 md:px-8 pb-28 md:pb-10 transition-all duration-300"
+          ? "space-y-4 max-w-7xl w-full lg:w-[min(80rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 px-1 sm:px-4 md:px-8 pb-28 transition-all duration-300"
           : "space-y-3 pb-28 md:pb-10"
       }
     >
@@ -2845,11 +2861,15 @@ export default function DialogueDetailPage({
                 <span>Kör Dinleme</span>
               </button>
 
-              {/* 9. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu (Sadece Tablet/Masaüstü/Tahta: hidden sm:inline-flex) */}
+              {/* 9. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu (Yalnızca Tablet ve Masaüstü >= 768px) */}
               <button
                 type="button"
                 onClick={(e) => {
                   (e.currentTarget as HTMLElement)?.blur();
+                  if (typeof window !== "undefined" && window.innerWidth < 768) {
+                    setIsClassroomMode(false);
+                    return;
+                  }
                   playClick();
                   setIsClassroomMode((v) => {
                     const next = !v;
@@ -3504,11 +3524,11 @@ export default function DialogueDetailPage({
         </div>
       </section>
 
-      {/* SINIF MODU ÜST KONTROL ÇUBUĞU (A+ / A- Punto, Spot Odaklama, Hızlı Gizle/Göster ve Çıkış) */}
+      {/* SINIF MODU ÜST KONTROL ÇUBUĞU (Yalnızca Tablet ve Masaüstü >= 768px) */}
       {isClassroomMode && studyMode !== "vocabulary" && (
         <section
           aria-label="Akıllı Tahta ve Sınıf Sunum Modu Kontrol Çubuğu"
-          className="rounded-2xl bg-gradient-to-r from-emerald-900 via-[#087F5B] to-teal-900 text-white border-2 border-emerald-400/60 border-b-4 p-3 sm:p-4 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200"
+          className="hidden md:flex print:hidden rounded-2xl bg-gradient-to-r from-emerald-900 via-[#087F5B] to-teal-900 text-white border-2 border-emerald-400/60 border-b-4 p-3 sm:p-4 shadow-xl flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200"
         >
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="px-3 py-1 rounded-xl bg-white/15 border border-white/25 text-xs sm:text-sm font-black tracking-wide flex items-center gap-1.5">
@@ -4763,12 +4783,17 @@ export default function DialogueDetailPage({
         </section>
       )}
 
-      {/* AKILLI TAHTA & SINIF MODU ALT SUNUM KUMANDASI (Sticky Bottom Presentation Remote) */}
-      {isClassroomMode && studyMode !== "vocabulary" && activeClassroomLineObj && (
-        <div
-          aria-label="Sınıf Modu Alt Sunum Kumandası"
-          className="sticky bottom-20 lg:bottom-4 z-50 mx-auto w-fit max-w-full overflow-x-auto rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white border-2 border-emerald-500/70 border-b-4 px-4 py-2.5 shadow-2xl flex items-center justify-center gap-2 md:gap-3 flex-nowrap whitespace-nowrap"
-        >
+      {/* AKILLI TAHTA & SINIF MODU ALT SUNUM KUMANDASI (createPortal ile body altında doğrudan viewport'a sabit) */}
+      {mounted &&
+        isClassroomMode &&
+        studyMode !== "vocabulary" &&
+        activeClassroomLineObj &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            aria-label="Sınıf Modu Alt Sunum Kumandası"
+            className="hidden md:flex print:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-fit max-w-[calc(100vw-1.5rem)] rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white border-2 border-emerald-500/70 border-b-4 px-3.5 py-2.5 shadow-2xl flex-wrap lg:flex-nowrap items-center justify-center gap-2 md:gap-2.5 whitespace-nowrap"
+          >
           {/* 1. Önceki */}
           <button
             type="button"
@@ -4928,8 +4953,9 @@ export default function DialogueDetailPage({
           >
             <X size={16} />
           </button>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* DİYALOG CÜMLELERİNİN ALTINDAKİ KALIP İFADELER KART BÖLÜMÜ (Dinle/Telaffuz/Rol Yapma Modlarında) */}
       {studyMode !== "vocabulary" && dialogueIdioms.length > 0 && (

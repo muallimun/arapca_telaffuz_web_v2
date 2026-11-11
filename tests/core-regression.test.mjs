@@ -2366,3 +2366,50 @@ test("23. Yan Yana Gramer (Split-View Grammar Panel) — Tekil Durum Makinesi, 2
   );
 });
 
+test("24. Sınıf / Tahta Modu (isClassroomMode) — createPortal ile Viewport Sabit Alt Kontrol Çubuğu ve Telefon (< 768px) Koruması (/diyalog/[id] & /metin/[id])", async () => {
+  const dialoguePageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const readingPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+
+  for (const [label, pageCode] of [
+    ["diyalog/[id]", dialoguePageCode],
+    ["metin/[id]", readingPageCode],
+  ]) {
+    // 1. createPortal(..., document.body) + fixed bottom-5 left-1/2 -translate-x-1/2 z-40 + pb-28
+    assert.equal(
+      pageCode.includes('import { createPortal } from "react-dom";') &&
+        pageCode.includes("createPortal(") &&
+        pageCode.includes("document.body") &&
+        pageCode.includes(
+          "hidden md:flex print:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40"
+        ) &&
+        pageCode.includes(
+          'isClassroomMode ? "pb-28" : "pb-28 md:pb-10"'
+        ) &&
+        pageCode.includes("px-1 sm:px-4 md:px-8 pb-28 transition-all duration-300"),
+      true,
+      `${label} Sınıf Modu alt çubuğu createPortal ile document.body altına fixed bottom-5 left-1/2 -translate-x-1/2 z-40 olarak sabitlenmeli ve pb-28 alt boşluk sağlamalıdır`
+    );
+
+    // 2. Telefon ekranlarında (< 768px) buton ve barların gizlenmesi + otomatik kapanma
+    assert.equal(
+      pageCode.includes(
+        "hidden md:inline-flex px-2.5 py-1.5 rounded-xl border text-xs font-extrabold items-center gap-1 transition-all cursor-pointer shrink-0"
+      ) &&
+        pageCode.includes(
+          "hidden md:flex print:hidden rounded-2xl bg-gradient-to-r from-emerald-900"
+        ) &&
+        pageCode.includes("window.innerWidth < 768") &&
+        pageCode.includes("setIsClassroomMode(false);"),
+      true,
+      `${label} telefon ekranlarında (< 768px) Sınıf/Tahta Modu buton ve panellerini gizlemeli ve isClassroomMode durumunu otomatik kapatmalıdır`
+    );
+  }
+});
+
+

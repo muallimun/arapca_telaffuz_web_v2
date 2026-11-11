@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, notFound } from "next/navigation";
@@ -1398,9 +1399,11 @@ export default function ReadingTextDetailPage({
               grammarSplitSide === "left"
                 ? "lg:grid-cols-[400px_minmax(0,1fr)]"
                 : "lg:grid-cols-[minmax(0,1fr)_400px]"
-            } lg:gap-4 xl:gap-5 lg:items-start pb-28 md:pb-10 transition-all duration-200`
+            } lg:gap-4 xl:gap-5 lg:items-start ${
+              isClassroomMode ? "pb-28" : "pb-28 md:pb-10"
+            } transition-all duration-200`
           : isClassroomMode
-          ? "space-y-4 max-w-7xl w-full lg:w-[min(80rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 px-1 sm:px-4 md:px-8 pb-28 md:pb-10 transition-all duration-300"
+          ? "space-y-4 max-w-7xl w-full lg:w-[min(80rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 px-1 sm:px-4 md:px-8 pb-28 transition-all duration-300"
           : "space-y-3 pb-28 md:pb-10"
       }
     >
@@ -2245,11 +2248,15 @@ export default function ReadingTextDetailPage({
                 <span>Kör Dinleme</span>
               </button>
 
-              {/* 10. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu */}
+              {/* 10. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu (Yalnızca Tablet ve Masaüstü >= 768px) */}
               <button
                 type="button"
                 onClick={(e) => {
                   (e.currentTarget as HTMLElement)?.blur();
+                  if (typeof window !== "undefined" && window.innerWidth < 768) {
+                    setIsClassroomMode(false);
+                    return;
+                  }
                   playClick();
                   setIsClassroomMode((v) => {
                     const next = !v;
@@ -2755,11 +2762,11 @@ export default function ReadingTextDetailPage({
         </div>
       </section>
 
-      {/* SINIF MODU ÜST KONTROL ÇUBUĞU (A+ / A- Punto, Spot Odaklama, Hızlı Gizle/Göster ve Çıkış) */}
+      {/* SINIF MODU ÜST KONTROL ÇUBUĞU (Yalnızca Tablet ve Masaüstü >= 768px) */}
       {isClassroomMode && studyMode !== "vocabulary" && (
         <section
           aria-label="Akıllı Tahta ve Sınıf Sunum Modu Kontrol Çubuğu"
-          className="rounded-2xl bg-gradient-to-r from-emerald-900 via-[#087F5B] to-teal-900 text-white border-2 border-emerald-400/60 border-b-4 p-3 sm:p-4 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200"
+          className="hidden md:flex print:hidden rounded-2xl bg-gradient-to-r from-emerald-900 via-[#087F5B] to-teal-900 text-white border-2 border-emerald-400/60 border-b-4 p-3 sm:p-4 shadow-xl flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200"
         >
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="px-3 py-1 rounded-xl bg-white/15 border border-white/25 text-xs sm:text-sm font-black tracking-wide flex items-center gap-1.5">
@@ -4290,12 +4297,16 @@ export default function ReadingTextDetailPage({
         </section>
       )}
 
-      {/* SINIF MODU ALT SABİT SUNUM KUMANDASI (Sticky Bottom Bar) */}
-      {isClassroomMode && studyMode !== "vocabulary" && (
-        <div
-          aria-label="Sınıf Modu Alt Sunum Kumandası"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[min(96vw,56rem)] rounded-2xl bg-slate-900/95 text-white border-2 border-emerald-400/70 border-b-4 px-3 py-2.5 shadow-2xl backdrop-blur-md flex flex-wrap items-center justify-between gap-2"
-        >
+      {/* SINIF MODU ALT SABİT SUNUM KUMANDASI (createPortal ile body altında doğrudan viewport'a sabit) */}
+      {mounted &&
+        isClassroomMode &&
+        studyMode !== "vocabulary" &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            aria-label="Sınıf Modu Alt Sunum Kumandası"
+            className="hidden md:flex print:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-fit max-w-[calc(100vw-1.5rem)] rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 text-white border-2 border-emerald-400/70 border-b-4 px-3.5 py-2.5 shadow-2xl backdrop-blur-md flex-wrap lg:flex-nowrap items-center justify-center gap-2 md:gap-2.5 whitespace-nowrap"
+          >
           {/* 1. Önceki */}
           <button
             type="button"
@@ -4445,8 +4456,9 @@ export default function ReadingTextDetailPage({
           >
             <X size={16} />
           </button>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* BÖLÜM 5: ALT TAMAMLAMA CTA, BAŞARI KARTI PAYLAŞIMI VE ÖNCEKİ/SONRAKİ METİN GEÇİŞİ */}
       <section className="space-y-3 pt-2">

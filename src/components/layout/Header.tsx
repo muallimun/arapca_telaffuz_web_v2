@@ -433,7 +433,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 print:hidden w-full h-12 lg:h-14 py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
+      <header className="fixed top-0 left-0 right-0 z-50 print:hidden w-full h-12 lg:h-14 py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
         <div className="w-full max-w-7xl mx-auto px-1.5 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-4 min-w-0 overflow-visible">
           {/* =============================================================== */}
           {/* 1. BÖLGE (SOL): Logo + Muallimun Arapça (Sıfır Çakışma)         */}

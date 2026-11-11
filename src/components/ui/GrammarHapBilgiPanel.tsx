@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -12,6 +12,7 @@ import {
   Layers,
   PanelRight,
   PanelLeft,
+  Columns2,
   Maximize2,
   X,
   ExternalLink,
@@ -46,6 +47,7 @@ import {
   stopAllAudio,
 } from "@/lib/audio";
 import { useSettings, GrammarDepthMode } from "@/store/settings";
+import type { GrammarSplitSide } from "@/store/classroomToolsStore";
 import { cleanArabicText } from "@/lib/dict";
 import {
   fixArabicTypography,
@@ -405,36 +407,169 @@ export function splitArabicAndTurkish(rawText: string): {
   };
 }
 
+export type IsolatedArabicSegment =
+  | { kind: "text"; value: string }
+  | { kind: "paren-arabic"; value: string }
+  | {
+      kind: "bound-arabic";
+      lead: string;
+      arabic: string;
+      trail: string;
+    }
+  | { kind: "arabic"; value: string };
+
+const ARABIC_CHAR_TEST_RE =
+  /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+const COMBINED_ISOLATED_ARABIC_TOKEN_RE =
+  /(\([\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF/+\-،.؟!:؛«»'"]+\)|[(['"«]?[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*[)'"»]?)/g;
+
 /**
- * Türkçe bir açıklama metni içinde geçen Arapça kelimeleri veya ekleri
- * otomatik olarak <bdi dir="rtl" lang="ar" className="arabic font-arabic ...">
- * içine alarak RTL/LTR karakter kaymasını %100 önler.
+ * Türkçe metin içindeki:
+ * 1) Parantezli saf Arapça ifadeleri — ör. `(زُرْتِ)`, `(زُرْتُهُ)`, `(عِنْدَ / يُوجَدُ)` — `paren-arabic`
+ * 2) Açılış/kapanış parantezine bitişik karma Arapça parçaları — ör. `(أَفْعَلُ Kalıbı)` içindeki `(أَفْعَلُ` — `bound-arabic`
+ * 3) Tekil Arapça kelimeleri — `arabic`
+ * olarak ayrıştırır ki açılış parantezi asla üst satırda tek başına kalıp Arapça kelime alt satıra düşmesin!
  */
-function renderTurkishWithIsolatedArabic(
+export function tokenizeTurkishWithParentheticalArabic(
+  text: string
+): IsolatedArabicSegment[] {
+  if (!text) return [];
+  if (!ARABIC_CHAR_TEST_RE.test(text)) {
+    return [{ kind: "text", value: text }];
+  }
+
+  const rawParts = text.split(COMBINED_ISOLATED_ARABIC_TOKEN_RE);
+  const segments: IsolatedArabicSegment[] = [];
+
+  for (const part of rawParts) {
+    if (!part) continue;
+    if (!ARABIC_CHAR_TEST_RE.test(part)) {
+      segments.push({ kind: "text", value: part });
+      continue;
+    }
+
+    if (part.startsWith("(") && part.endsWith(")")) {
+      segments.push({ kind: "paren-arabic", value: part });
+      continue;
+    }
+
+    const boundMatch = part.match(
+      /^([(['"«]?)([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)([)'"»]?)$/
+    );
+    if (boundMatch && (boundMatch[1] || boundMatch[3])) {
+      segments.push({
+        kind: "bound-arabic",
+        lead: boundMatch[1] || "",
+        arabic: boundMatch[2],
+        trail: boundMatch[3] || "",
+      });
+      continue;
+    }
+
+    segments.push({ kind: "arabic", value: part });
+  }
+
+  return segments;
+}
+
+/**
+ * Türkçe bir açıklama veya başlık metni içinde geçen Arapça kelimeleri ve
+ * parantezli Arapça kalıpları `(زُرْتِ)`, `(عِنْدَ / يُوجَدُ)` satır sonu kırılmasına karşı korur.
+ */
+export function renderTurkishWithIsolatedArabic(
   text: string,
   arabicBadgeClass = "arabic font-arabic text-[1.18em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block leading-normal"
 ): React.ReactNode {
   if (!text) return null;
-  const arabicRegex =
-    /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
-  if (!arabicRegex.test(text)) {
+  const segments = tokenizeTurkishWithParentheticalArabic(text);
+  if (segments.length === 1 && segments[0].kind === "text") {
     return text;
   }
-  const parts = text.split(arabicRegex);
-  return parts.map((part, idx) => {
-    if (
-      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-        part
-      )
-    ) {
+
+  return segments.map((seg, idx) => {
+    if (seg.kind === "text") {
+      return <React.Fragment key={idx}>{seg.value}</React.Fragment>;
+    }
+    if (seg.kind === "paren-arabic") {
       return (
-        <bdi key={idx} dir="rtl" lang="ar" className={arabicBadgeClass}>
-          {part}
-        </bdi>
+        <span
+          key={idx}
+          dir="rtl"
+          lang="ar"
+          className={`inline-block whitespace-nowrap font-arabic mx-0.5 ${arabicBadgeClass}`}
+        >
+          {seg.value}
+        </span>
       );
     }
-    return <React.Fragment key={idx}>{part}</React.Fragment>;
+    if (seg.kind === "bound-arabic") {
+      return (
+        <span key={idx} className="inline-block whitespace-nowrap">
+          {seg.lead}
+          <bdi dir="rtl" lang="ar" className={arabicBadgeClass}>
+            {seg.arabic}
+          </bdi>
+          {seg.trail}
+        </span>
+      );
+    }
+    return (
+      <bdi key={idx} dir="rtl" lang="ar" className={arabicBadgeClass}>
+        {seg.value}
+      </bdi>
+    );
   });
+}
+
+function GrammarDepthSegmentedBar({
+  mode,
+  onChange,
+}: {
+  mode: GrammarDepthMode;
+  onChange: (next: GrammarDepthMode) => void;
+}) {
+  const isSimple = mode === "simple";
+  return (
+    <div
+      role="group"
+      aria-label="Gramer Anlatım Derinliği"
+      className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-stone-100 dark:bg-slate-800 border border-[#E6D7BE]/80 dark:border-slate-700 w-full"
+    >
+      <button
+        type="button"
+        onClick={() => {
+          playClick();
+          onChange("simple");
+        }}
+        title="Sade Anlatım: Klasik terimler yerine anlaşılır Türkçe açıklamalar"
+        className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-black inline-flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+          isSimple
+            ? "bg-emerald-600 text-white shadow-2xs"
+            : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+        }`}
+      >
+        <span>🌱</span>
+        <span>Sade Anlatım</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          playClick();
+          onChange("academic");
+        }}
+        title="Akademik & İ'rab: Tam klasik sarf/nahiv terminolojisi ve açık i'rab tahlili"
+        className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-black inline-flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+          !isSimple
+            ? "bg-[#6741D9] text-white shadow-2xs"
+            : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+        }`}
+      >
+        <span>🎓</span>
+        <span>Akademik &amp; İ&apos;rab</span>
+      </button>
+    </div>
+  );
 }
 
 
@@ -1044,12 +1179,14 @@ export function GrammarDeepDiveModal({
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopPropagation();
         stopAllAudio();
         onClose();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [isOpen, onClose]);
 
   const detailLayer = useMemo(
@@ -1116,6 +1253,7 @@ export function GrammarDeepDiveModal({
 
   return (
     <div
+      data-grammar-deep-dive-modal="true"
       className="fixed inset-0 z-[110] bg-black/75 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-200"
       onClick={() => {
         stopAllAudio();
@@ -1784,6 +1922,8 @@ interface GrammarHapBilgiPanelProps {
   isCompactDrawer?: boolean;
   showMatchingSentences?: boolean;
   hideInlineDepthToggle?: boolean;
+  hideLessonSelfLink?: boolean;
+  onOpenSplitView?: () => void;
 }
 
 export function GrammarHapBilgiPanel({
@@ -1794,6 +1934,8 @@ export function GrammarHapBilgiPanel({
   isCompactDrawer = false,
   showMatchingSentences = true,
   hideInlineDepthToggle = false,
+  hideLessonSelfLink = false,
+  onOpenSplitView,
 }: GrammarHapBilgiPanelProps) {
   const {
     speechRate,
@@ -1868,42 +2010,64 @@ export function GrammarHapBilgiPanel({
   return (
     <div className="w-full max-w-full min-w-0 space-y-3.5 sm:space-y-5 animate-in fade-in duration-300 overflow-x-hidden">
       {/* 1. ÜST BAŞLIK VE TEMEL GRAMER KURALI (HAP KURAL) KARTI */}
-      <div className="w-full max-w-full min-w-0 box-border bg-gradient-to-br from-[#F7EFE1] to-[#EFE5D4] dark:from-[var(--surface)] dark:to-[var(--background)] rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-6 shadow-xs relative overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>Odak Gramer &amp; Hap Bilgi</span>
-            </span>
-            {linkedLevel && (
-              <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white font-black text-[11px]">
-                Seviye {linkedLevel}
+      <div
+        className={`w-full max-w-full min-w-0 box-border bg-gradient-to-br from-[#F7EFE1] to-[#EFE5D4] dark:from-[var(--surface)] dark:to-[var(--background)] rounded-2xl ${
+          isCompactDrawer ? "p-3.5" : "sm:rounded-3xl p-3.5 sm:p-6"
+        } border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-xs relative overflow-hidden`}
+      >
+        {/* Yan panel (isCompactDrawer) modunda üst rozet/seviye/ders bağlantısı kalabalığı gösterilmez */}
+        {!isCompactDrawer && (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Odak Gramer &amp; Hap Bilgi</span>
               </span>
-            )}
+              {linkedLevel && (
+                <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white font-black text-[11px]">
+                  Seviye {linkedLevel}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+              {!hideInlineDepthToggle && (
+                <GrammarDepthSwitch
+                  mode={grammarDepthMode}
+                  onChange={setGrammarDepthMode}
+                />
+              )}
+              {onOpenSplitView && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    onOpenSplitView();
+                  }}
+                  title="Metin cümlelerini okurken gramer notunu yan panelde açık tut"
+                  className="px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#064E3B] font-black text-[11px] sm:text-xs inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all shadow-2xs"
+                >
+                  <Columns2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Metinle Yan Yana Aç</span>
+                </button>
+              )}
+              {!hideLessonSelfLink &&
+                (linkedLessonTitle && linkedLessonUrl ? (
+                  <Link
+                    href={linkedLessonUrl}
+                    className="max-w-full px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-[11px] inline-flex items-center gap-1 transition-colors"
+                  >
+                    <BookOpen className="w-3 h-3 text-[#087F5B] shrink-0" />
+                    <span className="truncate">Ders: {linkedLessonTitle}</span>
+                    <ExternalLink className="w-3 h-3 text-[#087F5B] shrink-0" />
+                  </Link>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] font-extrabold text-[11px]">
+                    İçerik: {activeNote.bagli_id.toUpperCase()}
+                  </span>
+                ))}
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-            {!hideInlineDepthToggle && (
-              <GrammarDepthSwitch
-                mode={grammarDepthMode}
-                onChange={setGrammarDepthMode}
-              />
-            )}
-            {linkedLessonTitle && linkedLessonUrl ? (
-              <Link
-                href={linkedLessonUrl}
-                className="max-w-full px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-[11px] inline-flex items-center gap-1 transition-colors"
-              >
-                <BookOpen className="w-3 h-3 text-[#087F5B] shrink-0" />
-                <span className="truncate">Ders: {linkedLessonTitle}</span>
-                <ExternalLink className="w-3 h-3 text-[#087F5B] shrink-0" />
-              </Link>
-            ) : (
-              <span className="px-2.5 py-1 rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] font-extrabold text-[11px]">
-                İçerik: {activeNote.bagli_id.toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+        )}
 
         <h2
           dir="ltr"
@@ -1911,6 +2075,8 @@ export function GrammarHapBilgiPanel({
           className={`font-sans text-left ${
             isSmartboardLarge
               ? "text-xl sm:text-3xl"
+              : isCompactDrawer
+              ? "text-base sm:text-lg"
               : "text-base sm:text-2xl"
           } font-black text-[var(--foreground)] tracking-tight mb-3 leading-snug break-words`}
         >
@@ -2307,7 +2473,7 @@ export function GrammarHapBilgiPanel({
               : "grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full"
           }
         >
-          {linkedLessonUrl && (
+          {!hideLessonSelfLink && linkedLessonUrl && (
             <Link
               href={linkedLessonUrl}
               className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold text-center whitespace-normal transition-all"
@@ -2359,6 +2525,191 @@ export function GrammarHapBilgiPanel({
   );
 }
 
+/**
+ * Diyalog (`/diyalog/[id]`) ve Okuma Metni (`/metin/[id]`) sayfaları için
+ * Üst Barı (`Header`) asla kapatmayan Yan Yana Gramer Paneli (Split-View) & Mobil Çekmece (`< 1024px`).
+ */
+export interface LessonGrammarSplitPanelProps {
+  grammarNote: GramerHapBilgi;
+  side: GrammarSplitSide;
+  onToggleSide: () => void;
+  onExpandToFullTab: () => void;
+  onClose: () => void;
+  onOpenShadowing?: (arabicText: string, turkishText?: string) => void;
+  className?: string;
+}
+
+export function LessonGrammarSplitPanel({
+  grammarNote,
+  side,
+  onToggleSide,
+  onExpandToFullTab,
+  onClose,
+  onOpenShadowing,
+  className = "",
+}: LessonGrammarSplitPanelProps) {
+  const { grammarDepthMode, setGrammarDepthMode } = useSettings();
+  const scrollBodyRef = useRef<HTMLDivElement | null>(null);
+
+  const { resolvedNote, linkedLevel } = useMemo(
+    () =>
+      resolveGrammarNoteAndSentences({
+        grammarNote,
+      }),
+    [grammarNote]
+  );
+
+  // Başka bir diyalog/metne geçildiğinde yan panel içeriğini en üste kaydır
+  useEffect(() => {
+    scrollBodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [grammarNote.bagli_id]);
+
+  // ESC ile yan paneli kapat (Eğer 2. katman Ayrıntılı Anlatım modalı açıksa önce o kapanır)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector("[data-grammar-deep-dive-modal='true']")
+      ) {
+        return;
+      }
+      e.stopPropagation();
+      stopAllAudio();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const activeNote = resolvedNote || grammarNote;
+
+  return (
+    <>
+      {/* Tablet ve Mobil (< 1024px) Arka Plan Karartması: Üst Header'ın (z-50) altından başlar */}
+      <div
+        aria-hidden="true"
+        onClick={() => {
+          playClick();
+          stopAllAudio();
+          onClose();
+        }}
+        className="lg:hidden fixed inset-0 top-[var(--header-height,48px)] z-[44] bg-black/45 backdrop-blur-[1px] transition-opacity animate-in fade-in duration-150"
+      />
+
+      {/* Masaüstünde (lg+) Üst Barın Hemen Altında Sticky Grid Sütunu, < 1024px'de Alttan Açılan Çekmece (max-h-[82dvh]) */}
+      <aside
+        aria-label="Yan Yana Odak Gramer Paneli"
+        className={`fixed inset-x-0 bottom-0 z-[45] w-full max-h-[82dvh] rounded-t-3xl border-t-2 border-[#087F5B] dark:border-emerald-500 shadow-[0_-12px_40px_rgba(0,0,0,0.28)] bg-[#FDFBF7] dark:bg-slate-900 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200 lg:animate-none lg:sticky lg:inset-auto lg:top-[calc(var(--header-height,56px)+12px)] lg:z-20 lg:h-[calc(100dvh-var(--header-height,56px)-24px)] lg:max-h-[calc(100dvh-var(--header-height,56px)-24px)] lg:rounded-2xl lg:border-2 lg:border-b-4 lg:border-[#087F5B]/80 dark:lg:border-emerald-600/75 lg:shadow-lg lg:overflow-visible ${className}`}
+      >
+        {/* KOMPAKT 2 SATIRLI ÜST KONTROL ÇUBUĞU (Sıfır Buton Taşması) */}
+        <div className="relative z-20 px-3.5 pt-2.5 pb-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-slate-800 rounded-t-3xl lg:rounded-t-2xl space-y-2 shrink-0 overflow-visible">
+          {/* Mobil Çekmece Tutamaç Çizgisi */}
+          <div
+            aria-hidden="true"
+            className="lg:hidden w-10 h-1 rounded-full bg-stone-300 dark:bg-slate-700 mx-auto -mt-0.5 mb-1"
+          />
+
+          {/* 1. Satır: Sol (📌 Odak Gramer + Seviye) | Sağ (Yön Değiştir, Tam Ekran, Kapat) */}
+          <div className="flex items-center justify-between gap-2 overflow-visible">
+            <div className="min-w-0 flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-black whitespace-nowrap shrink-0">
+                <span>📌</span>
+                <span>Odak Gramer</span>
+              </span>
+              {linkedLevel && (
+                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
+                  {linkedLevel}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0 overflow-visible">
+              {/* Masaüstü Sol / Sağ Konum Değiştirici */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onToggleSide();
+                }}
+                data-tooltip="Paneli Sola / Sağa Al"
+                data-tooltip-pos="bottom"
+                aria-label={
+                  side === "right" ? "Paneli Sola Al" : "Paneli Sağa Al"
+                }
+                className="hidden lg:inline-flex w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-[var(--foreground)] hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-[#087F5B] dark:hover:text-emerald-300 hover:border-[#087F5B]/50 items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                {side === "right" ? (
+                  <PanelLeft className="w-4 h-4 shrink-0" />
+                ) : (
+                  <PanelRight className="w-4 h-4 shrink-0" />
+                )}
+              </button>
+
+              {/* Tam Genişlik Sekmeye Geç */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  stopAllAudio();
+                  onExpandToFullTab();
+                }}
+                data-tooltip="Tam Ekran Görünümüne Geç"
+                data-tooltip-pos="bottom"
+                aria-label="Tam Ekran Görünümüne Geç"
+                className="w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-[var(--foreground)] hover:bg-[#F3F0FF] dark:hover:bg-indigo-950/60 hover:text-[#6741D9] dark:hover:text-indigo-300 hover:border-[#6741D9]/50 inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <Maximize2 className="w-4 h-4 shrink-0" />
+              </button>
+
+              {/* Belirgin Kapat Butonu */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  stopAllAudio();
+                  onClose();
+                }}
+                data-tooltip="Yan Paneli Kapat (ESC)"
+                data-tooltip-pos="bottom"
+                data-tooltip-align="right"
+                aria-label="Yan Paneli Kapat"
+                className="w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4 shrink-0" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Satır: Tam Genişlik Dilimlenmiş Anlatım Seçici (Sıfır Taşma) */}
+          <GrammarDepthSegmentedBar
+            mode={grammarDepthMode}
+            onChange={setGrammarDepthMode}
+          />
+        </div>
+
+        {/* KAYDIRILABİLİR İÇERİK GÖVDESİ */}
+        <div
+          ref={scrollBodyRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-4 lg:rounded-b-2xl"
+        >
+          <GrammarHapBilgiPanel
+            grammarNote={activeNote}
+            isCompactDrawer={true}
+            showMatchingSentences={true}
+            hideInlineDepthToggle={true}
+            hideLessonSelfLink={true}
+            onOpenShadowing={(ar, tr) => {
+              stopAllAudio();
+              if (onOpenShadowing) onOpenShadowing(ar, tr);
+            }}
+          />
+        </div>
+      </aside>
+    </>
+  );
+}
+
 export type GrammarWindowViewMode = "drawer" | "smartboard";
 
 export interface GrammarHapBilgiModalProps {
@@ -2392,54 +2743,21 @@ export function GrammarHapBilgiModal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        stopAllAudio();
-        onClose();
+      if (e.key !== "Escape") return;
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector("[data-grammar-deep-dive-modal='true']")
+      ) {
+        return;
       }
+      stopAllAudio();
+      onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Yan Panel (Split-View Drawer) açıkken masaüstünde (lg+) ana sayfa içeriğini
-  // otomatik kaydırarak sağdaki veya soldaki Arapça/Türkçe metin kartlarının üstünün kapanmasını %100 önle
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    if (!isOpen || viewMode !== "drawer") {
-      document.body.style.paddingRight = "";
-      document.body.style.paddingLeft = "";
-      document.body.style.transition = "";
-      return;
-    }
-
-    const applySplitLayoutShift = () => {
-      if (window.innerWidth >= 1024) {
-        document.body.style.transition =
-          "padding-left 200ms ease, padding-right 200ms ease";
-        if (drawerSide === "right") {
-          document.body.style.paddingRight = "480px";
-          document.body.style.paddingLeft = "";
-        } else {
-          document.body.style.paddingLeft = "480px";
-          document.body.style.paddingRight = "";
-        }
-      } else {
-        document.body.style.paddingRight = "";
-        document.body.style.paddingLeft = "";
-      }
-    };
-
-    applySplitLayoutShift();
-    window.addEventListener("resize", applySplitLayoutShift);
-    return () => {
-      window.removeEventListener("resize", applySplitLayoutShift);
-      document.body.style.paddingRight = "";
-      document.body.style.paddingLeft = "";
-      document.body.style.transition = "";
-    };
-  }, [isOpen, viewMode, drawerSide]);
-
-  const { resolvedNote, linkedLevel, activeGrammarQuery } = useMemo(
+  const { resolvedNote, linkedLevel } = useMemo(
     () =>
       resolveGrammarNoteAndSentences({
         grammarNote,
@@ -2460,7 +2778,7 @@ export function GrammarHapBilgiModal({
       className={
         isSmartboard
           ? "fixed inset-0 z-[90] bg-black/70 backdrop-blur-xs flex items-center justify-center p-0 lg:p-4 overflow-hidden animate-in fade-in duration-200"
-          : `fixed inset-0 z-[90] lg:pointer-events-none flex ${
+          : `fixed inset-x-0 bottom-0 top-[var(--header-height,48px)] z-[45] lg:pointer-events-none flex items-end lg:items-stretch ${
               drawerSide === "left" ? "lg:justify-start" : "lg:justify-end"
             } overflow-hidden`
       }
@@ -2473,11 +2791,13 @@ export function GrammarHapBilgiModal({
           : undefined
       }
     >
-      {/* Yan Panel (Drawer) modunda masaüstü haricinde arka plan karartması */}
+      {/* Yan Panel (Drawer) modunda mobil/tablette (< 1024px) arka plan karartması */}
       {!isSmartboard && (
         <div
-          className="hidden lg:hidden fixed inset-0 bg-black/35 pointer-events-auto transition-opacity"
+          aria-hidden="true"
+          className="lg:hidden fixed inset-0 top-[var(--header-height,48px)] bg-black/45 backdrop-blur-[1px] pointer-events-auto transition-opacity"
           onClick={() => {
+            playClick();
             stopAllAudio();
             onClose();
           }}
@@ -2488,130 +2808,111 @@ export function GrammarHapBilgiModal({
         className={
           isSmartboard
             ? "pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] w-screen max-w-[100vw] h-[100dvh] rounded-none border-0 lg:rounded-3xl lg:border-2 border-[#E6D7BE] dark:border-[var(--border)] lg:border-b-4 lg:w-[85vw] lg:max-w-[1350px] lg:h-[85vh] flex flex-col shadow-2xl relative overflow-hidden"
-            : `pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] w-screen max-w-[100vw] h-[100dvh] rounded-none border-0 ${
+            : `pointer-events-auto bg-[#FDFBF7] dark:bg-slate-900 w-full max-w-[100vw] max-h-[82dvh] rounded-t-3xl border-t-2 border-[#087F5B] dark:border-emerald-500 shadow-[0_-12px_40px_rgba(0,0,0,0.28)] lg:rounded-none lg:border-t-0 ${
                 drawerSide === "left"
                   ? "lg:border-r-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-left"
                   : "lg:border-l-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[-12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-right"
-              } lg:w-[460px] lg:max-w-[460px] lg:h-full flex flex-col relative overflow-hidden duration-200`
+              } lg:w-[410px] lg:max-w-[410px] lg:h-[calc(100dvh-var(--header-height,56px))] lg:max-h-[calc(100dvh-var(--header-height,56px))] flex flex-col relative overflow-hidden duration-200`
         }
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ÜST SABİT KONTROL ÇUBUĞU: Sade/Akademik seçici + pencere kontrolleri (320px dahil %100 uyum) */}
-        <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-[var(--border)] w-full shrink-0">
-          {/* Sol: Kompakt Gramer Notu + Seviye Rozeti */}
-          <div className="min-w-0 flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-[11px] font-black shrink-0">
-              <span>📌</span>
-              <span>Gramer Notu</span>
-            </span>
-            {linkedLevel && (
-              <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
-                {linkedLevel}
-              </span>
-            )}
-          </div>
-
-          {/* Sağ: Sade/Akademik Seçici + Masaüstü Pencere Kontrolleri + Kapat */}
-          <div className="shrink-0 flex flex-wrap items-center gap-1.5 ml-auto">
-            <GrammarDepthSwitch
-              mode={grammarDepthMode}
-              onChange={setGrammarDepthMode}
+        {/* KOMPAKT 2 SATIRLI ÜST KONTROL ÇUBUĞU */}
+        <div className="sticky top-0 z-20 px-3.5 sm:px-4 py-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-slate-800 w-full shrink-0 space-y-2 overflow-visible">
+          {!isSmartboard && (
+            <div
+              aria-hidden="true"
+              className="lg:hidden w-10 h-1 rounded-full bg-stone-300 dark:bg-slate-700 mx-auto -mt-0.5 mb-1"
             />
+          )}
 
-            {/* Yan Panel Konum Seçici: Sadece lg+ ve Drawer Modunda */}
-            {!isSmartboard && (
-              <div className="hidden lg:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setDrawerSide("left");
-                  }}
-                  title="Yan Paneli Sola Yasla"
-                  className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                    drawerSide === "left"
-                      ? "bg-amber-500 text-slate-950"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  <PanelLeft className="w-3 h-3 shrink-0" />
-                  <span>Sol</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setDrawerSide("right");
-                  }}
-                  title="Yan Paneli Sağa Yasla"
-                  className={`px-2 py-1 rounded-lg text-[10px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                    drawerSide === "right"
-                      ? "bg-amber-500 text-slate-950"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  <PanelRight className="w-3 h-3 shrink-0" />
-                  <span>Sağ</span>
-                </button>
-              </div>
-            )}
-
-            {/* Görünüm Modu Seçici: Sadece lg+ Masaüstü/Akıllı Tahtada */}
-            <div className="hidden lg:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setViewMode("drawer");
-                }}
-                title="Yan Panel Modu (Metni okurken yan tarafta grameri inceleyin)"
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                  !isSmartboard
-                    ? "bg-[#087F5B] text-white shadow-2xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                <PanelRight className="w-3.5 h-3.5 shrink-0" />
-                <span>Yan Panel</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setViewMode("smartboard");
-                }}
-                title="Akıllı Tahta / Geniş Pencere Modu (%85 Ekran)"
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
-                  isSmartboard
-                    ? "bg-[#6741D9] text-white shadow-2xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Geniş Pencere</span>
-              </button>
+          <div className="flex items-center justify-between gap-2 overflow-visible">
+            <div className="min-w-0 flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-black whitespace-nowrap shrink-0">
+                <span>📌</span>
+                <span>Odak Gramer</span>
+              </span>
+              {linkedLevel && (
+                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
+                  {linkedLevel}
+                </span>
+              )}
             </div>
 
-            {/* Belirgin Kapat Butonu: Tüm ekran boyutlarında net görünür */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                stopAllAudio();
-                onClose();
-              }}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
-              aria-label="Gramer Notunu Kapat"
-              title="Pencereyi Kapat (Esc)"
-            >
-              <X className="w-3.5 h-3.5 shrink-0" />
-              <span>Kapat</span>
-            </button>
+            <div className="shrink-0 flex items-center gap-1 overflow-visible">
+              {!isSmartboard && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setDrawerSide((s) => (s === "right" ? "left" : "right"));
+                  }}
+                  data-tooltip="Paneli Sola / Sağa Al"
+                  data-tooltip-pos="bottom"
+                  aria-label="Paneli Sola / Sağa Al"
+                  className="hidden lg:inline-flex w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-[var(--foreground)] hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-[#087F5B] items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  {drawerSide === "right" ? (
+                    <PanelLeft className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <PanelRight className="w-4 h-4 shrink-0" />
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setViewMode((m) =>
+                    m === "smartboard" ? "drawer" : "smartboard"
+                  );
+                }}
+                data-tooltip={
+                  isSmartboard
+                    ? "Yan Panel Görünümüne Dön"
+                    : "Tam Ekran Görünümüne Geç"
+                }
+                data-tooltip-pos="bottom"
+                aria-label={
+                  isSmartboard
+                    ? "Yan Panel Görünümüne Dön"
+                    : "Tam Ekran Görünümüne Geç"
+                }
+                className="hidden lg:inline-flex w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-[var(--foreground)] hover:bg-[#F3F0FF] dark:hover:bg-indigo-950/60 hover:text-[#6741D9] items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                {isSmartboard ? (
+                  <PanelRight className="w-4 h-4 shrink-0" />
+                ) : (
+                  <Maximize2 className="w-4 h-4 shrink-0" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  stopAllAudio();
+                  onClose();
+                }}
+                data-tooltip="Yan Paneli Kapat (ESC)"
+                data-tooltip-pos="bottom"
+                data-tooltip-align="right"
+                aria-label="Gramer Notunu Kapat"
+                className="w-8 h-8 rounded-lg border border-[#E6D7BE] dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4 shrink-0" />
+              </button>
+            </div>
           </div>
+
+          <GrammarDepthSegmentedBar
+            mode={grammarDepthMode}
+            onChange={setGrammarDepthMode}
+          />
         </div>
 
-        {/* KAYDIRILABİLİR İÇERİK GÖVDESİ (Yatay Kaydırma Tamamen Kapalı) */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5">
+        {/* KAYDIRILABİLİR İÇERİK GÖVDESİ */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <GrammarHapBilgiPanel
             grammarNote={resolvedNote}
             grammarTopic={grammarTopic}
@@ -2625,38 +2926,6 @@ export function GrammarHapBilgiModal({
               if (onOpenShadowing) onOpenShadowing(ar, tr);
             }}
           />
-        </div>
-
-        {/* MOBİL SABİT ALT AKSİYON ÇUBUĞU (< lg): Başparmakla tek dokunuşta Alıştırma & Kapat */}
-        <div className="lg:hidden shrink-0 px-3.5 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-[#E6D7BE] dark:border-slate-800 grid grid-cols-2 gap-2">
-          <Link
-            href={`/alistirmalar?pool=sentences_1111${
-              activeGrammarQuery
-                ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
-                : ""
-            }`}
-            onClick={() => {
-              playClick();
-              stopAllAudio();
-              onClose();
-            }}
-            className="w-full py-2.5 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors"
-          >
-            <Gamepad2 className="w-4 h-4 shrink-0" />
-            <span>Alıştırma Yap</span>
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              stopAllAudio();
-              onClose();
-            }}
-            className="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4 shrink-0" />
-            <span>Kapat</span>
-          </button>
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ import {
 } from "@/lib/data";
 import {
   GrammarHapBilgiPanel,
-  GrammarQuickModal,
+  LessonGrammarSplitPanel,
 } from "@/components/ui/GrammarHapBilgiPanel";
 import {
   loadAudioManifest,
@@ -48,6 +48,7 @@ import {
   getMp3Path,
   VoiceOption,
   speakHybrid,
+  stopAllAudio,
 } from "@/lib/audio";
 import {
   isDialogueOfflineReady,
@@ -690,7 +691,35 @@ export default function ReadingTextDetailPage({
   const imagePath =
     readingText.gorsel || getReadingTextCoverUrl(readingText.id);
   const grammarNote = getReadingTextGrammarNote(readingText.id);
-  const [isGrammarQuickModalOpen, setIsGrammarQuickModalOpen] = useState(false);
+  const {
+    isGrammarSplitOpen,
+    grammarSplitSide,
+    setGrammarSplitOpen,
+    toggleGrammarSplitSide,
+  } = useClassroomToolsStore();
+
+  const activeTabId: StudyMode =
+    isGrammarSplitOpen && grammarNote && studyMode === "gramer"
+      ? "listen"
+      : studyMode;
+
+  useEffect(() => {
+    if (!grammarNote && isGrammarSplitOpen) {
+      setGrammarSplitOpen(false);
+    }
+  }, [grammarNote, isGrammarSplitOpen, setGrammarSplitOpen]);
+
+  const handleToggleGrammarSplit = useCallback(() => {
+    if (isGrammarSplitOpen) {
+      stopAllAudio();
+      setGrammarSplitOpen(false);
+      return;
+    }
+    if (studyMode === "gramer") {
+      setStudyMode("listen");
+    }
+    setGrammarSplitOpen(true);
+  }, [isGrammarSplitOpen, studyMode, setGrammarSplitOpen]);
 
   // PDF Modal uyumu için Dialogue nesnesi
   const dialogueForPdf: Dialogue = useMemo(
@@ -1364,11 +1393,26 @@ export default function ReadingTextDetailPage({
   return (
     <div
       className={
-        isClassroomMode
+        isGrammarSplitOpen && grammarNote
+          ? `w-full lg:w-[min(88rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 lg:grid ${
+              grammarSplitSide === "left"
+                ? "lg:grid-cols-[400px_minmax(0,1fr)]"
+                : "lg:grid-cols-[minmax(0,1fr)_400px]"
+            } lg:gap-4 xl:gap-5 lg:items-start pb-28 md:pb-10 transition-all duration-200`
+          : isClassroomMode
           ? "space-y-4 max-w-7xl w-full lg:w-[min(80rem,calc(100vw-2rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2 px-1 sm:px-4 md:px-8 pb-28 md:pb-10 transition-all duration-300"
           : "space-y-3 pb-28 md:pb-10"
       }
     >
+      <div
+        className={`min-w-0 ${isClassroomMode ? "space-y-4" : "space-y-3"} ${
+          isGrammarSplitOpen && grammarNote
+            ? grammarSplitSide === "left"
+              ? "lg:order-2"
+              : "lg:order-1"
+            : ""
+        }`}
+      >
       {/* GÖLGELEME VE TELAFFUZ KOÇU MODALI */}
       {shadowingTarget && (
         <ShadowingModal
@@ -1874,13 +1918,17 @@ export default function ReadingTextDetailPage({
                 : []),
             ] as { id: StudyMode; label: string }[]
           ).map((tab) => {
-            const isSelected = studyMode === tab.id;
+            const isSelected = activeTabId === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => {
                   playClick();
+                  if (tab.id === "gramer" && isGrammarSplitOpen) {
+                    stopAllAudio();
+                    setGrammarSplitOpen(false);
+                  }
                   setStudyMode(tab.id);
                 }}
                 className={`shrink-0 text-xs py-1.5 px-2.5 sm:px-2 whitespace-nowrap rounded-lg font-extrabold transition-all text-center cursor-pointer ${
@@ -1988,7 +2036,7 @@ export default function ReadingTextDetailPage({
               </button>
 
               {/* 5. METİN SAYFASINA ÖZEL: Paragraf / Cümle Görünümü Geçiş Butonu */}
-              {(studyMode === "listen" || studyMode === "shadowing") && (
+              {(activeTabId === "listen" || activeTabId === "shadowing") && (
                 <button
                   type="button"
                   onClick={() => {
@@ -2023,23 +2071,35 @@ export default function ReadingTextDetailPage({
                 </button>
               )}
 
-              {/* 5b. Yan Yana Gramer Butonu (Sadece Masaüstü/Akıllı Tahta lg+: mobilde Odak Gramer sekmesi kullanılır) */}
+              {/* 5b. Yan Yana Gramer Toggle Butonu (Masaüstünde 2 Sütunlu Panel, Mobilde Alt Çekmece) */}
               {grammarNote && (
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
-                    if (studyMode === "gramer") {
-                      setStudyMode("listen");
-                    }
-                    setIsGrammarQuickModalOpen(true);
+                    handleToggleGrammarSplit();
                   }}
-                  data-tooltip="Gramer notunu metinle yan yana ayrı pencerede aç"
-                  title="Gramer notunu metinle yan yana ayrı pencerede aç"
-                  className="hidden lg:inline-flex px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0"
+                  aria-pressed={isGrammarSplitOpen}
+                  data-tooltip={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Gramer Notunu Metinle Yan Yana Aç"
+                  }
+                  aria-label={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Yan Yana Gramer"
+                  }
+                  className={`inline-flex px-2.5 py-1.5 rounded-xl border items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    isGrammarSplitOpen
+                      ? "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46] text-white shadow-xs"
+                      : "bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
+                  }`}
                 >
                   <Columns2 size={13} className="shrink-0" />
-                  <span>Yan Yana Gramer</span>
+                  <span>
+                    {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
+                  </span>
                 </button>
               )}
 
@@ -2835,31 +2895,16 @@ export default function ReadingTextDetailPage({
       {/* ===================================================================== */}
       {/* SEKME İÇERİKLERİ: GRAMER / SÖZLÜK / SORULAR / METİN (CÜMLE & PARAGRAF) */}
       {/* ===================================================================== */}
-      {studyMode === "gramer" && grammarNote ? (
-        <div className="space-y-3">
-          <div className="hidden lg:flex flex-wrap items-center justify-between gap-2 bg-amber-50/90 dark:bg-amber-950/50 border-2 border-amber-300 dark:border-amber-700 rounded-2xl px-4 py-2.5">
-            <span className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-200">
-              💡 Okuma metnini incelerken gramer notunu yan tarafta açık tutmak ister misiniz?
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setStudyMode("listen");
-                setIsGrammarQuickModalOpen(true);
-              }}
-              title="Gramer notunu metinle yan yana ayrı pencerede aç"
-              className="px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-black border-b-2 border-[#065F46] inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all"
-            >
-              <Columns2 size={14} className="shrink-0" />
-              <span>Yan Yana Gramer</span>
-            </button>
-          </div>
-          <GrammarHapBilgiPanel
-            grammarNote={grammarNote}
-            onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
-          />
-        </div>
+      {studyMode === "gramer" && !isGrammarSplitOpen && grammarNote ? (
+        <GrammarHapBilgiPanel
+          grammarNote={grammarNote}
+          hideLessonSelfLink={true}
+          onOpenSplitView={() => {
+            setStudyMode("listen");
+            setGrammarSplitOpen(true);
+          }}
+          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+        />
       ) : studyMode === "vocabulary" ? (
         <div className="space-y-4">
           {textIdioms.length > 0 && (
@@ -4488,19 +4533,26 @@ export default function ReadingTextDetailPage({
         </div>
       </section>
 
-      <GrammarQuickModal
-        isOpen={isGrammarQuickModalOpen}
-        onClose={() => setIsGrammarQuickModalOpen(false)}
-        grammarNote={grammarNote}
-        readingId={readingText.id}
-        initialViewMode="drawer"
-        onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
-      />
-
       {shareCardTarget && (
         <ShareContentCardModal
           payload={shareCardTarget}
           onClose={() => setShareCardTarget(null)}
+        />
+      )}
+      </div>
+
+      {isGrammarSplitOpen && grammarNote && (
+        <LessonGrammarSplitPanel
+          grammarNote={grammarNote}
+          side={grammarSplitSide}
+          onToggleSide={toggleGrammarSplitSide}
+          onExpandToFullTab={() => {
+            setGrammarSplitOpen(false);
+            setStudyMode("gramer");
+          }}
+          onClose={() => setGrammarSplitOpen(false)}
+          onOpenShadowing={(ar) => openShadowingCoach({ text: ar })}
+          className={grammarSplitSide === "left" ? "lg:order-1" : "lg:order-2"}
         />
       )}
     </div>

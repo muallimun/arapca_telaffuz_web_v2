@@ -2258,3 +2258,111 @@ test("22) Ders Sayacı Otomatik Kompakt Saat Görünümü (Mini HUD): isTimerCom
     "Kompakt kapsül 4 metinsiz kontrol ikonuna (Duraklat/Devam Et, Sıfırla, Tam Aç, Kapat) ve isTimerCompact değişiminde Viewport Clamp korumasına sahip olmalıdır"
   );
 });
+
+test("23. Yan Yana Gramer (Split-View Grammar Panel) — Tekil Durum Makinesi, 2 Sütunlu Grid & Mobil Çekmece, 2 Satırlı Kompakt Üst Bar ve Parantezli Arapça Kırılmazlığı (/diyalog/[id] & /metin/[id])", async () => {
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  const storeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "store", "classroomToolsStore.ts"),
+    "utf8"
+  );
+  const stopperCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "AudioStopper.tsx"),
+    "utf8"
+  );
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  const dialoguePageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const readingPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. Üst Header z-50 ve --header-height CSS değişkeni (48px / 56px)
+  assert.equal(
+    headerCode.includes("fixed top-0 left-0 right-0 z-50") &&
+      globalsCss.includes("--header-height: 48px;") &&
+      globalsCss.includes("--header-height: 56px;"),
+    true,
+    "Header z-50 olmalı ve globals.css --header-height (48px / 56px) tanımlamalıdır"
+  );
+
+  // 2. Store & Rota Koruyucusu (Kural D: Ders dışına çıkınca kapat, dersler arası geçişte açık tut)
+  assert.equal(
+    storeCode.includes("isGrammarSplitOpen: boolean;") &&
+      storeCode.includes('export type GrammarSplitSide = "left" | "right";') &&
+      storeCode.includes("toggleGrammarSplitSide: () => void;") &&
+      stopperCode.includes(
+        'pathname.startsWith("/diyalog/") || pathname.startsWith("/metin/")'
+      ) &&
+      stopperCode.includes("setGrammarSplitOpen(false)"),
+    true,
+    "classroomToolsStore yan panel durumunu tutmalı ve AudioStopper yalnızca ders detay rotaları dışında paneli kapatmalıdır"
+  );
+
+  // 3. Diyalog ve Okuma Metni Birebir Eşitlik & Sıfır Çift Kart (Kural A, B, C + 2 Sütunlu CSS Grid)
+  for (const [label, pageCode] of [
+    ["diyalog/[id]", dialoguePageCode],
+    ["metin/[id]", readingPageCode],
+  ]) {
+    assert.equal(
+      pageCode.includes("const handleToggleGrammarSplit = useCallback") &&
+        pageCode.includes(
+          'isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"'
+        ) &&
+        pageCode.includes("aria-pressed={isGrammarSplitOpen}") &&
+        pageCode.includes('if (tab.id === "gramer" && isGrammarSplitOpen)') &&
+        pageCode.includes(
+          'studyMode === "gramer" && !isGrammarSplitOpen && grammarNote'
+        ) &&
+        pageCode.includes("lg:grid-cols-[400px_minmax(0,1fr)]") &&
+        pageCode.includes("lg:grid-cols-[minmax(0,1fr)_400px]") &&
+        pageCode.includes("<LessonGrammarSplitPanel") &&
+        pageCode.includes("onOpenSplitView={() => {") &&
+        !pageCode.includes("yan tarafta açık tutmak ister misiniz?") &&
+        !pageCode.includes("isGrammarQuickModalOpen"),
+      true,
+      `${label} sayfası gerçek toggle, çift kart yasağı, 2 sütunlu CSS Grid, sarı şerit temizliği ve LessonGrammarSplitPanel entegrasyonuna sahip olmalıdır`
+    );
+  }
+
+  // 4. LessonGrammarSplitPanel: Header altı sticky masaüstü, <1024px max-h-[82dvh] alt çekmece ve 2 satırlı kompakt üst bar
+  assert.equal(
+    grammarPanelCode.includes("export function LessonGrammarSplitPanel") &&
+      grammarPanelCode.includes("max-h-[82dvh]") &&
+      grammarPanelCode.includes("bg-black/45") &&
+      grammarPanelCode.includes(
+        "lg:sticky lg:inset-auto lg:top-[calc(var(--header-height,56px)+12px)]"
+      ) &&
+      grammarPanelCode.includes('data-tooltip="Paneli Sola / Sağa Al"') &&
+      grammarPanelCode.includes('data-tooltip="Tam Ekran Görünümüne Geç"') &&
+      grammarPanelCode.includes('data-tooltip="Yan Paneli Kapat (ESC)"') &&
+      grammarPanelCode.includes("grid grid-cols-2 gap-1 p-1 rounded-xl bg-stone-100 dark:bg-slate-800") &&
+      grammarPanelCode.includes("Metinle Yan Yana Aç") &&
+      grammarPanelCode.includes("hideLessonSelfLink={true}"),
+    true,
+    "LessonGrammarSplitPanel 2 satırlı kompakt üst bara, ESC/çekmece desteğine, duplike rozet/ders linki gizlemesine ve Metinle Yan Yana Aç aksiyonuna sahip olmalıdır"
+  );
+
+  // 5. Parantezli Arapça ifadelerin satır sonunda '(' yetim bırakmaması (tokenizeTurkishWithParentheticalArabic + whitespace-nowrap)
+  assert.equal(
+    grammarPanelCode.includes("export function tokenizeTurkishWithParentheticalArabic") &&
+      grammarPanelCode.includes('kind: "paren-arabic"') &&
+      grammarPanelCode.includes('kind: "bound-arabic"') &&
+      grammarPanelCode.includes("inline-block whitespace-nowrap font-arabic mx-0.5"),
+    true,
+    "Parantezli Arapça kalıplar inline-block whitespace-nowrap font-arabic ile tek blok olarak sarılmalıdır"
+  );
+});
+

@@ -78,6 +78,14 @@
   --speaker-4: #1d4ed8;
   --speaker-5: #be123c;
   --speaker-6: #4338ca;
+
+  --header-height: 48px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --header-height: 56px;
+  }
 }
 
 .dark {

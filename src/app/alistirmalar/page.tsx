@@ -2134,7 +2134,7 @@ function ExercisesPageContent() {
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 shrink-0"
               >
                 <Compass size={13} className="shrink-0" />
-                <span className="hidden md:inline">Seviye &amp; 13 Konu Tarama</span>
+                <span className="hidden md:inline">Seviye &amp; Konu Tarama</span>
                 <span className="md:hidden">Tarama</span>
               </Link>
             </>

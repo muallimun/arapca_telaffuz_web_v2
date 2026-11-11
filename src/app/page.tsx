@@ -666,7 +666,7 @@ export default function HomePage() {
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-400 whitespace-nowrap"
             >
               <ListChecks size={14} />
-              <span>13 Konu Tarama</span>
+              <span>Konu Tarama Testleri</span>
             </Link>
             {mounted && detectedCefrLevel && (
               <Link

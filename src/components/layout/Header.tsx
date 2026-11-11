@@ -383,7 +383,7 @@ export default function Header() {
       label: "Seviye & Tarama",
       shortLabel: "Seviye",
       Icon: Compass,
-      tooltip: "Adaptif Seviye Tespit Sınavı, 13 Konu Tarama ve Kur Bitirme Merkezi (180 Soru)",
+      tooltip: "Adaptif Seviye Tespit Sınavı, Konu Tarama Testleri ve Kur Bitirme Merkezi",
     },
     {
       href: "/sozluk",
@@ -1004,7 +1004,7 @@ export default function Header() {
                       className="lg:hidden col-span-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#087F5B] to-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <Compass size={14} className="shrink-0" />
-                      <span>🧭 Seviye Tespit &amp; 13 Konu Tarama</span>
+                      <span>🧭 Seviye Tespit &amp; Konu Tarama Testleri</span>
                     </Link>
 
                     <button

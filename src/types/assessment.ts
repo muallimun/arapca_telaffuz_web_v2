@@ -1,5 +1,5 @@
 // src/types/assessment.ts
-// 180 Soruluk Seviye Tespit, 13 Konu Tarama ve Kur Bitirme Merkezi Veri Tipleri ve Yardımcıları
+// 180 Soruluk Seviye Tespit, Dinamik Konu Tarama ve Kur Bitirme Merkezi Veri Tipleri ve Yardımcıları
 
 import type { Level } from "@/types/data";
 
@@ -212,3 +212,166 @@ export function getDistractorAnalysisForSelection(
   }
   return question.cozum_detayi?.celdirici_analizi?.[selectedOrigHarf] || null;
 }
+
+export interface DynamicAssessmentTopicMeta extends AssessmentTopicMeta {
+  levels: Level[];
+  levelCounts: Record<Level, number>;
+  searchKeywords: string;
+}
+
+const CANONICAL_LEVELS: Level[] = ["A1", "A2", "B1", "B2"];
+
+/**
+ * Soru bankasındaki benzersiz `ust_konu` başlıklarını dinamik olarak tarar.
+ * Bilinen konular için `ASSESSMENT_TOPICS` meta verisini (ikon, açıklama) korur;
+ * JSON dosyasına yeni `ust_konu` eklendiğinde kod değişikliği gerekmeden otomatik kart üretir.
+ */
+export function buildDynamicAssessmentTopics(
+  bank: AssessmentQuestion[]
+): DynamicAssessmentTopicMeta[] {
+  if (!bank || bank.length === 0) {
+    return ASSESSMENT_TOPICS.map((t) => ({
+      ...t,
+      levels: ["A1", "A2", "B1", "B2"],
+      levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0 },
+      searchKeywords: `${t.ust_konu} ${t.summaryTr}`.toLocaleLowerCase("tr-TR"),
+    }));
+  }
+
+  const grouped = new Map<
+    string,
+    {
+      count: number;
+      levelCounts: Record<Level, number>;
+      subTopics: Set<string>;
+    }
+  >();
+
+  for (const q of bank) {
+    const topicName = (q.ust_konu || "").trim();
+    if (!topicName) continue;
+    let entry = grouped.get(topicName);
+    if (!entry) {
+      entry = {
+        count: 0,
+        levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0 },
+        subTopics: new Set<string>(),
+      };
+      grouped.set(topicName, entry);
+    }
+    entry.count += 1;
+    if (CANONICAL_LEVELS.includes(q.seviye)) {
+      entry.levelCounts[q.seviye] += 1;
+    }
+    if (q.alt_grup) entry.subTopics.add(q.alt_grup.trim());
+    if (q.bagli_konu) entry.subTopics.add(q.bagli_konu.trim());
+  }
+
+  const knownMetaMap = new Map<string, AssessmentTopicMeta>(
+    ASSESSMENT_TOPICS.map((t) => [t.ust_konu, t])
+  );
+
+  const orderedNames: string[] = [];
+  for (const known of ASSESSMENT_TOPICS) {
+    if (grouped.has(known.ust_konu)) {
+      orderedNames.push(known.ust_konu);
+    }
+  }
+  for (const key of grouped.keys()) {
+    if (!orderedNames.includes(key)) {
+      orderedNames.push(key);
+    }
+  }
+
+  return orderedNames.map((ust_konu) => {
+    const stat = grouped.get(ust_konu)!;
+    const known = knownMetaMap.get(ust_konu);
+    const levels = CANONICAL_LEVELS.filter((lvl) => stat.levelCounts[lvl] > 0);
+    const dynamicLevelRange =
+      levels.length === 0
+        ? known?.levelRange || "A1–B2"
+        : levels.length === 1
+        ? levels[0]
+        : `${levels[0]}–${levels[levels.length - 1]}`;
+    const subList = Array.from(stat.subTopics);
+    const summaryTr =
+      known?.summaryTr ||
+      (subList.length > 0
+        ? subList.slice(0, 4).join(", ")
+        : `${ust_konu} kapsamındaki dilbilgisi, bağlam ve anlama soruları`);
+
+    return {
+      ust_konu,
+      icon: known?.icon || "📘",
+      questionCount: stat.count,
+      levelRange: dynamicLevelRange,
+      summaryTr,
+      levels,
+      levelCounts: stat.levelCounts,
+      searchKeywords: [ust_konu, summaryTr, ...subList]
+        .join(" ")
+        .toLocaleLowerCase("tr-TR"),
+    };
+  });
+}
+
+export interface ParsedArabicQuestionLine {
+  speaker: string | null;
+  utterance: string;
+  isDialogueLine: boolean;
+}
+
+/**
+ * Arapça kısaltmalardaki (ör. `د. حَسَنٌ`) noktanın RTL akışta harfle birleşmesini veya
+ * komşu noktalama işaretlerine yapışmasını önlemek için nokta sonrasına RLM (`\u200F`) ekler.
+ */
+export function stabilizeArabicSpeakerPunctuation(text: string): string {
+  if (!text) return "";
+  return text.replace(
+    /([\u0621-\u064A][\u064B-\u065F\u0670]*)\.(?=\s|$)/g,
+    "$1.\u200F"
+  );
+}
+
+/**
+ * Diyalog sorularındaki `\n` satır sonlarını ayrıştırır; çok satırlı diyaloglarda
+ * satır başındaki konuşmacı adını (`^([^:：]{2,28})[:：]\s*(.*)$`) ayıklar.
+ * Tek satırlık düz cümlelerde (ör. `قَالَ الْمُدِيرُ: ...`) cümleyi bölmez.
+ */
+export function splitArabicDialogueLines(
+  rawArabic: string
+): ParsedArabicQuestionLine[] {
+  if (!rawArabic) return [];
+  const rawLines = rawArabic
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (rawLines.length <= 1) {
+    const single = rawLines[0] || rawArabic.trim();
+    return [
+      {
+        speaker: null,
+        utterance: single,
+        isDialogueLine: false,
+      },
+    ];
+  }
+
+  return rawLines.map((line) => {
+    const match = line.match(/^([^:：]{2,28})[:：]\s*(.*)$/);
+    if (match) {
+      return {
+        speaker: stabilizeArabicSpeakerPunctuation(match[1].trim()),
+        utterance: match[2].trim(),
+        isDialogueLine: true,
+      };
+    }
+    return {
+      speaker: null,
+      utterance: line,
+      isDialogueLine: true,
+    };
+  });
+}
+

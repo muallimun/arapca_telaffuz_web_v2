@@ -21,17 +21,22 @@ import {
   ChevronLeft,
   ChevronUp,
   Compass,
+  Flag,
   GraduationCap,
   HelpCircle,
   Headphones,
+  LayoutGrid,
   Lightbulb,
   ListChecks,
+  Lock,
   Play,
   Printer,
   RefreshCcw,
+  Search,
   Sparkles,
   Target,
   Trophy,
+  User,
   Volume2,
   VolumeX,
   X,
@@ -41,10 +46,13 @@ import {
 import type { Level } from "@/types/data";
 import {
   ASSESSMENT_TOPICS,
+  buildDynamicAssessmentTopics,
   getDistractorAnalysisForSelection,
   isSelectedOptionCorrect,
   prepareQuestionOptions,
+  splitArabicDialogueLines,
   type AssessmentQuestion,
+  type DynamicAssessmentTopicMeta,
   type OptionLetter,
   type PreparedAssessmentOption,
   type RuntimeAssessmentQuestion,
@@ -85,6 +93,7 @@ interface SessionItemRecord {
   skipped: boolean;
   isCorrect: boolean;
   answered: boolean;
+  statsRecorded?: boolean;
 }
 
 const DIFFICULTY_LADDER: Array<{ seviye: Level; zorluk: 1 | 2 | 3 }> = [
@@ -361,27 +370,138 @@ function estimateFinalCefrFromCat(records: SessionItemRecord[]): {
   };
 }
 
-function renderArabicQuestionWithStyledBlank(
-  rawArabic: string,
-  formattedArabic: string
-): React.ReactNode {
-  if (!rawArabic.includes("___")) {
-    return formattedArabic;
-  }
-  const parts = formattedArabic.split(/_{3,}/g);
-  return parts.map((part, idx) => (
-    <React.Fragment key={idx}>
-      {part}
-      {idx < parts.length - 1 && (
+type QuestionBlankFillSpec =
+  | { kind: "empty" }
+  | {
+      kind: "filled";
+      text: string;
+      isArabic: boolean;
+      tone: "neutral" | "correct" | "wrong";
+    };
+
+function ArabicQuestionStemView({
+  rawArabic,
+  formatAr,
+  blankSpec,
+  sizeVariant = "active",
+}: {
+  rawArabic: string;
+  formatAr: (text: string) => string;
+  blankSpec: QuestionBlankFillSpec;
+  sizeVariant?: "active" | "review";
+}) {
+  const parsedLines = useMemo(
+    () => splitArabicDialogueLines(rawArabic),
+    [rawArabic]
+  );
+
+  const renderInlineBlank = (keyIdx: number) => {
+    if (blankSpec.kind === "filled") {
+      const toneCls =
+        blankSpec.tone === "correct"
+          ? "border-emerald-600 dark:border-emerald-400 bg-emerald-50/95 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200"
+          : blankSpec.tone === "wrong"
+          ? "border-rose-500 dark:border-rose-400 bg-rose-50/95 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200"
+          : "border-[#6741D9] dark:border-[#b197fc] bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff]";
+
+      return (
         <span
-          aria-label="Boşluk"
-          className="inline-flex items-center justify-center min-w-[68px] sm:min-w-[84px] mx-1.5 px-2.5 py-0.5 rounded-xl border-2 border-dashed border-[#087F5B] dark:border-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/60 text-[#065F46] dark:text-emerald-300 text-sm sm:text-base font-sans font-black align-middle select-none"
+          key={`blank_${keyIdx}`}
+          dir={blankSpec.isArabic ? "rtl" : "ltr"}
+          lang={blankSpec.isArabic ? "ar" : "tr"}
+          className={`inline-flex items-center justify-center mx-1.5 px-2.5 py-0.5 rounded-xl border-2 align-baseline [unicode-bidi:isolate] ${toneCls} ${
+            blankSpec.isArabic
+              ? "arabic font-arabic font-bold leading-[1.75]"
+              : "font-sans text-xs sm:text-sm font-extrabold"
+          }`}
         >
-          ؟
+          {blankSpec.isArabic ? formatAr(blankSpec.text) : blankSpec.text}
         </span>
-      )}
-    </React.Fragment>
-  ));
+      );
+    }
+
+    return (
+      <span
+        key={`blank_${keyIdx}`}
+        dir="ltr"
+        aria-label="Boşluk"
+        className="inline-flex items-center justify-center min-w-[56px] sm:min-w-[68px] mx-1.5 px-2 py-0.5 rounded-xl border-2 border-dashed border-[#087F5B] dark:border-emerald-400 bg-emerald-50/85 dark:bg-emerald-950/60 text-[#065F46] dark:text-emerald-300 text-xs sm:text-sm font-sans font-black tracking-wider align-middle [unicode-bidi:isolate] select-none"
+      >
+        [ ? ]
+      </span>
+    );
+  };
+
+  const renderUtteranceWithBlanks = (rawUtterance: string) => {
+    const formatted = formatAr(rawUtterance);
+    if (!/_{3,}/.test(formatted)) {
+      return formatted;
+    }
+    const parts = formatted.split(/_{3,}/g);
+    return parts.map((part, idx) => (
+      <React.Fragment key={idx}>
+        {part}
+        {idx < parts.length - 1 && renderInlineBlank(idx)}
+      </React.Fragment>
+    ));
+  };
+
+  const textSizeCls =
+    sizeVariant === "review"
+      ? "text-xl sm:text-2xl leading-[2.0]"
+      : parsedLines.length > 1
+      ? "text-xl sm:text-2xl md:text-[27px] leading-[2.05]"
+      : "text-2xl sm:text-3xl leading-[2.0]";
+
+  if (parsedLines.length <= 1) {
+    const single = parsedLines[0]?.utterance || rawArabic;
+    return (
+      <div
+        dir="rtl"
+        lang="ar"
+        className={`arabic font-arabic font-bold text-[var(--foreground)] text-right break-words [unicode-bidi:isolate] ${textSizeCls}`}
+      >
+        {renderUtteranceWithBlanks(single)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {parsedLines.map((line, lineIdx) => {
+        const isPrimarySpeaker = lineIdx % 2 === 0;
+        const speakerBadgeCls = isPrimarySpeaker
+          ? "bg-emerald-500/12 border-emerald-600/35 text-[#065F46] dark:text-emerald-300"
+          : "bg-[#6741D9]/12 border-[#6741D9]/35 text-[#4C28B5] dark:text-[#d0bfff]";
+
+        return (
+          <div
+            key={lineIdx}
+            dir="rtl"
+            lang="ar"
+            className={`arabic font-arabic font-bold text-[var(--foreground)] text-right break-words [unicode-bidi:isolate] ${
+              lineIdx > 0
+                ? "pt-1.5 border-t border-dashed border-[#E6D7BE]/75 dark:border-slate-700/70"
+                : ""
+            } ${textSizeCls}`}
+          >
+            {line.speaker && (
+              <span
+                dir="rtl"
+                lang="ar"
+                className={`inline-block [unicode-bidi:isolate] px-2 py-0.5 me-2 rounded-lg border font-extrabold align-baseline ${speakerBadgeCls}`}
+              >
+                {formatAr(line.speaker)}:
+              </span>
+            )}
+            <span dir="rtl" lang="ar" className="[unicode-bidi:isolate]">
+              {renderUtteranceWithBlanks(line.utterance)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 // ============================================================================
@@ -389,15 +509,21 @@ function renderArabicQuestionWithStyledBlank(
 // ============================================================================
 function AssessmentPrintModal({
   bank,
+  topics,
   initialTopic,
   initialLevel,
   onClose,
 }: {
   bank: AssessmentQuestion[];
+  topics?: DynamicAssessmentTopicMeta[];
   initialTopic?: string | null;
   initialLevel?: Level | null;
   onClose: () => void;
 }) {
+  const effectiveTopics = useMemo(
+    () => (topics && topics.length > 0 ? topics : buildDynamicAssessmentTopics(bank)),
+    [bank, topics]
+  );
   const [filterType, setFilterType] = useState<"level" | "topic">(
     initialTopic ? "topic" : "level"
   );
@@ -405,7 +531,7 @@ function AssessmentPrintModal({
     initialLevel || "A1"
   );
   const [selectedTopic, setSelectedTopic] = useState<string>(
-    initialTopic || ASSESSMENT_TOPICS[0].ust_konu
+    initialTopic || effectiveTopics[0]?.ust_konu || ASSESSMENT_TOPICS[0].ust_konu
   );
   const [questionCount, setQuestionCount] = useState<10 | 15 | 20>(10);
   const [bookletMode, setBookletMode] = useState<"A" | "B" | "AB">("AB");
@@ -491,13 +617,30 @@ function AssessmentPrintModal({
         q: AssessmentQuestion;
         opts: ReturnType<typeof prepareQuestionOptions>;
       }) => {
-        const normalizedStemAr = q.soru_metni_ar
-          .replace(/\r?\n+/g, "   •   ")
-          .trim();
-        const formattedAr = escapeHtml(normalizedStemAr).replace(
-          /_{3,}/g,
-          '<span class="blank-slot">..........</span>'
-        );
+        const parsedStemLines = splitArabicDialogueLines(q.soru_metni_ar);
+        const formatPrintUtteranceHtml = (utterance: string) =>
+          escapeHtml(utterance).replace(
+            /_{3,}/g,
+            '<span class="blank-slot" dir="ltr">[ ? ]</span>'
+          );
+
+        const formattedAr =
+          parsedStemLines.length <= 1
+            ? `<div class="q-arabic-line" dir="rtl" lang="ar">${formatPrintUtteranceHtml(
+                parsedStemLines[0]?.utterance || q.soru_metni_ar.trim()
+              )}</div>`
+            : parsedStemLines
+                .map((ln) => {
+                  const speakerHtml = ln.speaker
+                    ? `<span class="q-speaker" dir="rtl" lang="ar">${escapeHtml(
+                        ln.speaker
+                      )}:</span> `
+                    : "";
+                  return `<div class="q-arabic-line" dir="rtl" lang="ar">${speakerHtml}<span class="q-utterance" dir="rtl" lang="ar">${formatPrintUtteranceHtml(
+                    ln.utterance
+                  )}</span></div>`;
+                })
+                .join("");
 
         const maxOptVisibleLen = Math.max(
           ...opts.map((o) => getVisibleOptionLength(o.metin))
@@ -650,6 +793,7 @@ function AssessmentPrintModal({
       font-weight: normal;
       font-style: normal;
       font-display: swap;
+      unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
     }
     @page {
       size: A4 portrait;
@@ -820,18 +964,42 @@ function AssessmentPrintModal({
       margin: 0.5px 0 1px 0;
     }
     .q-arabic {
-      font-size: 11.8pt;
-      line-height: 1.48;
+      font-size: 11.6pt;
+      line-height: 1.46;
       margin: 1px 0 2.5px 0;
       padding: 2px 6px;
       background: #fdfbf7;
       border-right: 2.5px solid #087F5B;
       border-radius: 4px;
       text-align: right;
+      unicode-bidi: isolate;
+    }
+    .q-arabic-line {
+      display: block;
+      unicode-bidi: isolate;
+    }
+    .q-arabic-line + .q-arabic-line {
+      margin-top: 2px;
+    }
+    .q-speaker {
+      display: inline-block;
+      unicode-bidi: isolate;
+      font-weight: 800;
+      color: #065F46;
+      margin-left: 4px;
+    }
+    .q-arabic-line:nth-child(even) .q-speaker {
+      color: #4C28B5;
+    }
+    .q-utterance {
+      unicode-bidi: isolate;
     }
     .blank-slot {
+      display: inline-block;
+      unicode-bidi: isolate;
       font-family: "Inter", sans-serif;
-      font-weight: 700;
+      font-size: 8.6pt;
+      font-weight: 800;
       color: #065F46;
       padding: 0 3px;
     }
@@ -1075,7 +1243,7 @@ function AssessmentPrintModal({
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
               }`}
             >
-              📚 13 Üst Konuya Göre
+              📚 {effectiveTopics.length} Üst Konuya Göre
             </button>
           </div>
 
@@ -1105,7 +1273,7 @@ function AssessmentPrintModal({
               onChange={(e) => setSelectedTopic(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs sm:text-sm font-extrabold text-[var(--foreground)]"
             >
-              {ASSESSMENT_TOPICS.map((t) => (
+              {effectiveTopics.map((t) => (
                 <option key={t.ust_konu} value={t.ust_konu}>
                   {t.icon} {t.ust_konu} ({t.questionCount} Soru)
                 </option>
@@ -1291,6 +1459,14 @@ function DetailedSolutionBox({
   const correctPrepared = preparedOptions.find(
     (o) => o.origHarf === question.dogru_secenek
   );
+  const selectedPrepared = preparedOptions.find(
+    (o) => o.displayHarf === record.selectedDisplayHarf
+  );
+  const isArOpts = question.secenek_dili === "ar";
+  const formatOptDisplay = (txt: string) =>
+    isArOpts
+      ? formatArabicByHarekeMode(txt, harekeMode, arabicFont)
+      : txt;
 
   const otherDistractors = preparedOptions.filter(
     (o) =>
@@ -1299,53 +1475,108 @@ function DetailedSolutionBox({
 
   return (
     <div className="rounded-2xl border-2 border-[#087F5B]/45 dark:border-emerald-600/50 bg-[#FDFBF7] dark:bg-[var(--background)] p-3.5 sm:p-4 space-y-3 shadow-xs">
-      {/* Üst Başlık + Sade / Akademik Seçici */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5">
-        <div className="flex items-center gap-2">
+      {/* Üst Başlık + Doğru Şık & Kullanıcı Seçimi + Sade / Akademik Seçici */}
+      <div className="space-y-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-xs font-extrabold">
-            <Lightbulb size={14} />
-            <span>💡 Gerekçeli Çözüm</span>
+            <Lightbulb size={14} className="shrink-0" />
+            <span>Gerekçeli Çözüm</span>
           </span>
-          {correctPrepared && (
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">
-              Doğru Şık: {correctPrepared.displayHarf}
-            </span>
-          )}
+
+          <div
+            role="group"
+            aria-label="Çözüm Anlatım Derinliği"
+            className="inline-flex items-center rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] p-0.5 border border-[#E6D7BE] dark:border-[var(--border)]"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setGrammarDepthMode("simple");
+              }}
+              className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold cursor-pointer transition-all ${
+                isSimple
+                  ? "bg-emerald-600 text-white"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              🌱 Sade Anlatım
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setGrammarDepthMode("academic");
+              }}
+              className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold cursor-pointer transition-all ${
+                !isSimple
+                  ? "bg-[#6741D9] text-white"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              🎓 Akademik &amp; İ&apos;rab
+            </button>
+          </div>
         </div>
 
-        <div
-          role="group"
-          aria-label="Çözüm Anlatım Derinliği"
-          className="inline-flex items-center rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] p-0.5 border border-[#E6D7BE] dark:border-[var(--border)]"
-        >
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setGrammarDepthMode("simple");
-            }}
-            className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold cursor-pointer transition-all ${
-              isSimple
-                ? "bg-emerald-600 text-white"
-                : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            🌱 Sade Anlatım
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setGrammarDepthMode("academic");
-            }}
-            className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold cursor-pointer transition-all ${
-              !isSimple
-                ? "bg-[#6741D9] text-white"
-                : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            🎓 Akademik &amp; İ&apos;rab
-          </button>
+        {/* Doğru Şık + Kullanıcının Cevabı Özeti */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {correctPrepared && (
+            <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/55 border border-emerald-400 dark:border-emerald-700 text-xs font-extrabold text-emerald-950 dark:text-emerald-100 min-w-0">
+              <span className="inline-flex items-center gap-1 shrink-0 text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 size={14} className="shrink-0" />
+                <span>Doğru: {correctPrepared.displayHarf} —</span>
+              </span>
+              <span
+                dir={isArOpts ? "rtl" : "ltr"}
+                lang={isArOpts ? "ar" : "tr"}
+                className={`min-w-0 break-words [unicode-bidi:isolate] ${
+                  isArOpts
+                    ? "arabic font-arabic text-base sm:text-lg font-bold leading-[1.7] text-right"
+                    : "text-xs font-bold text-left"
+                }`}
+              >
+                {formatOptDisplay(correctPrepared.metin)}
+              </span>
+            </div>
+          )}
+
+          {!skipped && selectedPrepared ? (
+            <div
+              className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold min-w-0 ${
+                isCorrect
+                  ? "bg-emerald-50/75 dark:bg-emerald-950/45 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100"
+                  : "bg-rose-50/90 dark:bg-rose-950/55 border-rose-400 dark:border-rose-700 text-rose-950 dark:text-rose-100"
+              }`}
+            >
+              <span
+                className={`inline-flex items-center gap-1 shrink-0 ${
+                  isCorrect
+                    ? "text-emerald-800 dark:text-emerald-300"
+                    : "text-rose-800 dark:text-rose-300"
+                }`}
+              >
+                <User size={13} className="shrink-0" />
+                <span>Seçiminiz: {selectedPrepared.displayHarf} —</span>
+              </span>
+              <span
+                dir={isArOpts ? "rtl" : "ltr"}
+                lang={isArOpts ? "ar" : "tr"}
+                className={`min-w-0 break-words [unicode-bidi:isolate] ${
+                  isArOpts
+                    ? "arabic font-arabic text-base sm:text-lg font-bold leading-[1.7] text-right"
+                    : "text-xs font-bold text-left"
+                }`}
+              >
+                {formatOptDisplay(selectedPrepared.metin)}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50/85 dark:bg-amber-950/45 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200">
+              <HelpCircle size={14} className="shrink-0" />
+              <span>Seçiminiz: Boş / Emin Değilim</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1503,6 +1734,8 @@ function SeviyeTespitContent() {
     return m === "topic" || m === "exam" || m === "cat" ? m : "cat";
   });
   const [topicQuizLength, setTopicQuizLength] = useState<"10" | "all">("10");
+  const [topicLevelFilter, setTopicLevelFilter] = useState<"ALL" | Level>("ALL");
+  const [topicSearchQuery, setTopicSearchQuery] = useState<string>("");
   const [printModalOpen, setPrintModalOpen] = useState(false);
 
   // Aktif oturum state'leri
@@ -1513,9 +1746,13 @@ function SeviyeTespitContent() {
   const [sessionExamLevel, setSessionExamLevel] = useState<Level | null>(null);
   const [sessionItems, setSessionItems] = useState<SessionItemRecord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [navGridOpen, setNavGridOpen] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
   const [showReviewList, setShowReviewList] = useState(false);
   const [appliedPlanFeedback, setAppliedPlanFeedback] = useState(false);
+
+  // Soru Navigatörü yatay kaydırma referansları
+  const navButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   // CAT Adaptif takip referansları
   const catStepRef = useRef<number>(3);
@@ -1574,6 +1811,12 @@ function SeviyeTespitContent() {
     []
   );
 
+  // Veri dosyasındaki benzersiz `ust_konu` başlıklarından beslenen dinamik konu listesi
+  const uniqueTopics = useMemo(
+    () => buildDynamicAssessmentTopics(bank),
+    [bank]
+  );
+
   // Her üst konu için gerçek soru sayıları
   const topicActualCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1582,6 +1825,20 @@ function SeviyeTespitContent() {
     }
     return counts;
   }, [bank]);
+
+  // CEFR Kur filtresi ve hızlı arama kutusuna göre filtrelenmiş konular
+  const filteredTopics = useMemo(() => {
+    const query = topicSearchQuery.trim().toLocaleLowerCase("tr-TR");
+    return uniqueTopics.filter((t) => {
+      if (topicLevelFilter !== "ALL" && t.levelCounts[topicLevelFilter] <= 0) {
+        return false;
+      }
+      if (query && !t.searchKeywords.includes(query)) {
+        return false;
+      }
+      return true;
+    });
+  }, [topicLevelFilter, topicSearchQuery, uniqueTopics]);
 
   const makeSessionRecord = useCallback(
     (q: RuntimeAssessmentQuestion): SessionItemRecord => ({
@@ -1592,6 +1849,7 @@ function SeviyeTespitContent() {
       skipped: false,
       isCorrect: false,
       answered: false,
+      statsRecorded: false,
     }),
     []
   );
@@ -1608,6 +1866,7 @@ function SeviyeTespitContent() {
       catUsedIdsRef.current = new Set();
       catUsedAudioIdsRef.current = new Set();
       catTopicCountsRef.current = {};
+      navButtonRefs.current = [];
 
       const firstQ = pickNextAdaptiveBankQuestion(
         sourceBank,
@@ -1626,6 +1885,7 @@ function SeviyeTespitContent() {
       setSessionExamLevel(null);
       setSessionItems([makeSessionRecord(firstQ)]);
       setCurrentIndex(0);
+      setNavGridOpen(false);
       setSessionCompleted(false);
       setShowReviewList(false);
       setAppliedPlanFeedback(false);
@@ -1639,22 +1899,42 @@ function SeviyeTespitContent() {
     (
       topicName: string,
       lengthMode: "10" | "all" = topicQuizLength,
-      sourceBank: AssessmentQuestion[] = bank
+      sourceBank: AssessmentQuestion[] = bank,
+      preferredLevel: "ALL" | Level = "ALL"
     ) => {
       const topicPool = sourceBank.filter((q) => q.ust_konu === topicName);
       if (topicPool.length === 0) return;
       stopAllAudio();
       playStart();
+      navButtonRefs.current = [];
 
-      const shuffled = [...topicPool];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      const shuffleArr = <T,>(arr: T[]): T[] => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      };
+
+      let picked: AssessmentQuestion[];
+      if (lengthMode === "all") {
+        picked = shuffleArr(topicPool);
+      } else if (preferredLevel !== "ALL") {
+        const matchingLvl = shuffleArr(
+          topicPool.filter((q) => q.seviye === preferredLevel)
+        );
+        const restLvl = shuffleArr(
+          topicPool.filter((q) => q.seviye !== preferredLevel)
+        );
+        picked = [...matchingLvl, ...restLvl].slice(0, 10);
+      } else {
+        picked = shuffleArr(topicPool).slice(0, 10);
       }
       // Zorluk sırasını yumuşak artan tutmak için hafif grupla
-      const picked =
-        lengthMode === "10" ? shuffled.slice(0, 10) : shuffled;
-      picked.sort((a, b) => getStepIndexForQuestion(a) - getStepIndexForQuestion(b));
+      picked.sort(
+        (a, b) => getStepIndexForQuestion(a) - getStepIndexForQuestion(b)
+      );
 
       setSessionMode("topic");
       setSessionTitle(`Konu Tarama: ${topicName}`);
@@ -1662,6 +1942,7 @@ function SeviyeTespitContent() {
       setSessionExamLevel(null);
       setSessionItems(picked.map((q) => makeSessionRecord(q)));
       setCurrentIndex(0);
+      setNavGridOpen(false);
       setSessionCompleted(false);
       setShowReviewList(false);
       setAppliedPlanFeedback(false);
@@ -1677,6 +1958,7 @@ function SeviyeTespitContent() {
       if (levelPool.length === 0) return;
       stopAllAudio();
       playStart();
+      navButtonRefs.current = [];
 
       const shuffled = [...levelPool];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -1692,6 +1974,7 @@ function SeviyeTespitContent() {
       setSessionExamLevel(level);
       setSessionItems(picked.map((q) => makeSessionRecord(q)));
       setCurrentIndex(0);
+      setNavGridOpen(false);
       setSessionCompleted(false);
       setShowReviewList(false);
       setAppliedPlanFeedback(false);
@@ -1811,16 +2094,69 @@ function SeviyeTespitContent() {
     );
   };
 
-  const finalizeSession = useCallback(
-    (finalRecords: SessionItemRecord[]) => {
+  // Aktif soru değiştiğinde Soru Navigatöründeki düğmeyi mobilde yatay ortala
+  useEffect(() => {
+    if (!sessionActive || sessionCompleted) return;
+    const activeBtn = navButtonRefs.current[currentIndex];
+    if (activeBtn && typeof activeBtn.scrollIntoView === "function") {
+      activeBtn.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [currentIndex, sessionActive, sessionCompleted]);
+
+  const jumpToQuestionIndex = useCallback(
+    (targetIdx: number) => {
+      if (targetIdx < 0 || targetIdx >= sessionItems.length) return;
       stopAllAudio();
+      playClick();
+      setCurrentIndex(targetIdx);
+      setNavGridOpen(false);
+    },
+    [sessionItems.length]
+  );
+
+  const finalizeSession = useCallback(
+    (rawRecords: SessionItemRecord[]) => {
+      stopAllAudio();
+      setNavGridOpen(false);
+
+      const normalizedRecords = rawRecords.map((rec) => {
+        const shouldRecordNow =
+          !rec.statsRecorded && (rec.answered || sessionMode === "exam");
+        if (shouldRecordNow) {
+          if (!rec.question.isListeningAudioItem) {
+            recordTopicAttempt(rec.question.ust_konu, rec.isCorrect);
+          }
+          recordSkillAttempt(mapQuestionToSkillKey(rec.question), rec.isCorrect);
+        }
+
+        if (!rec.answered) {
+          return {
+            ...rec,
+            skipped: true,
+            isCorrect: false,
+            answered: true,
+            statsRecorded: true,
+          };
+        }
+
+        return {
+          ...rec,
+          statsRecorded: true,
+        };
+      });
+
+      setSessionItems(normalizedRecords);
       setSessionCompleted(true);
       addStudyMinutes(3);
 
-      const correctTotal = finalRecords.filter((r) => r.isCorrect).length;
+      const correctTotal = normalizedRecords.filter((r) => r.isCorrect).length;
       const pct =
-        finalRecords.length > 0
-          ? Math.round((correctTotal / finalRecords.length) * 100)
+        normalizedRecords.length > 0
+          ? Math.round((correctTotal / normalizedRecords.length) * 100)
           : 0;
 
       if (sessionMode === "exam" && sessionExamLevel && pct >= 75) {
@@ -1828,14 +2164,27 @@ function SeviyeTespitContent() {
       }
       playFanfare(pct);
     },
-    [addStudyMinutes, markLevelExamCompleted, sessionExamLevel, sessionMode]
+    [
+      addStudyMinutes,
+      markLevelExamCompleted,
+      recordSkillAttempt,
+      recordTopicAttempt,
+      sessionExamLevel,
+      sessionMode,
+    ]
   );
 
   const advanceToNextOrFinish = useCallback(
     (updatedRecords: SessionItemRecord[]) => {
       stopAllAudio();
       if (sessionMode === "cat") {
-        const nextSlot = currentIndex + 1;
+        // Kullanıcı daha önce açılmış bir soruya geri dönmüşse yalnızca sonraki açılmış soruya ilerle
+        if (currentIndex + 1 < updatedRecords.length) {
+          setCurrentIndex(currentIndex + 1);
+          return;
+        }
+
+        const nextSlot = updatedRecords.length;
         if (nextSlot >= CAT_TOTAL_QUESTIONS) {
           finalizeSession(updatedRecords);
           return;
@@ -1881,10 +2230,21 @@ function SeviyeTespitContent() {
         return;
       }
 
-      // KTT veya Kur Sınavı
+      // KTT veya Kur Sınavı: İleride soru varsa ona geç
       if (currentIndex + 1 < updatedRecords.length) {
         setCurrentIndex(currentIndex + 1);
-      } else {
+        return;
+      }
+
+      // Son sorudayken boş/pas bırakılmış soru kalmadıysa oturumu tamamla;
+      // boş soru varsa kullanıcının geri dönmesine izin vermek için açık tut (KTT'de buton zaten açıkça bitirir)
+      if (sessionMode === "topic") {
+        finalizeSession(updatedRecords);
+        return;
+      }
+
+      const hasUnanswered = updatedRecords.some((it) => !it.answered);
+      if (!hasUnanswered) {
         finalizeSession(updatedRecords);
       }
     },
@@ -1901,14 +2261,47 @@ function SeviyeTespitContent() {
     chosenOption: PreparedAssessmentOption | null,
     isSkip: boolean
   ) => {
-    if (!currentRecord || currentRecord.answered) return;
+    if (!currentRecord) return;
+    // CAT ve Konu Taramada yanıtlanmış soru kilitlidir; Kur Bitirme Sınavında sınav bitene kadar boş/cevaplı soruya dönülüp yanıt güncellenebilir
+    if (sessionMode !== "exam" && currentRecord.answered) return;
 
     const q = currentRecord.question;
     const selectedOrig = isSkip ? null : chosenOption?.origHarf || null;
     const selectedDisp = isSkip ? null : chosenOption?.displayHarf || null;
     const right = !isSkip && isSelectedOptionCorrect(q, selectedOrig);
 
-    // Konu ve 6-Beceri istatistiklerini kaydet
+    // Kur Bitirme Sınavında "Pas Geç" denildiğinde soruyu boş/pas işaretleyip geri dönüldüğünde cevaplanabilir bırak
+    if (sessionMode === "exam") {
+      const updatedExamItem: SessionItemRecord = isSkip
+        ? {
+            ...currentRecord,
+            selectedDisplayHarf: null,
+            selectedOrigHarf: null,
+            skipped: true,
+            isCorrect: false,
+            answered: false,
+          }
+        : {
+            ...currentRecord,
+            selectedDisplayHarf: selectedDisp,
+            selectedOrigHarf: selectedOrig,
+            skipped: false,
+            isCorrect: right,
+            answered: true,
+          };
+
+      const nextExamItems = sessionItems.map((it, idx) =>
+        idx === currentIndex ? updatedExamItem : it
+      );
+      setSessionItems(nextExamItems);
+      playClick();
+      setTimeout(() => {
+        advanceToNextOrFinish(nextExamItems);
+      }, 180);
+      return;
+    }
+
+    // CAT ve KTT: Konu ve 6-Beceri istatistiklerini kaydet
     if (!q.isListeningAudioItem) {
       recordTopicAttempt(q.ust_konu, right);
     }
@@ -1936,6 +2329,7 @@ function SeviyeTespitContent() {
       skipped: isSkip,
       isCorrect: right,
       answered: true,
+      statsRecorded: true,
     };
 
     const nextItems = sessionItems.map((it, idx) =>
@@ -1955,7 +2349,7 @@ function SeviyeTespitContent() {
       return;
     }
 
-    // CAT ve Kur Bitirme Sınavında ipucu sızmasını önlemek için doğrudan sonraki soruya geç
+    // CAT modunda sonraki adaptif soruyu üretip aç
     playClick();
     setTimeout(() => {
       advanceToNextOrFinish(nextItems);
@@ -2312,60 +2706,147 @@ function SeviyeTespitContent() {
           {/* TAM GEREKÇELİ ÇÖZÜM İNCELEME LİSTESİ */}
           {showReviewList && (
             <section className="space-y-4">
-              {sessionItems.map((rec, idx) => (
-                <div
-                  key={`${rec.question.id}_${idx}`}
-                  className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-5 space-y-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
-                        Soru {idx + 1}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[11px] font-extrabold text-[var(--foreground)]">
-                        {rec.question.seviye} • {rec.question.ust_konu}
-                      </span>
+              {sessionItems.map((rec, idx) => {
+                const isArOpts = rec.question.secenek_dili === "ar";
+                const correctOpt = rec.preparedOptions.find(
+                  (o) => o.origHarf === rec.question.dogru_secenek
+                );
+                const reviewBlankSpec: QuestionBlankFillSpec = correctOpt
+                  ? {
+                      kind: "filled",
+                      text: correctOpt.metin,
+                      isArabic: isArOpts,
+                      tone: "correct",
+                    }
+                  : { kind: "empty" };
+
+                const maxReviewOptLen = Math.max(
+                  ...rec.preparedOptions.map(
+                    (o) =>
+                      o.metin.replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim()
+                        .length
+                  )
+                );
+                const reviewGridColsCls =
+                  maxReviewOptLen > 34
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-2";
+
+                return (
+                  <div
+                    key={`${rec.question.id}_${idx}`}
+                    className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 sm:p-5 space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
+                          Soru {idx + 1}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[11px] font-extrabold text-[var(--foreground)]">
+                          {rec.question.seviye} • {rec.question.ust_konu}
+                        </span>
+                      </div>
+
+                      {rec.skipped ? (
+                        <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 text-xs font-extrabold">
+                          ⚪ Boş / Pas Geçildi
+                        </span>
+                      ) : rec.isCorrect ? (
+                        <span className="px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 text-xs font-extrabold inline-flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Doğru ({rec.selectedDisplayHarf})
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-900 dark:bg-rose-950/70 dark:text-rose-200 text-xs font-extrabold inline-flex items-center gap-1">
+                          <XCircle size={13} /> Yanlış (Seçilen: {rec.selectedDisplayHarf})
+                        </span>
+                      )}
                     </div>
 
-                    {rec.skipped ? (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 text-xs font-extrabold">
-                        🤔 Pas Geçildi
-                      </span>
-                    ) : rec.isCorrect ? (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-extrabold inline-flex items-center gap-1">
-                        <CheckCircle2 size={13} /> Doğru ({rec.selectedDisplayHarf})
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-900 text-xs font-extrabold inline-flex items-center gap-1">
-                        <XCircle size={13} /> Yanlış (Seçilen: {rec.selectedDisplayHarf})
-                      </span>
-                    )}
+                    <p className="text-xs sm:text-sm font-bold text-[var(--foreground)]">
+                      {rec.question.soru_yonergesi_tr}
+                    </p>
+
+                    <div className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 text-right">
+                      <ArabicQuestionStemView
+                        rawArabic={rec.question.soru_metni_ar}
+                        formatAr={displayArabic}
+                        blankSpec={reviewBlankSpec}
+                        sizeVariant="review"
+                      />
+                    </div>
+
+                    {/* 4 SEÇENEĞİN KOMPAKT 2×2 İNCELEME IZGARASI */}
+                    <div className={`grid ${reviewGridColsCls} gap-2`}>
+                      {rec.preparedOptions.map((opt) => {
+                        const isRightOpt =
+                          opt.origHarf === rec.question.dogru_secenek;
+                        const isUserChoice =
+                          !rec.skipped &&
+                          rec.selectedDisplayHarf === opt.displayHarf;
+
+                        const cellCls = isRightOpt
+                          ? "border-2 border-emerald-600 bg-emerald-50/90 dark:bg-emerald-950/55 text-emerald-950 dark:text-emerald-100"
+                          : isUserChoice
+                          ? "border-2 border-rose-500 bg-rose-50/90 dark:bg-rose-950/55 text-rose-950 dark:text-rose-100"
+                          : "border border-[#E6D7BE] dark:border-[var(--border)] bg-white/85 dark:bg-[var(--background)] text-[var(--foreground)]";
+
+                        const letterBadgeCls = isRightOpt
+                          ? "bg-emerald-600 border-emerald-700 text-white"
+                          : isUserChoice
+                          ? "bg-rose-600 border-rose-700 text-white"
+                          : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]";
+
+                        return (
+                          <div
+                            key={opt.displayHarf}
+                            className={`px-2.5 py-2 rounded-xl flex items-center justify-between gap-2 min-w-0 ${cellCls}`}
+                          >
+                            <span
+                              className={`w-6 h-6 rounded-md border flex items-center justify-center text-[11px] font-black shrink-0 ${letterBadgeCls}`}
+                            >
+                              {opt.displayHarf}
+                            </span>
+
+                            <span
+                              dir={isArOpts ? "rtl" : "ltr"}
+                              lang={isArOpts ? "ar" : "tr"}
+                              className={`min-w-0 flex-1 break-words [unicode-bidi:isolate] ${
+                                isArOpts
+                                  ? "arabic font-arabic text-lg sm:text-xl font-bold leading-[1.75] text-right"
+                                  : "text-xs font-bold leading-snug text-left"
+                              }`}
+                            >
+                              {isArOpts ? displayArabic(opt.metin) : opt.metin}
+                            </span>
+
+                            {isRightOpt && (
+                              <CheckCircle2
+                                size={15}
+                                className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                              />
+                            )}
+                            {isUserChoice && !isRightOpt && (
+                              <XCircle
+                                size={15}
+                                className="text-rose-600 dark:text-rose-400 shrink-0"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <DetailedSolutionBox record={rec} />
                   </div>
-
-                  <p className="text-xs sm:text-sm font-bold text-[var(--foreground)]">
-                    {rec.question.soru_yonergesi_tr}
-                  </p>
-
-                  <div
-                    dir="rtl"
-                    lang="ar"
-                    className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 text-right arabic font-arabic text-xl sm:text-2xl font-bold leading-[2.0] text-[var(--foreground)]"
-                  >
-                    {renderArabicQuestionWithStyledBlank(
-                      rec.question.soru_metni_ar,
-                      displayArabic(rec.question.soru_metni_ar)
-                    )}
-                  </div>
-
-                  <DetailedSolutionBox record={rec} />
-                </div>
-              ))}
+                );
+              })}
             </section>
           )}
 
           {printModalOpen && (
             <AssessmentPrintModal
               bank={bank}
+              topics={uniqueTopics}
               initialTopic={sessionTopic}
               initialLevel={sessionExamLevel || catEvaluation.level}
               onClose={() => setPrintModalOpen(false)}
@@ -2378,10 +2859,88 @@ function SeviyeTespitContent() {
     // AKTİF SORU EKRANI
     if (!currentRecord) return null;
     const q = currentRecord.question;
+    const maxReachedIndex = sessionItems.length - 1;
+    const answeredCountSoFar = sessionItems.filter((r) => r.answered).length;
     const progressPct = Math.round(((currentIndex + 1) / totalCount) * 100);
 
+    const selectedOptForBlank = currentRecord.selectedDisplayHarf
+      ? currentRecord.preparedOptions.find(
+          (o) => o.displayHarf === currentRecord.selectedDisplayHarf
+        ) || null
+      : null;
+
+    const activeBlankSpec: QuestionBlankFillSpec = selectedOptForBlank
+      ? {
+          kind: "filled",
+          text: selectedOptForBlank.metin,
+          isArabic: q.secenek_dili === "ar",
+          tone:
+            sessionMode === "topic" && currentRecord.answered
+              ? currentRecord.isCorrect
+                ? "correct"
+                : "wrong"
+              : "neutral",
+        }
+      : { kind: "empty" };
+
+    const canGoPrev = currentIndex > 0;
+    const canGoNext =
+      sessionMode === "cat"
+        ? currentIndex < maxReachedIndex ||
+          (currentIndex === maxReachedIndex &&
+            currentRecord.answered &&
+            currentIndex + 1 < CAT_TOTAL_QUESTIONS)
+        : currentIndex + 1 < totalCount;
+
+    const canFinishSessionNow =
+      sessionMode !== "cat" ||
+      answeredCountSoFar >= 5 ||
+      (sessionItems.length >= CAT_TOTAL_QUESTIONS && currentRecord.answered);
+
+    const getNavButtonStyle = (slotIdx: number) => {
+      const isLockedCat =
+        sessionMode === "cat" && slotIdx >= sessionItems.length;
+      const rec = sessionItems[slotIdx];
+      const isCurrent = slotIdx === currentIndex;
+
+      let base =
+        "border border-dashed border-[#cbb692] dark:border-slate-600 bg-white dark:bg-[var(--background)] text-[var(--foreground)] hover:border-[#087F5B]";
+
+      if (isLockedCat) {
+        base =
+          "opacity-45 border border-dashed border-[#E6D7BE] dark:border-slate-700 bg-white/40 dark:bg-slate-900/30 text-[var(--muted)] cursor-not-allowed";
+      } else if (rec) {
+        if (sessionMode === "topic") {
+          if (rec.answered) {
+            if (rec.skipped) {
+              base =
+                "border-2 border-amber-500 bg-amber-100 dark:bg-amber-950/75 text-amber-950 dark:text-amber-200";
+            } else if (rec.isCorrect) {
+              base = "border-2 border-emerald-700 bg-emerald-600 text-white";
+            } else {
+              base = "border-2 border-rose-700 bg-rose-600 text-white";
+            }
+          }
+        } else {
+          // Kur Bitirme & CAT: sınav devam ederken kopya vermemek için yalnızca cevaplandı / boş ayrımı
+          if (rec.answered && !rec.skipped) {
+            base = "border-2 border-[#4C28B5] bg-[#6741D9] text-white";
+          } else if (rec.skipped) {
+            base =
+              "border-2 border-dashed border-amber-500 bg-amber-50/90 dark:bg-amber-950/55 text-amber-900 dark:text-amber-200";
+          }
+        }
+      }
+
+      const activeRing = isCurrent
+        ? "ring-2 ring-[#087F5B] dark:ring-emerald-400 ring-offset-1 ring-offset-[#FDFBF7] dark:ring-offset-[#191714] font-black"
+        : "font-extrabold";
+
+      return { isLockedCat, className: `${base} ${activeRing}` };
+    };
+
     return (
-      <div className="max-w-3xl mx-auto space-y-3 pb-16">
+      <div className="max-w-3xl mx-auto space-y-2.5 pb-16">
         {/* Üst Kompakt İlerleme ve Çıkış Çubuğu */}
         <div className="flex items-center justify-between gap-2">
           <button
@@ -2389,6 +2948,7 @@ function SeviyeTespitContent() {
             onClick={() => {
               playClick();
               stopAllAudio();
+              setNavGridOpen(false);
               setSessionActive(false);
             }}
             className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer shrink-0"
@@ -2402,7 +2962,8 @@ function SeviyeTespitContent() {
               {sessionTitle}
             </span>
             <span className="block text-[11px] font-bold text-[var(--muted)] tabular-nums">
-              Soru {currentIndex + 1} / {totalCount}
+              Soru {currentIndex + 1} / {totalCount} • Yanıtlanan:{" "}
+              {answeredCountSoFar}/{totalCount}
               {sessionMode !== "cat" && ` • ${q.seviye}`}
             </span>
           </div>
@@ -2439,6 +3000,97 @@ function SeviyeTespitContent() {
             className="h-full bg-[#087F5B] rounded-full transition-all duration-300"
             style={{ width: `${progressPct}%` }}
           />
+        </div>
+
+        {/* MOBİL UYUMLU SORU NAVİGATÖRÜ (Yatay Şerit + [🔢 Liste] 5 Sütun Izgara) */}
+        <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1]/90 dark:bg-[var(--surface)] px-2.5 py-2 space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              role="navigation"
+              aria-label="Soru Navigatörü"
+              className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory py-1 px-0.5 flex-1 min-w-0"
+            >
+              {Array.from({ length: totalCount }, (_, slotIdx) => {
+                const { isLockedCat, className } = getNavButtonStyle(slotIdx);
+                return (
+                  <button
+                    key={slotIdx}
+                    ref={(el) => {
+                      navButtonRefs.current[slotIdx] = el;
+                    }}
+                    type="button"
+                    disabled={isLockedCat}
+                    onClick={() => jumpToQuestionIndex(slotIdx)}
+                    aria-label={`Soru ${slotIdx + 1}`}
+                    aria-current={slotIdx === currentIndex ? "step" : undefined}
+                    className={`min-w-[36px] h-9 px-2 rounded-xl text-xs tabular-nums inline-flex items-center justify-center gap-0.5 shrink-0 snap-center transition-all ${
+                      isLockedCat ? "" : "cursor-pointer"
+                    } ${className}`}
+                  >
+                    <span>{slotIdx + 1}</span>
+                    {isLockedCat && <Lock size={10} className="opacity-70" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setNavGridOpen((v) => !v);
+              }}
+              aria-expanded={navGridOpen}
+              className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border-2 text-xs font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors ${
+                navGridOpen
+                  ? "bg-[#6741D9] border-[#4C28B5] text-white"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+              }`}
+            >
+              <LayoutGrid size={13} className="shrink-0" />
+              <span>Liste</span>
+            </button>
+          </div>
+
+          {navGridOpen && (
+            <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] space-y-2">
+              <div className="grid grid-cols-5 sm:grid-cols-9 gap-1.5">
+                {Array.from({ length: totalCount }, (_, slotIdx) => {
+                  const { isLockedCat, className } = getNavButtonStyle(slotIdx);
+                  return (
+                    <button
+                      key={`grid_${slotIdx}`}
+                      type="button"
+                      disabled={isLockedCat}
+                      onClick={() => jumpToQuestionIndex(slotIdx)}
+                      className={`min-h-[40px] rounded-xl text-xs tabular-nums inline-flex items-center justify-center gap-1 transition-all ${
+                        isLockedCat ? "" : "cursor-pointer"
+                      } ${className}`}
+                    >
+                      <span>{slotIdx + 1}</span>
+                      {isLockedCat && <Lock size={10} className="opacity-70" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-[var(--muted)]">
+                {sessionMode === "topic" ? (
+                  <span>
+                    Yeşil: Doğru · Kırmızı: Yanlış · Kehribar: Pas · Kesikli: Boş
+                  </span>
+                ) : sessionMode === "cat" ? (
+                  <span>
+                    Mor: Yanıtlandı · Kehribar: Pas · Kilitli: Adaptif sırada açılır
+                  </span>
+                ) : (
+                  <span>
+                    Mor: Yanıtlandı · Kehribar/Kesikli: Boş (tıklayıp dönebilirsiniz)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SORU KARTI */}
@@ -2538,27 +3190,25 @@ function SeviyeTespitContent() {
               </div>
             </div>
           ) : (
-            <div
-              dir="rtl"
-              lang="ar"
-              className="rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 sm:p-5 text-right shadow-2xs"
-            >
-              <p className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[var(--foreground)] leading-[2.0] break-words">
-                {renderArabicQuestionWithStyledBlank(
-                  q.soru_metni_ar,
-                  displayArabic(q.soru_metni_ar)
-                )}
-              </p>
+            <div className="rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 sm:p-5 text-right shadow-2xs">
+              <ArabicQuestionStemView
+                rawArabic={q.soru_metni_ar}
+                formatAr={displayArabic}
+                blankSpec={activeBlankSpec}
+                sizeVariant="active"
+              />
             </div>
           )}
 
-          {/* ŞIKLAR: Mobilde tek sütun (grid-cols-1), masaüstünde 2 sütun (md:grid-cols-2), min-h-[48px] */}
+          {/* ŞIKLAR: Mobilde tek sütun (grid-cols-1), masaüstünde 2 sütun (md:grid-cols-2), min-h-[52px] */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {currentRecord.preparedOptions.map((opt) => {
               const isArOpt = q.secenek_dili === "ar";
               const isSelected =
                 currentRecord.selectedDisplayHarf === opt.displayHarf;
               const isRightOpt = opt.origHarf === q.dogru_secenek;
+              const isOptionLocked =
+                sessionMode !== "exam" && currentRecord.answered;
 
               let btnStyle =
                 "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]";
@@ -2577,7 +3227,7 @@ function SeviyeTespitContent() {
                   }
                 } else if (isSelected) {
                   btnStyle =
-                    "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-200";
+                    "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff] ring-2 ring-[#6741D9]/25";
                 }
               }
 
@@ -2585,7 +3235,7 @@ function SeviyeTespitContent() {
                 <button
                   key={opt.displayHarf}
                   type="button"
-                  disabled={currentRecord.answered}
+                  disabled={isOptionLocked}
                   onClick={() => handleAnswerOrSkip(opt, false)}
                   className={`min-h-[52px] px-3.5 py-2.5 rounded-2xl border-2 border-b-3 transition-all flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default ${btnStyle}`}
                 >
@@ -2596,11 +3246,11 @@ function SeviyeTespitContent() {
                   <span
                     dir={isArOpt ? "rtl" : "ltr"}
                     lang={isArOpt ? "ar" : "tr"}
-                    className={
+                    className={`[unicode-bidi:isolate] ${
                       isArOpt
                         ? "arabic font-arabic text-xl sm:text-2xl font-bold leading-[1.85] text-right flex-1"
                         : "text-xs sm:text-sm font-bold leading-snug text-left flex-1"
-                    }
+                    }`}
                   >
                     {isArOpt ? displayArabic(opt.metin) : opt.metin}
                   </span>
@@ -2624,52 +3274,73 @@ function SeviyeTespitContent() {
             })}
           </div>
 
-          {/* Alt Aksiyon Satırı: 🤔 Emin Değilim / Pas Geç VEYA Sonraki Soru */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            {!currentRecord.answered ? (
+          {/* ALT GEZİNME KONTROLLERİ: [← Önceki] | [Pas Geç] | [Sonraki →] | [Sınavı Bitir] */}
+          <div className="space-y-2 pt-1">
+            {!currentRecord.answered && (
               <button
                 type="button"
                 onClick={() => handleAnswerOrSkip(null, true)}
-                className="min-h-[48px] w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-amber-500 text-xs sm:text-sm font-extrabold text-[var(--muted)] hover:text-amber-800 dark:hover:text-amber-300 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="min-h-[44px] w-full px-4 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-amber-500 text-xs sm:text-sm font-extrabold text-[var(--muted)] hover:text-amber-800 dark:hover:text-amber-300 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
-                <HelpCircle size={16} />
+                <HelpCircle size={15} className="shrink-0" />
                 <span>🤔 Emin Değilim / Pas Geç (Tahmin yürütme)</span>
               </button>
-            ) : (
-              sessionMode === "topic" && (
-                <div className="w-full flex items-center justify-between gap-2">
-                  {currentIndex > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        stopAllAudio();
-                        setCurrentIndex((i) => Math.max(0, i - 1));
-                      }}
-                      className="min-h-[48px] px-3.5 py-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <ArrowLeft size={15} />
-                      <span>Önceki</span>
-                    </button>
-                  ) : (
-                    <div />
-                  )}
+            )}
 
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={!canGoPrev}
+                onClick={() => jumpToQuestionIndex(currentIndex - 1)}
+                className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-45 disabled:cursor-not-allowed text-xs sm:text-sm font-extrabold text-[var(--foreground)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <ArrowLeft size={15} className="shrink-0" />
+                <span>Önceki</span>
+              </button>
+
+              <div className="flex items-center gap-2 ml-auto">
+                {canGoNext && (
                   <button
                     type="button"
-                    onClick={() => advanceToNextOrFinish(sessionItems)}
-                    className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-emerald-900 text-xs sm:text-sm font-extrabold inline-flex items-center gap-2 cursor-pointer"
+                    onClick={() => {
+                      if (
+                        sessionMode === "cat" &&
+                        currentIndex === maxReachedIndex &&
+                        currentRecord.answered
+                      ) {
+                        advanceToNextOrFinish(sessionItems);
+                      } else {
+                        jumpToQuestionIndex(currentIndex + 1);
+                      }
+                    }}
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-emerald-900 text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <span>
-                      {currentIndex + 1 < totalCount
-                        ? "Sonraki Soruya Geç"
-                        : "Taramayı Bitir & Özeti Gör"}
-                    </span>
-                    <ArrowRight size={16} />
+                    <span>Sonraki</span>
+                    <ArrowRight size={15} className="shrink-0" />
                   </button>
-                </div>
-              )
-            )}
+                )}
+
+                {canFinishSessionNow && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      finalizeSession(sessionItems);
+                    }}
+                    className={`min-h-[44px] px-3.5 py-2 rounded-xl border-2 border-b-3 text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                      !canGoNext || answeredCountSoFar === totalCount
+                        ? "bg-[#6741D9] hover:bg-[#5432B8] border-[#3d2191] text-white"
+                        : "bg-white dark:bg-[var(--background)] border-[#6741D9]/60 text-[#6741D9] dark:text-[#d0bfff] hover:bg-[#F3F0FF] dark:hover:bg-[var(--lavender-bg)]"
+                    }`}
+                  >
+                    <Flag size={14} className="shrink-0" />
+                    <span>
+                      {sessionMode === "topic" ? "Taramayı Bitir" : "Sınavı Bitir"}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* KTT Modunda Anında Açılan Gerekçeli Çözüm ve Çeldirici Teşhis Kutusu */}
@@ -2682,7 +3353,7 @@ function SeviyeTespitContent() {
   }
 
   // ============================================================================
-  // ANA ÖLÇME, SEVİYE TESPİT VE 13 KONU TARAMA MERKEZİ SEÇİM EKRANI
+  // ANA ÖLÇME, SEVİYE TESPİT VE KONU TARAMA MERKEZİ SEÇİM EKRANI
   // ============================================================================
   return (
     <div className="max-w-6xl mx-auto space-y-4 pb-16">
@@ -2700,7 +3371,7 @@ function SeviyeTespitContent() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight">
-                Seviye Tespit, 13 Konu Tarama &amp; Kur Sınav Merkezi
+                Seviye Tespit, {uniqueTopics.length} Konu Tarama &amp; Kur Sınav Merkezi
               </h1>
               {mounted && detectedCefrLevel && (
                 <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
@@ -2738,7 +3409,7 @@ function SeviyeTespitContent() {
           },
           {
             id: "topic" as const,
-            title: "📚 2. 13 Konu Tarama Testi",
+            title: `📚 2. ${uniqueTopics.length} Konu Tarama Testi`,
             sub: "Anında Gerekçeli Çözümlü KTT",
             icon: ListChecks,
           },
@@ -2835,125 +3506,224 @@ function SeviyeTespitContent() {
         </section>
       )}
 
-      {/* MOD 2 İÇERİĞİ: 13 KONU TARAMA TESTİ (KTT) */}
+      {/* MOD 2 İÇERİĞİ: DİNAMİK KONU TARAMA TESTİ (KTT) + CEFR KUR FİLTRESİ + HIZLI ARAMA */}
       {activeTab === "topic" && (
         <section className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5">
-            <div>
-              <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
-                📚 13 Üst Konu Tarama Testi (Anında Gerekçeli Çözümlü)
-              </h2>
-              <p className="text-xs font-medium text-[var(--muted)]">
-                Her sorudan hemen sonra cümle çevirisi, odak kural ve seçtiğiniz yanlış şıkkın özel teşhisi açılır.
-              </p>
-            </div>
+          <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                  📚 {uniqueTopics.length} Üst Konu Tarama Testi (Anında Gerekçeli Çözümlü)
+                </h2>
+                <p className="text-xs font-medium text-[var(--muted)]">
+                  Her sorudan hemen sonra cümle çevirisi, odak kural ve seçtiğiniz yanlış şıkkın özel teşhisi açılır.
+                </p>
+              </div>
 
-            <div className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-1 border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setTopicQuizLength("10");
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer ${
-                  topicQuizLength === "10"
-                    ? "bg-[#087F5B] text-white"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                10 Soru (Hızlı)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setTopicQuizLength("all");
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer ${
-                  topicQuizLength === "all"
-                    ? "bg-[#6741D9] text-white"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                Tüm Sorular
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ASSESSMENT_TOPICS.map((topic) => {
-              const qCount =
-                topicActualCounts[topic.ust_konu] || topic.questionCount;
-              const stat = mounted ? topicMastery[topic.ust_konu] : undefined;
-              const masteryPct =
-                stat && stat.total > 0
-                  ? Math.round((stat.correct / stat.total) * 100)
-                  : null;
-
-              return (
-                <div
-                  key={topic.ust_konu}
-                  className="rounded-2xl border-2 border-b-4 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 flex flex-col justify-between gap-3 hover:border-[#087F5B] transition-all"
+              <div className="inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-1 border border-[#E6D7BE] dark:border-[var(--border)] shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setTopicQuizLength("10");
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer ${
+                    topicQuizLength === "10"
+                      ? "bg-[#087F5B] text-white"
+                      : "text-[var(--muted)]"
+                  }`}
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xl">{topic.icon}</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[10px] font-extrabold text-[var(--muted)]">
-                          {topic.levelRange}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-[10px] font-extrabold">
-                          {qCount} Soru
-                        </span>
-                      </div>
-                    </div>
+                  10 Soru (Hızlı)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setTopicQuizLength("all");
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer ${
+                    topicQuizLength === "all"
+                      ? "bg-[#6741D9] text-white"
+                      : "text-[var(--muted)]"
+                  }`}
+                >
+                  Tüm Sorular
+                </button>
+              </div>
+            </div>
 
-                    <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
-                      {topic.ust_konu}
-                    </h3>
-                    <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      {topic.summaryTr}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 pt-1">
-                    {/* Hakimiyet Barı */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-[var(--muted)]">Konu Hakimiyeti</span>
-                        <span className="text-[var(--foreground)] tabular-nums">
-                          {masteryPct !== null
-                            ? `%${masteryPct} (${stat?.correct}/${stat?.total})`
-                            : "Henüz çözülmedi"}
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-white dark:bg-[var(--background)] overflow-hidden border border-[#E6D7BE]/70">
-                        <div
-                          className="h-full bg-[#087F5B] rounded-full transition-all"
-                          style={{ width: `${masteryPct ?? 0}%` }}
-                        />
-                      </div>
-                    </div>
-
+            {/* CEFR Kur Filtresi (Tümü | A1 | A2 | B1 | B2) + Hızlı Konu Arama Kutusu */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+              <div
+                role="group"
+                aria-label="CEFR Kur Filtresi"
+                className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-0.5"
+              >
+                {(["ALL", "A1", "A2", "B1", "B2"] as const).map((lvl) => {
+                  const isActive = topicLevelFilter === lvl;
+                  const countForTab =
+                    lvl === "ALL"
+                      ? uniqueTopics.length
+                      : uniqueTopics.filter((t) => t.levelCounts[lvl] > 0)
+                          .length;
+                  return (
                     <button
+                      key={lvl}
                       type="button"
-                      onClick={() =>
-                        startTopicSession(topic.ust_konu, topicQuizLength)
-                      }
-                      className="w-full min-h-[42px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] hover:bg-[#087F5B] hover:text-white border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      onClick={() => {
+                        playClick();
+                        setTopicLevelFilter(lvl);
+                      }}
+                      className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all tabular-nums ${
+                        isActive
+                          ? "bg-[#087F5B] border-[#065F46] text-white"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                      }`}
                     >
-                      <Play size={13} fill="currentColor" />
-                      <span>
-                        {topicQuizLength === "10"
-                          ? `${Math.min(10, qCount)} Soruluk Tarama Başlat`
-                          : `${qCount} Sorunun Tümünü Çöz`}
-                      </span>
+                      {lvl === "ALL"
+                        ? `Tümü (${countForTab})`
+                        : `${lvl} (${countForTab})`}
                     </button>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+
+              <div className="relative flex-1 md:max-w-xs">
+                <Search
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+                />
+                <input
+                  type="text"
+                  value={topicSearchQuery}
+                  onChange={(e) => setTopicSearchQuery(e.target.value)}
+                  placeholder="Konu veya kural ara (ör. İnne, Fiil, İzâfet)..."
+                  aria-label="Konu Ara"
+                  className="w-full min-h-[38px] pl-9 pr-8 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] focus:border-[#087F5B] focus:outline-none text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                />
+                {topicSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setTopicSearchQuery("");
+                    }}
+                    aria-label="Aramayı Temizle"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
+
+          {filteredTopics.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1]/70 dark:bg-[var(--surface)] p-6 text-center space-y-2.5">
+              <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                Seçili kur veya arama kriterine uygun konu bulunamadı.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setTopicLevelFilter("ALL");
+                  setTopicSearchQuery("");
+                }}
+                className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
+              >
+                Filtreleri Sıfırla
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredTopics.map((topic) => {
+                const qCount =
+                  topicActualCounts[topic.ust_konu] || topic.questionCount;
+                const levelSpecificCount =
+                  topicLevelFilter !== "ALL"
+                    ? topic.levelCounts[topicLevelFilter]
+                    : null;
+                const stat = mounted ? topicMastery[topic.ust_konu] : undefined;
+                const masteryPct =
+                  stat && stat.total > 0
+                    ? Math.round((stat.correct / stat.total) * 100)
+                    : null;
+
+                return (
+                  <div
+                    key={topic.ust_konu}
+                    className="rounded-2xl border-2 border-b-4 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 flex flex-col justify-between gap-3 hover:border-[#087F5B] transition-all"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xl">{topic.icon}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[10px] font-extrabold text-[var(--muted)]">
+                            {topic.levelRange}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-[10px] font-extrabold tabular-nums">
+                            {levelSpecificCount !== null
+                              ? `${topicLevelFilter}: ${levelSpecificCount} / ${qCount} Soru`
+                              : `${qCount} Soru`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
+                        {topic.ust_konu}
+                      </h3>
+                      <p className="text-xs text-[var(--muted)] leading-relaxed">
+                        {topic.summaryTr}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      {/* Hakimiyet Barı */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-[var(--muted)]">
+                            Konu Hakimiyeti
+                          </span>
+                          <span className="text-[var(--foreground)] tabular-nums">
+                            {masteryPct !== null
+                              ? `%${masteryPct} (${stat?.correct}/${stat?.total})`
+                              : "Henüz çözülmedi"}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-white dark:bg-[var(--background)] overflow-hidden border border-[#E6D7BE]/70">
+                          <div
+                            className="h-full bg-[#087F5B] rounded-full transition-all"
+                            style={{ width: `${masteryPct ?? 0}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startTopicSession(
+                            topic.ust_konu,
+                            topicQuizLength,
+                            bank,
+                            topicLevelFilter
+                          )
+                        }
+                        className="w-full min-h-[44px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] hover:bg-[#087F5B] hover:text-white border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Play size={13} fill="currentColor" />
+                        <span>
+                          {topicQuizLength === "10"
+                            ? `${Math.min(10, qCount)} Soruluk Tarama Başlat`
+                            : `${qCount} Sorunun Tümünü Çöz`}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
@@ -3013,6 +3783,7 @@ function SeviyeTespitContent() {
       {printModalOpen && (
         <AssessmentPrintModal
           bank={bank}
+          topics={uniqueTopics}
           onClose={() => setPrintModalOpen(false)}
         />
       )}

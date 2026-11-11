@@ -1705,3 +1705,107 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
   );
 });
 
+test("19. SEVİYE TESPİT İYİLEŞTİRMELERİ — Çok Satırlı Diyalog Konuşmacı Ayrıştırması & RTL Noktalama, Soru Navigatörü, Tam Gerekçeli Çözüm & 2x2 İnceleme Şıkları ve Dinamik Konu/Kur Filtreleme", async () => {
+  const {
+    splitArabicDialogueLines,
+    buildDynamicAssessmentTopics,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
+  );
+
+  // 1. Çok satırlı diyalog soruları konuşmacı + replik olarak bölünmeli ve "د." kısaltması RLM (\u200F) ile izole edilmeli
+  const multiLineSample =
+    "د. حَسَنٌ: مَا رَأْيُكَ فِي الْخُطَّةِ؟\nد. طَارِقٌ: هِيَ ______ جِدًّا.";
+  const splitMulti = splitArabicDialogueLines(multiLineSample);
+  assert.equal(splitMulti.length, 2, "Çok satırlı diyalog 2 ayrı konuşmacı satırına bölünmelidir");
+  assert.equal(splitMulti[0].isDialogueLine, true);
+  assert.equal(splitMulti[0].speaker, "د.\u200F حَسَنٌ");
+  assert.equal(splitMulti[0].utterance, "مَا رَأْيُكَ فِي الْخُطَّةِ؟");
+  assert.equal(splitMulti[1].isDialogueLine, true);
+  assert.equal(splitMulti[1].speaker, "د.\u200F طَارِقٌ");
+  assert.equal(splitMulti[1].utterance, "هِيَ ______ جِدًّا.");
+
+  // Tek satırlı düz cümlede iki nokta bulunsa bile ("قَالَ الْمُدِيرُ: ...") diyalog konuşmacısı olarak bölünmemeli
+  const singleLineColon = "قَالَ الْمُدِيرُ: ______ مُجْتَهِدَانِ.";
+  const splitSingle = splitArabicDialogueLines(singleLineColon);
+  assert.equal(splitSingle.length, 1);
+  assert.equal(splitSingle[0].isDialogueLine, false);
+  assert.equal(splitSingle[0].speaker, null);
+
+  // 2. Dinamik Konu Keşfi: JSON'a yeni bir ust_konu eklendiğinde kod değişikliği gerektirmeden otomatik tanınmalı
+  const { parsed: bank } = readDataJson("seviye_tespit_sorulari.json");
+  const baseDynamicTopics = buildDynamicAssessmentTopics(bank);
+  assert.equal(baseDynamicTopics.length, 13);
+
+  const extendedBank = [
+    ...bank,
+    {
+      ...bank[0],
+      id: "sts_b2_dynamic_test_001",
+      seviye: "B2",
+      ust_konu: "Belâgat ve Üslup Analizi",
+    },
+  ];
+  const extendedTopics = buildDynamicAssessmentTopics(extendedBank);
+  assert.equal(
+    extendedTopics.length,
+    14,
+    "Yeni ust_konu eklendiğinde dinamik konu listesi otomatik olarak 14 konuya çıkmalıdır"
+  );
+  const addedTopic = extendedTopics.find(
+    (t) => t.ust_konu === "Belâgat ve Üslup Analizi"
+  );
+  assert.ok(addedTopic, "Yeni eklenen ust_konu dinamik listede bulunmalıdır");
+  assert.equal(addedTopic.levelCounts.B2, 1);
+  assert.equal(addedTopic.questionCount, 1);
+
+  // 3. seviye-tespit/page.tsx: Soru Navigatörü, Önceki/Sonraki/Bitir, Gerekçeli Çözüm başlığı, 2x2 şık incelemesi, A4 çok satırlı diyalog ve CEFR filtresi
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    seviyeCode.includes("Soru Navigatörü") &&
+      seviyeCode.includes("scrollIntoView") &&
+      seviyeCode.includes("Önceki") &&
+      seviyeCode.includes("Sonraki"),
+    true,
+    "seviye-tespit/page.tsx içinde Soru Navigatörü, scrollIntoView ve Önceki/Sonraki kontrolleri bulunmalıdır"
+  );
+  assert.equal(
+    seviyeCode.includes(".q-arabic-line + .q-arabic-line") &&
+      seviyeCode.includes("[unicode-bidi:isolate]"),
+    true,
+    "seviye-tespit/page.tsx hem ekranda hem A4 çıktısında çok satırlı konuşmacı ve unicode-bidi:isolate koruması içermelidir"
+  );
+  assert.equal(
+    seviyeCode.includes("Doğru:") &&
+      seviyeCode.includes("Seçiminiz:") &&
+      !seviyeCode.includes("💡 Gerekçeli"),
+    true,
+    "DetailedSolutionBox çift ampul içermemeli; Doğru ve Seçiminiz alanlarını eksiksiz göstermelidir"
+  );
+  assert.equal(
+    seviyeCode.includes('aria-label="CEFR Kur Filtresi"') &&
+      seviyeCode.includes("Konu veya kural ara"),
+    true,
+    "Konu Tarama sekmesinde CEFR Kur Filtresi ve Konu Arama Kutusu bulunmalıdır"
+  );
+
+  // 4. Sabit "13 Konu" ifadesi arayüz dosyalarından tamamen kaldırılmış olmalı
+  for (const rel of [
+    ["src", "app", "page.tsx"],
+    ["src", "app", "alistirmalar", "page.tsx"],
+    ["src", "components", "layout", "Header.tsx"],
+    ["src", "app", "seviye-tespit", "page.tsx"],
+  ]) {
+    const uiCode = fs.readFileSync(path.join(ROOT_DIR, ...rel), "utf8");
+    assert.equal(
+      uiCode.includes("13 Konu"),
+      false,
+      `${rel.join("/")} içinde sabit '13 Konu' ifadesi bulunmamalıdır`
+    );
+  }
+});
+
+

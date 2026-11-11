@@ -9,7 +9,9 @@ const SmartboardOverlay = dynamic(
 );
 
 export default function SmartboardMount() {
-  const isOpen = useClassroomToolsStore((s) => s.isOpen);
-  if (!isOpen) return null;
+  const shouldMount = useClassroomToolsStore(
+    (s) => s.isOpen || s.timerOpen || s.pickerOpen || s.curtainOpen
+  );
+  if (!shouldMount) return null;
   return <SmartboardOverlay />;
 }

@@ -79,20 +79,18 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
   closeToolbar: () =>
     set({
       isOpen: false,
+      isCollapsed: false,
       activeTool: "navigate",
       curtainOpen: false,
-      pickerOpen: false,
-      timerOpen: false,
     }),
   toggleToolbar: () =>
     set((state) =>
       state.isOpen
         ? {
             isOpen: false,
+            isCollapsed: false,
             activeTool: "navigate",
             curtainOpen: false,
-            pickerOpen: false,
-            timerOpen: false,
           }
         : {
             isOpen: true,
@@ -106,15 +104,15 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
   setPenWidth: (width) => set({ penWidth: width }),
   setDockZone: (zone) => set({ dockZone: zone }),
   toggleCurtain: () =>
-    set((state) => ({ isOpen: true, curtainOpen: !state.curtainOpen })),
+    set((state) => ({ curtainOpen: !state.curtainOpen })),
   setCurtainOpen: (open) => set({ curtainOpen: open }),
   setCurtainRatio: (ratio) =>
     set({ curtainRatio: Math.min(0.92, Math.max(0.08, ratio)) }),
   setCurtainAxis: (axis) => set({ curtainAxis: axis }),
   setPickerOpen: (open) => set({ pickerOpen: open }),
   togglePicker: () =>
-    set((state) => ({ isOpen: true, pickerOpen: !state.pickerOpen })),
+    set((state) => ({ pickerOpen: !state.pickerOpen })),
   setTimerOpen: (open) => set({ timerOpen: open }),
   toggleTimer: () =>
-    set((state) => ({ isOpen: true, timerOpen: !state.timerOpen })),
+    set((state) => ({ timerOpen: !state.timerOpen })),
 }));

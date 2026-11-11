@@ -1833,13 +1833,14 @@ test("20. ÜST BAR SIFIR ÇAKIŞMA & MUALLİMUN ARAPÇA MARKASI, EXCALIDRAW SINI
       !headerCode.includes("Arapça Telaffuz & Diyalog") &&
       headerCode.includes("data-tooltip={item.tooltip}") &&
       headerCode.includes('tooltip: "Ana Sayfa"') &&
-      headerCode.includes('tooltip: "İnteraktif Kök Sözlüğü"') &&
-      headerCode.includes('tooltip: "Uygulama Ayarları"') &&
+      headerCode.includes('tooltip: "İnteraktif Sözlük"') &&
+      headerCode.includes('tooltip: "Ayarlar"') &&
       headerCode.includes('data-tooltip="Arapça Font ve Yazı Boyutu"') &&
       headerCode.includes('data-tooltip="Tahta Çizim ve Sınıf Araçları"') &&
+      headerCode.includes('data-tooltip="Ders Sayacı ve Sınıf Kurası"') &&
       headerCode.includes('data-tooltip="Diğer Araçlar ve Yardım"'),
     true,
-    "Header.tsx Muallimun Arapça başlığına, ikon+etiket karma orta menüye ve 4 kompakt sağ araç ikonuna sahip olmalıdır"
+    "Header.tsx Muallimun Arapça başlığına, metinsiz büyük ikonlu orta menüye ve sağ araç ikonlarına sahip olmalıdır"
   );
   assert.equal(
     mobileNavCode.includes('href: "/seviye-tespit"') &&
@@ -1977,9 +1978,9 @@ test("20. ÜST BAR SIFIR ÇAKIŞMA & MUALLİMUN ARAPÇA MARKASI, EXCALIDRAW SINI
       smartboardCode.includes("z-[90]") &&
       smartboardCode.includes("stopPropagation") &&
       smartboardCode.includes("w-[38px] h-[38px]") &&
-      smartboardCode.includes("w-[46px] h-[46px]"),
+      smartboardCode.includes("w-[48px] h-[48px]"),
     true,
-    "SmartboardOverlay z-[80]/z-[90] katman izolasyonuna, 38x38 metinsiz İkon Dock butonlarına ve 46x46 küçültülmüş rozete sahip olmalıdır"
+    "SmartboardOverlay z-[80]/z-[90] katman izolasyonuna, 38x38 metinsiz İkon Dock butonlarına ve 48x48 küçültülmüş kalem ikonuna sahip olmalıdır"
   );
 
   // 3. Uygulama genelinde gereksiz 'YENİ' / '✨ Yeni' rozetleri temizlenmiş olmalı
@@ -2009,6 +2010,195 @@ test("20. ÜST BAR SIFIR ÇAKIŞMA & MUALLİMUN ARAPÇA MARKASI, EXCALIDRAW SINI
     "Ana sayfadaki 60 Okuma Metni kartı 'A1-B2' seviye etiketi taşımalıdır"
   );
 });
+
+test("21. BÜYÜK İKONLU METİNSİZ ÜST BAR, BAĞIMSIZ SAYAÇ & KURA, AKILLI TAHTA TEK/ÇİFT SIRA + EKRAN SINIR KİLİDİ + 48x48 KALEM İKONU VE ORTALANMIŞ ALIŞTIRMA KARTLARI", async () => {
+  // 1. GÖREV 1: Header.tsx tamamı metinsiz 6 büyük ikon (w-11 h-11, size={22}), lg:w-10 lg:h-10 sağ butonlar ve doğrudan Sayaç & Kura erişimi
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  for (const tip of [
+    'tooltip: "Ana Sayfa"',
+    'tooltip: "Eğitim Kütüphanesi"',
+    'tooltip: "Alıştırmalar ve Oyunlar"',
+    'tooltip: "Sınav ve Konu Tarama"',
+    'tooltip: "İnteraktif Sözlük"',
+    'tooltip: "Ayarlar"',
+  ]) {
+    assert.equal(
+      headerCode.includes(tip),
+      true,
+      `Header.tsx 6 ana navigasyon ikonunda ${tip} bulunmalıdır`
+    );
+  }
+  assert.equal(
+    headerCode.includes("w-11 h-11 rounded-xl") &&
+      headerCode.includes("size={22}") &&
+      headerCode.includes("strokeWidth={isActive ? 2.5 : 2.1}") &&
+      !headerCode.includes("<span>{item.label}</span>"),
+    true,
+    "Header.tsx orta navigasyonu tamamen metinsiz, w-11 h-11 ve size={22} büyük ikonlardan oluşmalıdır"
+  );
+  assert.equal(
+    headerCode.includes("lg:w-10 lg:h-10") &&
+      headerCode.includes('data-tooltip="Ders Sayacı ve Sınıf Kurası"') &&
+      headerCode.includes("Kronometre &amp; Geri Sayım") &&
+      headerCode.includes("Sınıf Kura Çarkı"),
+    true,
+    "Header.tsx sağ araç grubu lg:w-10 lg:h-10 boyutunda olmalı, Sayaç & Kura hızlı butonunu ve ⋯ menüsünün en üstündeki Kronometre/Kura satırlarını içermelidir"
+  );
+
+  // 2. GÖREV 1 & 2.4: Bağımsız Sayaç & Kura Store + SmartboardMount davranışı (çizim aracı kapalıyken çalışabilme)
+  const { useClassroomToolsStore } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "store", "classroomToolsStore.ts")
+    ).href
+  );
+  // Başlangıç durumuna sıfırla
+  useClassroomToolsStore.setState({
+    isOpen: false,
+    isCollapsed: false,
+    timerOpen: false,
+    pickerOpen: false,
+    curtainOpen: false,
+  });
+  useClassroomToolsStore.getState().toggleTimer();
+  assert.equal(
+    useClassroomToolsStore.getState().timerOpen === true &&
+      useClassroomToolsStore.getState().isOpen === false,
+    true,
+    "toggleTimer() çizim çubuğunu (isOpen) açmaya zorlamadan bağımsız Kronometre penceresini açmalıdır"
+  );
+  useClassroomToolsStore.getState().togglePicker();
+  assert.equal(
+    useClassroomToolsStore.getState().pickerOpen === true &&
+      useClassroomToolsStore.getState().isOpen === false,
+    true,
+    "togglePicker() çizim çubuğunu (isOpen) açmaya zorlamadan bağımsız Sınıf Kura Çarkını açmalıdır"
+  );
+  // Çizim çubuğu açılıp kapatılsa bile bağımsız açık olan Sayaç kapanmamalı
+  useClassroomToolsStore.getState().openToolbar("pen");
+  useClassroomToolsStore.getState().closeToolbar();
+  assert.equal(
+    useClassroomToolsStore.getState().isOpen === false &&
+      useClassroomToolsStore.getState().timerOpen === true,
+    true,
+    "Çizim çubuğu kapatıldığında bağımsız çalışan Ders Sayacı kapanmamalıdır"
+  );
+  useClassroomToolsStore.setState({
+    isOpen: false,
+    timerOpen: false,
+    pickerOpen: false,
+  });
+
+  const mountCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "classroom",
+      "SmartboardMount.tsx"
+    ),
+    "utf8"
+  );
+  assert.equal(
+    mountCode.includes("s.isOpen || s.timerOpen || s.pickerOpen || s.curtainOpen"),
+    true,
+    "SmartboardMount çizim aracı kapalı olsa bile Sayaç veya Kura açıldığında bileşeni yüklemelidir"
+  );
+
+  // 3. GÖREV 2 & 4: SmartboardOverlay üst kontrol yerleşimi, 1x/2x Çift Sıra, ResizeObserver sınır kilidi (1280x720, 1366x768, 1536x864, 360x800) ve 48x48 yuvarlak Kalem İkonu
+  const { clampBoxToViewport } = await import(
+    pathToFileURL(
+      path.join(
+        ROOT_DIR,
+        "src",
+        "components",
+        "classroom",
+        "SmartboardOverlay.tsx"
+      )
+    ).href
+  );
+
+  for (const [vw, vh] of [
+    [1280, 720],
+    [1366, 768],
+    [1536, 864],
+    [360, 800],
+  ]) {
+    // Negatif taşma -> (8, 8)
+    const topLeftClamp = clampBoxToViewport(-50, -30, 96, 440, vw, vh);
+    assert.deepEqual(topLeftClamp, { x: 8, y: 8 });
+    // Sağ/alt taşma -> [vw - w - 8, vh - h - 8]
+    const bottomRightClamp = clampBoxToViewport(9999, 9999, 96, 440, vw, vh);
+    assert.deepEqual(bottomRightClamp, {
+      x: vw - 96 - 8,
+      y: vh - 440 - 8,
+    });
+  }
+
+  const smartboardCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "classroom",
+      "SmartboardOverlay.tsx"
+    ),
+    "utf8"
+  );
+
+  // Kontrol butonları (Küçült, Tek/Çift Sıra, Kapat) çizim araçlarından (Gezin / Tıklama Modu) ÖNCE yer almalı
+  const minimizeIdx = smartboardCode.indexOf(
+    'data-tooltip="Sadece Kalem İkonuna Küçült"'
+  );
+  const rowToggleIdx = smartboardCode.indexOf(
+    'data-tooltip="Tek Sıra / Çift Sıra Görünüm"'
+  );
+  const closeIdx = smartboardCode.indexOf(
+    'data-tooltip="Tahta Araçlarını Kapat"'
+  );
+  const firstToolIdx = smartboardCode.indexOf('tooltip: "Gezin / Tıklama Modu"');
+  assert.equal(
+    minimizeIdx > 0 &&
+      rowToggleIdx > 0 &&
+      closeIdx > 0 &&
+      firstToolIdx > closeIdx,
+    true,
+    "SmartboardOverlay içinde Küçült, Tek/Çift Sıra ve Kapat butonları listenin en üstünde/başında yer almalıdır"
+  );
+
+  assert.equal(
+    smartboardCode.includes("new ResizeObserver") &&
+      smartboardCode.includes("grid-cols-2 gap-1.5") &&
+      smartboardCode.includes("w-[48px] h-[48px] rounded-full") &&
+      smartboardCode.includes(
+        'data-tooltip="Çizim Araçlarını Aç (Taşımak için sürükleyin)"'
+      ) &&
+      smartboardCode.includes("⏳ Geri Sayım") &&
+      smartboardCode.includes("⏱️ Kronometre") &&
+      smartboardCode.includes('{ sec: 600, label: "10 dk" }'),
+    true,
+    "SmartboardOverlay ResizeObserver kilidine, Çift Sıra (grid-cols-2) düzenine, 48x48 yuvarlak Kalem ikonuna ve 10 dk dahil çift sekmeli sürüklenebilir Sayaca sahip olmalıdır"
+  );
+
+  // 4. GÖREV 3: Alıştırmalar sayfasında son satır kartlarının ortalanması (flex flex-wrap justify-center gap-3.5)
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    alistirmalarCode.includes(
+      "flex flex-wrap justify-center items-stretch gap-3.5"
+    ) &&
+      alistirmalarCode.includes(
+        "w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)]"
+      ),
+    true,
+    "Alıştırmalar sayfasındaki modül kartları flex-wrap justify-center gap-3.5 ile son satırı simetrik ortalamalıdır"
+  );
+});
+
 
 
 

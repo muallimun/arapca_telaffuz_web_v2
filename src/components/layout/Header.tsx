@@ -33,6 +33,8 @@ import {
   BookMarked,
   Compass,
   PenTool,
+  Timer,
+  Dices,
   MoreHorizontal,
   Lightbulb,
   AudioLines,
@@ -88,8 +90,15 @@ export default function Header() {
     micNoiseSuppression,
     toggleMicNoiseSuppression,
   } = useSettings();
-  const { isOpen: smartboardOpen, toggleToolbar: toggleSmartboardToolbar } =
-    useClassroomToolsStore();
+  const {
+    isOpen: smartboardOpen,
+    timerOpen,
+    pickerOpen,
+    toggleToolbar: toggleSmartboardToolbar,
+    toggleTimer,
+    setTimerOpen,
+    setPickerOpen,
+  } = useClassroomToolsStore();
   const { isInstallable, isInstalled, isIOS, installApp } = usePwaInstall();
 
   const mounted = useSyncExternalStore(
@@ -373,44 +382,38 @@ export default function Header() {
     {
       href: "/",
       label: "Ana Sayfa",
-      iconOnly: true,
       Icon: Home,
       tooltip: "Ana Sayfa",
     },
     {
       href: "/kutuphane",
-      label: "Kütüphane",
-      iconOnly: false,
+      label: "Eğitim Kütüphanesi",
       Icon: BookOpen,
       tooltip: "Eğitim Kütüphanesi",
     },
     {
       href: "/alistirmalar",
-      label: "Alıştırmalar",
-      iconOnly: false,
+      label: "Alıştırmalar ve Oyunlar",
       Icon: Gamepad2,
-      tooltip: "İnteraktif Alıştırma ve Oyun Merkezi",
+      tooltip: "Alıştırmalar ve Oyunlar",
     },
     {
       href: "/seviye-tespit",
-      label: "Sınav",
-      iconOnly: false,
+      label: "Sınav ve Konu Tarama",
       Icon: Compass,
-      tooltip: "Seviye Tespit ve Konu Tarama Sınavları",
+      tooltip: "Sınav ve Konu Tarama",
     },
     {
       href: "/sozluk",
-      label: "Sözlük",
-      iconOnly: true,
+      label: "İnteraktif Sözlük",
       Icon: BookMarked,
-      tooltip: "İnteraktif Kök Sözlüğü",
+      tooltip: "İnteraktif Sözlük",
     },
     {
       href: "/ayarlar",
       label: "Ayarlar",
-      iconOnly: true,
       Icon: Settings,
-      tooltip: "Uygulama Ayarları",
+      tooltip: "Ayarlar",
     },
   ];
 
@@ -430,8 +433,8 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 print:hidden w-full h-12 py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
-        <div className="w-full max-w-7xl mx-auto px-2 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-2 lg:gap-4 min-w-0 overflow-visible">
+      <header className="fixed top-0 left-0 right-0 z-40 print:hidden w-full h-12 lg:h-14 py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
+        <div className="w-full max-w-7xl mx-auto px-1.5 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-4 min-w-0 overflow-visible">
           {/* =============================================================== */}
           {/* 1. BÖLGE (SOL): Logo + Muallimun Arapça (Sıfır Çakışma)         */}
           {/* =============================================================== */}
@@ -439,31 +442,31 @@ export default function Header() {
             <Link
               href="/"
               onClick={() => playClick()}
-              className="flex items-center gap-1.5 sm:gap-2 group shrink-0"
+              className="flex items-center gap-1 sm:gap-2 group shrink-0"
               data-tooltip="Muallimun Arapça — Ana Sayfa"
               data-tooltip-pos="bottom"
               data-tooltip-align="left"
               aria-label="Muallimun Arapça Ana Sayfa"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center shrink-0 group-active:translate-y-0.5 transition-transform p-0.5">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center shrink-0 group-active:translate-y-0.5 transition-transform p-0.5">
                 <img
                   src="/icons/android-chrome-192x192.png"
                   alt="Muallimun Arapça Logo"
-                  className="w-6 h-6 object-contain rounded-lg"
+                  className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-lg"
                 />
               </div>
-              <span className="text-[13px] sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] whitespace-nowrap shrink-0 leading-none">
+              <span className="text-[12px] sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] whitespace-nowrap shrink-0 leading-none">
                 Muallimun Arapça
               </span>
             </Link>
           </div>
 
           {/* =============================================================== */}
-          {/* 2. BÖLGE (ORTA): Kompakt Masaüstü Navigasyon (6 Öğe + Tooltip)  */}
+          {/* 2. BÖLGE (ORTA): Tamamı Metinsiz Büyük Masaüstü İkon Navigasyonu*/}
           {/* =============================================================== */}
           <nav
             aria-label="Ana Navigasyon"
-            className="hidden lg:flex items-center justify-center gap-1 bg-slate-200/55 dark:bg-slate-800/65 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700/60 shrink-0 overflow-visible"
+            className="hidden lg:flex items-center justify-center gap-1.5 bg-slate-200/55 dark:bg-slate-800/65 p-1 rounded-2xl border border-slate-300/60 dark:border-slate-700/60 shrink-0 overflow-visible"
           >
             {navLinks.map((item) => {
               const isActive =
@@ -472,30 +475,13 @@ export default function Header() {
                   : pathname.startsWith(item.href);
               const NavIcon = item.Icon;
 
-              if (item.iconOnly) {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-label={item.label}
-                    data-tooltip={item.tooltip}
-                    data-tooltip-pos="bottom"
-                    onClick={() => playClick()}
-                    className={
-                      isActive
-                        ? "w-9 h-9 rounded-lg font-bold bg-[#087F5B] text-white shadow-xs flex items-center justify-center transition-all shrink-0"
-                        : "w-9 h-9 rounded-lg font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/85 dark:hover:bg-slate-700/70 hover:text-[#065F46] dark:hover:text-emerald-300 transition-all flex items-center justify-center shrink-0"
-                    }
-                  >
-                    <NavIcon size={17} strokeWidth={2.2} className="shrink-0" />
-                  </Link>
-                );
-              }
-
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-label={item.label}
+                  data-tooltip={item.tooltip}
+                  data-tooltip-pos="bottom"
                   onClick={() => {
                     playClick();
                     if (
@@ -507,26 +493,27 @@ export default function Header() {
                       );
                     }
                   }}
-                  data-tooltip={item.tooltip}
-                  data-tooltip-pos="bottom"
                   className={
                     isActive
-                      ? "h-9 px-3 text-[13px] rounded-lg font-bold bg-[#087F5B] text-white shadow-xs flex items-center gap-1.5 whitespace-nowrap transition-all shrink-0"
-                      : "h-9 px-3 text-[13px] rounded-lg font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/85 dark:hover:bg-slate-700/70 hover:text-[#065F46] dark:hover:text-emerald-300 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                      ? "w-11 h-11 rounded-xl bg-[#087F5B] text-white shadow-xs ring-2 ring-[#087F5B]/25 flex items-center justify-center transition-all shrink-0"
+                      : "w-11 h-11 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-white/90 dark:hover:bg-slate-700/75 hover:text-[#065F46] dark:hover:text-emerald-300 transition-all flex items-center justify-center shrink-0"
                   }
                 >
-                  <NavIcon size={15} strokeWidth={2.2} className="shrink-0" />
-                  <span>{item.label}</span>
+                  <NavIcon
+                    size={22}
+                    strokeWidth={isActive ? 2.5 : 2.1}
+                    className="shrink-0"
+                  />
                 </Link>
               );
             })}
           </nav>
 
           {/* =============================================================== */}
-          {/* 3. BÖLGE (SAĞ): 4 Kompakt İkon Butonu (Hareke, Font, Tahta, ⋯) */}
+          {/* 3. BÖLGE (SAĞ): Hızlı Araç İkonları (Hareke, Font, Tahta, Sayaç, ⋯) */}
           {/* =============================================================== */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-visible">
-            {/* 1) Hareke Modu İkon Butonu (w-9 h-9 + küçük durum göstergesi) */}
+            {/* 1) Hareke Modu İkon Butonu */}
             <button
               type="button"
               onClick={() => {
@@ -536,7 +523,7 @@ export default function Header() {
               data-tooltip={harekeTooltipText}
               data-tooltip-pos="bottom"
               aria-label={harekeTooltipText}
-              className={`relative w-9 h-9 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`relative w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 activeHarekeMode === "full"
                   ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                   : activeHarekeMode === "irab-only"
@@ -544,7 +531,11 @@ export default function Header() {
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
               }`}
             >
-              <Sparkles size={16} strokeWidth={2.2} className="shrink-0" />
+              <Sparkles
+                size={20}
+                strokeWidth={2.2}
+                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+              />
               <span
                 aria-hidden="true"
                 className={`absolute bottom-1 right-1 w-2 h-2 rounded-full border border-white dark:border-slate-900 ${
@@ -557,7 +548,7 @@ export default function Header() {
               />
             </button>
 
-            {/* 2) Yazı Tipi & Boyutu (Type İkonu, w-9 h-9) */}
+            {/* 2) Yazı Tipi & Boyutu (Type İkonu) */}
             <div className="relative shrink-0 overflow-visible" ref={fontMenuRef}>
               <button
                 type="button"
@@ -570,13 +561,17 @@ export default function Header() {
                 data-tooltip-pos="bottom"
                 aria-label="Arapça Font ve Yazı Boyutu"
                 aria-expanded={fontMenuOpen}
-                className={`w-9 h-9 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                   fontMenuOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
                 }`}
               >
-                <Type size={16} strokeWidth={2.3} />
+                <Type
+                  size={20}
+                  strokeWidth={2.3}
+                  className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                />
               </button>
 
               {fontMenuOpen && (
@@ -700,7 +695,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* 3) Tahta Çizim Aracı (PenTool İkonu, w-9 h-9) */}
+            {/* 3) Tahta Çizim Aracı (PenTool İkonu) */}
             <button
               type="button"
               onClick={() => {
@@ -713,16 +708,46 @@ export default function Header() {
               data-tooltip-pos="bottom"
               aria-label="Tahta Çizim ve Sınıf Araçları"
               aria-pressed={smartboardOpen}
-              className={`w-9 h-9 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 smartboardOpen
                   ? "bg-[#087F5B] border-[#065F46] text-white"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
               }`}
             >
-              <PenTool size={16} strokeWidth={2.2} />
+              <PenTool
+                size={20}
+                strokeWidth={2.2}
+                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+              />
             </button>
 
-            {/* 4) ⋯ (MoreHorizontal — Hızlı Araçlar Açılır Menüsü, w-9 h-9) */}
+            {/* 4) Bağımsız Ders Sayacı & Sınıf Kurası Hızlı Erişim Butonu */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setFontMenuOpen(false);
+                setMoreMenuOpen(false);
+                toggleTimer();
+              }}
+              data-tooltip="Ders Sayacı ve Sınıf Kurası"
+              data-tooltip-pos="bottom"
+              aria-label="Ders Sayacı ve Sınıf Kurası"
+              aria-pressed={timerOpen || pickerOpen}
+              className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                timerOpen || pickerOpen
+                  ? "bg-[#6741D9] border-[#5230B5] text-white"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
+              }`}
+            >
+              <Timer
+                size={20}
+                strokeWidth={2.2}
+                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+              />
+            </button>
+
+            {/* 5) ⋯ (MoreHorizontal — Hızlı Araçlar Açılır Menüsü) */}
             <div className="relative shrink-0 overflow-visible" ref={moreMenuRef}>
               <button
                 type="button"
@@ -736,17 +761,21 @@ export default function Header() {
                 data-tooltip-align="right"
                 aria-label="Diğer Araçlar ve Yardım"
                 aria-expanded={moreMenuOpen}
-                className={`w-9 h-9 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                   moreMenuOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
                 }`}
               >
-                <MoreHorizontal size={17} strokeWidth={2.4} />
+                <MoreHorizontal
+                  size={20}
+                  strokeWidth={2.4}
+                  className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                />
               </button>
 
               {moreMenuOpen && (
-                <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-13 sm:top-full sm:mt-2 sm:w-80 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 border-b-4 p-3 shadow-2xl z-50 space-y-2 max-h-[84dvh] overflow-y-auto">
+                <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-13 lg:top-15 sm:top-full sm:mt-2 sm:w-80 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 border-b-4 p-3 shadow-2xl z-50 space-y-2 max-h-[84dvh] overflow-y-auto">
                   <div className="flex items-center justify-between pb-1.5 border-b border-[#E6D7BE]/80 dark:border-slate-800">
                     <span className="text-xs font-extrabold text-[var(--foreground)]">
                       Hızlı Araçlar ve Tercihler
@@ -758,6 +787,45 @@ export default function Header() {
                       aria-label="Menüyü Kapat"
                     >
                       <X size={13} />
+                    </button>
+                  </div>
+
+                  {/* 0. EN ÜST HIZLI SINIF ARAÇLARI: Kronometre & Geri Sayım ve Sınıf Kura Çarkı */}
+                  <div className="space-y-1.5 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setMoreMenuOpen(false);
+                        setTimerOpen(true);
+                      }}
+                      className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#087F5B]/10 dark:bg-emerald-950/45 border border-[#087F5B]/40 dark:border-emerald-700/60 flex items-center justify-between text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:bg-[#087F5B]/18 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Timer size={15} className="shrink-0" />
+                        <span>Kronometre &amp; Geri Sayım</span>
+                      </span>
+                      <span className="text-[11px] font-bold">
+                        {timerOpen ? "Açık" : "Aç"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setMoreMenuOpen(false);
+                        setPickerOpen(true);
+                      }}
+                      className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/45 border border-[#6741D9]/40 dark:border-purple-700/60 flex items-center justify-between text-xs font-extrabold text-[#5230B5] dark:text-purple-300 hover:bg-[#6741D9]/15 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Dices size={15} className="shrink-0" />
+                        <span>Sınıf Kura Çarkı</span>
+                      </span>
+                      <span className="text-[11px] font-bold">
+                        {pickerOpen ? "Açık" : "Aç"}
+                      </span>
                     </button>
                   </div>
 
@@ -1001,7 +1069,7 @@ export default function Header() {
       {/* Sabit İnce Topbar İçin Görünmez Yer Tutucu (Spacer) */}
       <div
         aria-hidden="true"
-        className="h-12 w-full shrink-0 print:hidden"
+        className="h-12 lg:h-14 w-full shrink-0 print:hidden"
       />
 
       {/* iOS KURULUM REHBERİ MODALI */}

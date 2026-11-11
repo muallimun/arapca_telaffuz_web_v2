@@ -28,6 +28,8 @@ import {
   ArrowUpDown,
   Rows2,
   Columns2,
+  LayoutGrid,
+  Rows3,
   Users,
   Sparkles,
   Palette,
@@ -113,6 +115,8 @@ const PEN_WIDTH_PX: Record<PenWidthPreset, number> = {
 };
 
 const ERASER_HIT_RADIUS_PX = 14;
+const VIEWPORT_MARGIN_PX = 8;
+const DRAG_THRESHOLD_PX = 6;
 
 export interface Point2D {
   x: number;
@@ -253,7 +257,6 @@ export function isItemHitByEraser(
       return true;
     }
     if (el.kind === "arrow") {
-      // Ok ucu yakınlığı kontrolü
       const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
       const wingLen = Math.max(12, el.strokeWidth * 3);
       const leftWing: Point2D = {
@@ -324,8 +327,27 @@ export function isItemHitByEraser(
     return isNearPolygonEdges(pt, samplePts, true, tolerance);
   }
 
-  // Serbest kalem & fosforlu kalem: ardışık nokta doğru parçalarına uzaklık
   return isNearPolygonEdges(pt, el.points, false, tolerance);
+}
+
+/**
+ * Bir kutunun koordinatlarını her zaman [8px, viewport - size - 8px] aralığına kilitler.
+ */
+export function clampBoxToViewport(
+  x: number,
+  y: number,
+  boxWidth: number,
+  boxHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+  margin: number = VIEWPORT_MARGIN_PX
+): Point2D {
+  const maxX = Math.max(margin, viewportWidth - boxWidth - margin);
+  const maxY = Math.max(margin, viewportHeight - boxHeight - margin);
+  return {
+    x: Math.round(Math.min(maxX, Math.max(margin, x))),
+    y: Math.round(Math.min(maxY, Math.max(margin, y))),
+  };
 }
 
 function formatTimerClock(totalSec: number): string {
@@ -365,28 +387,60 @@ export default function SmartboardOverlay() {
   const { theme } = useSettings();
   const isDark = theme === "dark";
 
-  // Çizim elemanları + Geri Al (Undo) geçmiş yığını (çizme ve silme işlemlerinin tamamını kaydeder)
+  // Ekran boyutu takibi (Otomatik Tek Sıra / Çift Sıra ve taşma kilidi için)
+  const [viewportSize, setViewportSize] = useState<{ w: number; h: number }>(
+    () =>
+      typeof window !== "undefined"
+        ? { w: window.innerWidth, h: window.innerHeight }
+        : { w: 1280, h: 800 }
+  );
+
+  // Çizim elemanları + Geri Al (Undo) geçmiş yığını
   const [elements, setElements] = useState<DrawingElement[]>([]);
   const [undoStack, setUndoStack] = useState<DrawingElement[][]>([]);
   const [draftElement, setDraftElement] = useState<DrawingElement | null>(null);
   const isPointerDrawingRef = useRef(false);
   const hasRecordedEraseSnapshotRef = useRef(false);
 
-  // Silgi imleç halkası ve üzerine gelinen şekillerin önizlemesi
+  // Silgi imleç halkası
   const [eraserCursor, setEraserCursor] = useState<Point2D | null>(null);
 
-  // Açılır Renk & Çizgi Kalınlığı Mini Paleti + Yatay/Dikey Dock Yönü
+  // Açılır Renk & Çizgi Kalınlığı Mini Paleti + Yön + Tek/Çift Sıra Modu
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteFixedPos, setPaletteFixedPos] = useState<Point2D | null>(null);
   const [dockOrientation, setDockOrientation] = useState<
     "horizontal" | "vertical"
-  >("horizontal");
+  >("vertical");
+  // "auto": ekran < 860px ise otomatik Çift Sıra (2), büyük ekranda Tek Sıra (1); kullanıcı butondan istediği zaman değiştirebilir
+  const [rowLayoutPref, setRowLayoutPref] = useState<"auto" | 1 | 2>("auto");
+
+  const paletteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const palettePopoverRef = useRef<HTMLDivElement | null>(null);
 
-  // Serbest Sürükle-Bırak (Hem 46x46 Küçültülmüş Rozet Hem Açık İkon Dock İçin)
+  // Serbest Sürükle-Bırak (Hem 48x48 Küçültülmüş Kalem İkonu Hem Açık İkon Dock İçin)
   const [floatingPos, setFloatingPos] = useState<Point2D | null>(null);
   const dockBoxRef = useRef<HTMLDivElement | null>(null);
   const hasDraggedRef = useRef<boolean>(false);
   const dragStateRef = useRef<{
+    active: boolean;
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    originLeft: number;
+    originTop: number;
+  }>({
+    active: false,
+    pointerId: -1,
+    startClientX: 0,
+    startClientY: 0,
+    originLeft: 0,
+    originTop: 0,
+  });
+
+  // Bağımsız Sürüklenebilir Kronometre & Geri Sayım Kartı Konumu
+  const [timerPos, setTimerPos] = useState<Point2D | null>(null);
+  const timerCardRef = useRef<HTMLDivElement | null>(null);
+  const timerDragRef = useRef<{
     active: boolean;
     pointerId: number;
     startClientX: number;
@@ -459,12 +513,32 @@ export default function SmartboardOverlay() {
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const [timerFinishedFlash, setTimerFinishedFlash] = useState<boolean>(false);
 
-  // Dışarı tıklama / ESC ile renk paletini kapat & pencere odağı kaybolursa çizim kilidini temizle
+  const isVertical = dockOrientation === "vertical";
+
+  // Otomatik Tek Sıra (1) / Çift Sıra (2) Hesaplaması:
+  // Dikeyde ekran yüksekliği < 860px (veya 880px dizüstü sınırı), yatayda ekran genişliği < 880px ise otomatik Çift Sıra (2x)
+  const effectiveRows: 1 | 2 = useMemo(() => {
+    if (rowLayoutPref !== "auto") return rowLayoutPref;
+    if (isVertical) {
+      return viewportSize.h < 880 ? 2 : 1;
+    }
+    return viewportSize.w < 900 ? 2 : 1;
+  }, [rowLayoutPref, isVertical, viewportSize.h, viewportSize.w]);
+
+  const isDoubleRow = effectiveRows === 2;
+
+  // Pencere boyut değişimi, ESC ve dış tıklama dinleyicileri
   useEffect(() => {
+    const handleViewportResize = () => {
+      setViewportSize({ w: window.innerWidth, h: window.innerHeight });
+    };
     const handleDocPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
         palettePopoverRef.current &&
-        !palettePopoverRef.current.contains(e.target as Node)
+        !palettePopoverRef.current.contains(target) &&
+        paletteTriggerRef.current &&
+        !paletteTriggerRef.current.contains(target)
       ) {
         setPaletteOpen(false);
       }
@@ -478,43 +552,205 @@ export default function SmartboardOverlay() {
       isPointerDrawingRef.current = false;
       hasRecordedEraseSnapshotRef.current = false;
       dragStateRef.current.active = false;
+      timerDragRef.current.active = false;
       setDraftElement(null);
       setEraserCursor(null);
     };
+    handleViewportResize();
+    window.addEventListener("resize", handleViewportResize);
     document.addEventListener("mousedown", handleDocPointerDown);
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("blur", handleWindowBlur);
     return () => {
+      window.removeEventListener("resize", handleViewportResize);
       document.removeEventListener("mousedown", handleDocPointerDown);
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("blur", handleWindowBlur);
     };
   }, []);
 
-  // Küçültülmüş rozet açıldığında veya ekran boyutu değiştiğinde dock'u ekran sınırlarına kilitle
-  useEffect(() => {
-    if (!isOpen || !floatingPos) return;
-    const clampIntoScreen = () => {
-      const box = dockBoxRef.current;
-      if (!box) return;
-      const rect = box.getBoundingClientRect();
-      const maxX = Math.max(8, window.innerWidth - rect.width - 8);
-      const maxY = Math.max(8, window.innerHeight - rect.height - 8);
-      const clampedX = Math.min(maxX, Math.max(8, floatingPos.x));
-      const clampedY = Math.min(maxY, Math.max(8, floatingPos.y));
-      if (clampedX !== floatingPos.x || clampedY !== floatingPos.y) {
-        setFloatingPos({ x: Math.round(clampedX), y: Math.round(clampedY) });
+  // SIFIR TAŞMA KİLİDİ (ResizeObserver + window.resize):
+  // Çizim kutusu veya 48x48 kalem ikonu her boyutta [8px, innerWidth - width - 8px] x [8px, innerHeight - height - 8px] içinde kalır
+  const enforceDockInViewport = useCallback(() => {
+    const box = dockBoxRef.current;
+    if (!box || typeof window === "undefined") return;
+    const rect = box.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    setFloatingPos((prev) => {
+      if (prev) {
+        const clamped = clampBoxToViewport(
+          prev.x,
+          prev.y,
+          rect.width,
+          rect.height,
+          vw,
+          vh
+        );
+        if (clamped.x === prev.x && clamped.y === prev.y) return prev;
+        return clamped;
       }
-    };
-    const raf = requestAnimationFrame(clampIntoScreen);
-    window.addEventListener("resize", clampIntoScreen);
+      // Henüz sürüklenmemişse bile ekran sınırına taşıyorsa otomatik içeri kilitle
+      if (
+        rect.left < VIEWPORT_MARGIN_PX ||
+        rect.top < VIEWPORT_MARGIN_PX ||
+        rect.right > vw - VIEWPORT_MARGIN_PX ||
+        rect.bottom > vh - VIEWPORT_MARGIN_PX
+      ) {
+        return clampBoxToViewport(
+          rect.left,
+          rect.top,
+          rect.width,
+          rect.height,
+          vw,
+          vh
+        );
+      }
+      return null;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const raf = requestAnimationFrame(enforceDockInViewport);
+    const box = dockBoxRef.current;
+    let observer: ResizeObserver | null = null;
+    if (box && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        enforceDockInViewport();
+      });
+      observer.observe(box);
+    }
+    window.addEventListener("resize", enforceDockInViewport);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", clampIntoScreen);
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", enforceDockInViewport);
     };
-  }, [isOpen, isCollapsed, dockOrientation, floatingPos]);
+  }, [
+    isOpen,
+    isCollapsed,
+    dockOrientation,
+    effectiveRows,
+    enforceDockInViewport,
+  ]);
 
-  // Sürükleme Başlangıcı (Tutamaca veya Küçültülmüş Rozete Basıldığında)
+  // Renk & Kalınlık Popover penceresini de ekran sınırları içinde tut ([8, vw - w - 8] x [8, vh - h - 8])
+  const updatePalettePopoverPosition = useCallback(() => {
+    if (!paletteOpen || typeof window === "undefined") return;
+    const trigger = paletteTriggerRef.current;
+    const pop = palettePopoverRef.current;
+    if (!trigger) return;
+
+    const tRect = trigger.getBoundingClientRect();
+    const popW = pop ? pop.offsetWidth || 228 : 228;
+    const popH = pop ? pop.offsetHeight || 226 : 226;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let rawX = tRect.left + tRect.width / 2 - popW / 2;
+    let rawY = tRect.top - popH - 10;
+
+    if (isVertical) {
+      // Dikey çubuk ekranın sağ yarısındaysa sola, sol yarısındaysa sağa aç
+      if (tRect.left > vw * 0.5) {
+        rawX = tRect.left - popW - 10;
+      } else {
+        rawX = tRect.right + 10;
+      }
+      rawY = tRect.top + tRect.height / 2 - popH / 2;
+    } else if (tRect.top < popH + 18) {
+      rawY = tRect.bottom + 10;
+    }
+
+    setPaletteFixedPos(clampBoxToViewport(rawX, rawY, popW, popH, vw, vh));
+  }, [paletteOpen, isVertical]);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+    const raf = requestAnimationFrame(updatePalettePopoverPosition);
+    const pop = palettePopoverRef.current;
+    let observer: ResizeObserver | null = null;
+    if (pop && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => updatePalettePopoverPosition());
+      observer.observe(pop);
+    }
+    window.addEventListener("resize", updatePalettePopoverPosition);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", updatePalettePopoverPosition);
+    };
+  }, [
+    paletteOpen,
+    floatingPos,
+    dockOrientation,
+    effectiveRows,
+    updatePalettePopoverPosition,
+  ]);
+
+  // Bağımsız Kronometre Penceresi için ResizeObserver + window.resize ekran içi kilidi
+  const enforceTimerInViewport = useCallback(() => {
+    const card = timerCardRef.current;
+    if (!card || typeof window === "undefined") return;
+    const rect = card.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    setTimerPos((prev) => {
+      if (prev) {
+        const clamped = clampBoxToViewport(
+          prev.x,
+          prev.y,
+          rect.width,
+          rect.height,
+          vw,
+          vh
+        );
+        if (clamped.x === prev.x && clamped.y === prev.y) return prev;
+        return clamped;
+      }
+      if (
+        rect.left < VIEWPORT_MARGIN_PX ||
+        rect.top < VIEWPORT_MARGIN_PX ||
+        rect.right > vw - VIEWPORT_MARGIN_PX ||
+        rect.bottom > vh - VIEWPORT_MARGIN_PX
+      ) {
+        return clampBoxToViewport(
+          rect.left,
+          rect.top,
+          rect.width,
+          rect.height,
+          vw,
+          vh
+        );
+      }
+      return null;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!timerOpen) return;
+    const raf = requestAnimationFrame(enforceTimerInViewport);
+    const card = timerCardRef.current;
+    let observer: ResizeObserver | null = null;
+    if (card && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => enforceTimerInViewport());
+      observer.observe(card);
+    }
+    window.addEventListener("resize", enforceTimerInViewport);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", enforceTimerInViewport);
+    };
+  }, [timerOpen, timerMode, enforceTimerInViewport]);
+
+  // Sürükleme Başlangıcı (Tutamaca veya 48x48 Küçültülmüş Kalem İkonuna Basıldığında)
   const startDragGesture = (e: React.PointerEvent<HTMLElement>) => {
     e.stopPropagation();
     if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -539,10 +775,12 @@ export default function SmartboardOverlay() {
     const dx = e.clientX - st.startClientX;
     const dy = e.clientY - st.startClientY;
     const dist = Math.hypot(dx, dy);
-    if (!hasDraggedRef.current && dist <= 5) return;
+    // <= 6px hareket = tıklama sayılır; > 6px hareket = sürükle ve ekran sınırlarında tut
+    if (!hasDraggedRef.current && dist <= DRAG_THRESHOLD_PX) return;
 
     if (!hasDraggedRef.current) {
       hasDraggedRef.current = true;
+      setPaletteOpen(false);
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
       } catch {
@@ -552,13 +790,17 @@ export default function SmartboardOverlay() {
     e.preventDefault();
 
     const box = dockBoxRef.current;
-    const boxW = box ? box.offsetWidth : 46;
-    const boxH = box ? box.offsetHeight : 46;
-    const maxX = Math.max(8, window.innerWidth - boxW - 8);
-    const maxY = Math.max(8, window.innerHeight - boxH - 8);
-    const nextX = Math.min(maxX, Math.max(8, st.originLeft + dx));
-    const nextY = Math.min(maxY, Math.max(8, st.originTop + dy));
-    setFloatingPos({ x: Math.round(nextX), y: Math.round(nextY) });
+    const boxW = box ? box.offsetWidth : 48;
+    const boxH = box ? box.offsetHeight : 48;
+    const nextPos = clampBoxToViewport(
+      st.originLeft + dx,
+      st.originTop + dy,
+      boxW,
+      boxH,
+      window.innerWidth,
+      window.innerHeight
+    );
+    setFloatingPos(nextPos);
   };
 
   const endDragGesture = (
@@ -585,6 +827,63 @@ export default function SmartboardOverlay() {
   const cancelDragGesture = (e: React.PointerEvent<HTMLElement>) => {
     dragStateRef.current.active = false;
     hasDraggedRef.current = false;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+    e.stopPropagation();
+  };
+
+  // Bağımsız Kronometre Kartı Sürükleme İşleyicileri
+  const startTimerDrag = (e: React.PointerEvent<HTMLElement>) => {
+    e.stopPropagation();
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const card = timerCardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    timerDragRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      originLeft: rect.left,
+      originTop: rect.top,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const moveTimerDrag = (e: React.PointerEvent<HTMLElement>) => {
+    const st = timerDragRef.current;
+    if (!st.active || st.pointerId !== e.pointerId) return;
+    e.stopPropagation();
+    const dx = e.clientX - st.startClientX;
+    const dy = e.clientY - st.startClientY;
+    if (Math.hypot(dx, dy) <= 3) return;
+    e.preventDefault();
+    const card = timerCardRef.current;
+    const w = card ? card.offsetWidth : 320;
+    const h = card ? card.offsetHeight : 320;
+    setTimerPos(
+      clampBoxToViewport(
+        st.originLeft + dx,
+        st.originTop + dy,
+        w,
+        h,
+        window.innerWidth,
+        window.innerHeight
+      )
+    );
+  };
+
+  const endTimerDrag = (e: React.PointerEvent<HTMLElement>) => {
+    timerDragRef.current.active = false;
     try {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -695,8 +994,18 @@ export default function SmartboardOverlay() {
     setTimerFinishedFlash(false);
   };
 
+  const handleSwitchCountdownTab = () => {
+    playClick();
+    if (timerMode === "countdown") return;
+    setTimerMode("countdown");
+    setTimerSeconds(presetSeconds);
+    setTimerRunning(false);
+    setTimerFinishedFlash(false);
+  };
+
   const handleSwitchStopwatch = () => {
     playClick();
+    if (timerMode === "stopwatch") return;
     setTimerMode("stopwatch");
     setTimerSeconds(0);
     setTimerRunning(false);
@@ -775,7 +1084,7 @@ export default function SmartboardOverlay() {
   }, []);
 
   const handleSvgPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (isCollapsed || activeTool === "navigate") return;
+    if (!isOpen || isCollapsed || activeTool === "navigate") return;
     setPaletteOpen(false);
     e.preventDefault();
     try {
@@ -831,7 +1140,7 @@ export default function SmartboardOverlay() {
   };
 
   const handleSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (isCollapsed || activeTool === "navigate") return;
+    if (!isOpen || isCollapsed || activeTool === "navigate") return;
     const pt: Point2D = { x: e.clientX, y: e.clientY };
 
     if (activeTool === "eraser") {
@@ -953,33 +1262,32 @@ export default function SmartboardOverlay() {
   // Silgi imleci şeklin üzerindeyse hafif soluklaştırma önizlemesi
   const hoveredEraserIds = useMemo(() => {
     const ids = new Set<string>();
-    if (isCollapsed || activeTool !== "eraser" || !eraserCursor) return ids;
+    if (!isOpen || isCollapsed || activeTool !== "eraser" || !eraserCursor) {
+      return ids;
+    }
     for (const el of elements) {
       if (isItemHitByEraser(el, eraserCursor, ERASER_HIT_RADIUS_PX)) {
         ids.add(el.id);
       }
     }
     return ids;
-  }, [isCollapsed, activeTool, eraserCursor, elements]);
+  }, [isOpen, isCollapsed, activeTool, eraserCursor, elements]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !timerOpen && !pickerOpen && !curtainOpen) return null;
 
-  const isDrawingInteractive = !isCollapsed && activeTool !== "navigate";
+  const isDrawingInteractive =
+    isOpen && !isCollapsed && activeTool !== "navigate";
   const allRenderedElements = draftElement
     ? [...elements, draftElement]
     : elements;
 
-  const isVertical = dockOrientation === "vertical";
-
   // Tooltip yönü: Dock ekranın üst yarısındaysa alta, alt yarısındaysa üste; dikeyse sağa/sola açılır
   const isNearTop =
-    floatingPos !== null &&
-    typeof window !== "undefined" &&
-    floatingPos.y < 120;
+    floatingPos !== null && floatingPos.y < 120;
   const isNearRight =
-    floatingPos !== null &&
-    typeof window !== "undefined" &&
-    floatingPos.x > window.innerWidth * 0.55;
+    floatingPos === null
+      ? isVertical || isCollapsed
+      : floatingPos.x > viewportSize.w * 0.5;
 
   const dockTooltipPos: "top" | "bottom" | "left" | "right" = isVertical
     ? isNearRight
@@ -990,159 +1298,189 @@ export default function SmartboardOverlay() {
     : "top";
 
   const dockContainerClasses = floatingPos
-    ? "fixed z-[90] pointer-events-auto max-w-[calc(100vw-1rem)]"
+    ? "fixed z-[90] pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]"
     : isCollapsed
     ? "fixed bottom-20 lg:bottom-5 right-3 sm:right-5 z-[90] pointer-events-auto"
     : isVertical
-    ? "fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-[90] pointer-events-auto max-h-[calc(100dvh-5rem)]"
-    : "fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto max-w-[calc(100vw-1rem)]";
-
-  const dividerClass = isVertical
-    ? "w-6 h-px bg-stone-200 dark:bg-slate-700 my-0.5 shrink-0"
-    : "w-px h-6 bg-stone-200 dark:bg-slate-700 mx-0.5 shrink-0 hidden sm:block";
+    ? "fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-[90] pointer-events-auto max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)]"
+    : "fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]";
 
   const iconBtnBase =
     "w-[38px] h-[38px] min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0";
+
+  const handleToggleRowCount = () => {
+    playClick();
+    setPaletteOpen(false);
+    setRowLayoutPref(isDoubleRow ? 1 : 2);
+  };
+
+  const handleToggleOrientation = () => {
+    playClick();
+    setPaletteOpen(false);
+    setDockOrientation((prev) =>
+      prev === "horizontal" ? "vertical" : "horizontal"
+    );
+  };
 
   return (
     <div className="print:hidden">
       {/* =================================================================== */}
       {/* 1. DOM DOSTU BAĞIMSIZ SVG ÇİZİM VE GEOMETRİK ŞEKİL KATMANI (z-[80]) */}
       {/* =================================================================== */}
-      <svg
-        aria-label="Akıllı Tahta Çizim ve Şekil Katmanı"
-        onPointerDown={handleSvgPointerDown}
-        onPointerMove={handleSvgPointerMove}
-        onPointerUp={handleSvgPointerUp}
-        onPointerCancel={handleSvgPointerUp}
-        onPointerLeave={() => setEraserCursor(null)}
-        className={`fixed inset-0 w-screen h-screen z-[80] select-none ${
-          isDrawingInteractive
-            ? activeTool === "eraser"
-              ? "pointer-events-auto touch-none cursor-none"
-              : "pointer-events-auto touch-none cursor-crosshair"
-            : "pointer-events-none"
-        }`}
-      >
-        <defs>
-          {allRenderedElements
-            .filter((el) => el.kind === "arrow")
-            .map((el) => (
-              <marker
-                key={`arrow-marker-${el.id}`}
-                id={`sb-arrow-${el.id}`}
-                viewBox="0 0 12 12"
-                refX="9.5"
-                refY="6"
-                markerWidth="6.5"
-                markerHeight="6.5"
-                orient="auto-start-reverse"
-              >
-                <path d="M 1 1.5 L 10.5 6 L 1 10.5 z" fill={el.colorHex} />
-              </marker>
-            ))}
-        </defs>
+      {isOpen && (
+        <svg
+          aria-label="Akıllı Tahta Çizim ve Şekil Katmanı"
+          onPointerDown={handleSvgPointerDown}
+          onPointerMove={handleSvgPointerMove}
+          onPointerUp={handleSvgPointerUp}
+          onPointerCancel={handleSvgPointerUp}
+          onPointerLeave={() => setEraserCursor(null)}
+          className={`fixed inset-0 w-screen h-screen z-[80] select-none ${
+            isDrawingInteractive
+              ? activeTool === "eraser"
+                ? "pointer-events-auto touch-none cursor-none"
+                : "pointer-events-auto touch-none cursor-crosshair"
+              : "pointer-events-none"
+          }`}
+        >
+          <defs>
+            {allRenderedElements
+              .filter((el) => el.kind === "arrow")
+              .map((el) => (
+                <marker
+                  key={`arrow-marker-${el.id}`}
+                  id={`sb-arrow-${el.id}`}
+                  viewBox="0 0 12 12"
+                  refX="9.5"
+                  refY="6"
+                  markerWidth="6.5"
+                  markerHeight="6.5"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 1 1.5 L 10.5 6 L 1 10.5 z" fill={el.colorHex} />
+                </marker>
+              ))}
+          </defs>
 
-        {allRenderedElements.map((el) => {
-          const isEraserHovered = hoveredEraserIds.has(el.id);
+          {allRenderedElements.map((el) => {
+            const isEraserHovered = hoveredEraserIds.has(el.id);
 
-          if (el.points.length >= 2 && isTwoPointGeometricKind(el.kind)) {
-            const p0 = el.points[0];
-            const p1 = el.points[1];
+            if (el.points.length >= 2 && isTwoPointGeometricKind(el.kind)) {
+              const p0 = el.points[0];
+              const p1 = el.points[1];
 
-            if (el.kind === "arrow") {
+              if (el.kind === "arrow") {
+                return (
+                  <line
+                    key={el.id}
+                    x1={p0.x}
+                    y1={p0.y}
+                    x2={p1.x}
+                    y2={p1.y}
+                    stroke={el.colorHex}
+                    strokeWidth={el.strokeWidth}
+                    strokeLinecap="round"
+                    opacity={isEraserHovered ? 0.28 : 1}
+                    markerEnd={`url(#sb-arrow-${el.id})`}
+                  />
+                );
+              }
+
+              if (el.kind === "line") {
+                return (
+                  <line
+                    key={el.id}
+                    x1={p0.x}
+                    y1={p0.y}
+                    x2={p1.x}
+                    y2={p1.y}
+                    stroke={el.colorHex}
+                    strokeWidth={el.strokeWidth}
+                    strokeLinecap="round"
+                    opacity={isEraserHovered ? 0.28 : 1}
+                  />
+                );
+              }
+
+              if (el.kind === "rect" || el.kind === "square") {
+                const b =
+                  el.kind === "square"
+                    ? computeSquareBounds(p0, p1)
+                    : computeRectBounds(p0, p1);
+                return (
+                  <rect
+                    key={el.id}
+                    x={b.x}
+                    y={b.y}
+                    width={Math.max(1, b.w)}
+                    height={Math.max(1, b.h)}
+                    rx={4}
+                    fill="none"
+                    stroke={el.colorHex}
+                    strokeWidth={el.strokeWidth}
+                    strokeLinejoin="round"
+                    opacity={isEraserHovered ? 0.28 : 1}
+                  />
+                );
+              }
+
+              if (el.kind === "circle") {
+                const b = computeRectBounds(p0, p1);
+                return (
+                  <ellipse
+                    key={el.id}
+                    cx={b.x + b.w / 2}
+                    cy={b.y + b.h / 2}
+                    rx={Math.max(1, b.w / 2)}
+                    ry={Math.max(1, b.h / 2)}
+                    fill="none"
+                    stroke={el.colorHex}
+                    strokeWidth={el.strokeWidth}
+                    opacity={isEraserHovered ? 0.28 : 1}
+                  />
+                );
+              }
+
+              if (el.kind === "triangle") {
+                const b = computeRectBounds(p0, p1);
+                const ptsStr = `${(b.x + b.w / 2).toFixed(1)},${b.y.toFixed(1)} ${(b.x + b.w).toFixed(1)},${(b.y + b.h).toFixed(1)} ${b.x.toFixed(1)},${(b.y + b.h).toFixed(1)}`;
+                return (
+                  <polygon
+                    key={el.id}
+                    points={ptsStr}
+                    fill="none"
+                    stroke={el.colorHex}
+                    strokeWidth={el.strokeWidth}
+                    strokeLinejoin="round"
+                    opacity={isEraserHovered ? 0.28 : 1}
+                  />
+                );
+              }
+            }
+
+            const pathData = buildSmoothSvgPath(el.points);
+            if (!pathData) return null;
+
+            if (el.kind === "highlighter") {
               return (
-                <line
+                <path
                   key={el.id}
-                  x1={p0.x}
-                  y1={p0.y}
-                  x2={p1.x}
-                  y2={p1.y}
+                  d={pathData}
+                  fill="none"
                   stroke={el.colorHex}
                   strokeWidth={el.strokeWidth}
                   strokeLinecap="round"
-                  opacity={isEraserHovered ? 0.28 : 1}
-                  markerEnd={`url(#sb-arrow-${el.id})`}
-                />
-              );
-            }
-
-            if (el.kind === "line") {
-              return (
-                <line
-                  key={el.id}
-                  x1={p0.x}
-                  y1={p0.y}
-                  x2={p1.x}
-                  y2={p1.y}
-                  stroke={el.colorHex}
-                  strokeWidth={el.strokeWidth}
-                  strokeLinecap="round"
-                  opacity={isEraserHovered ? 0.28 : 1}
-                />
-              );
-            }
-
-            if (el.kind === "rect" || el.kind === "square") {
-              const b =
-                el.kind === "square"
-                  ? computeSquareBounds(p0, p1)
-                  : computeRectBounds(p0, p1);
-              return (
-                <rect
-                  key={el.id}
-                  x={b.x}
-                  y={b.y}
-                  width={Math.max(1, b.w)}
-                  height={Math.max(1, b.h)}
-                  rx={4}
-                  fill="none"
-                  stroke={el.colorHex}
-                  strokeWidth={el.strokeWidth}
                   strokeLinejoin="round"
-                  opacity={isEraserHovered ? 0.28 : 1}
+                  opacity={
+                    isEraserHovered ? 0.14 : isDark ? 0.36 : 0.42
+                  }
+                  style={{
+                    mixBlendMode: isDark ? "screen" : "multiply",
+                  }}
                 />
               );
             }
 
-            if (el.kind === "circle") {
-              const b = computeRectBounds(p0, p1);
-              return (
-                <ellipse
-                  key={el.id}
-                  cx={b.x + b.w / 2}
-                  cy={b.y + b.h / 2}
-                  rx={Math.max(1, b.w / 2)}
-                  ry={Math.max(1, b.h / 2)}
-                  fill="none"
-                  stroke={el.colorHex}
-                  strokeWidth={el.strokeWidth}
-                  opacity={isEraserHovered ? 0.28 : 1}
-                />
-              );
-            }
-
-            if (el.kind === "triangle") {
-              const b = computeRectBounds(p0, p1);
-              const ptsStr = `${(b.x + b.w / 2).toFixed(1)},${b.y.toFixed(1)} ${(b.x + b.w).toFixed(1)},${(b.y + b.h).toFixed(1)} ${b.x.toFixed(1)},${(b.y + b.h).toFixed(1)}`;
-              return (
-                <polygon
-                  key={el.id}
-                  points={ptsStr}
-                  fill="none"
-                  stroke={el.colorHex}
-                  strokeWidth={el.strokeWidth}
-                  strokeLinejoin="round"
-                  opacity={isEraserHovered ? 0.28 : 1}
-                />
-              );
-            }
-          }
-
-          const pathData = buildSmoothSvgPath(el.points);
-          if (!pathData) return null;
-
-          if (el.kind === "highlighter") {
             return (
               <path
                 key={el.id}
@@ -1152,49 +1490,31 @@ export default function SmartboardOverlay() {
                 strokeWidth={el.strokeWidth}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={
-                  isEraserHovered ? 0.14 : isDark ? 0.36 : 0.42
-                }
-                style={{
-                  mixBlendMode: isDark ? "screen" : "multiply",
-                }}
+                opacity={isEraserHovered ? 0.28 : 1}
               />
             );
-          }
+          })}
 
-          return (
-            <path
-              key={el.id}
-              d={pathData}
-              fill="none"
-              stroke={el.colorHex}
-              strokeWidth={el.strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={isEraserHovered ? 0.28 : 1}
-            />
-          );
-        })}
-
-        {/* Silgi Aktifken Yarı Saydam Yuvarlak Silgi Halkası */}
-        {!isCollapsed && activeTool === "eraser" && eraserCursor && (
-          <g className="pointer-events-none">
-            <circle
-              cx={eraserCursor.x}
-              cy={eraserCursor.y}
-              r={ERASER_HIT_RADIUS_PX}
-              fill={
-                hoveredEraserIds.size > 0
-                  ? "rgba(244, 63, 94, 0.22)"
-                  : "rgba(15, 23, 42, 0.08)"
-              }
-              stroke={hoveredEraserIds.size > 0 ? "#E11D48" : "#475569"}
-              strokeWidth={2}
-              strokeDasharray="3 2"
-            />
-          </g>
-        )}
-      </svg>
+          {/* Silgi Aktifken Yarı Saydam Yuvarlak Silgi Halkası */}
+          {!isCollapsed && activeTool === "eraser" && eraserCursor && (
+            <g className="pointer-events-none">
+              <circle
+                cx={eraserCursor.x}
+                cy={eraserCursor.y}
+                r={ERASER_HIT_RADIUS_PX}
+                fill={
+                  hoveredEraserIds.size > 0
+                    ? "rgba(244, 63, 94, 0.22)"
+                    : "rgba(15, 23, 42, 0.08)"
+                }
+                stroke={hoveredEraserIds.size > 0 ? "#E11D48" : "#475569"}
+                strokeWidth={2}
+                strokeDasharray="3 2"
+              />
+            </g>
+          )}
+        </svg>
+      )}
 
       {/* =================================================================== */}
       {/* 2. SÜRÜKLENEBİLİR TAHTA PERDESİ (SCREEN SHADE / CURTAIN — z-[82])   */}
@@ -1299,106 +1619,183 @@ export default function SmartboardOverlay() {
       )}
 
       {/* =================================================================== */}
-      {/* 3. YÜZEN DERS ZAMANLAYICISI (GERİ SAYIM & KRONOMETRE — z-[88])      */}
+      {/* 3. BAĞIMSIZ SÜRÜKLENEBİLİR DERS SAYACI & KRONOMETRE (z-[92])        */}
+      {/* Çizim kutusu kapalı veya kalem ikonuna küçültülmüş olsa da çalışır! */}
       {/* =================================================================== */}
       {timerOpen && (
         <div
+          ref={timerCardRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          className={`fixed top-16 right-3 sm:right-5 z-[88] pointer-events-auto w-[300px] sm:w-[330px] rounded-3xl border-2 border-b-4 shadow-2xl p-3.5 space-y-3 transition-all ${
+          style={
+            timerPos
+              ? {
+                  left: `${timerPos.x}px`,
+                  top: `${timerPos.y}px`,
+                }
+              : undefined
+          }
+          className={`${
+            timerPos
+              ? "fixed z-[92]"
+              : "fixed top-15 lg:top-17 right-2 sm:right-5 z-[92]"
+          } pointer-events-auto w-[min(340px,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-3xl border-2 border-b-4 shadow-2xl p-3.5 space-y-3 transition-colors ${
             timerFinishedFlash
               ? "bg-amber-50 dark:bg-amber-950 border-amber-500 ring-4 ring-amber-400/50"
-              : "bg-[#FDFBF7] dark:bg-[var(--surface)] border-[#087F5B]"
+              : "bg-[#FDFBF7] dark:bg-slate-900 border-[#087F5B]"
           }`}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#087F5B] text-white flex items-center justify-center">
+          {/* Sürüklenebilir Üst Başlık + Hızlı Kura Erişimi + Kapat */}
+          <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-slate-800 pb-2">
+            <div
+              onPointerDown={startTimerDrag}
+              onPointerMove={moveTimerDrag}
+              onPointerUp={endTimerDrag}
+              onPointerCancel={endTimerDrag}
+              title="Sayacı taşımak için sürükleyin"
+              className="touch-none select-none cursor-grab active:cursor-grabbing flex items-center gap-2 min-w-0 flex-1 py-0.5"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#087F5B] text-white flex items-center justify-center shrink-0">
                 <Timer size={16} />
               </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                  Ders Zamanlayıcısı
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1 truncate">
+                  <span>Ders Sayacı &amp; Kronometre</span>
+                  <GripHorizontal
+                    size={14}
+                    className="text-slate-400 shrink-0"
+                  />
                 </h3>
                 <p className="text-[10px] font-bold text-[var(--muted)]">
-                  {timerMode === "countdown"
-                    ? "Geri Sayım Sayacı"
-                    : "İleri Kronometre"}
+                  Taşımak için başlığı sürükleyin
                 </p>
               </div>
             </div>
 
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPickerOpen(true);
+                }}
+                data-tooltip="Sınıf Kura Çarkını Aç"
+                data-tooltip-pos="bottom"
+                aria-label="Sınıf Kura Çarkını Aç"
+                className="min-h-[38px] px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/60 border border-[#6741D9]/45 text-[#5230B5] dark:text-purple-300 text-[11px] font-extrabold flex items-center gap-1 cursor-pointer hover:bg-[#6741D9]/15"
+              >
+                <Dices size={14} />
+                <span>Kura</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setTimerRunning(false);
+                  setTimerOpen(false);
+                }}
+                aria-label="Zamanlayıcıyı Kapat"
+                className="min-w-[38px] min-h-[38px] rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center text-[var(--muted)] hover:text-rose-600 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* İki Sekmeli Mod Seçici: Geri Sayım | Kronometre (İleri Sayım) */}
+          <div
+            role="tablist"
+            aria-label="Zamanlayıcı Modu"
+            className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700"
+          >
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                setTimerRunning(false);
-                setTimerOpen(false);
-              }}
-              aria-label="Zamanlayıcıyı Kapat"
-              className="min-w-[40px] min-h-[40px] rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+              role="tab"
+              aria-selected={timerMode === "countdown"}
+              onClick={handleSwitchCountdownTab}
+              className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timerMode === "countdown"
+                  ? "bg-[#087F5B] text-white shadow-xs"
+                  : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+              }`}
             >
-              <X size={16} />
+              ⏳ Geri Sayım
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={timerMode === "stopwatch"}
+              onClick={handleSwitchStopwatch}
+              className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timerMode === "stopwatch"
+                  ? "bg-[#6741D9] text-white shadow-xs"
+                  : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+              }`}
+            >
+              ⏱️ Kronometre
             </button>
           </div>
 
-          <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] py-3 px-4 text-center">
+          {/* Dijital Saat Göstergesi */}
+          <div className="rounded-2xl bg-[#F7EFE1] dark:bg-slate-800/90 border border-[#E6D7BE] dark:border-slate-700 py-3 px-4 text-center">
             <div
               className={`text-4xl sm:text-5xl font-black tabular-nums tracking-wider ${
                 timerFinishedFlash
                   ? "text-amber-700 dark:text-amber-300 animate-pulse"
                   : timerMode === "countdown" && timerSeconds <= 10
                   ? "text-rose-600 dark:text-rose-400"
+                  : timerMode === "stopwatch"
+                  ? "text-[#5230B5] dark:text-purple-300"
                   : "text-[#065F46] dark:text-emerald-300"
               }`}
             >
               {formatTimerClock(timerSeconds)}
             </div>
-            {timerFinishedFlash && (
+            {timerFinishedFlash ? (
               <p className="text-xs font-extrabold text-amber-800 dark:text-amber-200 mt-1">
                 Süre Tamamlandı!
+              </p>
+            ) : (
+              <p className="text-[11px] font-semibold text-[var(--muted)] mt-0.5">
+                {timerMode === "countdown"
+                  ? "Seçilen süreden geriye sayar"
+                  : "00:00 başlangıçtan ileri sayar"}
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5">
-            {[
-              { sec: 30, label: "30 sn" },
-              { sec: 60, label: "1 dk" },
-              { sec: 120, label: "2 dk" },
-              { sec: 180, label: "3 dk" },
-              { sec: 300, label: "5 dk" },
-            ].map((p) => {
-              const active =
-                timerMode === "countdown" && presetSeconds === p.sec;
-              return (
-                <button
-                  key={p.sec}
-                  type="button"
-                  onClick={() => handleSelectCountdownPreset(p.sec)}
-                  className={`min-h-[48px] rounded-xl border text-xs font-extrabold transition-all cursor-pointer ${
-                    active
-                      ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
-                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={handleSwitchStopwatch}
-              className={`min-h-[48px] rounded-xl border text-xs font-extrabold transition-all cursor-pointer ${
-                timerMode === "stopwatch"
-                  ? "bg-[#6741D9] border-[#5230B5] text-white shadow-xs"
-                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
-              }`}
-            >
-              Kronometre
-            </button>
-          </div>
+          {/* Geri Sayım Hızlı Süre Butonları (30 sn, 1 dk, 2 dk, 3 dk, 5 dk, 10 dk) */}
+          {timerMode === "countdown" && (
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { sec: 30, label: "30 sn" },
+                { sec: 60, label: "1 dk" },
+                { sec: 120, label: "2 dk" },
+                { sec: 180, label: "3 dk" },
+                { sec: 300, label: "5 dk" },
+                { sec: 600, label: "10 dk" },
+              ].map((p) => {
+                const active = presetSeconds === p.sec;
+                return (
+                  <button
+                    key={p.sec}
+                    type="button"
+                    onClick={() => handleSelectCountdownPreset(p.sec)}
+                    className={`min-h-[44px] rounded-xl border text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
+                      active
+                        ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
+                        : "bg-white dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
+          {/* Başlat / Duraklat / Sıfırla Kontrolleri */}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -1413,6 +1810,8 @@ export default function SmartboardOverlay() {
               className={`min-h-[48px] rounded-xl font-extrabold text-xs text-white border-b-3 flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                 timerRunning
                   ? "bg-amber-600 hover:bg-amber-700 border-amber-800"
+                  : timerMode === "stopwatch"
+                  ? "bg-[#6741D9] hover:bg-[#5230B5] border-[#422399]"
                   : "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46]"
               }`}
             >
@@ -1432,7 +1831,7 @@ export default function SmartboardOverlay() {
             <button
               type="button"
               onClick={handleResetTimer}
-              className="min-h-[48px] rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer hover:border-[#087F5B]"
+              className="min-h-[48px] rounded-xl bg-white dark:bg-slate-800 border-2 border-[#E6D7BE] dark:border-slate-700 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer hover:border-[#087F5B]"
             >
               <RotateCcw size={15} />
               <span>Sıfırla</span>
@@ -1442,28 +1841,29 @@ export default function SmartboardOverlay() {
       )}
 
       {/* =================================================================== */}
-      {/* 4. SINIF KURA ÇARKI (RANDOM STUDENT PICKER) MODALI (z-[95])         */}
+      {/* 4. BAĞIMSIZ SINIF KURA ÇARKI (RANDOM STUDENT PICKER — z-[95])       */}
+      {/* Çizim aracı kapalıyken de üst bardan/menüden tek başına açılır!     */}
       {/* =================================================================== */}
       {pickerOpen && (
         <div
-          className="fixed inset-0 z-[95] pointer-events-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-[95] pointer-events-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => setPickerOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-3xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="w-full max-w-[min(32rem,calc(100vw-16px))] rounded-3xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-16px)]"
           >
             <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-3 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-xl bg-[#6741D9] text-white flex items-center justify-center shrink-0">
                   <Dices size={18} />
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] truncate">
                     Sınıf Kura Çarkı (Öğrenci Seçici)
                   </h3>
-                  <p className="text-[11px] font-semibold text-[var(--muted)]">
+                  <p className="text-[11px] font-semibold text-[var(--muted)] truncate">
                     İsimler yalnızca bu cihazda tutulur; sunucuya gönderilmez.
                   </p>
                 </div>
@@ -1476,7 +1876,7 @@ export default function SmartboardOverlay() {
                   setPickerOpen(false);
                 }}
                 aria-label="Kura Penceresini Kapat"
-                className="min-w-[44px] min-h-[44px] rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+                className="min-w-[44px] min-h-[44px] rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer shrink-0"
               >
                 <X size={18} />
               </button>
@@ -1659,543 +2059,600 @@ export default function SmartboardOverlay() {
       )}
 
       {/* =================================================================== */}
-      {/* 5. PROFESYONEL METİNSİZ İKON DOCK & 46x46 YÜZEN ROZET (z-[90])      */}
+      {/* 5. EKRAN İÇİNE KİLİTLİ RENK & ÇİZGİ KALINLIĞI POPOVER PENCERESİ     */}
       {/* =================================================================== */}
-      <div
-        ref={dockBoxRef}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        style={
-          floatingPos
-            ? {
-                left: `${floatingPos.x}px`,
-                top: `${floatingPos.y}px`,
-              }
-            : undefined
-        }
-        className={dockContainerClasses}
-      >
-        {isCollapsed ? (
-          /* KÜÇÜLTÜLMÜŞ DURUM: 46x46px Sürüklenebilir Yüzen Kalem Rozeti */
-          <button
-            type="button"
-            aria-label="Tahta Araçlarını Aç"
-            data-tooltip="Tahta Araçlarını Aç (Sürüklenebilir)"
-            data-tooltip-pos={isNearTop ? "bottom" : "top"}
-            data-tooltip-align={isNearRight ? "right" : undefined}
-            onPointerDown={startDragGesture}
-            onPointerMove={moveDragGesture}
-            onPointerUp={(e) =>
-              endDragGesture(e, () => {
-                playClick();
-                setCollapsed(false);
-              })
-            }
-            onPointerCancel={cancelDragGesture}
-            onClick={(e) => {
-              // Klavye ile Enter/Space basıldığında açılması için erişilebilirlik desteği
-              if (e.detail === 0) {
-                playClick();
-                setCollapsed(false);
-              }
-            }}
-            className="touch-none select-none cursor-grab active:cursor-grabbing relative w-[46px] h-[46px] rounded-2xl backdrop-blur-md bg-[#087F5B]/95 hover:bg-[#065F46] text-white border-2 border-white/85 dark:border-emerald-300/75 shadow-2xl flex items-center justify-center transition-transform hover:scale-105"
-          >
-            <Pen size={20} strokeWidth={2.3} />
-            <span
-              aria-hidden="true"
-              style={{ backgroundColor: activeColorHex }}
-              className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
-            />
-          </button>
-        ) : (
-          /* AÇIK DURUM: Excalidraw / Miro Kalitesinde Metinsiz İkon Dock */
-          <div
-            className={`backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/90 dark:border-slate-700 shadow-2xl rounded-2xl p-1.5 flex ${
-              isVertical
-                ? "flex-col items-center gap-1"
-                : "flex-wrap sm:flex-nowrap items-center justify-center gap-1"
-            } overflow-visible`}
-          >
-            {/* Sürükleme Tutamacı */}
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label="Araç Çubuğunu Sürükle"
-              data-tooltip="Araç Çubuğunu Sürükle"
-              data-tooltip-pos={dockTooltipPos}
-              onPointerDown={startDragGesture}
-              onPointerMove={moveDragGesture}
-              onPointerUp={(e) => endDragGesture(e)}
-              onPointerCancel={cancelDragGesture}
-              className="touch-none select-none cursor-grab active:cursor-grabbing w-[30px] h-[38px] rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 shrink-0"
-            >
-              <GripVertical size={18} strokeWidth={2.2} />
+      {isOpen && !isCollapsed && paletteOpen && (
+        <div
+          ref={palettePopoverRef}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={
+            paletteFixedPos
+              ? {
+                  left: `${paletteFixedPos.x}px`,
+                  top: `${paletteFixedPos.y}px`,
+                }
+              : { left: "16px", top: "64px" }
+          }
+          className="fixed z-[96] pointer-events-auto w-[min(228px,calc(100vw-16px))] rounded-2xl backdrop-blur-md bg-white/98 dark:bg-slate-900/98 border border-stone-200 dark:border-slate-700 shadow-2xl p-3 space-y-3"
+        >
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              <span>Çizim Rengi</span>
+              <label
+                title="Özel Renk Seç"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer"
+              >
+                <Palette size={12} />
+                <span>Özel</span>
+                <input
+                  type="color"
+                  value={activeColorHex}
+                  onChange={(e) => {
+                    setActiveColorHex(e.target.value);
+                    if (
+                      activeTool === "navigate" ||
+                      activeTool === "eraser"
+                    ) {
+                      setActiveTool("pen");
+                    }
+                  }}
+                  aria-label="Özel Renk Seçici"
+                  className="sr-only"
+                />
+              </label>
             </div>
 
-            <div aria-hidden="true" className={dividerClass} />
+            <div className="grid grid-cols-5 gap-2 pt-0.5">
+              {BOARD_COLOR_SWATCHES.map((sw) => {
+                const isSelected =
+                  activeColorHex.toUpperCase() === sw.hex.toUpperCase();
+                return (
+                  <button
+                    key={sw.hex}
+                    type="button"
+                    aria-label={`Renk: ${sw.label}`}
+                    data-tooltip={sw.label}
+                    onClick={() => {
+                      playClick();
+                      setActiveColorHex(sw.hex);
+                      if (
+                        activeTool === "navigate" ||
+                        activeTool === "eraser"
+                      ) {
+                        setActiveTool("pen");
+                      }
+                    }}
+                    style={{ backgroundColor: sw.hex }}
+                    className={`w-7 h-7 rounded-full cursor-pointer transition-transform mx-auto ${
+                      sw.hex === "#FFFFFF"
+                        ? "border-2 border-slate-400"
+                        : "border border-black/15"
+                    } ${
+                      isSelected
+                        ? "ring-2 ring-offset-2 ring-[#6741D9] dark:ring-offset-slate-900 scale-110"
+                        : "hover:scale-105"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
-            {/* BÖLÜM 1: Temel Araçlar (Gezin, Kalem, Fosforlu, Silgi) */}
-            {(
-              [
-                {
-                  id: "navigate" as SmartboardTool,
-                  tooltip: "Gezin / Tıklama Modu",
-                  icon: MousePointer2,
-                },
-                {
-                  id: "pen" as SmartboardTool,
-                  tooltip: "Kalem",
-                  icon: Pen,
-                },
-                {
-                  id: "highlighter" as SmartboardTool,
-                  tooltip: "Fosforlu Kalem",
-                  icon: Highlighter,
-                },
-                {
-                  id: "eraser" as SmartboardTool,
-                  tooltip: "Silgi",
-                  icon: Eraser,
-                },
-              ] as const
-            ).map((tool) => {
-              const Icon = tool.icon;
-              const active = activeTool === tool.id;
-              return (
+          <div className="space-y-1.5 pt-2 border-t border-stone-200/80 dark:border-slate-800">
+            <span className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              Çizgi Kalınlığı
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {(
+                [
+                  {
+                    id: "thin" as PenWidthPreset,
+                    label: "İnce",
+                    barH: "h-[2px]",
+                  },
+                  {
+                    id: "medium" as PenWidthPreset,
+                    label: "Orta",
+                    barH: "h-[4px]",
+                  },
+                  {
+                    id: "thick" as PenWidthPreset,
+                    label: "Kalın",
+                    barH: "h-[7px]",
+                  },
+                ] as const
+              ).map((w) => {
+                const active = penWidth === w.id;
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setPenWidth(w.id);
+                    }}
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      active
+                        ? "bg-[#6741D9]/12 border-[#6741D9] text-[#6741D9] dark:text-purple-300"
+                        : "bg-stone-50 dark:bg-slate-800 border-stone-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400"
+                    }`}
+                  >
+                    <span
+                      className={`w-7 rounded-full bg-current ${w.barH}`}
+                    />
+                    <span>{w.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* 6. PROFESYONEL METİNSİZ İKON DOCK & 48x48 YUVARLAK KALEM İKONU      */}
+      {/* =================================================================== */}
+      {isOpen && (
+        <div
+          ref={dockBoxRef}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={
+            floatingPos
+              ? {
+                  left: `${floatingPos.x}px`,
+                  top: `${floatingPos.y}px`,
+                }
+              : undefined
+          }
+          className={dockContainerClasses}
+        >
+          {isCollapsed ? (
+            /* KÜÇÜLTÜLMÜŞ DURUM: 48x48px Sürüklenebilir Yuvarlak Kalem İkonu (Çizimleri Silmez!) */
+            <button
+              type="button"
+              aria-label="Çizim Araçlarını Aç"
+              data-tooltip="Çizim Araçlarını Aç (Taşımak için sürükleyin)"
+              data-tooltip-pos={isNearTop ? "bottom" : "top"}
+              data-tooltip-align={isNearRight ? "right" : undefined}
+              onPointerDown={startDragGesture}
+              onPointerMove={moveDragGesture}
+              onPointerUp={(e) =>
+                endDragGesture(e, () => {
+                  playClick();
+                  setCollapsed(false);
+                })
+              }
+              onPointerCancel={cancelDragGesture}
+              onClick={(e) => {
+                if (e.detail === 0) {
+                  playClick();
+                  setCollapsed(false);
+                }
+              }}
+              className="touch-none select-none cursor-grab active:cursor-grabbing relative w-[48px] h-[48px] rounded-full backdrop-blur-md bg-[#087F5B]/95 hover:bg-[#065F46] text-white border-2 border-white/90 dark:border-emerald-300/80 shadow-2xl flex items-center justify-center transition-transform hover:scale-105"
+            >
+              <Pen size={21} strokeWidth={2.3} />
+              <span
+                aria-hidden="true"
+                style={{ backgroundColor: activeColorHex }}
+                className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
+              />
+            </button>
+          ) : (
+            /* AÇIK DURUM: Kontrol Butonları EN ÜSTTE/BAŞTA + Tek Sıra (1x) / Çift Sıra (2x) İkon Dock */
+            <div
+              className={`backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/90 dark:border-slate-700 shadow-2xl rounded-2xl p-1.5 flex ${
+                isVertical ? "flex-col items-center gap-1" : "flex-row items-center gap-1"
+              } max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-visible`}
+            >
+              {/* =========================================================== */}
+              {/* EN ÜST / BAŞ KONTROL GRUBU: Sürükle, Küçült, 1x/2x, Yön, ✕ */}
+              {/* Hiçbir ekran boyutunda taşmaz ve her zaman ulaşılır!        */}
+              {/* =========================================================== */}
+              <div
+                className={`shrink-0 flex ${
+                  isVertical
+                    ? isDoubleRow
+                      ? "flex-col items-center gap-1 w-full pb-1 border-b border-stone-200 dark:border-slate-700"
+                      : "flex-col items-center gap-1 pb-1 border-b border-stone-200 dark:border-slate-700"
+                    : isDoubleRow && viewportSize.w >= 460
+                    ? "flex-row items-center gap-1 pr-1.5 border-r border-stone-200 dark:border-slate-700"
+                    : "flex-row items-center gap-1 pr-1 border-r border-stone-200 dark:border-slate-700"
+                }`}
+              >
+                {/* Sürükleme Tutamacı */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Araç Çubuğunu Sürükle"
+                  data-tooltip="Araç Çubuğunu Sürükle"
+                  data-tooltip-pos={dockTooltipPos}
+                  onPointerDown={startDragGesture}
+                  onPointerMove={moveDragGesture}
+                  onPointerUp={(e) => endDragGesture(e)}
+                  onPointerCancel={cancelDragGesture}
+                  className={`touch-none select-none cursor-grab active:cursor-grabbing rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 shrink-0 ${
+                    isVertical && isDoubleRow
+                      ? "w-full h-6"
+                      : isVertical
+                      ? "w-[38px] h-7"
+                      : "w-7 h-[38px]"
+                  }`}
+                >
+                  {isVertical ? (
+                    <GripHorizontal size={16} strokeWidth={2.2} />
+                  ) : (
+                    <GripVertical size={17} strokeWidth={2.2} />
+                  )}
+                </div>
+
+                {/* 4 Üst Yönetim Butonu: Küçült (Kalem İkonu), Tek/Çift Sıra, Yatay/Dikey, Kapat */}
+                <div
+                  className={
+                    isVertical && isDoubleRow
+                      ? "grid grid-cols-2 gap-1.5"
+                      : !isVertical && isDoubleRow && viewportSize.w >= 460
+                      ? "grid grid-rows-2 grid-flow-col gap-1.5"
+                      : isVertical
+                      ? "flex flex-col items-center gap-1"
+                      : "flex flex-row items-center gap-1"
+                  }
+                >
+                  {/* 1) Küçült (Sadece Kalem İkonuna Dönüştür) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setPaletteOpen(false);
+                      setCollapsed(true);
+                    }}
+                    aria-label="Sadece Kalem İkonuna Küçült"
+                    data-tooltip="Sadece Kalem İkonuna Küçült"
+                    data-tooltip-pos={dockTooltipPos}
+                    className={`${iconBtnBase} bg-emerald-50/80 dark:bg-emerald-950/40 text-[#065F46] dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60`}
+                  >
+                    <Minimize2 size={17} strokeWidth={2.2} />
+                  </button>
+
+                  {/* 2) Tek Sıra (1x) / Çift Sıra (2x Kompakt Izgara) Görünüm Değiştir */}
+                  <button
+                    type="button"
+                    onClick={handleToggleRowCount}
+                    aria-label="Tek Sıra / Çift Sıra Görünüm"
+                    aria-pressed={isDoubleRow}
+                    data-tooltip="Tek Sıra / Çift Sıra Görünüm"
+                    data-tooltip-pos={dockTooltipPos}
+                    className={`${iconBtnBase} ${
+                      isDoubleRow
+                        ? "bg-[#6741D9]/15 text-[#5230B5] dark:text-purple-300 ring-1 ring-[#6741D9]/40"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {isDoubleRow ? (
+                      <Rows3 size={17} strokeWidth={2.2} />
+                    ) : (
+                      <LayoutGrid size={17} strokeWidth={2.2} />
+                    )}
+                  </button>
+
+                  {/* 3) Yatay / Dikey Konum Değiştir */}
+                  <button
+                    type="button"
+                    onClick={handleToggleOrientation}
+                    aria-label={
+                      isVertical ? "Yatay Araç Çubuğu" : "Dikey Araç Çubuğu"
+                    }
+                    data-tooltip={
+                      isVertical
+                        ? "Yatay Araç Çubuğuna Geç"
+                        : "Dikey Araç Çubuğuna Geç"
+                    }
+                    data-tooltip-pos={dockTooltipPos}
+                    className={`${iconBtnBase} text-slate-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800`}
+                  >
+                    {isVertical ? (
+                      <Rows2 size={17} strokeWidth={2.2} />
+                    ) : (
+                      <Columns2 size={17} strokeWidth={2.2} />
+                    )}
+                  </button>
+
+                  {/* 4) ✕ Kapat */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setPaletteOpen(false);
+                      closeToolbar();
+                    }}
+                    aria-label="Tahta Araçlarını Kapat"
+                    data-tooltip="Tahta Araçlarını Kapat"
+                    data-tooltip-pos={dockTooltipPos}
+                    className={`${iconBtnBase} text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60`}
+                  >
+                    <X size={18} strokeWidth={2.3} />
+                  </button>
+                </div>
+              </div>
+
+              {/* =========================================================== */}
+              {/* 16 ÇİZİM, ŞEKİL VE SINIF ARACI İKONU (1x veya 2x Izgara)   */}
+              {/* =========================================================== */}
+              <div
+                className={
+                  isVertical
+                    ? isDoubleRow
+                      ? "grid grid-cols-2 gap-1.5 overflow-y-auto max-h-[calc(100dvh-148px)]"
+                      : "flex flex-col items-center gap-1 overflow-y-auto max-h-[calc(100dvh-210px)]"
+                    : isDoubleRow
+                    ? viewportSize.w >= 460
+                      ? "grid grid-rows-2 grid-flow-col gap-1.5 overflow-x-auto max-w-[calc(100vw-130px)]"
+                      : "flex flex-wrap items-center justify-center gap-1 max-w-[calc(100vw-110px)]"
+                    : "flex flex-row items-center gap-1 overflow-x-auto max-w-[calc(100vw-210px)]"
+                }
+              >
+                {/* BÖLÜM 1: Temel Araçlar (Gezin, Kalem, Fosforlu, Silgi) */}
+                {(
+                  [
+                    {
+                      id: "navigate" as SmartboardTool,
+                      tooltip: "Gezin / Tıklama Modu",
+                      icon: MousePointer2,
+                    },
+                    {
+                      id: "pen" as SmartboardTool,
+                      tooltip: "Kalem",
+                      icon: Pen,
+                    },
+                    {
+                      id: "highlighter" as SmartboardTool,
+                      tooltip: "Fosforlu Kalem",
+                      icon: Highlighter,
+                    },
+                    {
+                      id: "eraser" as SmartboardTool,
+                      tooltip: "Silgi",
+                      icon: Eraser,
+                    },
+                  ] as const
+                ).map((tool) => {
+                  const Icon = tool.icon;
+                  const active = activeTool === tool.id;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      aria-label={tool.tooltip}
+                      aria-pressed={active}
+                      data-tooltip={tool.tooltip}
+                      data-tooltip-pos={dockTooltipPos}
+                      onClick={() => {
+                        playClick();
+                        setPaletteOpen(false);
+                        setActiveTool(tool.id);
+                      }}
+                      className={`${iconBtnBase} ${
+                        active
+                          ? tool.id === "navigate"
+                            ? "bg-[#087F5B] text-white shadow-xs"
+                            : tool.id === "eraser"
+                            ? "bg-rose-600 text-white shadow-xs"
+                            : "bg-[#6741D9] text-white shadow-xs"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Icon size={18} strokeWidth={2.2} />
+                    </button>
+                  );
+                })}
+
+                {/* BÖLÜM 2: Geometrik Şekiller (Çizgi, Ok, Dikdörtgen, Kare, Daire, Üçgen) */}
+                {(
+                  [
+                    {
+                      id: "line" as SmartboardTool,
+                      tooltip: "Düz Çizgi",
+                      icon: Minus,
+                      diagonal: true,
+                    },
+                    {
+                      id: "arrow" as SmartboardTool,
+                      tooltip: "Ok",
+                      icon: MoveUpRight,
+                      diagonal: false,
+                    },
+                    {
+                      id: "rect" as SmartboardTool,
+                      tooltip: "Dikdörtgen",
+                      icon: RectangleHorizontal,
+                      diagonal: false,
+                    },
+                    {
+                      id: "square" as SmartboardTool,
+                      tooltip: "Kare",
+                      icon: Square,
+                      diagonal: false,
+                    },
+                    {
+                      id: "circle" as SmartboardTool,
+                      tooltip: "Daire",
+                      icon: Circle,
+                      diagonal: false,
+                    },
+                    {
+                      id: "triangle" as SmartboardTool,
+                      tooltip: "Üçgen",
+                      icon: Triangle,
+                      diagonal: false,
+                    },
+                  ] as const
+                ).map((shape) => {
+                  const Icon = shape.icon;
+                  const active = activeTool === shape.id;
+                  return (
+                    <button
+                      key={shape.id}
+                      type="button"
+                      aria-label={shape.tooltip}
+                      aria-pressed={active}
+                      data-tooltip={shape.tooltip}
+                      data-tooltip-pos={dockTooltipPos}
+                      onClick={() => {
+                        playClick();
+                        setPaletteOpen(false);
+                        setActiveTool(shape.id);
+                      }}
+                      className={`${iconBtnBase} ${
+                        active
+                          ? "bg-[#6741D9] text-white shadow-xs"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Icon
+                        size={18}
+                        strokeWidth={2.2}
+                        className={shape.diagonal ? "-rotate-45" : undefined}
+                      />
+                    </button>
+                  );
+                })}
+
+                {/* BÖLÜM 3: Tek Butonda Açılır Renk & Çizgi Kalınlığı Tetikleyicisi */}
                 <button
-                  key={tool.id}
+                  ref={paletteTriggerRef}
                   type="button"
-                  aria-label={tool.tooltip}
-                  aria-pressed={active}
-                  data-tooltip={tool.tooltip}
+                  aria-label="Renk ve Çizgi Kalınlığı"
+                  aria-expanded={paletteOpen}
+                  data-tooltip="Renk ve Çizgi Kalınlığı"
                   data-tooltip-pos={dockTooltipPos}
                   onClick={() => {
                     playClick();
-                    setPaletteOpen(false);
-                    setActiveTool(tool.id);
+                    setPaletteOpen((o) => !o);
                   }}
                   className={`${iconBtnBase} ${
-                    active
-                      ? tool.id === "navigate"
-                        ? "bg-[#087F5B] text-white shadow-xs"
-                        : tool.id === "eraser"
-                        ? "bg-rose-600 text-white shadow-xs"
-                        : "bg-[#6741D9] text-white shadow-xs"
+                    paletteOpen
+                      ? "bg-stone-200/80 dark:bg-slate-800 ring-2 ring-[#6741D9]"
+                      : "hover:bg-stone-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <span
+                    style={{ backgroundColor: activeColorHex }}
+                    className={`rounded-full ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ${
+                      activeColorHex.toUpperCase() === "#FFFFFF"
+                        ? "ring-slate-400 border border-slate-300"
+                        : "ring-stone-300 dark:ring-slate-600"
+                    } ${
+                      penWidth === "thin"
+                        ? "w-4 h-4"
+                        : penWidth === "medium"
+                        ? "w-5 h-5"
+                        : "w-6 h-6"
+                    }`}
+                  />
+                </button>
+
+                {/* BÖLÜM 4A: Geri Al & Tüm Çizimleri Temizle */}
+                <button
+                  type="button"
+                  disabled={undoStack.length === 0}
+                  onClick={handleUndo}
+                  aria-label="Geri Al"
+                  data-tooltip="Geri Al"
+                  data-tooltip-pos={dockTooltipPos}
+                  className={`${iconBtnBase} disabled:opacity-35 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800`}
+                >
+                  <Undo2 size={18} strokeWidth={2.2} />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={elements.length === 0}
+                  onClick={handleClearAll}
+                  aria-label="Tüm Çizimleri Temizle"
+                  data-tooltip="Tüm Çizimleri Temizle"
+                  data-tooltip-pos={dockTooltipPos}
+                  className={`${iconBtnBase} disabled:opacity-35 disabled:cursor-not-allowed text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50`}
+                >
+                  <Trash2 size={18} strokeWidth={2.2} />
+                </button>
+
+                {/* BÖLÜM 4B: Sınıf Araçları (Tahta Perdesi, Kura Çarkı, Ders Sayacı & Kronometre) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setPaletteOpen(false);
+                    toggleCurtain();
+                  }}
+                  aria-label="Tahta Perdesi"
+                  aria-pressed={curtainOpen}
+                  data-tooltip="Tahta Perdesi"
+                  data-tooltip-pos={dockTooltipPos}
+                  className={`${iconBtnBase} ${
+                    curtainOpen
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
                       : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <Icon size={18} strokeWidth={2.2} />
+                  <Blinds size={18} strokeWidth={2.2} />
                 </button>
-              );
-            })}
 
-            <div aria-hidden="true" className={dividerClass} />
-
-            {/* BÖLÜM 2: Geometrik Şekiller (Çizgi, Ok, Dikdörtgen, Kare, Daire, Üçgen) */}
-            {(
-              [
-                {
-                  id: "line" as SmartboardTool,
-                  tooltip: "Düz Çizgi",
-                  icon: Minus,
-                  diagonal: true,
-                },
-                {
-                  id: "arrow" as SmartboardTool,
-                  tooltip: "Ok",
-                  icon: MoveUpRight,
-                  diagonal: false,
-                },
-                {
-                  id: "rect" as SmartboardTool,
-                  tooltip: "Dikdörtgen",
-                  icon: RectangleHorizontal,
-                  diagonal: false,
-                },
-                {
-                  id: "square" as SmartboardTool,
-                  tooltip: "Kare",
-                  icon: Square,
-                  diagonal: false,
-                },
-                {
-                  id: "circle" as SmartboardTool,
-                  tooltip: "Daire",
-                  icon: Circle,
-                  diagonal: false,
-                },
-                {
-                  id: "triangle" as SmartboardTool,
-                  tooltip: "Üçgen",
-                  icon: Triangle,
-                  diagonal: false,
-                },
-              ] as const
-            ).map((shape) => {
-              const Icon = shape.icon;
-              const active = activeTool === shape.id;
-              return (
                 <button
-                  key={shape.id}
                   type="button"
-                  aria-label={shape.tooltip}
-                  aria-pressed={active}
-                  data-tooltip={shape.tooltip}
-                  data-tooltip-pos={dockTooltipPos}
                   onClick={() => {
                     playClick();
                     setPaletteOpen(false);
-                    setActiveTool(shape.id);
+                    togglePicker();
                   }}
+                  aria-label="Sınıf Kura Çarkı"
+                  aria-pressed={pickerOpen}
+                  data-tooltip="Sınıf Kura Çarkı"
+                  data-tooltip-pos={dockTooltipPos}
                   className={`${iconBtnBase} ${
-                    active
+                    pickerOpen
                       ? "bg-[#6741D9] text-white shadow-xs"
                       : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <Icon
-                    size={18}
-                    strokeWidth={2.2}
-                    className={shape.diagonal ? "-rotate-45" : undefined}
-                  />
+                  <Dices size={18} strokeWidth={2.2} />
                 </button>
-              );
-            })}
 
-            <div aria-hidden="true" className={dividerClass} />
-
-            {/* BÖLÜM 3: Tek Butonda Açılır Renk & Çizgi Kalınlığı Paleti */}
-            <div
-              className="relative shrink-0 overflow-visible"
-              ref={palettePopoverRef}
-            >
-              <button
-                type="button"
-                aria-label="Renk ve Çizgi Kalınlığı"
-                aria-expanded={paletteOpen}
-                data-tooltip="Renk ve Çizgi Kalınlığı"
-                data-tooltip-pos={dockTooltipPos}
-                onClick={() => {
-                  playClick();
-                  setPaletteOpen((o) => !o);
-                }}
-                className={`${iconBtnBase} ${
-                  paletteOpen
-                    ? "bg-stone-200/80 dark:bg-slate-800 ring-2 ring-[#6741D9]"
-                    : "hover:bg-stone-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                <span
-                  style={{ backgroundColor: activeColorHex }}
-                  className={`rounded-full ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ${
-                    activeColorHex.toUpperCase() === "#FFFFFF"
-                      ? "ring-slate-400 border border-slate-300"
-                      : "ring-stone-300 dark:ring-slate-600"
-                  } ${
-                    penWidth === "thin"
-                      ? "w-4 h-4"
-                      : penWidth === "medium"
-                      ? "w-5 h-5"
-                      : "w-6 h-6"
-                  }`}
-                />
-              </button>
-
-              {paletteOpen && (
-                <div
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`absolute z-[96] w-56 rounded-2xl backdrop-blur-md bg-white/98 dark:bg-slate-900/98 border border-stone-200 dark:border-slate-700 shadow-2xl p-3 space-y-3 ${
-                    isVertical
-                      ? isNearRight
-                        ? "right-full mr-2.5 top-1/2 -translate-y-1/2"
-                        : "left-full ml-2.5 top-1/2 -translate-y-1/2"
-                      : isNearTop
-                      ? "top-full mt-2.5 left-1/2 -translate-x-1/2"
-                      : "bottom-full mb-2.5 left-1/2 -translate-x-1/2"
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setPaletteOpen(false);
+                    toggleTimer();
+                  }}
+                  aria-label="Ders Sayacı ve Kronometre"
+                  aria-pressed={timerOpen}
+                  data-tooltip={
+                    timerRunning
+                      ? `Ders Sayacı (${formatTimerClock(timerSeconds)})`
+                      : "Ders Sayacı ve Kronometre"
+                  }
+                  data-tooltip-pos={dockTooltipPos}
+                  className={`relative ${iconBtnBase} ${
+                    timerOpen || timerRunning
+                      ? "bg-[#087F5B] text-white shadow-xs"
+                      : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  {/* 10 Canlı Renk + Özel Renk Seçici */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      <span>Çizim Rengi</span>
-                      <label
-                        title="Özel Renk Seç"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer"
-                      >
-                        <Palette size={12} />
-                        <span>Özel</span>
-                        <input
-                          type="color"
-                          value={activeColorHex}
-                          onChange={(e) => {
-                            setActiveColorHex(e.target.value);
-                            if (
-                              activeTool === "navigate" ||
-                              activeTool === "eraser"
-                            ) {
-                              setActiveTool("pen");
-                            }
-                          }}
-                          aria-label="Özel Renk Seçici"
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-2 pt-0.5">
-                      {BOARD_COLOR_SWATCHES.map((sw) => {
-                        const isSelected =
-                          activeColorHex.toUpperCase() === sw.hex.toUpperCase();
-                        return (
-                          <button
-                            key={sw.hex}
-                            type="button"
-                            aria-label={`Renk: ${sw.label}`}
-                            data-tooltip={sw.label}
-                            onClick={() => {
-                              playClick();
-                              setActiveColorHex(sw.hex);
-                              if (
-                                activeTool === "navigate" ||
-                                activeTool === "eraser"
-                              ) {
-                                setActiveTool("pen");
-                              }
-                            }}
-                            style={{ backgroundColor: sw.hex }}
-                            className={`w-7 h-7 rounded-full cursor-pointer transition-transform mx-auto ${
-                              sw.hex === "#FFFFFF"
-                                ? "border-2 border-slate-400"
-                                : "border border-black/15"
-                            } ${
-                              isSelected
-                                ? "ring-2 ring-offset-2 ring-[#6741D9] dark:ring-offset-slate-900 scale-110"
-                                : "hover:scale-105"
-                            }`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Çizgi Kalınlığı Seçici (İnce / Orta / Kalın) */}
-                  <div className="space-y-1.5 pt-2 border-t border-stone-200/80 dark:border-slate-800">
-                    <span className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      Çizgi Kalınlığı
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(
-                        [
-                          {
-                            id: "thin" as PenWidthPreset,
-                            label: "İnce",
-                            barH: "h-[2px]",
-                          },
-                          {
-                            id: "medium" as PenWidthPreset,
-                            label: "Orta",
-                            barH: "h-[4px]",
-                          },
-                          {
-                            id: "thick" as PenWidthPreset,
-                            label: "Kalın",
-                            barH: "h-[7px]",
-                          },
-                        ] as const
-                      ).map((w) => {
-                        const active = penWidth === w.id;
-                        return (
-                          <button
-                            key={w.id}
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              setPenWidth(w.id);
-                            }}
-                            className={`py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                              active
-                                ? "bg-[#6741D9]/12 border-[#6741D9] text-[#6741D9] dark:text-purple-300"
-                                : "bg-stone-50 dark:bg-slate-800 border-stone-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400"
-                            }`}
-                          >
-                            <span
-                              className={`w-7 rounded-full bg-current ${w.barH}`}
-                            />
-                            <span>{w.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+                  <Timer size={18} strokeWidth={2.2} />
+                  {timerRunning && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300"
+                    />
+                  )}
+                </button>
+              </div>
             </div>
-
-            <div aria-hidden="true" className={dividerClass} />
-
-            {/* BÖLÜM 4A: Geri Al & Tüm Çizimleri Temizle */}
-            <button
-              type="button"
-              disabled={undoStack.length === 0}
-              onClick={handleUndo}
-              aria-label="Geri Al"
-              data-tooltip="Geri Al"
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} disabled:opacity-35 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800`}
-            >
-              <Undo2 size={18} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              disabled={elements.length === 0}
-              onClick={handleClearAll}
-              aria-label="Tüm Çizimleri Temizle"
-              data-tooltip="Tüm Çizimleri Temizle"
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} disabled:opacity-35 disabled:cursor-not-allowed text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50`}
-            >
-              <Trash2 size={18} strokeWidth={2.2} />
-            </button>
-
-            <div aria-hidden="true" className={dividerClass} />
-
-            {/* BÖLÜM 4B: Sınıf Araçları (Tahta Perdesi, Kura Çarkı, Ders Sayacı) */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                toggleCurtain();
-              }}
-              aria-label="Tahta Perdesi"
-              aria-pressed={curtainOpen}
-              data-tooltip="Tahta Perdesi"
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} ${
-                curtainOpen
-                  ? "bg-amber-500 text-slate-950 shadow-xs"
-                  : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Blinds size={18} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                togglePicker();
-              }}
-              aria-label="Sınıf Kura Çarkı"
-              aria-pressed={pickerOpen}
-              data-tooltip="Sınıf Kura Çarkı"
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} ${
-                pickerOpen
-                  ? "bg-[#6741D9] text-white shadow-xs"
-                  : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Dices size={18} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                toggleTimer();
-              }}
-              aria-label="Ders Sayacı"
-              aria-pressed={timerOpen}
-              data-tooltip={
-                timerRunning
-                  ? `Ders Sayacı (${formatTimerClock(timerSeconds)})`
-                  : "Ders Sayacı"
-              }
-              data-tooltip-pos={dockTooltipPos}
-              className={`relative ${iconBtnBase} ${
-                timerOpen || timerRunning
-                  ? "bg-[#087F5B] text-white shadow-xs"
-                  : "text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Timer size={18} strokeWidth={2.2} />
-              {timerRunning && (
-                <span
-                  aria-hidden="true"
-                  className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300"
-                />
-              )}
-            </button>
-
-            <div aria-hidden="true" className={dividerClass} />
-
-            {/* BÖLÜM 4C: Yatay/Dikey Dock Geçişi, Küçült ve Kapat */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                setDockOrientation((prev) =>
-                  prev === "horizontal" ? "vertical" : "horizontal"
-                );
-              }}
-              aria-label={
-                isVertical ? "Yatay Araç Çubuğu" : "Dikey Araç Çubuğu"
-              }
-              data-tooltip={
-                isVertical
-                  ? "Yatay Araç Çubuğuna Geç"
-                  : "Dikey Araç Çubuğuna Geç"
-              }
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} text-slate-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800`}
-            >
-              {isVertical ? (
-                <Rows2 size={17} strokeWidth={2.2} />
-              ) : (
-                <Columns2 size={17} strokeWidth={2.2} />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                setCollapsed(true);
-              }}
-              aria-label="Araç Çubuğunu Küçült"
-              data-tooltip="Araç Çubuğunu Küçült"
-              data-tooltip-pos={dockTooltipPos}
-              className={`${iconBtnBase} text-slate-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800`}
-            >
-              <Minimize2 size={17} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPaletteOpen(false);
-                closeToolbar();
-              }}
-              aria-label="Tahta Araçlarını Kapat"
-              data-tooltip="Tahta Araçlarını Kapat"
-              data-tooltip-pos={dockTooltipPos}
-              data-tooltip-align={!isVertical ? "right" : undefined}
-              className={`${iconBtnBase} text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60`}
-            >
-              <X size={18} strokeWidth={2.3} />
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

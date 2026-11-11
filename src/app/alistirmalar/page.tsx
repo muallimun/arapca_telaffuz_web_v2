@@ -2174,7 +2174,7 @@ function ExercisesPageContent() {
               })}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            <div className="flex flex-wrap justify-center items-stretch gap-3.5">
               {visibleExerciseCards.map((card) => {
                 const isSelected = selectedType === card.id;
                 const Icon = card.icon;
@@ -2218,7 +2218,7 @@ function ExercisesPageContent() {
                         setRangePreset("sentences_1111");
                       }
                     }}
-                    className={`min-h-[48px] text-left p-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
+                    className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[78px] sm:min-h-[104px] text-left p-2.5 sm:p-3 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
@@ -2261,7 +2261,7 @@ function ExercisesPageContent() {
                       {card.title}
                     </h2>
 
-                    <p className="hidden sm:block text-[11px] text-[var(--muted)] leading-tight line-clamp-2 mt-0.5">
+                    <p className="text-[11px] text-[var(--muted)] leading-snug line-clamp-2 mt-0.5">
                       {card.subtitle}
                     </p>
                   </button>

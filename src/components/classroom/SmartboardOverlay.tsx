@@ -19,6 +19,7 @@ import {
   Timer,
   X,
   Minimize2,
+  Maximize2,
   Play,
   Pause,
   RotateCcw,
@@ -504,7 +505,7 @@ export default function SmartboardOverlay() {
   const [isRollingPicker, setIsRollingPicker] = useState<boolean>(false);
   const pickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Ders Zamanlayıcısı (Geri Sayım / Kronometre) State'leri
+  // Ders Zamanlayıcısı (Geri Sayım / Kronometre) + Otomatik Kompakt Saat Kapsülü (Mini HUD) State'leri
   const [timerMode, setTimerMode] = useState<"countdown" | "stopwatch">(
     "countdown"
   );
@@ -512,6 +513,7 @@ export default function SmartboardOverlay() {
   const [timerSeconds, setTimerSeconds] = useState<number>(60);
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const [timerFinishedFlash, setTimerFinishedFlash] = useState<boolean>(false);
+  const [isTimerCompact, setIsTimerCompact] = useState<boolean>(false);
 
   const isVertical = dockOrientation === "vertical";
 
@@ -748,7 +750,7 @@ export default function SmartboardOverlay() {
       if (observer) observer.disconnect();
       window.removeEventListener("resize", enforceTimerInViewport);
     };
-  }, [timerOpen, timerMode, enforceTimerInViewport]);
+  }, [timerOpen, timerMode, isTimerCompact, enforceTimerInViewport]);
 
   // Sürükleme Başlangıcı (Tutamaca veya 48x48 Küçültülmüş Kalem İkonuna Basıldığında)
   const startDragGesture = (e: React.PointerEvent<HTMLElement>) => {
@@ -1017,6 +1019,36 @@ export default function SmartboardOverlay() {
     setTimerRunning(false);
     setTimerFinishedFlash(false);
     setTimerSeconds(timerMode === "countdown" ? presetSeconds : 0);
+  };
+
+  const handleToggleCompactTimerRun = () => {
+    playClick();
+    setTimerFinishedFlash(false);
+    if (!timerRunning && timerMode === "countdown" && timerSeconds === 0) {
+      setTimerSeconds(presetSeconds);
+    }
+    setTimerRunning((r) => !r);
+  };
+
+  const handleCompactResetTimer = () => {
+    playClick();
+    setTimerFinishedFlash(false);
+    if (timerMode === "stopwatch") {
+      setTimerRunning(false);
+      setTimerSeconds(0);
+    } else {
+      const shouldRestartImmediately = timerRunning || timerSeconds === 0;
+      setTimerSeconds(presetSeconds);
+      setTimerRunning(shouldRestartImmediately);
+    }
+  };
+
+  const handleCloseTimer = () => {
+    playClick();
+    setTimerRunning(false);
+    setTimerFinishedFlash(false);
+    setIsTimerCompact(false);
+    setTimerOpen(false);
   };
 
   // Kura Çarkı Animasyonlu Seçim
@@ -1619,7 +1651,7 @@ export default function SmartboardOverlay() {
       )}
 
       {/* =================================================================== */}
-      {/* 3. BAĞIMSIZ SÜRÜKLENEBİLİR DERS SAYACI & KRONOMETRE (z-[92])        */}
+      {/* 3. BAĞIMSIZ SÜRÜKLENEBİLİR DERS SAYACI & KOMPAKT MİNİ HUD (z-[92])  */}
       {/* Çizim kutusu kapalı veya kalem ikonuna küçültülmüş olsa da çalışır! */}
       {/* =================================================================== */}
       {timerOpen && (
@@ -1639,204 +1671,361 @@ export default function SmartboardOverlay() {
             timerPos
               ? "fixed z-[92]"
               : "fixed top-15 lg:top-17 right-2 sm:right-5 z-[92]"
-          } pointer-events-auto w-[min(340px,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-3xl border-2 border-b-4 shadow-2xl p-3.5 space-y-3 transition-colors ${
-            timerFinishedFlash
-              ? "bg-amber-50 dark:bg-amber-950 border-amber-500 ring-4 ring-amber-400/50"
-              : "bg-[#FDFBF7] dark:bg-slate-900 border-[#087F5B]"
-          }`}
+          } pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]`}
         >
-          {/* Sürüklenebilir Üst Başlık + Hızlı Kura Erişimi + Kapat */}
-          <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-slate-800 pb-2">
+          {isTimerCompact ? (
+            /* KOMPAKT SAAT KAPSÜLÜ (MİNİ HUD): Hafif Transparan Buzlu Cam + %100 Net Rakamlar */
             <div
               onPointerDown={startTimerDrag}
               onPointerMove={moveTimerDrag}
               onPointerUp={endTimerDrag}
               onPointerCancel={endTimerDrag}
-              title="Sayacı taşımak için sürükleyin"
-              className="touch-none select-none cursor-grab active:cursor-grabbing flex items-center gap-2 min-w-0 flex-1 py-0.5"
-            >
-              <div className="w-8 h-8 rounded-xl bg-[#087F5B] text-white flex items-center justify-center shrink-0">
-                <Timer size={16} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1 truncate">
-                  <span>Ders Sayacı &amp; Kronometre</span>
-                  <GripHorizontal
-                    size={14}
-                    className="text-slate-400 shrink-0"
-                  />
-                </h3>
-                <p className="text-[10px] font-bold text-[var(--muted)]">
-                  Taşımak için başlığı sürükleyin
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setPickerOpen(true);
-                }}
-                data-tooltip="Sınıf Kura Çarkını Aç"
-                data-tooltip-pos="bottom"
-                aria-label="Sınıf Kura Çarkını Aç"
-                className="min-h-[38px] px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/60 border border-[#6741D9]/45 text-[#5230B5] dark:text-purple-300 text-[11px] font-extrabold flex items-center gap-1 cursor-pointer hover:bg-[#6741D9]/15"
-              >
-                <Dices size={14} />
-                <span>Kura</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setTimerRunning(false);
-                  setTimerOpen(false);
-                }}
-                aria-label="Zamanlayıcıyı Kapat"
-                className="min-w-[38px] min-h-[38px] rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center text-[var(--muted)] hover:text-rose-600 cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* İki Sekmeli Mod Seçici: Geri Sayım | Kronometre (İleri Sayım) */}
-          <div
-            role="tablist"
-            aria-label="Zamanlayıcı Modu"
-            className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={timerMode === "countdown"}
-              onClick={handleSwitchCountdownTab}
-              className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                timerMode === "countdown"
-                  ? "bg-[#087F5B] text-white shadow-xs"
-                  : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
-              }`}
-            >
-              ⏳ Geri Sayım
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={timerMode === "stopwatch"}
-              onClick={handleSwitchStopwatch}
-              className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                timerMode === "stopwatch"
-                  ? "bg-[#6741D9] text-white shadow-xs"
-                  : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
-              }`}
-            >
-              ⏱️ Kronometre
-            </button>
-          </div>
-
-          {/* Dijital Saat Göstergesi */}
-          <div className="rounded-2xl bg-[#F7EFE1] dark:bg-slate-800/90 border border-[#E6D7BE] dark:border-slate-700 py-3 px-4 text-center">
-            <div
-              className={`text-4xl sm:text-5xl font-black tabular-nums tracking-wider ${
+              className={`relative touch-none cursor-grab active:cursor-grabbing bg-slate-900/78 dark:bg-slate-950/82 backdrop-blur-md border shadow-xl rounded-2xl px-3.5 py-2 text-white select-none flex items-center gap-2.5 overflow-visible transition-colors ${
                 timerFinishedFlash
-                  ? "text-amber-700 dark:text-amber-300 animate-pulse"
-                  : timerMode === "countdown" && timerSeconds <= 10
-                  ? "text-rose-600 dark:text-rose-400"
-                  : timerMode === "stopwatch"
-                  ? "text-[#5230B5] dark:text-purple-300"
-                  : "text-[#065F46] dark:text-emerald-300"
+                  ? "border-amber-400 ring-2 ring-amber-400/60"
+                  : "border-white/20"
               }`}
             >
-              {formatTimerClock(timerSeconds)}
-            </div>
-            {timerFinishedFlash ? (
-              <p className="text-xs font-extrabold text-amber-800 dark:text-amber-200 mt-1">
-                Süre Tamamlandı!
-              </p>
-            ) : (
-              <p className="text-[11px] font-semibold text-[var(--muted)] mt-0.5">
-                {timerMode === "countdown"
-                  ? "Seçilen süreden geriye sayar"
-                  : "00:00 başlangıçtan ileri sayar"}
-              </p>
-            )}
-          </div>
+              {/* Rakam Göstergesi (Sürüklenebilir Gövde) */}
+              <div
+                className={`font-mono tabular-nums font-extrabold text-2xl sm:text-3xl tracking-wider leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] ${
+                  timerFinishedFlash
+                    ? "text-amber-300"
+                    : timerMode === "countdown" &&
+                      timerSeconds > 0 &&
+                      timerSeconds <= 5
+                    ? "text-rose-400 animate-pulse"
+                    : timerMode === "countdown" &&
+                      timerSeconds > 5 &&
+                      timerSeconds <= 10
+                    ? "text-amber-300"
+                    : "text-white"
+                }`}
+              >
+                {formatTimerClock(timerSeconds)}
+              </div>
 
-          {/* Geri Sayım Hızlı Süre Butonları (30 sn, 1 dk, 2 dk, 3 dk, 5 dk, 10 dk) */}
-          {timerMode === "countdown" && (
-            <div className="grid grid-cols-3 gap-1.5">
-              {[
-                { sec: 30, label: "30 sn" },
-                { sec: 60, label: "1 dk" },
-                { sec: 120, label: "2 dk" },
-                { sec: 180, label: "3 dk" },
-                { sec: 300, label: "5 dk" },
-                { sec: 600, label: "10 dk" },
-              ].map((p) => {
-                const active = presetSeconds === p.sec;
-                return (
-                  <button
-                    key={p.sec}
-                    type="button"
-                    onClick={() => handleSelectCountdownPreset(p.sec)}
-                    className={`min-h-[44px] rounded-xl border text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
-                      active
-                        ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
-                        : "bg-white dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
+              {/* Metinsiz Küçük Kontrol İkonları */}
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 pl-1.5 border-l border-white/15 shrink-0 overflow-visible"
+              >
+                {/* 1) Duraklat / Devam Et */}
+                <button
+                  type="button"
+                  onClick={handleToggleCompactTimerRun}
+                  aria-label="Duraklat / Devam Et"
+                  data-tooltip="Duraklat / Devam Et"
+                  data-tooltip-pos={
+                    !timerPos || timerPos.y < 100 ? "bottom" : "top"
+                  }
+                  className="w-7 h-7 rounded-lg hover:bg-white/15 text-white/85 hover:text-white transition flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  {timerRunning ? (
+                    <Pause size={15} strokeWidth={2.3} />
+                  ) : (
+                    <Play size={15} strokeWidth={2.3} />
+                  )}
+                </button>
+
+                {/* 2) Sıfırla / Baştan Başlat */}
+                <button
+                  type="button"
+                  onClick={handleCompactResetTimer}
+                  aria-label="Sıfırla / Baştan Başlat"
+                  data-tooltip="Sıfırla / Baştan Başlat"
+                  data-tooltip-pos={
+                    !timerPos || timerPos.y < 100 ? "bottom" : "top"
+                  }
+                  className="w-7 h-7 rounded-lg hover:bg-white/15 text-white/85 hover:text-white transition flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  <RotateCcw size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* 3) Tam Kartı Aç (Sayacı Durdurmadan) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsTimerCompact(false);
+                  }}
+                  aria-label="Sayaç Kartını Tam Aç"
+                  data-tooltip="Sayaç Kartını Tam Aç"
+                  data-tooltip-pos={
+                    !timerPos || timerPos.y < 100 ? "bottom" : "top"
+                  }
+                  className="w-7 h-7 rounded-lg hover:bg-white/15 text-white/85 hover:text-white transition flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  <Maximize2 size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* 4) Sayacı Kapat */}
+                <button
+                  type="button"
+                  onClick={handleCloseTimer}
+                  aria-label="Sayacı Kapat"
+                  data-tooltip="Sayacı Kapat"
+                  data-tooltip-pos={
+                    !timerPos || timerPos.y < 100 ? "bottom" : "top"
+                  }
+                  data-tooltip-align="right"
+                  className="w-7 h-7 rounded-lg hover:bg-rose-500/25 text-white/75 hover:text-rose-300 transition flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  <X size={15} strokeWidth={2.3} />
+                </button>
+              </div>
+
+              {/* Geri Sayım Modunda Alt Kenarda 2px İnce Kalan Süre İlerleme Çizgisi */}
+              {timerMode === "countdown" && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-3 bottom-[3px] h-[2px] rounded-full bg-white/15 overflow-hidden"
+                >
+                  <div
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(
+                          100,
+                          (timerSeconds / Math.max(1, presetSeconds)) * 100
+                        )
+                      )}%`,
+                    }}
+                    className={`h-full rounded-full transition-opacity duration-200 ${
+                      timerSeconds <= 5
+                        ? "bg-rose-400"
+                        : timerSeconds <= 10
+                        ? "bg-amber-300"
+                        : "bg-emerald-400"
                     }`}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            /* TAM AYAR KARTI GÖRÜNÜMÜ */
+            <div
+              className={`w-[min(340px,calc(100vw-16px))] max-h-[calc(100dvh-16px)] overflow-y-auto rounded-3xl border-2 border-b-4 shadow-2xl p-3.5 space-y-3 transition-colors ${
+                timerFinishedFlash
+                  ? "bg-amber-50 dark:bg-amber-950 border-amber-500 ring-4 ring-amber-400/50"
+                  : "bg-[#FDFBF7] dark:bg-slate-900 border-[#087F5B]"
+              }`}
+            >
+              {/* Sürüklenebilir Üst Başlık + Kura + Küçült + Kapat */}
+              <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-slate-800 pb-2">
+                <div
+                  onPointerDown={startTimerDrag}
+                  onPointerMove={moveTimerDrag}
+                  onPointerUp={endTimerDrag}
+                  onPointerCancel={endTimerDrag}
+                  title="Sayacı taşımak için sürükleyin"
+                  className="touch-none select-none cursor-grab active:cursor-grabbing flex items-center gap-2 min-w-0 flex-1 py-0.5"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[#087F5B] text-white flex items-center justify-center shrink-0">
+                    <Timer size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1 whitespace-nowrap">
+                      <span>Ders Sayacı</span>
+                      <GripHorizontal
+                        size={14}
+                        className="text-slate-400 shrink-0"
+                      />
+                    </h3>
+                    <p className="text-[10px] font-bold text-[var(--muted)] truncate">
+                      Taşımak için başlığı sürükleyin
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setPickerOpen(true);
+                    }}
+                    data-tooltip="Sınıf Kura Çarkını Aç"
+                    data-tooltip-pos="bottom"
+                    aria-label="Sınıf Kura Çarkını Aç"
+                    className="min-h-[36px] px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/60 border border-[#6741D9]/45 text-[#5230B5] dark:text-purple-300 text-[11px] font-extrabold flex items-center gap-1 cursor-pointer hover:bg-[#6741D9]/15"
                   >
-                    {p.label}
+                    <Dices size={14} />
+                    <span>Kura</span>
                   </button>
-                );
-              })}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsTimerCompact(true);
+                    }}
+                    data-tooltip="Kompakt Saat Görünümü"
+                    data-tooltip-pos="bottom"
+                    aria-label="Kompakt Saat Görünümü"
+                    className="min-w-[36px] min-h-[36px] rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center text-[var(--muted)] hover:text-[#087F5B] dark:hover:text-emerald-300 cursor-pointer"
+                  >
+                    <Minimize2 size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCloseTimer}
+                    aria-label="Zamanlayıcıyı Kapat"
+                    className="min-w-[36px] min-h-[36px] rounded-xl bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center text-[var(--muted)] hover:text-rose-600 cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* İki Sekmeli Mod Seçici: Geri Sayım | Kronometre (İleri Sayım) */}
+              <div
+                role="tablist"
+                aria-label="Zamanlayıcı Modu"
+                className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timerMode === "countdown"}
+                  onClick={handleSwitchCountdownTab}
+                  className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    timerMode === "countdown"
+                      ? "bg-[#087F5B] text-white shadow-xs"
+                      : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  ⏳ Geri Sayım
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timerMode === "stopwatch"}
+                  onClick={handleSwitchStopwatch}
+                  className={`min-h-[40px] rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    timerMode === "stopwatch"
+                      ? "bg-[#6741D9] text-white shadow-xs"
+                      : "text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  ⏱️ Kronometre
+                </button>
+              </div>
+
+              {/* Dijital Saat Göstergesi */}
+              <div className="rounded-2xl bg-[#F7EFE1] dark:bg-slate-800/90 border border-[#E6D7BE] dark:border-slate-700 py-3 px-4 text-center">
+                <div
+                  className={`font-mono text-4xl sm:text-5xl font-black tabular-nums tracking-wider ${
+                    timerFinishedFlash
+                      ? "text-amber-700 dark:text-amber-300 animate-pulse"
+                      : timerMode === "countdown" &&
+                        timerSeconds > 0 &&
+                        timerSeconds <= 5
+                      ? "text-rose-600 dark:text-rose-400 animate-pulse"
+                      : timerMode === "countdown" &&
+                        timerSeconds > 5 &&
+                        timerSeconds <= 10
+                      ? "text-amber-600 dark:text-amber-400"
+                      : timerMode === "stopwatch"
+                      ? "text-[#5230B5] dark:text-purple-300"
+                      : "text-[#065F46] dark:text-emerald-300"
+                  }`}
+                >
+                  {formatTimerClock(timerSeconds)}
+                </div>
+                {timerFinishedFlash ? (
+                  <p className="text-xs font-extrabold text-amber-800 dark:text-amber-200 mt-1">
+                    Süre Tamamlandı!
+                  </p>
+                ) : (
+                  <p className="text-[11px] font-semibold text-[var(--muted)] mt-0.5">
+                    {timerMode === "countdown"
+                      ? "Seçilen süreden geriye sayar"
+                      : "00:00 başlangıçtan ileri sayar"}
+                  </p>
+                )}
+              </div>
+
+              {/* Geri Sayım Hızlı Süre Butonları (30 sn, 1 dk, 2 dk, 3 dk, 5 dk, 10 dk) */}
+              {timerMode === "countdown" && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { sec: 30, label: "30 sn" },
+                    { sec: 60, label: "1 dk" },
+                    { sec: 120, label: "2 dk" },
+                    { sec: 180, label: "3 dk" },
+                    { sec: 300, label: "5 dk" },
+                    { sec: 600, label: "10 dk" },
+                  ].map((p) => {
+                    const active = presetSeconds === p.sec;
+                    return (
+                      <button
+                        key={p.sec}
+                        type="button"
+                        onClick={() => handleSelectCountdownPreset(p.sec)}
+                        className={`min-h-[44px] rounded-xl border text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
+                          active
+                            ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
+                            : "bg-white dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Başlat (Otomatik Kompakt Kapsüle Geçer) / Duraklat / Sıfırla */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setTimerFinishedFlash(false);
+                    if (timerRunning) {
+                      setTimerRunning(false);
+                    } else {
+                      if (timerMode === "countdown" && timerSeconds === 0) {
+                        setTimerSeconds(presetSeconds);
+                      }
+                      setTimerRunning(true);
+                      setIsTimerCompact(true);
+                    }
+                  }}
+                  className={`min-h-[48px] rounded-xl font-extrabold text-xs text-white border-b-3 flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                    timerRunning
+                      ? "bg-amber-600 hover:bg-amber-700 border-amber-800"
+                      : timerMode === "stopwatch"
+                      ? "bg-[#6741D9] hover:bg-[#5230B5] border-[#422399]"
+                      : "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46]"
+                  }`}
+                >
+                  {timerRunning ? (
+                    <>
+                      <Pause size={15} />
+                      <span>Duraklat</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={15} />
+                      <span>Başlat</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetTimer}
+                  className="min-h-[48px] rounded-xl bg-white dark:bg-slate-800 border-2 border-[#E6D7BE] dark:border-slate-700 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer hover:border-[#087F5B]"
+                >
+                  <RotateCcw size={15} />
+                  <span>Sıfırla</span>
+                </button>
+              </div>
             </div>
           )}
-
-          {/* Başlat / Duraklat / Sıfırla Kontrolleri */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setTimerFinishedFlash(false);
-                if (timerMode === "countdown" && timerSeconds === 0) {
-                  setTimerSeconds(presetSeconds);
-                }
-                setTimerRunning((r) => !r);
-              }}
-              className={`min-h-[48px] rounded-xl font-extrabold text-xs text-white border-b-3 flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                timerRunning
-                  ? "bg-amber-600 hover:bg-amber-700 border-amber-800"
-                  : timerMode === "stopwatch"
-                  ? "bg-[#6741D9] hover:bg-[#5230B5] border-[#422399]"
-                  : "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46]"
-              }`}
-            >
-              {timerRunning ? (
-                <>
-                  <Pause size={15} />
-                  <span>Duraklat</span>
-                </>
-              ) : (
-                <>
-                  <Play size={15} />
-                  <span>Başlat</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResetTimer}
-              className="min-h-[48px] rounded-xl bg-white dark:bg-slate-800 border-2 border-[#E6D7BE] dark:border-slate-700 text-xs font-extrabold text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer hover:border-[#087F5B]"
-            >
-              <RotateCcw size={15} />
-              <span>Sıfırla</span>
-            </button>
-          </div>
         </div>
       )}
 

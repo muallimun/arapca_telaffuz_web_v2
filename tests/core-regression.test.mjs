@@ -2199,6 +2199,62 @@ test("21. BÜYÜK İKONLU METİNSİZ ÜST BAR, BAĞIMSIZ SAYAÇ & KURA, AKILLI T
   );
 });
 
+test("22) Ders Sayacı Otomatik Kompakt Saat Görünümü (Mini HUD): isTimerCompact, transparan buzlu cam kapsül, tabular-nums okunabilirlik, 2px ilerleme barı ve kontrol ikonları", () => {
+  const smartboardCode = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "classroom",
+      "SmartboardOverlay.tsx"
+    ),
+    "utf8"
+  );
 
+  // 1. Başlık kısalığı ("Ders Sayacı") ve yarıda kesilen uzun başlığın kaldırılması
+  assert.equal(
+    smartboardCode.includes("<span>Ders Sayacı</span>") &&
+      !smartboardCode.includes("<span>Ders Sayacı &amp; Kronometre</span>") &&
+      !smartboardCode.includes("<span>Ders Sayacı & Kronometre</span>"),
+    true,
+    "Tam kart başlığı kesilmemesi için 'Ders Sayacı' olmalı, uzun 'Ders Sayacı & Kronometre' başlığı kaldırılmalıdır"
+  );
 
+  // 2. isTimerCompact state, Başlat ile otomatik geçiş ve başlık çubuğunda Küçült (Minimize2) ikonu
+  assert.equal(
+    smartboardCode.includes("const [isTimerCompact, setIsTimerCompact] = useState<boolean>(false)") &&
+      smartboardCode.includes("setTimerRunning(true);\n                      setIsTimerCompact(true);") &&
+      smartboardCode.includes('data-tooltip="Kompakt Saat Görünümü"') &&
+      smartboardCode.includes("<Minimize2 size={15} />"),
+    true,
+    "Sayaç başlatıldığında otomatik olarak isTimerCompact = true olmalı ve tam kart başlığında Minimize2 küçültme ikonu bulunmalıdır"
+  );
 
+  // 3. Kompakt Saat Kapsülü görsel kontrastı, tabular-nums rakam okunabilirliği, son 10/5 sn uyarıları ve 2px alt ilerleme çizgisi
+  assert.equal(
+    smartboardCode.includes(
+      "bg-slate-900/78 dark:bg-slate-950/82 backdrop-blur-md border shadow-xl rounded-2xl px-3.5 py-2 text-white select-none"
+    ) &&
+      smartboardCode.includes(
+        "font-mono tabular-nums font-extrabold text-2xl sm:text-3xl tracking-wider leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
+      ) &&
+      smartboardCode.includes("text-rose-400 animate-pulse") &&
+      smartboardCode.includes("text-amber-300") &&
+      smartboardCode.includes("border-amber-400 ring-2 ring-amber-400/60") &&
+      smartboardCode.includes("h-[2px] rounded-full bg-white/15"),
+    true,
+    "Kompakt kapsül buzlu cam arka plana, tabular-nums gölgeli rakamlara, son 10/5 sn renk uyarılarına ve 2px alt ilerleme barına sahip olmalıdır"
+  );
+
+  // 4. Kompakt görünüm metinsiz kontrol ikonları, tooltip'ler ve gövdeden sürükleme + ResizeObserver/Viewport Clamp uyumu
+  assert.equal(
+    smartboardCode.includes('data-tooltip="Duraklat / Devam Et"') &&
+      smartboardCode.includes('data-tooltip="Sıfırla / Baştan Başlat"') &&
+      smartboardCode.includes('data-tooltip="Sayaç Kartını Tam Aç"') &&
+      smartboardCode.includes('data-tooltip="Sayacı Kapat"') &&
+      smartboardCode.includes("<Maximize2 size={15}") &&
+      smartboardCode.includes("[timerOpen, timerMode, isTimerCompact, enforceTimerInViewport]"),
+    true,
+    "Kompakt kapsül 4 metinsiz kontrol ikonuna (Duraklat/Devam Et, Sıfırla, Tam Aç, Kapat) ve isTimerCompact değişiminde Viewport Clamp korumasına sahip olmalıdır"
+  );
+});

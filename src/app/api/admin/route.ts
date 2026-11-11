@@ -13,7 +13,8 @@ export type AdminDatasetKey =
   | "metinler_60"
   | "sozluk"
   | "diyalog_gramer"
-  | "metin_gramer";
+  | "metin_gramer"
+  | "seviye_sorulari";
 
 export type AdminPostAction =
   | "verify_access"
@@ -30,6 +31,7 @@ const DATASET_FILE_MAP: Record<AdminDatasetKey, string> = {
   sozluk: "yeni_tum_sozluk.json",
   diyalog_gramer: "diyaloglar_gramer_hap_bilgi.json",
   metin_gramer: "metinler_gramer_hap_bilgi.json",
+  seviye_sorulari: "seviye_tespit_sorulari.json",
 };
 
 // Sıkı Depo Beyaz Listesi (Allowlist)

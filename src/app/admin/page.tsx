@@ -123,6 +123,14 @@ const STUDIO_TABS: DatasetMeta[] = [
     description: "60 okuma metninin hap gramer kuralları, tablolar ve i'rab tahlilleri",
   },
   {
+    key: "seviye_sorulari",
+    label: "🧭 Seviye & Tarama Soruları (180)",
+    shortLabel: "180 Seviye Sorusu",
+    icon: "🧭",
+    fileName: "seviye_tespit_sorulari.json",
+    description: "A1–B2 seviye tespit, 13 konu tarama soruları ve gerekçeli çeldirici analizleri",
+  },
+  {
     key: "efect_manager",
     label: "🔊 Ses Efektleri (efect)",
     shortLabel: "Ses Efektleri",
@@ -310,7 +318,8 @@ function getRecordLevel(rec: GenericRecord): string {
 
 function getRecordCategory(rec: GenericRecord): string {
   return String(
-    rec.kategori_tr ||
+    rec.ust_konu ||
+      rec.kategori_tr ||
       rec.tema ||
       rec.odak_gramer ||
       rec.tur ||
@@ -321,6 +330,7 @@ function getRecordCategory(rec: GenericRecord): string {
 }
 
 function getRecordArabic(rec: GenericRecord): string {
+  if (rec.soru_metni_ar) return String(rec.soru_metni_ar);
   if (rec.arapca) return String(rec.arapca);
   if (rec.baslik_ar) return String(rec.baslik_ar);
   if (rec.mufret) return String(rec.mufret);
@@ -332,6 +342,10 @@ function getRecordArabic(rec: GenericRecord): string {
 }
 
 function getRecordTurkish(rec: GenericRecord): string {
+  if (rec.cozum_detayi?.soru_cevirisi_tr) {
+    return String(rec.cozum_detayi.soru_cevirisi_tr);
+  }
+  if (rec.soru_yonergesi_tr) return String(rec.soru_yonergesi_tr);
   if (rec.turkce) return String(rec.turkce);
   if (rec.baslik_tr) return String(rec.baslik_tr);
   if (rec.anlam_tr) return String(rec.anlam_tr);

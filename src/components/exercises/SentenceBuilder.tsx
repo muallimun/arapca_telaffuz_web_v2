@@ -106,7 +106,12 @@ export default function SentenceBuilder({
 }: SentenceBuilderProps) {
   const { playAudio, playTTS, stop } = useAudioStore();
   const { showHareke, arabicFont, speechRate } = useSettings();
-  const { addStudyMinutes, addMistake, recordItemAttempt } = useUserStore();
+  const {
+    addStudyMinutes,
+    addMistake,
+    recordItemAttempt,
+    recordSkillAttempt,
+  } = useUserStore();
   const wrongAttemptedQuestionsRef = useRef<Set<string>>(new Set());
   const usedHintQuestionsRef = useRef<Set<string>>(new Set());
   const lastLoadedQuestionKeyRef = useRef<string>("");
@@ -376,6 +381,10 @@ export default function SentenceBuilder({
       if (cid.startsWith("sent_")) return "sentence";
       return "word";
     };
+
+    if (!hadPreviousAttempt) {
+      recordSkillAttempt("imla", isRight);
+    }
 
     if (!isRight) {
       wrongAttemptedQuestionsRef.current.add(currentQ.id);

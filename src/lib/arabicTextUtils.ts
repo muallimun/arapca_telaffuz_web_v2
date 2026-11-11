@@ -122,6 +122,84 @@ export function removeDiacritics(text: string): string {
   return removeArabicHarakat(text);
 }
 
+export type HarekeMode = "full" | "irab-only" | "none";
+
+const ARABIC_WORD_WITH_MARKS_REGEX =
+  /[\u0621-\u063A\u0641-\u065F\u0670\u0671\u06D6-\u06ED]+/g;
+const ARABIC_BASE_LETTER_REGEX = /[\u0621-\u063A\u0641-\u064A\u0671]/;
+
+/**
+ * 3 Kademeli "Hareke Solması (Harakat Fading)" Biçimlendiricisi:
+ * - `"full"`: Tüm harekeleri ve şeddeyi korur (`fixArabicTypography` uygular).
+ * - `"irab-only"`: Kelime ortasındaki kısa ünlüleri (\u064E, \u064F, \u0650, \u0652) gizler;
+ *   ancak tüm harflerdeki şeddeyi (\u0651), tenvinleri (\u064B-\u064D), med/çeker işaretlerini (\u0653, \u0670)
+ *   ve her kelimenin son harfindeki i'rab harekesini korur. Asla harf eklemez/silmez.
+ * - `"none"`: Tüm harekeleri soyar (`removeArabicHarakat`).
+ */
+export function formatArabicByHarekeMode(
+  text: string,
+  mode: HarekeMode = "full",
+  fontFamily?: string
+): string {
+  if (!text) return "";
+  if (mode === "none") {
+    return removeArabicHarakat(text);
+  }
+  const fixed = fixArabicTypography(text, fontFamily);
+  if (mode === "full") {
+    return fixed;
+  }
+
+  // mode === "irab-only"
+  const canonical = canonicalizeArabicDiacritics(fixed);
+  return canonical.replace(ARABIC_WORD_WITH_MARKS_REGEX, (wordToken) => {
+    const units: Array<{ letter: string; diacritics: string }> = [];
+    let leadingMarks = "";
+
+    for (const ch of wordToken) {
+      if (ARABIC_BASE_LETTER_REGEX.test(ch)) {
+        units.push({ letter: ch, diacritics: "" });
+      } else if (units.length > 0) {
+        units[units.length - 1].diacritics += ch;
+      } else {
+        leadingMarks += ch;
+      }
+    }
+
+    if (units.length <= 1) {
+      return wordToken;
+    }
+
+    const lastIdx = units.length - 1;
+    // Çoğul fiillerdeki sessiz elif-i fârika (ـُوا) durumunda sondan bir önceki harfin harekesini de koru
+    const hasSilentPluralAlif =
+      units.length >= 3 &&
+      units[lastIdx].letter === "ا" &&
+      units[lastIdx].diacritics === "" &&
+      units[lastIdx - 1].letter === "و";
+
+    const rebuilt = units
+      .map((u, idx) => {
+        if (idx === lastIdx) {
+          return u.letter + u.diacritics;
+        }
+        if (hasSilentPluralAlif && idx === lastIdx - 2) {
+          return u.letter + u.diacritics;
+        }
+        // İç harflerde şedde (\u0651), tenvin (\u064B-\u064D), med (\u0653) ve çeker (\u0670) korunur;
+        // kısa ünlüler (\u064E, \u064F, \u0650) ve sükûn (\u0652) gizlenir.
+        const keptMarks = u.diacritics.replace(
+          /[\u064E\u064F\u0650\u0652\u06D6-\u06ED]/g,
+          ""
+        );
+        return u.letter + keptMarks;
+      })
+      .join("");
+
+    return leadingMarks + rebuilt;
+  });
+}
+
 /**
  * Hem hareke tercihini hem de Lafzatullah tipografi düzeltmesini uygular
  */
@@ -778,6 +856,46 @@ export function normalizeArabicText(text: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+const NON_ARABIC_GLOSS_OPT =
+  "(?:[ \\t]*\\([^()\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF\\uFB50-\\uFDFF\\uFE70-\\uFEFF\\u25CC]+\\))?";
+
+const SIMPLE_TERMINOLOGY_RULES: Array<[RegExp, string]> = [
+  [new RegExp(`(?<![\\p{L}])N[âa]ib-i\\s+F[âa]il(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sözde Özne"],
+  [new RegExp(`(?<![\\p{L}])Mef['’]?[ûu]l[üu]n\\s+Bih(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Etkilenen Nesne"],
+  [new RegExp(`(?<![\\p{L}])Muz[âa]fun\\s+[İI]leyh(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlayan İsim"],
+  [new RegExp(`(?<![\\p{L}])Muz[âa]f(?![\\p{L}])(?!\\s+[İI]leyh)${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlanan İsim"],
+  [new RegExp(`(?<![\\p{L}])[İI]z[âa]fet(?:\\s+Tamlamas[ıi])?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İsim Tamlaması"],
+  [new RegExp(`(?<![\\p{L}])M[üu]bted[âa](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İsim Cümlesi Öznesi"],
+  [/(?<![\p{L}])Haber(?![\p{L}])(?:[ \t]*\(Yüklem\))?/gu, "Yüklem"],
+  [new RegExp(`(?<![\\p{L}])F[âa]il(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İşi Yapan Özne"],
+  [new RegExp(`(?<![\\p{L}])Mevs[ûu]f(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Nitelenen İsim"],
+  [new RegExp(`(?<![\\p{L}])Merf[ûu](?:dur|d[üu]r)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Ötreli Durum"],
+  [new RegExp(`(?<![\\p{L}])Mans[ûu]b(?:tur|dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Üstünlü Durum"],
+  [new RegExp(`(?<![\\p{L}])Mecr[ûu]r(?:dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Esreli Durum"],
+  [new RegExp(`(?<![\\p{L}])Mecz[ûu]m(?:dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Cezimli Durum"],
+  [new RegExp(`(?<![\\p{L}])Mebn[îi](?:dir)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sonu Değişmeyen"],
+  [new RegExp(`(?<![\\p{L}])[İI]stifh[âa]m(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Soru"],
+  [new RegExp(`(?<![\\p{L}])M[üu]zekker(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Eril"],
+  [new RegExp(`(?<![\\p{L}])M[üu]ennes(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Dişil"],
+  [new RegExp(`(?<![\\p{L}])M[üu]fre[dt](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tekil"],
+  [new RegExp(`(?<![\\p{L}])Tesniye(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İkil"],
+  [new RegExp(`(?<![\\p{L}])Cem[îi](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Çoğul"],
+];
+
+/**
+ * `"simple"` (Sade Anlatım) modunda ağır klasik sarf/nahiv terimlerini
+ * sade ve anlaşılır Türkçe karşılıklarına dönüştürür; Arapça metinlere dokunmaz.
+ */
+export function simplifyGrammarTerminology(text: string): string {
+  if (!text) return "";
+  let out = text;
+  for (const [pattern, replacement] of SIMPLE_TERMINOLOGY_RULES) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
+}
+
 
 
 

@@ -4,6 +4,7 @@ import {
   ArabicFontId,
   ArabicFontSizePreset,
   ARABIC_FONT_SIZE_PRESETS,
+  HarekeMode,
 } from "@/lib/arabicTextUtils";
 
 export type ViewMode = "stacked" | "columns" | "arabic-only" | "turkish-only" | "click-reveal";
@@ -15,12 +16,15 @@ export type DialogueLoopCount = 1 | 2 | 3 | 5 | "infinite";
 export type SentenceLoopCount = 2 | 3 | 5 | "infinite";
 export type PauseBetweenLines = 0 | 2 | "auto";
 export type VoiceGender = "erkek" | "kadin";
-export type { ArabicFontId, ArabicFontSizePreset };
+export type GrammarDepthMode = "simple" | "academic";
+export type { ArabicFontId, ArabicFontSizePreset, HarekeMode };
 
 interface SettingsState {
   theme: "light" | "dark";
   viewMode: ViewMode;
   showHareke: boolean;
+  harekeMode: HarekeMode;
+  grammarDepthMode: GrammarDepthMode;
   showTooltips: boolean;
   showShadowing: boolean;
   arabicFont: ArabicFontId;
@@ -43,6 +47,10 @@ interface SettingsState {
   setViewMode: (mode: ViewMode) => void;
   toggleHareke: () => void;
   setShowHareke: (show: boolean) => void;
+  setHarekeMode: (mode: HarekeMode) => void;
+  cycleHarekeMode: () => void;
+  setGrammarDepthMode: (mode: GrammarDepthMode) => void;
+  toggleGrammarDepthMode: () => void;
   toggleTooltips: () => void;
   setShowTooltips: (show: boolean) => void;
   toggleShadowing: () => void;
@@ -109,12 +117,16 @@ export function detectIsMobileOrLowMem(): boolean {
   return isMobileUa || isLowMemOrCpu;
 }
 
+const HAREKE_MODE_ORDER: HarekeMode[] = ["full", "irab-only", "none"];
+
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
       theme: "light",
       viewMode: "stacked",
       showHareke: true,
+      harekeMode: "full",
+      grammarDepthMode: "academic",
       showTooltips: true,
       showShadowing: true,
       arabicFont: "arakom",
@@ -136,8 +148,42 @@ export const useSettings = create<SettingsState>()(
         set((state) => ({ theme: state.theme === "light" ? "dark" : "light" })),
       setTheme: (theme) => set({ theme }),
       setViewMode: (mode) => set({ viewMode: mode }),
-      toggleHareke: () => set((state) => ({ showHareke: !state.showHareke })),
-      setShowHareke: (show) => set({ showHareke: show }),
+      toggleHareke: () =>
+        set((state) => {
+          const currIdx = HAREKE_MODE_ORDER.indexOf(state.harekeMode || "full");
+          const nextMode =
+            HAREKE_MODE_ORDER[(currIdx + 1) % HAREKE_MODE_ORDER.length];
+          return {
+            harekeMode: nextMode,
+            showHareke: nextMode !== "none",
+          };
+        }),
+      setShowHareke: (show) =>
+        set({
+          showHareke: show,
+          harekeMode: show ? "full" : "none",
+        }),
+      setHarekeMode: (mode) =>
+        set({
+          harekeMode: mode,
+          showHareke: mode !== "none",
+        }),
+      cycleHarekeMode: () =>
+        set((state) => {
+          const currIdx = HAREKE_MODE_ORDER.indexOf(state.harekeMode || "full");
+          const nextMode =
+            HAREKE_MODE_ORDER[(currIdx + 1) % HAREKE_MODE_ORDER.length];
+          return {
+            harekeMode: nextMode,
+            showHareke: nextMode !== "none",
+          };
+        }),
+      setGrammarDepthMode: (mode) => set({ grammarDepthMode: mode }),
+      toggleGrammarDepthMode: () =>
+        set((state) => ({
+          grammarDepthMode:
+            state.grammarDepthMode === "simple" ? "academic" : "simple",
+        })),
       toggleTooltips: () =>
         set((state) => ({ showTooltips: !state.showTooltips })),
       setShowTooltips: (show) => set({ showTooltips: show }),
@@ -218,23 +264,38 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "app-settings",
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown, version: number) => {
         const state =
           persistedState && typeof persistedState === "object"
             ? (persistedState as Partial<SettingsState>)
             : {};
+        const migrated: Partial<SettingsState> = { ...state };
         if (version < 3) {
-          return {
-            ...state,
-            sttEngine: (detectIsMobileOrLowMem()
-              ? "webspeech"
-              : "whisper") as SttEngine,
-            micNoiseSuppression: false,
-            localSttOnly: false,
-          } as SettingsState;
+          migrated.sttEngine = (detectIsMobileOrLowMem()
+            ? "webspeech"
+            : "whisper") as SttEngine;
+          migrated.micNoiseSuppression = false;
+          migrated.localSttOnly = false;
         }
-        return state as SettingsState;
+        if (version < 4) {
+          const resolvedHarekeMode: HarekeMode =
+            migrated.harekeMode === "full" ||
+            migrated.harekeMode === "irab-only" ||
+            migrated.harekeMode === "none"
+              ? migrated.harekeMode
+              : migrated.showHareke === false
+              ? "none"
+              : "full";
+          migrated.harekeMode = resolvedHarekeMode;
+          migrated.showHareke = resolvedHarekeMode !== "none";
+          migrated.grammarDepthMode =
+            migrated.grammarDepthMode === "simple" ||
+            migrated.grammarDepthMode === "academic"
+              ? migrated.grammarDepthMode
+              : "academic";
+        }
+        return migrated as SettingsState;
       },
     }
   )

@@ -19,6 +19,11 @@ import {
   Target,
   Play,
   Share2,
+  Compass,
+  Stethoscope,
+  BarChart3,
+  ListChecks,
+  GraduationCap,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -59,8 +64,12 @@ const ShareContentCardModal = dynamic(
   { ssr: false }
 );
 import { MixedText } from "@/components/ui/MixedText";
-import { buildDailyStudyPackage } from "@/lib/mistakeUtils";
-import { formatArabicText, formatTurkishCategory } from "@/lib/arabicTextUtils";
+import { buildDailyStudyPackage, getLeechSrsItems } from "@/lib/mistakeUtils";
+import {
+  formatArabicByHarekeMode,
+  formatTurkishCategory,
+} from "@/lib/arabicTextUtils";
+import { ASSESSMENT_TOPICS } from "@/types/assessment";
 
 const SENTENCE_THEME_LABELS: Record<string, string> = {
   selamlasma_ve_nezaket: "Selamlaşma ve Nezaket",
@@ -132,6 +141,10 @@ export default function HomePage() {
     streakDays,
     lastStudyDate,
     dailyGoalMinutes,
+    detectedCefrLevel,
+    topicMastery,
+    skillStats,
+    completedLevelExams,
     addStudyMinutes,
     syncDailyProgress,
   } = useUserStore();
@@ -141,6 +154,7 @@ export default function HomePage() {
     viewMode,
     speechRate,
     showHareke,
+    harekeMode,
     arabicFont,
     preferredVoiceGender,
   } = useSettings();
@@ -178,6 +192,7 @@ export default function HomePage() {
       completedDialogues: mounted ? completedDialogues || [] : [],
       learnedWords: mounted ? learnedWords || [] : [],
       preferredLevel,
+      detectedCefrLevel: mounted ? detectedCefrLevel : null,
     });
   }, [
     mounted,
@@ -186,6 +201,7 @@ export default function HomePage() {
     completedDialogues,
     learnedWords,
     preferredLevel,
+    detectedCefrLevel,
   ]);
 
   const recommendedDialogue = dailyPackage.dailyDialogue.dialogue;
@@ -262,8 +278,11 @@ export default function HomePage() {
     []
   );
 
-  // Kullanıcının tamamladığı diyaloglara göre aktif CEFR seviyesini belirle (A1 bitmeden üst seviyelerden cümle gösterilmez)
+  // Kullanıcının tespit edilen CEFR seviyesini veya tamamladığı diyaloglara göre aktif CEFR seviyesini belirle
   const activeLevel = useMemo(() => {
+    if (mounted && detectedCefrLevel) {
+      return detectedCefrLevel;
+    }
     const doneSet = new Set(mounted ? completedDialogues || [] : []);
     const levels: Array<"A1" | "A2" | "B1" | "B2"> = ["A1", "A2", "B1", "B2"];
     for (const lvl of levels) {
@@ -273,7 +292,35 @@ export default function HomePage() {
       }
     }
     return "A1";
-  }, [mounted, completedDialogues, pedagogicalDialogues]);
+  }, [mounted, detectedCefrLevel, completedDialogues, pedagogicalDialogues]);
+
+  // İnatçı Kelimeler Kliniği (wrongCount >= 3 olan SRS öğeleri)
+  const leechItems = useMemo(
+    () => (mounted ? getLeechSrsItems(srsRecords || {}) : []),
+    [mounted, srsRecords]
+  );
+
+  // En zayıf veya sıradaki konu tarama önerisi
+  const recommendedDiagnosticTopic = useMemo(() => {
+    if (!mounted) return ASSESSMENT_TOPICS[0];
+    const attempted = ASSESSMENT_TOPICS.map((t) => {
+      const rec = topicMastery?.[t.ust_konu];
+      if (!rec || rec.total <= 0) return { topic: t, pct: null as number | null };
+      return {
+        topic: t,
+        pct: Math.round((rec.correct / rec.total) * 100),
+      };
+    });
+    const withScores = attempted.filter(
+      (x): x is { topic: (typeof ASSESSMENT_TOPICS)[0]; pct: number } =>
+        x.pct !== null
+    );
+    if (withScores.length > 0) {
+      withScores.sort((a, b) => a.pct - b.pct);
+      return withScores[0].topic;
+    }
+    return ASSESSMENT_TOPICS[0];
+  }, [mounted, topicMastery]);
 
   // Günün Okuma Metni (60 Okuma Metni içinden kullanıcının seviyesine ve tamamlama durumuna göre seçilir)
   const recommendedReading = useMemo(() => {
@@ -369,9 +416,9 @@ export default function HomePage() {
   }, [levelQuotesPool, tipIndex]);
 
   const displayArabic = (text: string) =>
-    formatArabicText(
+    formatArabicByHarekeMode(
       text,
-      !mounted || showHareke,
+      !mounted ? "full" : harekeMode || (showHareke ? "full" : "none"),
       mounted ? arabicFont : "arakom"
     );
 
@@ -558,6 +605,96 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* BÖLÜM 1.25: SEVİYE TESPİT & 13 KONU TARAMA KARTI + KOŞULLU İNATÇI KELİMELER KLİNİĞİ */}
+      <section
+        aria-label="Seviye Tespit ve Kişisel Klinik Kısayolları"
+        className={`grid grid-cols-1 ${
+          leechItems.length >= 1 ? "lg:grid-cols-3" : "lg:grid-cols-1"
+        } gap-3`}
+      >
+        <div
+          className={`${
+            leechItems.length >= 1 ? "lg:col-span-2" : ""
+          } rounded-2xl border-2 border-[#6741D9]/60 dark:border-[#6741D9]/70 border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
+        >
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#6741D9] text-white text-xs font-extrabold">
+                <Compass size={14} />
+                <span>
+                  {mounted && detectedCefrLevel
+                    ? `Aktif Kur Seviyeniz: ${detectedCefrLevel}`
+                    : "🧭 Seviyemi Belirle (3 Dk Akıllı Test)"}
+                </span>
+              </span>
+              {mounted && completedLevelExams.length > 0 && (
+                <span className="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-[11px] font-extrabold">
+                  🏆 Bitirilen Kur: {completedLevelExams.join(", ")}
+                </span>
+              )}
+            </div>
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">
+              {mounted && detectedCefrLevel
+                ? "180 soruluk doğrulanmış havuzdan 13 konu tarama testi çözün veya kur bitirme sınavıyla seviye atlayın."
+                : "Henüz seviye tespiti yapmadınız. 16+2 soruluk adaptif testle A1–B2 seviyenizi belirleyip günlük çalışma planınızı kişiselleştirin."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Link
+              href="/seviye-tespit"
+              onClick={() => playClick()}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5432B8] text-white border-b-3 border-[#3d2191] text-xs font-extrabold whitespace-nowrap"
+            >
+              <Compass size={14} />
+              <span>
+                {mounted && detectedCefrLevel ? "Yeniden Ölç" : "Seviyemi Belirle"}
+              </span>
+            </Link>
+            <Link
+              href="/seviye-tespit?mode=topic"
+              onClick={() => playClick()}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-400 whitespace-nowrap"
+            >
+              <ListChecks size={14} />
+              <span>13 Konu Tarama</span>
+            </Link>
+            {mounted && detectedCefrLevel && (
+              <Link
+                href={`/seviye-tespit?mode=exam&level=${detectedCefrLevel}`}
+                onClick={() => playClick()}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-amber-500 text-xs font-extrabold text-amber-800 dark:text-amber-300 whitespace-nowrap"
+              >
+                <GraduationCap size={14} />
+                <span>{detectedCefrLevel} Kur Sınavı</span>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {leechItems.length >= 1 && (
+          <div className="rounded-2xl border-2 border-rose-400 dark:border-rose-700 border-b-4 bg-rose-50/85 dark:bg-rose-950/35 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-600 text-white text-xs font-extrabold">
+                <Stethoscope size={14} />
+                <span>🩺 İnatçı Kelimeler Kliniği ({leechItems.length} Öğe)</span>
+              </span>
+              <p className="text-xs font-semibold text-rose-950 dark:text-rose-200 leading-snug">
+                3 veya daha fazla kez takıldığınız kelimeler için özel odaklı tekrar kliniği hazır.
+              </p>
+            </div>
+            <Link
+              href="/alistirmalar?plan=leech"
+              onClick={() => playClick()}
+              className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border-b-3 border-rose-900 text-xs font-extrabold inline-flex items-center justify-center gap-1.5"
+            >
+              <Play size={13} fill="currentColor" />
+              <span>Kliniği Başlat ({leechItems.length} Öğe)</span>
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* BÖLÜM 1.5: BUGÜN NE ÇALIŞMALIYIM? (~12 DAKİKALIK AKILLI PAKET) */}
@@ -1358,6 +1495,83 @@ export default function HomePage() {
               />
             </div>
           </Link>
+        </div>
+      </section>
+
+      {/* BÖLÜM 3.5: 6 BECERİ HAKİMİYET HARİTASI & ÖNERİLEN KONU TARAMASI */}
+      <section
+        aria-label="6 Beceri Hakimiyet Haritası"
+        className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-4 space-y-3"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-xs font-extrabold">
+              <BarChart3 size={14} />
+              <span>📊 Beceri Hakimiyet Haritası</span>
+            </span>
+            <span className="text-xs font-semibold text-[var(--muted)] hidden sm:inline">
+              Alıştırma, okuma, telaffuz ve konu taramalarınıza göre canlı güncellenir
+            </span>
+          </div>
+
+          <Link
+            href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+              recommendedDiagnosticTopic.ust_konu
+            )}`}
+            onClick={() => playClick()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] shrink-0"
+          >
+            <span>{recommendedDiagnosticTopic.icon}</span>
+            <span>Önerilen Tarama: {recommendedDiagnosticTopic.ust_konu} →</span>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {(
+            [
+              { key: "kelime", label: "Kelime", icon: "🧠" },
+              { key: "gramer", label: "Gramer", icon: "📌" },
+              { key: "okuma", label: "Okuma", icon: "📖" },
+              { key: "dinleme", label: "Dinleme", icon: "🎧" },
+              { key: "telaffuz", label: "Telaffuz", icon: "🎙️" },
+              { key: "imla", label: "İmla & Dizilim", icon: "✍️" },
+            ] as const
+          ).map((sk) => {
+            const rec = mounted ? skillStats?.[sk.key] : undefined;
+            const pct =
+              rec && rec.total > 0
+                ? Math.round((rec.correct / rec.total) * 100)
+                : sk.key === "telaffuz" && pronunciationAccuracy !== null
+                ? pronunciationAccuracy
+                : null;
+
+            return (
+              <div
+                key={sk.key}
+                className="rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2.5 space-y-1.5"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-xs font-extrabold text-[var(--foreground)] truncate">
+                    {sk.icon} {sk.label}
+                  </span>
+                  <span className="text-xs font-black tabular-nums text-[#065F46] dark:text-emerald-400">
+                    {pct !== null ? `%${pct}` : "—"}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-[#F7EFE1] dark:bg-[var(--surface)] overflow-hidden">
+                  <div
+                    className="h-full bg-[#087F5B] rounded-full transition-all duration-500"
+                    style={{ width: `${pct ?? 0}%` }}
+                  />
+                </div>
+                <span className="block text-[10px] font-semibold text-[var(--muted)] tabular-nums">
+                  {rec && rec.total > 0
+                    ? `${rec.correct}/${rec.total} başarılı`
+                    : "Henüz veri yok"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 

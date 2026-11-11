@@ -31,6 +31,7 @@ import {
   BookOpen,
   Gamepad2,
   BookMarked,
+  Compass,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode } from "@/store/settings";
@@ -61,7 +62,8 @@ export default function Header() {
     theme,
     toggleTheme,
     showHareke,
-    toggleHareke,
+    harekeMode,
+    cycleHarekeMode,
     viewMode,
     setViewMode,
     speechRate,
@@ -361,7 +363,13 @@ export default function Header() {
       href: "/alistirmalar",
       label: "Alıştırmalar",
       Icon: Gamepad2,
-      tooltip: "6 Farklı Etkileşimli Kelime, Cümle ve Görsel-Sesli Alıştırma",
+      tooltip: "8 Farklı Etkileşimli Kelime, Cümle ve Görsel-Sesli Alıştırma",
+    },
+    {
+      href: "/seviye-tespit",
+      label: "Seviye & Tarama",
+      Icon: Compass,
+      tooltip: "Adaptif Seviye Tespit Sınavı, 13 Konu Tarama ve Kur Bitirme Merkezi (180 Soru)",
     },
     {
       href: "/sozluk",
@@ -377,7 +385,15 @@ export default function Header() {
     },
   ];
 
-  const isHarekeOn = !mounted || showHareke;
+  const activeHarekeMode = !mounted
+    ? "full"
+    : harekeMode || (showHareke ? "full" : "none");
+  const harekeShortLabel =
+    activeHarekeMode === "full"
+      ? "Tam"
+      : activeHarekeMode === "irab-only"
+      ? "İ'rab"
+      : "Kapalı";
   const currentViewMode: ViewMode = mounted ? viewMode : "stacked";
   const isDark = mounted && theme === "dark";
   const canInstall = (isInstallable || isIOS) && !isInstalled;
@@ -478,23 +494,34 @@ export default function Header() {
 
           {/* SAĞ: Mobilde Sadece 3 Net Hızlı Buton ([1x] [🌙] [⚙️]), Masaüstünde Tam Araç Çubuğu */}
           <div className="flex items-center gap-1.5 xl:gap-1.5 shrink-0">
-            {/* 1. Hareke Aç/Kapa İkonu (Masaüstü/Tablet md+) */}
+            {/* 1. 3 Kademeli Hareke Modu İkonu (Masaüstü/Tablet md+) */}
             <button
               type="button"
               onClick={() => {
-                toggleHareke();
+                cycleHarekeMode();
                 playClick();
               }}
-              data-tooltip="Harekeleri Göster / Gizle (Okuma Zorluk Ayarı)"
+              data-tooltip={`Hareke Modu: ${
+                activeHarekeMode === "full"
+                  ? "Tam Harekeli"
+                  : activeHarekeMode === "irab-only"
+                  ? "Hareke Solması (Sadece Son İ'rab & Şedde)"
+                  : "Harekesiz (Üzerine Gelince Açılır)"
+              } — Değiştirmek için tıklayın`}
               data-tooltip-pos="bottom"
-              aria-label="Harekeleri Göster / Gizle"
-              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl border-2 border-b-3 items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
-                isHarekeOn
+              aria-label="Hareke Modunu Değiştir"
+              className={`hidden md:flex group relative min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] px-2 rounded-xl border-2 border-b-3 items-center justify-center gap-1 active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                activeHarekeMode === "full"
                   ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
-                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] opacity-75"
+                  : activeHarekeMode === "irab-only"
+                  ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
+                  : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] opacity-80"
               }`}
             >
-              <Sparkles size={14} strokeWidth={2.4} />
+              <Sparkles size={13} strokeWidth={2.4} className="shrink-0" />
+              <span className="hidden xl:inline text-[10px] font-black">
+                {harekeShortLabel}
+              </span>
             </button>
 
             {/* 2. Çeviri Görünümü İkonu + Popover Menü (Masaüstü/Tablet md+) */}
@@ -625,17 +652,19 @@ export default function Header() {
                     </button>
                   </div>
 
-                  {/* Hızlı Anahtarlar: Hareke, Çeviri & Ses Efektleri */}
+                  {/* Hızlı Anahtarlar: 3 Kademeli Hareke, Çeviri & Ses Efektleri */}
                   <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
-                        toggleHareke();
+                        cycleHarekeMode();
                         playClick();
                       }}
                       className={`px-2 py-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
-                        isHarekeOn
+                        activeHarekeMode === "full"
                           ? "bg-emerald-500/15 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                          : activeHarekeMode === "irab-only"
+                          ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
                           : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--muted)]"
                       }`}
                     >
@@ -644,7 +673,7 @@ export default function Header() {
                         <span>Hareke</span>
                       </span>
                       <span className="text-[10px] font-extrabold">
-                        {isHarekeOn ? "Açık" : "Kapalı"}
+                        {harekeShortLabel}
                       </span>
                     </button>
 
@@ -732,8 +761,20 @@ export default function Header() {
                     </div>
                   </div>
 
-                  {/* Mikrofon Testi, Uygulama Rehberi ve Kurulum */}
+                  {/* Seviye Tespit, Mikrofon Testi, Uygulama Rehberi ve Kurulum */}
                   <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#E6D7BE]/80 dark:border-slate-800">
+                    <Link
+                      href="/seviye-tespit"
+                      onClick={() => {
+                        playClick();
+                        setMobileToolsOpen(false);
+                      }}
+                      className="col-span-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#087F5B] to-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <Compass size={14} className="shrink-0" />
+                      <span>🧭 Seviye Tespit &amp; 13 Konu Tarama</span>
+                    </Link>
+
                     <button
                       type="button"
                       onClick={() => {

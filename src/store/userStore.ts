@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DictionaryItem } from "@/types/data";
+import { DictionaryItem, Level } from "@/types/data";
 
 export function formatIstanbulDate(date: Date = new Date()): string {
   try {
@@ -293,6 +293,118 @@ function sanitizeSrsRecords(raw: unknown): Record<string, SrsItemRecord> {
   return { ...safeMap };
 }
 
+export type SkillKey =
+  | "kelime"
+  | "gramer"
+  | "okuma"
+  | "dinleme"
+  | "telaffuz"
+  | "imla";
+
+export const ALL_SKILL_KEYS: SkillKey[] = [
+  "kelime",
+  "gramer",
+  "okuma",
+  "dinleme",
+  "telaffuz",
+  "imla",
+];
+
+export interface TopicMasteryRecord {
+  correct: number;
+  total: number;
+  lastTestedAt: string;
+}
+
+export interface SkillStatRecord {
+  correct: number;
+  total: number;
+}
+
+export function createDefaultSkillStats(): Record<SkillKey, SkillStatRecord> {
+  return {
+    kelime: { correct: 0, total: 0 },
+    gramer: { correct: 0, total: 0 },
+    okuma: { correct: 0, total: 0 },
+    dinleme: { correct: 0, total: 0 },
+    telaffuz: { correct: 0, total: 0 },
+    imla: { correct: 0, total: 0 },
+  };
+}
+
+const VALID_CEFR_LEVELS: Level[] = ["A1", "A2", "B1", "B2"];
+
+function sanitizeCefrLevel(val: unknown): Level | null {
+  if (typeof val === "string" && VALID_CEFR_LEVELS.includes(val as Level)) {
+    return val as Level;
+  }
+  return null;
+}
+
+function sanitizeCefrLevelArray(arr: unknown): Level[] {
+  if (!Array.isArray(arr)) return [];
+  const out: Level[] = [];
+  for (const item of arr) {
+    const lvl = sanitizeCefrLevel(item);
+    if (lvl && !out.includes(lvl)) {
+      out.push(lvl);
+    }
+  }
+  return out;
+}
+
+function sanitizeTopicMastery(raw: unknown): Record<string, TopicMasteryRecord> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const safeMap: Record<string, TopicMasteryRecord> = Object.create(null);
+  const nowIso = new Date().toISOString();
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const cleanKey = key.trim();
+    if (!cleanKey || cleanKey.length > 160 || FORBIDDEN_OBJECT_KEYS.has(cleanKey)) {
+      continue;
+    }
+    if (typeof val !== "object" || val === null || Array.isArray(val)) continue;
+    const rec = val as Record<string, unknown>;
+    const rawTotal = Number(rec.total);
+    const rawCorrect = Number(rec.correct);
+    const total = Number.isFinite(rawTotal)
+      ? Math.max(0, Math.min(100000, Math.floor(rawTotal)))
+      : 0;
+    const correct = Number.isFinite(rawCorrect)
+      ? Math.max(0, Math.min(total, Math.floor(rawCorrect)))
+      : 0;
+    const lastTestedAt = isValidIsoOrDateString(rec.lastTestedAt)
+      ? String(rec.lastTestedAt).trim()
+      : nowIso;
+    if (total > 0) {
+      safeMap[cleanKey] = { correct, total, lastTestedAt };
+    }
+  }
+  return { ...safeMap };
+}
+
+function sanitizeSkillStats(raw: unknown): Record<SkillKey, SkillStatRecord> {
+  const base = createDefaultSkillStats();
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return base;
+  }
+  const obj = raw as Record<string, unknown>;
+  for (const skill of ALL_SKILL_KEYS) {
+    const val = obj[skill];
+    if (typeof val !== "object" || val === null || Array.isArray(val)) continue;
+    const rec = val as Record<string, unknown>;
+    const rawTotal = Number(rec.total);
+    const rawCorrect = Number(rec.correct);
+    const total = Number.isFinite(rawTotal)
+      ? Math.max(0, Math.min(1000000, Math.floor(rawTotal)))
+      : 0;
+    const correct = Number.isFinite(rawCorrect)
+      ? Math.max(0, Math.min(total, Math.floor(rawCorrect)))
+      : 0;
+    base[skill] = { correct, total };
+  }
+  return base;
+}
+
 interface UserState {
   favoriteDialogues: string[];
   completedDialogues: string[];
@@ -311,6 +423,10 @@ interface UserState {
   streakDays: number;
   lastStudyDate: string;
   dailyGoalMinutes: number;
+  detectedCefrLevel: Level | null;
+  topicMastery: Record<string, TopicMasteryRecord>;
+  skillStats: Record<SkillKey, SkillStatRecord>;
+  completedLevelExams: Level[];
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
@@ -343,6 +459,10 @@ interface UserState {
   addStudyMinutes: (minutes: number) => void;
   setDailyGoalMinutes: (minutes: number) => void;
   syncDailyProgress: () => void;
+  setDetectedCefrLevel: (level: Level | null) => void;
+  recordTopicAttempt: (topic: string, isCorrect: boolean) => void;
+  recordSkillAttempt: (skill: SkillKey, isCorrect: boolean) => void;
+  markLevelExamCompleted: (level: Level) => void;
 
   exportProgress: () => string;
   importProgress: (jsonData: string, mode?: "merge" | "overwrite") => boolean;
@@ -375,6 +495,10 @@ export const useUserStore = create<UserState>()(
       streakDays: 0,
       lastStudyDate: "",
       dailyGoalMinutes: 15,
+      detectedCefrLevel: null,
+      topicMastery: {},
+      skillStats: createDefaultSkillStats(),
+      completedLevelExams: [],
 
       toggleFavoriteDialogue: (id) =>
         set((state) => ({
@@ -761,10 +885,23 @@ export const useUserStore = create<UserState>()(
             }
           }
 
+          const targetSkill: SkillKey =
+            type === "sentence" ? "gramer" : "kelime";
+          const currentSkills = sanitizeSkillStats(state.skillStats);
+          const prevSkill = currentSkills[targetSkill];
+          const nextSkillStats: Record<SkillKey, SkillStatRecord> = {
+            ...currentSkills,
+            [targetSkill]: {
+              correct: prevSkill.correct + (isCorrect && !usedHint ? 1 : 0),
+              total: prevSkill.total + 1,
+            },
+          };
+
           return {
             srsRecords: nextSrsRecords,
             mistakeIds: nextMistakeIds,
             learnedWords: nextLearnedWords,
+            skillStats: nextSkillStats,
           };
         });
 
@@ -830,6 +967,15 @@ export const useUserStore = create<UserState>()(
             "local"
           );
           const nextHistory = [...existingHistory, historyEntry].slice(-200);
+          const currentSkills = sanitizeSkillStats(state.skillStats);
+          const prevTelaffuz = currentSkills.telaffuz;
+          const nextSkillStats: Record<SkillKey, SkillStatRecord> = {
+            ...currentSkills,
+            telaffuz: {
+              correct: prevTelaffuz.correct + (clampedScore >= 70 ? 1 : 0),
+              total: prevTelaffuz.total + 1,
+            },
+          };
           return {
             pronunciationScores: [
               ...state.pronunciationScores.slice(-49),
@@ -840,6 +986,7 @@ export const useUserStore = create<UserState>()(
               (state.totalPronunciationAttempts || 0) + 1,
             studyMinutes: baseMinutes,
             activityXp: (state.activityXp || 0) + 5,
+            skillStats: nextSkillStats,
             ...streakUpdate,
           };
         }),
@@ -888,6 +1035,66 @@ export const useUserStore = create<UserState>()(
           };
         }),
 
+      setDetectedCefrLevel: (level) =>
+        set(() => ({
+          detectedCefrLevel: sanitizeCefrLevel(level),
+        })),
+
+      recordTopicAttempt: (topic, isCorrect) =>
+        set((state) => {
+          const cleanTopic = (topic || "").trim();
+          if (
+            !cleanTopic ||
+            cleanTopic.length > 160 ||
+            FORBIDDEN_OBJECT_KEYS.has(cleanTopic)
+          ) {
+            return state;
+          }
+          const prev = state.topicMastery?.[cleanTopic] || {
+            correct: 0,
+            total: 0,
+            lastTestedAt: new Date().toISOString(),
+          };
+          return {
+            topicMastery: {
+              ...(state.topicMastery || {}),
+              [cleanTopic]: {
+                correct: prev.correct + (isCorrect ? 1 : 0),
+                total: prev.total + 1,
+                lastTestedAt: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+
+      recordSkillAttempt: (skill, isCorrect) =>
+        set((state) => {
+          if (!ALL_SKILL_KEYS.includes(skill)) return state;
+          const currentSkills = sanitizeSkillStats(state.skillStats);
+          const prev = currentSkills[skill];
+          return {
+            skillStats: {
+              ...currentSkills,
+              [skill]: {
+                correct: prev.correct + (isCorrect ? 1 : 0),
+                total: prev.total + 1,
+              },
+            },
+          };
+        }),
+
+      markLevelExamCompleted: (level) =>
+        set((state) => {
+          const valid = sanitizeCefrLevel(level);
+          if (!valid) return state;
+          const existing = sanitizeCefrLevelArray(state.completedLevelExams);
+          if (existing.includes(valid)) return state;
+          return {
+            completedLevelExams: [...existing, valid],
+            activityXp: (state.activityXp || 0) + 100,
+          };
+        }),
+
       exportProgress: () => {
         const state = get();
         const history = sanitizePronunciationHistory(
@@ -896,7 +1103,7 @@ export const useUserStore = create<UserState>()(
           "export"
         );
         const payload = {
-          version: 3,
+          version: 4,
           exportedAt: new Date().toISOString(),
           favoriteDialogues: state.favoriteDialogues,
           completedDialogues: state.completedDialogues,
@@ -915,6 +1122,10 @@ export const useUserStore = create<UserState>()(
           streakDays: state.streakDays,
           lastStudyDate: state.lastStudyDate,
           dailyGoalMinutes: state.dailyGoalMinutes,
+          detectedCefrLevel: state.detectedCefrLevel || null,
+          topicMastery: sanitizeTopicMastery(state.topicMastery),
+          skillStats: sanitizeSkillStats(state.skillStats),
+          completedLevelExams: sanitizeCefrLevelArray(state.completedLevelExams),
         };
         return JSON.stringify(payload, null, 2);
       },
@@ -941,14 +1152,14 @@ export const useUserStore = create<UserState>()(
 
           const data = parsed as Record<string, unknown>;
 
-          // 2. Sürüm (version) doğrulaması: undefined veya 1..3 arası tam sayı olmalı (ör. version: 999 reddedilir)
+          // 2. Sürüm (version) doğrulaması: undefined veya 1..4 arası tam sayı olmalı (ör. version: 999 reddedilir)
           if (data.version !== undefined) {
             if (
               typeof data.version !== "number" ||
               !Number.isFinite(data.version) ||
               !Number.isInteger(data.version) ||
               data.version < 1 ||
-              data.version > 3
+              data.version > 4
             ) {
               return false;
             }
@@ -973,6 +1184,10 @@ export const useUserStore = create<UserState>()(
             "streakDays",
             "lastStudyDate",
             "dailyGoalMinutes",
+            "detectedCefrLevel",
+            "topicMastery",
+            "skillStats",
+            "completedLevelExams",
           ];
           if (!knownKeys.some((k) => k in data)) {
             return false;
@@ -1168,6 +1383,13 @@ export const useUserStore = create<UserState>()(
             }
           }
 
+          const importedDetectedCefr = sanitizeCefrLevel(data.detectedCefrLevel);
+          const importedTopicMastery = sanitizeTopicMastery(data.topicMastery);
+          const importedSkillStats = sanitizeSkillStats(data.skillStats);
+          const importedCompletedExams = sanitizeCefrLevelArray(
+            data.completedLevelExams
+          );
+
           if (mode === "overwrite") {
             set({
               favoriteDialogues: importedFavoriteDialogues,
@@ -1190,6 +1412,10 @@ export const useUserStore = create<UserState>()(
               streakDays: effectiveImportedStreakDays,
               lastStudyDate: importedLastStudyDate,
               dailyGoalMinutes: importedDailyGoalMinutes,
+              detectedCefrLevel: importedDetectedCefr,
+              topicMastery: importedTopicMastery,
+              skillStats: importedSkillStats,
+              completedLevelExams: importedCompletedExams,
             });
             return true;
           }
@@ -1268,6 +1494,47 @@ export const useUserStore = create<UserState>()(
                   mergedScores.length
                 );
 
+          const mergedTopicMastery: Record<string, TopicMasteryRecord> = {
+            ...sanitizeTopicMastery(current.topicMastery),
+          };
+          for (const [topicKey, incomingRec] of Object.entries(
+            importedTopicMastery
+          )) {
+            const curRec = mergedTopicMastery[topicKey];
+            if (!curRec) {
+              mergedTopicMastery[topicKey] = incomingRec;
+            } else {
+              const total = Math.max(curRec.total, incomingRec.total);
+              const correct = Math.min(
+                total,
+                Math.max(curRec.correct, incomingRec.correct)
+              );
+              const lastTestedAt =
+                (Date.parse(incomingRec.lastTestedAt) || 0) >=
+                (Date.parse(curRec.lastTestedAt) || 0)
+                  ? incomingRec.lastTestedAt
+                  : curRec.lastTestedAt;
+              mergedTopicMastery[topicKey] = { correct, total, lastTestedAt };
+            }
+          }
+
+          const currentSkills = sanitizeSkillStats(current.skillStats);
+          const mergedSkillStats = createDefaultSkillStats();
+          for (const sk of ALL_SKILL_KEYS) {
+            const total = Math.max(
+              currentSkills[sk].total,
+              importedSkillStats[sk].total
+            );
+            const correct = Math.min(
+              total,
+              Math.max(
+                currentSkills[sk].correct,
+                importedSkillStats[sk].correct
+              )
+            );
+            mergedSkillStats[sk] = { correct, total };
+          }
+
           set({
             favoriteDialogues: sanitizeStringArray([
               ...current.favoriteDialogues,
@@ -1323,6 +1590,14 @@ export const useUserStore = create<UserState>()(
               data.dailyGoalMinutes !== undefined
                 ? importedDailyGoalMinutes
                 : current.dailyGoalMinutes,
+            detectedCefrLevel:
+              importedDetectedCefr || current.detectedCefrLevel || null,
+            topicMastery: mergedTopicMastery,
+            skillStats: mergedSkillStats,
+            completedLevelExams: sanitizeCefrLevelArray([
+              ...(current.completedLevelExams || []),
+              ...importedCompletedExams,
+            ]),
           });
           return true;
         } catch {
@@ -1360,6 +1635,10 @@ export const useUserStore = create<UserState>()(
           streakDays: 0,
           lastStudyDate: "",
           dailyGoalMinutes: 15,
+          detectedCefrLevel: null,
+          topicMastery: {},
+          skillStats: createDefaultSkillStats(),
+          completedLevelExams: [],
         }),
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
@@ -1447,6 +1726,10 @@ export const useUserStore = create<UserState>()(
             raw.dailyGoalMinutes <= 180
               ? Math.floor(raw.dailyGoalMinutes)
               : 15,
+          detectedCefrLevel: sanitizeCefrLevel(raw.detectedCefrLevel),
+          topicMastery: sanitizeTopicMastery(raw.topicMastery),
+          skillStats: sanitizeSkillStats(raw.skillStats),
+          completedLevelExams: sanitizeCefrLevelArray(raw.completedLevelExams),
         };
       },
     }

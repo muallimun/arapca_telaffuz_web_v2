@@ -744,3 +744,224 @@ test("11. FAZ 3 — A4 PDF Üreticisi: escapeHtml, Arakom.ttf, tohumlu A/B Kitap
   assert.equal(rubricSum, 100);
 });
 
+test("12. FAZ 4A — seviye_tespit_sorulari.json (180 Soru): benzersiz ID, NFC, 0 tatweel, 13 konu ve %100 çeldirici analizi bütünlüğü", async () => {
+  const { raw, parsed } = readDataJson("seviye_tespit_sorulari.json");
+  const { ASSESSMENT_TOPICS } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
+  );
+
+  assert.ok(Array.isArray(parsed), "seviye_tespit_sorulari.json dizi olmalıdır");
+  assert.equal(parsed.length, 180, "Toplam soru sayısı tam 180 olmalıdır");
+  assert.equal(
+    raw.includes("\u0640"),
+    false,
+    "seviye_tespit_sorulari.json içinde tatweel (\\u0640) bulunmamalıdır"
+  );
+
+  const strings = collectStrings(parsed);
+  for (const s of strings) {
+    assert.equal(
+      s,
+      s.normalize("NFC"),
+      `seviye_tespit_sorulari.json içinde NFC olmayan metin bulundu: ${s.slice(0, 40)}`
+    );
+  }
+
+  const seenIds = new Set();
+  const seenTopics = new Set();
+  const validLetters = ["A", "B", "C", "D"];
+
+  for (const q of parsed) {
+    assert.ok(typeof q.id === "string" && q.id.length > 0);
+    assert.equal(seenIds.has(q.id), false, `Mükerrer soru ID: ${q.id}`);
+    seenIds.add(q.id);
+
+    assert.ok(["A1", "A2", "B1", "B2"].includes(q.seviye), `${q.id} geçersiz seviye`);
+    assert.ok([1, 2, 3].includes(q.zorluk_basamagi), `${q.id} geçersiz zorluk_basamagi`);
+    seenTopics.add(q.ust_konu);
+
+    assert.equal(Array.isArray(q.secenekler) && q.secenekler.length === 4, true, `${q.id} 4 şıklı olmalıdır`);
+    assert.deepEqual(
+      q.secenekler.map((o) => o.harf),
+      validLetters,
+      `${q.id} şıkları tam A,B,C,D sırasıyla tanımlı olmalıdır`
+    );
+    assert.ok(validLetters.includes(q.dogru_secenek), `${q.id} geçersiz dogru_secenek`);
+
+    assert.ok(q.cozum_detayi?.soru_cevirisi_tr?.trim().length > 0, `${q.id} soru_cevirisi_tr boş`);
+    assert.ok(q.cozum_detayi?.odak_kural?.trim().length > 0, `${q.id} odak_kural boş`);
+    assert.ok(q.cozum_detayi?.dogru_cevap_gerekcesi?.trim().length > 0, `${q.id} dogru_cevap_gerekcesi boş`);
+
+    const expectedWrongLetters = validLetters.filter((l) => l !== q.dogru_secenek);
+    const actualAnalizKeys = Object.keys(q.cozum_detayi?.celdirici_analizi || {}).sort();
+    assert.deepEqual(
+      actualAnalizKeys,
+      expectedWrongLetters,
+      `${q.id} celdirici_analizi anahtarları yanlış 3 şıkla birebir eşleşmelidir`
+    );
+    for (const wl of expectedWrongLetters) {
+      assert.ok(
+        q.cozum_detayi.celdirici_analizi[wl].trim().length > 0,
+        `${q.id} ${wl} şıkkı çeldirici analizi boş olmamalıdır`
+      );
+    }
+  }
+
+  assert.equal(seenTopics.size, 13, "Tam 13 üst konu bulunmalıdır");
+  const configuredTopics = new Set(ASSESSMENT_TOPICS.map((t) => t.ust_konu));
+  assert.deepEqual(seenTopics, configuredTopics);
+});
+
+test("13. FAZ 4A — 3 Kademeli Hareke Solması (full / irab-only / none) harf iskeleti ve son harf i'rab koruması", async () => {
+  const { formatArabicByHarekeMode, removeArabicHarakat } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts")).href
+  );
+
+  const sampleSentences = [
+    "ذَهَبَ الطَّالِبُ الْمُجْتَهِدُ إِلَى مَدْرَسَةٍ كَبِيرَةٍ.",
+    "إِنَّ الْمُعَلِّمِينَ كَتَبُوا دَرْسًا جَدِيدًا.",
+  ];
+
+  for (const s of sampleSentences) {
+    const fullOut = formatArabicByHarekeMode(s, "full", "amiri");
+    const irabOut = formatArabicByHarekeMode(s, "irab-only", "amiri");
+    const noneOut = formatArabicByHarekeMode(s, "none", "amiri");
+
+    // Üç modda da ünsüz harf iskeleti %100 aynı kalmalı
+    const skelFull = removeArabicHarakat(fullOut);
+    const skelIrab = removeArabicHarakat(irabOut);
+    const skelNone = removeArabicHarakat(noneOut);
+    assert.equal(skelFull, skelIrab, "full ve irab-only ünsüz iskeleti birebir aynı olmalıdır");
+    assert.equal(skelFull, skelNone, "full ve none ünsüz iskeleti birebir aynı olmalıdır");
+
+    // none modunda hiçbir hareke kalmamalı
+    assert.equal(
+      /[\u064B-\u065F\u0670]/.test(noneOut),
+      false,
+      "none modunda hiçbir hareke bulunmamalıdır"
+    );
+
+    // irab-only modunda tam harekeden daha az hareke olmalı ama şedde/tenvin/son harf i'rabı korunmalı
+    assert.ok(
+      irabOut.length < fullOut.length && irabOut.length > noneOut.length,
+      "irab-only uzunluğu none ile full arasında olmalıdır"
+    );
+    assert.equal(irabOut.includes("\u0651"), true, "irab-only şeddeyi korumalıdır");
+  }
+
+  // Kelime sonu damme ve iç fethaların ayrımı: "الطَّالِبُ" -> iç kesra (\u0650) silinmeli, şedde+fetha? (şedde korunur, iç fetha silinir), son damme (\u064F) korunmalı!
+  const wordIrab = formatArabicByHarekeMode("الطَّالِبُ", "irab-only", "amiri");
+  assert.equal(wordIrab.endsWith("بُ"), true, "Kelime sonu i'rab harekesi (بُ) korunmalıdır");
+  assert.equal(wordIrab.includes("لِ"), false, "Kelime içi kesra (لِ) soyulmalıdır");
+
+  // Cemi müzekker fiil (كَتَبُوا): sessiz eliften önceki بُ dammesi korunmalı, iç تَ fethası soyulmalı
+  const verbIrab = formatArabicByHarekeMode("كَتَبُوا", "irab-only", "amiri");
+  assert.equal(verbIrab.includes("بُوا"), true, "Sessiz elif öncesi fiil harekesi (بُوا) korunmalıdır");
+  assert.equal(verbIrab.includes("تَ"), false, "Fiil içi kısa hareke (تَ) soyulmalıdır");
+});
+
+test("14. FAZ 4A — Şık karıştırma kilidi, sade terim dönüştürücü, Leech kliniği, dinamik import disiplini ve Admin entegrasyonu", async () => {
+  const {
+    prepareQuestionOptions,
+    isSelectedOptionCorrect,
+    getDistractorAnalysisForSelection,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
+  );
+  const { mulberry32, hashStringSeed } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx")
+    ).href
+  );
+  const { getLeechSrsItems } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "mistakeUtils.ts")).href
+  );
+  const { simplifyGrammarTerminology } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts")).href
+  );
+
+  const { parsed: questions } = readDataJson("seviye_tespit_sorulari.json");
+  const normalQ = questions.find((q) => q.soru_tipi !== "hata_bulma");
+  const hataBulmaQ = questions.find((q) => q.soru_tipi === "hata_bulma");
+
+  // Normal soruda şıklar karışsa bile origHarf üzerinden doğru şık ve çeldirici analizi %100 eşleşmeli
+  const rng = mulberry32(hashStringSeed("shuffle_lock_test_42"));
+  const prepared = prepareQuestionOptions(normalQ, rng);
+  const rightOpt = prepared.find((o) => o.origHarf === normalQ.dogru_secenek);
+  const wrongOpt = prepared.find((o) => o.origHarf !== normalQ.dogru_secenek);
+  assert.equal(isSelectedOptionCorrect(normalQ, rightOpt.origHarf), true);
+  assert.equal(isSelectedOptionCorrect(normalQ, wrongOpt.origHarf), false);
+  assert.equal(
+    getDistractorAnalysisForSelection(normalQ, wrongOpt.origHarf),
+    normalQ.cozum_detayi.celdirici_analizi[wrongOpt.origHarf]
+  );
+
+  // hata_bulma sorularında şık sırası A-B-C-D kilitli kalmalı
+  if (hataBulmaQ) {
+    const locked = prepareQuestionOptions(
+      hataBulmaQ,
+      mulberry32(hashStringSeed("any_seed"))
+    );
+    assert.deepEqual(
+      locked.map((o) => o.origHarf),
+      ["A", "B", "C", "D"],
+      "hata_bulma sorularında şık sırası A-B-C-D olarak sabit kalmalıdır"
+    );
+  }
+
+  // Sade anlatım dönüştürücü Arapçaya dokunmadan ağır terimleri sadeleştirmeli
+  const simplified = simplifyGrammarTerminology(
+    "Mübteda (الْعِلْمُ) merfûdur; Muzâfun İleyh mecrûrdur."
+  );
+  assert.equal(simplified.includes("İsim Cümlesi Öznesi"), true);
+  assert.equal(simplified.includes("Tamlayan İsim"), true);
+  assert.equal(simplified.includes("الْعِلْمُ"), true);
+
+  // Leech Kliniği: wrongCount >= 3 filtrelemesi ve azalan sıralama
+  const leeches = getLeechSrsItems({
+    w1: { id: "w1", type: "word", box: 1, nextReviewAt: 0, correctStreak: 0, wrongCount: 2, lastReviewedAt: 10 },
+    w2: { id: "w2", type: "word", box: 1, nextReviewAt: 0, correctStreak: 0, wrongCount: 5, lastReviewedAt: 20 },
+    w3: { id: "w3", type: "word", box: 1, nextReviewAt: 0, correctStreak: 0, wrongCount: 3, lastReviewedAt: 30 },
+  });
+  assert.deepEqual(
+    leeches.map((l) => l.id),
+    ["w2", "w3"],
+    "getLeechSrsItems yalnızca wrongCount >= 3 öğeleri azalan sırayla döndürmelidir"
+  );
+
+  // Dinamik paketleme disiplini: seviye_tespit_sorulari.json global dosyalara statik import edilmemeli
+  for (const rel of [
+    ["src", "lib", "data.ts"],
+    ["src", "app", "page.tsx"],
+    ["src", "components", "layout", "Header.tsx"],
+  ]) {
+    const srcCode = fs.readFileSync(path.join(ROOT_DIR, ...rel), "utf8");
+    assert.equal(
+      srcCode.includes("seviye_tespit_sorulari.json"),
+      false,
+      `${rel.join("/")} içinde seviye_tespit_sorulari.json statik import edilmemelidir`
+    );
+  }
+
+  const seviyePageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    seviyePageCode.includes('import("@/data/seviye_tespit_sorulari.json")'),
+    true,
+    "/seviye-tespit sayfası soru bankasını dinamik import() ile yüklemelidir"
+  );
+
+  const adminApiCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  assert.equal(
+    adminApiCode.includes('seviye_sorulari: "seviye_tespit_sorulari.json"'),
+    true,
+    "/api/admin içinde seviye_sorulari veri kümesi tanımlı olmalıdır"
+  );
+});
+
+

@@ -19,6 +19,7 @@ import {
   FolderOpen,
   GitBranch,
   Trophy,
+  Compass,
   X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
@@ -46,6 +47,7 @@ import {
 import {
   resolveMistakesPool,
   buildDailyStudyPackage,
+  getLeechSrsItems,
 } from "@/lib/mistakeUtils";
 import {
   generatePoolFromDialogues,
@@ -299,6 +301,7 @@ function ExercisesPageContent() {
     srsRecords,
     completedDialogues,
     learnedWords,
+    detectedCefrLevel,
     clearMistakes,
   } = useUserStore();
   const { preferredLevel } = useSettings();
@@ -329,8 +332,16 @@ function ExercisesPageContent() {
         completedDialogues: completedDialogues || [],
         learnedWords: learnedWords || [],
         preferredLevel,
+        detectedCefrLevel,
       }),
-    [srsRecords, mistakeIds, completedDialogues, learnedWords, preferredLevel]
+    [
+      srsRecords,
+      mistakeIds,
+      completedDialogues,
+      learnedWords,
+      preferredLevel,
+      detectedCefrLevel,
+    ]
   );
 
   // URL parametrelerini oku (?pool=sentences_1111&cat=...&grammar=...&level=A1&mode=quiz vb.)
@@ -380,6 +391,49 @@ function ExercisesPageContent() {
           dialogues:
             dailyPackage.dueReviewPool.dialogues.length > 0
               ? dailyPackage.dueReviewPool.dialogues
+              : [dailyPackage.dailyDialogue.dialogue],
+          visualPool: gorselKelimeler,
+          isMistakesMode: true,
+        });
+        setIsPlaying(true);
+        return;
+      }
+
+      if (planParam === "leech") {
+        const leechIds = getLeechSrsItems(srsRecords || {}).map((r) => r.id);
+        const sourceIds = leechIds.length > 0 ? leechIds : mistakeIds;
+        const leechResolved = resolveMistakesPool(sourceIds);
+        const leechVocab =
+          leechResolved.words.length >= 4
+            ? leechResolved.words
+            : [
+                ...leechResolved.words,
+                ...sozluk
+                  .filter(
+                    (w) => !leechResolved.words.some((lw) => lw.id === w.id)
+                  )
+                  .slice(0, 8),
+              ];
+        setSingleDialogueId("all");
+        setSingleReadingId("all");
+        setCategoryFilter("all");
+        setGrammarFilter("all");
+        setRangePreset("mistakes");
+        setContentType(
+          leechResolved.idioms.length > 0 || leechResolved.dialogues.length > 0
+            ? "mixed"
+            : "words"
+        );
+        setSelectedType("multiple-choice");
+        setFrozenPools({
+          vocabulary: leechVocab,
+          idioms:
+            leechResolved.idioms.length > 0
+              ? leechResolved.idioms
+              : getCombinedIdiomsCatalog().slice(0, 4),
+          dialogues:
+            leechResolved.dialogues.length > 0
+              ? leechResolved.dialogues
               : [dailyPackage.dailyDialogue.dialogue],
           visualPool: gorselKelimeler,
           isMistakesMode: true,
@@ -479,7 +533,7 @@ function ExercisesPageContent() {
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [searchParams, dailyPackage]);
+  }, [searchParams, dailyPackage, srsRecords, mistakeIds]);
 
   const mistakesResolved = useMemo(
     () => resolveMistakesPool(mistakeIds),
@@ -1703,6 +1757,18 @@ function ExercisesPageContent() {
                 </button>
               </div>
             )}
+
+          {!isPlaying && (
+            <Link
+              href="/seviye-tespit"
+              onClick={() => playClick()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 shrink-0"
+            >
+              <Compass size={13} className="shrink-0" />
+              <span className="hidden md:inline">Seviye &amp; 13 Konu Tarama</span>
+              <span className="md:hidden">Tarama</span>
+            </Link>
+          )}
 
           <div
             data-tooltip={`${contentStats.dialogueCount} Diyalog • ${contentStats.readingCount} Metin • ${contentStats.sentenceCount} Cümle • ${contentStats.proverbCount} Atasözü • ${contentStats.visualWordCount} Görsel Kelime • ${contentStats.dictionaryWordCount} Sözlük Kelimesi`}

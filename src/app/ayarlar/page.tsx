@@ -52,7 +52,7 @@ import {
 import {
   ARABIC_FONT_OPTIONS,
   ARABIC_FONT_SIZE_PRESETS,
-  formatArabicText,
+  formatArabicByHarekeMode,
   getArabicFontConfig,
 } from "@/lib/arabicTextUtils";
 import { triggerGuideModal } from "@/components/ui/GuideAndInfoModal";
@@ -68,7 +68,10 @@ export default function SettingsPage() {
     viewMode,
     setViewMode,
     showHareke,
-    setShowHareke,
+    harekeMode,
+    setHarekeMode,
+    grammarDepthMode,
+    setGrammarDepthMode,
     showTooltips,
     setShowTooltips,
     showShadowing,
@@ -303,9 +306,14 @@ export default function SettingsPage() {
     { id: "data", label: "💾 Hedef & Veri" },
   ];
 
+  const activeHarekeMode = harekeMode || (showHareke ? "full" : "none");
   const rawSampleArabic =
     "أَسْتَوْدِعُكِ اللّٰهَ يَا أُمِّي، وَأَسْتَوْدِعُكَ اللّٰهَ يَا أَبِي.";
-  const sampleArabic = formatArabicText(rawSampleArabic, showHareke, arabicFont);
+  const sampleArabic = formatArabicByHarekeMode(
+    rawSampleArabic,
+    activeHarekeMode,
+    arabicFont
+  );
   const activeFontCfg = getArabicFontConfig(arabicFont);
 
   const showAppearance =
@@ -484,7 +492,11 @@ export default function SettingsPage() {
                       }}
                       className="w-full rounded-xl bg-[#F7EFE1]/70 dark:bg-[var(--surface)] px-2.5 py-1 border border-[#E6D7BE] dark:border-[var(--border)] text-right font-bold text-[#065F46] dark:text-emerald-400"
                     >
-                      {formatArabicText("أَسْتَوْدِعُكَ اللّٰهَ", showHareke)}
+                      {formatArabicByHarekeMode(
+                        "أَسْتَوْدِعُكَ اللّٰهَ",
+                        activeHarekeMode,
+                        font.id
+                      )}
                     </div>
                   </button>
                 );
@@ -740,16 +752,76 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* 1. Arapça Harekeleri Göster (Tashkeel) */}
+              {/* 1. 3 Kademeli Arapça Hareke Görünümü (Tam / Hareke Solması / Harekesiz) */}
               <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
                 <div className="flex items-start gap-2.5">
                   <Sparkles size={17} className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                      Arapça Harekeleri Göster (Tashkeel)
+                      3 Kademeli Hareke Modu (Hareke Solması)
                     </span>
                     <span className="block text-[11px] text-[var(--muted)]">
-                      Üstün, esre, ötre ve şedde işaretlerini göster veya gizle
+                      Tam harekeli, sadece son i&apos;rab &amp; şedde veya harekesiz (üzerine gelince açılır)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-3 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setHarekeMode("full");
+                    }}
+                    className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      activeHarekeMode === "full"
+                        ? "bg-[#087F5B] text-white font-bold"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    Tam Harekeli
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setHarekeMode("irab-only");
+                    }}
+                    className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      activeHarekeMode === "irab-only"
+                        ? "bg-amber-600 text-white font-bold"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    Hareke Solması
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setHarekeMode("none");
+                    }}
+                    className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      activeHarekeMode === "none"
+                        ? "bg-[#087F5B] text-white font-bold"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    Harekesiz
+                  </button>
+                </div>
+              </div>
+
+              {/* 1B. Gramer Anlatım Derinliği (Sade Anlatım | Akademik & İ'rab) */}
+              <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
+                <div className="flex items-start gap-2.5">
+                  <BookOpen size={17} className="text-[#6741D9] dark:text-indigo-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                      Gramer Anlatım Derinliği
+                    </span>
+                    <span className="block text-[11px] text-[var(--muted)]">
+                      Klasik sarf/nahiv terimlerini sade Türkçe veya akademik i&apos;rab ile inceleyin
                     </span>
                   </div>
                 </div>
@@ -759,29 +831,29 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => {
                       playClick();
-                      setShowHareke(true);
+                      setGrammarDepthMode("simple");
                     }}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
-                      showHareke
+                    className={`px-2.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      grammarDepthMode === "simple"
                         ? "bg-[#087F5B] text-white font-bold"
                         : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
                     }`}
                   >
-                    Harekeli
+                    🌱 Sade Anlatım
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       playClick();
-                      setShowHareke(false);
+                      setGrammarDepthMode("academic");
                     }}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
-                      !showHareke
-                        ? "bg-[#087F5B] text-white font-bold"
+                    className={`px-2.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      grammarDepthMode !== "simple"
+                        ? "bg-[#6741D9] text-white font-bold"
                         : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
                     }`}
                   >
-                    Harekesiz
+                    🎓 Akademik &amp; İ&apos;rab
                   </button>
                 </div>
               </div>

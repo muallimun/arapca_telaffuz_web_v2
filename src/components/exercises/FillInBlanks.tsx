@@ -150,7 +150,12 @@ export default function FillInBlanks({
 
   const { speechRate, showHareke, arabicFont } = useSettings();
   const { playAudio, playTTS } = useAudioStore();
-  const { addStudyMinutes, addMistake, recordItemAttempt } = useUserStore();
+  const {
+    addStudyMinutes,
+    addMistake,
+    recordItemAttempt,
+    recordSkillAttempt,
+  } = useUserStore();
   const formatAr = (t: string) => formatArabicText(t, showHareke, arabicFont);
 
   useEffect(() => {
@@ -637,6 +642,10 @@ export default function FillInBlanks({
       if (cid.startsWith("sent_")) return "sentence";
       return "word";
     };
+
+    if (!hadPreviousAttempt) {
+      recordSkillAttempt("imla", isRight);
+    }
 
     if (!isRight) {
       wrongAttemptedQuestionsRef.current.add(q.id);

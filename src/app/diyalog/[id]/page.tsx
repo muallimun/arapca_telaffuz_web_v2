@@ -118,7 +118,10 @@ import {
 } from "@/lib/audioAnalysis";
 import { HybridSpeechManager } from "@/lib/speechManager";
 import { evaluateSentenceWords } from "@/lib/arabicNlpEngine";
-import { formatArabicText, splitMixedBidiText } from "@/lib/arabicTextUtils";
+import {
+  formatArabicByHarekeMode,
+  splitMixedBidiText,
+} from "@/lib/arabicTextUtils";
 import {
   requestWakeLock,
   releaseWakeLock,
@@ -155,6 +158,7 @@ export default function DialogueDetailPage({
     viewMode,
     setViewMode,
     showHareke,
+    harekeMode,
     toggleHareke,
     showShadowing,
     arabicFont,
@@ -803,7 +807,11 @@ export default function DialogueDetailPage({
   const [isGrammarQuickModalOpen, setIsGrammarQuickModalOpen] = useState(false);
 
   const getDisplayText = (text: string) =>
-    formatArabicText(text, !mounted || showHareke, arabicFont);
+    formatArabicByHarekeMode(
+      text,
+      !mounted ? "full" : harekeMode || (showHareke ? "full" : "none"),
+      arabicFont
+    );
 
   const prepareWordForms = (word: DictionaryItem) => {
     const forms: { label: string; arabic: string }[] = [];
@@ -2526,23 +2534,31 @@ export default function DialogueDetailPage({
                 {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
               </button>
 
-              {/* 3. Hareke Butonu (✨ Hareke) */}
+              {/* 3. Hareke Butonu (✨ 3 Kademeli Hareke Solması) */}
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   toggleHareke();
                 }}
-                data-tooltip="Harekeli / Harekesiz Görünüm"
-                aria-label="Harekeli / Harekesiz"
+                data-tooltip="Hareke Görünümü: Tam Harekeli → Hareke Solması (İ'rab) → Harekesiz"
+                aria-label="Hareke Görünümünü Değiştir"
                 className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0 ${
-                  !mounted || showHareke
+                  !mounted || harekeMode === "full"
                     ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                    : harekeMode === "irab-only"
+                    ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
                     : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
                 <Sparkles size={13} className="shrink-0" />
-                <span>Hareke</span>
+                <span>
+                  {!mounted || harekeMode === "full"
+                    ? "Hareke"
+                    : harekeMode === "irab-only"
+                    ? "İ'rab"
+                    : "Harekesiz"}
+                </span>
               </button>
 
               {/* 4. Canlandırma / Rol Yapma Hızlı İkon Butonu (Masaüstünde görünür, mobilde sekmede/menüde) */}

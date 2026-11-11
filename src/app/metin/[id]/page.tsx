@@ -115,7 +115,11 @@ import {
   DictionaryItem,
   ReadingTextLine,
 } from "@/types/data";
-import { formatArabicText, splitMixedBidiText } from "@/lib/arabicTextUtils";
+import {
+  formatArabicText,
+  formatArabicByHarekeMode,
+  splitMixedBidiText,
+} from "@/lib/arabicTextUtils";
 import {
   requestWakeLock,
   releaseWakeLock,
@@ -159,6 +163,7 @@ export default function ReadingTextDetailPage({
     viewMode,
     setViewMode,
     showHareke,
+    harekeMode,
     toggleHareke,
     showShadowing,
     arabicFont,
@@ -186,6 +191,7 @@ export default function ReadingTextDetailPage({
     toggleLearnedWord,
     isWordLearned,
     mistakeIds,
+    recordSkillAttempt,
   } = useUserStore();
 
   const [mounted, setMounted] = useState(false);
@@ -719,9 +725,13 @@ export default function ReadingTextDetailPage({
       : "ar-SA-HamedNeural";
 
   const getDisplayText = (text: string, harekeOverride?: boolean) => {
-    const effective =
-      harekeOverride !== undefined ? harekeOverride : !mounted || showHareke;
-    return formatArabicText(text, effective, arabicFont);
+    if (harekeOverride !== undefined) {
+      return formatArabicText(text, harekeOverride, arabicFont);
+    }
+    const activeMode = !mounted
+      ? "full"
+      : harekeMode || (showHareke ? "full" : "none");
+    return formatArabicByHarekeMode(text, activeMode, arabicFont);
   };
 
   const prepareWordForms = (word: DictionaryItem) => {
@@ -1932,7 +1942,7 @@ export default function ReadingTextDetailPage({
                   : "1.0x"}
               </button>
 
-              {/* 3. Hareke Butonu (✨ Hareke) */}
+              {/* 3. Hareke Butonu (✨ 3 Kademeli Hareke Solması) */}
               <button
                 type="button"
                 onClick={() => {
@@ -1940,16 +1950,24 @@ export default function ReadingTextDetailPage({
                   toggleHareke();
                   setLineHarekeOverrides({});
                 }}
-                data-tooltip="Harekeli / Harekesiz Görünüm"
-                aria-label="Harekeli / Harekesiz"
+                data-tooltip="Hareke Görünümü: Tam Harekeli → Hareke Solması (İ'rab) → Harekesiz"
+                aria-label="Hareke Görünümünü Değiştir"
                 className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0 ${
-                  !mounted || showHareke
+                  !mounted || harekeMode === "full"
                     ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                    : harekeMode === "irab-only"
+                    ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
                     : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
                 <Sparkles size={13} className="shrink-0" />
-                <span>Hareke</span>
+                <span>
+                  {!mounted || harekeMode === "full"
+                    ? "Hareke"
+                    : harekeMode === "irab-only"
+                    ? "İ'rab"
+                    : "Harekesiz"}
+                </span>
               </button>
 
               {/* 4. Seslendirici Cinsiyeti (👨 Erkek / 👩 Kadın) */}
@@ -3298,6 +3316,9 @@ export default function ReadingTextDetailPage({
                         type="button"
                         onClick={() => {
                           playClick();
+                          if (selectedAnswers[qIdx] === undefined) {
+                            recordSkillAttempt("okuma", isThisCorrect);
+                          }
                           setSelectedAnswers((prev) => ({
                             ...prev,
                             [qIdx]: optIdx,

@@ -142,7 +142,7 @@
     "bagli_konu": "İsim Cümlesinde Mübteda-Haber İ'rabı ve Uyumu",
     "soru_yonergesi_tr": "Cümledeki dil bilgisi hatasını içeren kelimeyi seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "الْفَصْلُ وَاسِعٌ وَالنَّافِذَةُ مَفْتُوحًا.",
+    "soru_metni_ar": "الْفَصْلُ وَاسِعٌ وَالنَّافِذَةُ مَفْتُوحًا.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -318,7 +318,7 @@
     "bagli_konu": "Muzâri Fiil Çekimi ve Fail Uyumu",
     "soru_yonergesi_tr": "Cümledeki boşluğa uygun fiili seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "الْأُمُّ ______ طَعَامَ الْغَدَاءِ فِي الْمَطْبَخِ.",
+    "soru_metni_ar": "الْأُمُّ ______ طَعَامَ الْغَدَاءِ فِي الْمَطْبَخِ.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -494,7 +494,7 @@
     "bagli_konu": "Fiyat Sorma Kalıbı (بِكَمْ) ve Alışveriş İletişimi",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa uygun soruyu seçiniz.",
     "soru_baglam_tr": "Müşteri manava elmanın fiyatını soruyor:",
-    "soru_metni_ar": "الْمُشْتَرِي: مَعْذِرَةً، ______ التُّفَّاحِ؟\nالْبَائِعُ: بِخَمْسِ لِيرَاتٍ يَا سَيِّدِي.",
+    "soru_metni_ar": "الْمُشْتَرِي: مَعْذِرَةً، ______ التُّفَّاحِ؟\nالْبَائِعُ: بِخَمْسِ لِيرَاتٍ يَا سَيِّدِي.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -538,7 +538,7 @@
     "bagli_konu": "Ulaşım Araçları ve Zıt Anlamlı Sıfatlar",
     "soru_yonergesi_tr": "Cümledeki boşluğa anlamca en uygun zıt sıfatı seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "الطَّائِرَةُ سَرِيعَةٌ، وَالْقِطَارُ الْقَدِيمُ ______.",
+    "soru_metni_ar": "الطَّائِرَةُ سَرِيعَةٌ، وَالْقِطَارُ الْقَدِيمُ ______.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -582,7 +582,7 @@
     "bagli_konu": "Sıfat Tamlamasında Cinsiyet Uyumu",
     "soru_yonergesi_tr": "Cümledeki dil bilgisi hatasını içeren kelimeyi seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "الْبِنْتُ الصَّغِيرُ تَقْرَأُ قِصَّةً.",
+    "soru_metni_ar": "الْبِنْتُ الصَّغِيرُ تَقْرَأُ قِصَّةً.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -2342,7 +2342,7 @@
     "bagli_konu": "Harf-i Cerli Fiiller (شَعَرَ بِ)",
     "soru_yonergesi_tr": "Cümledeki boşluğa uygun harf-i cerli ifadeyi seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "شَعَرَتِ الْبِنْتُ ______ شَدِيدٍ بَعْدَ الرِّحْلَةِ.",
+    "soru_metni_ar": "شَعَرَتِ الْبِنْتُ ______ شَدِيدٍ بَعْدَ الرِّحْلَةِ.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -2474,7 +2474,7 @@
     "bagli_konu": "3-10 Arası Sayı-Ma'dûd Cinsiyet Zıtlığı",
     "soru_yonergesi_tr": "Cümledeki dil bilgisi hatasını içeren kelimeyi seçiniz.",
     "soru_baglam_tr": null,
-    "soru_metni_ar": "اشْتَرَيْتُ ثَلَاثَةَ حَقَائِبَ جَدِيدَةٍ مِنَ السُّوقِ.",
+    "soru_metni_ar": "اشْتَرَيْتُ ثَلَاثَةَ حَقَائِبَ جَدِيدَةٍ مِنَ السُّوقِ.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -3466,9 +3466,9 @@
     "cozum_detayi": {
       "soru_cevirisi_tr": "Öğrenci ay boyunca on dört hikâye okudu.",
       "odak_kural": "13-19 arası mürekkeb sayılarda birinci cüz ma'dûda zıt cinsiyette, ikinci cüz (عَشْرَةَ / عَشَرَ) ise ma'dûdla aynı cinsiyette fetha üzere mebnî gelir.",
-      "dogru_cevap_gerekcesi": "قِصَّةً kelimesi müennes (dişil) olduğundan birinci cüz tâ'sız (أَرْبَعَ), ikinci cüz ise ma'dûdla uyumlu tâ'lı (عَشْرَةَ) olarak أَرْبَعَ عَشْرَةَ şeklinde kurulmalıdır.",
+      "dogru_cevap_gerekcesi": "قِصَّةً kelimesi müennes (dişil) olduğundan birinci cüz tâ'sız (أَرْبَعَ), ikinci cüz ise ma'dûdla uyumlu tâ'lı (عَشْرَةَ) olarak أَرْبَعَ عَشْرَةَ şeklinde kurulmalıdır.",
       "celdirici_analizi": {
-        "B": "أَرْبَعَةَ عَشَرَ kalıbı müzekker ma'dûdlar (ör. طَالِبًا) içindir; müennes قِصَّةً kelimesine uymaz.",
+        "B": "أَرْبَعَةَ عَشَرَ kalıbı müzekker ma'dûdlar (ör. طَالِبًا) içindir; müennes قِصَّةً kelimesine uymaz.",
         "C": "أَرْبَعَ عَشَرَ formunda her iki cüz de tâ'sız bırakılarak 13-19 sayı uyumu bozulmuştur.",
         "D": "أَرْبَعَةَ عَشْرَةَ formunda iki cüze birden tâ verilmiştir; 13-19 arası sayılarda iki cüz asla aynı anda tâ almaz."
       }
@@ -3530,7 +3530,7 @@
     "bagli_konu": "İstif'âl Babı Mâzî Fiili (اسْتَقْبَلَ)",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa anlamca en uygun fiili seçiniz.",
     "soru_baglam_tr": "İki arkadaş havaalanında karşılamayı konuşuyor:",
-    "soru_metni_ar": "عَلِيٌّ: كَيْفَ وَصَلَ الضُّيُوفُ يَا خَالِدُ؟\nخَالِدٌ: ذَهَبْتُ إِلَى الْمَطَارِ ______ فِيهِ.",
+    "soru_metni_ar": "عَلِيٌّ: كَيْفَ وَصَلَ الضُّيُوفُ يَا خَالِدُ؟\nخَالِدٌ: ذَهَبْتُ إِلَى الْمَطَارِ ______ فِيهِ.",
     "secenek_dili": "ar",
     "secenekler": [
       {
@@ -3539,7 +3539,7 @@
       },
       {
         "harf": "B",
-        "metin": "وَوَدَّعْتُهُمْ"
+        "metin": "وَوَدَّعْتُهُمْ"
       },
       {
         "harf": "C",
@@ -4322,24 +4322,24 @@
     "bagli_konu": "Mef'ûlün Ma'ah (Vâv-ı Maiyye) ve Mansûbluk",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa dil bilgisine uygun kelimeyi seçiniz.",
     "soru_baglam_tr": "Sabah yürüyüşü yapan iki arkadaş sahilde karşılaşıyor:",
-    "soru_metni_ar": "مَحْمُودٌ: مَتَى اسْتَيْقَظْتَ الْيَوْمَ يَا عَلِيُّ؟\nعَلِيٌّ: اسْتَيْقَظْتُ ______، ثُمَّ خَرَجْتُ.",
+    "soru_metni_ar": "مَحْمُودٌ: مَتَى اسْتَيْقَظْتَ الْيَوْمَ يَا عَلِيُّ؟\nعَلِيٌّ: اسْتَيْقَظْتُ ______، ثُمَّ خَرَجْتُ.",
     "secenek_dili": "ar",
     "secenekler": [
       {
         "harf": "A",
-        "metin": "وَطُلُوعُ الشَّمْسِ"
+        "metin": "وَطُلُوعُ الشَّمْسِ"
       },
       {
         "harf": "B",
-        "metin": "وَطُلُوعِ الشَّمْسِ"
+        "metin": "وَطُلُوعِ الشَّمْسِ"
       },
       {
         "harf": "C",
-        "metin": "وَطُلُوعَ الشَّمْسِ"
+        "metin": "وَطُلُوعَ الشَّمْسِ"
       },
       {
         "harf": "D",
-        "metin": "وَطَالِعُ الشَّمْسِ"
+        "metin": "وَطَالِعُ الشَّمْسِ"
       }
     ],
     "dogru_secenek": "C",
@@ -7050,7 +7050,7 @@
     "bagli_konu": "Müşterek İsm-i Mevsûl Olarak Akıllı Varlıklar İçin (مَنْ)",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa anlamca en uygun kelimeyi seçiniz.",
     "soru_baglam_tr": "Öğretmen, ödülü kimin hak ettiğini öğrencilere açıklıyor:",
-    "soru_metni_ar": "الْمُعَلِّمُ: لِمَنِ الْجَائِزَةُ الْيَوْمَ يَا أَبْنَائِي؟\nالطُّلَّابُ: تُقَدَّمُ الْجَائِزَةُ إِلَى ______ يَجْتَهِدُ فِي دُرُوسِهِ.",
+    "soru_metni_ar": "الْمُعَلِّمُ: لِمَنِ الْجَائِزَةُ الْيَوْمَ يَا أَبْنَائِي؟\nالطُّلَّابُ: تُقَدَّمُ الْجَائِزَةُ إِلَى ______ يَجْتَهِدُ فِي دُرُوسِهِ.",
     "secenek_dili": "ar",
     "secenekler": [
       {

@@ -16,7 +16,11 @@ import { speakHybrid } from "@/lib/audio";
 import { playClick } from "@/lib/sfxManager";
 import ShadowingModal, { TargetForm } from "@/components/ui/ShadowingModal";
 import { DictionaryItem } from "@/types/data";
-import { formatArabicText, splitMixedBidiText } from "@/lib/arabicTextUtils";
+import {
+  formatArabicByHarekeMode,
+  HarekeMode,
+  splitMixedBidiText,
+} from "@/lib/arabicTextUtils";
 import { formatSrsBadgeInfo } from "@/lib/mistakeUtils";
 import { findIdiomSpanAtWordIndex } from "@/lib/arabicIdioms";
 
@@ -124,6 +128,7 @@ export default function WordTooltip({
   const {
     showTooltips,
     showHareke,
+    harekeMode,
     speechRate,
     arabicFont,
     wordTrackingStyle,
@@ -138,6 +143,7 @@ export default function WordTooltip({
   } = useUserStore();
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [hoveredWordIndex, setHoveredWordIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{
     top?: number;
     bottom?: number;
@@ -272,10 +278,28 @@ export default function WordTooltip({
     };
   }, [activeIndex, computePosition]);
 
-  const effectiveShowHareke =
-    forceShowHareke !== undefined ? forceShowHareke : showHareke;
+  const effectiveHarekeMode: HarekeMode =
+    forceShowHareke === true
+      ? "full"
+      : forceShowHareke === false
+      ? "none"
+      : harekeMode || (showHareke ? "full" : "none");
+
+  const formatWordInLine = (str: string, wordIdx: number) => {
+    const isRevealed =
+      effectiveHarekeMode === "none" &&
+      forceShowHareke === undefined &&
+      (hoveredWordIndex === wordIdx || activeIndex === wordIdx);
+    return formatArabicByHarekeMode(
+      str,
+      isRevealed ? "full" : effectiveHarekeMode,
+      arabicFont
+    );
+  };
+
+  // Açılan sözlük kartında kelimenin harekeli aslını göster ki öğrenci harekesiz modda bile doğru okunuşu görebilsin
   const formatAr = (str: string) =>
-    formatArabicText(str, effectiveShowHareke, arabicFont);
+    formatArabicByHarekeMode(str, "full", arabicFont);
 
   const words = text.split(/\s+/).filter(Boolean);
   const isPureNumericOrPhoneLine =
@@ -374,14 +398,50 @@ export default function WordTooltip({
               />
             ) : null;
 
+          const hoverHandlers =
+            effectiveHarekeMode === "none" && forceShowHareke === undefined
+              ? {
+                  onMouseEnter: () => setHoveredWordIndex(index),
+                  onMouseLeave: () =>
+                    setHoveredWordIndex((prev) =>
+                      prev === index ? null : prev
+                    ),
+                }
+              : {};
+
+          const tapRevealHandlers =
+            effectiveHarekeMode === "none" && forceShowHareke === undefined
+              ? {
+                  onClick: (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    setHoveredWordIndex((prev) =>
+                      prev === index ? null : index
+                    );
+                  },
+                }
+              : {};
+
           if (!showTooltips) {
             return (
               <span
                 key={index}
-                className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${karaokeHighlightClass}`}
+                {...hoverHandlers}
+                {...tapRevealHandlers}
+                className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${
+                  effectiveHarekeMode === "none" && hoveredWordIndex === index
+                    ? "bg-amber-500/15 text-[#065F46] dark:text-emerald-300 cursor-pointer"
+                    : effectiveHarekeMode === "none"
+                    ? "cursor-pointer"
+                    : ""
+                } ${karaokeHighlightClass}`}
+                title={
+                  effectiveHarekeMode === "none"
+                    ? "Harekeyi görmek için üzerine gelin veya dokunun"
+                    : undefined
+                }
               >
                 {trackingArrowIndicator}
-                {formatAr(word)}
+                {formatWordInLine(word, index)}
                 {bottomProgressLine}
               </span>
             );
@@ -395,10 +455,12 @@ export default function WordTooltip({
             return (
               <span
                 key={index}
+                {...hoverHandlers}
+                {...tapRevealHandlers}
                 className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${karaokeHighlightClass}`}
               >
                 {trackingArrowIndicator}
-                {formatAr(word)}
+                {formatWordInLine(word, index)}
                 {bottomProgressLine}
               </span>
             );
@@ -419,10 +481,18 @@ export default function WordTooltip({
             return (
               <span
                 key={index}
-                className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${karaokeHighlightClass}`}
+                {...hoverHandlers}
+                {...tapRevealHandlers}
+                className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${
+                  effectiveHarekeMode === "none" && hoveredWordIndex === index
+                    ? "bg-amber-500/15 text-[#065F46] dark:text-emerald-300 cursor-pointer"
+                    : effectiveHarekeMode === "none"
+                    ? "cursor-pointer"
+                    : ""
+                } ${karaokeHighlightClass}`}
               >
                 {trackingArrowIndicator}
-                {formatAr(word)}
+                {formatWordInLine(word, index)}
                 {bottomProgressLine}
               </span>
             );
@@ -491,6 +561,7 @@ export default function WordTooltip({
               <button
                 type="button"
                 onClick={handleWordClick}
+                {...hoverHandlers}
                 className={`relative inline-block align-baseline leading-normal py-0.5 px-1 rounded cursor-pointer transition-colors duration-150 border-b-2 border-dashed ${
                   isWordSpeaking && showHighlight
                     ? "bg-emerald-500/20 dark:bg-emerald-400/25 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/40 border-emerald-500"
@@ -499,7 +570,7 @@ export default function WordTooltip({
                     : catStyle.underline
                 }`}
               >
-                {formatAr(coreWord)}
+                {formatWordInLine(coreWord, index)}
                 {bottomProgressLine}
               </button>
               {suffix}

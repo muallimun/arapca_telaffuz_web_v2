@@ -3,7 +3,7 @@ import {
   diyaloglar,
   getDialoguesSortedPedagogically,
 } from "@/lib/data";
-import { DictionaryItem, Dialogue } from "@/types/data";
+import { DictionaryItem, Dialogue, Level } from "@/types/data";
 import {
   cleanArabicText,
   analyzeAndMatchWord,
@@ -355,12 +355,34 @@ export interface DailyStudyPackage {
   };
 }
 
+/**
+ * İnatçı Kelimeler Kliniği (Leech Clinic):
+ * SRS kayıtlarında `wrongCount >= 3` olan zorlanılan öğeleri `wrongCount` azalan sırayla döndürür.
+ */
+export function getLeechSrsItems(
+  srsRecords?: Record<string, SrsItemRecord> | null,
+  minWrongCount = 3
+): SrsItemRecord[] {
+  if (!srsRecords) return [];
+  return Object.values(srsRecords)
+    .filter((rec) => rec && (rec.wrongCount || 0) >= minWrongCount)
+    .sort((a, b) => {
+      const diff = (b.wrongCount || 0) - (a.wrongCount || 0);
+      if (diff !== 0) return diff;
+      return (
+        (Date.parse(b.lastReviewedAt || "") || 0) -
+        (Date.parse(a.lastReviewedAt || "") || 0)
+      );
+    });
+}
+
 export function buildDailyStudyPackage(params: {
   srsRecords: Record<string, SrsItemRecord>;
   mistakeIds: string[];
   completedDialogues: string[];
   learnedWords: string[];
   preferredLevel?: string;
+  detectedCefrLevel?: Level | null;
 }): DailyStudyPackage {
   const {
     srsRecords = {},
@@ -368,6 +390,7 @@ export function buildDailyStudyPackage(params: {
     completedDialogues = [],
     learnedWords = [],
     preferredLevel = "Başlangıç",
+    detectedCefrLevel = null,
   } = params;
 
   const nowMs = Date.now();
@@ -385,12 +408,13 @@ export function buildDailyStudyPackage(params: {
   // Pedagojik sıra (A1 -> A2 -> B1 -> B2 ve dlg_01 .. dlg_60) ile sıralanmış diyaloglar üzerinden seçim yapılır
   const pedagogicalDialogues = getDialoguesSortedPedagogically();
 
-  const targetLevels =
-    preferredLevel === "Başlangıç"
-      ? ["A1"]
-      : preferredLevel === "Orta"
-      ? ["A2"]
-      : ["B1", "B2"];
+  const targetLevels: Level[] = detectedCefrLevel
+    ? [detectedCefrLevel]
+    : preferredLevel === "Başlangıç"
+    ? ["A1"]
+    : preferredLevel === "Orta"
+    ? ["A2"]
+    : ["B1", "B2"];
 
   let bestDialogue: Dialogue = pedagogicalDialogues[0] || diyaloglar[0];
   let reasonBadge = `Sıradaki ${bestDialogue.seviye} diyaloğunuz`;

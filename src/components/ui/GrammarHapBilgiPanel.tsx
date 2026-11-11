@@ -24,6 +24,8 @@ import {
   ListChecks,
   ArrowRight,
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   GramerHapBilgi,
@@ -43,12 +45,14 @@ import {
   playDualGenderAudio,
   stopAllAudio,
 } from "@/lib/audio";
-import { useSettings } from "@/store/settings";
+import { useSettings, GrammarDepthMode } from "@/store/settings";
 import { cleanArabicText } from "@/lib/dict";
 import {
   fixArabicTypography,
   formatTurkishCategory,
+  simplifyGrammarTerminology,
 } from "@/lib/arabicTextUtils";
+export { simplifyGrammarTerminology };
 import { MixedText } from "@/components/ui/MixedText";
 import WordTooltip from "@/components/ui/WordTooltip";
 import { playClick } from "@/lib/sfxManager";
@@ -433,6 +437,69 @@ function renderTurkishWithIsolatedArabic(
   });
 }
 
+
+
+function GrammarDepthSwitch({
+  mode,
+  onChange,
+  variant = "light",
+}: {
+  mode: GrammarDepthMode;
+  onChange: (next: GrammarDepthMode) => void;
+  variant?: "light" | "headerDark";
+}) {
+  const isSimple = mode === "simple";
+  const containerClass =
+    variant === "headerDark"
+      ? "inline-flex items-center rounded-xl bg-black/25 p-0.5 border border-white/25 shrink-0"
+      : "inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] shrink-0";
+
+  return (
+    <div
+      role="group"
+      aria-label="Gramer Anlatım Derinliği"
+      className={containerClass}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          playClick();
+          onChange("simple");
+        }}
+        title="Sade Anlatım: Klasik terimler yerine anlaşılır Türkçe açıklamalar"
+        className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+          isSimple
+            ? "bg-emerald-500 text-white shadow-2xs"
+            : variant === "headerDark"
+            ? "text-white/80 hover:text-white"
+            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+        }`}
+      >
+        <span>🌱</span>
+        <span>Sade Anlatım</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          playClick();
+          onChange("academic");
+        }}
+        title="Akademik & İ'rab: Tam klasik sarf/nahiv terminolojisi ve açık i'rab tahlili"
+        className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+          !isSimple
+            ? "bg-[#6741D9] text-white shadow-2xs"
+            : variant === "headerDark"
+            ? "text-white/80 hover:text-white"
+            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+        }`}
+      >
+        <span>🎓</span>
+        <span>Akademik &amp; İ&apos;rab</span>
+      </button>
+    </div>
+  );
+}
+
 /**
  * Tablo hücrelerinde:
  * - Sadece Arapça ise: dir="rtl" lang="ar" font-arabic
@@ -440,7 +507,10 @@ function renderTurkishWithIsolatedArabic(
  * - Karışık ise (örn. "أَنَا (Ben)", "دَفْتَرٍ (Mecrûr ــٍ)"): Arapça üstte/sağda kendi RTL bloğunda,
  *   Türkçe açıklama altta/yanda kendi LTR font-sans bloğunda!
  */
-function renderSmartTableCell(cell: string): React.ReactNode {
+function renderSmartTableCell(
+  cell: string,
+  depthMode: GrammarDepthMode = "academic"
+): React.ReactNode {
   const trimmed = (cell || "").trim();
   if (!trimmed || trimmed === "-") {
     return (
@@ -468,13 +538,15 @@ function renderSmartTableCell(cell: string): React.ReactNode {
 
   // 2. Saf Türkçe Hücre
   if (!hasArabic && hasLatin) {
+    const displayTr =
+      depthMode === "simple" ? simplifyGrammarTerminology(trimmed) : trimmed;
     return (
       <div
         dir="ltr"
         lang="tr"
         className="font-sans text-xs sm:text-sm font-bold text-[var(--foreground)] text-left leading-snug"
       >
-        {trimmed}
+        {displayTr}
       </div>
     );
   }
@@ -491,30 +563,38 @@ function renderSmartTableCell(cell: string): React.ReactNode {
         >
           {arabicPart}
         </div>
-        {turkishNotes.map((trNote, idx) => (
-          <div
-            key={idx}
-            dir="ltr"
-            lang="tr"
-            className="font-sans text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 bg-[#F7EFE1]/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-[#E6D7BE]/80 dark:border-slate-700 text-left leading-snug"
-          >
-            {renderTurkishWithIsolatedArabic(
-              trNote,
-              "arabic font-arabic text-sm font-bold text-[#087F5B] dark:text-emerald-400 px-0.5 inline-block"
-            )}
-          </div>
-        ))}
+        {turkishNotes.map((trNote, idx) => {
+          const displayNote =
+            depthMode === "simple"
+              ? simplifyGrammarTerminology(trNote)
+              : trNote;
+          return (
+            <div
+              key={idx}
+              dir="ltr"
+              lang="tr"
+              className="font-sans text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 bg-[#F7EFE1]/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-[#E6D7BE]/80 dark:border-slate-700 text-left leading-snug"
+            >
+              {renderTurkishWithIsolatedArabic(
+                displayNote,
+                "arabic font-arabic text-sm font-bold text-[#087F5B] dark:text-emerald-400 px-0.5 inline-block"
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
 
+  const fallbackTr =
+    depthMode === "simple" ? simplifyGrammarTerminology(trimmed) : trimmed;
   return (
     <div
       dir="ltr"
       lang="tr"
       className="font-sans text-xs sm:text-sm font-bold text-[var(--foreground)] text-left leading-snug"
     >
-      {renderTurkishWithIsolatedArabic(trimmed)}
+      {renderTurkishWithIsolatedArabic(fallbackTr)}
     </div>
   );
 }
@@ -948,8 +1028,17 @@ export function GrammarDeepDiveModal({
   linkedLessonUrl,
   activeGrammarQuery,
 }: GrammarDeepDiveModalProps) {
-  const { speechRate, arabicFont } = useSettings();
+  const {
+    speechRate,
+    arabicFont,
+    grammarDepthMode,
+    setGrammarDepthMode,
+  } = useSettings();
   const [playingKey, setPlayingKey] = useState<string | null>(null);
+  const [showIrabInSimpleMode, setShowIrabInSimpleMode] = useState(false);
+  const isSimpleMode = grammarDepthMode === "simple";
+  const formatByDepth = (str: string) =>
+    isSimpleMode ? simplifyGrammarTerminology(str) : str;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -1038,15 +1127,17 @@ export function GrammarDeepDiveModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* ÜST SABİT BAŞLIK ÇUBUĞU */}
-        <div className="px-3.5 sm:px-6 py-3 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex items-center justify-between gap-2.5 shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div className="px-3.5 sm:px-6 py-3 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
               <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
-                  Ayrıntılı Anlatım &amp; İ&apos;rab
+                  {isSimpleMode
+                    ? "Sade Konu Özeti & Şema"
+                    : "Ayrıntılı Anlatım & İ'rab"}
                 </span>
                 {linkedLevel && (
                   <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-black">
@@ -1060,26 +1151,33 @@ export function GrammarDeepDiveModal({
                 className="font-sans text-xs sm:text-lg font-black text-white text-left leading-snug break-words line-clamp-2"
               >
                 {renderTurkishWithIsolatedArabic(
-                  grammarNote.konu_basligi,
+                  formatByDepth(grammarNote.konu_basligi),
                   "arabic font-arabic text-[1.15em] font-bold text-amber-200 mx-0.5 inline-block"
                 )}
               </h2>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              stopAllAudio();
-              onClose();
-            }}
-            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-400/50 font-black text-xs inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
-            title="Ayrıntılı Anlatımı Kapat (Esc)"
-          >
-            <X className="w-4 h-4 shrink-0" />
-            <span>Kapat</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            <GrammarDepthSwitch
+              mode={grammarDepthMode}
+              onChange={setGrammarDepthMode}
+              variant="headerDark"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                stopAllAudio();
+                onClose();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-400/50 font-black text-xs inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
+              title="Ayrıntılı Anlatımı Kapat (Esc)"
+            >
+              <X className="w-4 h-4 shrink-0" />
+              <span>Kapat</span>
+            </button>
+          </div>
         </div>
 
         {/* KAYDIRILABİLİR 5 BÖLÜMLÜ PEDAGOJİK GÖVDE */}
@@ -1243,7 +1341,7 @@ export function GrammarDeepDiveModal({
                           className="font-sans text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-left leading-snug break-words min-w-0"
                         >
                           <MixedText
-                            text={node.label}
+                            text={formatByDepth(node.label)}
                             arabicClassName="arabic font-arabic text-lg font-bold text-emerald-900 dark:text-emerald-300 mx-1 inline-block leading-normal"
                           />
                         </div>
@@ -1255,7 +1353,7 @@ export function GrammarDeepDiveModal({
                 <div dir="ltr" lang="tr" className="text-center">
                   <p className="font-sans text-sm sm:text-base font-black text-[#4C28B5] dark:text-indigo-200 leading-relaxed break-words">
                     {renderTurkishWithIsolatedArabic(
-                      detailLayer.formul_sema,
+                      formatByDepth(detailLayer.formul_sema),
                       "arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 px-1 inline-block"
                     )}
                   </p>
@@ -1285,7 +1383,9 @@ export function GrammarDeepDiveModal({
                     {idx + 1}
                   </span>
                   <p className="font-sans text-xs sm:text-sm md:text-base font-bold text-[var(--foreground)] leading-relaxed break-words min-w-0 flex-1">
-                    {renderTurkishWithIsolatedArabic(step.replace(/^\d+\.\s*/, ""))}
+                    {renderTurkishWithIsolatedArabic(
+                      formatByDepth(step.replace(/^\d+\.\s*/, ""))
+                    )}
                   </p>
                 </div>
               ))}
@@ -1299,7 +1399,9 @@ export function GrammarDeepDiveModal({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-600 text-white font-black text-xs uppercase tracking-wider">
                     <Table2 className="w-4 h-4 shrink-0" />
-                    <span>3. {detailLayer.ozet_tablo.tablo_basligi}</span>
+                    <span>
+                      3. {formatByDepth(detailLayer.ozet_tablo.tablo_basligi)}
+                    </span>
                   </span>
                 </div>
 
@@ -1314,7 +1416,7 @@ export function GrammarDeepDiveModal({
                             lang="tr"
                             className="py-2 px-2.5 sm:py-2.5 sm:px-4 font-sans text-[11px] sm:text-xs font-black uppercase tracking-wider text-[var(--foreground)]"
                           >
-                            {renderTurkishWithIsolatedArabic(col)}
+                            {renderTurkishWithIsolatedArabic(formatByDepth(col))}
                           </th>
                         ))}
                       </tr>
@@ -1330,7 +1432,7 @@ export function GrammarDeepDiveModal({
                               key={cellIdx}
                               className="py-2.5 px-2.5 sm:py-3 sm:px-4 align-middle"
                             >
-                              {renderSmartTableCell(cell)}
+                              {renderSmartTableCell(cell, grammarDepthMode)}
                             </td>
                           ))}
                         </tr>
@@ -1347,92 +1449,146 @@ export function GrammarDeepDiveModal({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#6741D9] text-white font-black text-xs uppercase tracking-wider">
                   <Target className="w-4 h-4 shrink-0" />
-                  <span>4. Kelime Kelime İ&apos;rab &amp; Hareke Çözümlemesi</span>
+                  <span>
+                    4.{" "}
+                    {isSimpleMode
+                      ? "Kelime Kelime Cümle Görevleri (İsteğe Bağlı)"
+                      : "Kelime Kelime İ'rab & Hareke Çözümlemesi"}
+                  </span>
                 </span>
-                {grammarNote.metinden_ornek?.arapca && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleListen(
-                        grammarNote.metinden_ornek.arapca,
-                        "deep-dive-main"
-                      )
-                    }
-                    className={`px-3 py-1 rounded-xl text-xs font-extrabold border-2 inline-flex items-center gap-1.5 cursor-pointer transition-all ${
-                      playingKey === "deep-dive-main"
-                        ? "bg-[#087F5B] text-white border-[#065F46]"
-                        : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] hover:border-[#087F5B]"
-                    }`}
-                  >
-                    <Volume2 className="w-3.5 h-3.5 text-[#087F5B] shrink-0" />
-                    <span>
-                      {playingKey === "deep-dive-main"
-                        ? "Dinleniyor..."
-                        : "Örnek Cümleyi Dinle"}
-                    </span>
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {isSimpleMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShowIrabInSimpleMode((v) => !v);
+                      }}
+                      className="px-3 py-1 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/80 border-2 border-[#6741D9]/45 text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      {showIrabInSimpleMode ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+                          <span>İ&apos;rab Detayını Gizle</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            İ&apos;rab Detayını Göster (
+                            {detailLayer.irab_tahlili.length} Kelime)
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {grammarNote.metinden_ornek?.arapca && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleListen(
+                          grammarNote.metinden_ornek.arapca,
+                          "deep-dive-main"
+                        )
+                      }
+                      className={`px-3 py-1 rounded-xl text-xs font-extrabold border-2 inline-flex items-center gap-1.5 cursor-pointer transition-all ${
+                        playingKey === "deep-dive-main"
+                          ? "bg-[#087F5B] text-white border-[#065F46]"
+                          : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] hover:border-[#087F5B]"
+                      }`}
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-[#087F5B] shrink-0" />
+                      <span>
+                        {playingKey === "deep-dive-main"
+                          ? "Dinleniyor..."
+                          : "Örnek Cümleyi Dinle"}
+                      </span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div
-                dir="rtl"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-              >
-                {detailLayer.irab_tahlili.map((item, idx) => {
-                  const wKey = `irab-w-${idx}`;
-                  return (
-                    <div
-                      key={idx}
-                      dir="ltr"
-                      className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 flex flex-col justify-between gap-2 hover:border-[#6741D9] transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E6D7BE] dark:border-slate-800 pb-2">
-                        <button
-                          type="button"
-                          onClick={() => handleListen(item.kelime, wKey)}
-                          className="w-7 h-7 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] flex items-center justify-center text-[#087F5B] hover:bg-emerald-50 cursor-pointer shrink-0"
-                          title="Kelimeyi dinle"
+              {(!isSimpleMode || showIrabInSimpleMode) ? (
+                <div
+                  dir="rtl"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                >
+                  {detailLayer.irab_tahlili.map((item, idx) => {
+                    const wKey = `irab-w-${idx}`;
+                    return (
+                      <div
+                        key={idx}
+                        dir="ltr"
+                        className="rounded-2xl bg-white/95 dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3.5 flex flex-col justify-between gap-2 hover:border-[#6741D9] transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E6D7BE] dark:border-slate-800 pb-2">
+                          <button
+                            type="button"
+                            onClick={() => handleListen(item.kelime, wKey)}
+                            className="w-7 h-7 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] flex items-center justify-center text-[#087F5B] hover:bg-emerald-50 cursor-pointer shrink-0"
+                            title="Kelimeyi dinle"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              dir="rtl"
+                              lang="ar"
+                              className="arabic font-arabic text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed break-words"
+                            >
+                              {fixArabicTypography(item.kelime, arabicFont)}
+                            </span>
+                            <span
+                              className="w-5 h-5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/30 text-[#6741D9] dark:text-indigo-300 font-sans text-[10px] font-black flex items-center justify-center shrink-0"
+                              title={`Cümledeki ${idx + 1}. kelime (Sağdan sola)`}
+                            >
+                              {idx + 1}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          dir="ltr"
+                          lang="tr"
+                          className="space-y-1 text-left font-sans"
                         >
-                          <Volume2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            dir="rtl"
-                            lang="ar"
-                            className="arabic font-arabic text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed break-words"
-                          >
-                            {fixArabicTypography(item.kelime, arabicFont)}
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-300 font-sans text-[11px] font-black">
+                            {renderTurkishWithIsolatedArabic(
+                              formatByDepth(item.gorevi),
+                              "arabic font-arabic text-xs font-bold text-[#6741D9] dark:text-indigo-200 px-0.5 inline-block"
+                            )}
                           </span>
-                          <span
-                            className="w-5 h-5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/30 text-[#6741D9] dark:text-indigo-300 font-sans text-[10px] font-black flex items-center justify-center shrink-0"
-                            title={`Cümledeki ${idx + 1}. kelime (Sağdan sola)`}
-                          >
-                            {idx + 1}
-                          </span>
+                          <p className="font-sans text-xs font-semibold text-[var(--muted)] leading-snug">
+                            {renderTurkishWithIsolatedArabic(
+                              formatByDepth(item.hareke_nedeni),
+                              "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-400 px-0.5 inline-block"
+                            )}
+                          </p>
                         </div>
                       </div>
-                      <div
-                        dir="ltr"
-                        lang="tr"
-                        className="space-y-1 text-left font-sans"
-                      >
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-[#F3F0FF] dark:bg-indigo-950/70 text-[#6741D9] dark:text-indigo-300 font-sans text-[11px] font-black">
-                          {renderTurkishWithIsolatedArabic(
-                            item.gorevi,
-                            "arabic font-arabic text-xs font-bold text-[#6741D9] dark:text-indigo-200 px-0.5 inline-block"
-                          )}
-                        </span>
-                        <p className="font-sans text-xs font-semibold text-[var(--muted)] leading-snug">
-                          {renderTurkishWithIsolatedArabic(
-                            item.hareke_nedeni,
-                            "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-400 px-0.5 inline-block"
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  dir="ltr"
+                  className="rounded-2xl bg-white/90 dark:bg-[var(--background)] border border-dashed border-[#6741D9]/35 p-3.5 flex flex-wrap items-center justify-between gap-2"
+                >
+                  <p className="text-xs font-bold text-[var(--muted)]">
+                    🌱 Sade Anlatım modunda odaklanmayı kolaylaştırmak için ayrıntılı i&apos;rab kartları daraltıldı.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowIrabInSimpleMode(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>İ&apos;rab Detayını Göster</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
@@ -1548,7 +1704,7 @@ export function GrammarDeepDiveModal({
                   Neden:
                 </strong>
                 {renderTurkishWithIsolatedArabic(
-                  detailLayer.dikkat_sik_hata.neden,
+                  formatByDepth(detailLayer.dikkat_sik_hata.neden),
                   "arabic font-arabic text-base font-bold text-[#065F46] dark:text-emerald-400 px-1 inline-block"
                 )}
               </div>
@@ -1609,6 +1765,7 @@ interface GrammarHapBilgiPanelProps {
   isSmartboardLarge?: boolean;
   isCompactDrawer?: boolean;
   showMatchingSentences?: boolean;
+  hideInlineDepthToggle?: boolean;
 }
 
 export function GrammarHapBilgiPanel({
@@ -1618,11 +1775,20 @@ export function GrammarHapBilgiPanel({
   isSmartboardLarge = false,
   isCompactDrawer = false,
   showMatchingSentences = true,
+  hideInlineDepthToggle = false,
 }: GrammarHapBilgiPanelProps) {
-  const { speechRate, preferredVoiceGender } = useSettings();
+  const {
+    speechRate,
+    preferredVoiceGender,
+    grammarDepthMode,
+    setGrammarDepthMode,
+  } = useSettings();
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [showAllSentences, setShowAllSentences] = useState(false);
   const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
+  const isSimpleMode = grammarDepthMode === "simple";
+  const formatByDepth = (str: string) =>
+    isSimpleMode ? simplifyGrammarTerminology(str) : str;
 
   const {
     resolvedNote,
@@ -1698,6 +1864,12 @@ export function GrammarHapBilgiPanel({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            {!hideInlineDepthToggle && (
+              <GrammarDepthSwitch
+                mode={grammarDepthMode}
+                onChange={setGrammarDepthMode}
+              />
+            )}
             {linkedLessonTitle && linkedLessonUrl ? (
               <Link
                 href={linkedLessonUrl}
@@ -1725,7 +1897,7 @@ export function GrammarHapBilgiPanel({
           } font-black text-[var(--foreground)] tracking-tight mb-3 leading-snug break-words`}
         >
           {renderTurkishWithIsolatedArabic(
-            activeNote.konu_basligi,
+            formatByDepth(activeNote.konu_basligi),
             "arabic font-arabic text-[1.15em] font-bold text-[#065F46] dark:text-emerald-400 mx-0.5 inline-block"
           )}
         </h2>
@@ -1738,7 +1910,9 @@ export function GrammarHapBilgiPanel({
           <div className="flex items-center gap-1.5">
             <BookOpen className="w-4 h-4 text-[#087F5B] dark:text-emerald-400 shrink-0" />
             <span className="text-[11px] font-black uppercase tracking-widest text-[#087F5B] dark:text-emerald-400">
-              Temel Gramer Kuralı (Hap Kural &amp; Formül)
+              {isSimpleMode
+                ? "Sade Temel Kural & Cümle Mantığı"
+                : "Temel Gramer Kuralı (Hap Kural & Formül)"}
             </span>
           </div>
           <p
@@ -1748,7 +1922,7 @@ export function GrammarHapBilgiPanel({
                 : "text-sm sm:text-base"
             } font-sans font-bold text-[var(--foreground)] leading-relaxed break-words w-full`}
           >
-            {renderTurkishWithIsolatedArabic(activeNote.hap_kural)}
+            {renderTurkishWithIsolatedArabic(formatByDepth(activeNote.hap_kural))}
           </p>
         </div>
       </div>
@@ -1848,10 +2022,12 @@ export function GrammarHapBilgiPanel({
               className="bg-sky-50/90 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800/70 rounded-xl p-3.5 sm:p-4 font-sans text-xs sm:text-sm font-bold text-sky-950 dark:text-sky-200 leading-relaxed break-words text-left"
             >
               <span className="font-black uppercase text-[11px] tracking-wider block text-sky-800 dark:text-sky-300 mb-1">
-                Gramer Analizi &amp; İ&apos;rab Notu:
+                {isSimpleMode
+                  ? "Cümle Açıklaması & Hareke İpucu:"
+                  : "Gramer Analizi & İ'rab Notu:"}
               </span>
               {renderTurkishWithIsolatedArabic(
-                activeNote.metinden_ornek.aciklama
+                formatByDepth(activeNote.metinden_ornek.aciklama)
               )}
             </div>
           )}
@@ -1954,7 +2130,7 @@ export function GrammarHapBilgiPanel({
                 : "text-xs sm:text-sm"
             } font-sans font-bold text-amber-950 dark:text-amber-100 leading-relaxed break-words w-full`}
           >
-            {renderTurkishWithIsolatedArabic(activeNote.ipucu)}
+            {renderTurkishWithIsolatedArabic(formatByDepth(activeNote.ipucu))}
           </p>
         </div>
       )}
@@ -2176,6 +2352,7 @@ export function GrammarHapBilgiModal({
   initialViewMode = "drawer",
   onOpenShadowing,
 }: GrammarHapBilgiModalProps) {
+  const { grammarDepthMode, setGrammarDepthMode } = useSettings();
   const [viewMode, setViewMode] =
     useState<GrammarWindowViewMode>(initialViewMode);
   const [drawerSide, setDrawerSide] = useState<"left" | "right">("right");
@@ -2287,8 +2464,8 @@ export function GrammarHapBilgiModal({
         }
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ÜST SABİT KONTROL ÇUBUĞU: Tek satırda sığan yapışkan bar (320px dahil %100 uyum) */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-[var(--border)] w-full shrink-0">
+        {/* ÜST SABİT KONTROL ÇUBUĞU: Sade/Akademik seçici + pencere kontrolleri (320px dahil %100 uyum) */}
+        <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-5 py-2.5 bg-[#FDFBF7]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#E6D7BE] dark:border-[var(--border)] w-full shrink-0">
           {/* Sol: Kompakt Gramer Notu + Seviye Rozeti */}
           <div className="min-w-0 flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-[11px] font-black shrink-0">
@@ -2302,8 +2479,13 @@ export function GrammarHapBilgiModal({
             )}
           </div>
 
-          {/* Sağ: Masaüstü Pencere Kontrolleri (hidden lg:inline-flex) + Her Ekranda Görünür Net Kapat Butonu */}
-          <div className="shrink-0 flex items-center gap-1.5">
+          {/* Sağ: Sade/Akademik Seçici + Masaüstü Pencere Kontrolleri + Kapat */}
+          <div className="shrink-0 flex flex-wrap items-center gap-1.5 ml-auto">
+            <GrammarDepthSwitch
+              mode={grammarDepthMode}
+              onChange={setGrammarDepthMode}
+            />
+
             {/* Yan Panel Konum Seçici: Sadece lg+ ve Drawer Modunda */}
             {!isSmartboard && (
               <div className="hidden lg:inline-flex items-center rounded-xl bg-white dark:bg-[var(--background)] p-0.5 border-2 border-[#E6D7BE] dark:border-[var(--border)]">
@@ -2404,6 +2586,7 @@ export function GrammarHapBilgiModal({
             isSmartboardLarge={isSmartboard}
             isCompactDrawer={!isSmartboard}
             showMatchingSentences={true}
+            hideInlineDepthToggle={true}
             onOpenShadowing={(ar, tr) => {
               stopAllAudio();
               onClose();

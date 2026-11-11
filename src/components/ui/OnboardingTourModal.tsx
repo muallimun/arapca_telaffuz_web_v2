@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   Sparkles,
@@ -12,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Rocket,
+  Compass,
   Sun,
   PenTool,
   Link2,
@@ -33,6 +35,7 @@ export function triggerOnboardingTour() {
 }
 
 export default function OnboardingTourModal() {
+  const router = useRouter();
   const { showHareke, arabicFont } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -577,17 +580,31 @@ export default function OnboardingTourModal() {
                 <ChevronRight size={14} />
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  playSuccess();
-                  handleComplete();
-                }}
-                className="h-9 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3b1f8c] flex items-center gap-1.5 cursor-pointer"
-              >
-                <Rocket size={14} />
-                <span>🚀 Uygulamaya Başla</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSuccess();
+                    handleComplete();
+                    router.push("/seviye-tespit");
+                  }}
+                  className="h-9 px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-emerald-900 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Compass size={14} />
+                  <span>🧭 Seviyemi Belirle</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSuccess();
+                    handleComplete();
+                  }}
+                  className="h-9 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3b1f8c] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Rocket size={14} />
+                  <span>🚀 Uygulamaya Başla</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

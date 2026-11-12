@@ -973,7 +973,8 @@ export default function ReadingTextDetailPage({
       setLoopingLineSira(null);
       setSentenceLoopRemaining(null);
     } else {
-      const targetLoops: number | "infinite" = "infinite";
+      const targetLoops: number | "infinite" =
+        useSettings.getState().sentenceLoopCount;
       setLoopingLineSira(line.sira);
       setSentenceLoopRemaining(targetLoops);
       playSentence(line, false, true, targetLoops, 1);
@@ -3640,10 +3641,6 @@ export default function ReadingTextDetailPage({
                     const isPlaying = playingLineId === line.sira;
                     const isLooping = loopingLineSira === line.sira;
                     const isSelected = selectedParagraphSira === line.sira;
-                    const effectiveLineHareke =
-                      lineHarekeOverrides[line.sira] !== undefined
-                        ? lineHarekeOverrides[line.sira]
-                        : !mounted || showHareke;
                     const shouldBlurLine =
                       blurArabic && !revealedArabicLines[line.sira];
 
@@ -3682,7 +3679,7 @@ export default function ReadingTextDetailPage({
                               isPlaying ? activeWordProgress : 0
                             }
                             isClassroomMode={isClassroomMode}
-                            forceShowHareke={effectiveLineHareke}
+                            forceShowHareke={lineHarekeOverrides[line.sira]}
                             inlineFlow
                           />
                         </span>
@@ -3878,7 +3875,7 @@ export default function ReadingTextDetailPage({
                     activeWordIndex={isPlaying ? activeWordIndex : null}
                     activeWordProgress={isPlaying ? activeWordProgress : 0}
                     isClassroomMode={isClassroomMode}
-                    forceShowHareke={effectiveLineHareke}
+                    forceShowHareke={lineHarekeOverrides[line.sira]}
                   />
                 </div>
               </div>

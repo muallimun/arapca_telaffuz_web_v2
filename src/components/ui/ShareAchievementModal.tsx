@@ -799,11 +799,14 @@ export default function ShareAchievementModal({
 
       ctx.fillStyle = "#5C5142";
       ctx.font = "700 18px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        `Ödev Paketi: ${homeworkTitle || "Öğretmen Ödev Paketi"}  •  Telaffuz: ${pronPracticedCount}/${pronTargetCount}  •  Durum: Tamamlandı ✓`,
-        W / 2,
-        526
-      );
+      const hwMetaParts = [
+        `Ödev Paketi: ${homeworkTitle || "Öğretmen Ödev Paketi"}`,
+      ];
+      if (pronTargetCount > 0) {
+        hwMetaParts.push(`Telaffuz: ${pronPracticedCount}/${pronTargetCount}`);
+      }
+      hwMetaParts.push("Durum: Tamamlandı ✓");
+      ctx.fillText(hwMetaParts.join("  •  "), W / 2, 526);
     } else {
       // Kur Seviye Rozeti
       drawRoundRect(ctx, W / 2 - 140, 310, 280, 44, 16);

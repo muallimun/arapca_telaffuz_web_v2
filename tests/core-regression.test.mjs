@@ -2915,3 +2915,149 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
     "999 Görsel Kelime ifadeleri 998 Görsel Kelime olarak düzeltilmiş olmalıdır"
   );
 });
+
+test("30. 8 Kritik İşlevsel ve Davranışsal Hata Düzeltmesi Doğrulaması", async () => {
+  const metinPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const diyalogPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. metin/[id]/page.tsx içinde WordTooltip forceShowHareke prop'u lineHarekeOverrides[line.sira] olmalı
+  assert.equal(
+    metinPageCode.includes("forceShowHareke={effectiveLineHareke}"),
+    false,
+    "metin/[id]/page.tsx WordTooltip bileşenine boolean effectiveLineHareke geçerek irab-only modunu ezmemelidir"
+  );
+  assert.equal(
+    metinPageCode.includes("forceShowHareke={lineHarekeOverrides[line.sira]}"),
+    true,
+    "metin/[id]/page.tsx yalnızca satır bazlı override varsa forceShowHareke geçmelidir"
+  );
+
+  // 2. sentenceLoopCount ayarı hem diyalog hem metin sayfasında okunmalı
+  assert.equal(
+    metinPageCode.includes("useSettings.getState().sentenceLoopCount") &&
+      diyalogPageCode.includes("useSettings.getState().sentenceLoopCount"),
+    true,
+    "Hem diyalog hem metin sayfalarında handleToggleLoopLine sentenceLoopCount ayarını okumalıdır"
+  );
+
+  // 3. Alıştırma zamanlayıcı referans temizliği (FillInBlanks, BlindDictation, MultipleChoice)
+  const fillCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "FillInBlanks.tsx"),
+    "utf8"
+  );
+  const blindCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BlindDictation.tsx"),
+    "utf8"
+  );
+  const mcCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    fillCode.includes("autoAdvanceTimerRef") &&
+      fillCode.includes("clearPendingTimers"),
+    true,
+    "FillInBlanks zamanlayıcıları useRef ile takip edilip temizlenmelidir"
+  );
+  assert.equal(
+    blindCode.includes("clearPendingTimers"),
+    true,
+    "BlindDictation zamanlayıcıları useRef ile takip edilip temizlenmelidir"
+  );
+  assert.equal(
+    mcCode.includes("autoAdvanceTimerRef") &&
+      mcCode.includes("clearAutoAdvanceTimer"),
+    true,
+    "MultipleChoice zamanlayıcıları useRef ile takip edilip temizlenmelidir"
+  );
+
+  // 4. alistirmalar/page.tsx grammarFilter URL temizliği ve useEffect bağımlılıkları
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    alistirmalarCode.includes("clearGrammarFilterAndUrl") &&
+      alistirmalarCode.includes("router.replace(") &&
+      alistirmalarCode.includes("}, [searchParams]);"),
+    true,
+    "alistirmalar/page.tsx grammar parametresini URL'den silmeli ve useEffect bağımlılığından srsRecords/mistakeIds çıkarılmalıdır"
+  );
+
+  // 5. studyMinutes sayacının global AudioStopper bileşenine taşınması
+  const audioStopperCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "AudioStopper.tsx"),
+    "utf8"
+  );
+  const homePageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    audioStopperCode.includes("addStudyMinutes(1)") &&
+      !homePageCode.includes("addStudyMinutes(1)"),
+    true,
+    "60 saniyelik studyMinutes sayacı page.tsx yerine global AudioStopper içinde çalışmalıdır"
+  );
+
+  // 6. ShareAchievementModal pronTargetCount > 0 kontrolü
+  const shareModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShareAchievementModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    shareModalCode.includes("if (pronTargetCount > 0)"),
+    true,
+    "ShareAchievementModal pronTargetCount === 0 iken Telaffuz 0/0 metnini gizlemelidir"
+  );
+
+  // 7. VisitorCounterBadge POST döngüsünün kaldırılması
+  const visitorCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "VisitorCounterBadge.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !visitorCode.includes("knownTotalUsers > normalized.totalUsers") &&
+      !visitorCode.includes("!hasRegisteredThisPageLoad || knownTotalUsers > 0"),
+    true,
+    "VisitorCounterBadge refreshVisitorStatsLive içinde sunucu sayacı düşükse tekrar POST atmamalıdır"
+  );
+
+  // 8. Ortak serverTts.ts modülü
+  const serverTtsPath = path.join(ROOT_DIR, "src", "lib", "serverTts.ts");
+  assert.equal(
+    fs.existsSync(serverTtsPath),
+    true,
+    "src/lib/serverTts.ts ortak modülü mevcut olmalıdır"
+  );
+  const { splitArabicTextIntoChunks } = await import(
+    pathToFileURL(serverTtsPath).href
+  );
+  const longSample =
+    "السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، كَيْفَ حَالُكُمْ يَا أَصْدِقَائِي الْأَعِزَّاءَ فِي هَذَا الْيَوْمِ الْجَمِيلِ الْمُبَارَكِ؟ نَحْنُ نَدْرُسُ اللُّغَةَ الْعَرَبِيَّةَ الْفُصْحَى بِجِدٍّ وَاجْتِهَادٍ كَبِيرٍ كُلَّ يَوْمٍ.";
+  const chunks = splitArabicTextIntoChunks(longSample, 175);
+  assert.ok(chunks.length >= 2 && chunks.every((c) => c.length <= 175));
+
+  const ttsRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "tts", "route.ts"),
+    "utf8"
+  );
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  assert.equal(
+    ttsRouteCode.includes('@/lib/serverTts') &&
+      adminRouteCode.includes('@/lib/serverTts') &&
+      !adminRouteCode.includes("async function synthesizeEdgeTtsBuffer"),
+    true,
+    "/api/tts ve /api/admin ortak @/lib/serverTts fonksiyonlarını kullanmalıdır"
+  );
+});
+

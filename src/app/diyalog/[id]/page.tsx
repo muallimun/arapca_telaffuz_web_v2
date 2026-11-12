@@ -1512,8 +1512,8 @@ export default function DialogueDetailPage({
       setLoopingLineSira(null);
       setSentenceLoopRemaining(null);
     } else {
-      // Kullanıcı durdurana veya başka bir cümleye geçene kadar 800ms es ile sürekli tekrarla
-      const targetLoops: number | "infinite" = "infinite";
+      const targetLoops: number | "infinite" =
+        useSettings.getState().sentenceLoopCount;
       setLoopingLineSira(line.sira);
       setSentenceLoopRemaining(targetLoops);
       playSentence(line, false, true, false, targetLoops, 1);

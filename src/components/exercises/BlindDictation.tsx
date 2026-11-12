@@ -396,6 +396,18 @@ export default function BlindDictation({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const audioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingTimers = useCallback(() => {
+    if (audioTimerRef.current) {
+      clearTimeout(audioTimerRef.current);
+      audioTimerRef.current = null;
+    }
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+  }, []);
 
   const fullCatalog = useMemo(() => buildAudioSentenceCatalog(), []);
 
@@ -524,16 +536,13 @@ export default function BlindDictation({
 
   useEffect(() => {
     return () => {
-      if (audioTimerRef.current) clearTimeout(audioTimerRef.current);
+      clearPendingTimers();
       stopAllAudio();
     };
-  }, []);
+  }, [clearPendingTimers]);
 
   const resetQuestionState = useCallback(() => {
-    if (audioTimerRef.current) {
-      clearTimeout(audioTimerRef.current);
-      audioTimerRef.current = null;
-    }
+    clearPendingTimers();
     stopAllAudio();
     setPlacedTileIds([]);
     setTypedText("");
@@ -544,7 +553,7 @@ export default function BlindDictation({
     setSlotSelections({});
     setTashkeelEval("idle");
     setRemainingSeconds(timeLimit);
-  }, [timeLimit]);
+  }, [clearPendingTimers, timeLimit]);
 
   // İsteğe bağlı süre sayacı
   useEffect(() => {
@@ -633,7 +642,9 @@ export default function BlindDictation({
         setCorrectCount((c) => c + 1);
         setDictationEval("correct");
         await playSuccess({ streak: nextStreak });
+        clearPendingTimers();
         audioTimerRef.current = setTimeout(() => {
+          audioTimerRef.current = null;
           void playEntryAudio(currentEntry, 1.0);
         }, 250);
       } else {
@@ -667,7 +678,9 @@ export default function BlindDictation({
       setCorrectCount((c) => c + 1);
       setDictationEval(result.isExactSkeleton ? "correct" : "near");
       await playSuccess({ streak: nextStreak });
+      clearPendingTimers();
       audioTimerRef.current = setTimeout(() => {
+        audioTimerRef.current = null;
         void playEntryAudio(currentEntry, 1.0);
       }, 250);
     } else {
@@ -722,7 +735,9 @@ export default function BlindDictation({
       setCorrectCount((c) => c + 1);
       setTashkeelEval("correct");
       await playSuccess({ streak: nextStreak });
+      clearPendingTimers();
       audioTimerRef.current = setTimeout(() => {
+        audioTimerRef.current = null;
         void playEntryAudio(currentEntry, 1.0);
       }, 250);
     } else {
@@ -734,6 +749,7 @@ export default function BlindDictation({
   };
 
   const handleNextQuestion = () => {
+    clearPendingTimers();
     playClick();
     if (currentIndex + 1 < sessionEntries.length) {
       setCurrentIndex((i) => i + 1);

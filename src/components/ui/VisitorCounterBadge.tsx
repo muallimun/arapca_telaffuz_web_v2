@@ -170,23 +170,22 @@ function normalizeStatsPayload(
 function persistStatsToLocalStorage(stats: VisitorStatsData): void {
   if (typeof window === "undefined") return;
   try {
-    const prev = readKnownClientTotals();
-    const bestUsers = Math.max(stats.totalUsers, prev.knownTotalUsers);
-    const bestSessions = Math.max(stats.totalSessions, prev.knownTotalSessions);
+    const safeUsers = Math.max(1, stats.totalUsers);
+    const safeSessions = Math.max(safeUsers, stats.totalSessions);
 
-    localStorage.setItem(STORAGE_KEY_KNOWN_TOTAL_USERS, String(bestUsers));
+    localStorage.setItem(STORAGE_KEY_KNOWN_TOTAL_USERS, String(safeUsers));
     localStorage.setItem(
       STORAGE_KEY_KNOWN_TOTAL_SESSIONS,
-      String(bestSessions)
+      String(safeSessions)
     );
     localStorage.setItem(
       STORAGE_KEY_CACHE,
       JSON.stringify({
         ...stats,
-        totalUsers: bestUsers,
-        totalUnique: bestUsers,
-        totalSessions: bestSessions,
-        totalViews: bestSessions,
+        totalUsers: safeUsers,
+        totalUnique: safeUsers,
+        totalSessions: safeSessions,
+        totalViews: safeSessions,
       })
     );
   } catch {
@@ -293,8 +292,7 @@ export async function registerVisitorSessionOnLoad(): Promise<VisitorStatsData> 
 export async function refreshVisitorStatsLive(): Promise<VisitorStatsData> {
   if (typeof window === "undefined") return DEFAULT_FALLBACK_STATS;
   try {
-    const { knownTotalUsers, knownTotalSessions } = readKnownClientTotals();
-    if (!hasRegisteredThisPageLoad || knownTotalUsers > 0) {
+    if (!hasRegisteredThisPageLoad) {
       return await registerVisitorSessionOnLoad();
     }
     const res = await fetch("/api/stats", {
@@ -308,12 +306,6 @@ export async function refreshVisitorStatsLive(): Promise<VisitorStatsData> {
       const json = (await res.json()) as Record<string, unknown>;
       const normalized = normalizeStatsPayload(json);
       if (normalized) {
-        if (
-          knownTotalUsers > normalized.totalUsers ||
-          knownTotalSessions > normalized.totalSessions
-        ) {
-          return await registerVisitorSessionOnLoad();
-        }
         broadcastStats(normalized);
         return normalized;
       }

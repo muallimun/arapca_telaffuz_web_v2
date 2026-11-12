@@ -598,6 +598,25 @@ export default function FillInBlanks({
   }, [currentIndex, subMode, currentQ?.id, roundSeed, customQuestions]);
 
   const streakRef = useRef<number>(0);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingTimers = useCallback(() => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearPendingTimers();
+    };
+  }, [clearPendingTimers]);
 
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
@@ -708,6 +727,8 @@ export default function FillInBlanks({
       return;
     }
 
+    clearPendingTimers();
+
     // Instant mode
     if (isRight) {
       setFeedback("correct");
@@ -717,7 +738,8 @@ export default function FillInBlanks({
       }));
       streakRef.current += 1;
       playCorrect({ streak: streakRef.current });
-      setTimeout(() => {
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        autoAdvanceTimerRef.current = null;
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);
         } else {
@@ -734,7 +756,8 @@ export default function FillInBlanks({
           : { answer: word, isCorrect: false },
       }));
       playWrong();
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
+        feedbackTimerRef.current = null;
         setFeedback(null);
         setSelectedWord(null);
       }, 850);
@@ -767,6 +790,8 @@ export default function FillInBlanks({
       return;
     }
 
+    clearPendingTimers();
+
     // Instant mode
     if (isRight) {
       const hasSpellingOrHarakatVariation =
@@ -782,8 +807,9 @@ export default function FillInBlanks({
       }));
       streakRef.current += 1;
       playCorrect({ streak: streakRef.current });
-      setTimeout(
+      autoAdvanceTimerRef.current = setTimeout(
         () => {
+          autoAdvanceTimerRef.current = null;
           if (currentIndex < questions.length - 1) {
             setCurrentIndex((prev) => prev + 1);
           } else {
@@ -803,7 +829,8 @@ export default function FillInBlanks({
           : { answer: rawTyped, isCorrect: false },
       }));
       playWrong();
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
+        feedbackTimerRef.current = null;
         setFeedback(null);
       }, 950);
     }
@@ -922,12 +949,14 @@ export default function FillInBlanks({
 
   const prevQuestion = () => {
     if (currentIndex > 0) {
+      clearPendingTimers();
       playClick();
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
   const nextQuestion = () => {
+    clearPendingTimers();
     playClick();
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -940,6 +969,7 @@ export default function FillInBlanks({
 
   // 4 Sonuç Ekranı Aksiyonu
   const handleRepeatSameSet = () => {
+    clearPendingTimers();
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -963,6 +993,7 @@ export default function FillInBlanks({
   };
 
   const handleStartNewSet = () => {
+    clearPendingTimers();
     playClick();
     fanfarePlayedRef.current = false;
     setCustomQuestions(null);
@@ -984,6 +1015,7 @@ export default function FillInBlanks({
 
   const handleRetryWrongOnly = () => {
     if (wrongQuestions.length === 0) return;
+    clearPendingTimers();
     playClick();
     fanfarePlayedRef.current = false;
     setCustomQuestions(
@@ -1502,6 +1534,7 @@ export default function FillInBlanks({
                 key={idx}
                 type="button"
                 onClick={() => {
+                  clearPendingTimers();
                   playClick();
                   setCurrentIndex(idx);
                 }}

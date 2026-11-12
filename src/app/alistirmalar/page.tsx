@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   Check,
@@ -396,6 +396,8 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
 
 function ExercisesPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [selectedType, setSelectedType] = useState<ExerciseType>("flashcard");
   const [exerciseCategoryFilter, setExerciseCategoryFilter] =
     useState<ExerciseCategoryTab>("all");
@@ -476,6 +478,17 @@ function ExercisesPageContent() {
     const autostartParam = searchParams.get("autostart");
 
     const raf = requestAnimationFrame(() => {
+      const storeState = useUserStore.getState();
+      const settingsState = useSettings.getState();
+      const snapshotDailyPackage = buildDailyStudyPackage({
+        srsRecords: storeState.srsRecords || {},
+        mistakeIds: storeState.mistakeIds || [],
+        completedDialogues: storeState.completedDialogues || [],
+        learnedWords: storeState.learnedWords || [],
+        preferredLevel: settingsState.preferredLevel,
+        detectedCefrLevel: storeState.detectedCefrLevel,
+      });
+
       if (planParam === "daily") {
         setSingleDialogueId("all");
         setSingleReadingId("all");
@@ -485,14 +498,14 @@ function ExercisesPageContent() {
         setContentType("mixed");
         setSelectedType("multiple-choice");
         const dueVocab =
-          dailyPackage.dueReviewPool.words.length >= 4
-            ? dailyPackage.dueReviewPool.words
+          snapshotDailyPackage.dueReviewPool.words.length >= 4
+            ? snapshotDailyPackage.dueReviewPool.words
             : [
-                ...dailyPackage.dueReviewPool.words,
+                ...snapshotDailyPackage.dueReviewPool.words,
                 ...sozluk
                   .filter(
                     (w) =>
-                      !dailyPackage.dueReviewPool.words.some(
+                      !snapshotDailyPackage.dueReviewPool.words.some(
                         (dw) => dw.id === w.id
                       )
                   )
@@ -501,13 +514,13 @@ function ExercisesPageContent() {
         setFrozenPools({
           vocabulary: dueVocab,
           idioms:
-            dailyPackage.dueReviewPool.idioms.length > 0
-              ? dailyPackage.dueReviewPool.idioms
+            snapshotDailyPackage.dueReviewPool.idioms.length > 0
+              ? snapshotDailyPackage.dueReviewPool.idioms
               : getCombinedIdiomsCatalog().slice(0, 4),
           dialogues:
-            dailyPackage.dueReviewPool.dialogues.length > 0
-              ? dailyPackage.dueReviewPool.dialogues
-              : [dailyPackage.dailyDialogue.dialogue],
+            snapshotDailyPackage.dueReviewPool.dialogues.length > 0
+              ? snapshotDailyPackage.dueReviewPool.dialogues
+              : [snapshotDailyPackage.dailyDialogue.dialogue],
           visualPool: gorselKelimeler,
           isMistakesMode: true,
         });
@@ -516,8 +529,11 @@ function ExercisesPageContent() {
       }
 
       if (planParam === "leech") {
-        const leechIds = getLeechSrsItems(srsRecords || {}).map((r) => r.id);
-        const sourceIds = leechIds.length > 0 ? leechIds : mistakeIds;
+        const leechIds = getLeechSrsItems(storeState.srsRecords || {}).map(
+          (r) => r.id
+        );
+        const sourceIds =
+          leechIds.length > 0 ? leechIds : storeState.mistakeIds || [];
         const leechResolved = resolveMistakesPool(sourceIds);
         const leechVocab =
           leechResolved.words.length >= 4
@@ -550,7 +566,7 @@ function ExercisesPageContent() {
           dialogues:
             leechResolved.dialogues.length > 0
               ? leechResolved.dialogues
-              : [dailyPackage.dailyDialogue.dialogue],
+              : [snapshotDailyPackage.dailyDialogue.dialogue],
           visualPool: gorselKelimeler,
           isMistakesMode: true,
         });
@@ -665,7 +681,7 @@ function ExercisesPageContent() {
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [searchParams, dailyPackage, srsRecords, mistakeIds]);
+  }, [searchParams]);
 
   const mistakesResolved = useMemo(
     () => resolveMistakesPool(mistakeIds),
@@ -1628,6 +1644,19 @@ function ExercisesPageContent() {
     rangePreset === "mistakes" &&
     mistakeIds.length === 0;
 
+  const clearGrammarFilterAndUrl = () => {
+    setGrammarFilter("all");
+    setFrozenPools(null);
+    if (searchParams.has("grammar")) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("grammar");
+      const nextQuery = nextParams.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    }
+  };
+
   const handlePoolSelectChange = (presetId: PoolSourceId) => {
     if (!isPoolCompatibleWithSelectedMode(presetId)) {
       playClick();
@@ -1636,7 +1665,7 @@ function ExercisesPageContent() {
     playClick();
     setRangePreset(presetId);
     setCategoryFilter("all");
-    setGrammarFilter("all");
+    clearGrammarFilterAndUrl();
     setWordPosFilter("all");
     setSingleDialogueId("all");
     setSingleReadingId("all");
@@ -2091,8 +2120,7 @@ function ExercisesPageContent() {
                   type="button"
                   onClick={() => {
                     playClick();
-                    setGrammarFilter("all");
-                    setFrozenPools(null);
+                    clearGrammarFilterAndUrl();
                   }}
                   title="Odak kalıp filtresini kaldır"
                   className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[10px] font-black shrink-0 cursor-pointer"
@@ -2408,8 +2436,7 @@ function ExercisesPageContent() {
                   type="button"
                   onClick={() => {
                     playClick();
-                    setGrammarFilter("all");
-                    setFrozenPools(null);
+                    clearGrammarFilterAndUrl();
                   }}
                   className="px-2 py-0.5 rounded-lg bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[11px] font-black inline-flex items-center gap-1 cursor-pointer shrink-0"
                 >

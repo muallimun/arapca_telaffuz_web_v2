@@ -149,7 +149,6 @@ export default function HomePage() {
     topicMastery,
     skillStats,
     completedLevelExams,
-    addStudyMinutes,
     syncDailyProgress,
   } = useUserStore();
 
@@ -168,26 +167,10 @@ export default function HomePage() {
     const raf = requestAnimationFrame(() => setMounted(true));
     syncDailyProgress();
     loadAudioManifest().then(() => setManifestLoaded(true));
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        syncDailyProgress();
-      }
-    };
-    const studyTimer = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        addStudyMinutes(1);
-      }
-    }, 60000);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleVisibilityChange);
     return () => {
       cancelAnimationFrame(raf);
-      window.clearInterval(studyTimer);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleVisibilityChange);
     };
-  }, [syncDailyProgress, addStudyMinutes]);
+  }, [syncDailyProgress]);
 
   const dailyPackage = useMemo(() => {
     return buildDailyStudyPackage({

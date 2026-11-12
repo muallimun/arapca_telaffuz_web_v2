@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   playCorrect,
   playWrong,
@@ -414,6 +414,20 @@ export default function MultipleChoice({
   }, [currentIndex, questionsSignature]);
 
   const streakRef = useRef<number>(0);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAutoAdvanceTimer = useCallback(() => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearAutoAdvanceTimer();
+    };
+  }, [clearAutoAdvanceTimer]);
 
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
@@ -489,10 +503,22 @@ export default function MultipleChoice({
       [currentIndex]: { chosen: text, isCorrect },
     }));
 
+    clearAutoAdvanceTimer();
+
     if (feedbackMode === "instant") {
       if (isCorrect) {
         streakRef.current += 1;
         playCorrect({ streak: streakRef.current });
+        autoAdvanceTimerRef.current = setTimeout(() => {
+          autoAdvanceTimerRef.current = null;
+          if (currentIndex < questions.length - 1) {
+            setCurrentIndex((prev) => prev + 1);
+          } else {
+            setResultViewMode("summary");
+            setReviewIndex(0);
+            setIsFinished(true);
+          }
+        }, 1050);
       } else {
         streakRef.current = 0;
         playWrong();
@@ -504,12 +530,14 @@ export default function MultipleChoice({
 
   const prevQuestion = () => {
     if (currentIndex > 0) {
+      clearAutoAdvanceTimer();
       playClick();
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
   const nextQuestion = () => {
+    clearAutoAdvanceTimer();
     playClick();
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -522,6 +550,7 @@ export default function MultipleChoice({
 
   // 1) Tekrar Yap (Aynı soruları karıştırarak baştan başlat)
   const handleRepeatSameSet = () => {
+    clearAutoAdvanceTimer();
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -543,6 +572,7 @@ export default function MultipleChoice({
 
   // 2) Devam Et (Yeni Set)
   const handleStartNewSet = () => {
+    clearAutoAdvanceTimer();
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -564,6 +594,7 @@ export default function MultipleChoice({
 
   const handleRetryWrongOnly = () => {
     if (wrongQuestions.length === 0) return;
+    clearAutoAdvanceTimer();
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -1068,6 +1099,7 @@ export default function MultipleChoice({
                 key={idx}
                 type="button"
                 onClick={() => {
+                  clearAutoAdvanceTimer();
                   playClick();
                   setCurrentIndex(idx);
                 }}

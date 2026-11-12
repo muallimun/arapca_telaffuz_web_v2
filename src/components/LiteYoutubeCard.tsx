@@ -21,7 +21,6 @@ import {
   YOUTUBE_CATEGORY_META,
   buildYoutubeEmbedUrl,
   getContentLinkHref,
-  getYoutubeThumbnailUrls,
   resolveYoutubeIds,
 } from "@/lib/youtubeUtils";
 import { formatArabicByHarekeMode } from "@/lib/arabicTextUtils";
@@ -52,8 +51,8 @@ export default function LiteYoutubeCard({
   const { watchedVideos, toggleWatchedVideo } = useUserStore();
 
   const [mounted, setMounted] = useState(false);
-  const [isInlinePlaying, setIsInlinePlaying] = useState(false);
-  const [thumbStage, setThumbStage] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [speakingWord, setSpeakingWord] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,9 +61,10 @@ export default function LiteYoutubeCard({
   }, []);
 
   const { videoId, playlistId } = resolveYoutubeIds(item);
-  const thumbCandidates = getYoutubeThumbnailUrls(videoId);
-  const activeThumbUrl =
-    thumbStage < thumbCandidates.length ? thumbCandidates[thumbStage] : null;
+  const thumbnailUrl =
+    videoId && !imageError
+      ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+      : null;
 
   const embedUrl = buildYoutubeEmbedUrl(item, { autoplay: true });
   const meta =
@@ -87,13 +87,18 @@ export default function LiteYoutubeCard({
     playClick();
     stopAllAudio();
     if (!embedUrl) return;
-    setIsInlinePlaying(true);
+    setIsPlaying(true);
+  };
+
+  const handleStopInlinePlay = () => {
+    playClick();
+    setIsPlaying(false);
   };
 
   const handleOpenCinema = () => {
     playClick();
     stopAllAudio();
-    setIsInlinePlaying(false);
+    setIsPlaying(false);
     onOpenCinemaModal?.(item);
   };
 
@@ -118,24 +123,24 @@ export default function LiteYoutubeCard({
 
   return (
     <article
-      className={`rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between overflow-hidden shadow-xs ${
+      className={`rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between overflow-hidden shadow-xs min-w-0 ${
         isWatched
           ? "border-emerald-400/90 dark:border-emerald-700 bg-[#F4FBF7] dark:bg-emerald-950/20"
           : "border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDFBF7] dark:bg-[var(--surface)] hover:border-[#087F5B]"
       }`}
     >
       <div>
-        {/* ÜST GÖRSEL KAPAK VEYA SIFIR GECİKMELİ GÖMÜLÜ OYNATICI */}
+        {/* ÜST GÖRSEL KAPAK (isPlaying === false iken KESİNLİKLE iframe render edilmez) VEYA GÖMÜLÜ OYNATICI */}
         <div className="relative aspect-video w-full overflow-hidden bg-slate-950 border-b border-[#E6D7BE] dark:border-[var(--border)]">
-          {isInlinePlaying && embedUrl ? (
+          {isPlaying && embedUrl ? (
             <div className="relative w-full h-full bg-black">
               <iframe
                 src={embedUrl}
                 title={item.baslik_tr}
-                className="w-full h-full border-0"
+                className="w-full h-full aspect-video border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
               />
               <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
                 {onOpenCinemaModal && (
@@ -151,15 +156,13 @@ export default function LiteYoutubeCard({
                 )}
                 <button
                   type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsInlinePlaying(false);
-                  }}
+                  onClick={handleStopInlinePlay}
                   title="Oynatıcıyı Kapat"
-                  className="w-7 h-7 rounded-lg bg-black/80 hover:bg-rose-700 text-white border border-white/20 flex items-center justify-center cursor-pointer shadow-md"
+                  className="px-2 py-1 rounded-lg bg-black/80 hover:bg-rose-700 text-white text-[11px] font-extrabold border border-white/20 flex items-center gap-1 cursor-pointer shadow-md"
                   aria-label="Oynatıcıyı Kapat"
                 >
-                  <X size={14} />
+                  <X size={13} />
+                  <span>Kapat</span>
                 </button>
               </div>
             </div>
@@ -170,32 +173,30 @@ export default function LiteYoutubeCard({
               className="group relative w-full h-full text-left cursor-pointer focus:outline-none block"
               aria-label={`${item.baslik_tr} — Uygulama içinde oynat`}
             >
-              {activeThumbUrl ? (
+              {thumbnailUrl ? (
                 <>
                   <img
-                    src={activeThumbUrl}
+                    src={thumbnailUrl}
                     alt={item.baslik_tr}
                     loading="lazy"
-                    referrerPolicy="no-referrer"
-                    onError={() => setThumbStage((prev) => prev + 1)}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    onError={() => setImageError(true)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/45" />
                   {/* Görsel Kapak Varken Merkez Oynat İkonu */}
                   <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-600/95 group-hover:bg-rose-500 text-white border-2 border-white/80 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-600/95 group-hover:bg-rose-500 text-white border-2 border-white/85 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play size={22} className="fill-white ml-0.5" />
                     </span>
                   </div>
                 </>
               ) : (
-                /* Sadece playlist_id olan kayıtlar veya kapak yüklenemeyen durumlar için Play ikonu + Arapça başlığı dikey hizalayan çakışmasız tipografik kapak */
-                <div
-                  className={`w-full h-full bg-gradient-to-br ${meta.gradientClass} px-3.5 sm:px-4 pt-9 pb-8 flex flex-col items-center justify-center gap-2 text-center relative overflow-hidden`}
-                >
+                /* video_id yoksa veya kapak resmi yüklenemezse (imageError) zümrüt/yeşil CSS gradyan kapak + Play ikonu + Arapça başlık */
+                <div className="w-full h-full bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-emerald-50 px-3.5 sm:px-4 pt-9 pb-8 flex flex-col items-center justify-center gap-2 text-center relative overflow-hidden">
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-4 -bottom-4 text-7xl opacity-[0.06] select-none"
+                    className="pointer-events-none absolute -right-4 -bottom-4 text-7xl opacity-[0.07] select-none"
                   >
                     {meta.emoji}
                   </div>
@@ -330,6 +331,12 @@ export default function LiteYoutubeCard({
             </div>
           )}
 
+          {compact && item.pedagojik_not && (
+            <p className="text-xs font-medium text-[var(--muted)] line-clamp-2 leading-relaxed">
+              {item.pedagojik_not}
+            </p>
+          )}
+
           {/* Odak Kelimeler (Tıklandığında Seslendirir + Sözlük Bağlantısı) */}
           {!compact &&
             Array.isArray(item.odak_kelimeler) &&
@@ -392,27 +399,42 @@ export default function LiteYoutubeCard({
       </div>
 
       {/* ALT AKSİYON ÇUBUĞU */}
-      <div className="px-3.5 pb-3.5 pt-2 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center gap-2">
+      <div className="px-3.5 pb-3.5 pt-2 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           onClick={() => {
-            if (onOpenCinemaModal && compact) {
-              handleOpenCinema();
-            } else if (isInlinePlaying && onOpenCinemaModal) {
-              handleOpenCinema();
+            if (isPlaying) {
+              handleStopInlinePlay();
             } else {
               handleStartInlinePlay();
             }
           }}
-          className="flex-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+          className="flex-1 min-w-[140px] min-h-[38px] px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
         >
-          <Play size={13} className="fill-white shrink-0" />
-          <span>
-            {isInlinePlaying && onOpenCinemaModal
-              ? "Sinema Modu"
-              : "Uygulama İçinde İzle"}
-          </span>
+          {isPlaying ? (
+            <>
+              <X size={13} className="shrink-0" />
+              <span>Oynatıcıyı Kapat</span>
+            </>
+          ) : (
+            <>
+              <Play size={13} className="fill-white shrink-0" />
+              <span>Uygulama İçinde İzle</span>
+            </>
+          )}
         </button>
+
+        {onOpenCinemaModal && (
+          <button
+            type="button"
+            onClick={handleOpenCinema}
+            title="Sinema Modunda Geniş Ekranda İzle"
+            className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/60 border-2 border-[#6741D9]/40 dark:border-indigo-700 border-b-3 hover:border-[#6741D9] text-[#6741D9] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap"
+          >
+            <Maximize2 size={13} className="shrink-0" />
+            <span>Sinema Modu</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -500,16 +522,16 @@ export function YoutubePlayerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-[85] bg-black/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] shadow-2xl overflow-hidden my-auto"
+        className="w-[95vw] max-w-4xl max-h-[94dvh] flex flex-col rounded-2xl sm:rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] shadow-2xl overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Üst Başlık */}
-        <div className="px-4 py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+        {/* Modal Üst Bar: Sol Bilgi + Sağda Net "YouTube'da Aç ↗" ve "✕ Kapat" Butonları */}
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <span
               className={`px-2 py-0.5 rounded-lg text-xs font-black border shrink-0 ${
                 CEFR_BADGE_STYLE[activeItem.cefr] || CEFR_BADGE_STYLE.A1
@@ -518,26 +540,41 @@ export function YoutubePlayerModal({
               {activeItem.cefr}
             </span>
             <span className="text-xs font-extrabold text-[var(--muted)] truncate">
-              {meta.emoji} {meta.label} • 📺 {activeItem.kanal_adi}
+              {meta.emoji} {meta.shortLabel} • 📺 {activeItem.kanal_adi}
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              onClose();
-            }}
-            className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--muted)] hover:text-rose-600 cursor-pointer shrink-0"
-            aria-label="Kapat"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+            <a
+              href={activeItem.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                playClick();
+                stopAllAudio();
+              }}
+              className="min-h-[34px] px-2.5 sm:px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border-b-2 border-rose-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+            >
+              <span>YouTube&apos;da Aç ↗</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onClose();
+              }}
+              className="min-h-[34px] px-2.5 sm:px-3 py-1 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-400 text-xs font-extrabold text-[var(--foreground)] hover:text-rose-700 dark:hover:text-rose-300 inline-flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
+              aria-label="Sinema Modunu Kapat"
+            >
+              <span>✕ Kapat</span>
+            </button>
+          </div>
         </div>
 
         {/* Birden fazla bağlı video varsa sekme seçici */}
         {items.length > 1 && (
-          <div className="px-4 py-2 bg-white dark:bg-[var(--surface)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[var(--surface)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
             {items.map((cand, idx) => (
               <button
                 key={cand.id}
@@ -559,17 +596,17 @@ export function YoutubePlayerModal({
           </div>
         )}
 
-        {/* 16:9 YouTube Gömülü Oynatıcı */}
-        <div className="aspect-video w-full bg-black">
+        {/* 16:9 YouTube Gömülü Oynatıcı (Hem mobilde w-[95vw] aspect-video hem masaüstünde max-w-4xl) */}
+        <div className="w-full aspect-video bg-black shrink-0">
           {embedUrl ? (
             <iframe
               key={activeItem.id}
               src={embedUrl}
               title={activeItem.baslik_tr}
-              className="w-full h-full border-0"
+              className="w-full h-full aspect-video border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
               referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-white p-6 text-center gap-3">
@@ -582,18 +619,17 @@ export function YoutubePlayerModal({
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-extrabold inline-flex items-center gap-1.5"
               >
-                <span>YouTube&apos;da Aç</span>
-                <ExternalLink size={14} />
+                <span>YouTube&apos;da Aç ↗</span>
               </a>
             </div>
           )}
         </div>
 
-        {/* Alt Detaylar & Aksiyonlar */}
-        <div className="p-4 sm:p-5 space-y-3">
+        {/* Kaydırılabilir Alt Detaylar & Aksiyonlar */}
+        <div className="p-3.5 sm:p-5 space-y-3 overflow-y-auto min-h-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-0.5 min-w-0">
-              <h3 className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
+              <h3 className="text-sm sm:text-lg font-extrabold text-[var(--foreground)] leading-snug">
                 {activeItem.baslik_tr}
               </h3>
               <p
@@ -623,19 +659,10 @@ export function YoutubePlayerModal({
                 }`}
               >
                 {isWatched ? <CheckCircle2 size={15} /> : <Circle size={15} />}
-                <span>{isWatched ? "İzlendi İşaretlendi" : "İzledim İşaretle"}</span>
+                <span>
+                  {isWatched ? "İzlendi İşaretlendi" : "İzledim İşaretle"}
+                </span>
               </button>
-
-              <a
-                href={activeItem.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playClick()}
-                className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border-b-3 border-rose-800 text-xs font-extrabold inline-flex items-center gap-1.5"
-              >
-                <span>YouTube&apos;da Aç</span>
-                <ExternalLink size={14} />
-              </a>
             </div>
           </div>
 

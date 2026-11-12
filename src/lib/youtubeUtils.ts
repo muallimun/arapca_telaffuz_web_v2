@@ -243,8 +243,28 @@ export interface ParsedYoutubeUrlInfo {
 
 const VALID_VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
 const VALID_PLAYLIST_ID_RE = /^[A-Za-z0-9_-]{10,64}$/;
+const REGEX_VIDEO_ID =
+  /(?:[?&]v=|youtu\.be\/|\/embed\/(?!videoseries\b)|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})(?:[?&#/]|$)/i;
+const REGEX_PLAYLIST_ID = /[?&]list=([A-Za-z0-9_-]{10,64})(?:[?&#]|$)/i;
+const REGEX_START_PARAM = /[?&](?:start|t)=([0-9hmsHMS]+)(?:[?&#]|$)/i;
 
-function parseTimeParamToSeconds(raw: string | null): number | undefined {
+function sanitizeCandidateId(
+  raw: string | undefined | null,
+  validator: RegExp
+): string | undefined {
+  if (!raw || typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (
+    !trimmed ||
+    trimmed.toLowerCase() === "undefined" ||
+    trimmed.toLowerCase() === "null"
+  ) {
+    return undefined;
+  }
+  return validator.test(trimmed) ? trimmed : undefined;
+}
+
+function parseTimeParamToSeconds(raw: string | null | undefined): number | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim().toLowerCase();
   if (/^\d+$/.test(trimmed)) {
@@ -262,13 +282,32 @@ function parseTimeParamToSeconds(raw: string | null): number | undefined {
 
 /**
  * YouTube URL'sinden (youtu.be/..., youtube.com/watch?v=..., youtube.com/playlist?list=..., youtube.com/embed/...)
- * videoId, playlistId ve varsa başlangıç saniyesini güvenli şekilde ayrıştırır.
+ * videoId, playlistId ve varsa başlangıç saniyesini URL ayrıştırıcı + Regex ile güvenli şekilde ayıklar.
  */
 export function extractYoutubeIdsFromUrl(rawUrl?: string): ParsedYoutubeUrlInfo {
   if (!rawUrl || typeof rawUrl !== "string") return {};
   const trimmed = rawUrl.trim();
   if (!trimmed) return {};
 
+  let videoId: string | undefined;
+  let playlistId: string | undefined;
+  let startSeconds: number | undefined;
+
+  // 1. Regex tabanlı doğrudan ayıklama (watch?v=, list=, youtu.be/, start=/t=)
+  const regexVidMatch = trimmed.match(REGEX_VIDEO_ID);
+  if (regexVidMatch?.[1]) {
+    videoId = sanitizeCandidateId(regexVidMatch[1], VALID_VIDEO_ID_RE);
+  }
+  const regexListMatch = trimmed.match(REGEX_PLAYLIST_ID);
+  if (regexListMatch?.[1]) {
+    playlistId = sanitizeCandidateId(regexListMatch[1], VALID_PLAYLIST_ID_RE);
+  }
+  const regexStartMatch = trimmed.match(REGEX_START_PARAM);
+  if (regexStartMatch?.[1]) {
+    startSeconds = parseTimeParamToSeconds(regexStartMatch[1]);
+  }
+
+  // 2. Standart URL ayrıştırıcı ile doğrulama / tamamlama
   try {
     const normalizedUrl =
       trimmed.startsWith("http://") || trimmed.startsWith("https://")
@@ -277,51 +316,54 @@ export function extractYoutubeIdsFromUrl(rawUrl?: string): ParsedYoutubeUrlInfo 
     const parsed = new URL(normalizedUrl);
     const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
 
-    let videoId: string | undefined;
-    let playlistId: string | undefined;
-
-    const listParam = parsed.searchParams.get("list")?.trim();
-    if (listParam && VALID_PLAYLIST_ID_RE.test(listParam)) {
-      playlistId = listParam;
+    if (!playlistId) {
+      playlistId = sanitizeCandidateId(
+        parsed.searchParams.get("list"),
+        VALID_PLAYLIST_ID_RE
+      );
     }
 
-    if (host === "youtu.be") {
-      const seg = parsed.pathname.split("/").filter(Boolean)[0] || "";
-      if (VALID_VIDEO_ID_RE.test(seg)) {
-        videoId = seg;
-      }
-    } else if (
-      host === "youtube.com" ||
-      host === "m.youtube.com" ||
-      host === "music.youtube.com" ||
-      host === "youtube-nocookie.com"
-    ) {
-      const vParam = parsed.searchParams.get("v")?.trim();
-      if (vParam && VALID_VIDEO_ID_RE.test(vParam)) {
-        videoId = vParam;
-      } else {
-        const pathParts = parsed.pathname.split("/").filter(Boolean);
-        if (
-          (pathParts[0] === "embed" ||
-            pathParts[0] === "shorts" ||
-            pathParts[0] === "live") &&
-          pathParts[1] &&
-          pathParts[1] !== "videoseries" &&
-          VALID_VIDEO_ID_RE.test(pathParts[1])
-        ) {
-          videoId = pathParts[1];
+    if (!videoId) {
+      if (host === "youtu.be") {
+        const seg = parsed.pathname.split("/").filter(Boolean)[0] || "";
+        videoId = sanitizeCandidateId(seg, VALID_VIDEO_ID_RE);
+      } else if (
+        host === "youtube.com" ||
+        host === "m.youtube.com" ||
+        host === "music.youtube.com" ||
+        host === "youtube-nocookie.com"
+      ) {
+        const vParam = sanitizeCandidateId(
+          parsed.searchParams.get("v"),
+          VALID_VIDEO_ID_RE
+        );
+        if (vParam) {
+          videoId = vParam;
+        } else {
+          const pathParts = parsed.pathname.split("/").filter(Boolean);
+          if (
+            (pathParts[0] === "embed" ||
+              pathParts[0] === "shorts" ||
+              pathParts[0] === "live") &&
+            pathParts[1] &&
+            pathParts[1] !== "videoseries"
+          ) {
+            videoId = sanitizeCandidateId(pathParts[1], VALID_VIDEO_ID_RE);
+          }
         }
       }
     }
 
-    const startSeconds =
-      parseTimeParamToSeconds(parsed.searchParams.get("start")) ??
-      parseTimeParamToSeconds(parsed.searchParams.get("t"));
-
-    return { videoId, playlistId, startSeconds };
+    if (!startSeconds) {
+      startSeconds =
+        parseTimeParamToSeconds(parsed.searchParams.get("start")) ??
+        parseTimeParamToSeconds(parsed.searchParams.get("t"));
+    }
   } catch {
-    return {};
+    // Regex sonuçları yeterli
   }
+
+  return { videoId, playlistId, startSeconds };
 }
 
 export function resolveYoutubeIds(
@@ -331,18 +373,11 @@ export function resolveYoutubeIds(
   >
 ): ParsedYoutubeUrlInfo {
   const fromUrl = extractYoutubeIdsFromUrl(item.url);
-  const explicitVideoId = item.video_id?.trim();
-  const explicitPlaylistId = item.playlist_id?.trim();
-
   const videoId =
-    explicitVideoId && VALID_VIDEO_ID_RE.test(explicitVideoId)
-      ? explicitVideoId
-      : fromUrl.videoId;
-
+    sanitizeCandidateId(item.video_id, VALID_VIDEO_ID_RE) ?? fromUrl.videoId;
   const playlistId =
-    explicitPlaylistId && VALID_PLAYLIST_ID_RE.test(explicitPlaylistId)
-      ? explicitPlaylistId
-      : fromUrl.playlistId;
+    sanitizeCandidateId(item.playlist_id, VALID_PLAYLIST_ID_RE) ??
+    fromUrl.playlistId;
 
   const startSeconds =
     typeof item.baslangic_sn === "number" &&
@@ -355,13 +390,13 @@ export function resolveYoutubeIds(
 }
 
 /**
- * Standart YouTube gömülü oynatıcı (youtube.com/embed) URL'sini üretir:
- * - Sadece playlistId varsa (veya tur === "playlist" ve videoId yoksa):
- *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0
+ * Standart YouTube gömülü oynatıcı (https://www.youtube.com/embed/...) URL'sini üretir:
  * - Hem videoId hem playlistId varsa:
- *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0
- * - Sadece tekil videoId varsa:
- *   https://www.youtube.com/embed/${videoId}?rel=0(&start=...)
+ *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
+ * - Sadece playlistId varsa (!videoId):
+ *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
+ * - Sadece videoId varsa:
+ *   https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1(&start=...)
  */
 export function buildYoutubeEmbedUrl(
   item: Pick<
@@ -373,44 +408,42 @@ export function buildYoutubeEmbedUrl(
   options?: { autoplay?: boolean }
 ): string {
   const { videoId, playlistId, startSeconds } = resolveYoutubeIds(item);
-  const autoplaySuffix = options?.autoplay ? "&autoplay=1" : "";
-
-  if ((!videoId || (item.tur === "playlist" && !videoId)) && playlistId) {
-    return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
-      playlistId
-    )}&rel=0${autoplaySuffix}`;
-  }
+  const autoplay = options?.autoplay ?? true;
+  const autoplayParam = autoplay ? "&autoplay=1" : "";
+  const startParam =
+    startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
 
   if (videoId && playlistId) {
-    const startSuffix =
-      startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
     return `https://www.youtube.com/embed/${encodeURIComponent(
       videoId
     )}?list=${encodeURIComponent(
       playlistId
-    )}&rel=0${startSuffix}${autoplaySuffix}`;
+    )}&rel=0&modestbranding=1${autoplayParam}${startParam}`;
+  }
+
+  if (!videoId && playlistId) {
+    return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
+      playlistId
+    )}&rel=0&modestbranding=1${autoplayParam}`;
   }
 
   if (videoId) {
-    const startSuffix =
-      startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
     return `https://www.youtube.com/embed/${encodeURIComponent(
       videoId
-    )}?rel=0${startSuffix}${autoplaySuffix}`;
+    )}?rel=0&modestbranding=1${autoplayParam}${startParam}`;
   }
 
   return "";
 }
 
 export function getYoutubeThumbnailUrls(videoId?: string): string[] {
-  if (!videoId || !VALID_VIDEO_ID_RE.test(videoId.trim())) {
+  const cleanId = sanitizeCandidateId(videoId, VALID_VIDEO_ID_RE);
+  if (!cleanId) {
     return [];
   }
-  const cleanId = videoId.trim();
   return [
-    `https://i.ytimg.com/vi/${cleanId}/hqdefault.webp`,
-    `https://i.ytimg.com/vi_webp/${cleanId}/hqdefault.webp`,
     `https://i.ytimg.com/vi/${cleanId}/hqdefault.jpg`,
+    `https://i.ytimg.com/vi/${cleanId}/mqdefault.jpg`,
   ];
 }
 

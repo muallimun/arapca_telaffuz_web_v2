@@ -25,7 +25,6 @@ import {
   ListChecks,
   GraduationCap,
   Film,
-  ExternalLink,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -41,8 +40,7 @@ import {
   getYoutubeRecommendationsByLevel,
 } from "@/lib/data";
 import { Level, YoutubeRecommendationItem } from "@/types/data";
-import { YOUTUBE_CATEGORY_META } from "@/lib/youtubeUtils";
-import { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
+import LiteYoutubeCard, { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
 import {
   useUserStore,
   getTodayDateString,
@@ -56,7 +54,6 @@ import {
   loadAudioManifest,
   hasMp3,
   getMp3Path,
-  stopAllAudio,
 } from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
@@ -1650,87 +1647,16 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {recommendedYoutubeItems.map((yt) => {
-              const catMeta =
-                YOUTUBE_CATEGORY_META[yt.kategori] ||
-                YOUTUBE_CATEGORY_META.cizgi_animasyon;
-              const isWatched =
-                mounted && (watchedVideos || []).includes(yt.id);
-              return (
-                <div
-                  key={yt.id}
-                  className="rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] p-3.5 flex flex-col justify-between gap-2.5 transition-all"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span
-                        className={`px-2 py-0.5 rounded-md border text-[10px] font-extrabold ${catMeta.badgeClass}`}
-                      >
-                        {catMeta.emoji} {catMeta.shortLabel}
-                      </span>
-                      <span className="text-[10px] font-bold text-[var(--muted)] truncate">
-                        📺 {yt.kanal_adi}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
-                      {yt.baslik_tr}
-                    </h3>
-
-                    <p
-                      lang="ar"
-                      dir="rtl"
-                      className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed line-clamp-1"
-                    >
-                      {formatArabicByHarekeMode(
-                        yt.baslik_ar,
-                        !mounted || !showHareke
-                          ? !mounted
-                            ? "full"
-                            : "none"
-                          : harekeMode,
-                        mounted ? arabicFont : "arakom"
-                      )}
-                    </p>
-
-                    <p className="text-[11px] font-medium text-[var(--muted)] line-clamp-2 leading-relaxed">
-                      {yt.pedagojik_not}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        stopAllAudio();
-                        setActiveYoutubeModalItems([yt]);
-                      }}
-                      className="flex-1 min-h-[36px] px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                    >
-                      <Play size={12} className="fill-white shrink-0" />
-                      <span>
-                        {isWatched ? "Tekrar İzle" : "Uygulama İçinde İzle"}
-                      </span>
-                    </button>
-
-                    <a
-                      href={yt.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        playClick();
-                        stopAllAudio();
-                      }}
-                      title="YouTube'da Aç"
-                      className="min-h-[36px] px-2.5 py-1.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] hover:border-rose-500 text-xs font-extrabold text-[var(--foreground)] inline-flex items-center justify-center gap-1"
-                    >
-                      <ExternalLink size={12} className="text-rose-600" />
-                    </a>
-                  </div>
-                </div>
-              );
-            })}
+            {recommendedYoutubeItems.map((yt) => (
+              <LiteYoutubeCard
+                key={yt.id}
+                item={yt}
+                compact
+                onOpenCinemaModal={(selected) =>
+                  setActiveYoutubeModalItems([selected])
+                }
+              />
+            ))}
           </div>
         </section>
       )}

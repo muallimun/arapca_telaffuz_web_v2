@@ -3327,10 +3327,11 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   );
   assert.equal(
     nextConfigCode.includes(
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be; child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;"
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be; child-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com;"
     ) &&
       nextConfigCode.includes("https://i.ytimg.com") &&
-      nextConfigCode.includes("https://img.youtube.com"),
+      nextConfigCode.includes("https://img.youtube.com") &&
+      nextConfigCode.includes("https://*.ytimg.com"),
     true,
     "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src + child-src) ve kapak görseli (img-src) kuralları yer almalıdır"
   );
@@ -3422,7 +3423,7 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     playlistOnlyEmbed,
-    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0"
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1"
   );
 
   const dualEmbed = buildYoutubeEmbedUrl({
@@ -3432,13 +3433,13 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     dualEmbed,
-    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1"
   );
 
   const thumbs = getYoutubeThumbnailUrls("dQw4w9WgXcQ");
   assert.equal(
     thumbs[0],
-    "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.webp"
+    "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
   );
 
   // Sıfır dolgulu ID toleransı: metin_005 <-> metin_05
@@ -3727,7 +3728,7 @@ test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane
   );
   assert.equal(
     plOnly,
-    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&autoplay=1",
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1",
     "Sadece playlist_id içeren kayıtlar youtube.com/embed/videoseries adresini üretmeli ve undefined içermemelidir"
   );
   assert.equal(plOnly.includes("undefined"), false);
@@ -3739,8 +3740,8 @@ test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane
   });
   assert.equal(
     singleVid,
-    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&start=30",
-    "Tekil videolar youtube.com/embed/${videoId}?rel=0&start=... adresini üretmelidir"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&autoplay=1&start=30",
+    "Tekil videolar youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&start=... adresini üretmelidir"
   );
 
   const liteCardCode = fs.readFileSync(
@@ -3912,4 +3913,91 @@ test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Al
     "Diyalog ve Metin sayfalarında Hızlı Etkinlik şeridi bulunmalı, Dinlenen Kelime Vurgusu 2x2 düzende kesilmeden görünmeli ve çift ölçekleme engellenmelidir"
   );
 });
+
+test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 55 Kayıtta Standart www.youtube.com/embed URL Doğrulaması, Regex Ayıklama, Zero-Iframe Kapak + imageError Fallback ve Mobil Sinema Modu", async () => {
+  // 1. next.config.ts COEP/COOP kaldırılmış olmalı, Referrer-Policy ve CSP tam uyumlu olmalı
+  const nextConfigCode = fs.readFileSync(
+    path.join(ROOT_DIR, "next.config.ts"),
+    "utf8"
+  );
+  assert.equal(
+    nextConfigCode.includes('"Cross-Origin-Embedder-Policy"') ||
+      nextConfigCode.includes('"Cross-Origin-Opener-Policy"'),
+    false,
+    "next.config.ts içinde YouTube iframe'lerini ERR_BLOCKED_BY_RESPONSE ile bloklayan COEP/COOP başlıkları bulunmamalıdır"
+  );
+  assert.equal(
+    nextConfigCode.includes('value: "strict-origin-when-cross-origin"') &&
+      nextConfigCode.includes(
+        "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be;"
+      ) &&
+      nextConfigCode.includes(
+        "child-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com;"
+      ) &&
+      nextConfigCode.includes("https://*.ytimg.com") &&
+      nextConfigCode.includes("https://*.googlevideo.com"),
+    true,
+    "next.config.ts Referrer-Policy ve CSP kuralları YouTube iframe, kapak ve medya akışlarına tam izin vermelidir"
+  );
+
+  // 2. Tüm 55 kayıtta standart www.youtube.com/embed/... URL kontrolü ve Regex fallback doğrulaması
+  const { buildYoutubeEmbedUrl } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
+  );
+  const { parsed: ytItems } = readDataJson("youtube_tavsiyeleri.json");
+  for (const item of ytItems) {
+    const embedUrl = buildYoutubeEmbedUrl(item);
+    assert.equal(
+      embedUrl.startsWith("https://www.youtube.com/embed/"),
+      true,
+      `${item.id} standart https://www.youtube.com/embed/ ile başlamalıdır`
+    );
+    assert.equal(
+      embedUrl.includes("undefined") ||
+        embedUrl.includes("null") ||
+        embedUrl.includes("youtube-nocookie.com"),
+      false,
+      `${item.id} embed URL'sinde undefined, null veya youtube-nocookie.com bulunmamalıdır`
+    );
+    assert.equal(
+      embedUrl.includes("rel=0&modestbranding=1&autoplay=1"),
+      true,
+      `${item.id} embed URL'si rel=0&modestbranding=1&autoplay=1 içermelidir`
+    );
+  }
+
+  // video_id ve playlist_id eksik veya "undefined" metni olsa bile URL'den regex ile ayıklama
+  const regexFallbackUrl = buildYoutubeEmbedUrl({
+    url: "https://www.youtube.com/watch?v=N6kslYvDUDE&list=PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp",
+    video_id: "undefined",
+    playlist_id: "",
+  });
+  assert.equal(
+    regexFallbackUrl,
+    "https://www.youtube.com/embed/N6kslYvDUDE?list=PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp&rel=0&modestbranding=1&autoplay=1"
+  );
+
+  // 3. LiteYoutubeCard ve YoutubePlayerModal iframe & mobil ergonomi kontrolü
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    liteCardCode.includes("const [isPlaying, setIsPlaying] = useState(false)") &&
+      liteCardCode.includes("const [imageError, setImageError] = useState(false)") &&
+      liteCardCode.includes("https://i.ytimg.com/vi/${videoId}/hqdefault.jpg") &&
+      !liteCardCode.includes("sandbox=") &&
+      liteCardCode.includes('className="w-full h-full aspect-video border-0"') &&
+      liteCardCode.includes(
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
+      ) &&
+      liteCardCode.includes('referrerPolicy="strict-origin-when-cross-origin"') &&
+      liteCardCode.includes("w-[95vw] max-w-4xl") &&
+      liteCardCode.includes("✕ Kapat") &&
+      liteCardCode.includes("YouTube&apos;da Aç ↗"),
+    true,
+    "LiteYoutubeCard ilk yüklemede iframe basmamalı, imageError gradyan yedeği kullanmalı, sandbox içermemeli ve Sinema Modu mobil uyumlu olmalıdır"
+  );
+});
+
 

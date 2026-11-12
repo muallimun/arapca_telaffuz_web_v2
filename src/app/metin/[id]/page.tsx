@@ -57,7 +57,13 @@ import {
   getDialogueAudioUrls,
 } from "@/lib/offlineManager";
 import { useAudioStore } from "@/store/audioStore";
-import { useSettings, ViewMode, WordTrackingStyle, PauseBetweenLines } from "@/store/settings";
+import {
+  useSettings,
+  ViewMode,
+  SpeechRate,
+  WordTrackingStyle,
+  PauseBetweenLines,
+} from "@/store/settings";
 import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { useUserStore } from "@/store/userStore";
 import {
@@ -160,6 +166,8 @@ export default function ReadingTextDetailPage({
   const {
     viewMode,
     setViewMode,
+    readingLayoutMode,
+    setReadingLayoutMode,
     showHareke,
     harekeMode,
     toggleHareke,
@@ -196,9 +204,10 @@ export default function ReadingTextDetailPage({
   const [, setManifestLoaded] = useState(false);
   const [studyMode, setStudyMode] = useState<StudyMode>("listen");
 
-  // Metin Sayfasına Özel: Cümle Cümle ("sentences") veya Paragraf ("paragraph") Düzeni
-  const [textLayoutMode, setTextLayoutMode] =
-    useState<TextLayoutMode>("sentences");
+  // Metin Sayfasına Özel: Cümle Cümle ("sentences") veya Paragraf ("paragraph") Düzeni (useSettings ile senkronize)
+  const textLayoutMode: TextLayoutMode = mounted
+    ? readingLayoutMode
+    : "sentences";
   const [selectedParagraphSira, setSelectedParagraphSira] = useState<
     number | null
   >(1);
@@ -208,7 +217,21 @@ export default function ReadingTextDetailPage({
     Record<number, boolean>
   >({});
 
-  const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(false);
+  const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(
+    () => useSettings.getState().viewMode === "click-reveal"
+  );
+  useEffect(() => {
+    const unsub = useSettings.subscribe((state, prevState) => {
+      if (state.viewMode !== prevState.viewMode) {
+        if (state.viewMode === "click-reveal") {
+          setClickToRevealTr(true);
+        } else {
+          setClickToRevealTr(false);
+        }
+      }
+    });
+    return unsub;
+  }, []);
   const [revealedTrLines, setRevealedTrLines] = useState<
     Record<number, boolean>
   >({});
@@ -363,14 +386,17 @@ export default function ReadingTextDetailPage({
   const playToken = useRef(0);
   const lineRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
-  const updateTextLayoutMode = useCallback((mode: TextLayoutMode) => {
-    setTextLayoutMode(mode);
-    try {
-      localStorage.setItem("muallimun-text-layout-mode", mode);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const updateTextLayoutMode = useCallback(
+    (mode: TextLayoutMode) => {
+      setReadingLayoutMode(mode);
+      try {
+        localStorage.setItem("muallimun-text-layout-mode", mode);
+      } catch {
+        // ignore
+      }
+    },
+    [setReadingLayoutMode]
+  );
 
   const toggleLineHareke = useCallback(
     (sira: number) => {
@@ -411,14 +437,6 @@ export default function ReadingTextDetailPage({
 
     const raf = requestAnimationFrame(() => {
       setMounted(true);
-      try {
-        const savedLayout = localStorage.getItem("muallimun-text-layout-mode");
-        if (savedLayout === "sentences" || savedLayout === "paragraph") {
-          setTextLayoutMode(savedLayout);
-        }
-      } catch {
-        // ignore
-      }
 
       if (typeof window !== "undefined") {
         const parsedHw = parseHomeworkParams(
@@ -1181,6 +1199,8 @@ export default function ReadingTextDetailPage({
   const isFav = mounted ? isDialogueFavorite(readingText.id) : false;
   const isCompleted = mounted ? isDialogueCompleted(readingText.id) : false;
   const currentViewMode: ViewMode = mounted ? viewMode : "stacked";
+  const isClickRevealActive =
+    currentViewMode === "click-reveal" || clickToRevealTr;
   const shouldShowShadowingButton =
     !mounted || showShadowing || studyMode === "shadowing";
 
@@ -1376,7 +1396,7 @@ export default function ReadingTextDetailPage({
 
   const cycleSpeechSpeed = () => {
     playClick();
-    const rates: (0.75 | 1 | 1.25)[] = [0.75, 1, 1.25];
+    const rates: SpeechRate[] = [0.5, 0.75, 1, 1.25, 1.5];
     const idx = rates.findIndex((r) => r === speechRate);
     const nextRate = rates[(idx + 1) % rates.length];
     setSpeechRate(nextRate);
@@ -1971,11 +1991,11 @@ export default function ReadingTextDetailPage({
                 <span>{isPlayingAll ? "Durdur" : "Dinle"}</span>
               </button>
 
-              {/* 2. Hız Butonu (0.75x / 1.0x / 1.25x Tek Rozet Buton) */}
+              {/* 2. Hız Butonu (0.5x / 0.75x / 1.0x / 1.25x / 1.5x Tek Rozet Buton) */}
               <button
                 type="button"
                 onClick={cycleSpeechSpeed}
-                data-tooltip="Okuma Hızını Değiştir (0.75x / 1.0x / 1.25x)"
+                data-tooltip="Okuma Hızını Değiştir (0.5x / 0.75x / 1.0x / 1.25x / 1.5x)"
                 aria-label="Okuma Hızı"
                 className={`px-2 py-1.5 rounded-xl border text-xs font-semibold tabular-nums transition-all cursor-pointer shrink-0 ${
                   mounted && speechRate !== 1
@@ -2161,7 +2181,7 @@ export default function ReadingTextDetailPage({
                       getReadingTextCoverUrl(readingText.id),
                     deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                     initialShowTranslation:
-                      currentViewMode !== "arabic-only" && !clickToRevealTr,
+                      currentViewMode !== "arabic-only" && !isClickRevealActive,
                   });
                 }}
                 data-tooltip="Okuma metnini görseliyle birlikte sosyal medyada kart olarak paylaş"
@@ -2399,7 +2419,7 @@ export default function ReadingTextDetailPage({
                             deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                             initialShowTranslation:
                               currentViewMode !== "arabic-only" &&
-                              !clickToRevealTr,
+                              !isClickRevealActive,
                           });
                         }}
                         className="col-span-2 py-2 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/50 text-[#065F46] dark:text-emerald-300 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
@@ -2537,7 +2557,7 @@ export default function ReadingTextDetailPage({
                         }[]
                       ).map((opt) => {
                         const active =
-                          !clickToRevealTr && currentViewMode === opt.id;
+                          !isClickRevealActive && currentViewMode === opt.id;
                         const Icon = opt.icon;
                         return (
                           <button
@@ -2569,12 +2589,12 @@ export default function ReadingTextDetailPage({
                         onClick={() => {
                           playClick();
                           setClickToRevealTr(true);
-                          setViewMode("stacked");
+                          setViewMode("click-reveal");
                           setRevealedTrLines({});
                         }}
                         title="Tıkla-Gör (Çeviriyi tıklayınca aç)"
                         className={`flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                          clickToRevealTr
+                          isClickRevealActive
                             ? "bg-[#087F5B] text-white"
                             : "text-[var(--muted)] hover:text-[var(--foreground)]"
                         }`}
@@ -3590,7 +3610,8 @@ export default function ReadingTextDetailPage({
                         getReadingTextCoverUrl(readingText.id),
                       deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                       initialShowTranslation:
-                        currentViewMode !== "arabic-only" && !clickToRevealTr,
+                        currentViewMode !== "arabic-only" &&
+                        !isClickRevealActive,
                       initialShowHareke:
                         lineHarekeOverrides[selectedParagraphLine.sira] !==
                         undefined
@@ -3613,7 +3634,7 @@ export default function ReadingTextDetailPage({
           <div className="rounded-3xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-5 sm:p-7 md:p-8 shadow-sm space-y-5">
             <div
               className={
-                currentViewMode === "columns" && !clickToRevealTr
+                currentViewMode === "columns" && !isClickRevealActive
                   ? "grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
                   : "space-y-5"
               }
@@ -3632,7 +3653,7 @@ export default function ReadingTextDetailPage({
                     lineHeight: isClassroomMode ? 2.35 : 2.25,
                   }}
                   className={`arabic font-bold text-[var(--foreground)] text-right leading-[2.25] ${
-                    currentViewMode === "columns" && !clickToRevealTr
+                    currentViewMode === "columns" && !isClickRevealActive
                       ? "md:order-2"
                       : ""
                   }`}
@@ -3706,8 +3727,9 @@ export default function ReadingTextDetailPage({
                 </div>
               )}
 
-              {/* Alt Alta Modunda Ayırıcı Çizgi */}
-              {currentViewMode === "stacked" && (
+              {/* Alt Alta veya Tıkla-Gör Modunda Ayırıcı Çizgi */}
+              {(currentViewMode === "stacked" ||
+                currentViewMode === "click-reveal") && (
                 <div className="border-t-2 border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]" />
               )}
 
@@ -3716,7 +3738,7 @@ export default function ReadingTextDetailPage({
                 <div
                   dir="ltr"
                   className={`bg-white/75 dark:bg-[var(--background)]/70 rounded-2xl p-4 sm:p-5 border border-[#E6D7BE] dark:border-[var(--border)] space-y-2.5 ${
-                    currentViewMode === "columns" && !clickToRevealTr
+                    currentViewMode === "columns" && !isClickRevealActive
                       ? "md:order-1"
                       : ""
                   }`}
@@ -3725,7 +3747,7 @@ export default function ReadingTextDetailPage({
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#087F5B] dark:text-emerald-400">
                       🇹🇷 Türkçe Metin Çevirisi (Paragraf Akışı)
                     </span>
-                    {clickToRevealTr && (
+                    {isClickRevealActive && (
                       <button
                         type="button"
                         onClick={revealAllTrLines}
@@ -3751,14 +3773,15 @@ export default function ReadingTextDetailPage({
                       const isPlaying = playingLineId === line.sira;
                       const isSelected = selectedParagraphSira === line.sira;
                       const isTrRevealed =
-                        !clickToRevealTr || Boolean(revealedTrLines[line.sira]);
+                        !isClickRevealActive ||
+                        Boolean(revealedTrLines[line.sira]);
 
                       return (
                         <span
                           key={line.sira}
                           onClick={() => {
                             setSelectedParagraphSira(line.sira);
-                            if (clickToRevealTr && !isTrRevealed) {
+                            if (isClickRevealActive && !isTrRevealed) {
                               playClick();
                               setRevealedTrLines((prev) => ({
                                 ...prev,
@@ -3834,7 +3857,7 @@ export default function ReadingTextDetailPage({
                 : !mounted || showHareke;
 
             const isTrRevealed =
-              (!clickToRevealTr && currentViewMode !== "arabic-only") ||
+              (!isClickRevealActive && currentViewMode !== "arabic-only") ||
               revealedTrLines[line.sira];
             const isArRevealed =
               currentViewMode !== "turkish-only" || revealedArLines[line.sira];
@@ -4043,7 +4066,7 @@ export default function ReadingTextDetailPage({
                           deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
                           initialShowTranslation:
                             currentViewMode !== "arabic-only" &&
-                            (!clickToRevealTr ||
+                            (!isClickRevealActive ||
                               Boolean(revealedTrLines[line.sira])),
                           initialShowHareke: effectiveLineHareke,
                         });
@@ -4058,7 +4081,7 @@ export default function ReadingTextDetailPage({
                 </div>
 
                 {/* CÜMLE İÇERİĞİ (5 Görünüm Modu Desteği: Alt Alta, İki Sütun, Arapça, Türkçe, Tıkla-Gör) */}
-                {currentViewMode === "columns" && !clickToRevealTr ? (
+                {currentViewMode === "columns" && !isClickRevealActive ? (
                   <div className="space-y-1.5">
                     <div className="md:grid md:grid-cols-2 md:gap-5 items-center space-y-1.5 md:space-y-0">
                       <div

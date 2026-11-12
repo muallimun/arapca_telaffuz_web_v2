@@ -38,6 +38,8 @@ import {
   MoreHorizontal,
   Lightbulb,
   AudioLines,
+  Users,
+  GraduationCap,
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode, SpeechRate } from "@/store/settings";
@@ -89,6 +91,10 @@ export default function Header() {
     toggleTooltips,
     micNoiseSuppression,
     toggleMicNoiseSuppression,
+    preferredVoiceGender,
+    togglePreferredVoiceGender,
+    grammarDepthMode,
+    toggleGrammarDepthMode,
   } = useSettings();
   const {
     isOpen: smartboardOpen,
@@ -888,6 +894,52 @@ export default function Header() {
                       })}
                     </div>
                   </div>
+
+                  {/* 2b. Seslendirici Tercihi (Erkek / Kadın) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      togglePreferredVoiceGender();
+                      playClick();
+                    }}
+                    className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-between text-xs font-bold text-[var(--foreground)] hover:border-[#087F5B] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users
+                        size={15}
+                        className="text-[#087F5B] dark:text-emerald-400 shrink-0"
+                      />
+                      <span>Seslendirici Tercihi</span>
+                    </span>
+                    <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300">
+                      {mounted && preferredVoiceGender === "kadin"
+                        ? "👩 Kadın Sesi"
+                        : "👨 Erkek Sesi"}
+                    </span>
+                  </button>
+
+                  {/* 2c. Gramer Anlatım Derinliği (Sade / Akademik) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleGrammarDepthMode();
+                      playClick();
+                    }}
+                    className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-between text-xs font-bold text-[var(--foreground)] hover:border-[#087F5B] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <GraduationCap
+                        size={15}
+                        className="text-[#6741D9] dark:text-purple-400 shrink-0"
+                      />
+                      <span>Gramer Anlatımı</span>
+                    </span>
+                    <span className="text-[11px] font-extrabold text-[#5230B5] dark:text-purple-300">
+                      {mounted && grammarDepthMode === "simple"
+                        ? "🌱 Sade Anlatım"
+                        : "🎓 Akademik & İ'rab"}
+                    </span>
+                  </button>
 
                   {/* 3. Arayüz Ses Efektleri */}
                   <button

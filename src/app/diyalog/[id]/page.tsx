@@ -57,6 +57,7 @@ import { useAudioStore } from "@/store/audioStore";
 import {
   useSettings,
   ViewMode,
+  SpeechRate,
   WordTrackingStyle,
   PauseBetweenLines,
 } from "@/store/settings";
@@ -203,7 +204,21 @@ export default function DialogueDetailPage({
   const [mounted, setMounted] = useState(false);
   const [, setManifestLoaded] = useState(false);
   const [studyMode, setStudyMode] = useState<StudyMode>("listen");
-  const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(false);
+  const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(
+    () => useSettings.getState().viewMode === "click-reveal"
+  );
+  useEffect(() => {
+    const unsub = useSettings.subscribe((state, prevState) => {
+      if (state.viewMode !== prevState.viewMode) {
+        if (state.viewMode === "click-reveal") {
+          setClickToRevealTr(true);
+        } else {
+          setClickToRevealTr(false);
+        }
+      }
+    });
+    return unsub;
+  }, []);
   const [revealedTrLines, setRevealedTrLines] = useState<
     Record<number, boolean>
   >({});
@@ -1824,6 +1839,8 @@ export default function DialogueDetailPage({
   const isFav = mounted ? isDialogueFavorite(dialogue.id) : false;
   const isCompleted = mounted ? isDialogueCompleted(dialogue.id) : false;
   const currentViewMode: ViewMode = mounted ? viewMode : "stacked";
+  const isClickRevealActive =
+    currentViewMode === "click-reveal" || clickToRevealTr;
   const shouldShowShadowingButton =
     !mounted || showShadowing || studyMode === "shadowing";
 
@@ -2617,19 +2634,21 @@ export default function DialogueDetailPage({
                 </button>
               )}
 
-              {/* 2. Hız Butonu (1.0x <-> 0.75x Tek Rozet Buton) */}
+              {/* 2. Hız Butonu (0.5x -> 0.75x -> 1.0x -> 1.25x -> 1.5x) */}
               <button
                 type="button"
                 onClick={() => {
                   playClick();
-                  const nextRate = speechRate === 0.75 ? 1 : 0.75;
+                  const rates: SpeechRate[] = [0.5, 0.75, 1, 1.25, 1.5];
+                  const idx = rates.findIndex((r) => r === speechRate);
+                  const nextRate = rates[(idx + 1) % rates.length];
                   setSpeechRate(nextRate);
                   setPlaybackRate(nextRate);
                 }}
-                data-tooltip="Okuma Hızını Değiştir (1.0x Normal / 0.75x Yavaşlatılmış)"
+                data-tooltip="Okuma Hızını Değiştir (0.5x / 0.75x / 1.0x / 1.25x / 1.5x)"
                 aria-label="Okuma Hızı"
                 className={`px-2 py-1.5 rounded-xl border text-xs font-semibold tabular-nums transition-all cursor-pointer shrink-0 ${
-                  mounted && speechRate === 0.75
+                  mounted && speechRate !== 1
                     ? "bg-[#087F5B] border-[#087F5B] text-white"
                     : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
                 }`}
@@ -2777,7 +2796,7 @@ export default function DialogueDetailPage({
                       dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
                     deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                     initialShowTranslation:
-                      currentViewMode !== "arabic-only" && !clickToRevealTr,
+                      currentViewMode !== "arabic-only" && !isClickRevealActive,
                   });
                 }}
                 data-tooltip="Diyaloğu görseliyle birlikte sosyal medyada kart olarak paylaş"
@@ -3085,7 +3104,7 @@ export default function DialogueDetailPage({
                             deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                             initialShowTranslation:
                               currentViewMode !== "arabic-only" &&
-                              !clickToRevealTr,
+                              !isClickRevealActive,
                           });
                         }}
                         className="col-span-2 py-2 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/50 text-[#065F46] dark:text-emerald-300 flex items-center justify-center gap-1.5 text-xs font-extrabold cursor-pointer"
@@ -3173,7 +3192,8 @@ export default function DialogueDetailPage({
                           icon: typeof Rows2;
                         }[]
                       ).map((opt) => {
-                        const active = !clickToRevealTr && currentViewMode === opt.id;
+                        const active =
+                          !isClickRevealActive && currentViewMode === opt.id;
                         const Icon = opt.icon;
                         return (
                           <button
@@ -3203,12 +3223,12 @@ export default function DialogueDetailPage({
                         onClick={() => {
                           playClick();
                           setClickToRevealTr(true);
-                          setViewMode("stacked");
+                          setViewMode("click-reveal");
                           setRevealedTrLines({});
                         }}
                         title="Tıkla-Gör (Çeviriyi tıklayınca aç)"
                         className={`flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                          clickToRevealTr
+                          isClickRevealActive
                             ? "bg-[#087F5B] text-white"
                             : "text-[var(--muted)] hover:text-[var(--foreground)]"
                         }`}
@@ -4097,7 +4117,7 @@ export default function DialogueDetailPage({
             // Rol Yapma modunda kullanıcının kendi repliklerinde Türkçe çeviri her zaman görünür kalır
             const isTrRevealed =
               isUserRoleTurn ||
-              (!clickToRevealTr && currentViewMode !== "arabic-only") ||
+              (!isClickRevealActive && currentViewMode !== "arabic-only") ||
               revealedTrLines[line.sira];
             const isArRevealed =
               currentViewMode !== "turkish-only" ||
@@ -4444,7 +4464,7 @@ export default function DialogueDetailPage({
                           deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
                           initialShowTranslation:
                             currentViewMode !== "arabic-only" &&
-                            (!clickToRevealTr ||
+                            (!isClickRevealActive ||
                               Boolean(revealedTrLines[line.sira])),
                         });
                       }}
@@ -4458,7 +4478,7 @@ export default function DialogueDetailPage({
                 </div>
 
                 {/* CÜMLE İÇERİĞİ (Sıkılaştırılmış Dikey Boşluklar py-1.5; Sınıf Modunda Gerçek Inline Font Çarpanı) */}
-                {currentViewMode === "columns" && !clickToRevealTr ? (
+                {currentViewMode === "columns" && !isClickRevealActive ? (
                   <div className="space-y-1.5">
                     <div className="md:grid md:grid-cols-2 md:gap-5 items-center space-y-1.5 md:space-y-0">
                       <div

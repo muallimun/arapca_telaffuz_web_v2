@@ -3061,3 +3061,124 @@ test("30. 8 Kritik İşlevsel ve Davranışsal Hata Düzeltmesi Doğrulaması", 
   );
 });
 
+test("31. Header, Genel Ayarlar, Diyalog/Metin, Admin, PWA ve Kılavuz Modalları Senkronizasyonu", () => {
+  const settingsStoreCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "store", "settings.ts"),
+    "utf8"
+  );
+  const ayarlarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const offlineManagerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "offlineManager.ts"),
+    "utf8"
+  );
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  const adminPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "admin", "page.tsx"),
+    "utf8"
+  );
+  const swCode = fs.readFileSync(
+    path.join(ROOT_DIR, "public", "sw.js"),
+    "utf8"
+  );
+  const onboardingCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+  const guideModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    "utf8"
+  );
+
+  // 1. click-reveal görünüm modu senkronizasyonu
+  assert.equal(
+    ayarlarCode.includes('id: "click-reveal"') &&
+      diyalogCode.includes('viewMode === "click-reveal"') &&
+      diyalogCode.includes("setClickToRevealTr(false)") &&
+      metinCode.includes('viewMode === "click-reveal"') &&
+      metinCode.includes("setClickToRevealTr(false)"),
+    true,
+    "click-reveal modu Ayarlar, Diyalog ve Metin sayfaları arasında tam senkronize olmalıdır"
+  );
+
+  // 2. speechRate 0.5x - 1.5x döngüsü
+  assert.equal(
+    ayarlarCode.includes("[0.5, 0.75, 1, 1.25, 1.5]") &&
+      diyalogCode.includes("[0.5, 0.75, 1, 1.25, 1.5]") &&
+      metinCode.includes("[0.5, 0.75, 1, 1.25, 1.5]"),
+    true,
+    "Ayarlar, Diyalog ve Metin sayfalarında 5 kademeli (0.5x - 1.5x) hız seçimi desteklenmelidir"
+  );
+
+  // 3. Header.tsx More menüsünde Seslendirici Tercihi ve Gramer Anlatımı
+  assert.equal(
+    headerCode.includes("preferredVoiceGender") &&
+      headerCode.includes("togglePreferredVoiceGender") &&
+      headerCode.includes("grammarDepthMode") &&
+      headerCode.includes("toggleGrammarDepthMode"),
+    true,
+    "Header.tsx More menüsünde Seslendirici Tercihi ve Gramer Anlatımı hızlı kontrolleri yer almalıdır"
+  );
+
+  // 4. Ayarlar sayfasında 5 yeni kontrol (STT, readingLayoutMode, CEFR, PhonemeHeatmapModal, 180 çevrimdışı ders)
+  assert.equal(
+    settingsStoreCode.includes("readingLayoutMode") &&
+      settingsStoreCode.includes("setReadingLayoutMode") &&
+      metinCode.includes("readingLayoutMode") &&
+      metinCode.includes("setReadingLayoutMode"),
+    true,
+    "readingLayoutMode global settings store ile metin sayfası arasında çift yönlü senkronize olmalıdır"
+  );
+  assert.equal(
+    ayarlarCode.includes("setSttEngine") &&
+      ayarlarCode.includes("setLocalSttOnly") &&
+      ayarlarCode.includes("setDetectedCefrLevel") &&
+      ayarlarCode.includes("/seviye-tespit") &&
+      ayarlarCode.includes("PhonemeHeatmapModal") &&
+      ayarlarCode.includes("28 Harf Mahreç Haritam") &&
+      ayarlarCode.includes("180") &&
+      offlineManagerCode.includes("[...diyaloglar, ...metinler]"),
+    true,
+    "Ayarlar sayfasında STT motoru, aktif CEFR seviyesi, 28 Harf Mahreç Haritam ve 180 çevrimdışı ders paketi yer almalıdır"
+  );
+
+  // 5. Admin Stüdyosu ek_gramer ve PWA sw.js /seviye-tespit önbelleği
+  assert.equal(
+    adminRouteCode.includes('ek_gramer: "ek_gramer_hap_bilgi.json"') &&
+      adminPageCode.includes('key: "ek_gramer"') &&
+      adminPageCode.includes("ek_gramer_hap_bilgi.json") &&
+      swCode.includes('"/seviye-tespit"'),
+    true,
+    "/api/admin, /admin ve public/sw.js içinde ek_gramer ve /seviye-tespit tanımlı olmalıdır"
+  );
+
+  // 6. OnboardingTourModal ve GuideAndInfoModalBody güncellemeleri
+  assert.equal(
+    onboardingCode.includes("14 Etkileşimli Modül") &&
+      onboardingCode.includes("Tıkla-Gör") &&
+      guideModalCode.includes("Özel İsim (علم) — Turkuaz") &&
+      guideModalCode.includes("195 Kartlık Gramer Atlası") &&
+      guideModalCode.includes("180 Çevrimdışı Ders Paketi"),
+    true,
+    "OnboardingTourModal ve GuideAndInfoModalBody güncel özellikleri eksiksiz yansıtmalıdır"
+  );
+});
+
+

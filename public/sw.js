@@ -9,6 +9,7 @@ const PRECACHE_ASSETS = [
   "/",
   "/kutuphane",
   "/alistirmalar",
+  "/seviye-tespit",
   "/sozluk",
   "/ayarlar",
   OFFLINE_URL,

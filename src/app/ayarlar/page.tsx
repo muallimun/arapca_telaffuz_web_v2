@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Type,
   Monitor,
@@ -26,11 +27,17 @@ import {
   Repeat,
   Timer,
   Share2,
+  Compass,
+  Cpu,
+  WifiOff,
+  LayoutList,
 } from "lucide-react";
 import {
   useSettings,
   ViewMode,
+  ReadingLayoutMode,
   SpeechRate,
+  SttEngine,
   ArabicFontSizePreset,
   WordTrackingStyle,
   DialogueLoopCount,
@@ -43,7 +50,7 @@ import { useUserStore } from "@/store/userStore";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { playTTS, loadAudioManifest } from "@/lib/audio";
-import { diyaloglar } from "@/lib/data";
+import { diyaloglar, metinler } from "@/lib/data";
 import {
   getDownloadedDialogueIds,
   downloadAllDialoguesOffline,
@@ -59,6 +66,11 @@ import { triggerGuideModal } from "@/components/ui/GuideAndInfoModal";
 import { triggerOnboardingTour } from "@/components/ui/OnboardingTourModal";
 import { triggerShareAppModal } from "@/lib/shareApp";
 
+const PhonemeHeatmapModal = dynamic(
+  () => import("@/components/ui/PhonemeHeatmapModal"),
+  { ssr: false }
+);
+
 type SettingsCategory = "all" | "appearance" | "audio" | "data";
 
 export default function SettingsPage() {
@@ -67,6 +79,8 @@ export default function SettingsPage() {
     setTheme,
     viewMode,
     setViewMode,
+    readingLayoutMode,
+    setReadingLayoutMode,
     showHareke,
     harekeMode,
     setHarekeMode,
@@ -97,6 +111,11 @@ export default function SettingsPage() {
     setMicNoiseSuppression,
     preferredVoiceGender,
     setPreferredVoiceGender,
+    sttEngine,
+    setSttEngine,
+    localSttOnly,
+    setLocalSttOnly,
+    setPreferredLevel,
   } = useSettings();
 
   const { enabled: sfxEnabled, setEnabled: setSfxEnabled } = useSfxStore();
@@ -105,6 +124,8 @@ export default function SettingsPage() {
     activityXp,
     dailyGoalMinutes,
     setDailyGoalMinutes,
+    detectedCefrLevel,
+    setDetectedCefrLevel,
     exportProgress,
     importProgress,
     restoreLastAutoBackup,
@@ -123,7 +144,11 @@ export default function SettingsPage() {
     text: string;
   } | null>(null);
   const [showIosGuide, setShowIosGuide] = useState(false);
+  const [previewRevealed, setPreviewRevealed] = useState(false);
+  const [phonemeHeatmapOpen, setPhonemeHeatmapOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const totalOfflineLessons = diyaloglar.length + metinler.length;
 
   // Çevrimdışı İndirilen Dersler (Cache API) State
   const [offlineDownloadedIds, setOfflineDownloadedIds] = useState<string[]>(
@@ -289,6 +314,11 @@ export default function SettingsPage() {
       id: "turkish-only",
       label: "Sadece Türkçe",
       desc: "Arapçayı gizleyerek Türkçe anlam üzerinden kendinizi sınayın",
+    },
+    {
+      id: "click-reveal",
+      label: "Tıkla-Gör (Çeviri Gizli)",
+      desc: "Türkçe çeviriyi gizler; cümleye tıkladığınızda anında açar",
     },
   ];
 
@@ -664,6 +694,52 @@ export default function SettingsPage() {
                       Arapça metin gizlendi (Sadece Türkçe modu)
                     </p>
                   </div>
+                ) : viewMode === "click-reveal" ? (
+                  <div className="space-y-2">
+                    <p
+                      dir="rtl"
+                      style={{
+                        fontFamily: activeFontCfg.cssFamily,
+                        fontSize: `${Math.round(
+                          arabicFontSize * activeFontCfg.scale
+                        )}px`,
+                        lineHeight: activeFontCfg.lineHeight,
+                      }}
+                      className="arabic font-bold text-[var(--foreground)] text-right"
+                    >
+                      {sampleArabic}
+                    </p>
+                    <div className="border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pt-1.5">
+                      {previewRevealed ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setPreviewRevealed(false);
+                          }}
+                          style={{ fontSize: `${turkishFontSize}px` }}
+                          className="font-semibold text-[var(--muted)] text-left cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          “Anneciğim seni Allah&apos;a emanet ediyorum; babacığım
+                          seni de Allah&apos;a emanet ediyorum.”{" "}
+                          <span className="text-[11px] font-bold text-[#6741D9]">
+                            (Gizlemek için tıkla)
+                          </span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setPreviewRevealed(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-xs font-bold text-amber-900 dark:text-amber-300 cursor-pointer hover:bg-amber-200/70 transition-colors"
+                        >
+                          <span>👆 Türkçe çeviriyi görmek için tıkla</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <p
@@ -693,7 +769,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* 1B. DİYALOG GÖRÜNÜM MODU (4'lü Seçim Izgarası) */}
+          {/* 1B. DİYALOG GÖRÜNÜM MODU (5'li Seçim Izgarası) */}
           <section className="space-y-2">
             <div className="flex items-center gap-2 px-1">
               <Eye size={17} className="text-[#065F46] dark:text-emerald-400" />
@@ -702,7 +778,7 @@ export default function SettingsPage() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {viewModes.map((mode) => {
                 const isSelected = viewMode === mode.id;
                 return (
@@ -1039,6 +1115,49 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+
+              {/* 7. Okuma Metni Varsayılan Düzeni (Cümle Cümle / Paragraf) */}
+              <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5 md:col-span-2">
+                <div className="flex items-start gap-2.5">
+                  <LayoutList
+                    size={17}
+                    className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5"
+                  />
+                  <div>
+                    <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                      Okuma Metni Varsayılan Düzeni (60 Okuma Metni)
+                    </span>
+                    <span className="block text-[11px] text-[var(--muted)]">
+                      Okuma metinleri açıldığında cümle kartları halinde mi yoksa bütünleşik kitap paragrafı düzeninde mi gösterileceğini belirler
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                  {(
+                    [
+                      { id: "sentences", label: "📑 Cümle Cümle (Kartlar)" },
+                      { id: "paragraph", label: "📄 Paragraf (Bütün Metin)" },
+                    ] as { id: ReadingLayoutMode; label: string }[]
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setReadingLayoutMode(opt.id);
+                      }}
+                      className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                        readingLayoutMode === opt.id
+                          ? "bg-[#087F5B] text-white font-bold"
+                          : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         </>
@@ -1107,13 +1226,13 @@ export default function SettingsPage() {
                     Arapça Seslendirme Hızı (TTS / MP3)
                   </span>
                   <span className="block text-[11px] text-[var(--muted)]">
-                    Varsayılan konuşma ve telaffuz dinleme hızı (0.5x - 1.25x)
+                    Varsayılan konuşma ve telaffuz dinleme hızı (0.5x - 1.5x)
                   </span>
                 </div>
               </div>
 
-              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-4 gap-1">
-                {([0.5, 0.75, 1, 1.25] as SpeechRate[]).map((rate) => (
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-5 gap-1">
+                {([0.5, 0.75, 1, 1.25, 1.5] as SpeechRate[]).map((rate) => (
                   <button
                     key={rate}
                     type="button"
@@ -1345,6 +1464,128 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+
+            {/* 8. Konuşma Tanıma (STT) Motoru Seçimi */}
+            <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <Cpu
+                  size={17}
+                  className="text-[#6741D9] dark:text-purple-400 shrink-0 mt-0.5"
+                />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                    Konuşma Tanıma (STT) Motoru
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Gölgeleme ve telaffuz analizinde kullanılacak ses tanıma altyapısı
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                {(
+                  [
+                    { id: "whisper", label: "🧠 Whisper AI (Hassas)" },
+                    { id: "webspeech", label: "⚡ Tarayıcı Motoru" },
+                  ] as { id: SttEngine; label: string }[]
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setSttEngine(opt.id);
+                    }}
+                    className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                      sttEngine === opt.id
+                        ? "bg-[#6741D9] text-white font-bold"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 9. Sadece Cihaz İçi (Çevrimdışı) STT Zorlaması */}
+            <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <WifiOff
+                  size={17}
+                  className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5"
+                />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                    Çevrimdışı / Cihaz İçi Ses Tanıma
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Açıldığında ses verisi sunucuya gönderilmeden cihaz içi Whisper modeliyle işlenir
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setLocalSttOnly(false);
+                  }}
+                  className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    !localSttOnly
+                      ? "bg-[#087F5B] text-white font-bold"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  🌐 Otomatik (Hibrit)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setLocalSttOnly(true);
+                  }}
+                  className={`px-2 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    localSttOnly
+                      ? "bg-[#6741D9] text-white font-bold"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  📴 Sadece Cihaz İçi
+                </button>
+              </div>
+            </div>
+
+            {/* 10. 28 Harf Mahreç Haritam Hızlı Erişim Kartı */}
+            <div className="bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] p-3.5 rounded-xl border-2 border-[#6741D9]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:col-span-2">
+              <div className="flex items-start gap-2.5">
+                <Sparkles
+                  size={18}
+                  className="text-[#6741D9] dark:text-purple-300 shrink-0 mt-0.5"
+                />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
+                    🗣️ 28 Harf Mahreç Haritam &amp; Telaffuz Analizi
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Yaptığınız gölgeleme kayıtlarına göre 28 Arapça harfteki mahreç isabet oranınızı ve odaklanmanız gereken ikiz harfleri inceleyin
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPhonemeHeatmapOpen(true);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#3b1f8c] text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all shrink-0 cursor-pointer"
+              >
+                <Mic size={14} />
+                <span>28 Harf Mahreç Haritam</span>
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -1360,6 +1601,65 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* 0. Aktif Kur Seviyesi (CEFR) & Seviye Tespit Sınavı Kısayolu */}
+            <div className="bg-white dark:bg-[var(--background)] p-3.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between gap-3 md:col-span-2">
+              <div className="flex items-start gap-2.5">
+                <Compass
+                  size={18}
+                  className="text-[#065F46] dark:text-emerald-400 shrink-0 mt-0.5"
+                />
+                <div>
+                  <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+                    Aktif Kur Seviyesi ({detectedCefrLevel || "A1"}) &amp; Seviye Tespit Merkezi
+                  </span>
+                  <span className="block text-[11px] text-[var(--muted)]">
+                    Kütüphane ve alıştırmalardaki varsayılan kur seviyenizi seçin veya adaptif CAT sınavıyla seviyenizi ölçün
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-4 gap-1">
+                  {(["A1", "A2", "B1", "B2"] as const).map((lvl) => {
+                    const active = (detectedCefrLevel || "A1") === lvl;
+                    return (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setDetectedCefrLevel(lvl);
+                          setPreferredLevel(
+                            lvl === "B2"
+                              ? "İleri"
+                              : lvl === "B1"
+                              ? "Orta"
+                              : "Başlangıç"
+                          );
+                        }}
+                        className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+                          active
+                            ? "bg-[#087F5B] text-white"
+                            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {lvl}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Link
+                  href="/seviye-tespit"
+                  onClick={() => playClick()}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#3b1f8c] text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all"
+                >
+                  <Compass size={14} />
+                  <span>Seviye Tespit &amp; KTT</span>
+                </Link>
+              </div>
+            </div>
+
             {/* 1. Günlük Çalışma Hedefi ve Seri */}
             <div className="bg-white dark:bg-[var(--background)] p-3 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col justify-between gap-2.5">
               <div className="flex items-start gap-2.5">
@@ -1505,11 +1805,11 @@ export default function SettingsPage() {
                       📦 Çevrimdışı İndirilen Dersler
                     </span>
                     <span className="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400/60 text-[11px] font-black text-emerald-800 dark:text-emerald-300 tabular-nums">
-                      {offlineDownloadedIds.length} / {diyaloglar.length} Diyalog İndirildi
+                      {offlineDownloadedIds.length} / {totalOfflineLessons} Ders İndirildi ({diyaloglar.length} Diyalog + {metinler.length} Metin)
                     </span>
                   </div>
                   <span className="block text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    İndirilen diyalogların cümle sesleri, sözlük/morfoloji verileri ve 5 alıştırma modülü uçakta, metroda veya internetin olmadığı sınıflarda tamamen çevrimdışı çalışır.
+                    İndirilen 120 diyalog ve 60 okuma metninin (180 ders) cümle sesleri, sözlük/morfoloji verileri ve 14 alıştırma modülü uçakta, metroda veya internetin olmadığı sınıflarda tamamen çevrimdışı çalışır.
                   </span>
                 </div>
               </div>
@@ -1519,7 +1819,7 @@ export default function SettingsPage() {
                   type="button"
                   disabled={
                     isDownloadingAllOffline ||
-                    offlineDownloadedIds.length >= diyaloglar.length
+                    offlineDownloadedIds.length >= totalOfflineLessons
                   }
                   onClick={async () => {
                     playClick();
@@ -1540,12 +1840,12 @@ export default function SettingsPage() {
                       playSuccess();
                       setDataMessage({
                         type: "success",
-                        text: `Tüm ${updatedIds.length} diyalog çevrimdışı ses önbelleğine başarıyla indirildi!`,
+                        text: `Toplam ${updatedIds.length} ders paketi (diyalog ve okuma metinleri) çevrimdışı ses önbelleğine başarıyla indirildi!`,
                       });
                     }
                   }}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-b-3 text-xs font-extrabold transition-all cursor-pointer ${
-                    offlineDownloadedIds.length >= diyaloglar.length
+                    offlineDownloadedIds.length >= totalOfflineLessons
                       ? "bg-emerald-600 border-emerald-800 text-white"
                       : isDownloadingAllOffline
                       ? "bg-amber-500 border-amber-700 text-white"
@@ -1554,11 +1854,11 @@ export default function SettingsPage() {
                 >
                   <Download size={14} />
                   <span>
-                    {offlineDownloadedIds.length >= diyaloglar.length
-                      ? "✅ Tüm Dersler Çevrimdışı Hazır"
+                    {offlineDownloadedIds.length >= totalOfflineLessons
+                      ? "✅ 180 Dersin Tamamı Çevrimdışı Hazır"
                       : isDownloadingAllOffline
                       ? `İndiriliyor... %${offlineAllProgressPct}`
-                      : "Tümünü Çevrimdışı İndir"}
+                      : "Tüm 180 Dersi Çevrimdışı İndir"}
                   </span>
                 </button>
 
@@ -1756,6 +2056,11 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
+
+      <PhonemeHeatmapModal
+        isOpen={phonemeHeatmapOpen}
+        onClose={() => setPhonemeHeatmapOpen(false)}
+      />
     </div>
   );
 }

@@ -123,12 +123,20 @@ const STUDIO_TABS: DatasetMeta[] = [
     description: "60 okuma metninin hap gramer kuralları, tablolar ve i'rab tahlilleri",
   },
   {
+    key: "ek_gramer",
+    label: "📌 Temel & İleri Gramer (15)",
+    shortLabel: "Ek Gramer (15)",
+    icon: "📌",
+    fileName: "ek_gramer_hap_bilgi.json",
+    description: "15 müstakil temel ve ileri gramer hap bilgi kartı (grm_001 – grm_015)",
+  },
+  {
     key: "seviye_sorulari",
     label: "🧭 Seviye & Tarama Soruları (180)",
     shortLabel: "180 Seviye Sorusu",
     icon: "🧭",
     fileName: "seviye_tespit_sorulari.json",
-    description: "A1–B2 seviye tespit, 13 konu tarama soruları ve gerekçeli çeldirici analizleri",
+    description: "A1–B2 seviye tespit, konu tarama soruları ve gerekçeli çeldirici analizleri",
   },
   {
     key: "efect_manager",
@@ -308,7 +316,12 @@ function hasArabicDiacritics(str: string): boolean {
 
 function getRecordId(rec: GenericRecord, idx: number): string {
   return String(
-    rec.id || rec.diyalog_id || rec.metin_id || rec.sira || `kayit_${idx + 1}`
+    rec.id ||
+      rec.bagli_id ||
+      rec.diyalog_id ||
+      rec.metin_id ||
+      rec.sira ||
+      `kayit_${idx + 1}`
   );
 }
 
@@ -318,7 +331,8 @@ function getRecordLevel(rec: GenericRecord): string {
 
 function getRecordCategory(rec: GenericRecord): string {
   return String(
-    rec.ust_konu ||
+    rec.ktt_ust_konu ||
+      rec.ust_konu ||
       rec.kategori_tr ||
       rec.tema ||
       rec.odak_gramer ||
@@ -335,6 +349,7 @@ function getRecordArabic(rec: GenericRecord): string {
   if (rec.baslik_ar) return String(rec.baslik_ar);
   if (rec.mufret) return String(rec.mufret);
   if (rec.mazi) return String(rec.mazi);
+  if (rec.metinden_ornek?.arapca) return String(rec.metinden_ornek.arapca);
   if (Array.isArray(rec.gramer_notlari) && rec.gramer_notlari[0]?.ornekler?.[0]?.arapca) {
     return String(rec.gramer_notlari[0].ornekler[0].arapca);
   }
@@ -345,12 +360,14 @@ function getRecordTurkish(rec: GenericRecord): string {
   if (rec.cozum_detayi?.soru_cevirisi_tr) {
     return String(rec.cozum_detayi.soru_cevirisi_tr);
   }
+  if (rec.konu_basligi) return String(rec.konu_basligi);
   if (rec.soru_yonergesi_tr) return String(rec.soru_yonergesi_tr);
   if (rec.turkce) return String(rec.turkce);
   if (rec.baslik_tr) return String(rec.baslik_tr);
   if (rec.anlam_tr) return String(rec.anlam_tr);
   if (rec.diyalog_baslik) return String(rec.diyalog_baslik);
   if (rec.metin_baslik) return String(rec.metin_baslik);
+  if (rec.hap_kural) return String(rec.hap_kural);
   return "";
 }
 
@@ -901,6 +918,7 @@ export default function AdminStudioPage() {
       if (
         activeTab !== "diyalog_gramer" &&
         activeTab !== "metin_gramer" &&
+        activeTab !== "ek_gramer" &&
         (!ar.trim() || !tr.trim())
       ) {
         issues.push({
@@ -1355,6 +1373,22 @@ export default function AdminStudioPage() {
         cefr: "A1",
         ornek_ar: "هٰذَا كِتَابٌ جَدِيدٌ.",
         ornek_tr: "Bu yeni bir kitaptır.",
+      };
+    } else if (activeTab === "ek_gramer") {
+      const pad3 = String(nextNum).padStart(3, "0");
+      template = {
+        bagli_id: `grm_${pad3}`,
+        seviye: "A1",
+        ktt_ust_konu: "Temel Gramer",
+        konu_basligi: "Yeni Gramer Konusu",
+        hap_kural: "Kısa ve öz hap gramer kuralı buraya yazılır.",
+        metinden_ornek: {
+          arapca: "هٰذَا مِثَالٌ جَدِيدٌ.",
+          turkce: "Bu yeni bir örnektir.",
+          aciklama: "Örnek cümlenin gramer açıklaması.",
+        },
+        ek_ornekler: [],
+        ipucu: "Pedagojik ipucu notu.",
       };
     }
 
@@ -2155,8 +2189,8 @@ export default function AdminStudioPage() {
         </div>
       )}
 
-      {/* 2. ÜST SEKMELER (8 VERİ SETİ + SES EFEKTLERİ YÖNETİCİSİ) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5">
+      {/* 2. ÜST SEKMELER (10 VERİ SETİ + SES EFEKTLERİ YÖNETİCİSİ) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-1.5">
         {STUDIO_TABS.map((tab) => {
           const isSelected = activeTab === tab.key;
           return (
@@ -2571,12 +2605,15 @@ export default function AdminStudioPage() {
                           type="text"
                           value={String(
                             draftRecord.id ||
+                              draftRecord.bagli_id ||
                               draftRecord.diyalog_id ||
                               draftRecord.metin_id ||
                               ""
                           )}
                           onChange={(e) => {
-                            if ("diyalog_id" in draftRecord)
+                            if ("bagli_id" in draftRecord)
+                              updateDraftField("bagli_id", e.target.value);
+                            else if ("diyalog_id" in draftRecord)
                               updateDraftField("diyalog_id", e.target.value);
                             else if ("metin_id" in draftRecord)
                               updateDraftField("metin_id", e.target.value);
@@ -2608,19 +2645,25 @@ export default function AdminStudioPage() {
 
                       <div>
                         <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
-                          Kategori / Tema / Tür
+                          Kategori / Tema / KTT Üst Konu
                         </label>
                         <input
                           type="text"
                           value={String(
-                            draftRecord.kategori_tr ||
+                            draftRecord.ktt_ust_konu ||
+                              draftRecord.ust_konu ||
+                              draftRecord.kategori_tr ||
                               draftRecord.tema ||
                               draftRecord.odak_gramer ||
                               draftRecord.tur ||
                               ""
                           )}
                           onChange={(e) => {
-                            if ("kategori_tr" in draftRecord)
+                            if ("ktt_ust_konu" in draftRecord)
+                              updateDraftField("ktt_ust_konu", e.target.value);
+                            else if ("ust_konu" in draftRecord)
+                              updateDraftField("ust_konu", e.target.value);
+                            else if ("kategori_tr" in draftRecord)
                               updateDraftField("kategori_tr", e.target.value);
                             else if ("tema" in draftRecord)
                               updateDraftField("tema", e.target.value);
@@ -2635,7 +2678,8 @@ export default function AdminStudioPage() {
 
                     {/* Ana Arapça ve Türkçe Alanları */}
                     {activeTab !== "diyalog_gramer" &&
-                      activeTab !== "metin_gramer" && (
+                      activeTab !== "metin_gramer" &&
+                      activeTab !== "ek_gramer" && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="text-[11px] font-extrabold text-[#065F46] block mb-1">
@@ -2973,6 +3017,81 @@ export default function AdminStudioPage() {
                         )}
                       </div>
                     )}
+                    {/* Müstakil / Tekil Hap Gramer Kartı Alanları (konu_basligi / hap_kural) */}
+                    {("konu_basligi" in draftRecord || "hap_kural" in draftRecord) && (
+                      <div className="p-3 rounded-2xl bg-white border-2 border-[#E6D7BE] space-y-2.5">
+                        <span className="text-xs font-extrabold text-[#065F46] block">
+                          📌 Hap Gramer Kartı Başlığı, Kuralı &amp; Örneği
+                        </span>
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                            Konu Başlığı
+                          </label>
+                          <input
+                            type="text"
+                            value={String(draftRecord.konu_basligi || "")}
+                            onChange={(e) =>
+                              updateDraftField("konu_basligi", e.target.value)
+                            }
+                            className="w-full h-9 px-2.5 rounded-lg border border-[#E6D7BE] text-xs font-extrabold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                            Hap Kural Özeti
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={String(draftRecord.hap_kural || "")}
+                            onChange={(e) =>
+                              updateDraftField("hap_kural", e.target.value)
+                            }
+                            className="w-full p-2 rounded-lg border border-[#E6D7BE] text-xs font-semibold"
+                          />
+                        </div>
+                        {draftRecord.metinden_ornek && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[11px] font-extrabold text-[#065F46] block mb-1">
+                                Örnek Cümle (Arapça)
+                              </label>
+                              <input
+                                type="text"
+                                dir="rtl"
+                                value={String(
+                                  draftRecord.metinden_ornek?.arapca || ""
+                                )}
+                                onChange={(e) =>
+                                  updateDraftField("metinden_ornek", {
+                                    ...draftRecord.metinden_ornek,
+                                    arapca: e.target.value,
+                                  })
+                                }
+                                className="w-full h-10 px-2.5 rounded-lg border border-[#E6D7BE] arabic text-lg font-bold text-[#065F46]"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                                Örnek Cümle Çevirisi (Türkçe)
+                              </label>
+                              <input
+                                type="text"
+                                value={String(
+                                  draftRecord.metinden_ornek?.turkce || ""
+                                )}
+                                onChange={(e) =>
+                                  updateDraftField("metinden_ornek", {
+                                    ...draftRecord.metinden_ornek,
+                                    turkce: e.target.value,
+                                  })
+                                }
+                                className="w-full h-10 px-2.5 rounded-lg border border-[#E6D7BE] text-xs font-semibold"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2986,7 +3105,8 @@ export default function AdminStudioPage() {
                 {/* 1. 🖼️ GÖRSEL YÖNETİCİSİ (1:1 KARE ÖNİZLEME & OTOMATİK .WEBP DÖNÜŞTÜRÜCÜ) */}
                 {activeTab !== "efect_manager" &&
                   activeTab !== "diyalog_gramer" &&
-                  activeTab !== "metin_gramer" && (
+                  activeTab !== "metin_gramer" &&
+                  activeTab !== "ek_gramer" && (
                     <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-3.5 space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5">

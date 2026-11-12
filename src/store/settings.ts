@@ -17,11 +17,13 @@ export type SentenceLoopCount = 2 | 3 | 5 | "infinite";
 export type PauseBetweenLines = 0 | 2 | "auto";
 export type VoiceGender = "erkek" | "kadin";
 export type GrammarDepthMode = "simple" | "academic";
+export type ReadingLayoutMode = "sentences" | "paragraph";
 export type { ArabicFontId, ArabicFontSizePreset, HarekeMode };
 
 interface SettingsState {
   theme: "light" | "dark";
   viewMode: ViewMode;
+  readingLayoutMode: ReadingLayoutMode;
   showHareke: boolean;
   harekeMode: HarekeMode;
   grammarDepthMode: GrammarDepthMode;
@@ -45,6 +47,7 @@ interface SettingsState {
   toggleTheme: () => void;
   setTheme: (theme: "light" | "dark") => void;
   setViewMode: (mode: ViewMode) => void;
+  setReadingLayoutMode: (mode: ReadingLayoutMode) => void;
   toggleHareke: () => void;
   setShowHareke: (show: boolean) => void;
   setHarekeMode: (mode: HarekeMode) => void;
@@ -124,6 +127,7 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       theme: "light",
       viewMode: "stacked",
+      readingLayoutMode: "sentences",
       showHareke: true,
       harekeMode: "full",
       grammarDepthMode: "academic",
@@ -148,6 +152,7 @@ export const useSettings = create<SettingsState>()(
         set((state) => ({ theme: state.theme === "light" ? "dark" : "light" })),
       setTheme: (theme) => set({ theme }),
       setViewMode: (mode) => set({ viewMode: mode }),
+      setReadingLayoutMode: (mode) => set({ readingLayoutMode: mode }),
       toggleHareke: () =>
         set((state) => {
           const currIdx = HAREKE_MODE_ORDER.indexOf(state.harekeMode || "full");
@@ -264,7 +269,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "app-settings",
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         const state =
           persistedState && typeof persistedState === "object"
@@ -294,6 +299,12 @@ export const useSettings = create<SettingsState>()(
             migrated.grammarDepthMode === "academic"
               ? migrated.grammarDepthMode
               : "academic";
+        }
+        if (version < 5) {
+          migrated.readingLayoutMode =
+            migrated.readingLayoutMode === "paragraph"
+              ? "paragraph"
+              : "sentences";
         }
         return migrated as SettingsState;
       },

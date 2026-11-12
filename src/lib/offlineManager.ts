@@ -307,7 +307,8 @@ export async function downloadDialogueOfflinePack(
 }
 
 /**
- * Tüm diyalogların ses paketlerini sırayla çevrimdışı önbelleğe indirir.
+ * Tüm diyalogların (120) ve okuma metinlerinin (60) ses paketlerini (toplam 180 ders)
+ * sırayla çevrimdışı önbelleğe indirir.
  */
 export async function downloadAllDialoguesOffline(
   onProgress?: (
@@ -316,13 +317,14 @@ export async function downloadAllDialoguesOffline(
     totalDialogues: number
   ) => void
 ): Promise<number> {
-  const total = diyaloglar.length;
+  const allLessons = [...diyaloglar, ...metinler];
+  const total = allLessons.length;
   let successCount = 0;
   onProgress?.(0, 0, total);
 
   for (let i = 0; i < total; i++) {
-    const dlg = diyaloglar[i];
-    const res = await downloadDialogueOfflinePack(dlg.id);
+    const lesson = allLessons[i];
+    const res = await downloadDialogueOfflinePack(lesson.id);
     if (res.ok) successCount += 1;
     const pct = Math.min(100, Math.round(((i + 1) / total) * 100));
     onProgress?.(pct, i + 1, total);

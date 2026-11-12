@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { sozluk } from "@/lib/data";
+import { sozluk, CONTENT_INVENTORY } from "@/lib/data";
 import {
   X,
   BookOpen,
@@ -33,6 +33,7 @@ import {
   Trophy,
   Timer,
   Share2,
+  Dices,
 } from "lucide-react";
 import { playClick } from "@/lib/sfxManager";
 import { triggerOnboardingTour } from "./OnboardingTourModal";
@@ -225,16 +226,19 @@ export default function GuideAndInfoModalBody({
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-[#6741D9]">
-                      2. Diyalog, Sözlük & ✨ Kalıp İfadeler
+                      2. 5 Çalışma Modu, Yan Yana Gramer &amp; İkili (A/B) Kartlar
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Canlı kelime/ok takipli dinleme, cümle arası gölgeleme
-                      boşluğu, 38 mahreç analizli Telaffuz Stüdyosu ve Rol Yapma
-                      modu. Tıklanan kelimede morfolojik kök analizi ve{" "}
+                      Canlı kelime/ok takipli dinleme, 38 mahreç analizli Telaffuz
+                      Stüdyosu, Rol Yapma,{" "}
                       <strong className="text-[var(--foreground)]">
-                        ✨ Kalıp İfadeler
+                        🗣️ İkili Bilgi Boşluğu (A/B) Kartları
                       </strong>{" "}
-                      kartlarıyla deyimsel anlam ve sesli pratik.
+                      ve metinle{" "}
+                      <strong className="text-[var(--foreground)]">
+                        📌 Yan Yana Gramer
+                      </strong>{" "}
+                      bölünmüş paneli ile kapsamlı çalışma.
                     </p>
                   </div>
                 </div>
@@ -242,20 +246,21 @@ export default function GuideAndInfoModalBody({
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-amber-700">
-                      3. İnteraktif Alıştırma Merkezi (8 Mod)
+                      3. İnteraktif Alıştırma Merkezi ({CONTENT_INVENTORY.exerciseModulesCount} Modül)
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      3B Kelime/İfade Kartları, Çoktan Seçmeli Test, Ok Çizimli
-                      Eşleştirme, Sürükle-Bırak / Klavyeli İmla Boşluk Doldurma,{" "}
+                      3B Kartlar, Çoktan Seçmeli, Ok Çizimli Eşleştirme,
+                      Sürükle-Bırak, Dinle-Yaz İmla, Dinle-Sırala, Görsel
+                      Eşleştirme,{" "}
                       <strong className="text-[var(--foreground)]">
-                        🧩 Dinle ve Sırala (Cümle Kurma)
+                        Hata Avcısı, Kör Dikte, Diyalog Tamamlama, Müzekker/Müennes
+                        Tasnifi, Metin Kanıt Dedektifi, İ&apos;rab Renk Boyama
                       </strong>{" "}
                       ve{" "}
                       <strong className="text-[var(--foreground)]">
-                        🖼️ Görsel &amp; Sesli Eşleştirme
-                      </strong>{" "}
-                      modlarıyla kelimeleri, atasözlerini ve cümleleri
-                      pekiştirin.
+                        🏆 Sınıf Takım Yarışması
+                      </strong>
+                      .
                     </p>
                   </div>
                 </div>
@@ -263,79 +268,76 @@ export default function GuideAndInfoModalBody({
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-sky-700">
-                      4. Akıllı A4 PDF & Çalışma Kağıdı
+                      4. Seviye Tespit (CAT Motoru) &amp; Konu Tarama Merkezi
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Sağda Arapça / Solda Türkçe iki sütunlu ders notu, renkli
-                      kelime ve{" "}
                       <strong className="text-[var(--foreground)]">
-                        ✨ Kalıp İfadeler
+                        180 soruluk
                       </strong>{" "}
-                      tabloları. Öğretmen ve öğrenciler için A/B kitapçıklı
-                      yazılı sınav, Maarif rubrikli harekesiz yoklama ve
-                      otomatik cevap anahtarı üretimi.
+                      akademik soru bankası, 12 soruluk adaptif{" "}
+                      <strong className="text-[var(--foreground)]">
+                        CAT Seviye Tespit Motoru
+                      </strong>{" "}
+                      ve CEFR kurlarına göre tasnif edilmiş{" "}
+                      <strong className="text-[var(--foreground)]">
+                        Konu Tarama Testi (KTT)
+                      </strong>{" "}
+                      ile eksik kazanım analizi.
                     </p>
                   </div>
                 </div>
 
-                <div className="sm:col-span-2 p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
-                  <h3 className="text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300">
-                    5. 🏆 Başarı Kartı Paylaşımı
-                  </h3>
-                  <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Tamamladığınız diyalog ve alıştırma sonuçlarınızı tek tıkla
-                    görsel başarı kartı (PNG) olarak indirip WhatsApp veya
-                    Telegram&apos;da paylaşın.
-                  </p>
-                </div>
-
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-300">
-                    6. 🎯 Bugün Ne Çalışmalıyım? &amp; Aralıklı Tekrar (SRS)
+                    5. 📌 195 Kartlık Gramer Atlası &amp; KTT Köprüsü
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    5 aşamalı (1, 3, 7, 14, 30 gün) akıllı hafıza sistemi,
-                    seviye dengeli diyalog önerisi ve günlük 12 dakikalık
-                    kişisel çalışma paketi.
+                    4 temel dilbilimsel alanda 195 hap gramer kartı (120 diyalog
+                    + 60 metin + 15 temel/ileri müstakil gramer), Sade/Akademik
+                    anlatım geçişi ve kart içinden doğrudan konu tarama testi.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-[#6741D9] dark:text-indigo-300">
-                    7. 🌿 Sözlükte Kök Ailesi (İştikak) &amp; Canlı Örnek Cümleler
+                    6. 🗣️ 28 Harf Mahreç Haritası &amp; 🌿 Ortak Kelime / Kur&apos;ân Köprüsü
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Bir kelimenin üçlü kökünden türeyen tüm kardeş kelimeleri
-                    filtreleyin ve diyaloglardaki gerçek sesli örnek cümlelerini
-                    anında dinleyin.
+                    28 Arapça harfte kişisel telaffuz ısı haritası; sözlükte kök
+                    ailesi (iştikak),{" "}
+                    <strong className="text-[var(--foreground)]">
+                      Türkçeyle Ortak Kelimeler
+                    </strong>{" "}
+                    ve{" "}
+                    <strong className="text-[var(--foreground)]">
+                      Kur&apos;ân &amp; Klasik Arapça Köprüsü
+                    </strong>
+                    .
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
-                  <h3 className="text-xs sm:text-sm font-extrabold text-amber-700 dark:text-amber-300">
-                    8. 🎓 Öğretmen Ödev &amp; QR Sistemi + A4 Quiz Üretici
+                  <h3 className="text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300">
+                    7. 🎓 QR Ödev Sistemi, A4 PDF Quiz &amp; Başarı Kartı
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Öğretmenler için karekodlu ödev linki, öğrenciler için
-                    doğrulama kodlu ödev karnesi ve cevap anahtarlı A4
-                    Çalışma/Quiz kağıdı.
+                    Karekodlu öğretmen ödev linki, A/B kitapçıklı ve Maarif
+                    rubrikli A4 Çalışma/Quiz kağıdı, PNG başarı kartı ve
+                    5 aşamalı (1–30 gün) Aralıklı Tekrar (SRS) hafıza sistemi.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-sky-700 dark:text-sky-300">
-                    9. 📥 Çevrimdışı Ders Paketleri &amp; Kör Dinleme / Akıllı Tahta Modu
+                    8. 🖊️ Akıllı Tahta Araçları &amp; 180 Çevrimdışı Ders Paketi
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    İnternetsiz ses indirme (Cache API), bulanık metinle{" "}
+                    Kalem, fosforlu kalem, geometrik şekiller, silgi, tahta
+                    perdesi, kompakt ders sayacı HUD, sınıf kura çarkı,{" "}
                     <strong className="text-[var(--foreground)]">
                       👁️ Kör Dinleme
                     </strong>{" "}
-                    ve sınıfta{" "}
-                    <strong className="text-[var(--foreground)]">
-                      🖥️ Akıllı Tahta Sunum Modu
-                    </strong>
-                    .
+                    ve 180 çevrimdışı ses paketi.
                   </p>
                 </div>
               </div>
@@ -348,7 +350,7 @@ export default function GuideAndInfoModalBody({
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#065F46] dark:text-emerald-400">
                   Morfolojik Kelime Türü Renk Kodları
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                   <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 border-l-4 border-l-amber-500">
                     <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 block">
                       ⚡ Fiil (فعل) — Kehribar
@@ -373,6 +375,14 @@ export default function GuideAndInfoModalBody({
                       Harf-i cerler, bağlaçlar, soru edatları ve kalıp ifadeler
                     </span>
                   </div>
+                  <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border-2 border-teal-300 border-l-4 border-l-teal-500">
+                    <span className="text-xs font-extrabold text-teal-800 dark:text-teal-300 block">
+                      🏷️ Özel İsim (علم) — Turkuaz
+                    </span>
+                    <span className="text-[11px] text-[var(--muted)]">
+                      Kişi, şehir, ülke adları ve belirlilik taşıyan özel isimler
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -385,7 +395,7 @@ export default function GuideAndInfoModalBody({
                     {
                       icon: Volume2,
                       label: "🔊 Doğal Sesle Dinle",
-                      desc: "Cümleyi veya kelimeyi yerel MP3 / Neural TTS ile seslendirir.",
+                      desc: "Cümleyi veya kelimeyi çift cinsiyet MP3 / Neural TTS ile seslendirir.",
                     },
                     {
                       icon: Repeat,
@@ -394,43 +404,53 @@ export default function GuideAndInfoModalBody({
                     },
                     {
                       icon: Mic,
-                      label: "🎤 Gölgeleme Ses Kaydı",
-                      desc: "Kendi telaffuzunuzu kaydedip referans sesle karşılaştırır.",
+                      label: "🎤 Gölgeleme & 28 Harf Mahreç",
+                      desc: "Sesinizi kaydedip referans sesle ve 28 harf mahreç haritasıyla kıyaslar.",
                     },
                     {
                       icon: Sparkles,
-                      label: "✨ Mahreç Koçu / Hareke",
-                      desc: "Üst barda harekeleri açıp kapatır; cümlede 38 mahreç analizini açar.",
+                      label: "✨ 3 Kademeli Hareke Solması / Koç",
+                      desc: "Üst barda Tam Harekeli → Hareke Solması (İ'rab & Şedde) → Harekesiz geçişi yapar.",
                     },
                     {
                       icon: Languages,
-                      label: "🌐 Çeviri Görünüm Modu",
-                      desc: "Alt Alta, İki Sütun, Sadece Arapça ve Sadece Türkçe geçişi.",
+                      label: "🌐 5 Çeviri Görünüm Modu",
+                      desc: "Alt Alta, İki Sütun, Sadece Arapça, Sadece Türkçe ve Tıkla-Gör (Çeviri Gizli) geçişi.",
                     },
                     {
                       icon: Gauge,
-                      label: "⏱️ Seslendirme Hızı",
-                      desc: "Konuşma hızını 0.5x, 0.75x, 1x ve 1.25x arasında değiştirir.",
+                      label: "⏱️ Seslendirme Hızı (0.5x – 1.5x)",
+                      desc: "Konuşma hızını 0.5x, 0.75x, 1x, 1.25x ve 1.5x arasında değiştirir.",
+                    },
+                    {
+                      icon: PenTool,
+                      label: "🖊️ Akıllı Tahta Çizim & Perde",
+                      desc: "Ekran üstü kalem, fosforlu kalem, geometrik şekiller, silgi ve tahta perdesi açar.",
+                    },
+                    {
+                      icon: Dices,
+                      label: "🎲 Ders Sayacı HUD & Sınıf Kurası",
+                      desc: "Kompakt ders kronometresi/geri sayım ve rastgele öğrenci seçici kura çarkı açar.",
                     },
                     {
                       icon: FileText,
-                      label: "📄 A4 PDF Ders Notu",
+                      label: "📄 A4 PDF Ders Notu & Sınav",
                       desc: "Diyaloğu, kelime tablosunu ve A/B kitapçıklı sınav kağıdını A4 yazdırır.",
                     },
                     {
                       icon: Keyboard,
                       label: "⌨️ Sanal Arapça Klavye",
-                      desc: "Boşluk doldurma İmla modunda ekrandan Arapça harf/hareke yazar.",
+                      desc: "Boşluk doldurma ve Kör Dikte modlarında ekrandan Arapça harf/hareke yazar.",
                     },
                     {
                       icon: Heart,
                       label: "❤️ Favori & Kelime Kartım",
-                      desc: "Diyaloğu veya kelimeyi kişisel tekrar havuzunuza ekler.",
+                      desc: "Diyaloğu veya kelimeyi kişisel SRS tekrar havuzunuza ekler.",
                     },
                     {
                       icon: CheckCircle2,
                       label: "✅ Tamamlandı / Öğrendim",
-                      desc: "Diyaloğu veya kelimeyi öğrenildi olarak işaretler.",
+                      desc: "Diyaloğu, metni veya kelimeyi öğrenildi olarak işaretler.",
                     },
                     {
                       icon: Maximize2,
@@ -440,7 +460,7 @@ export default function GuideAndInfoModalBody({
                     {
                       icon: Timer,
                       label: "🎙️ Gölgeleme Boşluğu",
-                      desc: "Diyalog seçenekleri (...) menüsünden cümleler arası tekrar boşluğu bırakır.",
+                      desc: "Diyalog/metin seçenekleri (...) menüsünden cümleler arası tekrar boşluğu bırakır.",
                     },
                     {
                       icon: Trophy,
@@ -537,45 +557,46 @@ export default function GuideAndInfoModalBody({
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     CEFR (A1–B2) standartlarına uyumlu 120 özgün diyalog, 60
-                    okuma metni, {sozluk.length.toLocaleString("tr-TR")}{" "}
-                    kök/temel kelime + 111 kalıp ifade kayıtlı sözlük ve 5
-                    kademeli Arapça morfolojik çözümleyici.
+                    okuma metni, 195 kartlık Gramer Atlası, 180 soruluk CAT &amp;
+                    Konu Tarama soru bankası ve{" "}
+                    {sozluk.length.toLocaleString("tr-TR")} kayıtlı morfolojik
+                    sözlük (Türkçeyle Ortak Kelimeler &amp; Kur&apos;ân Köprüsü).
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-extrabold text-[#6741D9]">
                     <Cpu size={15} />
-                    <span>16kHz DSP & 38 Mahreç Motoru</span>
+                    <span>16kHz DSP, 28 Harf &amp; 38 Mahreç Motoru</span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Web Audio API tabanlı 16kHz ses zarfı (envelope) analizi,
-                    dinamik zaman bükme (DTW) ritim skoru ve 38 Arapça mahreç
-                    çifti için fonetik teşhis motoru.
+                    Web Audio API tabanlı 16kHz ses zarfı analizi, Whisper AI /
+                    cihaz içi çevrimdışı STT seçeneği, 28 Harf Mahreç Haritası ve
+                    38 Arapça mahreç çifti teşhis motoru.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-extrabold text-amber-700">
                     <Sparkles size={15} />
-                    <span>Akıllı Tipografi & Hibrit Ses</span>
+                    <span>3 Kademeli Hareke &amp; 14 Alıştırma Modülü</span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Lafzatullah ve şedde/hareke çakışmalarını önleyen OpenType
-                    tipografi motoru; Yerel MP3 + Neural TTS + Offline Web
-                    Speech 3 katmanlı ses mimarisi.
+                    Lafzatullah ve şedde/hareke çakışmalarını önleyen tipografi
+                    motoru, 3 kademeli Hareke Solması (İ&apos;rab), 14 etkileşimli
+                    alıştırma modülü ve çift cinsiyet ses mimarisi.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-extrabold text-sky-700">
                     <Smartphone size={15} />
-                    <span>Çevrimdışı PWA & Veri Gizliliği</span>
+                    <span>180 Çevrimdışı Ders Paketi &amp; PWA</span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Tüm çalışma ilerlemeniz ve ses kayıtlarınız cihazınızda
-                    güvenle saklanır; JSON yedekleme ve çevrimdışı PWA kurulum
-                    desteği sunar.
+                    120 diyalog ve 60 okuma metninin tamamı için çevrimdışı ses
+                    önbelleği, cihaz içi JSON yedekleme ve çevrimdışı PWA
+                    kurulum desteği sunar.
                   </p>
                 </div>
               </div>

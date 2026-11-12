@@ -18,6 +18,7 @@ export type AdminDatasetKey =
   | "sozluk"
   | "diyalog_gramer"
   | "metin_gramer"
+  | "ek_gramer"
   | "seviye_sorulari";
 
 export type AdminPostAction =
@@ -35,6 +36,7 @@ const DATASET_FILE_MAP: Record<AdminDatasetKey, string> = {
   sozluk: "yeni_tum_sozluk.json",
   diyalog_gramer: "diyaloglar_gramer_hap_bilgi.json",
   metin_gramer: "metinler_gramer_hap_bilgi.json",
+  ek_gramer: "ek_gramer_hap_bilgi.json",
   seviye_sorulari: "seviye_tespit_sorulari.json",
 };
 

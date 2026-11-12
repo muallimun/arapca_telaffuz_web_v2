@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   X,
   Sparkles,
-  Languages,
-  Gauge,
   Repeat,
   BookOpen,
   FileText,
@@ -14,12 +12,13 @@ import {
   ChevronRight,
   Rocket,
   Compass,
-  Sun,
   PenTool,
   Link2,
   CheckSquare,
   ListOrdered,
   Trophy,
+  Type,
+  MoreHorizontal,
 } from "lucide-react";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { formatArabicText } from "@/lib/arabicTextUtils";
@@ -175,35 +174,36 @@ export default function OnboardingTourModal() {
     },
     {
       badge: "ADIM 2 / 6 — HIZLI KONTROLLER",
-      title: "Üst Bar Hızlı Ayar İkonları",
+      title: "Üst Bar Hızlı Ayar ve Sınıf İkonları",
       subtitle:
-        "Sayfadan ayrılmadan tek tıkla okuma ve dinleme deneyiminizi özelleştirin:",
+        "Sayfadan ayrılmadan üst bardaki hızlı araçlarla okuma, ses ve tahta deneyiminizi yönetin:",
       visual: (
         <div className="space-y-2">
           {[
             {
               icon: Sparkles,
-              color: "bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-400 border-[#087F5B]",
-              name: "Hareke Aç / Kapa (Tashkeel)",
-              desc: "Metinleri tek tıkla harekeli veya harekesiz okumaya geçirin.",
+              color:
+                "bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-400 border-[#087F5B]",
+              name: "3 Kademeli Hareke Modu (Hareke Solması)",
+              desc: "Tam Harekeli, Hareke Solması (sadece son İ'rab & şedde) ve Harekesiz okuma geçişi.",
             },
             {
-              icon: Languages,
+              icon: Type,
               color: "bg-[#6741D9]/15 text-[#6741D9] border-[#6741D9]",
-              name: "4 Çeviri Görünüm Modu",
-              desc: "Alt Alta, İki Sütun, Sadece Arapça veya Sadece Türkçe modları.",
+              name: "5 Arapça Font, Yazı Boyutu & 5 Görünüm Modu",
+              desc: "Alt Alta, İki Sütun, Sadece Arapça, Sadece Türkçe ve Tıkla-Gör (Çeviri Gizli) düzenleri.",
             },
             {
-              icon: Gauge,
+              icon: PenTool,
               color: "bg-amber-100 text-amber-800 border-amber-400",
-              name: "Okuma Hızı (0.5x – 1.25x)",
-              desc: "Seslendirmeyi yavaşlatarak her harfin mahrecini net duyun.",
+              name: "Akıllı Tahta Çizim & Ders Sayacı / Kura (⏱️)",
+              desc: "Ekran üstü kalem, fosforlu kalem, şekiller, tahta perdesi, kronometre HUD ve kura çarkı.",
             },
             {
-              icon: Sun,
+              icon: MoreHorizontal,
               color: "bg-sky-100 text-sky-800 border-sky-400",
-              name: "Tema & Canlı Mikrofon Testi",
-              desc: "Sıcak Krem / Gece Modu geçişi ve mikrofon sinyal doğrulaması.",
+              name: "Diğer Araçlar (⋯): 0.5x–1.5x Hız, Ses & Gramer",
+              desc: "Erkek/Kadın seslendirici, Sade/Akademik gramer, Sıcak Krem/Gece teması ve mikrofon testi.",
             },
           ].map((item, idx) => {
             const Icon = item.icon;
@@ -232,18 +232,18 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badge: "ADIM 3 / 6 — DİYALOG STÜDYOSU",
-      title: "4 Çalışma Modu, Canlı Ok Takibi & Döngü",
+      badge: "ADIM 3 / 6 — DİYALOG & METİN STÜDYOSU",
+      title: "5 Çalışma Modu, Yan Yana Gramer & Canlı Ok Takibi",
       subtitle:
-        "Her diyalog sayfasında 4 farklı pedagojik çalışma modu ve canlı kelime takibi bulunur:",
+        "Diyalog ve okuma metni sayfalarında 5 pedagojik çalışma modu ve bölünmüş ekran gramer paneli yer alır:",
       visual: (
         <div className="space-y-3">
           {/* Canlı Kelime & Ok Takibi Önizlemesi */}
           <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] space-y-2">
             <div className="flex items-center justify-between text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
-              <span>🎯 Canlı Karaoke Kelime & Ok Takibi (RTL)</span>
+              <span>🎯 Canlı Karaoke Kelime &amp; Ok Takibi (RTL)</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#6741D9] text-white">
-                <Repeat size={11} /> Döngü: 1x / 2x / 3x / ∞
+                <Repeat size={11} /> Döngü: 1x / 2x / 3x / 5x / ∞
               </span>
             </div>
             <div
@@ -265,10 +265,10 @@ export default function OnboardingTourModal() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE]">
               <strong className="text-[#065F46] dark:text-emerald-400 block">
-                📖 1. Dinle & İncele
+                📖 1. Dinle &amp; İncele
               </strong>
               <span className="text-[11px] text-[var(--muted)]">
-                Ok takipli sesli okuma ve çoklu döngü (loop)
+                Ok takipli sesli okuma, paragraf/cümle akışı ve döngü
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE]">
@@ -276,32 +276,35 @@ export default function OnboardingTourModal() {
                 🎙️ 2. Telaffuz Stüdyosu
               </strong>
               <span className="text-[11px] text-[var(--muted)]">
-                Ses kaydı ve 38 mahreç çifti analizi
+                Ses kaydı, 28 harf ve 38 mahreç çifti koçluğu
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE]">
-              <strong className="text-amber-700 block">🎭 3. Rol Yapma</strong>
+              <strong className="text-amber-700 block">
+                🎭 3. Rol Yapma / ❓ Sorular
+              </strong>
               <span className="text-[11px] text-[var(--muted)]">
-                Karakter seçip otomatik mikrofonla karşılıklı konuşma
+                Diyalogda karşılıklı konuşma, metinde anlama soruları
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE]">
-              <strong className="text-sky-700 block">📚 4. Diyalog Sözlüğü</strong>
+              <strong className="text-sky-700 block">
+                📚 4. Konu Sözlüğü &amp; 📌 5. Odak Gramer
+              </strong>
               <span className="text-[11px] text-[var(--muted)]">
-                Diyalogdaki tüm kelimelerin çekimli ve yalın halleri
+                Kelime çekimleri ve metinle Yan Yana Gramer paneli
               </span>
             </div>
           </div>
 
           <div className="p-2.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/40 text-[11px] text-[var(--foreground)] space-y-1">
             <span className="font-extrabold text-[#4C28B5] dark:text-[#d0bfff] block">
-              ✨ Kalıp İfadeler & 🎙️ Gölgeleme Boşluğu:
+              📌 Yan Yana Gramer, ✨ Kalıp İfadeler &amp; 🗣️ İkili (A/B) Kartlar:
             </span>
             <p className="text-[var(--muted)] leading-snug">
-              Diyalog altındaki <strong>✨ Kalıp İfadeler</strong> kutusuyla
-              deyimlerin harfiyen/deyimsel anlamlarını dinleyin; cümleler arası{" "}
-              <strong>🎙️ Şimdi yüksek sesle tekrar edin (Gölgeleme Boşluğu)</strong>{" "}
-              sayacıyla akıcı konuşma pratiği yapın.
+              Metni kapatmadan <strong>Yan Yana Gramer</strong> paneliyle i&apos;rab
+              kurallarını inceleyin; <strong>🗣️ İkili Bilgi Boşluğu (A/B)</strong>{" "}
+              kartları ve cümleler arası gölgeleme sayacıyla pratik yapın.
             </p>
           </div>
         </div>
@@ -446,12 +449,13 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
-                🧩 Dinle ve Sırala + 🎯 Aralıklı Tekrar (SRS)
+                🧩 14 Etkileşimli Modül + 🎯 Aralıklı Tekrar (SRS)
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Cümleyi dinleyip sağdan sola inşa edin; 5 aşamalı (1, 3, 7, 14,
-                30 gün) akıllı tekrar sistemiyle kelimeleri kalıcı hafızaya
-                taşıyın.
+                Dinle-Sırala, Görsel Eşleştirme, Hata Avcısı, Kör Dikte, Diyalog
+                Tamamlama, Müzekker/Müennes Tasnifi, Metin Kanıt Dedektifi,
+                İ&apos;rab Renk Boyama ve Sınıf Takım Yarışması ile 5 aşamalı SRS
+                tekrar sistemi.
               </span>
             </div>
           </div>

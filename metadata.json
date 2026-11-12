@@ -1,5 +1,5 @@
 {
   "name": "Arapça Telaffuz ve Diyalog Asistanı",
-  "description": "120 CEFR Arapça diyalog, 60 okuma metni, 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, 8 modüllü alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.",
+  "description": "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi — 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü ve A4 PDF çalışma kağıdı üreticisi.",
   "requestFramePermissions": ["microphone"]
 }

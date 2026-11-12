@@ -645,7 +645,7 @@ export default function LibraryPage() {
     });
   }, [search, levelFilter, categoryFilter]);
 
-  // 5. 999 Görsel Kelime Filtreleme (19 Ana Tematik Kategori + 9'lu Alt Setler)
+  // 5. 998 Görsel Kelime Filtreleme (19 Ana Tematik Kategori + 9'lu Alt Setler)
   const formatVisualCategoryBadge = (rawCatTr?: string) => {
     const mainCat = getMainVisualCategory(rawCatTr);
     const subNo = getVisualSubGroupNo(rawCatTr);
@@ -1604,7 +1604,7 @@ export default function LibraryPage() {
         />
       )}
 
-      {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 999 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
+      {/* TEKİL KART ÇALIŞMA MODALI (İLERİ / GERİ NAVİGASYONLU — 998 Görsel Kelime, 508 Atasözü, 1111 Cümle) */}
       {selectedCardIndex !== null &&
         isDualGenderSection &&
         activeModalListLength > 0 &&
@@ -4900,7 +4900,7 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {/* 5. SEKME: 999 GÖRSEL KELİME (1:1 KARE GÖRSEL & BÜTÜNCÜL KART MİMARİSİ) */}
+      {/* 5. SEKME: 998 GÖRSEL KELİME (1:1 KARE GÖRSEL & BÜTÜNCÜL KART MİMARİSİ) */}
       {activeSection === "gorsel-kelimeler" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">

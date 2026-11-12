@@ -5,9 +5,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)
 ![PWA](https://img.shields.io/badge/PWA-Çevrimdışı_Destekli-6741D9?style=for-the-badge)
 ![Whisper AI](https://img.shields.io/badge/AI-Whisper_WebGPU_%26_WASM-0CA678?style=for-the-badge)
-![CEFR](https://img.shields.io/badge/CEFR-A1--B2_(60_Diyalog)-D97706?style=for-the-badge)
+![CEFR](https://img.shields.io/badge/CEFR-A1--B2_(120_Diyalog)-D97706?style=for-the-badge)
 
-**Arapça Telaffuz ve Diyalog Asistanı (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu 60 günlük konuşma diyaloğu, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, Kalıp İfadeler Kütüphanesi, 5 Modlu İnteraktif Alıştırma Merkezi ve Akıllı A4 PDF Çalışma Kağıdı Üreticisi içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
+**Muallimun Arapça (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu **120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi**, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, 998 Görsel Kelime, 1111 Kalıp Cümle, 180 Soruluk Seviye Tespit & Konu Tarama Sınavı ve Akıllı A4 PDF Çalışma Kağıdı Üreticisi içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
 
 🌐 **Canlı Uygulama:** [https://app.muallimun.net](https://app.muallimun.net)  
 🏛️ **Ana Portal:** [https://muallimun.net](https://muallimun.net)
@@ -16,8 +16,8 @@
 
 ## ✨ Öne Çıkan Özellikler
 
-### 1. 📚 Diyalog Kütüphanesi (60 Diyalog / A1–B2)
-- **Zengin Görselli 60 Günlük Konuşma Diyaloğu:** Başlangıç (A1), Orta (A2–B1) ve İleri (B1–B2) kurlarına ayrılmış gerçek hayat senaryoları.
+### 1. 📚 Eğitim Kütüphanesi (120 Diyalog, 60 Okuma Metni, 195 Gramer Notu / A1–B2)
+- **Zengin Görselli 120 Günlük Konuşma Diyaloğu & 60 Okuma Metni:** Başlangıç (A1), Orta (A2–B1) ve İleri (B1–B2) kurlarına ayrılmış gerçek hayat senaryoları, okuma parçaları ve 195 yapılandırılmış gramer notu.
 - **Doğal MP3 Seslendirme & Karaoke Kelime Takibi:** Cümle bazlı doğal seslendirme, canlı kelime renklendirme ve ok (`▼`) takibi.
 - **5 Farklı Görünüm Modu:** `Alt Alta`, `İki Sütun`, `Sadece Arapça`, `Sadece Türkçe` ve `Tıkla Gör` okuma düzenleri.
 - **Esnek Dinleme & Gölgeleme Kontrolü:** Hız kontrolü (`0.5x – 1.25x`), cümle/diyalog döngüsü (loop: `1x`, `2x`, `3x`, `5x`, `∞`) ve canlı geri sayım çubuğuna sahip **Cümleler Arası Gölgeleme Boşluğu** (`Yok`, `2 Saniye Bekle`, `Cümle Süresi Kadar Boşluk`).
@@ -37,14 +37,14 @@
 - **Morfolojik Kök ve Kalıp Analizi (`WordTooltip`):** Diyalog içindeki herhangi bir Arapça kelimeye tıklandığında açılan bilgi kartında sülâsî kök (misal, ecvef ve istif'âl bâbı dahil), kelime türü (*İsim / Fiil / Edat / Özel İsim*), müfret-cemî veya mâzî-muzâri-emir çekimleri ile önek-kök-sonek ayrıştırması.
 - **✨ Kalıp İfadeler ve Deyimler (التعبيرات الاصطلاحية):** Diyaloglarda geçen deyim ve kalıp ifadeler için harfiyen anlam, deyimsel anlam, pedagojik kullanım notu, sesli dinleme ve telaffuz pratiği.
 
-### 5. 🎮 İnteraktif Alıştırma Merkezi (5 Farklı Mod)
-- **Zengin Kaynak Filtreleri:** `Tüm Sözlük`, `✨ Kalıp İfadeler`, `💬 Diyalog Cümleleri`, `🔀 Karışık`, `❤️ Favorilerim` ve `⚡ Zorlandıklarım (Akıllı Hata Defteri)`.
-- **5 Pedagojik Alıştırma Türü:**
+### 5. 🎮 14 Modüllü Alıştırma Merkezi
+- **Zengin Kaynak Filtreleri:** `120 Diyalog`, `60 Okuma Metni`, `998 Görsel Kelime`, `1111 Kalıp Cümle`, `508 Atasözü`, `✨ Kalıp İfadeler`, `❤️ Favorilerim`, `📅 Günlük Tekrar (SRS)` ve `⚡ Zorlandıklarım (Akıllı Hata Defteri)`.
+- **14 Pedagojik Alıştırma ve Oyun Modülü:**
   1. **3B Kelime & Kalıp İfade Kartları (`Flashcard`):** Sesli, örnek cümleli ve morfolojik detaylı çevrilebilir kartlar.
   2. **Çoktan Seçmeli Test (`MultipleChoice`):** Arapça ↔ Türkçe çift yönlü, sesli ve ipucu destekli test.
   3. **Ok Çizerek Eşleştirme (`MatchingGame`):** Sağ sütunda Arapça, sol sütunda Türkçe anlamların yer aldığı, SVG ok çizimli pedagojik eşleştirme oyunu.
   4. **Boşluk Doldurma & Sanal Klavyeli İmla (`FillInBlanks` + `ArabicVirtualKeyboard`):** Dinleyerek cümledeki eksik kelimeyi yazma, hareke/hemze toleransı ve mobil çift klavye çakışmasını önleyen dahili Arapça sanal klavye.
-  5. **🧩 Dinle ve Sırala / Cümle Kurma (`SentenceBuilder`):** Diyalog cümlesini dinleyip karışık verilen Arapça kelimeleri sağdan sola (`RTL`) doğru sırayla dizerek sentaks (nahiv) pratiği yapma.
+  5. **🧩 Dinle ve Sırala, Kelime Avı, Kök Ailesi, Çoğul/Fiil Çekimi, Hafıza & Sınıf Takım Oyunları:** 14 farklı etkileşimli öğrenme ve yarışma modülüyle kapsamlı pratik.
 
 ### 6. ⚡ Zorlandıklarım (Akıllı Hata Defteri & Aralıklı Tekrar)
 - **Spaced Repetition (Aralıklı Tekrar) Mantığı:** Alıştırmalarda yanlış cevaplanan veya telaffuz stüdyosunda `%70`'in altında kalınan kelime, kalıp ifade ve cümleleri otomatik olarak **Zorlandıklarım** havuzuna kaydeder.

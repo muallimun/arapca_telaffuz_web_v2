@@ -672,7 +672,7 @@ function ExercisesPageContent() {
     [mistakeIds]
   );
 
-  // Modül bazlı dinamik kategori listesi (1111 Cümle, 508 Atasözü, 999 Görsel Kelime)
+  // Modül bazlı dinamik kategori listesi (1111 Cümle, 508 Atasözü, 998 Görsel Kelime)
   const activeModuleCategories = useMemo(() => {
     if (
       rangePreset === "sentences_1111" ||
@@ -734,7 +734,7 @@ function ExercisesPageContent() {
     [singleDialogueId, cefrFilter, startNum, endNum]
   );
 
-  // Görsel & Sesli Eşleştirme için filtrelenmiş ResimliKelime[] havuzu (999 Görsel Kelime, 508 Atasözü, 120 Diyalog, 60 Metin)
+  // Görsel & Sesli Eşleştirme için filtrelenmiş ResimliKelime[] havuzu (998 Görsel Kelime, 508 Atasözü, 120 Diyalog, 60 Metin)
   const filteredVisualWordsPool: ResimliKelime[] = useMemo(() => {
     if (rangePreset === "proverbs_508") {
       const items =
@@ -910,8 +910,8 @@ function ExercisesPageContent() {
         seviye: cefrFilter === "all" ? "A1" : cefrFilter,
         baslik_tr:
           categoryFilter !== "all"
-            ? `999 Görsel Kelime · ${categoryFilter}`
-            : "999 Görsel Kelime Örnek Cümleleri",
+            ? `998 Görsel Kelime · ${categoryFilter}`
+            : "998 Görsel Kelime Örnek Cümleleri",
         baslik_ar: "أَمْثِلَةُ الْكَلِمَاتِ الْمُصَوَّرَة",
         satirlar: sourceItems.map((w, idx) => ({
           sira: idx + 1,
@@ -2419,7 +2419,7 @@ function ExercisesPageContent() {
               </div>
             )}
 
-            {/* Bağlama Duyarlı Çalışma Türü Seçicisi: SADECE Çoklu-Tür Kaynaklarında (120 Diyalog, 60 Metin, 999 Görsel Kelime) görünür */}
+            {/* Bağlama Duyarlı Çalışma Türü Seçicisi: SADECE Çoklu-Tür Kaynaklarında (120 Diyalog, 60 Metin, 998 Görsel Kelime) görünür */}
             {showSmartContentTypeSelector && (
               <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
@@ -2494,7 +2494,7 @@ function ExercisesPageContent() {
 
             {/* Tek Kompakt Filtre ve Ayar Barı: Kategori/Konu + Seviye + Soru/Süre/Sonuç + Başlat Butonu */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-1.5 sm:gap-2">
-              {/* 1. Dinamik Alt Filtre (Sadece 120 Diyalog, 60 Metin, 999 Görsel Kelime, 1111 Cümle veya 508 Atasözü seçiliyse görünür) */}
+              {/* 1. Dinamik Alt Filtre (Sadece 120 Diyalog, 60 Metin, 998 Görsel Kelime, 1111 Cümle veya 508 Atasözü seçiliyse görünür) */}
               {rangePreset === "all_dialogues" && (
                 <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
                   <FolderOpen

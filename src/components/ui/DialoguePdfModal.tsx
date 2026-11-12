@@ -2102,13 +2102,6 @@ export default function DialoguePdfModal({
             font-style: normal;
             font-display: swap;
           }
-          @font-face {
-            font-family: "WinSoftPro";
-            src: url("${originStr}/fonts/WinSoftPro-Med.otf") format("opentype");
-            font-weight: 100 900;
-            font-style: normal;
-            font-display: swap;
-          }
           @page {
             size: A4 portrait;
             margin: ${

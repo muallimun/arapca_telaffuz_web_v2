@@ -17,6 +17,8 @@ const JSON_FILES = [
   "tum_metinler_60.json",
   "diyaloglar_gramer_hap_bilgi.json",
   "metinler_gramer_hap_bilgi.json",
+  "ek_gramer_hap_bilgi.json",
+  "seviye_tespit_sorulari.json",
 ];
 
 // ============================================================================
@@ -908,6 +910,22 @@ function main() {
     `✅ diyaloglar_gramer_hap_bilgi.json: ${diyalogGramer.length}/120 tam şema gramer notu tamamlandı.`
   );
 
+  // 9. ek_gramer_hap_bilgi.json onarımı
+  let ekGramer = readJson("ek_gramer_hap_bilgi.json");
+  ekGramer = deepCleanNode(deepApplyOrthographyFixes(ekGramer));
+  writeJson("ek_gramer_hap_bilgi.json", ekGramer);
+  console.log(
+    `✅ ek_gramer_hap_bilgi.json: ${ekGramer.length}/15 müstakil gramer notu onarıldı.`
+  );
+
+  // 10. seviye_tespit_sorulari.json onarımı
+  let seviyeSorulari = readJson("seviye_tespit_sorulari.json");
+  seviyeSorulari = deepCleanNode(deepApplyOrthographyFixes(seviyeSorulari));
+  writeJson("seviye_tespit_sorulari.json", seviyeSorulari);
+  console.log(
+    `✅ seviye_tespit_sorulari.json: ${seviyeSorulari.length} seviye tespit ve konu tarama sorusu onarıldı.`
+  );
+
   // ==========================================================================
   // DOĞRULAMA KONTROLLERİ (VALIDATION)
   // ==========================================================================
@@ -937,10 +955,10 @@ function main() {
     checkStrings(parsed);
   }
 
-  const allGrammar = [...diyalogGramer, ...metinGramer];
-  if (allGrammar.length !== 180) {
+  const allGrammar = [...diyalogGramer, ...metinGramer, ...ekGramer];
+  if (allGrammar.length !== 195) {
     console.error(
-      `❌ HATA: Toplam gramer notu 180 olmalıydı, bulunan: ${allGrammar.length}`
+      `❌ HATA: Toplam gramer notu 195 olmalıydı, bulunan: ${allGrammar.length}`
     );
     errors++;
   }
@@ -976,7 +994,7 @@ function main() {
   }
 
   console.log(
-    "\n🎉 Tüm 8 JSON veri dosyası başarıyla onarıldı ve %100 doğrulandı (0 tatweel, %100 NFC, 1895 sözlük, 180/180 tam şema gramer)!"
+    `\n🎉 Tüm ${JSON_FILES.length} JSON veri dosyası başarıyla onarıldı ve %100 doğrulandı (0 tatweel, %100 NFC, ${sozluk.length} sözlük, 195/195 tam şema gramer)!`
   );
 }
 

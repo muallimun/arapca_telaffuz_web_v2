@@ -528,7 +528,7 @@ export function generatePoolFromProverbs(options?: {
 }
 
 /**
- * 6. 999 Görsel Kelime Havuzu (gorselKelimeler_guncel.json)
+ * 6. 998 Görsel Kelime Havuzu (gorselKelimeler_guncel.json)
  */
 export function generatePoolFromVisualWords(options?: {
   category?: string;

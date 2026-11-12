@@ -491,7 +491,7 @@ test("7. FAZ 2 — Kesilmeyen otomatik sürümlü QR matrisi (140+ bayt Türkçe
   );
 });
 
-test("8. FAZ 3 — Yerel Arapça font varlıkları (Arakom.ttf & WinSoftPro-Med.otf) ve globals.css @font-face doğrulaması", () => {
+test("8. FAZ 3 — Yerel Arapça font varlığı (Arakom.ttf), lisans kısıtlı/mükerrer fontların kaldırılması ve globals.css @font-face doğrulaması", () => {
   const arakomPath = path.join(ROOT_DIR, "public", "fonts", "Arakom.ttf");
   const winsoftPath = path.join(
     ROOT_DIR,
@@ -499,31 +499,33 @@ test("8. FAZ 3 — Yerel Arapça font varlıkları (Arakom.ttf & WinSoftPro-Med.
     "fonts",
     "WinSoftPro-Med.otf"
   );
+  const dupDataFontsDir = path.join(ROOT_DIR, "src", "data", "fonts");
 
   assert.equal(
     fs.existsSync(arakomPath),
     true,
     "public/fonts/Arakom.ttf mevcut olmalıdır"
   );
-  assert.equal(
-    fs.existsSync(winsoftPath),
-    true,
-    "public/fonts/WinSoftPro-Med.otf mevcut olmalıdır"
-  );
   assert.ok(
     fs.statSync(arakomPath).size > 50_000,
     "public/fonts/Arakom.ttf geçerli boyutta olmalıdır"
   );
-  assert.ok(
-    fs.statSync(winsoftPath).size > 50_000,
-    "public/fonts/WinSoftPro-Med.otf geçerli boyutta olmalıdır"
+  assert.equal(
+    fs.existsSync(winsoftPath),
+    false,
+    "Lisans kısıtlı public/fonts/WinSoftPro-Med.otf silinmiş olmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(dupDataFontsDir),
+    false,
+    "Mükerrer src/data/fonts klasörü tamamen silinmiş olmalıdır"
   );
 
   const globalsCss = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "globals.css"),
     "utf8"
   );
-  assert.equal(globalsCss.includes("/fonts/WinSoftPro-Med.otf"), true);
+  assert.equal(globalsCss.includes("/fonts/WinSoftPro-Med.otf"), false);
   assert.equal(globalsCss.includes("/fonts/Arakom.ttf"), true);
 });
 
@@ -2808,5 +2810,108 @@ test("28. Sözlük & Kur'ân Köprüsü Performans ve Sayfalama Mimarisi ([25, 5
       sozlukCode.includes("showClassicalBridgePanel"),
     true,
     "Sözlük sayfası dilimli sayfalama, Sayfa Başına Göster seçicisi, O(1) meta önbelleği ve hızlı Kur'ân Köprüsü panelini içermelidir"
+  );
+});
+
+test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunumu ve güncel sayaç metinleri", () => {
+  // 1. metadata.json korunmalı ve mikrofon izni içermelidir
+  const metadataPath = path.join(ROOT_DIR, "metadata.json");
+  assert.equal(fs.existsSync(metadataPath), true, "metadata.json silinmemelidir");
+  const metadataJson = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+  assert.deepEqual(metadataJson.requestFramePermissions, ["microphone"]);
+  assert.equal(
+    metadataJson.description.includes(
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+    ),
+    true
+  );
+
+  // 2. Silinmesi gereken şablon ikonları, mükerrer favicon ve atıl SettingsContext
+  for (const relPath of [
+    "public/file.svg",
+    "public/globe.svg",
+    "public/next.svg",
+    "public/vercel.svg",
+    "public/window.svg",
+    "src/app/favicon.ico",
+    "src/context/SettingsContext.tsx",
+    "src/data/fonts",
+    "public/fonts/WinSoftPro-Med.otf",
+  ]) {
+    assert.equal(
+      fs.existsSync(path.join(ROOT_DIR, relPath)),
+      false,
+      `${relPath} silinmiş olmalıdır`
+    );
+  }
+
+  // 3. package.json: wavesurfer.js kaldırılmış ve açıklama güncellenmiş olmalı
+  const pkgJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8")
+  );
+  assert.equal(
+    "wavesurfer.js" in (pkgJson.dependencies || {}),
+    false,
+    "wavesurfer.js paketi dependencies altından kaldırılmalıdır"
+  );
+  assert.equal(
+    pkgJson.description.includes(
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+    ),
+    true
+  );
+
+  // 4. .gitignore mükerrer deploy/ satırı teke indirilmiş olmalı
+  const gitignoreLines = fs
+    .readFileSync(path.join(ROOT_DIR, ".gitignore"), "utf8")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l === "deploy/");
+  assert.equal(gitignoreLines.length, 1, ".gitignore içinde tek deploy/ satırı olmalıdır");
+
+  // 5. repair-and-validate-data.mjs içinde ek_gramer_hap_bilgi.json ve seviye_tespit_sorulari.json bulunmalı
+  const repairScript = fs.readFileSync(
+    path.join(ROOT_DIR, "scripts", "repair-and-validate-data.mjs"),
+    "utf8"
+  );
+  assert.equal(
+    repairScript.includes('"ek_gramer_hap_bilgi.json"') &&
+      repairScript.includes('"seviye_tespit_sorulari.json"'),
+    true
+  );
+
+  // 6. opengraph-image.tsx ve README.md güncellemeleri, 998 Görsel Kelime düzeltmesi
+  const ogCode = fs
+    .readFileSync(path.join(ROOT_DIR, "src", "app", "opengraph-image.tsx"), "utf8")
+    .replace(/\s+/g, " ");
+  assert.equal(
+    ogCode.includes(
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+    ),
+    true
+  );
+
+  const readmeCode = fs.readFileSync(path.join(ROOT_DIR, "README.md"), "utf8");
+  assert.equal(
+    readmeCode.includes(
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+    ),
+    true
+  );
+
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !alistirmalarCode.includes("999 Görsel") &&
+      !kutuphaneCode.includes("999 Görsel") &&
+      !kutuphaneCode.includes("999 GÖRSEL"),
+    true,
+    "999 Görsel Kelime ifadeleri 998 Görsel Kelime olarak düzeltilmiş olmalıdır"
   );
 });

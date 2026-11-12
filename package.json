@@ -1,7 +1,7 @@
 {
   "name": "arapca-platform",
   "version": "2.0.0",
-  "description": "120 CEFR Arapça diyalog, 60 okuma metni, 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, 8 modüllü interaktif alıştırma merkezi ve akıllı A4 PDF çalışma kağıdı üreticisi.",
+  "description": "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi — 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü ve akıllı A4 PDF çalışma kağıdı üreticisi.",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,7 +19,6 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "^3.7.0",
-    "wavesurfer.js": "^8.0.3",
     "zustand": "^5.0.16"
   },
   "devDependencies": {

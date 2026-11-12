@@ -116,15 +116,15 @@ export default function OpenGraphImage() {
             borderRadius: "24px",
             backgroundColor: "#087F5B",
             borderBottom: "6px solid #087F5B",
-            color: "#FFFFFF",
-            fontSize: 23,
+          color: "#FFFFFF",
+            fontSize: 22,
             fontWeight: 800,
             textAlign: "center",
             width: "100%",
           }}
         >
-          120 Diyalog • 60 Okuma Metni • 180 Soruluk Sınav • 1111 Cümle • 14
-          Modüllü Oyun &amp; Alıştırma
+          120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma
+          Merkezi
         </div>
       </div>
     ),

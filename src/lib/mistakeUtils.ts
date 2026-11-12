@@ -320,11 +320,11 @@ export function formatMistakeStageProgressText(
 ): string {
   const stage = Math.min(5, Math.max(0, record?.stage ?? 0));
   if (stage >= 3) {
-    return `🎉 Tekrar Kademesi: ${stage}/5 — Uzun süreli hafızaya alındı ve Hata Defteri'nden mezun oldu!`;
+    return `🎉 Tekrar Kademesi: ${stage}/5 — Uzun süreli hafızaya alındı ve Hata Defterim'den mezun oldu!`;
   }
   const nextLabel =
     stage === 1 ? "Yarın (+1 gün)" : stage === 2 ? "3 gün sonra" : "Bugün";
-  return `🔄 Tekrar Kademesi: ${stage}/5 — Sonraki tekrar: ${nextLabel} (Hata Defteri'nden çıkmak için ${
+  return `🔄 Tekrar Kademesi: ${stage}/5 — Sonraki tekrar: ${nextLabel} (Hata Defterim'den çıkmak için ${
     3 - stage
   } kademe daha gerekli)`;
 }
@@ -591,7 +591,7 @@ export function buildDailyStudyPackage(params: {
     pickedIdiomIds.add(idm.id);
     dailyIdioms.push({
       idiom: idm,
-      statusBadge: "⚠️ Zorlandığınız kalıp",
+      statusBadge: "⚡ Hata Defterim",
     });
   }
 

@@ -433,8 +433,8 @@ export default function FeedbackModal() {
                   <option value="İnteraktif Sözlük & Kalıp İfadeler">
                     İnteraktif Sözlük &amp; Kalıp İfadeler
                   </option>
-                  <option value="Alıştırma Merkezi & Hata Defteri">
-                    Alıştırma Merkezi &amp; Hata Defteri
+                  <option value="Alıştırma Merkezi & Hata Defterim">
+                    Alıştırma Merkezi &amp; Hata Defterim
                   </option>
                   <option value="Telaffuz & Mahreç Stüdyosu">
                     Telaffuz &amp; Mahreç Stüdyosu

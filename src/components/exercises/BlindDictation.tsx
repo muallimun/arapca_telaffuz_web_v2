@@ -691,64 +691,79 @@ export default function BlindDictation({
     }
   };
 
-  const handleApplyHarakaStone = async (harakaId: string) => {
-    if (!currentEntry || tashkeelEval !== "idle" || tashkeelSlots.length === 0) {
-      return;
-    }
-    playClick();
+  const handleApplyHarakaStone = useCallback(
+    async (harakaId: string) => {
+      if (!currentEntry || tashkeelEval !== "idle" || tashkeelSlots.length === 0) {
+        return;
+      }
+      playClick();
 
-    const targetSlot = tashkeelSlots[activeSlotIdx] || tashkeelSlots[0];
-    const updated = {
-      ...slotSelections,
-      [targetSlot.wordIndex]: harakaId,
-    };
-    setSlotSelections(updated);
+      const targetSlot = tashkeelSlots[activeSlotIdx] || tashkeelSlots[0];
+      const updated = {
+        ...slotSelections,
+        [targetSlot.wordIndex]: harakaId,
+      };
+      setSlotSelections(updated);
 
-    // Eğer birden fazla boşluk varsa sıradaki boşluğa odaklan
-    const nextUnfilledIdx = tashkeelSlots.findIndex(
-      (s) => !updated[s.wordIndex]
-    );
-    if (nextUnfilledIdx !== -1) {
-      setActiveSlotIdx(nextUnfilledIdx);
-      return;
-    }
+      // Eğer birden fazla boşluk varsa sıradaki boşluğa odaklan
+      const nextUnfilledIdx = tashkeelSlots.findIndex(
+        (s) => !updated[s.wordIndex]
+      );
+      if (nextUnfilledIdx !== -1) {
+        setActiveSlotIdx(nextUnfilledIdx);
+        return;
+      }
 
-    // Tüm boşluklar doldurulduysa anında değerlendir
-    const allRight = tashkeelSlots.every(
-      (s) => updated[s.wordIndex] === s.expectedHarakaId
-    );
+      // Tüm boşluklar doldurulduysa anında değerlendir
+      const allRight = tashkeelSlots.every(
+        (s) => updated[s.wordIndex] === s.expectedHarakaId
+      );
 
-    recordSkillAttempt("imla", allRight);
-    recordSkillAttempt("gramer", allRight);
-    recordItemAttempt(
-      currentEntry.sourceItemId,
-      "sentence",
-      allRight,
-      false,
-      allRight ? 100 : 40,
-      "İ'rab & Son Hareke Atölyesi"
-    );
+      recordSkillAttempt("imla", allRight);
+      recordSkillAttempt("gramer", allRight);
+      recordItemAttempt(
+        currentEntry.sourceItemId,
+        "sentence",
+        allRight,
+        false,
+        allRight ? 100 : 40,
+        "İ'rab & Son Hareke Atölyesi"
+      );
 
-    if (allRight) {
-      const nextStreak = streak + 1;
-      setStreak(nextStreak);
-      setCorrectCount((c) => c + 1);
-      setTashkeelEval("correct");
-      await playSuccess({ streak: nextStreak });
-      clearPendingTimers();
-      audioTimerRef.current = setTimeout(() => {
-        audioTimerRef.current = null;
-        void playEntryAudio(currentEntry, 1.0);
-      }, 250);
-    } else {
-      setStreak(0);
-      addMistake(currentEntry.sourceItemId);
-      setTashkeelEval("wrong");
-      await playWrong();
-    }
-  };
+      if (allRight) {
+        const nextStreak = streak + 1;
+        setStreak(nextStreak);
+        setCorrectCount((c) => c + 1);
+        setTashkeelEval("correct");
+        await playSuccess({ streak: nextStreak });
+        clearPendingTimers();
+        audioTimerRef.current = setTimeout(() => {
+          audioTimerRef.current = null;
+          void playEntryAudio(currentEntry, 1.0);
+        }, 250);
+      } else {
+        setStreak(0);
+        addMistake(currentEntry.sourceItemId);
+        setTashkeelEval("wrong");
+        await playWrong();
+      }
+    },
+    [
+      activeSlotIdx,
+      addMistake,
+      clearPendingTimers,
+      currentEntry,
+      playEntryAudio,
+      recordItemAttempt,
+      recordSkillAttempt,
+      slotSelections,
+      streak,
+      tashkeelEval,
+      tashkeelSlots,
+    ]
+  );
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     clearPendingTimers();
     playClick();
     if (currentIndex + 1 < sessionEntries.length) {
@@ -764,7 +779,59 @@ export default function BlindDictation({
       void playFanfare(pct);
       setIsCompleted(true);
     }
-  };
+  }, [
+    addStudyMinutes,
+    clearPendingTimers,
+    correctCount,
+    currentIndex,
+    resetQuestionState,
+    sessionEntries.length,
+  ]);
+
+  const isQuestionDoneForShortcuts =
+    workshopTab === "dictation"
+      ? dictationEval !== "idle"
+      : tashkeelEval !== "idle";
+
+  useEffect(() => {
+    if (isCompleted || !currentEntry) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector(".fixed.inset-0")) return;
+      const targetEl = e.target as HTMLElement | null;
+      const isTypingTarget =
+        targetEl?.tagName === "INPUT" ||
+        targetEl?.tagName === "TEXTAREA" ||
+        targetEl?.isContentEditable;
+
+      if (isQuestionDoneForShortcuts && e.key === "Enter" && !isTypingTarget) {
+        e.preventDefault();
+        handleNextQuestion();
+        return;
+      }
+
+      if (
+        workshopTab === "tashkeel" &&
+        tashkeelEval === "idle" &&
+        !isTypingTarget
+      ) {
+        const idx = Number(e.key) - 1;
+        if (idx >= 0 && idx < HARAKA_STONES.length) {
+          e.preventDefault();
+          void handleApplyHarakaStone(HARAKA_STONES[idx].id);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    currentEntry,
+    handleApplyHarakaStone,
+    handleNextQuestion,
+    isCompleted,
+    isQuestionDoneForShortcuts,
+    tashkeelEval,
+    workshopTab,
+  ]);
 
   const switchWorkshopTab = (nextTab: BlindWorkshopTab) => {
     if (nextTab === workshopTab) return;
@@ -1149,6 +1216,7 @@ export default function BlindDictation({
                     value={typedText}
                     onChange={(e) => setTypedText(e.target.value)}
                     onKeyDown={(e) => {
+                      if (document.querySelector(".fixed.inset-0")) return;
                       if (e.key === "Enter" && typedText.trim().length > 0) {
                         e.preventDefault();
                         void handleCheckDictation();

@@ -751,7 +751,7 @@ test("11. FAZ 3 — A4 PDF Üreticisi: escapeHtml, Arakom.ttf, tohumlu A/B Kitap
 
 test("12. FAZ 4A — seviye_tespit_sorulari.json: benzersiz ID, NFC, 0 tatweel, tüm üst konular ve %100 çeldirici analizi bütünlüğü", async () => {
   const { raw, parsed } = readDataJson("seviye_tespit_sorulari.json");
-  const { ASSESSMENT_TOPICS } = await import(
+  const { ASSESSMENT_TOPICS, buildDynamicAssessmentTopics } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
   );
 
@@ -812,9 +812,23 @@ test("12. FAZ 4A — seviye_tespit_sorulari.json: benzersiz ID, NFC, 0 tatweel, 
     }
   }
 
-  assert.equal(seenTopics.size, ASSESSMENT_TOPICS.length, "Üst konu sayısı ASSESSMENT_TOPICS ile eşleşmelidir");
-  const configuredTopics = new Set(ASSESSMENT_TOPICS.map((t) => t.ust_konu));
-  assert.deepEqual(seenTopics, configuredTopics);
+  for (const baseTopic of ASSESSMENT_TOPICS) {
+    assert.equal(
+      seenTopics.has(baseTopic.ust_konu),
+      true,
+      `Temel müfredat üst konusu soru bankasında bulunmalıdır: ${baseTopic.ust_konu}`
+    );
+  }
+  const dynamicTopics = buildDynamicAssessmentTopics(parsed);
+  assert.equal(
+    seenTopics.size,
+    dynamicTopics.length,
+    "Üst konu sayısı buildDynamicAssessmentTopics ile birebir eşleşmelidir"
+  );
+  assert.deepEqual(
+    seenTopics,
+    new Set(dynamicTopics.map((t) => t.ust_konu))
+  );
 });
 
 test("13. FAZ 4A — 3 Kademeli Hareke Solması (full / irab-only / none) harf iskeleti ve son harf i'rab koruması", async () => {
@@ -3180,5 +3194,130 @@ test("31. Header, Genel Ayarlar, Diyalog/Metin, Admin, PWA ve Kılavuz Modallar�
     "OnboardingTourModal ve GuideAndInfoModalBody güncel özellikleri eksiksiz yansıtmalıdır"
   );
 });
+
+test("32. Mobil UX, Arayüz Ferahlığı, Hata Defterim Standartlaştırması, Sarf/İ'rab Koruması ve Modal Kısayol Kilidi Doğrulaması", () => {
+  const scrollTopCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ScrollToTopButton.tsx"),
+    "utf8"
+  );
+  const smartboardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "classroom", "SmartboardOverlay.tsx"),
+    "utf8"
+  );
+  const visualRosettaCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "VisualRosettaQuiz.tsx"),
+    "utf8"
+  );
+  const mobileNavCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "MobileNav.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  const fillInBlanksCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "FillInBlanks.tsx"),
+    "utf8"
+  );
+  const blindDictationCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BlindDictation.tsx"),
+    "utf8"
+  );
+  const genderSortingCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "GenderSortingGame.tsx"),
+    "utf8"
+  );
+
+  // 1. Mobil sağ alt köşe sabit buton çakışmasının giderilmesi
+  assert.equal(
+    scrollTopCode.includes("right-3 bottom-20") &&
+      smartboardCode.includes("left-3 sm:left-5") &&
+      !smartboardCode.includes("fixed bottom-20 lg:bottom-5 right-3"),
+    true,
+    "SmartboardOverlay küçültülmüş kalem ikonu sol alt köşede konumlanarak ScrollToTopButton ile çakışmamalıdır"
+  );
+
+  // 2. VisualRosettaQuiz 100dvh mobil sıkışmasının esnetilmesi
+  assert.equal(
+    visualRosettaCode.includes("min-h-[calc(100dvh-146px)]") &&
+      visualRosettaCode.includes("overflow-y-auto") &&
+      !visualRosettaCode.includes("max-h-[calc(100dvh-146px)]"),
+    true,
+    "VisualRosettaQuiz küçük ve yatay mobil ekranlarda sıkışmamak için min-h + overflow-y-auto kullanmalıdır"
+  );
+
+  // 3. Sanal klavye açıldığında MobileNav'ın gizlenmesi
+  assert.equal(
+    mobileNavCode.includes("visualViewport") &&
+      mobileNavCode.includes("focusin") &&
+      mobileNavCode.includes("isKeyboardOpen"),
+    true,
+    "MobileNav mobilde input odaklandığında veya visualViewport daraldığında geçici olarak gizlenmelidir"
+  );
+
+  // 4. Yatay sekmelerde kaydırma ipucu ve Kütüphane kişisel sekme gruplaması
+  assert.equal(
+    diyalogCode.includes("bg-gradient-to-l") &&
+      metinCode.includes("bg-gradient-to-l") &&
+      kutuphaneCode.includes("bg-gradient-to-l") &&
+      sozlukCode.includes("bg-gradient-to-l") &&
+      kutuphaneCode.includes('aria-label="Kişisel Çalışma Sekmeleri"'),
+    true,
+    "Yatay kaydırılan sekmelerde sağ kenar kaydırma ipucu ve Kütüphane kişisel sekme ayrımı bulunmalıdır"
+  );
+
+  // 5. Diyalog/Metin araç çubuğu sadeleştirmesi, Alıştırmalar hızlı başlat ve Hata Defterim standartlaştırması
+  assert.equal(
+    diyalogCode.includes("Ek Araçlar &amp; Modlar") &&
+      !diyalogCode.includes('className="sm:hidden border-t border-[var(--border)] mt-1 pt-1"') &&
+      metinCode.includes("Ek Araçlar &amp; Modlar") &&
+      !metinCode.includes('className="sm:hidden border-t border-[var(--border)] mt-1 pt-1"'),
+    true,
+    "Diyalog ve Metin sayfalarında ikincil araçlar hem mobil hem masaüstünde Araçlar (...) menüsünde toplanmalıdır"
+  );
+  assert.equal(
+    alistirmalarCode.includes("Alıştırmayı Başlat") &&
+      alistirmalarCode.includes("Hata Defterim") &&
+      sozlukCode.includes("⚡ Hata Defterim") &&
+      !sozlukCode.includes("⚡ Zorlandıklarım") &&
+      !alistirmalarCode.includes('"⚡ Hata Defteri"'),
+    true,
+    "Alıştırmalar hızlı başlat butonu bulunmalı ve tüm hata listeleri 'Hata Defterim' adıyla standartlaştırılmalıdır"
+  );
+
+  // 6. FillInBlanks sarf/i'rab koruması (sentetik son hareke/tenvin yamama kaldırılmış olmalı)
+  assert.equal(
+    !fillInBlanksCode.includes("adaptDistractorToTargetSurface") &&
+      fillInBlanksCode.includes("selectInflectionMatchedDistractors"),
+    true,
+    "FillInBlanks sentetik hareke yamama yapmadan doğrulanmış sahih kelime formlarından çeldirici seçmelidir"
+  );
+
+  // 7. Açık modal varken klavye kısayolu kilidi
+  assert.equal(
+    blindDictationCode.includes('document.querySelector(".fixed.inset-0")') &&
+      genderSortingCode.includes('document.querySelector(".fixed.inset-0")'),
+    true,
+    "BlindDictation ve GenderSortingGame açık modal (.fixed.inset-0) varken klavye kısayollarını kilitlemelidir"
+  );
+});
+
 
 

@@ -295,6 +295,7 @@ export default function GenderSortingGame({
   useEffect(() => {
     if (isCompleted || !currentItem) return;
     const onKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector(".fixed.inset-0")) return;
       if (selectedBasket === null) {
         if (e.key === "ArrowLeft") {
           e.preventDefault();

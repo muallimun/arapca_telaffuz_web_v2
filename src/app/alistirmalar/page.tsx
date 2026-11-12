@@ -1574,9 +1574,9 @@ function ExercisesPageContent() {
     },
     {
       id: "mistakes",
-      title: "⚡ Hata Defteri",
+      title: "⚡ Hata Defterim",
       countBadge: String(mistakeIds.length),
-      label: `Hata Defteri (${mistakeIds.length})`,
+      label: `Hata Defterim (${mistakeIds.length})`,
     },
     {
       id: "favorites",
@@ -2174,43 +2174,64 @@ function ExercisesPageContent() {
         <>
           {/* 1. 14 MODÜLLÜ KATEGORİ SEKMELİ ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
           <section aria-label="Alıştırma Türü Seçimi" className="space-y-2">
-            {/* Kategori Filtre Çubuğu */}
+            {/* Kategori Filtre Çubuğu + İlk Açılışta Doğrudan Görünür Hızlı Başlat Butonu */}
             <div
               role="tablist"
               aria-label="Alıştırma Kategorileri"
-              className="flex flex-wrap items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-1.5"
+              className="flex flex-wrap items-center justify-between gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-1.5"
             >
-              {exerciseCategoryTabs.map((tab) => {
-                const active = exerciseCategoryFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      playClick();
-                      setExerciseCategoryFilter(tab.id);
-                    }}
-                    className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                      active
-                        ? "bg-[#6741D9] text-white shadow-2xs"
-                        : "bg-white/80 dark:bg-[var(--background)] text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tabular-nums ${
+              <div className="flex flex-wrap items-center gap-1.5">
+                {exerciseCategoryTabs.map((tab) => {
+                  const active = exerciseCategoryFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => {
+                        playClick();
+                        setExerciseCategoryFilter(tab.id);
+                      }}
+                      className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                         active
-                          ? "bg-white/20 text-white"
-                          : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#6741D9] dark:text-indigo-300"
+                          ? "bg-[#6741D9] text-white shadow-2xs"
+                          : "bg-white/80 dark:bg-[var(--background)] text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
                       }`}
                     >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{tab.label}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tabular-nums ${
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#6741D9] dark:text-indigo-300"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleStartExercise}
+                disabled={
+                  isMistakesEmpty ||
+                  (!isSelfSourcedSpecialMode &&
+                    combinedVocabulary.length < 4 &&
+                    sentenceCountInPool < 2 &&
+                    idiomsPool.length < 1 &&
+                    filteredVisualWordsPool.length < 4)
+                }
+                className="w-full sm:w-auto min-h-[40px] px-3.5 py-1.5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all inline-flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <Play size={13} fill="currentColor" className="shrink-0" />
+                <span className="truncate">
+                  Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe)
+                </span>
+              </button>
             </div>
 
             <div className="flex flex-wrap justify-center items-stretch gap-3.5">
@@ -2257,50 +2278,52 @@ function ExercisesPageContent() {
                         setRangePreset("sentences_1111");
                       }
                     }}
-                    className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[78px] sm:min-h-[104px] text-left p-2.5 sm:p-3 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
+                    className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[58px] sm:min-h-[76px] text-left px-2.5 py-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
                         : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full mb-1 sm:mb-1.5 gap-1">
-                      <div
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
-                          isSelected
-                            ? "bg-[#6741D9] border-[#5230B5] text-white"
-                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#065F46] dark:text-emerald-400"
-                        }`}
-                      >
-                        <Icon size={15} strokeWidth={2.3} />
+                    <div className="flex items-center justify-between w-full gap-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
+                            isSelected
+                              ? "bg-[#6741D9] border-[#5230B5] text-white"
+                              : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#065F46] dark:text-emerald-400"
+                          }`}
+                        >
+                          <Icon size={14} strokeWidth={2.3} />
+                        </div>
+
+                        <h2
+                          className={`font-extrabold text-xs sm:text-sm leading-tight truncate ${
+                            isSelected
+                              ? "text-[#4C28B5] dark:text-[#d0bfff]"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          {card.title}
+                        </h2>
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
                         <span
                           lang="ar"
                           dir="rtl"
-                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-[1.95]"
+                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-none"
                         >
                           {card.arabicBadge}
                         </span>
                         {isSelected && (
-                          <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#6741D9] text-white flex items-center justify-center shrink-0">
+                          <span className="w-4 h-4 rounded-full bg-[#6741D9] text-white flex items-center justify-center shrink-0">
                             <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <h2
-                      className={`font-extrabold text-xs sm:text-sm leading-tight w-full ${
-                        isSelected
-                          ? "text-[#4C28B5] dark:text-[#d0bfff]"
-                          : "text-[var(--foreground)]"
-                      }`}
-                    >
-                      {card.title}
-                    </h2>
-
-                    <p className="text-[11px] text-[var(--muted)] leading-snug line-clamp-2 mt-0.5">
+                    <p className="text-[11px] text-[var(--muted)] leading-snug line-clamp-1 mt-1">
                       {card.subtitle}
                     </p>
                   </button>
@@ -2909,7 +2932,7 @@ function ExercisesPageContent() {
                     className="shrink-0 text-[#065F46] dark:text-emerald-400"
                   />
                   <span>
-                    Harika! Şu an hata defterinizde zorlandığınız bir kelime
+                    Harika! Şu an Hata Defterim listenizde zorlandığınız bir kelime
                     veya cümle bulunmuyor.
                   </span>
                 </div>
@@ -2928,7 +2951,7 @@ function ExercisesPageContent() {
               mistakeIds.length > 0 && (
                 <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-amber-900 dark:text-amber-200">
                   <span>
-                    ⚡ Akıllı Hata Defterinizde{" "}
+                    ⚡ Hata Defterim&apos;de{" "}
                     <strong>{mistakeIds.length}</strong> öğe kayıtlı. Farklı
                     günlerde 3 kez ipucusuz doğru cevapladığınız (Kademe 3/5)
                     sorular uzun süreli hafızaya alınarak listeden otomatik

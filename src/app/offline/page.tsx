@@ -103,7 +103,7 @@ export default function OfflinePage() {
                 Alıştırma Merkezi
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                {exerciseModulesCount} Modül &amp; Akıllı Hata Defteri
+                {exerciseModulesCount} Modül &amp; Hata Defterim
               </span>
             </div>
           </Link>

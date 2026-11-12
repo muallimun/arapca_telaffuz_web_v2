@@ -239,14 +239,6 @@ export default function FillInBlanks({
 
     for (const v of vocabulary) {
       const pos = normalizePos(v.tur);
-      const primary = stripPunct((v.mufret || v.mazi || "").split("/")[0].trim());
-      if (primary && countBaseArabicLetters(primary) >= 2) {
-        const normKey = normalizeArabicSpelling(primary);
-        if (normKey && !seenDistractorWords.has(normKey)) {
-          seenDistractorWords.add(normKey);
-          typedPool.push({ word: primary, pos });
-        }
-      }
       const allForms = [v.mufret, v.cemi, v.mazi, v.muzari, v.masdar];
       for (const f of allForms) {
         if (!f || f === "-") continue;
@@ -257,6 +249,33 @@ export default function FillInBlanks({
             posLookupByBare.set(bare, pos);
             if (bare.startsWith("ال") && bare.length > 3) {
               posLookupByBare.set(bare.slice(2), pos);
+            }
+            const normKey = normalizeArabicSpelling(cl);
+            if (normKey && !seenDistractorWords.has(normKey)) {
+              seenDistractorWords.add(normKey);
+              typedPool.push({ word: cl, pos });
+            }
+          }
+        }
+      }
+    }
+
+    for (const dlg of dialogues) {
+      for (const line of dlg.satirlar) {
+        for (const rawTok of line.arapca.split(/\s+/)) {
+          const cl = stripPunct(rawTok);
+          if (countBaseArabicLetters(cl) >= 2) {
+            const normKey = normalizeArabicSpelling(cl);
+            if (normKey && !seenDistractorWords.has(normKey)) {
+              seenDistractorWords.add(normKey);
+              const bare = removeArabicHarakat(cl);
+              const bareNoAl =
+                bare.startsWith("ال") && bare.length > 3 ? bare.slice(2) : bare;
+              const inferredPos =
+                posLookupByBare.get(bare) ||
+                posLookupByBare.get(bareNoAl) ||
+                (bare.startsWith("ال") ? "isim" : "isim");
+              typedPool.push({ word: cl, pos: inferredPos });
             }
           }
         }
@@ -280,48 +299,9 @@ export default function FillInBlanks({
       }
     }
 
-    const adaptDistractorToTargetSurface = (
-      rawCandidate: string,
-      targetHasAl: boolean,
-      targetPos: "isim" | "fiil" | "edat",
-      targetEndingHaraka: string
-    ): string => {
-      let adapted = rawCandidate.trim();
-      const bareCand = removeArabicHarakat(adapted);
-      const candHasAl = bareCand.startsWith("ال") && bareCand.length > 3;
-
-      if (targetPos === "isim") {
-        if (targetHasAl && !candHasAl) {
-          // Tanwin varsa tek harekeye indir ve başına ال ekle
-          adapted = adapted
-            .replace(/\u064B$/, "\u064E")
-            .replace(/\u064C$/, "\u064F")
-            .replace(/\u064D$/, "\u0650");
-          adapted = `ال${adapted}`;
-        } else if (!targetHasAl && candHasAl) {
-          adapted = adapted.replace(/^ا[\u064B-\u0652]*ل[\u064B-\u0652]*/, "");
-        }
-      }
-
-      // Son hareke uyumu (örn. ikisi de merfû/mansûb/mecrûr görünsün ki sadece son harekeden şık elenmesin)
-      if (targetEndingHaraka && adapted.length >= 2) {
-        const isTargetTanwin = /[\u064B\u064C\u064D]/.test(targetEndingHaraka);
-        const adaptedBare = removeArabicHarakat(adapted);
-        const adaptedHasAl =
-          adaptedBare.startsWith("ال") && adaptedBare.length > 3;
-
-        if (!(isTargetTanwin && adaptedHasAl)) {
-          if (/[\u064B-\u0652]+$/.test(adapted)) {
-            adapted = adapted.replace(/[\u064B-\u0652]+$/, targetEndingHaraka);
-          } else {
-            adapted = `${adapted}${targetEndingHaraka}`;
-          }
-        }
-      }
-
-      return adapted;
-    };
-
+    // Sarf & İ'rab Koruması: Kelime sonu hareke/tenvin regex ile sentetik olarak değiştirilmez;
+    // gayr-ı munsarif, mebnî, tesniye ve cem' müzekker sâlim kalıpları bozmamak için yalnızca
+    // sözlük ve doğrulanan metinlerdeki sahih (orijinal) biçimler seçilir.
     const selectInflectionMatchedDistractors = (
       cleanTarget: string,
       needed = 3
@@ -334,9 +314,22 @@ export default function FillInBlanks({
         ? "isim"
         : posLookupByBare.get(bareTarget) ||
           posLookupByBare.get(bareNoAl) ||
-          (/^[يتأن]/.test(bareTarget) && !targetHasAl ? "isim" : "isim");
+          "isim";
       const trailingMatch = cleanTarget.match(/[\u064B-\u0652]+$/);
       const targetEndingHaraka = trailingMatch ? trailingMatch[0] : "";
+
+      const samePosAlAndHaraka = targetEndingHaraka
+        ? shuffleArray(
+            typedPool.filter((entry) => {
+              if (entry.pos !== targetPos) return false;
+              const b = removeArabicHarakat(entry.word);
+              const hasAl = b.startsWith("ال") && b.length > 3;
+              if (hasAl !== targetHasAl) return false;
+              const entryEnd = entry.word.match(/[\u064B-\u0652]+$/)?.[0] || "";
+              return entryEnd === targetEndingHaraka;
+            })
+          )
+        : [];
 
       const samePosAndAl = shuffleArray(
         typedPool.filter((entry) => {
@@ -362,31 +355,35 @@ export default function FillInBlanks({
 
       const picked: string[] = [];
       const seenNorm = new Set<string>([targetNorm]);
+      const seenBare = new Set<string>([bareTarget, bareNoAl]);
 
-      for (const bucket of [samePosAndAl, samePosOther, fallbackOtherPos]) {
+      for (const bucket of [
+        samePosAlAndHaraka,
+        samePosAndAl,
+        samePosOther,
+        fallbackOtherPos,
+      ]) {
         for (const entry of bucket) {
           if (picked.length >= needed) break;
-          const surface =
-            entry.pos === targetPos
-              ? adaptDistractorToTargetSurface(
-                  entry.word,
-                  targetHasAl,
-                  targetPos,
-                  targetEndingHaraka
-                )
-              : entry.word;
+          const surface = entry.word.trim();
           const surfNorm = normalizeArabicSpelling(surface);
-          const rawNorm = normalizeArabicSpelling(entry.word);
+          const surfBare = removeArabicHarakat(surface);
+          const surfBareNoAl =
+            surfBare.startsWith("ال") && surfBare.length > 3
+              ? surfBare.slice(2)
+              : surfBare;
           if (
             !surfNorm ||
             seenNorm.has(surfNorm) ||
-            seenNorm.has(rawNorm) ||
+            seenBare.has(surfBare) ||
+            seenBare.has(surfBareNoAl) ||
             countBaseArabicLetters(surface) < 2
           ) {
             continue;
           }
           seenNorm.add(surfNorm);
-          seenNorm.add(rawNorm);
+          seenBare.add(surfBare);
+          if (surfBareNoAl.length >= 2) seenBare.add(surfBareNoAl);
           picked.push(surface);
         }
         if (picked.length >= needed) break;

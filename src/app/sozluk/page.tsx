@@ -1207,7 +1207,7 @@ export default function DictionaryPage() {
                 },
                 {
                   id: "mistakes",
-                  label: `⚡ Zorlandıklarım (${mounted ? mistakeIds.length : 0})`,
+                  label: `⚡ Hata Defterim (${mounted ? mistakeIds.length : 0})`,
                 },
               ] as { id: StatusFilter; label: string }[]
             ).map((tab) => {
@@ -1237,7 +1237,8 @@ export default function DictionaryPage() {
         </div>
 
         {/* 4. Mobil Uyumlu Kategori ve Hızlı Alt Sekmeler (Her sekme kendi verisi üzerinde bağımsız sayfalanır) */}
-        <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1">
+        <div className="relative">
+          <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1 pr-6 sm:pr-0">
           {(
             [
               {
@@ -1346,7 +1347,7 @@ export default function DictionaryPage() {
             🕌 Kur&apos;ân &amp; Klasik Köprü ({sectionCounts.classical.toLocaleString("tr-TR")})
           </button>
 
-          {/* Hızlı Filtre: ⚡ Zorlandıklarım (Hem Mobil Hem Masaüstünde Tek Dokunuşla) */}
+          {/* Hızlı Filtre: ⚡ Hata Defterim (Hem Mobil Hem Masaüstünde Tek Dokunuşla) */}
           <button
             type="button"
             onClick={() => {
@@ -1362,8 +1363,15 @@ export default function DictionaryPage() {
                 : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-amber-700 dark:text-amber-300 font-semibold hover:border-amber-400"
             }`}
           >
-            ⚡ Zorlandıklarım ({mounted ? mistakeIds.length : 0})
+            ⚡ Hata Defterim ({mounted ? mistakeIds.length : 0})
           </button>
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none sm:hidden absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-[#FBF6EC] dark:from-[var(--surface)] to-transparent flex items-center justify-end pr-0.5 text-[var(--muted)]/80"
+          >
+            <ChevronRight size={13} />
+          </div>
         </div>
 
         {/* Mobilde [SlidersHorizontal] Filtreler Açıkken Diyalog Seçici ve Öğrenme Durumu */}
@@ -1409,7 +1417,7 @@ export default function DictionaryPage() {
                   },
                   {
                     id: "mistakes",
-                    label: `⚡ Zorlandıklarım (${mounted ? mistakeIds.length : 0})`,
+                    label: `⚡ Hata Defterim (${mounted ? mistakeIds.length : 0})`,
                   },
                 ] as { id: StatusFilter; label: string }[]
               ).map((tab) => {

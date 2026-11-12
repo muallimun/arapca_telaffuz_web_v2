@@ -2485,66 +2485,117 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {/* Modül Sekmeleri (Mobilde Tek Satır Yatay Kaydırılabilir Hap Şeridi, Masaüstünde Esnek Sarımlı) */}
-        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 max-w-full">
-          {(
-            [
-              {
-                id: "vitrin",
-                label: "🏛️ Vitrin (Genel Bakış)",
-              },
-              {
-                id: "dialogues",
-                label: `💬 Diyaloglar (${contentStats.dialogueCount})`,
-              },
-              {
-                id: "metinler",
-                label: `📖 Metinler (${contentStats.readingCount})`,
-              },
-              {
-                id: "cumleler",
-                label: `🗣️ Günlük Cümle (${contentStats.sentenceCount})`,
-              },
-              {
-                id: "atasozleri",
-                label: `📜 Atasözleri (${contentStats.proverbCount})`,
-              },
-              {
-                id: "gorsel-kelimeler",
-                label: `🖼️ Görsel Kelime (${contentStats.visualWordCount})`,
-              },
-              {
-                id: "gramer",
-                label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
-              },
-              {
-                id: "saved-words",
-                label: `❤️ Defterim (${mounted ? favoriteWords.length : 0})`,
-              },
-              {
-                id: "weak-words",
-                label: `🎯 Mahreç (${mounted ? weakWords.length : 0})`,
-              },
-            ] as { id: ViewSection; label: string }[]
-          ).map((tab) => {
-            const active = activeSection === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleSwitchSection(tab.id)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                  active
-                    ? tab.id === "vitrin"
-                      ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
-                      : "bg-[#087F5B] text-white font-extrabold shadow-2xs"
-                    : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* Modül Sekmeleri (Mobilde Yatay Kaydırılabilir + Sağ Görsel İpucu, Kişisel Defterim & Mahreç Sağda Ayrı Grup) */}
+        <div className="relative max-w-full">
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 pr-7 md:pr-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 max-w-full">
+            {(
+              [
+                {
+                  id: "vitrin",
+                  label: "🏛️ Vitrin (Genel Bakış)",
+                },
+                {
+                  id: "dialogues",
+                  label: `💬 Diyaloglar (${contentStats.dialogueCount})`,
+                },
+                {
+                  id: "metinler",
+                  label: `📖 Metinler (${contentStats.readingCount})`,
+                },
+                {
+                  id: "cumleler",
+                  label: `🗣️ Günlük Cümle (${contentStats.sentenceCount})`,
+                },
+                {
+                  id: "atasozleri",
+                  label: `📜 Atasözleri (${contentStats.proverbCount})`,
+                },
+                {
+                  id: "gorsel-kelimeler",
+                  label: `🖼️ Görsel Kelime (${contentStats.visualWordCount})`,
+                },
+                {
+                  id: "gramer",
+                  label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
+                },
+              ] as { id: ViewSection; label: string }[]
+            ).map((tab) => {
+              const active = activeSection === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleSwitchSection(tab.id)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                    active
+                      ? tab.id === "vitrin"
+                        ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
+                        : "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+
+            {/* Kişisel Çalışma Alanı Ayırıcısı ve Sağ Grup: Defterim & Mahreç */}
+            <span
+              aria-hidden="true"
+              className="h-5 w-px bg-[#D9C7A8] dark:bg-slate-700 mx-0.5 shrink-0"
+            />
+            <div
+              role="group"
+              aria-label="Kişisel Çalışma Sekmeleri"
+              className="flex items-center gap-1.5 shrink-0 md:ml-auto"
+            >
+              {(
+                [
+                  {
+                    id: "saved-words",
+                    label: `❤️ Defterim (${mounted ? favoriteWords.length : 0})`,
+                    activeClass:
+                      "bg-rose-600 border-rose-700 text-white font-extrabold shadow-2xs",
+                    idleClass:
+                      "bg-rose-50/75 dark:bg-rose-950/35 border-rose-300/70 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 font-bold hover:border-rose-500",
+                  },
+                  {
+                    id: "weak-words",
+                    label: `🎯 Mahreç (${mounted ? weakWords.length : 0})`,
+                    activeClass:
+                      "bg-[#6741D9] border-[#5230B5] text-white font-extrabold shadow-2xs",
+                    idleClass:
+                      "bg-[#F3F0FF]/80 dark:bg-indigo-950/35 border-[#6741D9]/35 dark:border-indigo-700/60 text-[#4C28B5] dark:text-indigo-300 font-bold hover:border-[#6741D9]",
+                  },
+                ] as {
+                  id: ViewSection;
+                  label: string;
+                  activeClass: string;
+                  idleClass: string;
+                }[]
+              ).map((tab) => {
+                const active = activeSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleSwitchSection(tab.id)}
+                    className={`px-2.5 py-1.5 rounded-lg border text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                      active ? tab.activeClass : tab.idleClass
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            className="md:hidden pointer-events-none absolute inset-y-0.5 right-0.5 w-7 rounded-r-xl bg-gradient-to-l from-white via-white/90 to-transparent dark:from-[#1e1e1e] dark:via-[#1e1e1e]/90 flex items-center justify-end pr-1 text-[var(--muted)]"
+          >
+            <ChevronRight size={13} className="opacity-80" />
+          </span>
         </div>
       </div>
 
@@ -3096,7 +3147,7 @@ export default function LibraryPage() {
                   />
                 </button>
 
-                {/* Alt Araç 2: 38 Mahreç Rehberi & Zorlandıklarım */}
+                {/* Alt Araç 2: 38 Mahreç Rehberi & Telaffuz Tekrarım */}
                 <button
                   type="button"
                   onClick={() => handleSwitchSection("weak-words")}
@@ -3108,7 +3159,7 @@ export default function LibraryPage() {
                     </span>
                     <div className="min-w-0">
                       <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] truncate">
-                        38 Mahreç Çifti & Zorlandıklarım (
+                        38 Mahreç Çifti &amp; Telaffuz Tekrarım (
                         {mounted ? weakWords.length : 0})
                       </span>
                       <span className="block text-[11px] font-semibold text-[var(--muted)] truncate">

@@ -920,6 +920,11 @@ function main() {
 
   // 10. seviye_tespit_sorulari.json onarımı
   let seviyeSorulari = readJson("seviye_tespit_sorulari.json");
+  for (const q of seviyeSorulari) {
+    if (![1, 2, 3].includes(q.zorluk_basamagi)) {
+      q.zorluk_basamagi = Math.min(3, Math.max(1, Number(q.zorluk_basamagi) || 1));
+    }
+  }
   seviyeSorulari = deepCleanNode(deepApplyOrthographyFixes(seviyeSorulari));
   writeJson("seviye_tespit_sorulari.json", seviyeSorulari);
   console.log(

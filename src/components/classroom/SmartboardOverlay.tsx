@@ -1318,7 +1318,7 @@ export default function SmartboardOverlay() {
     floatingPos !== null && floatingPos.y < 120;
   const isNearRight =
     floatingPos === null
-      ? isVertical || isCollapsed
+      ? isVertical && !isCollapsed
       : floatingPos.x > viewportSize.w * 0.5;
 
   const dockTooltipPos: "top" | "bottom" | "left" | "right" = isVertical
@@ -1332,7 +1332,7 @@ export default function SmartboardOverlay() {
   const dockContainerClasses = floatingPos
     ? "fixed z-[90] pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]"
     : isCollapsed
-    ? "fixed bottom-20 lg:bottom-5 right-3 sm:right-5 z-[90] pointer-events-auto"
+    ? "fixed bottom-20 lg:bottom-5 left-3 sm:left-5 z-[90] pointer-events-auto"
     : isVertical
     ? "fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-[90] pointer-events-auto max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)]"
     : "fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]";

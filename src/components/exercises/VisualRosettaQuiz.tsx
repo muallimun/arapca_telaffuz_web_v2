@@ -1836,7 +1836,7 @@ export default function VisualRosettaQuiz({
   ];
 
   return (
-    <div className="h-[calc(100dvh-146px)] max-h-[calc(100dvh-146px)] sm:h-[calc(100dvh-115px)] sm:max-h-[calc(100dvh-115px)] flex flex-col justify-between overflow-hidden p-1.5 sm:p-3.5 bg-[#F7EFE1]/60 dark:bg-[var(--surface)]/50 rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] gap-1.5 sm:gap-2">
+    <div className="min-h-[calc(100dvh-146px)] sm:min-h-[calc(100dvh-115px)] flex flex-col justify-between overflow-y-auto p-1.5 sm:p-3.5 bg-[#F7EFE1]/60 dark:bg-[var(--surface)]/50 rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] gap-1.5 sm:gap-2">
       {/* Mobil dokunmatik sürükleme sırasında parmak altında yüzen ibare etiketi */}
       {touchDragPos && isDraggingCard && selectedOptionId === null && (
         <div
@@ -2531,14 +2531,14 @@ export default function VisualRosettaQuiz({
         </div>
       )}
 
-      {/* 3. MERKEZ 2x2 / 1x4 KARE GÖRSEL KART IZGARASI (KIRPILMAMIŞ 1:1 OBJECT-CONTAIN & ZERO-SCROLL) */}
-      <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+      {/* 3. MERKEZ 2x2 / 1x4 KARE GÖRSEL KART IZGARASI (KIRPILMAMIŞ 1:1 OBJECT-CONTAIN & ESNEK MOBİL KAYDIRMA) */}
+      <div className="flex-1 min-h-0 flex items-stretch justify-center py-0.5">
         <div
-          className={`w-full h-full grid grid-cols-2 ${
+          className={`w-full grid grid-cols-2 ${
             activeConcreteMode === "match_header_to_card"
               ? "lg:grid-cols-4"
               : "sm:grid-cols-2 lg:grid-cols-4"
-          } gap-2 sm:gap-2.5 items-stretch`}
+          } gap-1.5 sm:gap-2.5 items-stretch`}
         >
           {currentQuestion.options.map((option, idx) => {
             const isTarget = option.id === currentQuestion.target.id;
@@ -2684,7 +2684,7 @@ export default function VisualRosettaQuiz({
 
                 {activeConcreteMode === "match_header_to_card" && (
                   <div
-                    className={`shrink-0 rounded-xl px-2 py-1 mb-1 min-h-[30px] sm:min-h-[34px] flex items-center justify-center border-2 transition-all ${
+                    className={`shrink-0 rounded-lg sm:rounded-xl px-1.5 sm:px-2 py-0.5 sm:py-1 mb-1 min-h-[26px] sm:min-h-[34px] flex items-center justify-center border-2 transition-all ${
                       isSelectedCorrect
                         ? "bg-[#087F5B] border-[#065F46] text-white shadow-xs"
                         : isWrongAttempt
@@ -2697,12 +2697,12 @@ export default function VisualRosettaQuiz({
                     }`}
                   >
                     {isSelectedCorrect ? (
-                      <div className="flex items-center gap-1.5">
-                        <Check size={14} strokeWidth={3} />
+                      <div className="flex items-center gap-1 min-w-0">
+                        <Check size={13} strokeWidth={3} className="shrink-0" />
                         <span
                           lang="ar"
                           dir="rtl"
-                          className="arabic text-base sm:text-lg font-bold leading-none"
+                          className="arabic text-sm sm:text-lg font-bold leading-none truncate"
                         >
                           {formatAr(targetPhrase.ar)}
                         </span>
@@ -2711,15 +2711,15 @@ export default function VisualRosettaQuiz({
                       <span
                         lang="ar"
                         dir="rtl"
-                        className="arabic text-sm font-bold leading-none"
+                        className="arabic text-xs sm:text-sm font-bold leading-none truncate"
                       >
                         {formatAr(option.arapca)}
                       </span>
                     ) : (
-                      <span className="text-[10px] sm:text-[11px] font-bold">
+                      <span className="text-[10px] sm:text-[11px] font-bold truncate">
                         {isDragHovered
-                          ? "✨ Buraya bırakın!"
-                          : `Buraya yerleştir (${idx + 1})`}
+                          ? "✨ Bırakın!"
+                          : `Yerleştir (${idx + 1})`}
                       </span>
                     )}
                   </div>
@@ -2727,9 +2727,9 @@ export default function VisualRosettaQuiz({
 
                 {activeConcreteMode === "speech_bubble_match" && (
                   /* MOD C: Görselin Üstünde Üçgen İşaretçili Beyaz Konuşma Balonu */
-                  <div className="shrink-0 relative mb-2">
+                  <div className="shrink-0 relative mb-1.5 sm:mb-2">
                     <div
-                      className={`rounded-xl px-2.5 py-1 min-h-[30px] sm:min-h-[34px] flex items-center justify-center border-2 shadow-2xs transition-all ${
+                      className={`rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-0.5 sm:py-1 min-h-[26px] sm:min-h-[34px] flex items-center justify-center border-2 shadow-2xs transition-all ${
                         isSelectedCorrect
                           ? "bg-emerald-600 border-emerald-700 text-white"
                           : isWrongAttempt
@@ -2742,12 +2742,12 @@ export default function VisualRosettaQuiz({
                       }`}
                     >
                       {isSelectedCorrect ? (
-                        <div className="flex items-center gap-1.5">
-                          <Check size={14} strokeWidth={3} />
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Check size={13} strokeWidth={3} className="shrink-0" />
                           <span
                             lang="ar"
                             dir="rtl"
-                            className="arabic text-sm sm:text-base font-bold leading-tight truncate"
+                            className="arabic text-xs sm:text-base font-bold leading-tight truncate"
                           >
                             {formatAr(targetPhrase.ar)}
                           </span>
@@ -2761,16 +2761,16 @@ export default function VisualRosettaQuiz({
                           {formatAr(optionBubblePhrase.ar)}
                         </span>
                       ) : (
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-300">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-300 truncate">
                           {isDragHovered
                             ? "💬 Balona bırakın!"
-                            : "💬 Konuşma balonuna yerleştir..."}
+                            : "💬 Balona yerleştir"}
                         </span>
                       )}
                     </div>
                     {/* Balonun aşağı bakan üçgen oku */}
                     <div
-                      className={`w-2.5 h-2.5 rotate-45 border-r-2 border-b-2 mx-auto -mt-1.5 ${
+                      className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rotate-45 border-r-2 border-b-2 mx-auto -mt-1 sm:-mt-1.5 ${
                         isSelectedCorrect
                           ? "bg-emerald-600 border-emerald-700"
                           : isWrongAttempt
@@ -2784,7 +2784,7 @@ export default function VisualRosettaQuiz({
                 )}
 
                 {/* 1:1 KARE GÖRSEL KUTUSU — HİÇBİR ZAMAN KIRPILMAZ (aspect-square + object-contain) */}
-                <div className="relative aspect-square w-full max-h-[135px] sm:max-h-[220px] flex-1 min-h-0 flex items-center justify-center bg-white dark:bg-slate-900/60 rounded-xl overflow-hidden p-1.5 mx-auto">
+                <div className="relative aspect-square w-full min-h-[88px] max-h-[150px] sm:max-h-[220px] flex-1 flex items-center justify-center bg-white dark:bg-slate-900/60 rounded-xl overflow-hidden p-1 sm:p-1.5 mx-auto">
                   <img
                     src={resolveImageUrl(option.gorsel)}
                     alt={cleanDoubleParens(option.turkce)}
@@ -2855,8 +2855,8 @@ export default function VisualRosettaQuiz({
                     </div>
                   </div>
                 ) : (
-                  <div className="shrink-0 pt-1 flex items-center justify-between gap-1 text-[11px] font-bold text-[var(--muted)]">
-                    <span className="truncate">Seçenek {idx + 1}</span>
+                  <div className="shrink-0 pt-0.5 sm:pt-1 flex items-center justify-between gap-1 text-[10px] sm:text-[11px] font-bold text-[var(--muted)]">
+                    <span className="truncate">#{idx + 1}</span>
                     <span className="px-1.5 py-0.5 rounded bg-[#F7EFE1] dark:bg-[var(--background)] text-[10px] font-extrabold text-[var(--muted)]">
                       {option.cefr}
                     </span>

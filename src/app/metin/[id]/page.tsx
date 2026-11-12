@@ -1923,48 +1923,56 @@ export default function ReadingTextDetailPage({
           </button>
         </div>
 
-        {/* 2. SATIR: Mobilde Tek Satır Yatay Kaydırılabilir, Masaüstünde 5 Sütunlu Çalışma Modu Sekmeleri */}
-        <div className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap md:grid md:grid-cols-5 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-          {(
-            [
-              { id: "listen", label: "📖 Metni Oku & Dinle" },
-              { id: "shadowing", label: "🎙️ Telaffuz" },
-              {
-                id: "questions",
-                label: `❓ Sorular (${readingText.sorular.length})`,
-              },
-              {
-                id: "vocabulary",
-                label: `📚 Sözlük (${textVocabEntries.length})`,
-              },
-              ...(grammarNote
-                ? [{ id: "gramer" as StudyMode, label: "📌 Odak Gramer" }]
-                : []),
-            ] as { id: StudyMode; label: string }[]
-          ).map((tab) => {
-            const isSelected = activeTabId === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (tab.id === "gramer" && isGrammarSplitOpen) {
-                    stopAllAudio();
-                    setGrammarSplitOpen(false);
-                  }
-                  setStudyMode(tab.id);
-                }}
-                className={`shrink-0 text-xs py-1.5 px-2.5 sm:px-2 whitespace-nowrap rounded-lg font-extrabold transition-all text-center cursor-pointer ${
-                  isSelected
-                    ? "bg-[#6741D9] text-white shadow-2xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)] bg-white/60 dark:bg-transparent"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* 2. SATIR: Mobilde Tek Satır Yatay Kaydırılabilir (+ Sağ Görsel Kaydırma İpucu), Masaüstünde 5 Sütunlu Çalışma Modu Sekmeleri */}
+        <div className="relative w-full">
+          <div className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap md:grid md:grid-cols-5 gap-1.5 p-1 pr-7 md:pr-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            {(
+              [
+                { id: "listen", label: "📖 Metni Oku & Dinle" },
+                { id: "shadowing", label: "🎙️ Telaffuz" },
+                {
+                  id: "questions",
+                  label: `❓ Sorular (${readingText.sorular.length})`,
+                },
+                {
+                  id: "vocabulary",
+                  label: `📚 Sözlük (${textVocabEntries.length})`,
+                },
+                ...(grammarNote
+                  ? [{ id: "gramer" as StudyMode, label: "📌 Odak Gramer" }]
+                  : []),
+              ] as { id: StudyMode; label: string }[]
+            ).map((tab) => {
+              const isSelected = activeTabId === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (tab.id === "gramer" && isGrammarSplitOpen) {
+                      stopAllAudio();
+                      setGrammarSplitOpen(false);
+                    }
+                    setStudyMode(tab.id);
+                  }}
+                  className={`shrink-0 text-xs py-1.5 px-2.5 sm:px-2 whitespace-nowrap rounded-lg font-extrabold transition-all text-center cursor-pointer ${
+                    isSelected
+                      ? "bg-[#6741D9] text-white shadow-2xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)] bg-white/60 dark:bg-transparent"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+          <span
+            aria-hidden="true"
+            className="md:hidden pointer-events-none absolute inset-y-0.5 right-0.5 w-7 rounded-r-xl bg-gradient-to-l from-slate-100 via-slate-100/85 to-transparent dark:from-slate-800 dark:via-slate-800/85 flex items-center justify-end pr-1 text-[var(--muted)]"
+          >
+            <ChevronRight size={13} className="opacity-80" />
+          </span>
         </div>
 
         {/* 3. SATIR: Tek Satırlık Kompakt Kontrol Çubuğu + "⋯" Diğer Menüsü */}
@@ -2127,149 +2135,7 @@ export default function ReadingTextDetailPage({
                 </button>
               )}
 
-              {/* 6. PDF Butonu (Masaüstünde doğrudan, mobilde ••• menüsünde) */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsPdfModalOpen(true);
-                }}
-                data-tooltip="PDF Ders Notu veya A4 Çalışma/Quiz Yaprağı Üret"
-                aria-label="PDF / Ders Notu"
-                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
-              >
-                <FileText size={13} className="text-[#065F46] shrink-0" />
-                <span>PDF</span>
-              </button>
-
-              {/* 7. Öğretmen İçin "🎓 Ödev" Butonu */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsTeacherHwModalOpen(true);
-                }}
-                data-tooltip="Öğretmen-Öğrenci Ödev Bağlantısı ve Karekodu Oluştur"
-                aria-label="Ödev Oluştur"
-                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/50 hover:border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff] items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
-              >
-                <GraduationCap size={13} className="shrink-0" />
-                <span>Ödev</span>
-              </button>
-
-              {/* 7B. Okuma Metnini Görsel Kart Olarak Paylaş Butonu */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setShareCardTarget({
-                    type: "reading",
-                    arabicText:
-                      readingText.satirlar[0]?.arapca || readingText.baslik_ar,
-                    titleAr: readingText.baslik_ar,
-                    titleTr: readingText.baslik_tr,
-                    turkishText:
-                      readingText.satirlar[0]?.turkce || readingText.baslik_tr,
-                    excerptLines: readingText.satirlar.slice(0, 3).map((l) => ({
-                      arapca: l.arapca,
-                      turkce: l.turkce,
-                    })),
-                    level: readingText.seviye,
-                    category: readingText.tema,
-                    imageUrl:
-                      readingText.gorsel ||
-                      getReadingTextCoverUrl(readingText.id),
-                    deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
-                    initialShowTranslation:
-                      currentViewMode !== "arabic-only" && !isClickRevealActive,
-                  });
-                }}
-                data-tooltip="Okuma metnini görseliyle birlikte sosyal medyada kart olarak paylaş"
-                aria-label="Görsel Kart Paylaş"
-                className="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[#065F46] dark:text-emerald-400 items-center gap-1 text-xs font-extrabold transition-all cursor-pointer shrink-0"
-              >
-                <Share2 size={13} className="shrink-0" />
-                <span>Paylaş</span>
-              </button>
-
-              {/* 8. İndirilebilir Çevrimdışı Ders Paketi Butonu */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (isOfflineReady) {
-                    playClick();
-                    setShowOfflineNotice((v) => !v);
-                  } else {
-                    void handleDownloadOfflineText();
-                  }
-                }}
-                disabled={isDownloadingOffline}
-                data-tooltip={
-                  isOfflineReady
-                    ? "Bu okuma metni ve tüm ses dosyaları çevrimdışı kullanıma hazır"
-                    : `Bu metnin seslerini çevrimdışı kullanım için indir (~${offlineEstimatedMb} MB)`
-                }
-                aria-label="Çevrimdışı İndir"
-                className={`hidden sm:flex px-2.5 py-1.5 rounded-xl border text-xs font-extrabold items-center gap-1 transition-all cursor-pointer shrink-0 ${
-                  isOfflineReady
-                    ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-800 text-white shadow-2xs"
-                    : isDownloadingOffline
-                      ? "bg-amber-100 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200"
-                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-emerald-600 text-[var(--foreground)]"
-                }`}
-              >
-                {isOfflineReady ? (
-                  <>
-                    <CheckCircle2 size={12} className="shrink-0" />
-                    <span>Çevrimdışı Hazır</span>
-                  </>
-                ) : isDownloadingOffline ? (
-                  <>
-                    <Download size={12} className="animate-bounce shrink-0" />
-                    <span>
-                      İndiriliyor %{offlineProgressPct} (~{offlineEstimatedMb}{" "}
-                      MB)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Download
-                      size={12}
-                      className="text-[#065F46] dark:text-emerald-400 shrink-0"
-                    />
-                    <span>İndir (~{offlineEstimatedMb} MB)</span>
-                  </>
-                )}
-              </button>
-
-              {/* 9. Kör Dinleme (Bulanık Metin) Modu Butonu */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setBlurArabic((v) => !v);
-                  setRevealedArabicLines({});
-                }}
-                data-tooltip="Kör Dinleme: Arapça metni bulanıklaştırır, tıklayarak cümle cümle açabilirsiniz"
-                aria-label="Kör Dinleme (Metni Gizle)"
-                className={`hidden sm:flex px-2.5 py-1.5 rounded-xl border text-xs font-extrabold items-center gap-1 transition-all cursor-pointer shrink-0 ${
-                  blurArabic
-                    ? "bg-amber-600 border-amber-800 text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-amber-500 text-[var(--foreground)]"
-                }`}
-              >
-                <Eye
-                  size={13}
-                  className={
-                    blurArabic
-                      ? "text-white shrink-0"
-                      : "text-amber-600 shrink-0"
-                  }
-                />
-                <span>Kör Dinleme</span>
-              </button>
-
-              {/* 10. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu (Yalnızca Tablet ve Masaüstü >= 768px) */}
+              {/* 6. 🖥️ Akıllı Tahta / Sınıf Sunum Modu Butonu (Yalnızca Tablet ve Masaüstü >= 768px) */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -2322,7 +2188,7 @@ export default function ReadingTextDetailPage({
               )}
             </div>
 
-            {/* Sağ Kısım: "⋯" (MoreHorizontal) Açılır Popover Menüsü */}
+            {/* Sağ Kısım: "⋯" (MoreHorizontal) Araçlar & Seçenekler Popover Menüsü */}
             <div className="relative shrink-0" ref={moreMenuRef}>
               <button
                 type="button"
@@ -2330,23 +2196,24 @@ export default function ReadingTextDetailPage({
                   playClick();
                   setIsMoreMenuOpen((v) => !v);
                 }}
-                data-tooltip="Metin Seçenekleri, Görünüm, Döngü, Favori ve Rehber"
+                data-tooltip="Araçlar, PDF, Ödev, Paylaş, İndir, Kör Dinleme ve Görünüm"
                 data-tooltip-align="right"
-                aria-label="Diğer Seçenekler Menüsü"
-                className={`w-8 h-8 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer ${
+                aria-label="Araçlar ve Diğer Seçenekler Menüsü"
+                className={`h-8 px-2.5 rounded-xl border-2 border-b-3 flex items-center justify-center gap-1 text-xs font-extrabold transition-all cursor-pointer ${
                   isMoreMenuOpen
                     ? "bg-[#6741D9] border-[#5230B5] text-white"
                     : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
                 }`}
               >
                 <MoreHorizontal size={16} />
+                <span className="hidden sm:inline">Araçlar</span>
               </button>
 
               {isMoreMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 shadow-2xl z-50 space-y-2.5">
+                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] max-h-[80dvh] overflow-y-auto rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 shadow-2xl z-50 space-y-2.5">
                   <div className="flex items-center justify-between pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
-                      Metin Seçenekleri &amp; Görünüm
+                      Metin Araçları &amp; Görünüm
                     </span>
                     <button
                       type="button"
@@ -2358,8 +2225,8 @@ export default function ReadingTextDetailPage({
                     </button>
                   </div>
 
-                  {/* Mobilde (•••) Menüsüne Taşınan Hızlı Araçlar: Ödev, İndir, Kör Dinleme */}
-                  <div className="sm:hidden space-y-1">
+                  {/* İkincil Araçlar (PDF, Ödev, Paylaş, İndir, Kör Dinleme) Tek Merkezde */}
+                  <div className="space-y-1">
                     <span className="text-[10px] font-extrabold uppercase text-[var(--muted)] block">
                       Ek Araçlar &amp; Modlar
                     </span>

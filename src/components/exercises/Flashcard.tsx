@@ -378,7 +378,7 @@ export default function Flashcard({
               className="sm:col-span-2 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white border-b-4 border-amber-700 font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Target size={15} />
-              <span>🎯 Zorlandıklarımı Tekrarla ({hardItems.length})</span>
+              <span>⚡ Hata Defterim Tekrarı ({hardItems.length})</span>
             </button>
           )}
 
@@ -703,7 +703,7 @@ export default function Flashcard({
                     {isMarkedHard
                       ? currentSrsRecord && currentSrsRecord.stage > 0
                         ? `Kademe ${currentSrsRecord.stage}/3`
-                        : "Hata Defterinde"
+                        : "Hata Defterim"
                       : "Tekrara Ekle"}
                   </span>
                 </button>

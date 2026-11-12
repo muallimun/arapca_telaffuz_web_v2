@@ -2510,7 +2510,7 @@ test("25. Konu Tarama Testi (KTT) — Tekil Ana Seviye (primaryLevel), Net Konu/
   );
 });
 
-test("26. ek_gramer_hap_bilgi.json entegrasyonu: 195 Hap Bilgi kartı, kaynak filtreleri, Müstakil Gramer rozeti ve KTT bağlantısı", async () => {
+test("26. ek_gramer_hap_bilgi.json entegrasyonu: 195 Hap Bilgi kartı, seviye/ktt_ust_konu alanları ve KTT bağlantısı", async () => {
   const ekGramerRaw = JSON.parse(
     fs.readFileSync(
       path.join(ROOT_DIR, "src", "data", "ek_gramer_hap_bilgi.json"),
@@ -2565,20 +2565,12 @@ test("26. ek_gramer_hap_bilgi.json entegrasyonu: 195 Hap Bilgi kartı, kaynak fi
     "utf8"
   );
   assert.equal(
-    kutuphaneCode.includes("`Tümü (${hapBilgiAtlasItems.length})`") &&
-      kutuphaneCode.includes("`Temel & İleri Gramer (${ekGramerNotlari.length})`") &&
-      kutuphaneCode.includes("`Diyalog Grameri (${diyalogGramerNotlari.length})`") &&
-      kutuphaneCode.includes("`Metin Grameri (${metinGramerNotlari.length})`"),
-    true,
-    "Kütüphane Gramer sayfası Tümü (195), Temel & İleri Gramer (15), Diyalog Grameri (120) ve Metin Grameri (60) sekmelerini içermelidir"
-  );
-  assert.equal(
-    kutuphaneCode.includes("`Müstakil Gramer • ${cardLevel}`") &&
+    kutuphaneCode.includes("`Tümü (${grammarDomainCounts.all})`") &&
       kutuphaneCode.includes("gItem.kttUstKonu") &&
       kutuphaneCode.includes("Bu Konunun Tarama Testini Çöz") &&
       kutuphaneCode.includes("/seviye-tespit?mode=topic&topic=${encodeURIComponent("),
     true,
-    "grm_001–grm_015 kartlarında 'Müstakil Gramer • ${card.seviye}', ktt_ust_konu etiketi ve 'Bu Konunun Tarama Testini Çöz' butonu yer almalıdır"
+    "Kütüphane Gramer sayfası 195 kartı, ktt_ust_konu etiketini ve 'Bu Konunun Tarama Testini Çöz' butonunu içermelidir"
   );
 
   const panelCode = fs.readFileSync(
@@ -2588,11 +2580,130 @@ test("26. ek_gramer_hap_bilgi.json entegrasyonu: 195 Hap Bilgi kartı, kaynak fi
   assert.equal(
     panelCode.includes("...ekGramerNotlari") &&
       panelCode.includes('targetId.startsWith("grm_")') &&
-      panelCode.includes("Müstakil Gramer •") &&
       panelCode.includes("Bu Konunun Tarama Testini Çöz") &&
       panelCode.includes("/seviye-tespit?mode=topic&topic=${encodeURIComponent("),
     true,
     "GrammarHapBilgiPanel grm_ kartlarının seviye ve ktt_ust_konu alanlarını doğrudan okumalı ve KTT bağlantı butonunu göstermelidir"
+  );
+});
+
+test("27. Gramer Atlası Seçenek A 4 alanlı tasnif, A4 Ders Föyü PDF, Toplu Kur Kitapçığı PDF ve WhatsApp doğrudan kart paylaşımı", async () => {
+  const taxonomyMod = await import(
+    path.join(ROOT_DIR, "src", "lib", "grammarTaxonomy.ts")
+  );
+  const ekGramerNotlari = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "ek_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+  const diyalogGramerNotlari = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "diyaloglar_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+  const metinGramerNotlari = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "metinler_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+  const diyaloglar = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "tum_diyaloglar_120.json"),
+      "utf8"
+    )
+  );
+  const metinler = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "tum_metinler_60.json"),
+      "utf8"
+    )
+  );
+
+  const catalog = taxonomyMod.buildUnifiedGrammarAtlasCatalog({
+    ekGramerNotlari,
+    diyalogGramerNotlari,
+    metinGramerNotlari,
+    diyaloglar,
+    metinler,
+  });
+  assert.equal(catalog.length, 195, "Birleşik Gramer Atlası kataloğu 195 kart içermelidir");
+
+  const counts = {};
+  for (const domainId of taxonomyMod.GRAMMAR_DOMAIN_ORDER) {
+    counts[domainId] = catalog.filter((item) => item.domainId === domainId).length;
+    assert.ok(counts[domainId] > 0, `${domainId} alanında en az 1 kart bulunmalıdır`);
+  }
+  const sumCounts = Object.values(counts).reduce((acc, val) => acc + val, 0);
+  assert.equal(
+    sumCounts,
+    195,
+    "4 dil bilimsel alanın kart sayıları toplamı eksiksiz 195 olmalıdır"
+  );
+
+  // Pedagojik sıralama kontrolü (A1 -> A2 -> B1 -> B2)
+  const levelRank = { A1: 0, A2: 1, B1: 2, B2: 3 };
+  for (let i = 1; i < catalog.length; i++) {
+    assert.ok(
+      levelRank[catalog[i].level] >= levelRank[catalog[i - 1].level],
+      "Gramer Atlası kartları pedagojik kur sırasına (A1 -> A2 -> B1 -> B2) göre dizilmelidir"
+    );
+  }
+
+  // WhatsApp paylaşım formatı ve doğrudan kart linki kontrolü
+  const sampleCard = ekGramerNotlari[0];
+  const waText = taxonomyMod.buildGrammarWhatsAppText(sampleCard);
+  assert.ok(waText.includes("📌 *Muallimun Arapça Gramer Atlası*"));
+  assert.ok(waText.includes(`*📚 Konu:* ${sampleCard.konu_basligi}`));
+  assert.ok(waText.includes("*💡 Hap Kural:*"));
+  assert.ok(waText.includes("*📐 Formül:*"));
+  assert.ok(waText.includes("*🎯 Örnek:*"));
+  assert.ok(
+    waText.includes(
+      `https://arapcatellaffuzwebv2.vercel.app/kutuphane?tab=gramer&card=${sampleCard.bagli_id}`
+    )
+  );
+
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !kutuphaneCode.includes("Temel & İleri Gramer") &&
+      !kutuphaneCode.includes("Diyalog Grameri (") &&
+      !kutuphaneCode.includes("Metin Grameri (") &&
+      !kutuphaneCode.includes("Müstakil Gramer"),
+    true,
+    "Yapay kaynak sekmeleri ve teknik kaynak rozetleri kaldırılmış olmalıdır"
+  );
+  assert.equal(
+    kutuphaneCode.includes("GRAMMAR_DOMAIN_ORDER") &&
+      kutuphaneCode.includes("🖨️ A4 Ders Föyü (PDF)") &&
+      kutuphaneCode.includes("📑 Kur Kitapçığı İndir (PDF)") &&
+      kutuphaneCode.includes("📲 WhatsApp") &&
+      kutuphaneCode.includes('params.get("card")'),
+    true,
+    "Kütüphane sayfası 4 dil bilimsel alan sekmesi, A4 PDF, Toplu Kur Kitapçığı PDF, WhatsApp paylaşımı ve ?card= derin bağlantısını desteklemelidir"
+  );
+
+  const pdfGenCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "grammarPdfGenerator.ts"),
+    "utf8"
+  );
+  assert.equal(
+    pdfGenCode.includes("size: A4 portrait") &&
+      pdfGenCode.includes("printSingleGrammarSheetPdf") &&
+      pdfGenCode.includes("printGrammarBookletPdf") &&
+      pdfGenCode.includes("booklet-cover") &&
+      pdfGenCode.includes("toc-section") &&
+      pdfGenCode.includes("Temel Kural Özeti") &&
+      pdfGenCode.includes("Görsel Formül Şeması") &&
+      pdfGenCode.includes("Karşılaştırmalı Özet Tablo") &&
+      pdfGenCode.includes("Sık Yapılan Hatalar"),
+    true,
+    "PDF üretici modül A4 dikey düzen, kapak + içindekiler, tekli ders föyü ve 7 kutulu gramer anlatım bölümlerini içermelidir"
   );
 });
 

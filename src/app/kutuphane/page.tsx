@@ -35,6 +35,8 @@ import {
   GraduationCap,
   Columns2,
   ListChecks,
+  Printer,
+  MessageCircle,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -96,6 +98,17 @@ const ShareContentCardModal = dynamic(
 );
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
+import {
+  GRAMMAR_DOMAINS,
+  GRAMMAR_DOMAIN_ORDER,
+  buildGrammarWhatsAppShareUrl,
+  buildUnifiedGrammarAtlasCatalog,
+  type GrammarDomainFilter,
+} from "@/lib/grammarTaxonomy";
+import {
+  printGrammarBookletPdf,
+  printSingleGrammarSheetPdf,
+} from "@/lib/grammarPdfGenerator";
 
 type SavedItemFilter =
   | "all"
@@ -103,13 +116,6 @@ type SavedItemFilter =
   | "visual-words"
   | "sentences"
   | "proverbs";
-
-type GrammarAtlasSourceFilter =
-  | "all"
-  | "standalone"
-  | "dialogue"
-  | "reading"
-  | "sentence_pattern";
 
 type StatusFilter = "all" | "completed" | "ongoing" | "favorites";
 type ViewSection =
@@ -206,8 +212,11 @@ export default function LibraryPage() {
     rawNum: number;
   } | null>(null);
 
-  const [grammarSourceFilter, setGrammarSourceFilter] =
-    useState<GrammarAtlasSourceFilter>("all");
+  const [grammarDomainFilter, setGrammarDomainFilter] =
+    useState<GrammarDomainFilter>("all");
+  const [highlightedGrammarCardId, setHighlightedGrammarCardId] = useState<
+    string | null
+  >(null);
   const [activeGrammarModal, setActiveGrammarModal] = useState<{
     grammarNote?: GramerHapBilgi | null;
     dialogueId?: string;
@@ -274,14 +283,14 @@ export default function LibraryPage() {
             tab === "gramer-atlasi"
           ) {
             setActiveSection("gramer");
-            const srcParam = params.get("source");
+            const domParam = params.get("domain");
             if (
-              srcParam === "standalone" ||
-              srcParam === "dialogue" ||
-              srcParam === "reading" ||
-              srcParam === "sentence_pattern"
+              domParam === "nouns_pronouns_reading" ||
+              domParam === "phrases_sentence_nahiv" ||
+              domParam === "verbs_conjugation_sarf" ||
+              domParam === "styles_conjunctions"
             ) {
-              setGrammarSourceFilter(srcParam);
+              setGrammarDomainFilter(domParam);
             }
           } else if (
             [
@@ -293,6 +302,33 @@ export default function LibraryPage() {
             ].includes(tab)
           ) {
             setActiveSection(tab as ViewSection);
+          }
+        }
+
+        const cardParam = params.get("card")?.trim();
+        if (cardParam) {
+          setActiveSection("gramer");
+          const fullCatalog = buildUnifiedGrammarAtlasCatalog({
+            ekGramerNotlari,
+            diyalogGramerNotlari,
+            metinGramerNotlari,
+            diyaloglar,
+            metinler,
+          });
+          const matchIdx = fullCatalog.findIndex(
+            (c) => c.bagliId.toLowerCase() === cardParam.toLowerCase()
+          );
+          if (matchIdx >= 0) {
+            const matched = fullCatalog[matchIdx];
+            setVisibleCount((prev) => Math.max(prev, matchIdx + 12));
+            setHighlightedGrammarCardId(matched.bagliId);
+            setActiveGrammarModal({
+              grammarNote: matched.rawNote,
+              dialogueId: matched.dialogueId,
+              readingId: matched.readingId,
+              sourceId: matched.bagliId,
+              grammarTopic: matched.grammarQuery,
+            });
           }
         }
       }
@@ -662,153 +698,59 @@ export default function LibraryPage() {
     });
   }, [search, levelFilter, categoryFilter, visualSubSetFilter]);
 
-  // 6. GRAMER ATLASI VERİ MODELİ VE FİLTRELEME (15 Müstakil + 120 Diyalog + 60 Metin = 195 Hap Bilgi Kartı + 1111 Cümle Kalıpları)
-  const { hapBilgiAtlasItems, sentencePatternAtlasItems } = useMemo(() => {
-    type AtlasItem = {
-      id: string;
-      sourceType: "standalone" | "dialogue" | "reading" | "sentence_pattern";
-      sourceBadge: string;
-      level: Level;
-      kttUstKonu?: string;
-      title: string;
-      hapKural: string;
-      exampleAr: string;
-      exampleTr: string;
-      exampleAnalysis?: string;
-      linkedLessonUrl: string | null;
-      linkedLessonTitle: string;
-      grammarQuery: string;
-      rawNote?: GramerHapBilgi;
-      dialogueId?: string;
-      readingId?: string;
-      sourceId?: string;
+  // 6. GRAMER ATLASI VERİ MODELİ VE 4 DİL BİLİMSEL ALAN FİLTRELEMESİ (Toplam 195 Hap Bilgi Kartı)
+  const grammarAtlasCatalog = useMemo(
+    () =>
+      buildUnifiedGrammarAtlasCatalog({
+        ekGramerNotlari,
+        diyalogGramerNotlari,
+        metinGramerNotlari,
+        diyaloglar,
+        metinler,
+      }),
+    []
+  );
+
+  const grammarDomainCounts = useMemo(() => {
+    const counts = {
+      all: 0,
+      nouns_pronouns_reading: 0,
+      phrases_sentence_nahiv: 0,
+      verbs_conjugation_sarf: 0,
+      styles_conjunctions: 0,
     };
-
-    const hapItems: AtlasItem[] = [];
-
-    for (const card of ekGramerNotlari) {
-      const cardLevel: Level = card.seviye || "A1";
-      hapItems.push({
-        id: `atlas_grm_${card.bagli_id}`,
-        sourceType: "standalone",
-        sourceBadge: `Müstakil Gramer • ${cardLevel}`,
-        level: cardLevel,
-        kttUstKonu: card.ktt_ust_konu,
-        title: card.konu_basligi,
-        hapKural: card.hap_kural,
-        exampleAr: card.metinden_ornek?.arapca || "",
-        exampleTr: card.metinden_ornek?.turkce || "",
-        exampleAnalysis: card.metinden_ornek?.aciklama,
-        linkedLessonUrl: null,
-        linkedLessonTitle:
-          card.ktt_ust_konu || `Müstakil Gramer • ${cardLevel}`,
-        grammarQuery: card.konu_basligi,
-        rawNote: card,
-        sourceId: card.bagli_id,
-      });
+    for (const item of grammarAtlasCatalog) {
+      if (levelFilter !== "all" && item.level !== levelFilter) continue;
+      counts.all += 1;
+      counts[item.domainId] += 1;
     }
-
-    for (const note of diyalogGramerNotlari) {
-      const dlg = diyaloglar.find((d) => d.id === note.bagli_id);
-      const dlgNo = note.bagli_id.replace("dlg_", "");
-      hapItems.push({
-        id: `atlas_dlg_${note.bagli_id}`,
-        sourceType: "dialogue",
-        sourceBadge: `💬 Diyalog #${dlgNo}`,
-        level: dlg?.seviye || "A1",
-        title: note.konu_basligi,
-        hapKural: note.hap_kural,
-        exampleAr: note.metinden_ornek?.arapca || "",
-        exampleTr: note.metinden_ornek?.turkce || "",
-        exampleAnalysis: note.metinden_ornek?.aciklama,
-        linkedLessonUrl: `/diyalog/${note.bagli_id}`,
-        linkedLessonTitle: dlg?.baslik_tr || `Diyalog #${dlgNo}`,
-        grammarQuery: dlg?.odak_gramer || note.konu_basligi,
-        rawNote: note,
-        dialogueId: note.bagli_id,
-      });
-    }
-
-    for (const note of metinGramerNotlari) {
-      const txt = metinler.find((m) => m.id === note.bagli_id);
-      const txtNo = note.bagli_id.replace("metin_", "");
-      hapItems.push({
-        id: `atlas_txt_${note.bagli_id}`,
-        sourceType: "reading",
-        sourceBadge: `📖 Metin #${txtNo}`,
-        level: txt?.seviye || "A1",
-        title: note.konu_basligi,
-        hapKural: note.hap_kural,
-        exampleAr: note.metinden_ornek?.arapca || "",
-        exampleTr: note.metinden_ornek?.turkce || "",
-        exampleAnalysis: note.metinden_ornek?.aciklama,
-        linkedLessonUrl: `/metin/${note.bagli_id}`,
-        linkedLessonTitle: txt?.baslik_tr || `Okuma Metni #${txtNo}`,
-        grammarQuery: txt?.odak_gramer || note.konu_basligi,
-        rawNote: note,
-        readingId: note.bagli_id,
-      });
-    }
-
-    const patternGroups = new Map<string, typeof cumleler1111>();
-    for (const c of cumleler1111) {
-      const k = (c.odak_kalip || "").trim();
-      if (!k) continue;
-      const arr = patternGroups.get(k) || [];
-      arr.push(c);
-      patternGroups.set(k, arr);
-    }
-
-    const patternItems: AtlasItem[] = [];
-    let patIdx = 1;
-    for (const [kalip, list] of patternGroups.entries()) {
-      const first = list[0];
-      patternItems.push({
-        id: `atlas_pat_${patIdx++}`,
-        sourceType: "sentence_pattern",
-        sourceBadge: `🗣️ ${list.length} Cümle`,
-        level: (first.seviye || first.cefr || "A1") as Level,
-        title: kalip,
-        hapKural:
-          first.not_tr ||
-          `1111 Günlük Kalıp Cümle havuzunda bu gramer kalıbıyla (${kalip}) kurulmuş ${list.length} adet sesli örnek cümle bulunmaktadır.`,
-        exampleAr: first.arapca,
-        exampleTr: first.turkce,
-        exampleAnalysis: first.baglam ? `Bağlam: ${first.baglam}` : undefined,
-        linkedLessonUrl: null,
-        linkedLessonTitle: `1111 Cümle Havuzu (${list.length} Örnek)`,
-        grammarQuery: kalip,
-      });
-    }
-
-    return {
-      hapBilgiAtlasItems: hapItems,
-      sentencePatternAtlasItems: patternItems,
-    };
-  }, []);
+    return counts;
+  }, [grammarAtlasCatalog, levelFilter]);
 
   const filteredGrammarAtlasItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     const cleanQ = cleanArabicText(search.trim());
     const normQ = normalizeArabicText(search.trim());
 
-    const sourceList =
-      grammarSourceFilter === "sentence_pattern"
-        ? sentencePatternAtlasItems
-        : grammarSourceFilter === "all"
-        ? hapBilgiAtlasItems
-        : hapBilgiAtlasItems.filter(
-            (item) => item.sourceType === grammarSourceFilter
-          );
-
-    return sourceList.filter((item) => {
+    return grammarAtlasCatalog.filter((item) => {
+      if (
+        grammarDomainFilter !== "all" &&
+        item.domainId !== grammarDomainFilter
+      ) {
+        return false;
+      }
       if (levelFilter !== "all" && item.level !== levelFilter) {
         return false;
       }
       if (q) {
         const matchTitle = item.title.toLowerCase().includes(q);
         const matchRule = item.hapKural.toLowerCase().includes(q);
-        const matchLesson = item.linkedLessonTitle.toLowerCase().includes(q);
+        const matchDomain = item.domainMeta.shortTitle
+          .toLowerCase()
+          .includes(q);
+        const matchLesson = item.linkedLessonFullTitle
+          ? item.linkedLessonFullTitle.toLowerCase().includes(q)
+          : false;
         const matchKtt = item.kttUstKonu
           ? item.kttUstKonu.toLowerCase().includes(q)
           : false;
@@ -825,6 +767,7 @@ export default function LibraryPage() {
         if (
           !matchTitle &&
           !matchRule &&
+          !matchDomain &&
           !matchLesson &&
           !matchKtt &&
           !matchTrEx &&
@@ -835,13 +778,7 @@ export default function LibraryPage() {
       }
       return true;
     });
-  }, [
-    hapBilgiAtlasItems,
-    sentencePatternAtlasItems,
-    grammarSourceFilter,
-    levelFilter,
-    search,
-  ]);
+  }, [grammarAtlasCatalog, grammarDomainFilter, levelFilter, search]);
 
   const activeModalListLength =
     activeSection === "cumleler"
@@ -3195,18 +3132,16 @@ export default function LibraryPage() {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
-                  15 Müstakil Temel &amp; İleri Gramer, 120 Diyalog ve 60 Okuma Metnine ait toplam{" "}
-                  <strong>{contentStats.grammarNoteCount} odak gramer notu</strong>{" "}
-                  ile{" "}
-                  <strong>{contentStats.sentenceCount} günlük kalıp cümleyi</strong>{" "}
-                  görsel formül şemaları, karşılaştırmalı tabloları, kelime kelime i&apos;rab analizleri ve sık yapılan hatalarla tek ekranda keşfedin.
+                  A1–B2 kurlarındaki toplam{" "}
+                  <strong>{contentStats.grammarNoteCount} odak gramer kartını</strong>{" "}
+                  4 dil bilimsel alanda (İsimler &amp; Zamirler, Nahiv, Sarf, Üslûplar) görsel formül şemaları, özet tablolar, kelime kelime i&apos;rab analizleri ve A4 PDF ders föyleriyle keşfedin.
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] font-extrabold">
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-amber-300 text-amber-900 dark:text-amber-200">
-                    {contentStats.grammarNoteCount} Odak Gramer Notu
+                    {contentStats.grammarNoteCount} Odak Gramer Kartı
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-amber-300 text-amber-900 dark:text-amber-200">
-                    15 Müstakil • 120 Diyalog • 60 Metin Grameri
+                    4 Dil Bilimsel Alan • A4 PDF Föy &amp; Kitapçık
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
                     {contentStats.sentenceCount} Kalıp Cümle Eşleşmesi
@@ -3406,53 +3341,66 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* Gramer Atlası Kaynak Filtresi (Tümü (195), Temel & İleri Gramer (15), Diyalog Grameri (120), Metin Grameri (60), Cümle Kalıpları) */}
+          {/* Gramer Atlası Dil Bilimsel Alan Sekmeleri (Seçenek A: 4 Temel Alan) + Toplu PDF Kitapçık Butonu */}
           {activeSection === "gramer" && (
-            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
-              {(
-                [
-                  {
-                    id: "all",
-                    label: `Tümü (${hapBilgiAtlasItems.length})`,
-                  },
-                  {
-                    id: "standalone",
-                    label: `Temel & İleri Gramer (${ekGramerNotlari.length})`,
-                  },
-                  {
-                    id: "dialogue",
-                    label: `Diyalog Grameri (${diyalogGramerNotlari.length})`,
-                  },
-                  {
-                    id: "reading",
-                    label: `Metin Grameri (${metinGramerNotlari.length})`,
-                  },
-                  {
-                    id: "sentence_pattern",
-                    label: `Cümle Kalıpları (${contentStats.sentenceGrammarCount})`,
-                  },
-                ] as { id: GrammarAtlasSourceFilter; label: string }[]
-              ).map((tab) => {
-                const active = grammarSourceFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setGrammarSourceFilter(tab.id);
-                      setVisibleCount(36);
-                    }}
-                    className={`px-3 py-1.5 text-xs rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                      active
-                        ? "bg-[#087F5B] border-[#065F46] text-white font-extrabold shadow-2xs"
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-0.5">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+                {(
+                  [
+                    {
+                      id: "all" as GrammarDomainFilter,
+                      label: `Tümü (${grammarDomainCounts.all})`,
+                    },
+                    ...GRAMMAR_DOMAIN_ORDER.map((domId) => ({
+                      id: domId as GrammarDomainFilter,
+                      label: `${GRAMMAR_DOMAINS[domId].tabLabel} (${grammarDomainCounts[domId]})`,
+                    })),
+                  ]
+                ).map((tab) => {
+                  const active = grammarDomainFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setGrammarDomainFilter(tab.id);
+                        setVisibleCount(36);
+                      }}
+                      className={`px-3 py-1.5 text-xs rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                        active
+                          ? "bg-[#087F5B] border-[#065F46] text-white font-extrabold shadow-2xs"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                disabled={filteredGrammarAtlasItems.length === 0}
+                onClick={() => {
+                  playClick();
+                  printGrammarBookletPdf(
+                    filteredGrammarAtlasItems.map((i) => i.rawNote),
+                    {
+                      levelFilter,
+                      domainFilter: grammarDomainFilter,
+                      searchQuery: search,
+                    }
+                  );
+                }}
+                className="min-h-[38px] w-full lg:w-auto px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] disabled:opacity-50 text-white border-b-3 border-[#4C28B5] text-xs font-black inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-all shadow-xs"
+              >
+                <FileText size={14} className="shrink-0" />
+                <span>
+                  📑 Kur Kitapçığı İndir (PDF) •{" "}
+                  {filteredGrammarAtlasItems.length} Konu
+                </span>
+              </button>
             </div>
           )}
 
@@ -5787,20 +5735,23 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {/* 6. SEKME: 📌 GRAMER ATLASI (180 DERS GRAMER NOTU + CÜMLE KALIPLARI) */}
+      {/* 6. SEKME: 📌 GRAMER ATLASI (195 GRAMER HAP BİLGİ KARTI — 4 DİL BİLİMSEL ALAN) */}
       {activeSection === "gramer" && (
         <section aria-label="Arapça Gramer Atlası" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] px-1">
             <span>
-              Toplam <strong>{filteredGrammarAtlasItems.length}</strong> gramer kuralı ve kalıp listeleniyor
+              Toplam <strong>{filteredGrammarAtlasItems.length}</strong> gramer konusu listeleniyor
+              {levelFilter !== "all" ? ` (${levelFilter} Kuru)` : ""}
             </span>
             <span className="hidden lg:inline-flex text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400 items-center gap-1 flex-wrap">
               <span>💡 Kartlardaki</span>
               <Columns2 size={13} className="inline shrink-0" />
-              <span>&ldquo;Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı yan panelde veya akıllı tahta modunda inceleyebilirsiniz.</span>
+              <span>
+                &ldquo;Notu &amp; Tabloyu Aç&rdquo; ile yan panelde inceleyebilir, &ldquo;🖨️ A4 Ders Föyü (PDF)&rdquo; ile yazdırabilirsiniz.
+              </span>
             </span>
             <span className="lg:hidden text-[11px] font-extrabold text-[#087F5B] dark:text-emerald-400">
-              💡 &ldquo;Notu &amp; Tabloyu Aç&rdquo; butonuyla kuralı tam ekran inceleyebilirsiniz.
+              💡 Kartları tam ekran inceleyebilir, A4 PDF indirebilir veya WhatsApp&apos;ta paylaşabilirsiniz.
             </span>
           </div>
 
@@ -5814,7 +5765,7 @@ export default function LibraryPage() {
                 onClick={() => {
                   setSearch("");
                   setLevelFilter("all");
-                  setGrammarSourceFilter("all");
+                  setGrammarDomainFilter("all");
                 }}
                 className="px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
               >
@@ -5824,170 +5775,197 @@ export default function LibraryPage() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredGrammarAtlasItems.slice(0, visibleCount).map((gItem) => (
-                  <div
-                    key={gItem.id}
-                    className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all shadow-xs"
-                  >
-                    <div className="space-y-3">
-                      {/* Üst Rozet Satırı: Seviye + Kaynak + KTT Üst Konu / Bağlı Ders */}
-                      <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {gItem.sourceType === "standalone" ? (
-                            <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-black">
-                              {gItem.sourceBadge}
+                {filteredGrammarAtlasItems.slice(0, visibleCount).map((gItem) => {
+                  const isHighlighted =
+                    highlightedGrammarCardId === gItem.bagliId;
+                  return (
+                    <div
+                      key={gItem.id}
+                      id={`grammar-card-${gItem.bagliId}`}
+                      className={`rounded-2xl border-2 ${
+                        isHighlighted
+                          ? "border-[#087F5B] ring-2 ring-[#087F5B]/40"
+                          : "border-[#E6D7BE] dark:border-[var(--border)]"
+                      } border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all shadow-xs`}
+                    >
+                      <div className="space-y-3">
+                        {/* Üst Rozet Satırı: Yalnızca Seviye + Dil Bilimsel Alan */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black">
+                              {gItem.level}
                             </span>
-                          ) : (
-                            <>
-                              <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-black">
-                                {gItem.level}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-[10px] font-black">
-                                {gItem.sourceBadge}
-                              </span>
-                            </>
-                          )}
-                          {gItem.kttUstKonu && (
-                            <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300">
-                              • {gItem.kttUstKonu}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[11px] font-extrabold ${gItem.domainMeta.badgeClass}`}
+                            >
+                              <span>{gItem.domainMeta.emoji}</span>
+                              <span>{gItem.domainMeta.shortTitle}</span>
                             </span>
+                          </div>
+                        </div>
+
+                        {/* Türkçe & Arapça Gramer Konu Başlığı */}
+                        <div className="space-y-1">
+                          <h3
+                            dir="ltr"
+                            lang="tr"
+                            className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug text-left"
+                          >
+                            <MixedText text={gItem.title} />
+                          </h3>
+
+                          {/* Kart İçinde Küçük Şık Diyalog / Metin Bağlantısı veya KTT Konusu */}
+                          {(gItem.linkedLessonUrl || gItem.kttUstKonu) && (
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-0.5 text-[11px]">
+                              {gItem.linkedLessonUrl &&
+                                gItem.linkedLessonFullTitle && (
+                                  <Link
+                                    href={gItem.linkedLessonUrl}
+                                    onClick={() => playClick()}
+                                    className="inline-flex items-center gap-1 font-bold text-[#087F5B] dark:text-emerald-400 hover:underline max-w-full"
+                                  >
+                                    <BookOpen size={12} className="shrink-0" />
+                                    <span className="truncate">
+                                      {gItem.linkedLessonFullTitle}
+                                    </span>
+                                  </Link>
+                                )}
+                              {gItem.kttUstKonu && (
+                                <span className="font-bold text-[var(--muted)]">
+                                  Konu: {gItem.kttUstKonu}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
-                        {!gItem.kttUstKonu && (
-                          <span className="text-[11px] font-bold text-[var(--muted)] truncate max-w-[200px]">
-                            {gItem.linkedLessonTitle}
+
+                        {/* Kısa Kural Özeti (hap_kural) */}
+                        <div className="bg-white/95 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE] dark:border-[var(--border)]">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-[#087F5B] dark:text-emerald-400 block mb-0.5">
+                            Temel Kural Özeti:
                           </span>
+                          <p
+                            dir="ltr"
+                            lang="tr"
+                            className="text-xs sm:text-sm font-semibold text-[var(--foreground)] leading-relaxed line-clamp-3 text-left"
+                          >
+                            <MixedText text={gItem.hapKural} />
+                          </p>
+                        </div>
+
+                        {/* Formül & Örnek Cümle Önizlemesi */}
+                        {gItem.exampleAr && (
+                          <div className="bg-[#FDFBF7] dark:bg-[var(--background)] rounded-xl p-3 border border-dashed border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[#6741D9] dark:text-indigo-300">
+                                🎯 Örnek Cümle
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  void speakHybrid({
+                                    text: gItem.exampleAr,
+                                    rate: speechRate,
+                                  });
+                                }}
+                                className="px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] hover:border-[#087F5B] text-[10px] font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <Volume2 size={11} className="text-[#087F5B]" />
+                                <span>Dinle</span>
+                              </button>
+                            </div>
+                            <div
+                              dir="rtl"
+                              className="arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
+                            >
+                              {getDisplayArabic(gItem.exampleAr)}
+                            </div>
+                            <p className="text-xs font-bold text-[var(--foreground)] border-l-3 border-[#087F5B] pl-2">
+                              “{gItem.exampleTr}”
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      {/* Türkçe & Arapça Gramer Konu Başlığı */}
-                      <h3
-                        dir="ltr"
-                        lang="tr"
-                        className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug text-left"
-                      >
-                        <span className="mr-1">📌</span>
-                        <MixedText text={gItem.title} />
-                      </h3>
-
-                      {/* Kısa Kural Özeti (hap_kural) */}
-                      <div className="bg-white/95 dark:bg-[var(--background)] rounded-xl p-3 border border-[#E6D7BE] dark:border-[var(--border)]">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[#087F5B] dark:text-emerald-400 block mb-0.5">
-                          Temel Kural Özeti:
-                        </span>
-                        <p
-                          dir="ltr"
-                          lang="tr"
-                          className="text-xs sm:text-sm font-semibold text-[var(--foreground)] leading-relaxed line-clamp-3 text-left"
-                        >
-                          <MixedText text={gItem.hapKural} />
-                        </p>
-                      </div>
-
-                      {/* Formül & Örnek Cümle Önizlemesi */}
-                      {gItem.exampleAr && (
-                        <div className="bg-[#FDFBF7] dark:bg-[var(--background)] rounded-xl p-3 border border-dashed border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-[#6741D9] dark:text-indigo-300">
-                              🎯 Örnek Cümle
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                void speakHybrid({
-                                  text: gItem.exampleAr,
-                                  rate: speechRate,
-                                });
-                              }}
-                              className="px-2 py-0.5 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] hover:border-[#087F5B] text-[10px] font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <Volume2 size={11} className="text-[#087F5B]" />
-                              <span>Dinle</span>
-                            </button>
-                          </div>
-                          <div
-                            dir="rtl"
-                            className="arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85]"
+                      {/* Mobil Uyumlu Esnek Aksiyon Alanı: İnceleme/Test + A4 PDF & WhatsApp Paylaşım */}
+                      <div className="pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setActiveGrammarModal({
+                                grammarNote: gItem.rawNote,
+                                dialogueId: gItem.dialogueId,
+                                readingId: gItem.readingId,
+                                sourceId: gItem.bagliId,
+                                grammarTopic: gItem.grammarQuery,
+                              });
+                            }}
+                            className="flex-1 min-w-[140px] min-h-[40px] py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                           >
-                            {getDisplayArabic(gItem.exampleAr)}
-                          </div>
-                          <p className="text-xs font-bold text-[var(--foreground)] border-l-3 border-[#087F5B] pl-2">
-                            “{gItem.exampleTr}”
-                          </p>
+                            <BookOpen size={14} className="lg:hidden shrink-0" />
+                            <Columns2 size={14} className="hidden lg:inline shrink-0" />
+                            <span>Notu &amp; Tabloyu Aç</span>
+                          </button>
+
+                          {gItem.kttUstKonu && (
+                            <Link
+                              href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                                gItem.kttUstKonu
+                              )}`}
+                              onClick={() => playClick()}
+                              className="flex-1 min-w-[190px] min-h-[40px] py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs border-b-3 border-amber-700 flex items-center justify-center gap-1.5 transition-all"
+                            >
+                              <ListChecks size={14} className="shrink-0" />
+                              <span>Bu Konunun Tarama Testini Çöz</span>
+                            </Link>
+                          )}
+
+                          <Link
+                            href={`/alistirmalar?pool=sentences_1111&grammar=${encodeURIComponent(
+                              gItem.grammarQuery
+                            )}`}
+                            onClick={() => playClick()}
+                            className="min-h-[40px] py-2 px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-indigo-200 font-extrabold text-xs flex items-center justify-center gap-1 transition-all"
+                          >
+                            <Gamepad2 size={13} />
+                            <span>Alıştırma Yap</span>
+                          </Link>
                         </div>
-                      )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              printSingleGrammarSheetPdf(gItem.rawNote);
+                            }}
+                            className="min-h-[40px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B]/65 hover:border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#065F46] dark:text-emerald-300 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                          >
+                            <Printer size={14} className="shrink-0" />
+                            <span>🖨️ A4 Ders Föyü (PDF)</span>
+                          </button>
+
+                          <a
+                            href={buildGrammarWhatsAppShareUrl(gItem.rawNote)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => playClick()}
+                            className="min-h-[40px] py-2 px-3 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/55 text-emerald-950 dark:text-emerald-200 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <MessageCircle
+                              size={14}
+                              className="text-[#1da851] shrink-0"
+                            />
+                            <span>📲 WhatsApp&apos;ta Paylaş</span>
+                          </a>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Alt Hızlı Aksiyon Butonları */}
-                    <div className="pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setActiveGrammarModal({
-                            grammarNote: gItem.rawNote,
-                            dialogueId: gItem.dialogueId,
-                            readingId: gItem.readingId,
-                            sourceId: gItem.sourceId,
-                            grammarTopic: gItem.grammarQuery,
-                          });
-                        }}
-                        className="flex-1 min-w-[140px] py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                      >
-                        <BookOpen size={14} className="lg:hidden shrink-0" />
-                        <Columns2 size={14} className="hidden lg:inline shrink-0" />
-                        <span>Notu &amp; Tabloyu Aç</span>
-                      </button>
-
-                      {gItem.kttUstKonu && (
-                        <Link
-                          href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
-                            gItem.kttUstKonu
-                          )}`}
-                          onClick={() => playClick()}
-                          className="flex-1 min-w-[195px] py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs border-b-3 border-amber-700 flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <ListChecks size={14} className="shrink-0" />
-                          <span>Bu Konunun Tarama Testini Çöz</span>
-                        </Link>
-                      )}
-
-                      {gItem.linkedLessonUrl ? (
-                        <Link
-                          href={gItem.linkedLessonUrl}
-                          onClick={() => playClick()}
-                          className="py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs flex items-center justify-center gap-1 transition-all"
-                        >
-                          <span>📖 İlgili Derse Git</span>
-                        </Link>
-                      ) : !gItem.kttUstKonu ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setSearch(gItem.grammarQuery);
-                            handleSwitchSection("cumleler");
-                          }}
-                          className="py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[var(--foreground)] font-extrabold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all"
-                        >
-                          <span>📖 Cümleleri Gör</span>
-                        </button>
-                      ) : null}
-
-                      <Link
-                        href={`/alistirmalar?pool=sentences_1111&grammar=${encodeURIComponent(
-                          gItem.grammarQuery
-                        )}`}
-                        onClick={() => playClick()}
-                        className="py-2 px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-indigo-200 font-extrabold text-xs flex items-center justify-center gap-1 transition-all"
-                      >
-                        <Gamepad2 size={13} />
-                        <span>Alıştırma Yap</span>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {visibleCount < filteredGrammarAtlasItems.length && (

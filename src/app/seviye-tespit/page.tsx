@@ -2009,8 +2009,22 @@ function SeviyeTespitContent() {
     const timer = window.setTimeout(() => {
       if (modeParam === "topic") {
         setActiveTab("topic");
-        if (topicParam && bank.some((q) => q.ust_konu === topicParam)) {
-          startTopicSession(topicParam, "10", bank);
+        if (topicParam) {
+          const normParam = topicParam
+            .replace(/[’‘]/g, "'")
+            .trim()
+            .toLocaleLowerCase("tr-TR");
+          const matchedQ = bank.find(
+            (q) =>
+              q.ust_konu === topicParam ||
+              q.ust_konu
+                .replace(/[’‘]/g, "'")
+                .trim()
+                .toLocaleLowerCase("tr-TR") === normParam
+          );
+          if (matchedQ) {
+            startTopicSession(matchedQ.ust_konu, "10", bank);
+          }
         }
       } else if (modeParam === "exam") {
         setActiveTab("exam");

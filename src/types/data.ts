@@ -68,6 +68,8 @@ export interface GrammarDetailLayer {
 
 export interface GramerHapBilgi {
   bagli_id: string;
+  seviye?: Level;
+  ktt_ust_konu?: string;
   konu_basligi: string;
   hap_kural: string;
   metinden_ornek: {

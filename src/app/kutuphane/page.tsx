@@ -34,12 +34,14 @@ import {
   Gamepad2,
   GraduationCap,
   Columns2,
+  ListChecks,
 } from "lucide-react";
 import {
   diyaloglar,
   metinler,
   diyalogGramerNotlari,
   metinGramerNotlari,
+  ekGramerNotlari,
   cumleler1111,
   atasozleri,
   gorselKelimeler,
@@ -102,7 +104,12 @@ type SavedItemFilter =
   | "sentences"
   | "proverbs";
 
-type GrammarAtlasSourceFilter = "all" | "dialogue" | "reading" | "sentence_pattern";
+type GrammarAtlasSourceFilter =
+  | "all"
+  | "standalone"
+  | "dialogue"
+  | "reading"
+  | "sentence_pattern";
 
 type StatusFilter = "all" | "completed" | "ongoing" | "favorites";
 type ViewSection =
@@ -205,6 +212,7 @@ export default function LibraryPage() {
     grammarNote?: GramerHapBilgi | null;
     dialogueId?: string;
     readingId?: string;
+    sourceId?: string;
     grammarTopic?: string;
   } | null>(null);
 
@@ -266,6 +274,15 @@ export default function LibraryPage() {
             tab === "gramer-atlasi"
           ) {
             setActiveSection("gramer");
+            const srcParam = params.get("source");
+            if (
+              srcParam === "standalone" ||
+              srcParam === "dialogue" ||
+              srcParam === "reading" ||
+              srcParam === "sentence_pattern"
+            ) {
+              setGrammarSourceFilter(srcParam);
+            }
           } else if (
             [
               "metinler",
@@ -645,13 +662,14 @@ export default function LibraryPage() {
     });
   }, [search, levelFilter, categoryFilter, visualSubSetFilter]);
 
-  // 6. GRAMER ATLASI VERİ MODELİ VE FİLTRELEME (120 Diyalog Grameri + 60 Metin Grameri + 1111 Cümle Kalıpları)
-  const allGrammarAtlasItems = useMemo(() => {
-    const items: {
+  // 6. GRAMER ATLASI VERİ MODELİ VE FİLTRELEME (15 Müstakil + 120 Diyalog + 60 Metin = 195 Hap Bilgi Kartı + 1111 Cümle Kalıpları)
+  const { hapBilgiAtlasItems, sentencePatternAtlasItems } = useMemo(() => {
+    type AtlasItem = {
       id: string;
-      sourceType: "dialogue" | "reading" | "sentence_pattern";
+      sourceType: "standalone" | "dialogue" | "reading" | "sentence_pattern";
       sourceBadge: string;
       level: Level;
+      kttUstKonu?: string;
       title: string;
       hapKural: string;
       exampleAr: string;
@@ -663,12 +681,37 @@ export default function LibraryPage() {
       rawNote?: GramerHapBilgi;
       dialogueId?: string;
       readingId?: string;
-    }[] = [];
+      sourceId?: string;
+    };
+
+    const hapItems: AtlasItem[] = [];
+
+    for (const card of ekGramerNotlari) {
+      const cardLevel: Level = card.seviye || "A1";
+      hapItems.push({
+        id: `atlas_grm_${card.bagli_id}`,
+        sourceType: "standalone",
+        sourceBadge: `Müstakil Gramer • ${cardLevel}`,
+        level: cardLevel,
+        kttUstKonu: card.ktt_ust_konu,
+        title: card.konu_basligi,
+        hapKural: card.hap_kural,
+        exampleAr: card.metinden_ornek?.arapca || "",
+        exampleTr: card.metinden_ornek?.turkce || "",
+        exampleAnalysis: card.metinden_ornek?.aciklama,
+        linkedLessonUrl: null,
+        linkedLessonTitle:
+          card.ktt_ust_konu || `Müstakil Gramer • ${cardLevel}`,
+        grammarQuery: card.konu_basligi,
+        rawNote: card,
+        sourceId: card.bagli_id,
+      });
+    }
 
     for (const note of diyalogGramerNotlari) {
       const dlg = diyaloglar.find((d) => d.id === note.bagli_id);
       const dlgNo = note.bagli_id.replace("dlg_", "");
-      items.push({
+      hapItems.push({
         id: `atlas_dlg_${note.bagli_id}`,
         sourceType: "dialogue",
         sourceBadge: `💬 Diyalog #${dlgNo}`,
@@ -689,7 +732,7 @@ export default function LibraryPage() {
     for (const note of metinGramerNotlari) {
       const txt = metinler.find((m) => m.id === note.bagli_id);
       const txtNo = note.bagli_id.replace("metin_", "");
-      items.push({
+      hapItems.push({
         id: `atlas_txt_${note.bagli_id}`,
         sourceType: "reading",
         sourceBadge: `📖 Metin #${txtNo}`,
@@ -716,10 +759,11 @@ export default function LibraryPage() {
       patternGroups.set(k, arr);
     }
 
+    const patternItems: AtlasItem[] = [];
     let patIdx = 1;
     for (const [kalip, list] of patternGroups.entries()) {
       const first = list[0];
-      items.push({
+      patternItems.push({
         id: `atlas_pat_${patIdx++}`,
         sourceType: "sentence_pattern",
         sourceBadge: `🗣️ ${list.length} Cümle`,
@@ -737,7 +781,10 @@ export default function LibraryPage() {
       });
     }
 
-    return items;
+    return {
+      hapBilgiAtlasItems: hapItems,
+      sentencePatternAtlasItems: patternItems,
+    };
   }, []);
 
   const filteredGrammarAtlasItems = useMemo(() => {
@@ -745,13 +792,16 @@ export default function LibraryPage() {
     const cleanQ = cleanArabicText(search.trim());
     const normQ = normalizeArabicText(search.trim());
 
-    return allGrammarAtlasItems.filter((item) => {
-      if (
-        grammarSourceFilter !== "all" &&
-        item.sourceType !== grammarSourceFilter
-      ) {
-        return false;
-      }
+    const sourceList =
+      grammarSourceFilter === "sentence_pattern"
+        ? sentencePatternAtlasItems
+        : grammarSourceFilter === "all"
+        ? hapBilgiAtlasItems
+        : hapBilgiAtlasItems.filter(
+            (item) => item.sourceType === grammarSourceFilter
+          );
+
+    return sourceList.filter((item) => {
       if (levelFilter !== "all" && item.level !== levelFilter) {
         return false;
       }
@@ -759,6 +809,9 @@ export default function LibraryPage() {
         const matchTitle = item.title.toLowerCase().includes(q);
         const matchRule = item.hapKural.toLowerCase().includes(q);
         const matchLesson = item.linkedLessonTitle.toLowerCase().includes(q);
+        const matchKtt = item.kttUstKonu
+          ? item.kttUstKonu.toLowerCase().includes(q)
+          : false;
         const matchTrEx = item.exampleTr.toLowerCase().includes(q);
         const matchAr =
           item.title.includes(search.trim()) ||
@@ -773,6 +826,7 @@ export default function LibraryPage() {
           !matchTitle &&
           !matchRule &&
           !matchLesson &&
+          !matchKtt &&
           !matchTrEx &&
           !matchAr
         ) {
@@ -781,7 +835,13 @@ export default function LibraryPage() {
       }
       return true;
     });
-  }, [allGrammarAtlasItems, grammarSourceFilter, levelFilter, search]);
+  }, [
+    hapBilgiAtlasItems,
+    sentencePatternAtlasItems,
+    grammarSourceFilter,
+    levelFilter,
+    search,
+  ]);
 
   const activeModalListLength =
     activeSection === "cumleler"
@@ -3135,7 +3195,7 @@ export default function LibraryPage() {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
-                  120 Diyalog ve 60 Okuma Metnine ait toplam{" "}
+                  15 Müstakil Temel &amp; İleri Gramer, 120 Diyalog ve 60 Okuma Metnine ait toplam{" "}
                   <strong>{contentStats.grammarNoteCount} odak gramer notu</strong>{" "}
                   ile{" "}
                   <strong>{contentStats.sentenceCount} günlük kalıp cümleyi</strong>{" "}
@@ -3146,7 +3206,7 @@ export default function LibraryPage() {
                     {contentStats.grammarNoteCount} Odak Gramer Notu
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-amber-300 text-amber-900 dark:text-amber-200">
-                    120 Diyalog • 60 Metin Grameri
+                    15 Müstakil • 120 Diyalog • 60 Metin Grameri
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
                     {contentStats.sentenceCount} Kalıp Cümle Eşleşmesi
@@ -3346,26 +3406,30 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* Gramer Atlası Kaynak Filtresi (Tümü, Diyalog Grameri, Metin Grameri, Cümle Kalıpları) */}
+          {/* Gramer Atlası Kaynak Filtresi (Tümü (195), Temel & İleri Gramer (15), Diyalog Grameri (120), Metin Grameri (60), Cümle Kalıpları) */}
           {activeSection === "gramer" && (
             <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
               {(
                 [
                   {
                     id: "all",
-                    label: `Tümü (${allGrammarAtlasItems.length})`,
+                    label: `Tümü (${hapBilgiAtlasItems.length})`,
+                  },
+                  {
+                    id: "standalone",
+                    label: `Temel & İleri Gramer (${ekGramerNotlari.length})`,
                   },
                   {
                     id: "dialogue",
-                    label: `💬 Diyalog Grameri (${diyalogGramerNotlari.length})`,
+                    label: `Diyalog Grameri (${diyalogGramerNotlari.length})`,
                   },
                   {
                     id: "reading",
-                    label: `📖 Metin Grameri (${metinGramerNotlari.length})`,
+                    label: `Metin Grameri (${metinGramerNotlari.length})`,
                   },
                   {
                     id: "sentence_pattern",
-                    label: `🗣️ Cümle Kalıpları (${contentStats.sentenceGrammarCount})`,
+                    label: `Cümle Kalıpları (${contentStats.sentenceGrammarCount})`,
                   },
                 ] as { id: GrammarAtlasSourceFilter; label: string }[]
               ).map((tab) => {
@@ -5766,19 +5830,34 @@ export default function LibraryPage() {
                     className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all shadow-xs"
                   >
                     <div className="space-y-3">
-                      {/* Üst Rozet Satırı: Seviye + Kaynak + Bağlı Ders */}
+                      {/* Üst Rozet Satırı: Seviye + Kaynak + KTT Üst Konu / Bağlı Ders */}
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-black">
-                            {gItem.level}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-[10px] font-black">
-                            {gItem.sourceBadge}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {gItem.sourceType === "standalone" ? (
+                            <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-black">
+                              {gItem.sourceBadge}
+                            </span>
+                          ) : (
+                            <>
+                              <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[10px] font-black">
+                                {gItem.level}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-[10px] font-black">
+                                {gItem.sourceBadge}
+                              </span>
+                            </>
+                          )}
+                          {gItem.kttUstKonu && (
+                            <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300">
+                              • {gItem.kttUstKonu}
+                            </span>
+                          )}
                         </div>
-                        <span className="text-[11px] font-bold text-[var(--muted)] truncate max-w-[200px]">
-                          {gItem.linkedLessonTitle}
-                        </span>
+                        {!gItem.kttUstKonu && (
+                          <span className="text-[11px] font-bold text-[var(--muted)] truncate max-w-[200px]">
+                            {gItem.linkedLessonTitle}
+                          </span>
+                        )}
                       </div>
 
                       {/* Türkçe & Arapça Gramer Konu Başlığı */}
@@ -5840,7 +5919,7 @@ export default function LibraryPage() {
                       )}
                     </div>
 
-                    {/* Alt 3 Hızlı Aksiyon Butonu */}
+                    {/* Alt Hızlı Aksiyon Butonları */}
                     <div className="pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center gap-2">
                       <button
                         type="button"
@@ -5850,6 +5929,7 @@ export default function LibraryPage() {
                             grammarNote: gItem.rawNote,
                             dialogueId: gItem.dialogueId,
                             readingId: gItem.readingId,
+                            sourceId: gItem.sourceId,
                             grammarTopic: gItem.grammarQuery,
                           });
                         }}
@@ -5860,6 +5940,19 @@ export default function LibraryPage() {
                         <span>Notu &amp; Tabloyu Aç</span>
                       </button>
 
+                      {gItem.kttUstKonu && (
+                        <Link
+                          href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                            gItem.kttUstKonu
+                          )}`}
+                          onClick={() => playClick()}
+                          className="flex-1 min-w-[195px] py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs border-b-3 border-amber-700 flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <ListChecks size={14} className="shrink-0" />
+                          <span>Bu Konunun Tarama Testini Çöz</span>
+                        </Link>
+                      )}
+
                       {gItem.linkedLessonUrl ? (
                         <Link
                           href={gItem.linkedLessonUrl}
@@ -5868,7 +5961,7 @@ export default function LibraryPage() {
                         >
                           <span>📖 İlgili Derse Git</span>
                         </Link>
-                      ) : (
+                      ) : !gItem.kttUstKonu ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -5880,7 +5973,7 @@ export default function LibraryPage() {
                         >
                           <span>📖 Cümleleri Gör</span>
                         </button>
-                      )}
+                      ) : null}
 
                       <Link
                         href={`/alistirmalar?pool=sentences_1111&grammar=${encodeURIComponent(
@@ -5924,6 +6017,7 @@ export default function LibraryPage() {
         grammarNote={activeGrammarModal?.grammarNote}
         dialogueId={activeGrammarModal?.dialogueId}
         readingId={activeGrammarModal?.readingId}
+        sourceId={activeGrammarModal?.sourceId}
         grammarTopic={activeGrammarModal?.grammarTopic}
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />

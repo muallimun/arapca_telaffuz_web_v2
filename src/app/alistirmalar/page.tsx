@@ -36,6 +36,7 @@ import {
   gorselKelimeler,
   diyalogGramerNotlari,
   metinGramerNotlari,
+  ekGramerNotlari,
   getDynamicContentStats,
   getMainVisualCategory,
 } from "@/lib/data";
@@ -1407,8 +1408,11 @@ function ExercisesPageContent() {
       category: "grammar_irab",
       title: "Hata Avcısı (Cümle Onarımı)",
       arabicBadge: "صَيْدُ الْأَخْطَاء",
-      subtitle:
-        "180 gramer notundan iki aşamalı hatalı kelimeyi bulma ve doğru hareke/formla onarma",
+      subtitle: `${
+        ekGramerNotlari.length +
+        diyalogGramerNotlari.length +
+        metinGramerNotlari.length
+      } gramer notundan iki aşamalı hatalı kelimeyi bulma ve doğru hareke/formla onarma`,
       icon: ShieldAlert,
     },
     {
@@ -1763,7 +1767,10 @@ function ExercisesPageContent() {
   // Seçili havuz, kategori, seviye ve alıştırma moduna göre gerçek zamanlı öğe sayısı
   const { activeItemCount, activePoolCountLabel } = useMemo(() => {
     if (selectedType === "error-hunter") {
-      const cnt = diyalogGramerNotlari.length + metinGramerNotlari.length;
+      const cnt =
+        ekGramerNotlari.length +
+        diyalogGramerNotlari.length +
+        metinGramerNotlari.length;
       return {
         activeItemCount: cnt,
         activePoolCountLabel: `${cnt} Hata Avcısı Kalıbı`,
@@ -1771,7 +1778,10 @@ function ExercisesPageContent() {
     }
 
     if (selectedType === "irab-painter") {
-      const cnt = diyalogGramerNotlari.length + metinGramerNotlari.length;
+      const cnt =
+        ekGramerNotlari.length +
+        diyalogGramerNotlari.length +
+        metinGramerNotlari.length;
       return {
         activeItemCount: cnt,
         activePoolCountLabel: `${cnt} İ'rab Tahlili Cümlesi`,
@@ -1781,6 +1791,7 @@ function ExercisesPageContent() {
     if (selectedType === "blind-dictation") {
       const cnt =
         active1111SentencesWordItems.length +
+        ekGramerNotlari.length +
         diyalogGramerNotlari.length +
         metinGramerNotlari.length;
       return {
@@ -2818,7 +2829,11 @@ function ExercisesPageContent() {
                   Kaynak:{" "}
                   <strong className="text-[#6741D9] dark:text-indigo-300">
                     {selectedType === "error-hunter"
-                      ? `180 Gramer Notu (${activePoolCountLabel})`
+                      ? `${
+                          ekGramerNotlari.length +
+                          diyalogGramerNotlari.length +
+                          metinGramerNotlari.length
+                        } Gramer Notu (${activePoolCountLabel})`
                       : selectedType === "irab-painter"
                       ? `Gramer İ'rab Külliyatı (${activePoolCountLabel})`
                       : selectedType === "gender-sorting"

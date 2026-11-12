@@ -1,0 +1,1454 @@
+[
+  {
+    "bagli_id": "grm_001",
+    "seviye": "A1",
+    "ktt_ust_konu": "Şemsî-Kamerî Harfler ve Temel Okuma Kuralları",
+    "konu_basligi": "Şemsî ve Kamerî Harfler, Elif-Lâm (ال) Takısı, Tenvin ve Şedde Kuralları",
+    "hap_kural": "Arapçada 'الْ' belirteç takısı alan isimlerin başındaki lâm harfi, 14 kamerî harften biriyle başladığında cezimli okunur; 14 şemsî harften biriyle başladığında ise okunmayıp sonraki harf şeddelenir. Bir isim 'الْ' takısı aldığında tenvin kesinlikle düşer, çünkü tenvin ile belirlilik takısı asla bir arada bulunamaz.",
+    "metinden_ornek": {
+      "arapca": "طَلَعَتِ الشَّمْسُ الْمُشْرِقَةُ وَأَضَاءَتِ الْقَمَرَ فِي السَّمَاءِ.",
+      "turkce": "Parlak güneş doğdu ve gökyüzündeki ayı aydınlattı.",
+      "aciklama": "'الشَّمْسُ' ve 'السَّمَاءِ' kelimelerinde lâm okunmamış ve şemsî olan şîn (ش) ile sîn (س) harfleri şeddelenmiştir; 'الْمُشْرِقَةُ' ve 'الْقَمَرَ' kelimelerinde ise kamerî mîm (م) ve kaf (ق) harflerinden dolayı lâm harfi cezimle açıkça telaffuz edilmiştir. Tüm bu kelimelerde 'الْ' takısı tenvini kaldırmıştır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "قَرَأَ الطَّالِبُ الْكِتَابَ الْمُفِيدَ.",
+        "turkce": "Öğrenci faydalı kitabı okudu."
+      },
+      {
+        "arapca": "دَخَلَ الرَّجُلُ الصَّالِحُ إِلَى الْمَسْجِدِ الْكَبِيرِ.",
+        "turkce": "Salih adam büyük mescide girdi."
+      }
+    ],
+    "ipucu": "Dil ucunun dişlere ve damağa değdiği harfler (ت، ث، د، ذ، ر، ز، س، ش، ص، ض، ط، ظ، ل، ن) şemsîdir ve lâm'ı yutar (şeddeler); dudak, boğaz ve damak gerisi harfleri ise kamerîdir ve lâm'ı açıkça okutur.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[الْ] + [Şemsî Harf (ت، ث، د...)] -> [ا + Şeddeli Harf (اَلشَّ)] | [الْ] + [Kamerî Harf (ء، ب، ج...)] -> [Cezimli Lâm + Harf (اَلْقَ)] | [İsim + Tenvin] + [الْ] -> [Tek Hareke (ُ / َ / ِ)]",
+      "adim_adim_anlatim": [
+        "1. Şemsî Harfler ve İdğam Kuralı: Şemsî harfler 14 tanedir (ت، ث، د، ذ، ر، ز، س، ش، ص، ض، ط، ظ، ل، ن). Belirteç takısı 'الْ' bu harflerden biriyle başlayan bir ismin başına geldiğinde 'ل' harfi telaffuz edilmez, sonraki şemsî harfe idğam edilerek o harf şeddeli okunur ('الشَّمْسُ', 'السَّلَامُ').",
+        "2. Kamerî Harfler ve İzhâr Kuralı: Kamerî harfler 14 tanedir (ء، ب، ج، ح، خ، ع، غ، ف، ق، ك، م، و، ه، ي). Bu harflerin öncesindeki 'ل' harfi cezimli olarak açık ve net bir şekilde telaffuz edilir ('الْقَمَرُ', 'الْكِتَابُ'). Bu kurala izhâr-ı kameriyye denir.",
+        "3. Belirlilik ve Tenvin Bağdaşmazlığı: Tenvin bir ismin belirsiz (nekre) olduğunu gösterirken, 'الْ' takısı o ismi belirli (marife) yapar. Bu iki zıt özellik bir kelimede aynı anda bulunamaz. Bu sebeple 'كِتَابٌ' kelimesi 'الْ' aldığında tenvin düşer ve 'الْكِتَابُ' haline gelir."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Şemsî ve Kamerî Harflerin Karşılaştırmalı Okuma Tablosu",
+        "sutunlar": [
+          "Harf Grubu",
+          "Harf Sayısı ve Kodlama",
+          "Okunuş Kuralı",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Şemsî Harfler",
+            "14 Harf (ت ث د ذ ر ز س ش ص ض ط ظ ل ن)",
+            "Lâm okunmaz, sonraki harf şeddelenir",
+            "اَلشَّمْسُ / اَلطَّالِبُ / اَلنُّورُ"
+          ],
+          [
+            "Kamerî Harfler",
+            "14 Harf (ابغ حجك وخف عقيمه)",
+            "Lâm harfi sâkin (cezimli) açıkça okunur",
+            "اَلْقَمَرُ / اَلْبَابُ / اَلْمَسْجِدُ"
+          ],
+          [
+            "Nekre (Tenvinli)",
+            "Tüm harfler için geçerlidir",
+            "Son harf çift hareke (tenvin) alır",
+            "شَمْسٌ / قَمَرٌ / كِتَابٌ"
+          ],
+          [
+            "Marife (ال Takılı)",
+            "Tüm harfler için geçerlidir",
+            "Tenvin düşer, tek harekeye dönüşür",
+            "اَلشَّمْسُ / اَلْقَمَرُ / اَلْكِتَابُ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "الشَّمْسُ",
+          "gorevi": "Fâil (Özne)",
+          "hareke_nedeni": "Geçişli fiilin öznesi olduğu için damma ile merfûdur; 'الْ' takısı aldığından tek damma almıştır."
+        },
+        {
+          "kelime": "الْمُشْرِقَةُ",
+          "gorevi": "Sıfat",
+          "hareke_nedeni": "Merfû ve marife olan 'الشَّمْسُ' ismine uymuş, kamerî harfle başladığı için lâm'ı cezimli ve sonu damma ile merfûdur."
+        },
+        {
+          "kelime": "الْقَمَرَ",
+          "gorevi": "Mef'ûlün Bih (Nesne)",
+          "hareke_nedeni": "Eylemden etkilenen nesne olduğu için açık fetha ile mansûbdur; 'الْ' takısı sebebiyle tenvin almamıştır."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "اَلْشَّمْسُ / اَلْكِتَابٌ / اَلْسَّلَامُ عَلَيْكُمْ.",
+        "dogru": "اَلشَّمْسُ / اَلْكِتَابُ / اَلسَّلَامُ عَلَيْكُمْ.",
+        "neden": "Şemsî harflerde 'ل' cezimlenmez doğrudan sonraki harf şeddelenir; ayrıca 'الْ' takılı hiçbir kelimenin sonuna tenvin konulamaz."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_002",
+    "seviye": "A1",
+    "ktt_ust_konu": "Hemze-i Vasıl, Hemze-i Kat' ve Geçiş Harekeleri",
+    "konu_basligi": "Hemze-i Vasıl ve Hemze-i Kat' (ا / أ / إ) ile İltikâ-i Sâkineyn (Geçiş Harekeleri)",
+    "hap_kural": "Hemze-i vasıl sadece söze başlarken okunup ara geçişte düşen hemzedir; hemze-i kat' ise başta da ortada da dâima yazılıp okunan asıl hemzedir. İki sâkin harf arka arkaya geldiğinde (iltikâ-i sâkineyn) geçiş çoğunlukla kesra ile yapılırken, 'مِنْ' harf-i cerinde fetha ile, çoğul zamirlerinde ise damma ile sağlanır.",
+    "metinden_ornek": {
+      "arapca": "خَرَجَ الطَّالِبُ مِنَ الْبَيْتِ وَقَالَتِ الْأُمُّ: اِفْتَحِ الْكِتَابَ وَاكْتُبْ.",
+      "turkce": "Öğrenci evden çıktı ve anne şöyle dedi: Kitabı aç ve yaz.",
+      "aciklama": "'مِنَ الْبَيْتِ' terkibinde 'مِنْ' edatının sâkin nûnu fetha ile geçiş yapmıştır; 'قَالَتِ الْأُمُّ' ve 'اِفْتَحِ الْكِتَابَ' terkiplerinde sâkin harfler kesra ile vasledilmiştir; 'وَاكْتُبْ' lafzında ise hemze-i vasıl ara geçişte tamamen düşmüştür."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "سَمِعَ الْمُعَلِّمُونَ الْخَبَرَ وَهُمُ الْفَائِزُونَ.",
+        "turkce": "Öğretmenler haberi işitti ve kazananlar onlardır."
+      },
+      {
+        "arapca": "قَدَّمَتِ الدَّوْلَةُ مُسَاعَدَةً لِلْمَدْرَسَةِ وَلِلطَّالِبِ.",
+        "turkce": "Devlet okula ve öğrenciye yardım sundu."
+      }
+    ],
+    "ipucu": "Kelimenin başına 'وَ' veya 'فَ' koyun; hemze hâlâ okunuyorsa hemze-i kat'tır (وَأَكَلَ), kaybolup doğrudan sonraki harfe bağlanıyorsa hemze-i vasıldır (وَاسْتَمَعَ).",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Hemze-i Kat' (أَ / أُ / إِ)] -> Dâima Yazılır ve Okunur | [Hemze-i Vasıl (اِ / اُ)] + [Önceki Kelime] -> Düşer ve Bağlar | [مِنْ + ال] -> [مِنَ الْ] | [-تْ + ال] -> [-تِ الْ] | [هُمْ + ال] -> [هُمُ الْ]",
+      "adim_adim_anlatim": [
+        "1. Hemze-i Kat' ve Vasıl Ayrımı: Hemze-i kat' kök harfi veya bağlayıcı ek olup 'أَ', 'أُ', 'إِ' şeklinde elifin üstünde/altında hemze işaretiyle gösterilir ve asla düşmez ('أَكَلَ', 'إِكْرَامٌ', 'أَحْمَدُ'). Hemze-i vasıl ise yalnızca söze başlarken telaffuz edilen, ara geçişte düşen hemzedir ('اِبْنٌ', 'اِسْمٌ', 'اِفْتَحْ', 'اِسْتَغْفَرَ' ve 'الْ' takısı).",
+        "2. İltikâ-i Sâkineyn ve Geçiş Harekeleri: Arapçada iki sâkin (harekesiz/cezimli) harf yan yana gelemez. Karşılaşıldığında: (a) 'مِنْ' harf-i ceri fetha ile ('مِنَ الْمَدْرَسَةِ'), (b) Mazi dişil '-تْ', emir ve genel cezimli kelimeler kesra ile ('قَالَتِ الْبِنْتُ', 'عَنِ الْعِلْمِ', 'اِشْرَبِ الْمَاءَ'), (c) Çoğul mîmi ve cemaat vâvı damma ile ('هُمُ الْمُفْلِحُونَ', 'عَصَوُا الرَّسُولَ') harekelenerek geçiş yapılır.",
+        "3. Lâm Harf-i Ceri İle 'الْ' Birleşimi: 'لِ' harf-i ceri 'الْ' takılı bir ismin başına geldiğinde elif harfi hem yazıdan hem okunuştan tamamen silinir ('لِ' + 'الْمَدْرَسَةِ' -> 'لِلْمَدْرَسَةِ'; 'لِ' + 'الطَّالِبِ' -> 'لِلطَّالِبِ')."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Hemze Türleri ve Geçiş Harekeleri Özeti",
+        "sutunlar": [
+          "Dil Bilgisi Kuralı",
+          "Temel Kural Özelliği",
+          "Geçiş / Yazılış Şekli",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Hemze-i Kat' (أ / إ)",
+            "Dâima yazılır ve her durumda okunur",
+            "Hemze işareti düşmez",
+            "أَكْرَمَ أَحْمَدُ إِكْرَاماً"
+          ],
+          [
+            "Hemze-i Vasıl (ا)",
+            "Başta okunur, vasl halinde düşer",
+            "Yazıda elif kalır, seste kaybolur",
+            "فَاسْتَغْفِرْ / وَابْنُهُ"
+          ],
+          [
+            "Geçiş: Kesra ile",
+            "Kural dışı durumlar hariç genel kaidedir",
+            "Cezim yerine kesra verilir",
+            "قَالَتِ امْرَأَةٌ / اِقْرَإِ الْكِتَابَ"
+          ],
+          [
+            "Geçiş: Fetha ile",
+            "'مِنْ' edatı 'الْ' takısıyla birleştiğinde",
+            "Nûn fethalanır",
+            "مِنَ الْمَسْجِدِ / مِنَ النَّاسِ"
+          ],
+          [
+            "Geçiş: Damma ile",
+            "Çoğul mîmi ve cemaat vâvı birleştiğinde",
+            "Mîm veya vâv dammalanır",
+            "أَنْتُمُ الْأَعْلَوْنَ / كَتَبُوا الدَّرْسَ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "مِنَ",
+          "gorevi": "Harf-i Cer",
+          "hareke_nedeni": "Sükûn üzere mebnîdir; ancak iltikâ-i sâkineynden dolayı fetha ile harekelenmiştir."
+        },
+        {
+          "kelime": "الْبَيْتِ",
+          "gorevi": "Mecrûr İsim",
+          "hareke_nedeni": "'مِنْ' harf-i cerinden sonra geldiği için esre (kesra) ile mecrûrdur."
+        },
+        {
+          "kelime": "قَالَتِ",
+          "gorevi": "Mâzî Fiil ve Dişillik Tâ'sı",
+          "hareke_nedeni": "Fetha üzere mebnîdir; sakin dişillik tâ'sı sâkin elif-lâma bağlandığı için kesra almıştır."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "مِنِ الْبَيْتِ / هَلَ الدَّرْسُ / قَالَتَ الْأُمُّ / لِالْمَدْرَسَةِ.",
+        "dogru": "مِنَ الْبَيْتِ / هَلِ الدَّرْسُ / قَالَتِ الْأُمُّ / لِلْمَدْرَسَةِ.",
+        "neden": "'مِنْ' edatı kesra değil fetha ile geçer; fiil dişillik tâ'sı kesra ile geçer; 'لِ' harf-i cerinde ise elif tamamen düşürülür."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_003",
+    "seviye": "A1",
+    "ktt_ust_konu": "14 Şahıs Munfasıl, Muttasıl ve İyyâ Zamirleri",
+    "konu_basligi": "Munfasıl ve Muttasıl Zamirlerin Tam Tablosu (14 Şahıs: Ref, Nasb, Cer ve إِيَّا Zamirleri)",
+    "hap_kural": "Arapçada zamirler 14 şahıs üzerinden çekilir; tek başına müstakil yazılan özne zamirlerine munfasıl ref zamirleri (هُوَ، هِيَ...), bir isme veya harf-i cere bitiştiğinde cer, fiile bitiştiğinde ise mef'ûl (nesne) olan zamirlere muttasıl zamirler (-هُ، -هَا...) denir. Cümlede öne geçen müstakil nesne zamirleri ise 'إِيَّا' kalıbıyla (إِيَّاكَ، إِيَّاهُ...) ifade edilir.",
+    "metinden_ornek": {
+      "arapca": "هُوَ الَّذِي عَلَّمَنِي كِتَابَهُ، وَإِيَّاهُ نَشْكُرُ عَلَى فَضْلِهِ.",
+      "turkce": "Bana kitabını öğreten odur ve lütfundan dolayı yalnızca O'na şükrederiz.",
+      "aciklama": "'هُوَ' munfasıl ref zamiri olarak mübtedadır; 'عَلَّمَنِي' fiilindeki '-نِي' nûn-u vikâye ile bitişen muttasıl nasb zamiridir; 'كِتَابَهُ' ve 'فَضْلِهِ' kelimelerindeki '-هُ' ve '-هِ' muttasıl cer zamirleridir; 'إِيَّاهُ' ise öne geçmiş munfasıl nasb zamiridir."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ.",
+        "turkce": "Yalnızca Sana kulluk eder ve yalnızca Senden yardım dileriz."
+      },
+      {
+        "arapca": "هُمْ زَارُونَا فِي بَيْتِنَا وَأَكْرَمْنَاهُمْ.",
+        "turkce": "Onlar bizi evimizde ziyaret ettiler ve biz de onlara ikramda bulunduk."
+      }
+    ],
+    "ipucu": "Fiile bitişen zamir nesnedir (mansûb), isme bitişen zamir iyeliktir (mecrûr), harf-i cere bitişen zamir mecrûrdur; 1. tekil şahıs fiile bağlanırken fiili korumak için araya nûn-u vikâye (عَلَّمَنِي) girer.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Munfasıl Ref (هُوَ / هِيَ...)] -> Mübteda (Merfû) | [Fiil + Muttasıl Zamir (-هُ / -كَ / -نِي)] -> Mef'ûlün Bih (Mansûb) | [İsim + Zamir (كِتَابُهُ)] -> Muzafun İleyh (Mecrûr) | [إِيَّا + Zamir (إِيَّاكَ)] -> Munfasıl Mef'ûl (Mansûb)",
+      "adim_adim_anlatim": [
+        "1. 14 Şahıs Munfasıl Ref Zamirleri: Cümlede bağımsız kelime olarak gelen ve çoğunlukla mübteda olan zamirlerdir: Gaib (هُوَ، هُمَا، هُمْ)، Gaibe (هِيَ، هُمَا، هُنَّ)، Muhatab (أَنْتَ، أَنْتُمَا، أَنْتُمْ)، Muhataba (أَنْتِ، أَنْتُمَا، أَنْتُنَّ)، Mütekellim (أَنَا، نَحْنُ). Tümü mebnîdir ve mahallen merfûdur.",
+        "2. Muttasıl Zamirler ve Nûn-u Vikâye: İsme bitiştiğinde muzafun ileyh (iyelik) olarak mahallen mecrûrdur ('كِتَابِي'، 'كِتَابُكَ'). Harf-i cerden sonra da mecrûrdur ('فِيهِ'، 'لَكُمْ'). Fiile bitiştiğinde ise mef'ûlün bih (nesne) olup mahallen mansûbdur ('سَأَلَكَ'). Mütekellim yâ'sı fiile bitişirken fiilin son harekesinin esrelenmesini önlemek için koruma nûnu (nûn-u vikâye) zorunlu olarak araya girer ('ضَرَبَنِي').",
+        "3. Munfasıl Nasb Zamirleri (إِيَّا): Fiilden önce vurgu veya hasr (yalnızca O'na) amacıyla zikredilen ayrık nesne zamirleridir ('إِيَّاهُ', 'إِيَّاهَا', 'إِيَّاكَ', 'إِيَّاكِ', 'إِيَّايَ', 'إِيَّانَا'). Cümlede mef'ûlün bih olup mahallen mansûbdur."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Arapçada Zamir Sisteminin 14 Şahıs Özeti",
+        "sutunlar": [
+          "Şahıs Kategorisi",
+          "Munfasıl Ref Zamiri",
+          "Muttasıl Zamir (İsim/Fiil)",
+          "Munfasıl Nasb Zamiri (إِيَّا)"
+        ],
+        "satirlar": [
+          [
+            "3. Tekil Eril (Gaib)",
+            "هُوَ (O)",
+            "-هُ (كِتَابُهُ / رَآهُ)",
+            "إِيَّاهُ (Yalnız O'na)"
+          ],
+          [
+            "3. Tekil Dişil (Gaibe)",
+            "هِيَ (O kadın)",
+            "-هَا (كِتَابُهَا / رَآهَا)",
+            "إِيَّاهَا (Yalnız O kadına)"
+          ],
+          [
+            "2. Tekil Eril (Muhatab)",
+            "أَنْتَ (Sen)",
+            "-كَ (كِتَابُكَ / رَآكَ)",
+            "إِيَّاكَ (Yalnız Sana)"
+          ],
+          [
+            "2. Tekil Dişil (Muhataba)",
+            "أَنْتِ (Sen kadın)",
+            "-كِ (كِتَابُكِ / رَآكِ)",
+            "إِيَّاكِ (Yalnız Sana)"
+          ],
+          [
+            "1. Tekil (Mütekellim)",
+            "أَنَا (Ben)",
+            "-ي / -نِي (كِتَابِي / عَلَّمَنِي)",
+            "إِيَّايَ (Yalnız Bana)"
+          ],
+          [
+            "1. Çoğul (Mütekellim Maal-Gayr)",
+            "نَحْنُ (Biz)",
+            "-نَا (كِتَابُنَا / عَلَّمَنَا)",
+            "إِيَّانَا (Yalnız Bize)"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "هُوَ",
+          "gorevi": "Mübteda (Munfasıl Zamir)",
+          "hareke_nedeni": "Fetha üzere mebnî munfasıl zamirdir; mübteda makamında mahallen merfûdur."
+        },
+        {
+          "kelime": "عَلَّمَنِي",
+          "gorevi": "Fiil + Nûn-u Vikâye + Mef'ûl Zamiri",
+          "hareke_nedeni": "'عَلَّمَ' fetha üzere mebnîdir; 'ن' koruma harfidir; 'ي' sükûn üzere mebnî muttasıl zamir olup nesne makamında mahallen mansûbdur."
+        },
+        {
+          "kelime": "إِيَّاهُ",
+          "gorevi": "Mukaddem Mef'ûlün Bih (Munfasıl Zamir)",
+          "hareke_nedeni": "Sükûn üzere mebnî 'إِيَّا' ve bitişen '-هُ' zamiri öne geçmiş nesne makamında mahallen mansûbdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "عَلَّمَي / إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ (hasr anlamında hatâ).",
+        "dogru": "عَلَّمَنِي / إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ.",
+        "neden": "Fiilin sonuna 'ي' tek başına eklenemez, araya nûn-u vikâye girmelidir; ayrıca tahsis ve hasr bildirmek istendiğinde muttasıl zamir değil 'إِيَّا' munfasıl nasb zamiri kullanılır."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_004",
+    "seviye": "A2",
+    "ktt_ust_konu": "Yakın ve Uzak İşaret İsimleri Sistemi",
+    "konu_basligi": "İşaret İsimlerinin Tam Sistemi (Yakın/Uzak, Tekil-İkil-Çoğul ve Mekân İşaretleri)",
+    "hap_kural": "İşaret isimleri varlıkları işaretle göstermek için kullanılan mebnî kelimelerdir (ikilleri hariç). Kendisinden sonra 'الْ' takılı bir isim gelirse o isim işaret isminin sıfatı/bedeli (müşârun ileyh) olur ve tek başına tam bir cümle kurmaz; nekre bir isim gelirse işaret ismi mübteda, nekre isim ise haber olur ve tam bir isim cümlesi oluşur.",
+    "metinden_ornek": {
+      "arapca": "هٰذَا الطَّالِبُ مُجْتَهِدٌ، وَذٰلِكَ الْكِتَابُ الَّذِي هُنَاكَ نَافِعٌ جِدّاً.",
+      "turkce": "Bu öğrenci çalışkandır; ve şuradaki şu kitap son derece faydalıdır.",
+      "aciklama": "'هٰذَا الطَّالِبُ' öbeğinde 'الطَّالِبُ' kelimesi 'الْ' takılı olduğu için bedel/müşârun ileyhtir, 'مُجْتَهِدٌ' ise haberdir; 'ذٰلِكَ' uzak işaret ismidir ve 'هُنَاكَ' mekân işaret zarfıyla beraber kullanılmıştır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "هٰؤُلَاءِ الْمُعَلِّمُونَ مُخْلِصُونَ فِي عَمَلِهِمْ.",
+        "turkce": "Bu öğretmenler işlerinde samimidirler."
+      },
+      {
+        "arapca": "تِلْكَ الشَّجَرَةُ الْمُثْمِرَةُ بَعِيدَةٌ عَنْ هُنَا.",
+        "turkce": "Şu meyveli ağaç buradan uzaktır."
+      }
+    ],
+    "ipucu": "İşaret isminden sonra 'الْ' varsa sıfat/bedel tamlamasıdır ('هٰذَا الْكِتَابُ' = Bu kitap...); 'الْ' yoksa bağımsız tam bir isim cümlesidir ('هٰذَا كِتَابٌ' = Bu bir kitaptır).",
+    "ayrintili_anlatim": {
+      "formul_sema": "[İşaret İsmi] + [الْ + İsim] -> Müşârun İleyh / Bedel (Eksik Yargı) | [İşaret İsmi (Mübteda)] + [Nekre İsim (Haber)] -> Tam İsim Cümlesi | [Akılsız Çoğul] -> [هٰذِهِ / تِلْكَ (Müfred Müennes)]",
+      "adim_adim_anlatim": [
+        "1. Yakın ve Uzak İşaret İsimleri Kadrosu: Yakın için tekilde 'هٰذَا' (eril) ve 'هٰذِهِ' (dişil); ikilde 'هٰذَانِ / هٰذَيْنِ' (eril) ve 'هَاتَانِ / هَاتَيْنِ' (dişil); akıllı çoğullarda ortak 'هٰؤُلَاءِ' kullanılır. Uzak için tekilde 'ذٰلِكَ' (eril) ve 'تِلْكَ' (dişil); çoğulda 'أُولٰئِكَ' kullanılır. Mekân için 'هُنَا' (burada), 'هُنَاكَ' (şurada) ve 'هُنَالِكَ' (orada) kullanılır.",
+        "2. İ'rab Sistemi ve İkillerin Mu'rablığı: İşaret isimlerinin tekil ve çoğulları mebnîdir; mahallen irab alırlar. Ancak ikilleri ('هٰذَانِ / هٰذَيْنِ' ve 'هَاتَانِ / هَاتَيْنِ') tesniye isimler gibi mu'rabdır; ref halinde elif ('ا'), nasb ve cer halinde yâ ('ي') ile irab edilirler.",
+        "3. Akılsız Çoğullarda Kural: İnsan dışındaki varlıkların çoğulları (akılsız çoğullar) gramer bakımından tekil dişil (müfred müennes) sayılır. Bu sebeple akılsız çoğullara işaret edilirken 'هٰؤُلَاءِ' veya 'أُولٰئِكَ' değil; daima 'هٰذِهِ' veya 'تِلْكَ' kullanılır ('هٰذِهِ الْكُتُبُ'، 'تِلْكَ الْأَيَّامُ')."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Yakın ve Uzak İşaret İsimleri Karşılaştırma Tablosu",
+        "sutunlar": [
+          "Sayı ve Cinsiyet",
+          "Yakın İşaret İsmi",
+          "Uzak İşaret İsmi",
+          "Harekeli Cümle Örneği"
+        ],
+        "satirlar": [
+          [
+            "Tekil Eril (Müfred Müzekker)",
+            "هٰذَا",
+            "ذٰلِكَ",
+            "هٰذَا رَجُلٌ / ذٰلِكَ الْبَيْتُ كَبِيرٌ"
+          ],
+          [
+            "Tekil Dişil (Müfred Müennes)",
+            "هٰذِهِ",
+            "تِلْكَ",
+            "هٰذِهِ بِنْتٌ / تِلْكَ السَّيَّارَةُ سَرِيعَةٌ"
+          ],
+          [
+            "İkil Eril (Müsenna Müzekker)",
+            "هٰذَانِ (Ref) / هٰذَيْنِ (Nasb-Cer)",
+            "ذَانِكَ / ذَيْنِكَ",
+            "هٰذَانِ طَالِبَانِ / رَأَيْتُ هٰذَيْنِ"
+          ],
+          [
+            "İkil Dişil (Müsenna Müennes)",
+            "هَاتَانِ (Ref) / هَاتَيْنِ (Nasb-Cer)",
+            "تَانِكَ / تَيْنِكَ",
+            "هَاتَانِ مَدْرَسَتَانِ نَظِيفَتَانِ"
+          ],
+          [
+            "Akıllı Çoğul (Eril / Dişil)",
+            "هٰؤُلَاءِ",
+            "أُولٰئِكَ",
+            "هٰؤُلَاءِ مُعَلِّمُونَ / أُولٰئِكَ طَالِبَاتٌ"
+          ],
+          [
+            "Akılsız Çoğul (Ortak)",
+            "هٰذِهِ",
+            "تِلْكَ",
+            "هٰذِهِ الْأَقْلَامُ جَدِيدَةٌ / تِلْكَ الْأَيَّامُ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "هٰذَا",
+          "gorevi": "Mübteda (İşaret İsmi)",
+          "hareke_nedeni": "Sükûn üzere mebnîdir; mübteda olduğu için mahallen merfûdur."
+        },
+        {
+          "kelime": "الطَّالِبُ",
+          "gorevi": "Müşârun İleyh / Bedel",
+          "hareke_nedeni": "İşaret isminden sonra 'الْ' takılı geldiği için mübtedanın irabına uyarak damma ile merfûdur."
+        },
+        {
+          "kelime": "مُجْتَهِدٌ",
+          "gorevi": "Haber",
+          "hareke_nedeni": "İsim cümlesinin yüklemi ve nekre olduğu için damma tenvini ile merfûdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "هٰؤُلَاءِ الْكُتُبُ نَافِعَةٌ / هٰذَا كِتَابُ كَبِيرٌ.",
+        "dogru": "هٰذِهِ الْكُتُبُ نَافِعَةٌ / هٰذَا كِتَابٌ كَبِيرٌ.",
+        "neden": "Akılsız çoğullarda 'هٰؤُلَاءِ' kullanılmaz, dişil tekil olan 'هٰذِهِ' kullanılır; ayrıca haber nekre olduğunda tenvin almalıdır."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_005",
+    "seviye": "A2",
+    "ktt_ust_konu": "Yüzlü-Binli Sayılar, Kesirler ve Tarihler",
+    "konu_basligi": "Yüzlü, Binli ve Milyonlu Sayılar (مِئَةٌ / أَلْفٌ / مِلْيُونٌ), Kesirler ve Tarih Okunuşları",
+    "hap_kural": "Yüz (مِئَةٌ), bin (أَلْفٌ), milyon (مِلْيُونٌ) ve katlarının sayılan ismi (temyizi) daima tekil ve esreli (mecrûr muzafun ileyh) olur. Yıllar ve tarihler zikredilirken 'عَامَ' (eril) veya 'سَنَةَ' (dişil) kelimeleri zaman zarfı olarak mansûb okunur ve ardından gelen sayılar muzafun ileyh olarak esrelenir.",
+    "metinden_ornek": {
+      "arapca": "تَخَرَّجَ أَلْفُ طَالِبٍ وَمِئَةُ طَالِبَةٍ فِي عَامِ أَلْفَيْنِ وَأَرْبَعَةٍ وَعِشْرِينَ.",
+      "turkce": "İki bin yirmi dört yılında bin erkek öğrenci ve yüz kız öğrenci mezun oldu.",
+      "aciklama": "'أَلْفُ طَالِبٍ' ve 'مِئَةُ طَالِبَةٍ' terkiplerinde sayılan isimler tekil ve esreli muzafun ileyhtir; 'عَامِ' kelimesinden sonraki tarih sayıları da zincirleme esreli mecrûr okunmuştur."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "قَرَأْتُ نِصْفَ الْكِتَابِ فِي ثَلَاثِمِئَةِ يَوْمٍ.",
+        "turkce": "Üç yüz günde kitabın yarısını okudum."
+      },
+      {
+        "arapca": "اشْتَرَى التَّاجِرُ مِلْيُونَ قَلَمٍ بِثُلُثِ الثَّمَنِ.",
+        "turkce": "Tüccar fiyatın üçte birine bir milyon kalem satın aldı."
+      }
+    ],
+    "ipucu": "100 ve 1000'li sayıların ardından gelen sayılan kelimeyi daima tekil ve esreli yapın ('مِئَةُ كِتَابٍ'، 'أَلْفُ لَيْلَةٍ'); asla çoğul yapmayın.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[مِئَةُ / أَلْفُ / مِلْيُونُ] + [Tekil Mecrûr İsim (طَالِبٍ)] | [Yüzler Basamağı (ثَلَاثُ)] + [مِئَةٍ] -> [ثَلَاثُمِئَةٍ] | [Kesir Vezni: فُعْلٌ / فُعُلٌ] -> [نِصْفٌ، ثُلُثٌ، رُبْعٌ] | [عَامَ / سَنَةَ] + [Sayılar (Mecrûr)]",
+      "adim_adim_anlatim": [
+        "1. 100, 1000 ve Katlarının Temyizi: 100 ('مِئَةٌ'), 200 ('مِئَتَانِ / مِئَتَيْ'), 1000 ('أَلْفٌ'), 2000 ('أَلْفَانِ / أَلْفَيْ') ve 'مِلْيُونٌ' sayılarının temyizi daima müfred mecrûrdur (tekil ve esreli). Bu sayılar kendisinden sonraki sayılana muzaf olurlar ('مِئَةُ رَجُلٍ', 'أَلْفُ كِتَابٍ').",
+        "2. 300-900 ve 3000-10000 Arası Kuralı: 300 ile 900 arasındaki yüzlüklerde birinci sayı müenneslik 'ة' almaz ve 'مِئَةٍ' kelimesine bitişik yazılır ('ثَلَاثُمِئَةٍ', 'أَرْبَعُمِئَةٍ'). 3000-10000 arasında ise birinci sayı 3-10 kuralına göre 'آلَافٍ' çoğuluna muzaf olur ('ثَلَاثَةُ آلَافٍ', 'خَمْسَةُ آلَافٍ').",
+        "3. Kesir Sayıları ve Tarih Okunuşları: Kesirler sülasi kökten 'فُعْلٌ' veya 'فُعُلٌ' vezninde gelir: 'نِصْفٌ' (1/2), 'ثُلُثٌ' (1/3), 'رُبْعٌ' (1/4), 'خُمْسٌ' (1/5), 'عُشْرٌ' (1/10). Tarihlerde ise 'سَنَةَ' veya 'عَامَ' mansûb zarf olarak gelir; ardından gelen sayılar büyükten küçüğe doğru 'وَ' harfiyle bağlanıp esreli okunur ('سَنَةَ أَلْفٍ وَتِسْعِمِئَةٍ وَخَمْسِينَ')."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Yüzlü, Binli Sayılar, Kesirler ve Temyiz Kalıpları",
+        "sutunlar": [
+          "Sayı / Kesir Kategorisi",
+          "Arapça Sayı İfadesi",
+          "Temyiz Kuralı",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "100 ve Katları",
+            "مِئَةٌ / مِئَتَانِ / ثَلَاثُمِئَةٍ",
+            "Tekil ve Mecrûr",
+            "مِئَةُ صَفْحَةٍ / خَمْسُمِئَةِ بَيْتٍ"
+          ],
+          [
+            "1000 ve Katları",
+            "أَلْفٌ / أَلْفَانِ / ثَلَاثَةُ آلَافٍ",
+            "Tekil ve Mecrûr",
+            "أَلْفُ لَيْلَةٍ / عَشَرَةُ آلَافِ دِينَارٍ"
+          ],
+          [
+            "Milyon",
+            "مِلْيُونٌ / مِلْيُونَانِ",
+            "Tekil ve Mecrûr",
+            "مِلْيُونُ زَائِرٍ"
+          ],
+          [
+            "Kesir Sayıları",
+            "نِصْفٌ، ثُلُثٌ، رُبْعٌ، خُمْسٌ",
+            "Muzaf olarak esreler",
+            "رُبْعُ سَاعَةٍ / ثُلُثُ اللَّيْلِ"
+          ],
+          [
+            "Tarih / Yıl Okunuşu",
+            "عَامَ / سَنَةَ + Sayılar",
+            "Sayılar mecrûr okunur",
+            "فِي عَامِ أَلْفٍ وَتِسْعِمِئَةٍ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "أَلْفُ",
+          "gorevi": "Fâil (Özne)",
+          "hareke_nedeni": "Geçişsiz fiilin öznesi olduğu için damma ile merfûdur; muzaf olduğu için tenvin almamıştır."
+        },
+        {
+          "kelime": "طَالِبٍ",
+          "gorevi": "Temyiz (Muzafun İleyh)",
+          "hareke_nedeni": "1000 sayısının tekil temyizi ve muzafun ileyhi olduğu için esre tenvini ile mecrûrdur."
+        },
+        {
+          "kelime": "عَامِ",
+          "gorevi": "Mef'ûlün Fîh (Zaman Zarfı)",
+          "hareke_nedeni": "'فِي' harf-i cerinden sonra geldiği için esre ile mecrûrdur; sonrasındaki tarihe muzaftır."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "مِئَةُ كُتُبٍ / أَلْفُ طُلَّابٍ / ثَلَاثَةُ مِئَةٍ.",
+        "dogru": "مِئَةُ كِتَابٍ / أَلْفُ طَالِبٍ / ثَلَاثُمِئَةٍ.",
+        "neden": "100 ve 1000'in sayılanı çoğul yapılmaz, daima tekil ve esreli gelir; ayrıca 300-900 arası sayılar tenvinsiz ve bitişik yazılır."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_006",
+    "seviye": "B1",
+    "ktt_ust_konu": "Haberin Mübtedadan Öne Geçmesi (Takdîmü'l-Haber)",
+    "konu_basligi": "İsim Cümlesinde Haberin Mübtedadan Önce Gelmesi (Takdîmü'l-Haber: Vücûben ve Cevâzen)",
+    "hap_kural": "İsim cümlesinde asıl olan mübtedanın başta, haberin sonda gelmesidir; ancak haber şibh-i cümle olup mübteda nekre olduğunda, haber soru ismi olduğunda veya mübtedada habere dönen bir zamir bulunduğunda haberin öne geçmesi zorunludur (vücûben takdîm). Mübteda marife olduğunda ise haberin öne geçmesi caizdir (cevâzen takdîm).",
+    "metinden_ornek": {
+      "arapca": "فِي الْحَدِيقَةِ أَزْهَارٌ كَثِيرَةٌ، وَأَيْنَ الْبُسْتَانِيُّ الْمَسْؤُولُ عَنْهَا؟",
+      "turkce": "Bahçede çok çiçekler vardır; peki onlardan sorumlu bahçıvan nerededir?",
+      "aciklama": "'فِي الْحَدِيقَةِ أَزْهَارٌ' cümlesinde haber şibh-i cümle ve mübteda nekre olduğu için haber zorunlu olarak öne geçmiştir; 'أَيْنَ الْبُسْتَانِيُّ' cümlesinde ise haber soru ismi olduğu için sadâret (cümlenin başında gelme) hakkına binaen vücûben takdîm edilmiştir."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "فِي الْمَحْكَمَةِ قُضَاتُهَا الْعَادِلُونَ.",
+        "turkce": "Mahkemede onun adil hakimleri vardır."
+      },
+      {
+        "arapca": "عِنْدِي كِتَابٌ نَافِعٌ فِي اللُّغَةِ.",
+        "turkce": "Yanımda dil alanında faydalı bir kitap var."
+      }
+    ],
+    "ipucu": "Cümle harf-i cer veya zarfla başlıyorsa arkasından gelen ötreli nekre kelimeyi arayın; o kelime gecikmiş öznedir (mübteda-i muahhardır).",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Mukaddem Haber (Câr-Mecrûr / Zarf)] + [Muahhar Mübteda (Nekra)] -> Vücûben (Zorunlu) | [Soru İsmi (أَيْنَ / كَيْفَ)] + [İsim] -> Vücûben | [Câr-Mecrûr] + [Marife İsim] -> Cevâzen (İsteğe Bağlı)",
+      "adim_adim_anlatim": [
+        "1. Şibh-i Cümle Haber ve Nekre Mübteda: Haber harf-i cerli öbek (câr-mecrûr) veya zarf olup mübteda belirli olmayan (nekre) bir isim olduğunda haberin başa geçmesi zorunludur ('فِي الصَّفِّ طَالِبٌ'). Zira nekre bir isimle söze başlamak kural dışıdır.",
+        "2. Haberin Soru İsmi Olması: Soru isimleri dilde en başta gelme hakkına (sadâret hakkı) sahiptir. Bu sebeple haber soru ismi olduğunda daima öne geçer ('أَيْنَ الْمِفْتَاحُ؟', 'كَيْفَ حَالُكَ؟'). Burada 'أَيْنَ' mukaddem haber, 'الْمِفْتَاحُ' muahhar mübtedadır.",
+        "3. Mübtedada Habere Dönen Zamir Bulunması ve Cevâzen Durum: Mübteda, habere ait bir zamir taşıyorsa zamirin sonradan zikredilen bir kelimeye dönmesini önlemek için haber öne geçer ('فِي الدَّارِ صَاحِبُهَا'). Ancak mübteda marife ise takdîm cevâzidir: İster 'فِي الصَّفِّ الطَّالِبُ', ister 'الطَّالِبُ فِي الصَّفِّ' denilebilir."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Haberin Mübtedadan Öne Geçiş Hallerinin Karşılaştırılması",
+        "sutunlar": [
+          "Takdîm Türü",
+          "Gramer Gerekçesi",
+          "Cümle Yapısı",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Vücûben (Zorunlu)",
+            "Haber şibh-i cümle, mübteda nekre",
+            "Câr-Mecrûr + Nekre Mübteda",
+            "فِي الْبَيْتِ ضَيْفٌ"
+          ],
+          [
+            "Vücûben (Zorunlu)",
+            "Haber soru ismi (sadâret hakkı)",
+            "Soru İsmi + Mübteda",
+            "أَيْنَ سَيَّارَتُكَ؟ / كَيْفَ الْأَمْرُ؟"
+          ],
+          [
+            "Vücûben (Zorunlu)",
+            "Mübtedada habere dönen zamir var",
+            "Şibh-i Cümle + Zamirli Mübteda",
+            "عَلَى الْمُسَافِرِ حَقِيبَتُهُ"
+          ],
+          [
+            "Vücûben (Zorunlu)",
+            "Haberde hasr (sınırlandırma) var",
+            "إِنَّمَا / إِلَّا yapısı",
+            "إِنَّمَا فِي الْبَيْتِ خَالِدٌ"
+          ],
+          [
+            "Cevâzen (Caiz)",
+            "Mübteda belirli (marife) isimdir",
+            "Şibh-i Cümle + Marife Mübteda",
+            "فِي الْمَسْجِدِ الْإِمَامُ (veya الْإِمَامُ فِي الْمَسْجِدِ)"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "فِي الْحَدِيقَةِ",
+          "gorevi": "Şibh-i Cümle Mukaddem Haber",
+          "hareke_nedeni": "Câr-mecrûr öbeği olup öne geçmiş haber makamında mahallen merfûdur."
+        },
+        {
+          "kelime": "أَزْهَارٌ",
+          "gorevi": "Muahhar Mübteda",
+          "hareke_nedeni": "Gecikmiş isim cümlesi öznesi olduğu için damma tenvini ile merfûdur."
+        },
+        {
+          "kelime": "أَيْنَ",
+          "gorevi": "Soru İsmi (Mukaddem Haber)",
+          "hareke_nedeni": "Fetha üzere mebnî mekân zarfı olup öne geçmiş haber olarak mahallen merfûdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "طَالِبٌ فِي الصَّفِّ / الْمِفْتَاحُ أَيْنَ؟",
+        "dogru": "فِي الصَّفِّ طَالِبٌ / أَيْنَ الْمِفْتَاحُ؟",
+        "neden": "Arapçada sıfatsız yalın nekre isimle söze başlanamaz, haber şibh-i cümle ise öne geçer; ayrıca soru isimleri cümlenin sonuna bırakılamaz."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_007",
+    "seviye": "B1",
+    "ktt_ust_konu": "Lefîf Fiiller (Mefrûk ve Makrûn) ve Çekimi",
+    "konu_basligi": "Lefîf Fiiller (Lefîf-i Mefrûk وَفَى/وَقَى ve Lefîf-i Makrûn طَوَى/رَوَى) ve Çekim Kuralları",
+    "hap_kural": "Kök harflerinden ikisi illet harfi olan fiillere Lefîf fiil denir. İllet harfleri birinci ve üçüncü sırada olup araya sahih harf girmişse Lefîf-i Mefrûk (وَقَى، وَفَى), yan yana ikinci ve üçüncü sırada ise Lefîf-i Makrûn (طَوَى، رَوَى) adını alır. Lefîf-i mefrûk fiillerin emr-i hâzırı tek bir harften oluşur ve sonuna vasıl durumunda durulurken sekteli he (قِ / قِهْ!) gelir.",
+    "metinden_ornek": {
+      "arapca": "وَفَى الصَّادِقُ بِوَعْدِهِ وَرَوَى قِصَّةً حَكِيمَةً، فَقِ نَفْسَكَ مِنَ الْخَطَأِ!",
+      "turkce": "Doğru sözlü kişi sözünü tuttu ve bilgece bir hikaye anlattı; sen de kendini hatadan koru!",
+      "aciklama": "'وَفَى' birinci ve üçüncü harfi illetli lefîf-i mefrûktur; 'رَوَى' ikinci ve üçüncü harfi illetli lefîf-i makrûndur; 'قِ' ise 'وَقَى - يَقِي' fiilinin illet harfleri atılmış tek harfli emr-i hâzırıdır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "طَوَى الْكَاتِبُ الرِّسَالَةَ بَعْدَ أَنْ وَعَى مَضْمُونَهَا.",
+        "turkce": "Yazar içeriğini kavradıktan sonra mektubu dürdü/katladı."
+      },
+      {
+        "arapca": "فِ بِالْعَهْدِ كَمَا وَفَى أَبُوكَ!",
+        "turkce": "Babanın sözünde durduğu gibi sen de sözünde dur!"
+      }
+    ],
+    "ipucu": "'قِ' (koru!), 'فِ' (vefa göster!), 'عِ' (kavra!) tek harfli emirleri gördüğünde şaşırma; bunlar başındaki 'و' ve sonundaki 'ى' harfi düşmüş lefîf-i mefrûk emirleridir.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Lefîf-i Mefrûk: و + Sahih Harf + ى] -> [وَقَى -> يَقِي -> قِ!] | [Lefîf-i Makrûn: Sahih Harf + و + ى] -> [طَوَى -> يَطْوِي -> اِطْوِ!] | [Emirde İllet Harfi Düşmesi] -> [Sükûn Yerine Hazif]",
+      "adim_adim_anlatim": [
+        "1. Lefîf-i Mefrûk ve Çekim Özellikleri: Fâü'l-fiili (1. harf) ve lâmü'l-fiili (3. harf) illet harfi olan fiillerdir ('وَقَى', 'وَفَى', 'وَعَى'). Muzârilerinde baştaki vâv harfi misal fiil kuralı gereği düşer ('يَقِي', 'يَفِي', 'يَعِي'). Mâzî çekiminde cemaat vâvı ile birleştiğinde son illet harfi düşer ('وَقَوْا').",
+        "2. Tek Harfli Emr-i Hâzır Türetimi: Lefîf-i mefrûk muzâri fiilinin ('تَقِي') başındaki muzâraat harfi atılır, sonundaki illet harfi de emir cezm alameti olarak hazfedilir. Geriye sadece tek başına esreli orta harf kalır: 'قِ!' (Koru), 'فِ!' (Sözünde dur), 'عِ!' (Anla/kavra). Tek başına vakıf yapıldığında 'ه' (sekt he'si) eklenerek 'قِهْ!', 'فِهْ!', 'عِهْ!' denilir.",
+        "3. Lefîf-i Makrûn ve Çekim Kuralları: Aynü'l-fiili (2. harf) ve lâmü'l-fiili (3. harf) yan yana illetli olan fiillerdir ('طَوَى', 'رَوَى', 'نَوَى'). Bu fiiller nakıs fiil gibi işlem görür; ortadaki harf sabit kalır, son harf illet kaidelerine göre dönüşür. Muzârisi 'يَطْوِي', emr-i hâzırı ise hemze-i vasılla başlayıp son illet harfi düşerek 'اِطْوِ!' şeklinde gelir."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Lefîf Fiil Türleri ve Zamanlara Göre Çekim Tablosu",
+        "sutunlar": [
+          "Fiil Türü",
+          "Mâzî Şekli",
+          "Muzâri Şekli",
+          "Emr-i Hâzır Şekli"
+        ],
+        "satirlar": [
+          [
+            "Lefîf-i Mefrûk (وَقَى)",
+            "وَقَى (Korudu)",
+            "يَقِي (Koruyor)",
+            "قِ! / قِهْ! (Koru!)"
+          ],
+          [
+            "Lefîf-i Mefrûk (وَفَى)",
+            "وَفَى (Sözünde durdu)",
+            "يَفِي (Duruyor)",
+            "فِ! / فِهْ! (Dur!)"
+          ],
+          [
+            "Lefîf-i Mefrûk (وَعَى)",
+            "وَعَى (Kavradı)",
+            "يَعِي (Kavrıyor)",
+            "عِ! / عِهْ! (Kavra!)"
+          ],
+          [
+            "Lefîf-i Makrûn (طَوَى)",
+            "طَوَى (Katladı/Dürdü)",
+            "يَطْوِي (Katlıyor)",
+            "اِطْوِ! (Katla!)"
+          ],
+          [
+            "Lefîf-i Makrûn (رَوَى)",
+            "رَوَى (Rivayet etti)",
+            "يَرْوِي (Rivayet ediyor)",
+            "اِرْوِ! (Rivayet et!)"
+          ],
+          [
+            "Lefîf-i Makrûn (نَوَى)",
+            "نَوَى (Niyet etti)",
+            "يَنْوِي (Niyet ediyor)",
+            "اِنْوِ! (Niyet et!)"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "وَفَى",
+          "gorevi": "Mâzî Fiil (Lefîf-i Mefrûk)",
+          "hareke_nedeni": "Sonundaki elif üzerinde takdîrî fetha üzere mebnîdir."
+        },
+        {
+          "kelime": "رَوَى",
+          "gorevi": "Mâzî Fiil (Lefîf-i Makrûn)",
+          "hareke_nedeni": "Sonundaki illet harfi üzerinde takdîrî fetha üzere mebnîdir."
+        },
+        {
+          "kelime": "قِ",
+          "gorevi": "Emir Fiili (Lefîf-i Mefrûk)",
+          "hareke_nedeni": "Sonundaki illet harfinin hazfi (düşürülmesi) üzere mebnî emr-i hâzırdır; fâili müstetir 'أَنْتَ' zamiridir."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "اِوْقِ نَفْسَكَ! / اِطْوِي الثَّوْبَ!",
+        "dogru": "قِ نَفْسَكَ! / اِطْوِ الثَّوْبَ!",
+        "neden": "Lefîf-i mefrûkun emrinde başa hemze konulmaz, tek harf kalır ('قِ'); ayrıca emir fiillerinde son illet harfi mutlaka düşürülmelidir ('اِطْوِ')."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_008",
+    "seviye": "B1",
+    "ktt_ust_konu": "İsm-i Tasgîr ve Kırık Çoğul (Cem-i Teksîr) Vezinleri",
+    "konu_basligi": "İsm-i Tasgîr (Küçültme İsmi: فُعَيْلٌ / فُعَيْعِلٌ) ve Kırık Çoğul (Cem-i Teksîr) Vezinleri",
+    "hap_kural": "İsm-i tasgîr, bir varlığın küçüklüğünü, azlığını, sevimliliğini veya zamansal-mekânsal yakınlığını bildirmek için 3 harflilerde 'فُعَيْلٌ', 4 harflilerde 'فُعَيْعِلٌ' kalıbıyla türetilen isimdir. Kırık çoğullar (cem-i teksîr) ise kelime kökünün kırılarak değişmesiyle yapılır ve 3-10 arası azlık bildiren cem-i kıllet ile 10'dan fazla çokluk bildiren cem-i kesret kalıplarına ayrılır.",
+    "metinden_ornek": {
+      "arapca": "قَرَأَ الْكُتَيِّبَ قُبَيْلَ الْمَغْرِبِ رِجَالٌ وَفِتْيَةٌ كِرَامٌ.",
+      "turkce": "Akşam vaktinden az önce küçük kitapçığı cömert adamlar ve gençler okudu.",
+      "aciklama": "'الْكُتَيِّبَ' kelimesi 'كِتَابٌ' isminin 'فُعَيْلٌ' veznindeki küçültme halidir; 'قُبَيْلَ' zaman yakınlığı bildiren tasgîr zarfıdır; 'فِتْيَةٌ' cem-i kıllet vezninde, 'رِجَالٌ' ve 'كِرَامٌ' ise cem-i kesret vezninde kırık çoğullardır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "رَأَيْتُ عُصَيْفِيرًا جَمِيلًا فَوْقَ الشُّجَيْرَةِ.",
+        "turkce": "Küçük ağaççığın üzerinde güzel bir serçecik gördüm."
+      },
+      {
+        "arapca": "فِي الْمَدِينَةِ مَسَاجِدُ كَثِيرَةٌ وَأَنْهَارٌ جَارِيَةٌ.",
+        "turkce": "Şehirde birçok cami ve akan nehirler vardır."
+      }
+    ],
+    "ipucu": "Tasgîr edilmiş her kelimenin 1. harfi mutlaka dammalı, 2. harfi fethalı ve 3. harfi cezimli bir yâ'dır (ُ َ يْ: فُعَيْلٌ); 'قُبَيْلَ' hemen önce, 'بُعَيْدَ' hemen sonra demektir.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[3 Harfli İsim] -> [فُعَيْلٌ (قَلَمٌ -> قُلَيْمٌ)] | [4 Harfli İsim] -> [فُعَيْعِلٌ (دِرْهَمٌ -> دُرَيْهِمٌ)] | [Cem-i Kıllet (3-10)] -> [أَفْعَالٌ، أَفْعُلٌ، أَفْعِلَةٌ، فِعْلَةٌ] | [Cem-i Kesret (>10)] -> [فُعُولٌ، فِعَالٌ، مَفَاعِلُ...]",
+      "adim_adim_anlatim": [
+        "1. İsm-i Tasgîr Mantığı ve Üç Temel Vezni: Tasgîr sevgi ('يَا بُنَيَّ'), küçültme ('كُتَيِّبٌ'), değersiz görme ('رُجَيْلٌ') veya yakınlık ('قُبَيْلَ', 'بُعَيْدَ') ifade eder. Üç harfliler 'فُعَيْلٌ' veznine girer ('نَهْرٌ' -> 'نُهَيْرٌ', 'شَجَرَةٌ' -> 'شُجَيْرَةٌ'). Dört harfliler 'فُعَيْعِلٌ' veznine girer ('مَسْجِدٌ' -> 'مُسَيْجِدٌ'). Sondan bir önceki harfi med harfi olan beş harfliler 'فُعَيْعِيلٌ' veznine girer ('مِفْتَاحٌ' -> 'مُفَيْتِيحٌ', 'عُصْفُورٌ' -> 'عُصَيْفِيرٌ').",
+        "2. Kırık Çoğul (Cem-i Teksîr) Sistemi: Müfret kelimenin hareke veya harf yapısı kırılarak oluşturulur. İki ana sınıftır: (a) Cem-i Kıllet (3 ile 10 arasındaki azlık): 4 vezni vardır: 'أَفْعَالٌ' ('أَقْلَامٌ'), 'أَفْعُلٌ' ('أَنْفُسٌ'), 'أَفْعِلَةٌ' ('أَطْعِمَةٌ'), 'فِعْلَةٌ' ('فِتْيَةٌ').",
+        "3. Cem-i Kesret Kalıpları: 10'dan sonsuza kadar olan çokluğu ifade eder. En meşhurları: 'فُعُولٌ' ('قُلُوبٌ'), 'فِعَالٌ' ('رِجَالٌ', 'جِبَالٌ'), 'فُعَلَاءُ' ('عُلَمَاءُ'), 'مَفَاعِلُ' ('مَسَاجِدُ', 'مَدَارِسُ' - gayri munsariftir), 'مَفَاعِيلُ' ('مَصَابِيحُ' - gayri munsariftir)."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "İsm-i Tasgîr ve Kırık Çoğul Kalıpları Tablosu",
+        "sutunlar": [
+          "Gramer Başlığı",
+          "Temel Vezin / Kalıp",
+          "Anlam Boyutu",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Tasgîr (3 Harfli)",
+            "فُعَيْلٌ",
+            "Küçültme / Sevgi / Yakınlık",
+            "كُتَيِّبٌ / قُبَيْلَ / بُنَيٌّ"
+          ],
+          [
+            "Tasgîr (4 Harfli)",
+            "فُعَيْعِلٌ",
+            "Küçültme / Azlık",
+            "دُرَيْهِمٌ / مُسَيْجِدٌ"
+          ],
+          [
+            "Tasgîr (5 Harfli Medli)",
+            "فُعَيْعِيلٌ",
+            "Küçültme / Sevimlilik",
+            "عُصَيْفِيرٌ / قُنَيْدِيلٌ"
+          ],
+          [
+            "Cem-i Kıllet (Azlık: 3-10)",
+            "أَفْعَالٌ / أَفْعِلَةٌ / فِعْلَةٌ",
+            "Sınırlı az sayıda çoğul",
+            "أَقْلَامٌ / أَسْئِلَةٌ / فِتْيَةٌ"
+          ],
+          [
+            "Cem-i Kesret (Çokluk: 10+)",
+            "فُعُولٌ / فِعَالٌ / مَفَاعِلُ",
+            "Sınırsız genel çoğul",
+            "بُيُوتٌ / كِلَابٌ / مَفَاتِيحُ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "الْكُتَيِّبَ",
+          "gorevi": "Mef'ûlün Bih (İsm-i Tasgîr)",
+          "hareke_nedeni": "Eylemden etkilenen nesne olduğu için fetha ile mansûbdur."
+        },
+        {
+          "kelime": "قُبَيْلَ",
+          "gorevi": "Zaman Zarfı (Tasgîr Zarfı / Muzaf)",
+          "hareke_nedeni": "Zaman bildiren mef'ûlün fîh zarfı olduğu için fetha ile mansûbdur."
+        },
+        {
+          "kelime": "رِجَالٌ",
+          "gorevi": "Fâil (Cem-i Teksîr)",
+          "hareke_nedeni": "Fiilin öznesi olduğu için damma tenvini ile merfûdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "كِتَيْبٌ / مَسَاجِدٌ كَثِيرَةٌ.",
+        "dogru": "كُتَيِّبٌ / مَسَاجِدُ كَثِيرَةٌ.",
+        "neden": "Tasgîr kalıbının ilk harfi kesralı değil mutlaka dammalı okunmalıdır ('كُتَيِّبٌ'); ayrıca 'مَفَاعِلُ' veznindeki kırık çoğullar gayri munsarif olup asla tenvin almazlar."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_009",
+    "seviye": "B1",
+    "ktt_ust_konu": "Nidâ Üslûbu ve Münâdâ Çeşitleri",
+    "konu_basligi": "Nidâ (Seslenme) Üslûbu ve Münâdâ Çeşitleri (يَا / أَيُّهَا / أَيَّتُهَا ve İ'rabı)",
+    "hap_kural": "Nidâ üslûbunda seslenilen varlığa münâdâ denir. Münâdâ muzâf, şebîh bi'l-muzâf veya nekre-i gayr-i maksûde olduğunda açık fetha ile mansûb okunur; müfred alem veya nekre-i maksûde olduğunda ise hangi harekeyle merfû oluyorsa o alâmet üzere mebnî olur (damma üzere mebnî). Başı 'ال' takılı bir isme seslenirken araya müzekker için 'أَيُّهَا', müennes için 'أَيَّتُهَا' getirilir.",
+    "metinden_ornek": {
+      "arapca": "يَا طَالِبَ الْعِلْمِ، اجْتَهِدْ فِي دِرَاسَتِكَ، وَيَا أَيُّهَا الْمُعَلِّمُ، سَاعِدْهُ!",
+      "turkce": "Ey ilim talebesi, dersinde gayret et; ve ey öğretmen, ona yardım et!",
+      "aciklama": "'طَالِبَ' kelimesi muzâf münâdâ olduğu için fetha ile mansûbdur; 'أَيُّهَا' terkibindeki 'أَيُّ' lafzı ise nekre-i maksûde hükmünde damma üzere mebnî münâdâdır, sonrasındaki 'الْمُعَلِّمُ' ise onun sıfatı veya bedeli olarak merfûdur."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "يَا خَالِدُ، احْفَظِ الْأَمَانَةَ وَكُنْ صَادِقاً.",
+        "turkce": "Ey Halid, emaneti koru ve doğru sözlü ol."
+      },
+      {
+        "arapca": "يَا أَيَّتُهَا الطَّالِبَةُ الْمُجْتَهِدَةُ، أَبْشِرِي بِالنَّجَاحِ.",
+        "turkce": "Ey çalışkan kız öğrenci, başarıyla müjdelen."
+      }
+    ],
+    "ipucu": "Seslenilen kelime bir tamlamanın ilk kelimesiyse (muzâfsa) üstünlü (fethalı) yap: 'يَا عَبْدَ اللَّهِ'; tek kelimelik özel isim veya belirlenmiş şahıssa tek ötre ver: 'يَا مُحَمَّدُ'، 'يَا رَجُلُ'.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[يَا] + [Muzâf / Şebîh bi'l-Muzâf / Nekre-i Gayr-i Maksûde] -> Mansûb (َ / ً) | [يَا] + [Müfred Alem / Nekre-i Maksûde] -> Damma Üzere Mebnî (ُ) | [يَا] + [أَيُّهَا / أَيَّتُهَا] + [ال + İsim (Merfû Sıfat/Bedel)]",
+      "adim_adim_anlatim": [
+        "1. Mansûb Münâdâ Çeşitleri (3 Durum): (a) Muzâf Münâdâ: Tamlamanın muzafı olduğunda açık fetha ile mansûbtur ('يَا عَبْدَ اللَّهِ', 'يَا أَبَا بَكْرٍ', 'يَا طَالِبَ الْعِلْمِ'). (b) Şebîh bi'l-Muzâf: Tenvinli olup sonrasındaki kelimeyle anlamı tamamlanan yapıdır ('يَا طَالِعاً جَبَلاً'). (c) Nekre-i Gayr-i Maksûde: Belirli bir şahsı hedef almayan genel sesleniştir ('يَا غَافِلاً تَنَبَّهْ', körün 'يَا رَجُلاً خُذْ بِيَدِي' demesi gibi).",
+        "2. Mebnî Münâdâ Çeşitleri (2 Durum): (a) Müfred Alem: Tekil özel isimler tenvinsiz tek damma üzere mebnî olup mahallen mansûbdur ('يَا خَالِدُ', 'يَا فَاطِمَةُ'). (b) Nekre-i Maksûde: Karşıda duran belirli bir hedefe hitap eden nekre isimdir ('يَا رَجُلُ' = ey adam, 'يَا مُعَلِّمُونَ' = ey öğretmenler). İkil ve çoğullarda ref alâmeti ne ise onun üzere mebnî olurlar ('يَا مُسْلِمَانِ' elif üzere mebnî, 'يَا مُسْلِمُونَ' vâv üzere mebnî).",
+        "3. Belirli (ال Takılı) İsimlere Seslenme: Arapçada 'يَا' edatı doğrudan 'ال' takılı isme bağlanamaz (sadece 'يَا اللَّهُ' istisnadır). Araya müzekker isimler için 'أَيُّهَا', müennes isimler için 'أَيَّتُهَا' getirilir ('يَا أَيُّهَا النَّاسُ', 'يَا أَيَّتُهَا النَّفْسُ'). Burada münâdâ 'أَيُّ / أَيَّةُ' olup damma üzere mebnîdir; arkasından gelen 'ال' takılı isim müştaksa sıfat, câmidse bedel olarak merfû okunur."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Münâdâ Çeşitleri, İ'rab Durumları ve Fasih Örnekler",
+        "sutunlar": [
+          "Münâdâ Türü",
+          "Hedef Varlık Özelliği",
+          "İ'rab / Mebnîlik Hükmü",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Muzâf Münâdâ",
+            "İsim tamlamasının muzafıdır",
+            "Açık fetha ile mansûb",
+            "يَا رَبَّ الْعَالَمِينَ / يَا طَالِبَ الْحَقِّ"
+          ],
+          [
+            "Şebîh bi'l-Muzâf",
+            "Tenvinli olup tamlama benzeri",
+            "Fetha tenvini ile mansûb",
+            "يَا حَسَناً خُلُقُهُ / يَا كَاتِباً دَرْسَهُ"
+          ],
+          [
+            "Nekre-i Gayr-i Maksûde",
+            "Hedefsiz, genel hitap",
+            "Fetha tenvini ile mansûb",
+            "يَا ظَالِماً ارْجِعْ عَنْ ظُلْمِكَ"
+          ],
+          [
+            "Müfred Alem",
+            "Tek kelimelik özel isim",
+            "Damma üzere mebnî (mahallen mansûb)",
+            "يَا يُوسُفُ / يَا مَرْيَمُ"
+          ],
+          [
+            "Nekre-i Maksûde",
+            "Belli bir hedefe yönelen hitap",
+            "Damma veya ref alâmeti üzere mebnî",
+            "يَا وَلَدُ انْتَبِهْ / يَا مُسْلِمُونَ"
+          ],
+          [
+            "ال Takılı İsme Hitap",
+            "Araya أَيُّهَا / أَيَّتُهَا girer",
+            "أَيُّ mebnî, sonraki isim merfû",
+            "يَا أَيُّهَا الرَّجُلُ / يَا أَيَّتُهَا الْأُمُّ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "يَا",
+          "gorevi": "Nidâ Harfi",
+          "hareke_nedeni": "Sükûn üzere mebnî uzak ve yakın için kullanılan seslenme harfidir."
+        },
+        {
+          "kelime": "طَالِبَ",
+          "gorevi": "Münâdâ (Muzâf)",
+          "hareke_nedeni": "İlim kelimesine muzaf olan münâdâ olduğu için açık fetha ile mansûbdur."
+        },
+        {
+          "kelime": "الْعِلْمِ",
+          "gorevi": "Muzâfun İleyh",
+          "hareke_nedeni": "Tamlamanın tamlayanı olduğu için esre (kesra) ile mecrûrdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "يَا الرَّجُلُ / يَا خَالِداً (özel isme tenvin vermek) / يَا طَالِبُ الْعِلْمِ.",
+        "dogru": "يَا أَيُّهَا الرَّجُلُ / يَا خَالِدُ / يَا طَالِبَ الْعِلْمِ.",
+        "neden": "'ال' takılı isme doğrudan 'يَا' bitişemez, araya 'أَيُّهَا' girmelidir; müfred alem tenvin almaz tek damma ile mebnî olur; muzaf münâdâ ise ötreli değil fethalı mansûb okunur."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_010",
+    "seviye": "B1",
+    "ktt_ust_konu": "Mu'rab ve Mebnî Zaman-Mekân Zarfları (Mef'ûlün Fîh)",
+    "konu_basligi": "Mef'ûlün Fîh: Mu'rab ve Mebnî Zaman/Mekân Zarfları (حَيْثُ، مُنْذُ، قَطُّ، أَبَداً، لَدَى، بَيْنَمَا)",
+    "hap_kural": "Eylemin gerçekleştiği zamanı veya mekânı bildiren ögelere Mef'ûlün Fîh denir. Çoğu zarf mu'rab olup doğrudan fetha ile mansûb okunurken; bazı zarflar mebnîdir (örneğin 'حَيْثُ' damma üzere, 'أَمْسِ' kesra üzere, 'الْآنَ' fetha üzere mebnîdir). Geçmiş zamanın olumsuzluğunda dâima 'قَطُّ', gelecek zamanın olumsuzluğunda ise dâima 'أَبَداً' kullanılır.",
+    "metinden_ornek": {
+      "arapca": "مَا فَعَلْتُ الشَّرَّ قَطُّ، وَلَنْ أَتْرُكَ الصَّلَاةَ أَبَداً، وَأَجْلِسُ حَيْثُ يَجْلِسُ الْعُلَمَاءُ.",
+      "turkce": "Asla hiçbir zaman kötülük yapmadım; namazı ebediyen bırakmayacağım ve alimlerin oturduğu yerde otururum.",
+      "aciklama": "'قَطُّ' geçmiş zaman olumsuzunu pekiştiren damma üzere mebnî zaman zarfıdır; 'أَبَداً' gelecek zaman olumsuzunu pekiştiren mansûb mu'rab zarftır; 'حَيْثُ' ise damma üzere mebnî olup cümleye muzaf olan mekân zarfıdır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "حَضَرَ الضَّيْفُ أَمْسِ وَالْتَقَيْنَا عِنْدَ زَوَالِ الشَّمْسِ.",
+        "turkce": "Misafir dün geldi ve güneşin tepe noktasından batıya kayması vaktinde buluştuk."
+      },
+      {
+        "arapca": "سَافَرَ أَخِي مُنْذُ يَوْمَيْنِ وَهُوَ الْآنَ فِي الْقَاهِرَةِ.",
+        "turkce": "Kardeşim iki gün önce seyahat etti ve o şu anda Kahire'dedir."
+      }
+    ],
+    "ipucu": "Geçmişe ait olumsuz fiilin pekiştirmesinde sonu damma olan 'قَطُّ' (asla/hiç) kullanılır; geleceğe ait olumsuz fiilin pekiştirmesinde ise sonu fetha tenvinli 'أَبَداً' (asla/hiçbir zaman) kullanılır.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Mâzî Olumsuz (مَا فَعَلْتُ)] + [قَطُّ (Damma Mebnî)] | [Muzâri Olumsuz (لَنْ أَفْعَلَ)] + [أَبَداً (Fetha Mansûb)] | [حَيْثُ (Mekân Zarfı)] + [Fiil/İsim Cümlesi (Muzâfun İleyh)] | [مِنْ قَبْلُ وَمِنْ بَعْدُ (Muzâf Hazfedilince Damma Üzere Mebnî)]",
+      "adim_adim_anlatim": [
+        "1. Mu'rab Zaman ve Mekân Zarfları: Cümlede eylemin vakti veya yerini gösterip fetha alan kelimelerdir: Zaman zarfları ('صَبَاحاً', 'مَسَاءً', 'يَوْمَ', 'شَهْراً', 'سَنَةً'); Mekân zarfları ('أَمَامَ', 'خَلْفَ', 'فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'حَوْلَ'). Bunlar muzaf olduklarında tek fetha, yalın olduklarında fetha tenvini alırlar.",
+        "2. Mebnî Zarflar ve Mebnîlik Çeşitleri: Harekesi değişmeyen kalıplaşmış zarflardır: (a) Damma üzere mebnî: 'حَيْثُ' (mekân zarfı olup dâima cümleye muzaftır), 'قَطُّ' (geçmiş olumsuz zaman zarfı), 'مُنْذُ' (zaman başlangıcı bildirir). (b) Kesra üzere mebnî: 'أَمْسِ' (dün anlamında belirli gün). (c) Fetha üzere mebnî: 'الْآنَ' (şu an), 'أَيْنَ' (nerede), 'ثَمَّ' (orada). (d) Sükûn üzere mebnî: 'إِذْ' (geçmiş için), 'إِذَا' (gelecek için), 'لَدَى' (yanında), 'لَدُنْ' (katında), 'مُذْ'.",
+        "3. 'قَبْلُ' ve 'بَعْدُ' Zarflarının Özel Durumu ile 'بَيْنَمَا': 'قَبْلَ' ve 'بَعْدَ' zarfları normalde muzaftır ve mansûbdur ('قَبْلَ الظُّهْرِ'). Ancak muzafun ileyhi lafzan hazfedilip manası niyet edildiğinde damma üzere mebnî olurlar ('لِلَّهِ الْأَمْرُ مِنْ قَبْلُ وَمِنْ بَعْدُ'). 'بَيْنَمَا' ise zaman sürprizi ve iki olayın eşzamanlılığını bildiren mebnî zaman zarfıdır."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Mu'rab ve Mebnî Zarfların Karşılaştırma Tablosu",
+        "sutunlar": [
+          "Zarf Kategorisi",
+          "Zarf Kelimeleri",
+          "İ'rab / Mebnîlik Hali",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Mu'rab Zaman Zarfı",
+            "صَبَاحاً / مَسَاءً / يَوْمَ",
+            "Fetha ile mansûb",
+            "سَافَرْتُ يَوْمَ الْجُمُعَةِ صَبَاحاً"
+          ],
+          [
+            "Mu'rab Mekân Zarfı",
+            "أَمَامَ / فَوْقَ / بَيْنَ",
+            "Fetha ile mansûb",
+            "جَلَسْتُ أَمَامَ الْمُعَلِّمِ"
+          ],
+          [
+            "Damma Üzere Mebnî",
+            "حَيْثُ / قَطُّ / مُنْذُ",
+            "Mahallen mansûb mef'ûlün fîh",
+            "مَا كَذَبْتُ قَطُّ / اسْكُنْ حَيْثُ شِئْتَ"
+          ],
+          [
+            "Kesra Üzere Mebnî",
+            "أَمْسِ",
+            "Mahallen mansûb mef'ûlün fîh",
+            "وَصَلَ الْقِطَارُ أَمْسِ"
+          ],
+          [
+            "Fetha Üzere Mebnî",
+            "الْآنَ / أَيْنَ / ثَمَّ",
+            "Mahallen mansûb mef'ûlün fîh",
+            "نَحْنُ مُسْتَعِدُّونَ الْآنَ"
+          ],
+          [
+            "Sükûn Üzere Mebnî",
+            "إِذْ / إِذَا / لَدَى / لَدُنْ",
+            "Mahallen mansûb mef'ûlün fîh",
+            "وَجَدْتُ الْكِتَابَ لَدَى زَيْدٍ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "قَطُّ",
+          "gorevi": "Mebnî Zaman Zarfı (Mef'ûlün Fîh)",
+          "hareke_nedeni": "Damma üzere mebnîdir; geçmiş zaman fiilinin olumsuzluğunu pekiştiren zarf olarak mahallen mansûbdur."
+        },
+        {
+          "kelime": "أَبَداً",
+          "gorevi": "Mu'rab Zaman Zarfı (Mef'ûlün Fîh)",
+          "hareke_nedeni": "Gelecek zamanı niteleyen mu'rab zaman zarfı olduğu için fetha tenvini ile mansûbdur."
+        },
+        {
+          "kelime": "حَيْثُ",
+          "gorevi": "Mebnî Mekân Zarfı (Mef'ûlün Fîh)",
+          "hareke_nedeni": "Damma üzere mebnî mekân zarfıdır; mahallen mansûb olup kendisinden sonraki fiil cümlesine muzaftır."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "مَا رَأَيْتُهُ أَبَداً / لَنْ أَفْعَلَهُ قَطُّ / جَلَسْتُ حَيْثَ (fethalamak).",
+        "dogru": "مَا رَأَيْتُهُ قَطُّ / لَنْ أَفْعَلَهُ أَبَداً / جَلَسْتُ حَيْثُ.",
+        "neden": "Geçmiş zaman olumsuzunda 'أَبَداً' kullanılmaz 'قَطُّ' kullanılır; gelecek zaman olumsuzunda 'قَطُّ' kullanılmaz 'أَبَداً' kullanılır; 'حَيْثُ' zarfı ise fetha değil damma üzere mebnîdir."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_011",
+    "seviye": "B2",
+    "ktt_ust_konu": "Mebnîlik, Mu'rablık ve Takdîrî-Mahallî İ'rab",
+    "konu_basligi": "Mebnî ve Mu'rab İsimler/Fiiller ile Lafzî, Takdîrî ve Mahallî İ'rab Sistemi",
+    "hap_kural": "Cümledeki konumuna göre son harekesi değişen kelimelere Mu'rab, değişmeyip sabit kalanlara Mebnî denir. İ'rab alâmeti sonda açıkça telaffuz ediliyorsa Lafzî; elifle biten maksûr isimlerde (تعذّر), yâ ile biten mankûs isimlerde (ثقل) veya mütekellim yâ'sına muzaf isimlerde telaffuz edilemeyip varsayılıyorsa Takdîrî; mebnî kelimelerin ve cümlelerin i'rabında ise Mahallî i'rab geçerlidir.",
+    "metinden_ornek": {
+      "arapca": "زَارَ الْفَتَى الْقَاضِيَ فِي الْمُسْتَشْفَى مَعَ صَدِيقِي لِيَدْعُوَ لَهُ بِالشِّفَاءِ.",
+      "turkce": "Genç, hastanede arkadaşımla birlikte kadıyı ona şifa duasında bulunmak için ziyaret etti.",
+      "aciklama": "'الْفَتَى' maksûr isim olup fâil olarak takdîren merfûdur; 'الْقَاضِيَ' mankûs isim olup nasb halinde fethayı taşıyabildiği için lafzan mansûbdur; 'الْمُسْتَشْفَى' maksûr isim olup takdîren mecrûrdur; 'صَدِيقِي' mütekellim yâ'sından dolayı takdîren mecrûrdur; 'لِيَدْعُوَ' ise illetli muzâri olup nasb halini açıkça almıştır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "جَاءَ الْقَاضِي الْعَادِلُ وَحَكَمَ عَلَى الْجَانِي بِالْحَقِّ.",
+        "turkce": "Adil kadı geldi ve suçlu hakkında hak ile hükmetti."
+      },
+      {
+        "arapca": "هٰؤُلَاءِ الَّذِينَ اجْتَهَدُوا كَانُوا هُمُ الْفَائِزِينَ.",
+        "turkce": "Gayret eden şu kimseler, kazananların ta kendileri oldular."
+      }
+    ],
+    "ipucu": "Sonu elifle (ى / ا) biten isimler (maksûr) her üç halde de takdîrîdir; sonu yâ (ي) ile bitenler (mankûs) sadece üstünde fethayı açıkça gösterir, ötre ve esrede takdîrîdir.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Maksûr İsim (الْفَتَى)] -> Ref, Nasb, Cer: Tümü Takdîrî (Teazzür / ا) | [Mankûs İsim (الْقَاضِي)] -> Ref, Cer: Takdîrî (Sıklet) | Nasb: Lafzî (الْقَاضِيَ) | [Mütekellim Yâ'sı (كِتَابِي)] -> Tümü Takdîrî (Münâsebet Kesrası) | [Mebnî Kelime / Cümle] -> Mahallî İ'rab",
+      "adim_adim_anlatim": [
+        "1. Lafzî ve Takdîrî İ'rab Ayrımı: Lafzî i'rab, irab alâmetinin kelimenin sonunda ses ve yazı olarak açıkça belirmesidir ('جَاءَ زَيْدٌ', 'رَأَيْتُ زَيْداً'). Takdîrî i'rab ise telaffuzdaki imkansızlık veya ağırlık sebebiyle harekenin var kabul edilmesidir. Üç ana sebebi vardır: (a) Teazzür (İmkansızlık): Maksûr isimlerde elif asla hareke alamaz ('جَاءَ الْفَتَى', 'رَأَيْتُ الْفَتَى', 'مَرَرْتُ بِالْفَتَى'). (b) Sıklet (Ağırlık): Mankûs isimlerde damma ve kesra yâ üzerinde ağır gelir ('جَاءَ الْقَاضِي', 'مَرَرْتُ بِالْقَاضِي'), fakat fetha hafiftir ve lafzan açığa çıkar ('رَأَيْتُ الْقَاضِيَ'). (c) Münâsebet: Mütekellim yâ'sına ('ي') muzaf olan isimlerde son harf yâ'ya uyum için mecburen kesralanır, irab harekeleri takdîr edilir ('هٰذَا كِتَابِي', 'قَرَأْتُ كِتَابِي').",
+        "2. İlletli Muzâri Fiillerin İ'rabı: Sonu elif ile biten muzârilerde ('يَسْعَى') ref ve nasb takdîrîdir. Sonu vâv ('يَدْعُو') veya yâ ('يَرْمِي') ile biten muzârilerde ref hali takdîrîdir; ancak nasb edatı geldiğinde fetha hafif olduğu için lafzan okunur ('لَنْ يَدْعُوَ', 'لَنْ يَرْمِيَ'). Cezm halinde ise her üçünün de sonundaki illet harfi düşer ('لَمْ يَسْعَ', 'لَمْ يَدْعُ', 'لَمْ يَرْمِ').",
+        "3. Mahallî İ'rab ve Mebnî Alanlar: Mebnî kelimeler (zamirler, işaret isimleri, ism-i mevsûller, şart/soru isimleri, mâzî ve emir fiilleri, fetha mebnîsi olan mürekkep sayılar) ile cümle halindeki ögeler (haber cümlesi, hâl cümlesi, sıla cümlesi, mef'ûl cümlesi) irab makamında bulunurlar. Bunların durumları 'mahallen merfû / mansûb / mecrûr / meczûm' olarak ifade edilir."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Lafzî, Takdîrî ve Mahallî İ'rab Türlerinin Karşılaştırması",
+        "sutunlar": [
+          "Kelime Yapısı",
+          "Ref Hali İ'rabı",
+          "Nasb Hali İ'rabı",
+          "Cer Hali İ'rabı"
+        ],
+        "satirlar": [
+          [
+            "Sahih İsim (طَالِبٌ)",
+            "Lafzî Damma (طَالِبُ)",
+            "Lafzî Fetha (طَالِبَ)",
+            "Lafzî Kesra (طَالِبِ)"
+          ],
+          [
+            "Maksûr İsim (الْمُسْتَشْفَى)",
+            "Takdîrî Damma (Teazzür)",
+            "Takdîrî Fetha (Teazzür)",
+            "Takdîrî Kesra (Teazzür)"
+          ],
+          [
+            "Mankûs İsim (الْقَاضِي)",
+            "Takdîrî Damma (Sıklet)",
+            "Lafzî Fetha (الْقَاضِيَ)",
+            "Takdîrî Kesra (Sıklet)"
+          ],
+          [
+            "Mütekellim Yâ'sı (صَدِيقِي)",
+            "Takdîrî Damma (Münâsebet)",
+            "Takdîrî Fetha (Münâsebet)",
+            "Takdîrî Kesra (Münâsebet)"
+          ],
+          [
+            "Mebnî İsim (هٰذَا / هُوَ)",
+            "Mahallen Merfû",
+            "Mahallen Mansûb",
+            "Mahallen Mecrûr"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "الْفَتَى",
+          "gorevi": "Fâil (Maksûr İsim)",
+          "hareke_nedeni": "Özne olup elif üzerinde teazzür sebebiyle takdîr edilen damma ile merfûdur."
+        },
+        {
+          "kelime": "الْقَاضِيَ",
+          "gorevi": "Mef'ûlün Bih (Mankûs İsim)",
+          "hareke_nedeni": "Eylemden etkilenen nesne olup yâ harfi üzerindeki fetha hafif olduğu için lafzan mansûbdur."
+        },
+        {
+          "kelime": "صَدِيقِي",
+          "gorevi": "Mecrûr İsim (Muzaf)",
+          "hareke_nedeni": "'مَعَ' kelimesine muzaf olup mütekellim yâ'sının münâsebet kesrası sebebiyle takdîren mecrûrdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "رَأَيْتُ الْقَاضِيْ (fethayı takdir etmek) / مَرَرْتُ بِالْقَاضِيِ.",
+        "dogru": "رَأَيْتُ الْقَاضِيَ / مَرَرْتُ بِالْقَاضِي.",
+        "neden": "Mankûs isimlerde nasb hali takdîrî değildir, fetha hafif olduğu için mutlaka lafzan okunur; cer halinde ise kesra yâ üzerinde telaffuz edilmez, takdîr edilir."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_012",
+    "seviye": "B2",
+    "ktt_ust_konu": "Kasem (Yemin) Üslûbu ve Te'kid Nûnları",
+    "konu_basligi": "Kasem (Yemin) Üslûbu (وَاللَّهِ / بِاللَّهِ / تَاللَّهِ) ve Muzâri Fiilde Te'kid Nûnları (نَّ / نْ)",
+    "hap_kural": "Arapçada yemin harfleri olan 'و' (vâv-ı kasem), 'ب' (bâ-ı kasem) ve sadece lafza-i celâle mahsus olan 'ت' (tâ-ı kasem) kendisinden sonraki yemin edilen ismi mecrûr (esreli) yapar. Yeminin cevabı olumlu gelecek zaman muzârisi olduğunda fiilin başına te'kid lâmı ('لَ') ve sonuna şeddeli te'kid nûnu ('نَّ') getirilmesi zorunludur; bu durumda muzâri fiil fetha üzere mebnî olur.",
+    "metinden_ornek": {
+      "arapca": "تَاللَّهِ لَأَنْصُرَنَّ الْمَظْلُومَ، وَوَاللَّهِ لَقَدْ نَجَحَ الصَّابِرُونَ فِي امْتِحَانِهِمْ.",
+      "turkce": "Allah'a yemin olsun ki mazluma mutlaka yardım edeceğim; ve Allah'a andolsun ki sabredenler sınavlarında kesinlikle başarılı oldular.",
+      "aciklama": "'تَاللَّهِ' kasem harf-i ceriyle mecrûrdur; 'لَأَنْصُرَنَّ' yeminin olumlu muzâri cevabı olup başına te'kid lâmı ve sonuna nûn-u müşeddede (sakîle) alarak fetha üzere mebnî olmuştur; 'لَقَدْ نَجَحَ' ise olumlu mâzî cevap cümlesidir."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "وَاللَّهِ لَا أَخُونُ وَطَنِي أَبَداً.",
+        "turkce": "Allah'a yemin olsun ki vatanıma asla ihanet etmem."
+      },
+      {
+        "arapca": "بِاللَّهِ عَلَيْكَ، هَلْ تَقُولَنَّ الْحَقَّ دَائِماً؟",
+        "turkce": "Allah aşkına söyle, dâima hakkı söyler misin?"
+      }
+    ],
+    "ipucu": "Kasemden sonra olumlu mazi fiil gelirse 'لَقَدْ' ile pekiştirilir; olumlu muzâri fiil gelirse başında 'لَ' ve sonunda şeddeli 'نَّ' ile pekiştirilerek fethalanır: 'وَاللَّهِ لَأَفْعَلَنَّ'.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Kasem Harfi (وَ / بِ / تَ)] + [Muksemün Bih (اللَّهِ - Mecrûr ِ)] + [Cevap Cümlesi] | Olumlu Mâzî -> [لَقَدْ + Mâzî] | Olumlu Muzâri -> [لَ + Muzâri + نَّ (Fetha Mebnî)] | Olumsuz -> [مَا / لَا / لَنْ]",
+      "adim_adim_anlatim": [
+        "1. Kasem Harfleri ve Muksemün Bih: Yemin harfleri harf-i cer vazifesi görür: (a) 'الْوَاوُ': En yaygın kasem harfidir, tüm açık isimlere gelir ('وَاللَّهِ', 'وَالْعَصْرِ'). (b) 'الْبَاءُ': Hem açık isme hem zamire gelebilir ('بِاللَّهِ', 'بِكَ لَأَفْعَلَنَّ'). (c) 'التَّاءُ': Yalnızca ve sadece 'اللَّهِ' lafzına mahsustur ('تَاللَّهِ'). Muksemün bih olan isim dâima kesra ile mecrûrdur.",
+        "2. Kasemin Cevap (Ceza) Cümlesi Kuralları: Yeminden sonra gelen cümlenin yapısına göre te'kid edatları değişir: (a) Olumlu Mâzî Cümle: Başına 'لَقَدْ' veya 'قَدْ' getirilir ('وَاللَّهِ لَقَدْ فَازَ الْمُؤْمِنُونَ'). (b) Olumlu Muzâri Cümle: Fiilin başına cevap lâmı ('لَ'), sonuna şeddeli te'kid nûnu ('نَّ') gelir ('وَاللَّهِ لَأَجْتَهِدَنَّ'). (c) Olumsuz Cümleler: 'مَا' (mâzî için), 'لَا' veya 'لَنْ' (muzâri için) edatlarıyla kurulur ve nûn almaz ('وَاللَّهِ مَا كَذَبْتُ', 'وَاللَّهِ لَا أَفْعَلُ').",
+        "3. Te'kid Nûnları ve Muzâri Fiilin Mebnîliği: İki çeşit te'kid nûnu vardır: Nûn-u Sakîle (şeddeli 'نَّ') ve Nûn-u Hafîfe (cezimli 'نْ'). Bu nûnlar muzâri fiile araya fâil zamiri girmeksizin doğrudan bitiştiğinde, muzâri fiil mu'rablıktan çıkar ve son harfi fetha üzere mebnî olur ('يَكْتُبَنَّ', 'لَأَصْبِرَنَّ')."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Kasem Harfleri ve Cevap Cümlelerinin Te'kid Sistemi",
+        "sutunlar": [
+          "Kasem / Cevap Türü",
+          "Kullanılan Edatlar",
+          "Fiilin Durumu / İ'rabı",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "Vâv-ı Kasem (وَ)",
+            "Açık isimlerin başına",
+            "Muksemün bih mecrûr (esreli)",
+            "وَاللَّهِ / وَالشَّمْسِ"
+          ],
+          [
+            "Tâ-ı Kasem (تَ)",
+            "Sadece lafza-i celâle",
+            "Lafza-i celâl mecrûr (esreli)",
+            "تَاللَّهِ لَأَكِيدَنَّ أَصْنَامَكُمْ"
+          ],
+          [
+            "Olumlu Mâzî Cevap",
+            "لَقَدْ / قَدْ",
+            "Mâzî fiil fetha üzere mebnî",
+            "وَاللَّهِ لَقَدْ حَضَرَ الْمُعَلِّمُ"
+          ],
+          [
+            "Olumlu Muzâri Cevap",
+            "لَ + Fiil + نَّ",
+            "Muzâri fiil fetha üzere mebnî",
+            "وَاللَّهِ لَأَقُولَنَّ الْحَقَّ"
+          ],
+          [
+            "Olumsuz Cevap",
+            "مَا / لَا / لَنْ",
+            "Te'kid nûnu almaz, menfî kalır",
+            "وَاللَّهِ مَا قَصَّرْتُ فِي وَاجِبِي"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "تَاللَّهِ",
+          "gorevi": "Kasem Harfi + Muksemün Bih",
+          "hareke_nedeni": "'تَ' kasem harf-i ceridir; 'اللَّهِ' lafza-i celâli yemin edilen isim olarak esre (kesra) ile mecrûrdur."
+        },
+        {
+          "kelime": "لَأَنْصُرَنَّ",
+          "gorevi": "Cevap Lâmı + Te'kidli Muzâri Fiil",
+          "hareke_nedeni": "'لَ' kasem cevabı lâmıdır; 'أَنْصُرَ' fiili nûn-u sakîle doğrudan bitiştiği için fetha üzere mebnîdir; 'نَّ' te'kid harfidir."
+        },
+        {
+          "kelime": "الْمَظْلُومَ",
+          "gorevi": "Mef'ûlün Bih (Nesne)",
+          "hareke_nedeni": "Geçişli fiilin nesnesi olduğu için açık fetha ile mansûbdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "تَالرَّحْمٰنِ / وَاللَّهِ أَنْصُرُ (olumlu gelecek muzâride te'kidi terk etmek) / تَاللَّهُ.",
+        "dogru": "تَاللَّهِ / وَاللَّهِ لَأَنْصُرَنَّ / تَاللَّهِ.",
+        "neden": "'تَ' harfi Allah lafzı dışındaki isimlerin başına gelemez; kasemden sonraki isim mecrûrdur; olumlu gelecek muzârisi ise 'لَ' ve 'نَّ' ile pekiştirilmek zorundadır."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_013",
+    "seviye": "B2",
+    "ktt_ust_konu": "İhtisâs, İğrâ ve Tahzîr Üslûpları",
+    "konu_basligi": "İhtisâs (نَحْنُ الطُّلَّابَ...), İğrâ (Teşvik) ve Tahzîr (Sakındırma) Üslûpları",
+    "hap_kural": "İhtisâs üslûbunda mütekellim zamirinden sonra gelen ve kapalılığı gideren isim, takdîrî 'أَخُصُّ' (özellikle kastediyorum) fiilinin mef'ûlü olarak fethalı mansûb okunur (el-Muhassas). İğrâ üslûbunda övülen güzel bir davranış takdîrî 'اِلْزَمْ' (sarıl/yap) fiiliyle fethalanır; Tahzîr üslûbunda ise sakındırılan kötü davranış veya tehlike takdîrî 'احْذَرْ' (sakın) fiiliyle veya 'إِيَّاكَ' kalıbıyla mansûb kılınır.",
+    "metinden_ornek": {
+      "arapca": "نَحْنُ الْمُعَلِّمِينَ نَبْنِي الْأَجْيَالَ؛ فَالصِّدْقَ الصِّدْقَ فِي الْقَوْلِ، وَإِيَّاكُمْ وَالْكَذِبَ!",
+      "turkce": "Bizler -yani öğretmenler- nesilleri inşa ederiz; öyleyse sözde doğruluğa sımsıkı sarılın, ve yalandan kesinlikle sakının!",
+      "aciklama": "'الْمُعَلِّمِينَ' kelimesi ihtisâs üzere gizli 'أَخُصُّ' fiilinin mef'ûlü olarak yâ ile mansûbdur; 'الصِّدْقَ' kelimesi iğrâ üslûbuyla gizli 'اِلْزَمْ' fiilinin mef'ûlüdür; 'إِيَّاكُمْ وَالْكَذِبَ' terkibi ise tahzîr (sakındırma) kalıbıdır."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "نَحْنُ مَعَاشِرَ الْأَنْبِيَاءِ لَا نُورَثُ.",
+        "turkce": "Bizler -peygamberler topluluğu- miras bırakmayız."
+      },
+      {
+        "arapca": "الِاجْتِهَادَ وَالصَّبْرَ يَا طَالِبَ الْعِلْمِ!",
+        "turkce": "Çalışmaya ve sabra sarıl ey ilim talebesi!"
+      }
+    ],
+    "ipucu": "Cümle başında 'Biz...' dedikten sonra parantez içi gibi gelen fethalı isim ihtisâstır (özellikle biz...); iki kere tekrar edilen güzel ahlak iğrâdır (الصِّدْقَ الصِّدْقَ); 'إِيَّاكَ وَ...' kalıbı ise tahzîrdir.",
+    "ayrintili_anlatim": {
+      "formul_sema": "[Zamîr-i Mütekellim (نَحْنُ / أَنَا)] + [Muhassas İsim (أَخُصُّ -> Mansûb َ / ي)] + [Haber Cümlesi] | İğrâ: [اِلْزَمْ -> Mansûb İsim (Tekrar/Atıf)] | Tahzîr: [احْذَرْ -> Mansûb] veya [إِيَّاكَ وَ + Mansûb]",
+      "adim_adim_anlatim": [
+        "1. İhtisâs Üslûbu (el-İhtisâs): Çoğunlukla 'نَحْنُ' veya 'أَنَا' gibi 1. şahıs zamirlerinden sonra gelir. Zamirdeki kapalılığı gidermek ve övgü/tevazu ifade etmek için araya 'ال' takılı veya muzaf bir isim girer. Bu isim mübtedanın haberi değildir; takdîrî 'أَعْنِي' veya 'أَخُصُّ' (yani, bilhassa kastediyorum) fiilinin mef'ûlün bihi sayılarak fethalı (veya ikil-çoğulsa yâ ile) mansûb okunur ('نَحْنُ الطُّلَّابَ نَجْتَهِدُ').",
+        "2. İğrâ (Teşvik) Üslûbu: Muhatabı güzel ve övgüye değer bir eyleme teşvik etmek için o ismin zikredilmesidir. Üç şekilde gelir: Müfred ('النَّجَاحَ' = başarıya sarıl), Mükerrer ('الصِّدْقَ الصِّدْقَ' = doğruluğa sarıl doğruluğa), Ma'tûf ('الْجِدَّ وَالِاجْتِهَادَ' = ciddiyete ve çalışkanlığa sarıl). Buradaki mansûb isim gizli 'اِلْزَمْ' (sarıl) emrinin mef'ûlüdür; tekrar veya atıf varsa fiilin gizlenmesi zorunludur.",
+        "3. Tahzîr (Sakındırma) Üslûbu: Muhatabı zararlı bir durumdan korumak için uyarırken kullanılır. İki ana yapısı vardır: (a) Kötü eylemin doğrudan fethalanması: 'الْكَسَلَ الْكَسَلَ' (tembellikten sakın!) - gizli 'احْذَرْ' fiilinin mef'ûlüdür. (b) 'إِيَّا' Zamiriyle Kurulan Kalıplar: 'إِيَّاكَ وَالْأَسَدَ' (kendini koru ve aslandan sakın), 'إِيَّاكَ أَنْ تَكْذِبَ'. Burada 'إِيَّاكَ' birinci mef'ûl, sonrasındaki isim ise atıfla veya ikinci gizli fiille mansûb mef'ûldür."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "İhtisâs, İğrâ ve Tahzîr Üslûplarının Karşılaştırmalı Tablosu",
+        "sutunlar": [
+          "Üslûp Türü",
+          "Gizli Kabul Edilen Âmil",
+          "Gramer Hükmü",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "İhtisâs (Özelleştirme)",
+            "أَخُصُّ / أَعْنِي",
+            "Mef'ûlün bih olarak mansûb",
+            "نَحْنُ الْمُسْلِمِينَ نُحِبُّ السَّلَامَ"
+          ],
+          [
+            "İhtisâs (Muzâf Halinde)",
+            "أَخُصُّ / أَعْنِي",
+            "Muzâf mef'ûl mansûb",
+            "نَحْنُ أَبْنَاءَ الْعُرُوبَةِ نَتَّحِدُ"
+          ],
+          [
+            "İğrâ (Mükerrer Teşvik)",
+            "اِلْزَمْ (Zorunlu gizli)",
+            "Mef'ûlün bih olarak mansûb",
+            "الْمُرُوءَةَ الْمُرُوءَةَ يَا رِجَالُ"
+          ],
+          [
+            "İğrâ (Ma'tûf Teşvik)",
+            "اِلْزَمْ (Zorunlu gizli)",
+            "Mef'ûlün bih olarak mansûb",
+            "الصَّبْرَ وَالشَّجَاعَةَ فِي الْحَرْبِ"
+          ],
+          [
+            "Tahzîr (Mükerrer Sakındırma)",
+            "احْذَرْ (Zorunlu gizli)",
+            "Mef'ûlün bih olarak mansûb",
+            "النَّارَ النَّارَ! / الْخِيَانَةَ الْخِيَانَةَ!"
+          ],
+          [
+            "Tahzîr (إِيَّا Kalıbı)",
+            "قِ نَفْسَكَ وَاحْذَرْ",
+            "Mahallen ve lafzan mansûb",
+            "إِيَّاكَ وَالنِّفَاقَ / إِيَّاكُمْ وَالظُّلْمَ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "الْمُعَلِّمِينَ",
+          "gorevi": "el-Muhassas (Mef'ûlün Bih)",
+          "hareke_nedeni": "Mahzûf 'أَخُصُّ' fiilinin mef'ûlü olup cemi müzekker sâlim olduğu için yâ ('ي') ile mansûbdur."
+        },
+        {
+          "kelime": "الصِّدْقَ",
+          "gorevi": "İğrâ Mef'ûlü (Mef'ûlün Bih)",
+          "hareke_nedeni": "Vücûben mahzûf 'اِلْزَمْ' fiilinin mef'ûlü olduğu için fetha ile mansûbdur; ikincisi lafzî te'kiddir."
+        },
+        {
+          "kelime": "إِيَّاكُمْ",
+          "gorevi": "Tahzîr Zamiri (Mef'ûlün Bih)",
+          "hareke_nedeni": "Mahzûf fiilin nesnesi olarak mahallen mansûbdur; 'وَالْكَذِبَ' ise mahzûf fiilin mef'ûlü olarak fethalı mansûbdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "نَحْنُ الْمُعَلِّمُونَ نَبْنِي (ihtisâs kastedildiğinde) / إِيَّاكَ وَالْكَذِبُ.",
+        "dogru": "نَحْنُ الْمُعَلِّمِينَ نَبْنِي / إِيَّاكَ وَالْكَذِبَ.",
+        "neden": "İhtisâs ismi haber değil gizli fiilin mef'ûlü olduğu için merfû değil mansûb okunur; tahzîrde sakındırılan kelime de damma değil fethalı mansûb olmalıdır."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_014",
+    "seviye": "B2",
+    "ktt_ust_konu": "Esmâü'l-Ef'âl (Fiil İsimleri) ve Kullanımı",
+    "konu_basligi": "Esmâü'l-Ef'âl (Fiil İsimleri: هَيْهَاتَ، شَتَّانَ، أُفٍّ، آمِينَ، حَيَّ، هَيَّا، عَلَيْكَ بِ)",
+    "hap_kural": "Anlam, zaman ve amel bakımından fiil gibi davranan ancak fiil çekim eklerini (tâ-i fâil, cemaat vâvı vb.) kabul etmeyen mebnî kelimelere Esmâü'l-Ef'âl (fiil isimleri) denir. Zamana göre üç türe ayrılır: İsm-i fiil-i mâzî (هَيْهَاتَ = uzak oldu, شَتَّانَ = ayrıldı), İsm-i fiil-i muzâri (أُفٍّ = bıktım/of, آهٍ = acı çekiyorum) ve İsm-i fiil-i emir (آمِينَ = icabet et, حَيَّ/هَيَّا = gel/haydi, صَهْ = sus, عَلَيْكَ بِ = sarıl).",
+    "metinden_ornek": {
+      "arapca": "هَيْهَاتَ النَّجَاحُ بِغَيْرِ اجْتِهَادٍ، فَعَلَيْكَ بِالصَّبْرِ، وَقُلْ عِنْدَ الدُّعَاءِ: آمِينَ!",
+      "turkce": "Çalışma olmaksızın başarı ne kadar da uzaktır! Öyleyse sabra sarıl, ve dua vaktinde 'Amin' (duamı kabul et) de!",
+      "aciklama": "'هَيْهَاتَ' mazi anlamlı ism-i fiildir ve 'بَعُدَ' anlamında olup 'النَّجَاحُ' ismini fâil olarak ref etmiştir; 'عَلَيْكَ بِ' emir anlamlı ism-i fiildir ve 'اِلْزَمْ' anlamındadır; 'آمِينَ' ise 'اسْتَجِبْ' anlamında emir ism-i fiilidir."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "شَتَّانَ مَا بَيْنَ الْعَالِمِ وَالْجَاهِلِ فِي الْفَهْمِ.",
+        "turkce": "Anlayış hususunda alim ile cahilin arası ne kadar da ayrılmıştır/farklıdır!"
+      },
+      {
+        "arapca": "فَلَا تَقُلْ لَهُمَا أُفٍّ وَلَا تَنْهَرْهُمَا.",
+        "turkce": "Onlara 'öf' bile deme ve onları azarlama."
+      }
+    ],
+    "ipucu": "Fiil ismi gibi görünen ama çekilmeyen kelimeler tekildir ve mebnîdir; arkasından gelen fâil veya mef'ûlü fiil gibi idare ederler ('هَيْهَاتَ' mazi, 'أُفٍّ' şimdiki zaman, 'صَهْ' emirdir).",
+    "ayrintili_anlatim": {
+      "formul_sema": "[İsm-i Fiil-i Mâzî (هَيْهَاتَ / شَتَّانَ)] -> Mâzî Anlamı + Merfû Fâil | [İsm-i Fiil-i Muzâri (أُفٍّ / آهٍ / وَيْ)] -> Şimdiki Zaman Anlamı | [İsm-i Fiil-i Emir (صَهْ / حَيَّ / عَلَيْكَ بِ)] -> Emir Anlamı + Mef'ûl",
+      "adim_adim_anlatim": [
+        "1. İsm-i Fiil-i Mâzî (Geçmiş Zaman Fiil İsimleri): Mâzî fiil anlamı taşırlar, fetha üzere mebnîdirler ve sonrasındaki ismi fâil olarak ref ederler: 'هَيْهَاتَ' (= بَعُدَ جِدّاً: ne kadar uzak oldu!), 'شَتَّانَ' (= افْتَرَقَ كَثِيراً: ne kadar ayrıldı/farklı oldu!), 'سُرْعَانَ' (= سَرُعَ: ne kadar çabuk oldu!). Örneğin: 'هَيْهَاتَ الْأَمَلُ' (O emel ne kadar da uzak!).",
+        "2. İsm-i Fiil-i Muzâri (Şimdiki/Geniş Zaman Fiil İsimleri): Muzâri fiil anlamı ve eylemi taşırlar: 'أُفٍّ' (= أَتَضَجَّرُ: sıkıldım, bıktım, öf - kesra tenvini üzere mebnîdir), 'آهٍ' (= أَتَوَجَّعُ: acı çekiyorum, ah), 'وَيْ' veya 'وَاهاً' (= أَتَعَجَّبُ: şaşıyorum, hayret ediyorum). Fâilleri dâima içlerinde gizli 'أَنَا' zamiridir.",
+        "3. İsm-i Fiil-i Emir (Emir Fiil İsimleri): Sayıca en çok olan gruptur, talep ve emir bildirir: 'آمِينَ' (= اسْتَجِبْ: kabul eyle), 'حَيَّ' (= أَقْبِلْ: haydi gel, 'حَيَّ عَلَى الصَّلَاةِ'), 'هَيَّا' (= أَسْرِعْ: haydi acele et), 'هَلُمَّ' (= تَعَالَ: gel), 'صَهْ' (= اسْكُتْ: sus), 'مَهْ' (= اكْفُفْ: vazgeç), 'عَلَيْكَ بِ' (= الْزَمْ: sarıl, bırakma), 'إِلَيْكَ عَنِّي' (= ابْتَعِدْ: benden uzak dur), 'دُونَكَ / هَاكَ' (= خُذْ: al sana)."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Esmâü'l-Ef'âl Türleri, Anlamları ve Amel Özeti",
+        "sutunlar": [
+          "Fiil İsmi Grubu",
+          "Fiil İsmi Kelimesi",
+          "Kastedilen Fiil Anlamı",
+          "Harekeli Fasih Örnek"
+        ],
+        "satirlar": [
+          [
+            "İsm-i Fiil-i Mâzî",
+            "هَيْهَاتَ (Fetha mebnî)",
+            "بَعُدَ (Ne kadar uzak oldu)",
+            "هَيْهَاتَ هَيْهَاتَ لِمَا تُوعَدُونَ"
+          ],
+          [
+            "İsm-i Fiil-i Mâzî",
+            "شَتَّانَ (Fetha mebnî)",
+            "افْتَرَقَ (Ne kadar ayrıldı)",
+            "شَتَّانَ بَيْنَ الْحَقِّ وَالْبَاطِلِ"
+          ],
+          [
+            "İsm-i Fiil-i Muzâri",
+            "أُفٍّ (Kesra tenvini mebnî)",
+            "أَتَضَجَّرُ (Bıktım/Usandım)",
+            "أُفٍّ لِكُلِّ كَسُولٍ"
+          ],
+          [
+            "İsm-i Fiil-i Muzâri",
+            "وَيْ (Sükûn mebnî)",
+            "أَتَعَجَّبُ (Şaşıyorum)",
+            "وَيْكَأَنَّهُ لَا يُفْلِحُ الْكَافِرُونَ"
+          ],
+          [
+            "İsm-i Fiil-i Emir",
+            "آمِينَ (Fetha mebnî)",
+            "اسْتَجِبْ (Kabul eyle)",
+            "آمِينَ يَا رَبَّ الْعَالَمِينَ"
+          ],
+          [
+            "İsm-i Fiil-i Emir",
+            "صَهْ (Sükûn mebnî)",
+            "اسْكُتْ (Sus)",
+            "صَهْ إِذَا قَرَأَ الْإِمَامُ"
+          ],
+          [
+            "İsm-i Fiil-i Emir",
+            "عَلَيْكَ بِ (Mürtecel/Menkûl)",
+            "الْزَمْ (Sımsıkı sarıl)",
+            "عَلَيْكُمْ بِالصِّدْقِ"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "هَيْهَاتَ",
+          "gorevi": "İsm-i Fiil-i Mâzî",
+          "hareke_nedeni": "Fetha üzere mebnîdir; 'بَعُدَ' (uzak oldu) anlamında geçmiş zaman fiil ismidir."
+        },
+        {
+          "kelime": "النَّجَاحُ",
+          "gorevi": "Fâil",
+          "hareke_nedeni": "'هَيْهَاتَ' fiil isminin faili olduğu için damma ile merfûdur."
+        },
+        {
+          "kelime": "عَلَيْكَ",
+          "gorevi": "İsm-i Fiil-i Emir",
+          "hareke_nedeni": "Fetha üzere mebnîdir; 'الْزَمْ' (sarıl) anlamında emir fiil ismidir; fâili müstetir 'أَنْتَ' zamiridir."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "هَيْهَاتُ النَّجَاحَ / هَيَّوْا إِلَى الْعَمَلِ (çoğul zamir bitirmeye çalışmak).",
+        "dogru": "هَيْهَاتَ النَّجَاحُ / هَيَّا إِلَى الْعَمَلِ.",
+        "neden": "Fiil isimleri mebnîdir, sonları ötrelenmez ('هَيْهَاتَ'); ayrıca fiil isimleri tekil, ikil ve çoğul muhataplar için aynı kalır, çekim eki almazlar ('هَيَّا')."
+      }
+    }
+  },
+  {
+    "bagli_id": "grm_015",
+    "seviye": "B2",
+    "ktt_ust_konu": "Merfûât, Mansûbât ve Mecrûrât Genel İ'rab Özeti",
+    "konu_basligi": "Merfûât, Mansûbât ve Mecrûrât Genel İ'rab Haritası (Nahiv Bütüncül Özeti)",
+    "hap_kural": "Arapça nahiv sisteminde kelimelerin cümledeki rolleri 3 ana i'rab grubuna ayrılır: Merfûât (özne makamları: Mübteda, Haber, Fâil, Nâib-i Fâil, Kâne'nin İsmi, İnne'nin Haberi); Mansûbât (eylemden etkilenen ve tamamlayan unsurlar: Beş Mef'ûl, Hâl, Temyiz, Müstesnâ, Kâne'nin Haberi, İnne'nin İsmi); Mecrûrât (harf-i cerli isim ve muzâfun ileyh). Tâbiler (sıfat, atıf, te'kid, bedel) ise önündeki kelimenin i'rabına uyar.",
+    "metinden_ornek": {
+      "arapca": "إِنَّ الْمُعَلِّمَ الْمُخْلِصَ يَبْنِي الْعُقُولَ بِنَاءً جَمِيلاً فِي الْمَدْرَسَةِ صَبَاحاً رَغْبَةً فِي الْخَيْرِ.",
+      "turkce": "Şüphesiz ihlaslı öğretmen, iyilik arzusuyla sabahleyin okulda zihinleri güzel bir inşa ile inşa eder.",
+      "aciklama": "'الْمُعَلِّمَ' İnne'nin mansûb ismidir; 'الْمُخْلِصَ' mansûb sıfattır; 'يَبْنِي' fiil cümlesi İnne'nin mahallen merfû haberidir; 'الْعُقُولَ' mef'ûlün bihtir; 'بِنَاءً' mef'ûlün mutlaktır; 'الْمَدْرَسَةِ' mecrûr isimdir; 'صَبَاحاً' mef'ûlün fîhtir; 'رَغْبَةً' ise mef'ûlün li-eclihtir."
+    },
+    "ek_ornekler": [
+      {
+        "arapca": "كَانَ الطَّالِبَانِ مُجْتَهِدَيْنِ فِي دِرَاسَتِهِمَا.",
+        "turkce": "İki öğrenci derslerinde gayretli idiler."
+      },
+      {
+        "arapca": "قَرَأْتُ عِشْرِينَ كِتَاباً نَافِعاً فِي شَهْرٍ وَاحِدٍ.",
+        "turkce": "Bir ayda yirmi faydalı kitap okudum."
+      }
+    ],
+    "ipucu": "Cümle tahlilinde önce yüklem ve özneyi bul (Merfûât: damma/elif/vâv); sonra fiilin tüm sorularını cevapla: Kimi? Nerede? Ne zaman? Niçin? Nasıl? (Mansûbât: fetha/yâ/kesra); en son tamlamayı ve harf-i ceri kontrol et (Mecrûrât: kesra/yâ).",
+    "ayrintili_anlatim": {
+      "formul_sema": "[el-Merfûât] -> Mübteda, Haber, Fâil, Nâib-i Fâil, Kâne İsmi, İnne Haberi | [el-Mansûbât] -> 5 Mef'ûl (Bih, Mutlak, Fîh, Li-Eclih, Ma'ah) + Hâl + Temyiz + Müstesnâ + Kâne Haberi + İnne İsmi | [el-Mecrûrât] -> Mecrûr bi-Harfi'l-Cer + Muzâfun İleyh | [et-Tevâbi'] -> Sıfat, Atıf, Te'kid, Bedel",
+      "adim_adim_anlatim": [
+        "1. el-Merfûât (Özne ve Aslî Dayanaklar): Cümlenin kurucu ve merfû olan ana ögeleridir: (1) Mübteda (isim cümlesi öznesi), (2) Haber (isim cümlesi yüklemi), (3) Fâil (etken fiilin öznesi), (4) Nâib-i Fâil (edilgen fiilin sözde öznesi), (5) Kâne ve benzerlerinin ismi, (6) İnne ve benzerlerinin haberi. Aslî alameti damma ('ُ'); ikilde elif ('ا'), cemi müzekker salimde ve esmâ-i hamsede vâv ('و') harfidir.",
+        "2. el-Mansûbât (Nesneler ve Durum Bildirenler): Cümlede eylemin niteliğini, yönünü, zamanını ve gerekçesini tamamlayan zengin gruptur: (1-5) Beş Mef'ûller: Mef'ûlün Bih (neyi/kimi), Mef'ûlün Mutlak (pekiştirme/sayı/tür masdarı), Mef'ûlün Fîh (zaman/mekân), Mef'ûlün Li-Eclih (niçin), Mef'ûlün Ma'ah (birliktelik vâvı sonrası). (6) Hâl (durum/biçim), (7) Temyiz (kapalılık gideren), (8) Müstesnâ ('إِلَّا' sonrası), (9) Kâne'nin haberi, (10) İnne'nin ismi, (11) Cinsi nefyeden Lâ'nın ismi, (12) Muzâf münâdâ. Aslî alameti fetha ('َ'); ikil ve cemi müzekkerde yâ ('ي'), cemi müenneste kesra ('ِ'), esmâ-i hamsede elif ('ا') harfidir.",
+        "3. el-Mecrûrât ve et-Tevâbi' (Tamamlayıcı ve Bağlı İ'rablar): Mecrûrât iki temel kısımdır: Harf-i cer ile mecrûr olanlar ve Muzâfun İleyh olanlar (aslî alamet kesra, fer'î alamet yâ veya gayri munsarifte fetha). et-Tevâbi' (Tabi olanlar) ise bağımsız bir harekeye sahip olmayıp önündeki kelimeye uyan 4 unsurdur: Sıfat (niteleyen), Atıf (harfle bağlanan), Te'kid (pekiştiren: نَفْسُهُ، كُلُّهُ، كِلَاهُمَا) ve Bedel (yerini tutan)."
+      ],
+      "ozet_tablo": {
+        "tablo_basligi": "Arapçada İ'rab Grupları ve Aslî-Fer'î Alâmetler Haritası",
+        "sutunlar": [
+          "İ'rab Grubu",
+          "Kapsadığı Temel Nahiv Ögeleri",
+          "Aslî İ'rab Alâmeti",
+          "Fer'î İ'rab Alâmetleri (Harf/Hareke)"
+        ],
+        "satirlar": [
+          [
+            "el-Merfûât",
+            "Mübteda, Haber, Fâil, Nâib-i Fâil, Kâne İsmi, İnne Haberi",
+            "Damma (ُ)",
+            "Elif (İkil), Vâv (Cemi Müzekker / Esmâ-i Hamse)"
+          ],
+          [
+            "el-Mansûbât",
+            "5 Mef'ûl, Hâl, Temyiz, Müstesnâ, Kâne Haberi, İnne İsmi",
+            "Fetha (َ)",
+            "Yâ (İkil / Cemi Müzekker), Kesra (Cemi Müennes), Elif (Esmâ-i Hamse)"
+          ],
+          [
+            "el-Mecrûrât",
+            "Harf-i Cerden Sonra Gelen İsim, Muzâfun İleyh",
+            "Kesra (ِ)",
+            "Yâ (İkil / Cemi Müzekker / Esmâ-i Hamse), Fetha (Gayri Munsarif)"
+          ],
+          [
+            "el-Meczûmât (Fiil)",
+            "Cezm Edatları Alan Muzâri Fiil, Şart Cevapları",
+            "Sükûn (ْ)",
+            "İllet Harfinin Hazfi, Nûn Harfinin Düşmesi (Emsile-i Hamse)"
+          ],
+          [
+            "et-Tevâbi'",
+            "Sıfat, Atıf, Te'kid, Bedel",
+            "Metbûuna tâbidir",
+            "Önündeki kelimenin lafzî veya mahallî irabına uyar"
+          ]
+        ]
+      },
+      "irab_tahlili": [
+        {
+          "kelime": "الْمُعَلِّمَ",
+          "gorevi": "İnne'nin İsmi (Mansûbât)",
+          "hareke_nedeni": "'إِنَّ' harfinden sonra gelen isim olduğu için açık fetha ile mansûbdur."
+        },
+        {
+          "kelime": "بِنَاءً",
+          "gorevi": "Mef'ûlün Mutlak (Mansûbât)",
+          "hareke_nedeni": "Kendi fiili olan 'يَبْنِي' kökünden gelen masdar olup tür bildirdiği için fetha tenvini ile mansûbdur."
+        },
+        {
+          "kelime": "رَغْبَةً",
+          "gorevi": "Mef'ûlün Li-Eclih (Mansûbât)",
+          "hareke_nedeni": "Eylemin niçin yapıldığını bildiren içsel masdar olduğu için fetha tenvini ile mansûbdur."
+        }
+      ],
+      "dikkat_sik_hata": {
+        "yanlis": "إِنَّ الْمُعَلِّمُ / كَانَ الطَّالِبِينَ مُجْتَهِدُونَ / قَرَأْتُ كِتَابٍ.",
+        "dogru": "إِنَّ الْمُعَلِّمَ / كَانَ الطَّالِبَانِ مُجْتَهِدَيْنِ / قَرَأْتُ كِتَاباً.",
+        "neden": "İnne'nin ismi mansûbdur (fethalı); Kâne'nin ismi merfû (elifli), haberi mansûbdur (yâ'lı); fiilin mef'ûlü ise esreli değil fethalı mansûb olmak zorundadır."
+      }
+    }
+  }
+]

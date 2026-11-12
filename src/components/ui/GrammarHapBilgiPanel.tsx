@@ -38,6 +38,7 @@ import {
   cumleler1111,
   diyalogGramerNotlari,
   metinGramerNotlari,
+  ekGramerNotlari,
   diyaloglar,
   metinler,
 } from "@/lib/data";
@@ -197,6 +198,7 @@ export interface ResolvedGrammarData {
 }
 
 const ALL_CANONICAL_GRAMMAR_NOTES: GramerHapBilgi[] = [
+  ...ekGramerNotlari,
   ...diyalogGramerNotlari,
   ...metinGramerNotlari,
 ];
@@ -237,7 +239,10 @@ export function resolveGrammarNoteAndSentences(params: {
   const targetId = dialogueId || readingId || sourceId || grammarNote?.bagli_id;
 
   if (!resolvedNote && targetId) {
-    if (targetId.startsWith("dlg_")) {
+    if (targetId.startsWith("grm_")) {
+      resolvedNote =
+        ekGramerNotlari.find((g) => g.bagli_id === targetId) || null;
+    } else if (targetId.startsWith("dlg_")) {
       resolvedNote =
         diyalogGramerNotlari.find((g) => g.bagli_id === targetId) || null;
     } else if (targetId.startsWith("metin_")) {
@@ -256,7 +261,9 @@ export function resolveGrammarNoteAndSentences(params: {
       ALL_CANONICAL_GRAMMAR_NOTES.find(
         (g) =>
           g.konu_basligi.toLowerCase() === q ||
+          g.ktt_ust_konu?.toLowerCase() === q ||
           g.konu_basligi.toLowerCase().includes(q) ||
+          g.ktt_ust_konu?.toLowerCase().includes(q) ||
           q.includes(g.konu_basligi.toLowerCase())
       ) || null;
   }
@@ -307,7 +314,11 @@ export function resolveGrammarNoteAndSentences(params: {
   let linkedLessonTitle: string | null = null;
   let linkedLevel: Level | null = null;
 
-  if (finalId.startsWith("dlg_")) {
+  if (finalId.startsWith("grm_")) {
+    linkedLessonUrl = null;
+    linkedLessonTitle = null;
+    linkedLevel = resolvedNote?.seviye || "A1";
+  } else if (finalId.startsWith("dlg_")) {
     const dlg = diyaloglar.find((d) => d.id === finalId);
     linkedLessonUrl = `/diyalog/${finalId}`;
     linkedLessonTitle = dlg
@@ -321,6 +332,8 @@ export function resolveGrammarNoteAndSentences(params: {
       ? `Metin #${finalId.replace("metin_", "")}: ${txt.baslik_tr}`
       : `Okuma Metni #${finalId.replace("metin_", "")}`;
     linkedLevel = txt?.seviye || "A1";
+  } else if (resolvedNote?.seviye) {
+    linkedLevel = resolvedNote.seviye;
   } else if (matchingSentences[0]) {
     linkedLevel =
       (matchingSentences[0].seviye as Level) ||
@@ -1865,6 +1878,18 @@ export function GrammarDeepDiveModal({
                 </span>
               </Link>
             )}
+            {grammarNote.ktt_ust_konu && (
+              <Link
+                href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                  grammarNote.ktt_ust_konu
+                )}`}
+                onClick={() => onClose()}
+                className="min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 text-xs font-black inline-flex items-center gap-1.5"
+              >
+                <ListChecks className="w-4 h-4 shrink-0" />
+                <span>Bu Konunun Tarama Testini Çöz</span>
+              </Link>
+            )}
             <Link
               href={`/alistirmalar?pool=sentences_1111${
                 activeGrammarQuery
@@ -2019,13 +2044,31 @@ export function GrammarHapBilgiPanel({
         {!isCompactDrawer && (
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>Odak Gramer &amp; Hap Bilgi</span>
-              </span>
-              {linkedLevel && (
-                <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white font-black text-[11px]">
-                  Seviye {linkedLevel}
+              {activeNote.bagli_id.startsWith("grm_") ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#087F5B] text-white font-black text-[11px]">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span>
+                    {`Müstakil Gramer • ${
+                      activeNote.seviye || linkedLevel || "A1"
+                    }`}
+                  </span>
+                </span>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-black text-[11px] uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>Odak Gramer &amp; Hap Bilgi</span>
+                  </span>
+                  {linkedLevel && (
+                    <span className="px-2.5 py-1 rounded-xl bg-[#087F5B] text-white font-black text-[11px]">
+                      Seviye {linkedLevel}
+                    </span>
+                  )}
+                </>
+              )}
+              {activeNote.ktt_ust_konu && (
+                <span className="px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[#065F46] dark:text-emerald-300 font-extrabold text-[11px]">
+                  {activeNote.ktt_ust_konu}
                 </span>
               )}
             </div>
@@ -2066,6 +2109,12 @@ export function GrammarHapBilgiPanel({
                   </span>
                 ))}
             </div>
+          </div>
+        )}
+
+        {isCompactDrawer && activeNote.ktt_ust_konu && (
+          <div className="text-[11px] font-bold text-[#065F46] dark:text-emerald-400 mb-1.5">
+            {activeNote.ktt_ust_konu}
           </div>
         )}
 
@@ -2481,6 +2530,17 @@ export function GrammarHapBilgiPanel({
               <span>📖 İlgili Derse Git</span>
             </Link>
           )}
+          {activeNote.ktt_ust_konu && (
+            <Link
+              href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                activeNote.ktt_ust_konu
+              )}`}
+              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white text-[#065F46] hover:bg-emerald-50 border-b-3 border-emerald-900/40 text-xs sm:text-sm font-black text-center whitespace-normal shadow-sm transition-all"
+            >
+              <ListChecks className="w-4 h-4 shrink-0" />
+              <span>Bu Konunun Tarama Testini Çöz</span>
+            </Link>
+          )}
           <Link
             href={`/alistirmalar?pool=sentences_1111${
               activeGrammarQuery
@@ -2827,14 +2887,24 @@ export function GrammarHapBilgiModal({
 
           <div className="flex items-center justify-between gap-2 overflow-visible">
             <div className="min-w-0 flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-black whitespace-nowrap shrink-0">
-                <span>📌</span>
-                <span>Odak Gramer</span>
-              </span>
-              {linkedLevel && (
-                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
-                  {linkedLevel}
+              {resolvedNote.bagli_id.startsWith("grm_") ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs font-black whitespace-nowrap shrink-0">
+                  <span>{`Müstakil Gramer • ${
+                    resolvedNote.seviye || linkedLevel || "A1"
+                  }`}</span>
                 </span>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-black whitespace-nowrap shrink-0">
+                    <span>📌</span>
+                    <span>Odak Gramer</span>
+                  </span>
+                  {linkedLevel && (
+                    <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black shrink-0">
+                      {linkedLevel}
+                    </span>
+                  )}
+                </>
               )}
             </div>
 

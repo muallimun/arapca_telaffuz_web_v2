@@ -2,6 +2,7 @@ import diyaloglarJson from "@/data/tum_diyaloglar_120.json";
 import diyalogGramerJson from "@/data/diyaloglar_gramer_hap_bilgi.json";
 import metinlerJson from "@/data/tum_metinler_60.json";
 import metinGramerJson from "@/data/metinler_gramer_hap_bilgi.json";
+import ekGramerJson from "@/data/ek_gramer_hap_bilgi.json";
 import cumlelerJson from "@/data/1111_cumle.json";
 import atasozleriJson from "@/data/atasozleri.json";
 import gorselKelimelerJson from "@/data/gorselKelimeler_guncel.json";
@@ -97,6 +98,15 @@ export const diyalogGramerNotlari: GramerHapBilgi[] =
 
 export const metinGramerNotlari: GramerHapBilgi[] =
   metinGramerJson as GramerHapBilgi[];
+
+export const ekGramerNotlari: GramerHapBilgi[] =
+  ekGramerJson as GramerHapBilgi[];
+
+export const tumGramerHapBilgiler: GramerHapBilgi[] = [
+  ...ekGramerNotlari,
+  ...diyalogGramerNotlari,
+  ...metinGramerNotlari,
+];
 
 // 1. 120 Diyalog (tum_diyaloglar_120.json)
 export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
@@ -331,6 +341,20 @@ export function getReadingTextGrammarNote(
   return undefined;
 }
 
+export function getStandaloneGrammarNote(
+  grmId: string
+): GramerHapBilgi | undefined {
+  const exact = ekGramerNotlari.find((g) => g.bagli_id === grmId);
+  if (exact) return exact;
+  const targetNum = parseInt((grmId || "").replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return ekGramerNotlari.find(
+      (g) => parseInt(g.bagli_id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
+}
+
 export function getDialoguesByLevel(level: Level | "all"): Dialogue[] {
   if (level === "all") return diyaloglar;
   return diyaloglar.filter((d) => d.seviye === level);
@@ -367,6 +391,7 @@ export interface DynamicContentStats {
   visualWordCategoryCount: number;
   dictionaryWordCount: number;
   totalLibraryCards: number;
+  standaloneGrammarCount: number;
   grammarNoteCount: number;
   totalGrammarAtlasCount: number;
 }
@@ -416,7 +441,11 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   ).size;
   const dictionaryWordCount = sozluk.length;
   const totalLibraryCards = sentenceCount + proverbCount + visualWordCount;
-  const grammarNoteCount = diyalogGramerNotlari.length + metinGramerNotlari.length;
+  const standaloneGrammarCount = ekGramerNotlari.length;
+  const grammarNoteCount =
+    ekGramerNotlari.length +
+    diyalogGramerNotlari.length +
+    metinGramerNotlari.length;
   const totalGrammarAtlasCount = grammarNoteCount + sentenceGrammarCount;
 
   return {
@@ -433,6 +462,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     visualWordCategoryCount,
     dictionaryWordCount,
     totalLibraryCards,
+    standaloneGrammarCount,
     grammarNoteCount,
     totalGrammarAtlasCount,
   };

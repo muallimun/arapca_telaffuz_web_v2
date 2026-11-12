@@ -2510,5 +2510,92 @@ test("25. Konu Tarama Testi (KTT) — Tekil Ana Seviye (primaryLevel), Net Konu/
   );
 });
 
+test("26. ek_gramer_hap_bilgi.json entegrasyonu: 195 Hap Bilgi kartı, kaynak filtreleri, Müstakil Gramer rozeti ve KTT bağlantısı", async () => {
+  const ekGramerRaw = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "ek_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+  const dlgGramerRaw = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "diyaloglar_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+  const txtGramerRaw = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "metinler_gramer_hap_bilgi.json"),
+      "utf8"
+    )
+  );
+
+  assert.equal(ekGramerRaw.length, 15, "ek_gramer_hap_bilgi.json 15 müstakil kart içermelidir");
+  assert.equal(
+    ekGramerRaw.length + dlgGramerRaw.length + txtGramerRaw.length,
+    195,
+    "Toplam Hap Bilgi kart sayısı 195 (15 + 120 + 60) olmalıdır"
+  );
+
+  const validLevels = ["A1", "A2", "B1", "B2"];
+  ekGramerRaw.forEach((card, idx) => {
+    const expectedId = `grm_${String(idx + 1).padStart(3, "0")}`;
+    assert.equal(card.bagli_id, expectedId, `Kart ID ${expectedId} olmalıdır`);
+    assert.ok(validLevels.includes(card.seviye), `${card.bagli_id} doğrudan geçerli seviye alanına sahip olmalıdır`);
+    assert.ok(
+      typeof card.ktt_ust_konu === "string" && card.ktt_ust_konu.trim().length > 0,
+      `${card.bagli_id} doğrudan ktt_ust_konu alanına sahip olmalıdır`
+    );
+  });
+
+  const dataTsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "data.ts"),
+    "utf8"
+  );
+  assert.equal(
+    dataTsCode.includes("@/data/ek_gramer_hap_bilgi.json") &&
+      dataTsCode.includes("export const ekGramerNotlari") &&
+      dataTsCode.includes("ekGramerNotlari.length +"),
+    true,
+    "src/lib/data.ts ek_gramer_hap_bilgi.json verisini dahil etmeli ve grammarNoteCount hesabına katmalıdır"
+  );
+
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    kutuphaneCode.includes("`Tümü (${hapBilgiAtlasItems.length})`") &&
+      kutuphaneCode.includes("`Temel & İleri Gramer (${ekGramerNotlari.length})`") &&
+      kutuphaneCode.includes("`Diyalog Grameri (${diyalogGramerNotlari.length})`") &&
+      kutuphaneCode.includes("`Metin Grameri (${metinGramerNotlari.length})`"),
+    true,
+    "Kütüphane Gramer sayfası Tümü (195), Temel & İleri Gramer (15), Diyalog Grameri (120) ve Metin Grameri (60) sekmelerini içermelidir"
+  );
+  assert.equal(
+    kutuphaneCode.includes("`Müstakil Gramer • ${cardLevel}`") &&
+      kutuphaneCode.includes("gItem.kttUstKonu") &&
+      kutuphaneCode.includes("Bu Konunun Tarama Testini Çöz") &&
+      kutuphaneCode.includes("/seviye-tespit?mode=topic&topic=${encodeURIComponent("),
+    true,
+    "grm_001–grm_015 kartlarında 'Müstakil Gramer • ${card.seviye}', ktt_ust_konu etiketi ve 'Bu Konunun Tarama Testini Çöz' butonu yer almalıdır"
+  );
+
+  const panelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    panelCode.includes("...ekGramerNotlari") &&
+      panelCode.includes('targetId.startsWith("grm_")') &&
+      panelCode.includes("Müstakil Gramer •") &&
+      panelCode.includes("Bu Konunun Tarama Testini Çöz") &&
+      panelCode.includes("/seviye-tespit?mode=topic&topic=${encodeURIComponent("),
+    true,
+    "GrammarHapBilgiPanel grm_ kartlarının seviye ve ktt_ust_konu alanlarını doğrudan okumalı ve KTT bağlantı butonunu göstermelidir"
+  );
+});
+
+
 
 

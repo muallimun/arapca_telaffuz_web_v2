@@ -20,6 +20,7 @@ import {
 import {
   diyalogGramerNotlari,
   diyaloglar,
+  ekGramerNotlari,
   metinGramerNotlari,
   metinler,
 } from "@/lib/data";
@@ -312,6 +313,16 @@ function buildErrorHunterCatalog(): Omit<ErrorHunterItem, "repairOptions">[] {
     level: Level;
     sourceTitleTr: string;
   }> = [];
+
+  for (const note of ekGramerNotlari) {
+    if (!note.ayrintili_anlatim?.dikkat_sik_hata) continue;
+    combined.push({
+      note,
+      level: note.seviye || "A1",
+      sourceTitleTr:
+        note.ktt_ust_konu || `Müstakil Gramer • ${note.seviye || "A1"}`,
+    });
+  }
 
   for (const note of diyalogGramerNotlari) {
     if (!note.ayrintili_anlatim?.dikkat_sik_hata) continue;

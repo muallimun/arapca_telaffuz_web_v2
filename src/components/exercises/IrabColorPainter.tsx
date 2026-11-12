@@ -15,6 +15,7 @@ import {
 import {
   diyalogGramerNotlari,
   diyaloglar,
+  ekGramerNotlari,
   metinGramerNotlari,
   metinler,
 } from "@/lib/data";
@@ -378,6 +379,21 @@ function buildIrabPainterCatalog(): IrabPainterItem[] {
     level: Level;
     sourceTitleTr: string;
   }> = [];
+
+  for (const note of ekGramerNotlari) {
+    if (
+      !note.ayrintili_anlatim?.irab_tahlili?.length ||
+      !note.metinden_ornek?.arapca
+    ) {
+      continue;
+    }
+    notesWithMeta.push({
+      note,
+      level: note.seviye || "A1",
+      sourceTitleTr:
+        note.ktt_ust_konu || `Müstakil Gramer • ${note.seviye || "A1"}`,
+    });
+  }
 
   for (const note of diyalogGramerNotlari) {
     if (

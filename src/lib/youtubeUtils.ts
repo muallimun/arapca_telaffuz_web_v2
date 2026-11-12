@@ -355,54 +355,48 @@ export function resolveYoutubeIds(
 }
 
 /**
- * Gizlilik dostu YouTube gömülü oynatıcı (youtube-nocookie.com) URL'sini üretir:
- * - Hem videoId hem playlistId varsa: /embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1
- * - Sadece playlistId varsa: /embed/videoseries?list=${playlistId}&rel=0&modestbranding=1
- * - Sadece videoId varsa: /embed/${videoId}?rel=0&modestbranding=1(&start=...)
+ * Standart YouTube gömülü oynatıcı (youtube.com/embed) URL'sini üretir:
+ * - Sadece playlistId varsa (veya tur === "playlist" ve videoId yoksa):
+ *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0
+ * - Hem videoId hem playlistId varsa:
+ *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0
+ * - Sadece tekil videoId varsa:
+ *   https://www.youtube.com/embed/${videoId}?rel=0(&start=...)
  */
 export function buildYoutubeEmbedUrl(
   item: Pick<
     YoutubeRecommendationItem,
     "url" | "video_id" | "playlist_id" | "baslangic_sn"
-  >,
+  > & {
+    tur?: "video" | "playlist";
+  },
   options?: { autoplay?: boolean }
 ): string {
   const { videoId, playlistId, startSeconds } = resolveYoutubeIds(item);
-  const params = new URLSearchParams();
+  const autoplaySuffix = options?.autoplay ? "&autoplay=1" : "";
 
-  if (videoId && playlistId) {
-    params.set("list", playlistId);
-    params.set("rel", "0");
-    params.set("modestbranding", "1");
-    if (startSeconds && startSeconds > 0) {
-      params.set("start", String(startSeconds));
-    }
-    if (options?.autoplay) {
-      params.set("autoplay", "1");
-    }
-    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  if ((!videoId || (item.tur === "playlist" && !videoId)) && playlistId) {
+    return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
+      playlistId
+    )}&rel=0${autoplaySuffix}`;
   }
 
-  if (playlistId) {
-    params.set("list", playlistId);
-    params.set("rel", "0");
-    params.set("modestbranding", "1");
-    if (options?.autoplay) {
-      params.set("autoplay", "1");
-    }
-    return `https://www.youtube-nocookie.com/embed/videoseries?${params.toString()}`;
+  if (videoId && playlistId) {
+    const startSuffix =
+      startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
+    return `https://www.youtube.com/embed/${encodeURIComponent(
+      videoId
+    )}?list=${encodeURIComponent(
+      playlistId
+    )}&rel=0${startSuffix}${autoplaySuffix}`;
   }
 
   if (videoId) {
-    params.set("rel", "0");
-    params.set("modestbranding", "1");
-    if (startSeconds && startSeconds > 0) {
-      params.set("start", String(startSeconds));
-    }
-    if (options?.autoplay) {
-      params.set("autoplay", "1");
-    }
-    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+    const startSuffix =
+      startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
+    return `https://www.youtube.com/embed/${encodeURIComponent(
+      videoId
+    )}?rel=0${startSuffix}${autoplaySuffix}`;
   }
 
   return "";

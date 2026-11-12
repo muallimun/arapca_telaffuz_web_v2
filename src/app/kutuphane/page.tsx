@@ -2768,9 +2768,9 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {/* Modül Sekmeleri (Mobilde Yatay Kaydırılabilir + Sağ Görsel İpucu, Kişisel Defterim & Mahreç Sağda Ayrı Grup) */}
+        {/* Modül Sekmeleri (Mobilde Yatay Kaydırılabilir + Sağ Görsel İpucu, Masaüstünde Dengeli Flex-Wrap) */}
         <div className="relative max-w-full">
-          <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 pr-7 md:pr-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 max-w-full">
+          <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 pr-8 lg:pr-2 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto lg:overflow-visible no-scrollbar whitespace-nowrap lg:whitespace-normal lg:flex-wrap items-center gap-1.5 max-w-full">
             {(
               [
                 {
@@ -2830,7 +2830,7 @@ export default function LibraryPage() {
               );
             })}
 
-            {/* Kişisel Çalışma Alanı Ayırıcısı ve Sağ Grup: Defterim & Mahreç */}
+            {/* Kişisel Çalışma Alanı Ayırıcısı ve Kişisel Sekmeler (md:ml-auto olmadan dengeli sarma) */}
             <span
               aria-hidden="true"
               className="h-5 w-px bg-[#D9C7A8] dark:bg-slate-700 mx-0.5 shrink-0"
@@ -2838,7 +2838,7 @@ export default function LibraryPage() {
             <div
               role="group"
               aria-label="Kişisel Çalışma Sekmeleri"
-              className="flex items-center gap-1.5 shrink-0 md:ml-auto"
+              className="flex items-center gap-1.5 shrink-0"
             >
               {(
                 [
@@ -2883,7 +2883,7 @@ export default function LibraryPage() {
           </div>
           <span
             aria-hidden="true"
-            className="md:hidden pointer-events-none absolute inset-y-0.5 right-0.5 w-7 rounded-r-xl bg-gradient-to-l from-white via-white/90 to-transparent dark:from-[#1e1e1e] dark:via-[#1e1e1e]/90 flex items-center justify-end pr-1 text-[var(--muted)]"
+            className="lg:hidden pointer-events-none absolute inset-y-0.5 right-0.5 w-7 rounded-r-xl bg-gradient-to-l from-white via-white/90 to-transparent dark:from-[#1e1e1e] dark:via-[#1e1e1e]/90 flex items-center justify-end pr-1 text-[var(--muted)]"
           >
             <ChevronRight size={13} className="opacity-80" />
           </span>
@@ -6827,49 +6827,57 @@ export default function LibraryPage() {
               </div>
             </div>
 
-            {/* Satır 2: 6 Tematik YoutubeCategory Filtresi */}
-            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setYoutubeCategoryFilter("all");
-                  setVisibleCount(36);
-                }}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all ${
-                  youtubeCategoryFilter === "all"
-                    ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                Tüm Kategoriler ({youtubeCounts.byCategory.all})
-              </button>
+            {/* Satır 2: 6 Tematik YoutubeCategory Filtresi (Mobilde iç boşluklu yatay kaydırma, masaüstünde kesilmeyen flex-wrap) */}
+            <div className="relative max-w-full">
+              <div className="flex overflow-x-auto md:overflow-visible md:flex-wrap no-scrollbar whitespace-nowrap md:whitespace-normal items-center gap-1.5 py-1 px-1.5 pr-7 md:px-0 md:pr-0 max-w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setYoutubeCategoryFilter("all");
+                    setVisibleCount(36);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+                    youtubeCategoryFilter === "all"
+                      ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  Tüm Kategoriler ({youtubeCounts.byCategory.all})
+                </button>
 
-              {YOUTUBE_CATEGORY_ORDER.map((catId) => {
-                const meta = YOUTUBE_CATEGORY_META[catId];
-                const active = youtubeCategoryFilter === catId;
-                const count = youtubeCounts.byCategory[catId] || 0;
-                return (
-                  <button
-                    key={catId}
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setYoutubeCategoryFilter(catId);
-                      setVisibleCount(36);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all inline-flex items-center gap-1 ${
-                      active
-                        ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
-                    }`}
-                  >
-                    <span>{meta.emoji}</span>
-                    <span>{meta.shortLabel}</span>
-                    <span className="opacity-80">({count})</span>
-                  </button>
-                );
-              })}
+                {YOUTUBE_CATEGORY_ORDER.map((catId) => {
+                  const meta = YOUTUBE_CATEGORY_META[catId];
+                  const active = youtubeCategoryFilter === catId;
+                  const count = youtubeCounts.byCategory[catId] || 0;
+                  return (
+                    <button
+                      key={catId}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setYoutubeCategoryFilter(catId);
+                        setVisibleCount(36);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all inline-flex items-center gap-1 ${
+                        active
+                          ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+                      }`}
+                    >
+                      <span>{meta.emoji}</span>
+                      <span>{meta.shortLabel}</span>
+                      <span className="opacity-80">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <span
+                aria-hidden="true"
+                className="md:hidden pointer-events-none absolute inset-y-0.5 right-0 w-6 bg-gradient-to-l from-[#FDFBF7] via-[#FDFBF7]/85 to-transparent dark:from-[var(--surface)] dark:via-[var(--surface)]/85 flex items-center justify-end pr-0.5 text-[var(--muted)]"
+              >
+                <ChevronRight size={12} className="opacity-75" />
+              </span>
             </div>
 
             {/* Satır 3: Tür & İzlenme Durumu Alt Filtresi (Tümü | Tekil Videolar | Oynatma Listeleri | İzlediklerim) */}

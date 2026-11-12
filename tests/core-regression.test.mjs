@@ -3327,12 +3327,12 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   );
   assert.equal(
     nextConfigCode.includes(
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;"
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be; child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;"
     ) &&
       nextConfigCode.includes("https://i.ytimg.com") &&
       nextConfigCode.includes("https://img.youtube.com"),
     true,
-    "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src) ve kapak görseli (img-src) kuralları yer almalıdır"
+    "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src + child-src) ve kapak görseli (img-src) kuralları yer almalıdır"
   );
 
   // 2. youtube_tavsiyeleri.json 55 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
@@ -3422,7 +3422,7 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     playlistOnlyEmbed,
-    "https://www.youtube-nocookie.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1"
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0"
   );
 
   const dualEmbed = buildYoutubeEmbedUrl({
@@ -3432,7 +3432,7 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     dualEmbed,
-    "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0"
   );
 
   const thumbs = getYoutubeThumbnailUrls("dQw4w9WgXcQ");
@@ -3709,5 +3709,108 @@ test("34. 400 Eş & Zıt Anlamlılar (المرادفات والأضداد) veri 
       adminPageCode.includes('key: "es_zit_anlamlilar"'),
     true,
     "Sözlük, WordTooltip, Kütüphane, Alıştırmalar ve Admin Stüdyosu Eş & Zıt Anlamlılar entegrasyonunu eksiksiz içermelidir"
+  );
+});
+
+test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane Sekme/Kategori Kesilmezliği, Ziyaretçi Sayacı Cold-Start & Tıklanabilir Modal, Kompakt Kronometre Hover/Tap ve KTT Konu İpucu Gizleme Doğrulaması", async () => {
+  // 1. YouTube standart embed URL'leri (undefined videoId olmadan) ve LiteYoutubeCard çakışmasız kapak/rozet yapısı
+  const { buildYoutubeEmbedUrl } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
+  );
+  const plOnly = buildYoutubeEmbedUrl(
+    {
+      url: "https://www.youtube.com/playlist?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+      playlist_id: "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+      tur: "playlist",
+    },
+    { autoplay: true }
+  );
+  assert.equal(
+    plOnly,
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&autoplay=1",
+    "Sadece playlist_id içeren kayıtlar youtube.com/embed/videoseries adresini üretmeli ve undefined içermemelidir"
+  );
+  assert.equal(plOnly.includes("undefined"), false);
+
+  const singleVid = buildYoutubeEmbedUrl({
+    url: "https://youtu.be/dQw4w9WgXcQ?t=30",
+    video_id: "dQw4w9WgXcQ",
+    tur: "video",
+  });
+  assert.equal(
+    singleVid,
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&start=30",
+    "Tekil videolar youtube.com/embed/${videoId}?rel=0&start=... adresini üretmelidir"
+  );
+
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    liteCardCode.includes('rawDuration.toLocaleLowerCase("tr-TR") === "oynatma listesi"') &&
+      liteCardCode.includes("flex flex-col items-center justify-center gap-2 text-center") &&
+      !liteCardCode.includes("{meta.arabicTitle}"),
+    true,
+    "LiteYoutubeCard tipografik playlist kapaklarında Play ikonu ile Arapça başlığı üst üste bindirmemeli ve mükerrer Oynatma Listesi rozetini gizlemelidir"
+  );
+
+  // 2. Kütüphane üst sekme barı (md:ml-auto kaldırılmış dengeli flex-wrap) ve Video 6 kategori şeridi
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !kutuphaneCode.includes("shrink-0 md:ml-auto") &&
+      kutuphaneCode.includes(
+        "flex overflow-x-auto md:overflow-visible md:flex-wrap no-scrollbar whitespace-nowrap md:whitespace-normal items-center gap-1.5 py-1 px-1.5 pr-7 md:px-0 md:pr-0 max-w-full"
+      ),
+    true,
+    "Kütüphane üst sekmelerinde md:ml-auto kaynaklı kırılma giderilmeli ve Video kategorileri hem mobil hem masaüstünde kesilmemelidir"
+  );
+
+  // 3. Ziyaretçi sayacı cold-start başlangıç tabanı (SEED_TOTAL_USERS / SEED_TOTAL_SESSIONS) ve tıklanabilir canlı detay modalı
+  const statsRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "stats", "route.ts"),
+    "utf8"
+  );
+  const visitorBadgeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "VisitorCounterBadge.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    statsRouteCode.includes("export const SEED_TOTAL_USERS = 1480") &&
+      statsRouteCode.includes("export const SEED_TOTAL_SESSIONS = 3920") &&
+      statsRouteCode.includes("MAX_RECOVERY_GAP_USERS") &&
+      visitorBadgeCode.includes("handleOpenDetailModal") &&
+      visitorBadgeCode.includes('aria-label="Canlı Ziyaretçi İstatistikleri"'),
+    true,
+    "Ziyaretçi sayacı cold-start tabanına sahip olmalı ve rozete tıklandığında canlı detay modalı açılmalıdır"
+  );
+
+  // 4. Kompakt Kronometre (SmartboardOverlay) varsayılan gizli kontrol butonları + hover/dokunuş ile açılma
+  const smartboardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "classroom", "SmartboardOverlay.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    smartboardCode.includes("const [compactControlsOpen, setCompactControlsOpen] = useState<boolean>(false)") &&
+      smartboardCode.includes("max-w-0 opacity-0") &&
+      smartboardCode.includes("group-hover:max-w-[160px] group-hover:opacity-100"),
+    true,
+    "Kompakt kronometrede sağdaki 4 kontrol butonu varsayılan olarak gizli olmalı, mouse hover veya mobil dokunuşta açılmalıdır"
+  );
+
+  // 5. KTT Yaprak Test PDF üreticisinde Sorularda Konu Bilgisini Göster seçeneği (varsayılan: false / GİZLİ)
+  const seviyeTespitCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    seviyeTespitCode.includes("const [showTopicInQuestions, setShowTopicInQuestions] =\n    useState<boolean>(false)") &&
+      seviyeTespitCode.includes("Sorularda Konu Bilgisini Göster") &&
+      seviyeTespitCode.includes("showTopicInQuestions\n                ? `<span class=\"q-meta\">"),
+    true,
+    "KTT Yaprak Test PDF çıktısında soru üstü konu bilgisi varsayılan olarak gizli (false) olmalı ve isteğe bağlı açılabilmelidir"
   );
 });

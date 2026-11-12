@@ -3879,7 +3879,7 @@ export default function AdminStudioPage() {
 
                           <div className="space-y-1">
                             <span className="text-[10px] font-extrabold text-[var(--muted)] block">
-                              Gizlilik Dostu Embed Adresi (youtube-nocookie.com):
+                              Standart Gömülü Oynatıcı Adresi (youtube.com/embed):
                             </span>
                             <code className="text-[10px] font-mono text-[#065F46] break-all block bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200">
                               {embedUrl || "Geçerli video_id veya playlist_id girildiğinde üretilir"}

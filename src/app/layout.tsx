@@ -143,16 +143,16 @@ export default function RootLayout({
         <InAppBrowserBanner />
         <SmartboardMount />
         <Header />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-24 lg:pb-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-6 lg:pb-8">
           {children}
         </main>
         <ScrollToTopButton />
         <MobileNav />
 
-        <footer className="hidden lg:block print:hidden border-t-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] mt-10 max-w-7xl w-full mx-auto rounded-t-2xl">
-          <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 whitespace-nowrap">
+        <footer className="block print:hidden border-t-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] mt-6 lg:mt-10 pb-20 lg:pb-0 max-w-7xl w-full mx-auto rounded-t-2xl">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-2.5 lg:whitespace-nowrap">
             {/* Sol Grup: Logo + Telif + Ziyaretçi Sayacı Kapsülü */}
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-2.5 min-w-0">
               <div className="w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center p-0.5 shrink-0">
                 <img
                   src="/icons/android-chrome-192x192.png"
@@ -178,7 +178,7 @@ export default function RootLayout({
             </div>
 
             {/* Sağ Grup: Sosyal Bağlantılar + Görüş/Hata Bildir + İkonik Paylaş */}
-            <div className="flex items-center justify-end gap-1.5 shrink-0">
+            <div className="flex flex-wrap items-center justify-center lg:justify-end gap-1.5 shrink-0">
               <a
                 href="https://t.me/muallimun"
                 target="_blank"

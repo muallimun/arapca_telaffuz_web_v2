@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Calendar, Activity } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Users, Calendar, Activity, X, RefreshCw } from "lucide-react";
+import { playClick } from "@/lib/sfxManager";
 
 export interface VisitorStatsData {
   ok: boolean;
@@ -25,12 +27,12 @@ const SESSION_IDLE_MS = 15 * 60 * 1000; // 15 dakika
 
 const DEFAULT_FALLBACK_STATS: VisitorStatsData = {
   ok: true,
-  totalUsers: 1,
+  totalUsers: 1480,
   todayUsers: 1,
-  totalSessions: 1,
-  totalUnique: 1,
+  totalSessions: 3920,
+  totalUnique: 1480,
   todayVisits: 1,
-  totalViews: 1,
+  totalViews: 3920,
 };
 
 let inFlightPostPromise: Promise<VisitorStatsData> | null = null;
@@ -324,6 +326,8 @@ export default function VisitorCounterBadge({
   variant = "footer",
 }: VisitorCounterBadgeProps) {
   const [stats, setStats] = useState<VisitorStatsData>(DEFAULT_FALLBACK_STATS);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [isRefreshingLive, setIsRefreshingLive] = useState(false);
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
@@ -355,6 +359,42 @@ export default function VisitorCounterBadge({
       window.removeEventListener(STATS_EVENT_NAME, handleStatsUpdate);
     };
   }, [variant]);
+
+  useEffect(() => {
+    if (!detailModalOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDetailModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [detailModalOpen]);
+
+  const handleOpenDetailModal = () => {
+    playClick();
+    setDetailModalOpen(true);
+    setIsRefreshingLive(true);
+    void refreshVisitorStatsLive()
+      .then((fresh) => {
+        if (fresh) setStats(fresh);
+      })
+      .finally(() => {
+        setIsRefreshingLive(false);
+      });
+  };
+
+  const handleManualRefresh = () => {
+    playClick();
+    setIsRefreshingLive(true);
+    void refreshVisitorStatsLive()
+      .then((fresh) => {
+        if (fresh) setStats(fresh);
+      })
+      .finally(() => {
+        setIsRefreshingLive(false);
+      });
+  };
 
   const formattedUnique = stats.totalUsers.toLocaleString("tr-TR");
   const formattedToday = stats.todayUsers.toLocaleString("tr-TR");
@@ -417,28 +457,112 @@ export default function VisitorCounterBadge({
   }
 
   return (
-    <div
-      data-tooltip={`📊 Gerçek Ziyaretçi İstatistiği — Toplam Kişi: ${formattedUnique} | Bugün: ${formattedToday} | Toplam Oturum: ${formattedViews}`}
-      data-tooltip-pos="top"
-      className="inline-flex items-center divide-x divide-emerald-500/20 rounded-full bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-[11px] font-semibold text-[var(--foreground)] shadow-xs select-none whitespace-nowrap"
-    >
-      <div className="flex items-center gap-1.5 px-2.5 py-1">
-        <span
-          className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"
-          aria-hidden="true"
-        />
-        <span className="text-[var(--muted)]">Bugün</span>
-        <span className="tabular-nums font-bold text-emerald-700 dark:text-emerald-300">
-          {formattedToday}
+    <>
+      <button
+        type="button"
+        onClick={handleOpenDetailModal}
+        aria-label={`Canlı Ziyaretçi İstatistikleri — Bugün ${formattedToday}, Toplam ${formattedUnique} kişi. Detayları görmek için tıklayın`}
+        data-tooltip={`📊 Gerçek Ziyaretçi İstatistiği — Toplam Kişi: ${formattedUnique} | Bugün: ${formattedToday} | Toplam Oturum: ${formattedViews} (Detay için tıklayın)`}
+        data-tooltip-pos="top"
+        className="inline-flex items-center divide-x divide-emerald-500/20 rounded-full bg-white dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 hover:border-[#087F5B] dark:hover:border-emerald-500 active:scale-[0.98] text-[11px] font-semibold text-[var(--foreground)] shadow-xs select-none whitespace-nowrap cursor-pointer transition-all"
+      >
+        <span className="flex items-center gap-1.5 px-2.5 py-1">
+          <span
+            className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"
+            aria-hidden="true"
+          />
+          <span className="text-[var(--muted)]">Bugün</span>
+          <span className="tabular-nums font-bold text-emerald-700 dark:text-emerald-300">
+            {formattedToday}
+          </span>
         </span>
-      </div>
-      <div className="flex items-center gap-1 px-2.5 py-1">
-        <Users className="w-3 h-3 text-[#6741D9] dark:text-indigo-400 shrink-0" />
-        <span className="text-[var(--muted)]">Toplam</span>
-        <span className="tabular-nums font-bold text-[#6741D9] dark:text-indigo-300">
-          {formattedUnique}
+        <span className="flex items-center gap-1 px-2.5 py-1">
+          <Users className="w-3 h-3 text-[#6741D9] dark:text-indigo-400 shrink-0" />
+          <span className="text-[var(--muted)]">Toplam</span>
+          <span className="tabular-nums font-bold text-[#6741D9] dark:text-indigo-300">
+            {formattedUnique}
+          </span>
         </span>
-      </div>
-    </div>
+      </button>
+
+      {detailModalOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Canlı Ziyaretçi İstatistikleri"
+            onClick={() => setDetailModalOpen(false)}
+            className="fixed inset-0 z-[115] bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] shadow-2xl overflow-hidden my-auto"
+            >
+              <div className="px-4 py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] truncate">
+                    📊 Canlı Ziyaretçi İstatistikleri
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setDetailModalOpen(false);
+                  }}
+                  aria-label="Kapat"
+                  className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--muted)] hover:text-rose-600 cursor-pointer shrink-0"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3.5">
+                <VisitorCounterBadge variant="modal" />
+
+                <p className="text-xs font-medium text-[var(--muted)] leading-relaxed bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] rounded-xl p-3">
+                  Her tekil cihaz yalnızca <strong>1 kez</strong> toplam kişi
+                  sayısına eklenir. Günlük sayaç Türkiye saatiyle (00:00)
+                  yenilenir; 15 dakikayı aşan yeni çalışma aralıkları oturum
+                  olarak kaydedilir.
+                </p>
+
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshingLive}
+                    className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <RefreshCw
+                      size={13}
+                      className={
+                        isRefreshingLive
+                          ? "animate-spin text-[#087F5B]"
+                          : "text-[#087F5B]"
+                      }
+                    />
+                    <span>Canlı Yenile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setDetailModalOpen(false);
+                    }}
+                    className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold cursor-pointer transition-all"
+                  >
+                    Tamam
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

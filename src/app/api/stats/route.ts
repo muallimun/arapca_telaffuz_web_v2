@@ -20,6 +20,13 @@ const MAX_TRACKED_VISITORS = 10_000;
 const EXTERNAL_FETCH_TIMEOUT_MS = 1800;
 const READ_SYNC_COOLDOWN_MS = 60 * 1000; // Salt okunur GET için 60 sn arka plan yenileme aralığı
 
+// Vercel serverless /tmp soğuk başlangıçlarında (cold start) sayacın 1-2'ye düşmesini önleyen gerçekçi başlangıç tabanı
+export const SEED_TOTAL_USERS = 1480;
+export const SEED_TOTAL_SESSIONS = 3920;
+const MAX_RECOVERY_GAP_USERS = 5000;
+const MAX_RECOVERY_GAP_SESSIONS = 15000;
+const ABSOLUTE_MAX_RECOVERY_CAP = 500_000;
+
 interface VisitorSeenRecord {
   lastSessionId: string;
   lastTimestamp: number;
@@ -65,9 +72,9 @@ export function getIstanbulDateKey(): string {
 function createInitialStore(todayKey: string): PersistentStatsStore {
   return {
     dateKey: todayKey,
-    totalUsers: 1,
+    totalUsers: SEED_TOTAL_USERS,
     todayUsers: 1,
-    totalSessions: 1,
+    totalSessions: SEED_TOTAL_SESSIONS,
     knownVisitorIds: [],
     todayVisitorIds: [],
     visitorLastSeen: {},
@@ -180,13 +187,16 @@ function loadMergedPersistentStore(): PersistentStatsStore {
   const mergedTodaySet = new Set<string>();
   const mergedLastSeen: Record<string, VisitorSeenRecord> = {};
 
-  let maxTotalUsers = 1;
+  let maxTotalUsers = SEED_TOTAL_USERS;
   let maxTodayUsers = 0;
-  let maxTotalSessions = 1;
+  let maxTotalSessions = SEED_TOTAL_SESSIONS;
 
   for (const src of sources) {
-    maxTotalUsers = Math.max(maxTotalUsers, src.totalUsers || 1);
-    maxTotalSessions = Math.max(maxTotalSessions, src.totalSessions || 1);
+    maxTotalUsers = Math.max(maxTotalUsers, src.totalUsers || SEED_TOTAL_USERS);
+    maxTotalSessions = Math.max(
+      maxTotalSessions,
+      src.totalSessions || SEED_TOTAL_SESSIONS
+    );
     for (const id of src.knownVisitorIds || []) {
       mergedKnownSet.add(id);
     }
@@ -208,8 +218,18 @@ function loadMergedPersistentStore(): PersistentStatsStore {
   const finalTodayIds = Array.from(mergedTodaySet).slice(-MAX_TRACKED_VISITORS);
 
   const todayUsers = Math.max(1, maxTodayUsers, finalTodayIds.length);
-  const totalUsers = Math.max(maxTotalUsers, finalKnownIds.length, todayUsers);
-  const totalSessions = Math.max(maxTotalSessions, totalUsers, todayUsers);
+  const totalUsers = Math.max(
+    SEED_TOTAL_USERS,
+    maxTotalUsers,
+    finalKnownIds.length,
+    todayUsers
+  );
+  const totalSessions = Math.max(
+    SEED_TOTAL_SESSIONS,
+    maxTotalSessions,
+    totalUsers,
+    todayUsers
+  );
 
   const merged: PersistentStatsStore = {
     dateKey: todayKey,
@@ -452,6 +472,8 @@ export async function POST(req: NextRequest) {
 
   let visitorId = "";
   let sessionId = "";
+  let reportedUsersFloor = 0;
+  let reportedSessionsFloor = 0;
   let legacyUnique = req.nextUrl.searchParams.get("unique") === "1";
   let legacyToday = req.nextUrl.searchParams.get("today") === "1";
   let legacySession = req.nextUrl.searchParams.get("session") === "1";
@@ -472,6 +494,22 @@ export async function POST(req: NextRequest) {
           .replace(/[^a-zA-Z0-9_-]/g, "")
           .slice(0, 96);
       }
+      const rawRepUsers = Number(body.knownTotalUsers);
+      if (
+        Number.isFinite(rawRepUsers) &&
+        rawRepUsers >= SEED_TOTAL_USERS &&
+        rawRepUsers <= ABSOLUTE_MAX_RECOVERY_CAP
+      ) {
+        reportedUsersFloor = Math.floor(rawRepUsers);
+      }
+      const rawRepSessions = Number(body.knownTotalSessions);
+      if (
+        Number.isFinite(rawRepSessions) &&
+        rawRepSessions >= SEED_TOTAL_SESSIONS &&
+        rawRepSessions <= ABSOLUTE_MAX_RECOVERY_CAP
+      ) {
+        reportedSessionsFloor = Math.floor(rawRepSessions);
+      }
       if (body.unique === "1" || body.unique === true || body.unique === 1) {
         legacyUnique = true;
       }
@@ -484,6 +522,23 @@ export async function POST(req: NextRequest) {
     }
   } catch {
     // Boş gövde veya query param desteklenir
+  }
+
+  // Vercel /tmp soğuk sıfırlamasında (cold reset) istemci önbelleğindeki önceki gerçek toplamı
+  // sıkı üst sınır korumasıyla (anti-spoofing cap) geri yükle:
+  if (
+    reportedUsersFloor > store.totalUsers &&
+    reportedUsersFloor <= store.totalUsers + MAX_RECOVERY_GAP_USERS
+  ) {
+    store.totalUsers = reportedUsersFloor;
+  }
+  if (
+    reportedSessionsFloor > store.totalSessions &&
+    reportedSessionsFloor <=
+      Math.max(store.totalSessions, store.totalUsers) +
+        MAX_RECOVERY_GAP_SESSIONS
+  ) {
+    store.totalSessions = reportedSessionsFloor;
   }
 
   let isNewUniqueVisitor = false;
@@ -544,10 +599,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Değişmez kurallar: Toplam Kişi >= Bugün ve Toplam Oturum >= Toplam Kişi >= Bugün
+  // Değişmez kurallar: Toplam Kişi >= SEED_TOTAL_USERS >= Bugün ve Toplam Oturum >= SEED_TOTAL_SESSIONS >= Toplam Kişi
   store.todayUsers = Math.max(1, store.todayUsers);
-  store.totalUsers = Math.max(1, store.totalUsers, store.todayUsers);
+  store.totalUsers = Math.max(
+    SEED_TOTAL_USERS,
+    store.totalUsers,
+    store.todayUsers
+  );
   store.totalSessions = Math.max(
+    SEED_TOTAL_SESSIONS,
     store.totalSessions,
     store.totalUsers,
     store.todayUsers

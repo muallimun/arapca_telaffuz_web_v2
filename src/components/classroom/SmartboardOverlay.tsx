@@ -514,6 +514,8 @@ export default function SmartboardOverlay() {
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const [timerFinishedFlash, setTimerFinishedFlash] = useState<boolean>(false);
   const [isTimerCompact, setIsTimerCompact] = useState<boolean>(false);
+  const [compactControlsOpen, setCompactControlsOpen] = useState<boolean>(false);
+  const timerHasDraggedRef = useRef<boolean>(false);
 
   const isVertical = dockOrientation === "vertical";
 
@@ -544,10 +546,14 @@ export default function SmartboardOverlay() {
       ) {
         setPaletteOpen(false);
       }
+      if (timerCardRef.current && !timerCardRef.current.contains(target)) {
+        setCompactControlsOpen(false);
+      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setPaletteOpen(false);
+        setCompactControlsOpen(false);
       }
     };
     const handleWindowBlur = () => {
@@ -752,6 +758,12 @@ export default function SmartboardOverlay() {
     };
   }, [timerOpen, timerMode, isTimerCompact, enforceTimerInViewport]);
 
+  useEffect(() => {
+    if (!timerOpen || !isTimerCompact) return;
+    const raf = requestAnimationFrame(enforceTimerInViewport);
+    return () => cancelAnimationFrame(raf);
+  }, [timerOpen, isTimerCompact, compactControlsOpen, enforceTimerInViewport]);
+
   // Sürükleme Başlangıcı (Tutamaca veya 48x48 Küçültülmüş Kalem İkonuna Basıldığında)
   const startDragGesture = (e: React.PointerEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -846,6 +858,7 @@ export default function SmartboardOverlay() {
     const card = timerCardRef.current;
     if (!card) return;
     const rect = card.getBoundingClientRect();
+    timerHasDraggedRef.current = false;
     timerDragRef.current = {
       active: true,
       pointerId: e.pointerId,
@@ -867,7 +880,8 @@ export default function SmartboardOverlay() {
     e.stopPropagation();
     const dx = e.clientX - st.startClientX;
     const dy = e.clientY - st.startClientY;
-    if (Math.hypot(dx, dy) <= 3) return;
+    if (!timerHasDraggedRef.current && Math.hypot(dx, dy) <= 5) return;
+    timerHasDraggedRef.current = true;
     e.preventDefault();
     const card = timerCardRef.current;
     const w = card ? card.offsetWidth : 320;
@@ -885,7 +899,12 @@ export default function SmartboardOverlay() {
   };
 
   const endTimerDrag = (e: React.PointerEvent<HTMLElement>) => {
+    const wasActive =
+      timerDragRef.current.active &&
+      timerDragRef.current.pointerId === e.pointerId;
+    const didDrag = timerHasDraggedRef.current;
     timerDragRef.current.active = false;
+    timerHasDraggedRef.current = false;
     try {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -894,6 +913,10 @@ export default function SmartboardOverlay() {
       // ignore
     }
     e.stopPropagation();
+    // Mobil / dokunmatik ekranlarda (veya sürüklemeden saate dokunulduğunda) kontrol ikonlarını aç/kapat
+    if (wasActive && !didDrag && isTimerCompact && e.pointerType !== "mouse") {
+      setCompactControlsOpen((prev) => !prev);
+    }
   };
 
   // Sınıf listesini ve numara aralığını localStorage'da güncelle
@@ -1674,13 +1697,14 @@ export default function SmartboardOverlay() {
           } pointer-events-auto max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)]`}
         >
           {isTimerCompact ? (
-            /* KOMPAKT SAAT KAPSÜLÜ (MİNİ HUD): Hafif Transparan Buzlu Cam + %100 Net Rakamlar */
+            /* KOMPAKT SAAT KAPSÜLÜ (MİNİ HUD): Varsayılan sadece saat görünür; hover veya mobil dokunuşta 4 kontrol ikonu yumuşakça açılır */
             <div
               onPointerDown={startTimerDrag}
               onPointerMove={moveTimerDrag}
               onPointerUp={endTimerDrag}
               onPointerCancel={endTimerDrag}
-              className={`relative touch-none cursor-grab active:cursor-grabbing bg-slate-900/78 dark:bg-slate-950/82 backdrop-blur-md border shadow-xl rounded-2xl px-3.5 py-2 text-white select-none flex items-center gap-2.5 overflow-visible transition-colors ${
+              onMouseEnter={() => requestAnimationFrame(enforceTimerInViewport)}
+              className={`group relative touch-none cursor-grab active:cursor-grabbing bg-slate-900/78 dark:bg-slate-950/82 backdrop-blur-md border shadow-xl rounded-2xl px-3.5 py-2 text-white select-none flex items-center overflow-visible transition-all duration-200 ${
                 timerFinishedFlash
                   ? "border-amber-400 ring-2 ring-amber-400/60"
                   : "border-white/20"
@@ -1705,10 +1729,15 @@ export default function SmartboardOverlay() {
                 {formatTimerClock(timerSeconds)}
               </div>
 
-              {/* Metinsiz Küçük Kontrol İkonları */}
+              {/* Metinsiz Küçük Kontrol İkonları (Varsayılan gizli; mouse hover veya mobil dokunuşta açılır) */}
               <div
                 onPointerDown={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 pl-1.5 border-l border-white/15 shrink-0 overflow-visible"
+                onTransitionEnd={() => enforceTimerInViewport()}
+                className={`flex items-center gap-1 shrink-0 transition-all duration-200 ease-out ${
+                  compactControlsOpen
+                    ? "max-w-[160px] opacity-100 ml-2.5 pl-2 border-l border-white/15 pointer-events-auto overflow-visible"
+                    : "max-w-0 opacity-0 ml-0 pl-0 border-l-0 border-transparent pointer-events-none overflow-hidden group-hover:max-w-[160px] group-hover:opacity-100 group-hover:ml-2.5 group-hover:pl-2 group-hover:border-l group-hover:border-white/15 group-hover:pointer-events-auto group-hover:overflow-visible group-focus-within:max-w-[160px] group-focus-within:opacity-100 group-focus-within:ml-2.5 group-focus-within:pl-2 group-focus-within:border-l group-focus-within:border-white/15 group-focus-within:pointer-events-auto group-focus-within:overflow-visible"
+                }`}
               >
                 {/* 1) Duraklat / Devam Et */}
                 <button
@@ -1747,6 +1776,7 @@ export default function SmartboardOverlay() {
                   type="button"
                   onClick={() => {
                     playClick();
+                    setCompactControlsOpen(false);
                     setIsTimerCompact(false);
                   }}
                   aria-label="Sayaç Kartını Tam Aç"

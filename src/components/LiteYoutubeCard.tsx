@@ -181,91 +181,98 @@ export default function LiteYoutubeCard({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/45" />
+                  {/* Görsel Kapak Varken Merkez Oynat İkonu */}
+                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-600/95 group-hover:bg-rose-500 text-white border-2 border-white/80 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Play size={22} className="fill-white ml-0.5" />
+                    </span>
+                  </div>
                 </>
               ) : (
-                /* Sadece playlist_id olan kayıtlar veya kapak yüklenemeyen durumlar için kırık resim bırakmayan Arapça tipografik kapak */
+                /* Sadece playlist_id olan kayıtlar veya kapak yüklenemeyen durumlar için Play ikonu + Arapça başlığı dikey hizalayan çakışmasız tipografik kapak */
                 <div
-                  className={`w-full h-full bg-gradient-to-br ${meta.gradientClass} p-4 flex flex-col justify-between relative overflow-hidden`}
+                  className={`w-full h-full bg-gradient-to-br ${meta.gradientClass} px-3.5 sm:px-4 pt-9 pb-8 flex flex-col items-center justify-center gap-2 text-center relative overflow-hidden`}
                 >
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-6 -bottom-6 text-8xl opacity-15 select-none"
+                    className="pointer-events-none absolute -right-4 -bottom-4 text-7xl opacity-[0.06] select-none"
                   >
                     {meta.emoji}
                   </div>
-                  <div className="flex items-center justify-between gap-2 z-10 opacity-90">
-                    <span className="text-[11px] font-bold tracking-wide uppercase bg-black/25 px-2 py-0.5 rounded-md border border-white/15">
-                      {meta.emoji} {meta.shortLabel}
-                    </span>
-                    <span
-                      lang="ar"
-                      dir="rtl"
-                      className="arabic text-sm font-bold opacity-90"
-                    >
-                      {meta.arabicTitle}
-                    </span>
-                  </div>
 
-                  <div className="my-auto py-2 px-2 text-center z-10">
-                    <p
-                      lang="ar"
-                      dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold leading-relaxed drop-shadow-sm line-clamp-2"
-                    >
-                      {displayArabicTitle}
-                    </p>
-                  </div>
+                  <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-rose-600/95 group-hover:bg-rose-500 text-white border-2 border-white/85 shadow-lg flex items-center justify-center shrink-0 z-10 group-hover:scale-110 transition-transform">
+                    <Play size={20} className="fill-white ml-0.5" />
+                  </span>
 
-                  <div className="h-5" />
+                  <p
+                    lang="ar"
+                    dir="rtl"
+                    className="arabic text-base sm:text-xl font-bold leading-snug drop-shadow-sm line-clamp-2 max-w-[96%] z-10"
+                  >
+                    {displayArabicTitle}
+                  </p>
                 </div>
               )}
 
-              {/* Üst Rozetler (CEFR + Tür / Süre Etiketi) */}
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2 z-10 pointer-events-none">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`px-2 py-0.5 rounded-lg text-[11px] font-black border shadow-xs ${
-                      CEFR_BADGE_STYLE[item.cefr] || CEFR_BADGE_STYLE.A1
-                    }`}
-                  >
-                    {item.cefr}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-lg bg-black/70 text-white text-[11px] font-bold border border-white/15 inline-flex items-center gap-1 backdrop-blur-2xs">
-                    {item.tur === "playlist" || (!videoId && playlistId) ? (
-                      <>
-                        <ListVideo size={12} className="text-amber-300" />
-                        <span>Oynatma Listesi</span>
-                      </>
-                    ) : (
-                      <>
-                        <Film size={12} className="text-emerald-300" />
-                        <span>Video</span>
-                      </>
+              {/* Üst Rozetler (CEFR + Tür / Süre Etiketi - Mükerrer Oynatma Listesi rozeti engellenir) */}
+              {(() => {
+                const isPlaylistItem =
+                  item.tur === "playlist" || Boolean(!videoId && playlistId);
+                const rawDuration = item.sure_etiketi?.trim() || "";
+                const showDurationTag =
+                  Boolean(rawDuration) &&
+                  !(
+                    isPlaylistItem &&
+                    rawDuration.toLocaleLowerCase("tr-TR") === "oynatma listesi"
+                  );
+
+                return (
+                  <div className="absolute top-2 left-2.5 right-2.5 flex items-center justify-between gap-1.5 z-10 pointer-events-none">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-black border shadow-xs shrink-0 ${
+                          CEFR_BADGE_STYLE[item.cefr] || CEFR_BADGE_STYLE.A1
+                        }`}
+                      >
+                        {item.cefr}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg bg-black/70 text-white text-[11px] font-bold border border-white/15 inline-flex items-center gap-1 backdrop-blur-2xs truncate">
+                        {isPlaylistItem ? (
+                          <>
+                            <ListVideo
+                              size={12}
+                              className="text-amber-300 shrink-0"
+                            />
+                            <span className="truncate">Oynatma Listesi</span>
+                          </>
+                        ) : (
+                          <>
+                            <Film
+                              size={12}
+                              className="text-emerald-300 shrink-0"
+                            />
+                            <span>Video</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    {showDurationTag && (
+                      <span className="px-2 py-0.5 rounded-lg bg-black/70 text-amber-200 text-[10px] font-extrabold border border-white/15 backdrop-blur-2xs truncate max-w-[130px] shrink-0">
+                        {rawDuration}
+                      </span>
                     )}
-                  </span>
-                </div>
+                  </div>
+                );
+              })()}
 
-                {item.sure_etiketi && (
-                  <span className="px-2 py-0.5 rounded-lg bg-black/70 text-amber-200 text-[10px] font-extrabold border border-white/15 backdrop-blur-2xs truncate max-w-[140px]">
-                    {item.sure_etiketi}
-                  </span>
-                )}
-              </div>
-
-              {/* Merkez Oynat İkonu */}
-              <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <span className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-rose-600/95 group-hover:bg-rose-500 text-white border-2 border-white/80 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play size={24} className="fill-white ml-0.5" />
-                </span>
-              </div>
-
-              {/* Alt Kanal & Kapak Üstü Arapça Başlık (Görsel Kapak Varsa) */}
+              {/* Alt Kanal & İzlendi Rozeti */}
               <div className="absolute bottom-2 left-2.5 right-2.5 flex items-end justify-between gap-2 z-10 pointer-events-none">
-                <span className="px-2 py-0.5 rounded-md bg-black/70 text-white/95 text-[11px] font-bold border border-white/10 truncate max-w-[65%]">
+                <span className="px-2 py-0.5 rounded-md bg-black/70 text-white/95 text-[11px] font-bold border border-white/10 truncate max-w-[68%]">
                   📺 {item.kanal_adi}
                 </span>
                 {isWatched && (
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black shadow-xs inline-flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black shadow-xs inline-flex items-center gap-1 shrink-0">
                     <CheckCircle2 size={11} />
                     <span>İzlendi</span>
                   </span>

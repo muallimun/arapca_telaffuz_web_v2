@@ -542,6 +542,8 @@ function AssessmentPrintModal({
   const [institutionTitle, setInstitutionTitle] = useState<string>(
     "Arapça Ölçme, Konu Tarama ve Değerlendirme Yaprak Testi"
   );
+  const [showTopicInQuestions, setShowTopicInQuestions] =
+    useState<boolean>(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
   const candidatePool = useMemo(() => {
@@ -672,7 +674,11 @@ function AssessmentPrintModal({
           <div class="q-head">
             <span class="q-num">${num}.</span>
             <span class="q-prompt">${escapeHtml(q.soru_yonergesi_tr)}</span>
-            <span class="q-meta">[${escapeHtml(q.seviye)} · ${escapeHtml(q.ust_konu)}]</span>
+            ${
+              showTopicInQuestions
+                ? `<span class="q-meta">[${escapeHtml(q.seviye)} · ${escapeHtml(q.ust_konu)}]</span>`
+                : ""
+            }
           </div>
           ${
             q.soru_baglam_tr
@@ -1406,6 +1412,27 @@ function AssessmentPrintModal({
               ))}
             </div>
           </div>
+
+          {/* Soru Üstü Konu İpucu Seçeneği (Varsayılan: Gizli / Kapalı) */}
+          <label className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)] hover:border-[#087F5B] cursor-pointer transition-all select-none">
+            <div className="space-y-0.5 min-w-0">
+              <span className="block text-xs font-extrabold text-[var(--foreground)]">
+                Sorularda Konu Bilgisini Göster
+              </span>
+              <span className="block text-[11px] font-medium text-[var(--muted)] leading-snug">
+                Öğrenciye kopya ipucu vermemek için varsayılan olarak gizlidir; açıldığında soruların yanında [Seviye · Konu] etiketi yazdırılır.
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              checked={showTopicInQuestions}
+              onChange={(e) => {
+                playClick();
+                setShowTopicInQuestions(e.target.checked);
+              }}
+              className="mt-0.5 sm:mt-0 w-4 h-4 accent-[#087F5B] rounded cursor-pointer shrink-0"
+            />
+          </label>
         </div>
 
         <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-3.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3">

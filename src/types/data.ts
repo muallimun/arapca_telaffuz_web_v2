@@ -230,3 +230,26 @@ export interface YoutubeRecommendationItem {
   bagli_icerik_id?: string;
   odak_kelimeler?: string[];
 }
+
+export type SynonymAntonymWordTur = "isim" | "fiil" | "sifat" | "zarf";
+
+export interface SynonymAntonymSubItem {
+  ar: string;
+  harekesiz: string;
+  tr: string;
+  nuans_tr?: string;
+}
+
+export interface SynonymAntonymEntry {
+  id: string;
+  sira: number;
+  cefr: Level;
+  tur: SynonymAntonymWordTur;
+  kelime_ar: string;
+  kelime_harekesiz: string;
+  anlam_tr: string;
+  es_anlamlilar: SynonymAntonymSubItem[];
+  zit_anlamlilar: SynonymAntonymSubItem[];
+  ornek_cumle_ar: string;
+  ornek_cumle_tr: string;
+}

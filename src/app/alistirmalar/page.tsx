@@ -45,7 +45,14 @@ import {
   getReadingTextVocabulary,
   isProperNounItem,
 } from "@/lib/dict";
-import { Dialogue, DictionaryItem, Level, ResimliKelime } from "@/types/data";
+import {
+  Dialogue,
+  DictionaryItem,
+  Level,
+  ResimliKelime,
+  SynonymAntonymEntry,
+  SynonymAntonymWordTur,
+} from "@/types/data";
 import { useUserStore } from "@/store/userStore";
 import { useSettings } from "@/store/settings";
 import {
@@ -57,6 +64,7 @@ import {
   resolveMistakesPool,
   buildDailyStudyPackage,
   getLeechSrsItems,
+  synonymEntryToDictionaryItem,
 } from "@/lib/mistakeUtils";
 import {
   generatePoolFromDialogues,
@@ -64,6 +72,8 @@ import {
   generatePoolFrom1111Sentences,
   generatePoolFromProverbs,
   generatePoolFromVisualWords,
+  getFilteredSynonymAntonymEntries,
+  getSynonymTurLabel,
   getModuleCategoryList,
   normalizeWordPartOfSpeech,
 } from "@/lib/quiz";
@@ -223,6 +233,7 @@ type ExerciseCategoryTab =
 
 export type PoolSourceId =
   | "full_dict"
+  | "synonyms_antonyms"
   | "visual_words"
   | "all_dialogues"
   | "reading_texts"
@@ -238,6 +249,14 @@ function normalizePoolParam(raw?: string | null): PoolSourceId | null {
   const val = raw.trim().toLowerCase();
   if (val === "full_dict" || val === "all-dict" || val === "dict") {
     return "full_dict";
+  }
+  if (
+    val === "synonyms_antonyms" ||
+    val === "es-zit" ||
+    val === "es_zit" ||
+    val === "synonyms"
+  ) {
+    return "synonyms_antonyms";
   }
   if (
     val === "visual_words" ||
@@ -407,6 +426,8 @@ function ExercisesPageContent() {
     idioms: ArabicIdiom[];
     dialogues: Dialogue[];
     visualPool: ResimliKelime[];
+    synonymEntries: SynonymAntonymEntry[];
+    isSynonymsAntonymsMode: boolean;
     isMistakesMode: boolean;
   } | null>(null);
 
@@ -427,6 +448,9 @@ function ExercisesPageContent() {
   const [cefrFilter, setCefrFilter] = useState<"all" | Level>("all");
   const [wordPosFilter, setWordPosFilter] = useState<
     "all" | "isim" | "fiil" | "edat"
+  >("all");
+  const [synTurFilter, setSynTurFilter] = useState<
+    "all" | SynonymAntonymWordTur
   >("all");
   const [singleDialogueId, setSingleDialogueId] = useState<string>("all");
   const [singleReadingId, setSingleReadingId] = useState<string>("all");
@@ -522,6 +546,8 @@ function ExercisesPageContent() {
               ? snapshotDailyPackage.dueReviewPool.dialogues
               : [snapshotDailyPackage.dailyDialogue.dialogue],
           visualPool: gorselKelimeler,
+          synonymEntries: [],
+          isSynonymsAntonymsMode: false,
           isMistakesMode: true,
         });
         setIsPlaying(true);
@@ -568,6 +594,8 @@ function ExercisesPageContent() {
               ? leechResolved.dialogues
               : [snapshotDailyPackage.dailyDialogue.dialogue],
           visualPool: gorselKelimeler,
+          synonymEntries: [],
+          isSynonymsAntonymsMode: false,
           isMistakesMode: true,
         });
         setIsPlaying(true);
@@ -578,6 +606,16 @@ function ExercisesPageContent() {
         setCefrFilter(levelParam as Level);
       }
 
+      const turParam = searchParams.get("tur");
+      if (
+        turParam === "isim" ||
+        turParam === "fiil" ||
+        turParam === "sifat" ||
+        turParam === "zarf"
+      ) {
+        setSynTurFilter(turParam);
+      }
+
       const resolvedPool = normalizePoolParam(poolParam);
       if (resolvedPool) {
         setRangePreset(resolvedPool);
@@ -585,7 +623,10 @@ function ExercisesPageContent() {
           setContentType("sentences");
         } else if (resolvedPool === "proverbs_508") {
           setContentType("idioms");
-        } else if (resolvedPool === "visual_words") {
+        } else if (
+          resolvedPool === "visual_words" ||
+          resolvedPool === "synonyms_antonyms"
+        ) {
           setContentType("words");
         } else if (resolvedPool === "reading_texts") {
           setContentType("mixed");
@@ -748,6 +789,15 @@ function ExercisesPageContent() {
         endNum,
       }),
     [singleDialogueId, cefrFilter, startNum, endNum]
+  );
+
+  const activeSynonymEntries = useMemo(
+    () =>
+      getFilteredSynonymAntonymEntries({
+        level: cefrFilter,
+        tur: rangePreset === "synonyms_antonyms" ? synTurFilter : "all",
+      }),
+    [cefrFilter, rangePreset, synTurFilter]
   );
 
   // Görsel & Sesli Eşleştirme için filtrelenmiş ResimliKelime[] havuzu (998 Görsel Kelime, 508 Atasözü, 120 Diyalog, 60 Metin)
@@ -967,6 +1017,33 @@ function ExercisesPageContent() {
       );
     }
 
+    if (rangePreset === "synonyms_antonyms") {
+      const entries =
+        activeSynonymEntries.length > 0
+          ? activeSynonymEntries
+          : getFilteredSynonymAntonymEntries({ level: "all", tur: "all" });
+      const syntheticDlg: Dialogue = {
+        id: "pool_synonyms_antonyms",
+        seviye: cefrFilter === "all" ? "A1" : cefrFilter,
+        baslik_tr:
+          synTurFilter !== "all"
+            ? `Eş & Zıt Anlamlılar · ${getSynonymTurLabel(synTurFilter)}`
+            : "400 Eş & Zıt Anlamlı Kelime Karşılaştırmalı Cümleleri",
+        baslik_ar: "أَمْثِلَةُ الْمُرَادِفَاتِ وَالْأَضْدَاد",
+        satirlar: entries
+          .filter((e) => Boolean(e.ornek_cumle_ar?.trim()))
+          .map((e, idx) => ({
+            sira: idx + 1,
+            konusmaci: `${e.anlam_tr} (${e.kelime_ar})`,
+            konusmaci_ar: e.kelime_ar,
+            cinsiyet: "E",
+            arapca: e.ornek_cumle_ar,
+            turkce: e.ornek_cumle_tr,
+          })),
+      };
+      return [syntheticDlg];
+    }
+
     // all_dialogues veya full_dict / favorites / weak-words
     if (singleDialogueId !== "all" && !singleDialogueId.startsWith("range:")) {
       return diyaloglar.filter((dlg) => dlg.id === singleDialogueId);
@@ -986,11 +1063,13 @@ function ExercisesPageContent() {
     singleReadingId,
     categoryFilter,
     cefrFilter,
+    synTurFilter,
     dailyPackage,
     mistakesResolved.dialogues,
     active1111SentencesWordItems,
     activeProverbsWordItems,
     activeVisualWordsWordItems,
+    activeSynonymEntries,
     startNum,
     endNum,
   ]);
@@ -1270,6 +1349,18 @@ function ExercisesPageContent() {
       };
     }
 
+    if (rangePreset === "synonyms_antonyms") {
+      const entries =
+        activeSynonymEntries.length > 0
+          ? activeSynonymEntries
+          : getFilteredSynonymAntonymEntries({ level: "all", tur: "all" });
+      const mappedItems = entries.map((e) => synonymEntryToDictionaryItem(e));
+      return {
+        combinedVocabulary: mappedItems,
+        poolNotice: `🔄 ${getDynamicContentStats().synonymsAntonymsCount} Eş & Zıt Anlamlılar (المرادفات والأضداد) havuzundan ${entries.length} madde ve ince anlam nüansları (الفروق اللغوية) hazırlandı.`,
+      };
+    }
+
     if (rangePreset === "full_dict") {
       const filteredByLevel =
         cefrFilter === "all"
@@ -1347,6 +1438,7 @@ function ExercisesPageContent() {
     activeVisualWordsWordItems,
     active1111SentencesWordItems,
     activeProverbsWordItems,
+    activeSynonymEntries,
   ]);
 
   const exerciseCards: {
@@ -1523,7 +1615,7 @@ function ExercisesPageContent() {
 
   const contentStats = getDynamicContentStats();
 
-  // Hızlı Havuz Sekmeleri (4x2 Ferah Izgara Seçenekleri)
+  // Hızlı Havuz Sekmeleri (Ferah Izgara Seçenekleri)
   const poolOptions: {
     id: PoolSourceId;
     title: string;
@@ -1535,6 +1627,12 @@ function ExercisesPageContent() {
       title: "📚 Tüm Sözlük",
       countBadge: contentStats.dictionaryWordCount.toLocaleString("tr-TR"),
       label: `Tüm Sözlük (${contentStats.dictionaryWordCount.toLocaleString("tr-TR")} Kelime)`,
+    },
+    {
+      id: "synonyms_antonyms",
+      title: "🔄 Eş & Zıt Anlamlılar",
+      countBadge: contentStats.synonymsAntonymsCount.toLocaleString("tr-TR"),
+      label: `Eş & Zıt Anlamlı Kelimeler (${contentStats.synonymsAntonymsCount})`,
     },
     {
       id: "visual_words",
@@ -1592,7 +1690,7 @@ function ExercisesPageContent() {
     },
   ];
 
-  const quickPoolPills = poolOptions.slice(0, 8);
+  const quickPoolPills = poolOptions.slice(0, 9);
 
   const isSelfSourcedSpecialMode =
     selectedType === "error-hunter" ||
@@ -1667,6 +1765,7 @@ function ExercisesPageContent() {
     setCategoryFilter("all");
     clearGrammarFilterAndUrl();
     setWordPosFilter("all");
+    setSynTurFilter("all");
     setSingleDialogueId("all");
     setSingleReadingId("all");
     setStartNum(1);
@@ -1680,7 +1779,11 @@ function ExercisesPageContent() {
           ? "sentences"
           : "idioms"
       );
-    } else if (presetId === "visual_words" || presetId === "full_dict") {
+    } else if (
+      presetId === "visual_words" ||
+      presetId === "full_dict" ||
+      presetId === "synonyms_antonyms"
+    ) {
       setContentType(
         selectedType === "fill-in-blanks" || selectedType === "sentence-builder"
           ? "sentences"
@@ -1732,6 +1835,8 @@ function ExercisesPageContent() {
       idioms: [...idiomsPool],
       dialogues: [...selectedDialogues],
       visualPool: [...filteredVisualWordsPool],
+      synonymEntries: [...activeSynonymEntries],
+      isSynonymsAntonymsMode: rangePreset === "synonyms_antonyms",
       isMistakesMode:
         rangePreset === "mistakes" || rangePreset === "srs_due",
     });
@@ -1758,7 +1863,9 @@ function ExercisesPageContent() {
 
   const effectiveContentType: QuizContentType = useMemo(() => {
     if (isSentencesOnlyMode) return "sentences";
-    if (rangePreset === "full_dict") return "words";
+    if (rangePreset === "full_dict" || rangePreset === "synonyms_antonyms") {
+      return "words";
+    }
     if (rangePreset === "sentences_1111") return "sentences";
     if (rangePreset === "proverbs_508") return "idioms";
     if (rangePreset === "favorites" || rangePreset === "weak-words") {
@@ -1970,6 +2077,18 @@ function ExercisesPageContent() {
       };
     }
 
+    if (rangePreset === "synonyms_antonyms") {
+      const cnt = activeSynonymEntries.length;
+      const turSuffix =
+        synTurFilter === "all"
+          ? "Eş & Zıt Anlam Maddesi"
+          : `${getSynonymTurLabel(synTurFilter)} (Eş/Zıt)`;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt.toLocaleString("tr-TR")} ${turSuffix}`,
+      };
+    }
+
     if (rangePreset === "full_dict") {
       if (isSentencesOnlyMode || effectiveContentType === "sentences") {
         return {
@@ -2019,12 +2138,14 @@ function ExercisesPageContent() {
     effectiveContentType,
     cefrFilter,
     wordPosFilter,
+    synTurFilter,
     filteredVisualWordsPool,
     activeVisualWordsWordItems,
     active1111SentencesWordItems,
     activeProverbsWordItems,
     activeReadingsWordItems,
     activeDialoguesWordItems,
+    activeSynonymEntries,
     selectedDialogues,
     singleReadingId,
     sentenceCountInPool,
@@ -2350,7 +2471,7 @@ function ExercisesPageContent() {
                 </span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
                 {quickPoolPills.map((pill) => {
                   const isActive = rangePreset === pill.id;
                   const isCompatible = isPoolCompatibleWithSelectedMode(
@@ -2694,6 +2815,49 @@ function ExercisesPageContent() {
                 </div>
               )}
 
+              {/* 🔄 Eş & Zıt Anlamlılar Seçildiğinde Kelime Türü Filtresi ([Tümü] [İsim] [Fiil] [Sıfat] [Zarf]) */}
+              {!isSelfSourcedSpecialMode &&
+                rangePreset === "synonyms_antonyms" && (
+                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
+                  <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
+                    Kelime Türü:
+                  </span>
+                  <div className="grid grid-cols-3 sm:flex items-center gap-1 w-full sm:w-auto">
+                    {(
+                      [
+                        { id: "all", label: "Tümü" },
+                        { id: "isim", label: "📘 İsim" },
+                        { id: "fiil", label: "⚡ Fiil" },
+                        { id: "sifat", label: "🎨 Sıfat" },
+                        { id: "zarf", label: "⏱️ Zarf" },
+                      ] as {
+                        id: "all" | SynonymAntonymWordTur;
+                        label: string;
+                      }[]
+                    ).map((turItem) => {
+                      const active = synTurFilter === turItem.id;
+                      return (
+                        <button
+                          key={turItem.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setSynTurFilter(turItem.id);
+                          }}
+                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                            active
+                              ? "bg-[#087F5B] text-white font-bold shadow-2xs"
+                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                          }`}
+                        >
+                          {turItem.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* 2. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
               <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
                 <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
@@ -2999,6 +3163,13 @@ function ExercisesPageContent() {
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              synonymEntries={
+                frozenPools?.synonymEntries ?? activeSynonymEntries
+              }
+              isSynonymsAntonymsMode={
+                frozenPools?.isSynonymsAntonymsMode ??
+                rangePreset === "synonyms_antonyms"
+              }
               contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
@@ -3014,6 +3185,13 @@ function ExercisesPageContent() {
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
+              synonymEntries={
+                frozenPools?.synonymEntries ?? activeSynonymEntries
+              }
+              isSynonymsAntonymsMode={
+                frozenPools?.isSynonymsAntonymsMode ??
+                rangePreset === "synonyms_antonyms"
+              }
               contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
@@ -3030,6 +3208,13 @@ function ExercisesPageContent() {
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
               idioms={frozenPools?.idioms ?? idiomsPool}
               dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              synonymEntries={
+                frozenPools?.synonymEntries ?? activeSynonymEntries
+              }
+              isSynonymsAntonymsMode={
+                frozenPools?.isSynonymsAntonymsMode ??
+                rangePreset === "synonyms_antonyms"
+              }
               contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}

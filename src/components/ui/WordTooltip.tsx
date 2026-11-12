@@ -8,6 +8,7 @@ import {
   getWordCategory,
   WordCategory,
   getWordsByRoot,
+  findSynonymAntonymForWord,
 } from "@/lib/dict";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -163,6 +164,12 @@ export default function WordTooltip({
   } | null>(null);
   const [showDesktopRootFamily, setShowDesktopRootFamily] = useState(false);
   const [expandedBridgeIndex, setExpandedBridgeIndex] = useState<number | null>(
+    null
+  );
+  const [expandedSynExIndex, setExpandedSynExIndex] = useState<number | null>(
+    null
+  );
+  const [activeSynNuanceKey, setActiveSynNuanceKey] = useState<string | null>(
     null
   );
   const [mounted, setMounted] = useState(false);
@@ -1043,6 +1050,221 @@ export default function WordTooltip({
                                   </p>
                                   <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug">
                                     &ldquo;{bridgeHit.quranicExampleTr}&rdquo; ({bridgeHit.surahRef})
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Eş & Zıt Anlamlılar (المرادفات والأضداد) + الفروق اللغوية + Karşılaştırmalı Örnek */}
+                    {(() => {
+                      const synAntEntry =
+                        findSynonymAntonymForWord(primaryAr) ||
+                        findSynonymAntonymForWord(coreWord);
+                      if (!synAntEntry) return null;
+                      const isSynExOpen = expandedSynExIndex === index;
+
+                      return (
+                        <div
+                          dir="ltr"
+                          className="space-y-1.5 py-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] font-sans"
+                        >
+                          {synAntEntry.es_anlamlilar.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+                                🔄 Eş Anlamlıları (المرادفات)
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {synAntEntry.es_anlamlilar.map((syn, sIdx) => {
+                                  const nuanceKey = `${synAntEntry.id}_es_${sIdx}`;
+                                  const isNuanceShown =
+                                    activeSynNuanceKey === nuanceKey;
+                                  return (
+                                    <div
+                                      key={nuanceKey}
+                                      className="inline-flex flex-col gap-0.5 max-w-full"
+                                    >
+                                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200">
+                                        <button
+                                          type="button"
+                                          onClick={(e) =>
+                                            handlePlayWord(e, syn.ar)
+                                          }
+                                          title="Telaffuzu dinlemek için tıklayın"
+                                          className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80"
+                                        >
+                                          <Volume2
+                                            size={10}
+                                            className="text-emerald-700 dark:text-emerald-300 shrink-0"
+                                          />
+                                          <bdi
+                                            dir="rtl"
+                                            className="arabic font-arabic text-xs sm:text-sm font-bold"
+                                          >
+                                            {formatAr(syn.ar)}
+                                          </bdi>
+                                          <span className="text-[10px] font-semibold opacity-90">
+                                            ({syn.tr})
+                                          </span>
+                                        </button>
+                                        {syn.nuans_tr && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              playClick();
+                                              setActiveSynNuanceKey((prev) =>
+                                                prev === nuanceKey
+                                                  ? null
+                                                  : nuanceKey
+                                              );
+                                            }}
+                                            title={syn.nuans_tr}
+                                            className="ml-0.5 px-1 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-900 text-[9px] font-black text-emerald-950 dark:text-emerald-100 cursor-pointer shrink-0"
+                                          >
+                                            💡 الفروق
+                                          </button>
+                                        )}
+                                      </div>
+                                      {syn.nuans_tr && isNuanceShown && (
+                                        <p className="text-[10px] font-semibold leading-snug bg-emerald-50/95 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-md px-2 py-1 text-emerald-950 dark:text-emerald-100">
+                                          <strong className="font-black">
+                                            İnce Anlam Farkı:{" "}
+                                          </strong>
+                                          {syn.nuans_tr}
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {synAntEntry.zit_anlamlilar.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                                ⚡ Zıt Anlamlıları (الأضداد)
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {synAntEntry.zit_anlamlilar.map((ant, zIdx) => {
+                                  const nuanceKey = `${synAntEntry.id}_zit_${zIdx}`;
+                                  const isNuanceShown =
+                                    activeSynNuanceKey === nuanceKey;
+                                  return (
+                                    <div
+                                      key={nuanceKey}
+                                      className="inline-flex flex-col gap-0.5 max-w-full"
+                                    >
+                                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/80 text-amber-950 dark:text-amber-200">
+                                        <button
+                                          type="button"
+                                          onClick={(e) =>
+                                            handlePlayWord(e, ant.ar)
+                                          }
+                                          title="Telaffuzu dinlemek için tıklayın"
+                                          className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80"
+                                        >
+                                          <Volume2
+                                            size={10}
+                                            className="text-amber-700 dark:text-amber-300 shrink-0"
+                                          />
+                                          <bdi
+                                            dir="rtl"
+                                            className="arabic font-arabic text-xs sm:text-sm font-bold"
+                                          >
+                                            {formatAr(ant.ar)}
+                                          </bdi>
+                                          <span className="text-[10px] font-semibold opacity-90">
+                                            ({ant.tr})
+                                          </span>
+                                        </button>
+                                        {ant.nuans_tr && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              playClick();
+                                              setActiveSynNuanceKey((prev) =>
+                                                prev === nuanceKey
+                                                  ? null
+                                                  : nuanceKey
+                                              );
+                                            }}
+                                            title={ant.nuans_tr}
+                                            className="ml-0.5 px-1 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900 text-[9px] font-black text-amber-950 dark:text-amber-100 cursor-pointer shrink-0"
+                                          >
+                                            💡 الفروق
+                                          </button>
+                                        )}
+                                      </div>
+                                      {ant.nuans_tr && isNuanceShown && (
+                                        <p className="text-[10px] font-semibold leading-snug bg-amber-50/95 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 rounded-md px-2 py-1 text-amber-950 dark:text-amber-100">
+                                          <strong className="font-black">
+                                            İnce Anlam Farkı:{" "}
+                                          </strong>
+                                          {ant.nuans_tr}
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {synAntEntry.ornek_cumle_ar && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  playClick();
+                                  setExpandedSynExIndex((prev) =>
+                                    prev === index ? null : index
+                                  );
+                                }}
+                                className="w-full flex items-center justify-between px-2 py-1 rounded-lg bg-white/80 dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-emerald-500 text-[10px] font-extrabold text-[var(--foreground)] transition-all cursor-pointer"
+                              >
+                                <span>
+                                  📖 Karşılaştırmalı Örnek Cümle{" "}
+                                  {isSynExOpen ? "▴" : "▾"}
+                                </span>
+                                <span className="text-[9px] font-bold text-[#087F5B] dark:text-emerald-300">
+                                  {synAntEntry.cefr}
+                                </span>
+                              </button>
+                              {isSynExOpen && (
+                                <div className="mt-1 rounded-lg bg-white/95 dark:bg-[var(--background)] border border-[#E6D7BE] p-2 space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[9px] font-extrabold uppercase text-[#087F5B] dark:text-emerald-300">
+                                      المثال المقارن
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) =>
+                                        handlePlayWord(
+                                          e,
+                                          synAntEntry.ornek_cumle_ar
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-bold cursor-pointer"
+                                    >
+                                      <Volume2 size={9} />
+                                      <span>Cümleyi Dinle</span>
+                                    </button>
+                                  </div>
+                                  <p
+                                    dir="rtl"
+                                    className="arabic font-arabic text-sm font-bold text-[var(--foreground)] text-right leading-relaxed"
+                                  >
+                                    {formatAr(synAntEntry.ornek_cumle_ar)}
+                                  </p>
+                                  <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug">
+                                    {synAntEntry.ornek_cumle_tr}
                                   </p>
                                 </div>
                               )}

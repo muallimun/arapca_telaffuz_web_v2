@@ -8,12 +8,13 @@ import {
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
-import { Dialogue, DictionaryItem } from "@/types/data";
+import { Dialogue, DictionaryItem, SynonymAntonymEntry } from "@/types/data";
 import {
   shuffleArray,
   selectSmartWordDistractors,
   resolveSentenceSourceMeta,
   stripParentheticalArabicExamples,
+  generateSynonymAntonymMcQuestions,
 } from "@/lib/quiz";
 import { cumleler1111, atasozleri } from "@/lib/data";
 import {
@@ -85,6 +86,8 @@ interface Props {
   vocabulary: DictionaryItem[];
   idioms?: ArabicIdiom[];
   dialogues?: Dialogue[];
+  synonymEntries?: SynonymAntonymEntry[];
+  isSynonymsAntonymsMode?: boolean;
   contentType?: QuizContentType;
   feedbackMode?: FeedbackMode;
   timeLimit: number | null;
@@ -97,6 +100,8 @@ export default function MultipleChoice({
   vocabulary,
   idioms = [],
   dialogues = [],
+  synonymEntries = [],
+  isSynonymsAntonymsMode = false,
   contentType = "words",
   feedbackMode = "instant",
   timeLimit,
@@ -115,13 +120,24 @@ export default function MultipleChoice({
 
   const itemsSignature = useMemo(
     () =>
-      `${vocabulary.map((v) => v.id).join("|")}::${idioms
+      `${isSynonymsAntonymsMode ? "syn" : "std"}::${synonymEntries
+        .map((s) => s.id)
+        .join("|")}::${vocabulary.map((v) => v.id).join("|")}::${idioms
         .map((i) => i.id)
         .join("|")}::${dialogues.map((d) => d.id).join("|")}`,
-    [vocabulary, idioms, dialogues]
+    [isSynonymsAntonymsMode, synonymEntries, vocabulary, idioms, dialogues]
   );
 
   const generatedQuestions: QuizQuestionItem[] = useMemo(() => {
+    if (isSynonymsAntonymsMode && synonymEntries.length > 0) {
+      return generateSynonymAntonymMcQuestions(
+        synonymEntries,
+        questionCount
+      ).map((sq) => ({
+        ...sq,
+        metaLabel: sq.metaLabel || "Eş & Zıt Anlamlılar",
+      }));
+    }
     const wordPool: {
       id: string;
       arabic: string;
@@ -800,7 +816,7 @@ export default function MultipleChoice({
                   <div className="text-right text-[11px] font-bold">
                     {!isOk && ans?.chosen && (
                       <span className="text-rose-700 line-through block">
-                        Seçiminiz: {ans.chosen}
+                        Seçiminiz: <MixedText text={ans.chosen} />
                       </span>
                     )}
                     {!ans && (
@@ -809,7 +825,7 @@ export default function MultipleChoice({
                       </span>
                     )}
                     <span className="text-emerald-800 dark:text-emerald-300 block">
-                      Doğru: {q.turkish}
+                      Doğru: <MixedText text={q.turkish} />
                     </span>
                   </div>
                 </button>
@@ -832,7 +848,16 @@ export default function MultipleChoice({
               </button>
             </div>
 
-            <div className="text-center py-1">
+            <div className="text-center py-1 space-y-1">
+              {reviewQ.promptQuestionTr && (
+                <p
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-xs font-extrabold text-[var(--muted)]"
+                >
+                  <MixedText text={reviewQ.promptQuestionTr} />
+                </p>
+              )}
               <h4
                 dir="rtl"
                 className="arabic text-3xl sm:text-4xl font-bold text-[#065F46] dark:text-emerald-400"
@@ -883,33 +908,32 @@ export default function MultipleChoice({
               })}
             </div>
 
-            {reviewQ.kind === "idiom" &&
-              (reviewQ.literalTr || reviewQ.usageNote) && (
-                <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 p-3 text-left text-xs space-y-1">
-                  {reviewQ.literalTr && (
-                    <p
-                      dir="ltr"
-                      lang="tr"
-                      className="font-sans font-bold text-[#4C28B5] dark:text-[#d0bfff]"
-                    >
-                      <span className="font-extrabold">✨ Harfiyen Anlamı:</span>{" "}
-                      <MixedText text={reviewQ.literalTr} />
-                    </p>
-                  )}
-                  {reviewQ.usageNote && (
-                    <p
-                      dir="ltr"
-                      lang="tr"
-                      className="font-sans text-[var(--foreground)] font-semibold"
-                    >
-                      <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
-                        💡 Kullanım İpucu:
-                      </span>{" "}
-                      <MixedText text={reviewQ.usageNote} />
-                    </p>
-                  )}
-                </div>
-              )}
+            {(reviewQ.literalTr || reviewQ.usageNote) && (
+              <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 p-3 text-left text-xs space-y-1">
+                {reviewQ.literalTr && (
+                  <p
+                    dir="ltr"
+                    lang="tr"
+                    className="font-sans font-bold text-[#4C28B5] dark:text-[#d0bfff]"
+                  >
+                    <span className="font-extrabold">✨ Harfiyen Anlamı:</span>{" "}
+                    <MixedText text={reviewQ.literalTr} />
+                  </p>
+                )}
+                {reviewQ.usageNote && (
+                  <p
+                    dir="ltr"
+                    lang="tr"
+                    className="font-sans text-[var(--foreground)] font-semibold"
+                  >
+                    <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
+                      💡 Açıklama &amp; Nüans:
+                    </span>{" "}
+                    <MixedText text={reviewQ.usageNote} />
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-[#E2D3B8]">
               <button
@@ -1039,16 +1063,18 @@ export default function MultipleChoice({
             </span>
             <span
               className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold inline-flex items-center gap-1 ${
-                currentQuestion.kind === "sentence" ||
-                currentQuestion.kind === "idiom"
+                currentQuestion.topBadge?.includes("Zıt")
+                  ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-400/70"
+                  : currentQuestion.kind === "sentence" ||
+                    currentQuestion.kind === "idiom"
                   ? "bg-[#F3F0FF] text-[#6741D9] border border-[#6741D9]/30"
                   : "bg-[#E6FCF5] text-[#065F46] dark:text-emerald-400 border border-[#087F5B]/30"
               }`}
             >
-              {currentQuestion.kind === "sentence" ? (
-                <span>
-                  {currentQuestion.topBadge || "💬 Diyalog Cümlesi"}
-                </span>
+              {currentQuestion.topBadge ? (
+                <span>{currentQuestion.topBadge}</span>
+              ) : currentQuestion.kind === "sentence" ? (
+                <span>💬 Diyalog Cümlesi</span>
               ) : currentQuestion.kind === "idiom" ? (
                 <>
                   <Sparkles size={11} />
@@ -1123,12 +1149,15 @@ export default function MultipleChoice({
       <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 text-center space-y-3">
         <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] border-b border-dashed border-[#E2D3B8] pb-2.5">
           <span className="text-left">
-            {currentQuestion.kind === "sentence"
-              ? currentQuestion.promptQuestionTr ||
-                "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
-              : currentQuestion.kind === "idiom"
-              ? "Aşağıdaki Arapça kalıp ifadenin doğru deyimsel anlamı hangisidir?"
-              : "Aşağıdaki Arapça kelimenin Türkçe karşılığı nedir?"}
+            {currentQuestion.promptQuestionTr ? (
+              <MixedText text={currentQuestion.promptQuestionTr} />
+            ) : currentQuestion.kind === "sentence" ? (
+              "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
+            ) : currentQuestion.kind === "idiom" ? (
+              "Aşağıdaki Arapça kalıp ifadenin doğru deyimsel anlamı hangisidir?"
+            ) : (
+              "Aşağıdaki Arapça kelimenin Türkçe karşılığı nedir?"
+            )}
           </span>
           <button
             type="button"
@@ -1217,10 +1246,9 @@ export default function MultipleChoice({
         })}
       </div>
 
-      {/* KALIP İFADE CEVAPLANDIĞINDA HARFİYEN ANLAMI VE KULLANIM İPUCU KUTUSU */}
+      {/* CEVAPLANDIĞINDA HARFİYEN ANLAM / الفروق اللغوية NÜANS VE ÖRNEK İPUCU KUTUSU */}
       {feedbackMode === "instant" &&
         Boolean(selected) &&
-        currentQuestion.kind === "idiom" &&
         (currentQuestion.literalTr || currentQuestion.usageNote) && (
           <div className="rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9]/40 p-3.5 text-left text-xs space-y-1.5 animate-in fade-in duration-150">
             {currentQuestion.literalTr && (
@@ -1240,7 +1268,7 @@ export default function MultipleChoice({
                 className="font-sans text-[var(--foreground)] font-semibold"
               >
                 <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
-                  💡 Kullanım İpucu:
+                  💡 Açıklama &amp; Nüans:
                 </span>{" "}
                 <MixedText text={currentQuestion.usageNote} />
               </p>

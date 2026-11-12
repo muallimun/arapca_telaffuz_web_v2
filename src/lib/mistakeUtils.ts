@@ -1,9 +1,15 @@
 import {
   sozluk,
   diyaloglar,
+  esZitAnlamlilar,
   getDialoguesSortedPedagogically,
 } from "@/lib/data";
-import { DictionaryItem, Dialogue, Level } from "@/types/data";
+import {
+  DictionaryItem,
+  Dialogue,
+  Level,
+  SynonymAntonymEntry,
+} from "@/types/data";
 import {
   cleanArabicText,
   analyzeAndMatchWord,
@@ -32,6 +38,14 @@ export function normalizeToCanonicalMistakeId(
 ): string | null {
   if (rawId) {
     const trimmed = rawId.trim();
+    // 0. Eş & Zıt Anlamlılar kimlikleri: ez_001, mc_ez_001, mg_ez_001, fill_ez_001, sb_ez_001, w_ez_001
+    const ezMatch = trimmed.match(
+      /^(?:mc_w_|mg_w_|mc_|mg_|fill_|sb_|word_|w-|w_)?(ez_\d+)(?:_[a-z0-9]+)?$/i
+    );
+    if (ezMatch) {
+      return ezMatch[1].toLowerCase();
+    }
+
     // 1. Kelime önekleri: w-12, w_12, mc_w_12, mg_w_12, word_12
     if (/^(mc_w_|mg_w_|word_|w-|w_)/.test(trimmed)) {
       const rest = trimmed.replace(/^(mc_w_|mg_w_|word_|w-|w_)/, "");
@@ -135,6 +149,25 @@ export function normalizeToCanonicalMistakeId(
   return rawId ? rawId.trim() : null;
 }
 
+export function synonymEntryToDictionaryItem(
+  entry: SynonymAntonymEntry
+): DictionaryItem {
+  const synSummary = entry.es_anlamlilar[0]?.ar;
+  return {
+    id: entry.id,
+    tur: entry.tur,
+    kok: "-",
+    cefr: entry.cefr,
+    anlam_tr: entry.anlam_tr,
+    mufret: entry.tur !== "fiil" ? entry.kelime_ar : undefined,
+    mazi: entry.tur === "fiil" ? entry.kelime_ar : undefined,
+    cemi: synSummary || undefined,
+    ornek_ar: entry.ornek_cumle_ar,
+    ornek_tr: entry.ornek_cumle_tr,
+    kategori_tr: "Eş & Zıt Anlamlılar",
+  };
+}
+
 export interface ResolvedMistakesPool {
   words: DictionaryItem[];
   idioms: ArabicIdiom[];
@@ -188,6 +221,17 @@ export function resolveMistakesPool(mistakeIds: string[]): ResolvedMistakesPool 
       };
       wordsMap.set(asDictItem.id, asDictItem);
       continue;
+    }
+
+    // 2.5. Eş & Zıt Anlamlılar kaydı mı? (ez_001 .. ez_400)
+    if (/^ez_\d+$/i.test(id)) {
+      const foundEz = esZitAnlamlilar.find(
+        (e) => e.id.toLowerCase() === id.toLowerCase()
+      );
+      if (foundEz) {
+        wordsMap.set(foundEz.id, synonymEntryToDictionaryItem(foundEz));
+        continue;
+      }
     }
 
     // 3. Sözlük kelimesi mi?
@@ -478,9 +522,13 @@ export function buildDailyStudyPackage(params: {
     if (dailyWords.length >= 6) break;
     if (rec.type !== "word") continue;
     const stripped = rec.id.replace(/^word_/, "");
-    const w =
-      allDictWords.find((item) => item.id === stripped || item.id === rec.id) ||
-      sozluk.find((item) => item.id === stripped || item.id === rec.id);
+    const foundEz = /^ez_\d+$/i.test(stripped)
+      ? esZitAnlamlilar.find((e) => e.id.toLowerCase() === stripped.toLowerCase())
+      : undefined;
+    const w = foundEz
+      ? synonymEntryToDictionaryItem(foundEz)
+      : allDictWords.find((item) => item.id === stripped || item.id === rec.id) ||
+        sozluk.find((item) => item.id === stripped || item.id === rec.id);
     if (!w || isProperNounItem(w) || pickedWordIds.has(w.id)) continue;
     pickedWordIds.add(w.id);
 
@@ -651,9 +699,15 @@ export function buildDailyStudyPackage(params: {
   for (const rec of dueSrsEntries) {
     if (rec.type === "word") {
       const stripped = rec.id.replace(/^word_/, "");
-      const found =
-        allDictWords.find((w) => w.id === stripped || w.id === rec.id) ||
-        sozluk.find((w) => w.id === stripped || w.id === rec.id);
+      const foundEz = /^ez_\d+$/i.test(stripped)
+        ? esZitAnlamlilar.find(
+            (e) => e.id.toLowerCase() === stripped.toLowerCase()
+          )
+        : undefined;
+      const found = foundEz
+        ? synonymEntryToDictionaryItem(foundEz)
+        : allDictWords.find((w) => w.id === stripped || w.id === rec.id) ||
+          sozluk.find((w) => w.id === stripped || w.id === rec.id);
       if (found && !isProperNounItem(found)) poolWordsMap.set(found.id, found);
     }
   }

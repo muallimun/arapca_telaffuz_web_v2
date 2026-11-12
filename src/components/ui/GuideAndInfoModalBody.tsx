@@ -300,11 +300,15 @@ export default function GuideAndInfoModalBody({
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-[#6741D9] dark:text-indigo-300">
-                    6. 🗣️ 28 Harf Mahreç Haritası &amp; 🌿 Ortak Kelime / Kur&apos;ân Köprüsü
+                    6. 🗣️ 28 Harf Mahreç, 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar &amp; 🌿 Köprüler
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     28 Arapça harfte kişisel telaffuz ısı haritası; sözlükte kök
                     ailesi (iştikak),{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar (المرادفات والأضداد) ve الفروق nüans notları
+                    </strong>
+                    ,{" "}
                     <strong className="text-[var(--foreground)]">
                       Türkçeyle Ortak Kelimeler
                     </strong>{" "}
@@ -558,7 +562,9 @@ export default function GuideAndInfoModalBody({
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     CEFR (A1–B2) standartlarına uyumlu 120 özgün diyalog, 60
                     okuma metni, 195 kartlık Gramer Atlası, 180 soruluk CAT &amp;
-                    Konu Tarama soru bankası ve{" "}
+                    Konu Tarama soru bankası,{" "}
+                    {CONTENT_INVENTORY.synonymsAntonymsCount} maddelik Eş &amp; Zıt
+                    Anlamlılar (المرادفات والأضداد) atlası ve{" "}
                     {sozluk.length.toLocaleString("tr-TR")} kayıtlı morfolojik
                     sözlük (Türkçeyle Ortak Kelimeler &amp; Kur&apos;ân Köprüsü).
                   </p>

@@ -44,6 +44,8 @@ import {
   getVisualWordCoverUrl,
 } from "@/lib/data";
 import { playClick, playSuccess, playError } from "@/lib/sfxManager";
+import { speakHybrid } from "@/lib/audio";
+import { stripHarakat } from "@/lib/dict";
 import {
   YOUTUBE_CATEGORY_META,
   YOUTUBE_CATEGORY_ORDER,
@@ -52,7 +54,11 @@ import {
   buildYoutubeEmbedUrl,
   getYoutubeThumbnailUrls,
 } from "@/lib/youtubeUtils";
-import type { YoutubeCategory, YoutubeRecommendationItem } from "@/types/data";
+import type {
+  SynonymAntonymSubItem,
+  YoutubeCategory,
+  YoutubeRecommendationItem,
+} from "@/types/data";
 import type { AdminDatasetKey } from "@/app/api/admin/route";
 
 type StudioTabKey = AdminDatasetKey | "efect_manager";
@@ -154,6 +160,14 @@ const STUDIO_TABS: DatasetMeta[] = [
     icon: "🎬",
     fileName: "youtube_tavsiyeleri.json",
     description: "CEFR A1–B2 seviyeli YouTube video & oynatma listeleri, pedagojik notlar ve odak kelimeler",
+  },
+  {
+    key: "es_zit_anlamlilar",
+    label: "🔄 Eş & Zıt Anlamlılar (400)",
+    shortLabel: "Eş & Zıt (400)",
+    icon: "🔄",
+    fileName: "es_zit_anlamlilar.json",
+    description: "400 ana madde, eş/zıt anlamlılar, ince anlam farkları (الفروق اللغوية) ve karşılaştırmalı örnek cümleler",
   },
   {
     key: "efect_manager",
@@ -351,6 +365,17 @@ function getRecordCategory(rec: GenericRecord): string {
     const meta = YOUTUBE_CATEGORY_META[rec.kategori as YoutubeCategory];
     return `${meta.emoji} ${meta.shortLabel}`;
   }
+  if (rec.kelime_ar && typeof rec.tur === "string") {
+    const turLabels: Record<string, string> = {
+      isim: "📘 İsim",
+      fiil: "⚡ Fiil",
+      sifat: "✨ Sıfat",
+      zarf: "⏳ Zarf",
+    };
+    const esCount = Array.isArray(rec.es_anlamlilar) ? rec.es_anlamlilar.length : 0;
+    const zitCount = Array.isArray(rec.zit_anlamlilar) ? rec.zit_anlamlilar.length : 0;
+    return `${turLabels[rec.tur] || rec.tur} (=${esCount} / ≠${zitCount})`;
+  }
   return String(
     rec.ktt_ust_konu ||
       rec.ust_konu ||
@@ -366,6 +391,7 @@ function getRecordCategory(rec: GenericRecord): string {
 }
 
 function getRecordArabic(rec: GenericRecord): string {
+  if (rec.kelime_ar) return String(rec.kelime_ar);
   if (rec.soru_metni_ar) return String(rec.soru_metni_ar);
   if (rec.arapca) return String(rec.arapca);
   if (rec.baslik_ar) return String(rec.baslik_ar);
@@ -899,6 +925,28 @@ export default function AdminStudioPage() {
         const rootStr = String(rec.kok || "").toLowerCase();
         const channelStr = String(rec.kanal_adi || "").toLowerCase();
         const urlStr = String(rec.url || "").toLowerCase();
+        const synBlob =
+          Array.isArray(rec.es_anlamlilar) || Array.isArray(rec.zit_anlamlilar)
+            ? [
+                String(rec.kelime_harekesiz || ""),
+                String(rec.ornek_cumle_ar || ""),
+                String(rec.ornek_cumle_tr || ""),
+                ...(Array.isArray(rec.es_anlamlilar)
+                  ? rec.es_anlamlilar.map(
+                      (s: GenericRecord) =>
+                        `${s.ar || ""} ${s.harekesiz || ""} ${s.tr || ""} ${s.nuans_tr || ""}`
+                    )
+                  : []),
+                ...(Array.isArray(rec.zit_anlamlilar)
+                  ? rec.zit_anlamlilar.map(
+                      (a: GenericRecord) =>
+                        `${a.ar || ""} ${a.harekesiz || ""} ${a.tr || ""}`
+                    )
+                  : []),
+              ]
+                .join(" ")
+                .toLowerCase()
+            : "";
         return (
           idStr.includes(q) ||
           arStr.includes(q) ||
@@ -906,7 +954,8 @@ export default function AdminStudioPage() {
           catStr.includes(q) ||
           rootStr.includes(q) ||
           channelStr.includes(q) ||
-          urlStr.includes(q)
+          urlStr.includes(q) ||
+          synBlob.includes(q)
         );
       });
   }, [records, searchQuery, levelFilter, activeTab]);
@@ -1433,6 +1482,34 @@ export default function AdminStudioPage() {
         pedagojik_not:
           "Bu içeriği nasıl izlemeniz gerektiğine dair pedagojik rehber notu.",
         odak_kelimeler: ["حِوَارٌ", "اِسْتِمَاعٌ"],
+      };
+    } else if (activeTab === "es_zit_anlamlilar") {
+      const pad3 = String(nextNum).padStart(3, "0");
+      template = {
+        id: `ez_${pad3}`,
+        sira: nextNum,
+        cefr: "A1",
+        tur: "isim",
+        kelime_ar: "فَرَحٌ",
+        kelime_harekesiz: "فرح",
+        anlam_tr: "sevinç, neşe",
+        es_anlamlilar: [
+          {
+            ar: "سُرُورٌ",
+            harekesiz: "سرور",
+            tr: "sevinç, mutluluk",
+            nuans_tr: "İç huzuru ve gönül ferahlığı içeren sevinçtir.",
+          },
+        ],
+        zit_anlamlilar: [
+          {
+            ar: "حُزْنٌ",
+            harekesiz: "حزن",
+            tr: "hüzün, üzüntü",
+          },
+        ],
+        ornek_cumle_ar: "بَعْدَ الصَّبْرِ يَتَحَوَّلُ الْحُزْنُ إِلَى فَرَحٍ وَسُرُورٍ.",
+        ornek_cumle_tr: "Sabırdan sonra hüzün sevince ve mutluluğa dönüşür.",
       };
     }
 
@@ -2691,6 +2768,8 @@ export default function AdminStudioPage() {
                         <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
                           {activeTab === "youtube_tavsiyeleri"
                             ? "İzleme Kategorisi"
+                            : activeTab === "es_zit_anlamlilar"
+                            ? "Kelime Türü (tur)"
                             : "Kategori / Tema / KTT Üst Konu"}
                         </label>
                         {activeTab === "youtube_tavsiyeleri" ? (
@@ -2711,6 +2790,19 @@ export default function AdminStudioPage() {
                                 </option>
                               );
                             })}
+                          </select>
+                        ) : activeTab === "es_zit_anlamlilar" ? (
+                          <select
+                            value={String(draftRecord.tur || "isim")}
+                            onChange={(e) =>
+                              updateDraftField("tur", e.target.value)
+                            }
+                            className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-extrabold"
+                          >
+                            <option value="isim">📘 İsim (اسم)</option>
+                            <option value="fiil">⚡ Fiil (فعل)</option>
+                            <option value="sifat">✨ Sıfat (صفة)</option>
+                            <option value="zarf">⏳ Zarf (ظرف)</option>
                           </select>
                         ) : (
                           <input
@@ -2756,14 +2848,27 @@ export default function AdminStudioPage() {
                               type="text"
                               dir="rtl"
                               value={String(
-                                draftRecord.arapca ??
+                                draftRecord.kelime_ar ??
+                                  draftRecord.arapca ??
                                   draftRecord.baslik_ar ??
                                   draftRecord.mufret ??
                                   draftRecord.mazi ??
                                   ""
                               )}
                               onChange={(e) => {
-                                if ("baslik_ar" in draftRecord)
+                                if ("kelime_ar" in draftRecord) {
+                                  const nextDraft: GenericRecord = {
+                                    ...draftRecord,
+                                    kelime_ar: e.target.value,
+                                    kelime_harekesiz: stripHarakat(
+                                      e.target.value
+                                    ),
+                                  };
+                                  setDraftRecord(nextDraft);
+                                  setRawJsonText(
+                                    JSON.stringify(nextDraft, null, 2)
+                                  );
+                                } else if ("baslik_ar" in draftRecord)
                                   updateDraftField("baslik_ar", e.target.value);
                                 else if ("mufret" in draftRecord)
                                   updateDraftField("mufret", e.target.value);
@@ -3364,6 +3469,339 @@ export default function AdminStudioPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Eş & Zıt Anlamlılar (المرادفات والأضداد) Özel Yapısal Düzenleyici */}
+                    {activeTab === "es_zit_anlamlilar" && (
+                      <div className="p-3.5 rounded-2xl bg-[#F7EFE1]/85 border-2 border-[#E6D7BE] space-y-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Harekesiz Ana Kelime (kelime_harekesiz)
+                            </label>
+                            <input
+                              type="text"
+                              dir="rtl"
+                              value={String(draftRecord.kelime_harekesiz || "")}
+                              onChange={(e) =>
+                                updateDraftField(
+                                  "kelime_harekesiz",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full h-9 px-3 rounded-lg bg-white border border-[#E6D7BE] arabic text-base font-bold text-slate-700"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Sıra Numarası (sira)
+                            </label>
+                            <input
+                              type="number"
+                              value={Number(draftRecord.sira || 1)}
+                              onChange={(e) =>
+                                updateDraftField(
+                                  "sira",
+                                  Math.max(1, Number(e.target.value) || 1)
+                                )
+                              }
+                              className="w-full h-9 px-3 rounded-lg bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Eş Anlamlılar (المرادفات) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-extrabold text-[#065F46]">
+                              = Eş Anlamlılar — المرادفات (
+                              {Array.isArray(draftRecord.es_anlamlilar)
+                                ? draftRecord.es_anlamlilar.length
+                                : 0}
+                              )
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                const current: SynonymAntonymSubItem[] =
+                                  Array.isArray(draftRecord.es_anlamlilar)
+                                    ? draftRecord.es_anlamlilar
+                                    : [];
+                                updateDraftField("es_anlamlilar", [
+                                  ...current,
+                                  {
+                                    ar: "",
+                                    harekesiz: "",
+                                    tr: "",
+                                    nuans_tr: "",
+                                  },
+                                ]);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold cursor-pointer"
+                            >
+                              + Eş Anlamlı Ekle
+                            </button>
+                          </div>
+
+                          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            {(Array.isArray(draftRecord.es_anlamlilar)
+                              ? draftRecord.es_anlamlilar
+                              : []
+                            ).map((syn: SynonymAntonymSubItem, sIdx: number) => (
+                              <div
+                                key={sIdx}
+                                className="p-2.5 rounded-xl bg-emerald-50/75 border border-emerald-300 space-y-1.5"
+                              >
+                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                                  <input
+                                    type="text"
+                                    dir="rtl"
+                                    value={String(syn.ar || "")}
+                                    onChange={(e) => {
+                                      const copy = [
+                                        ...draftRecord.es_anlamlilar,
+                                      ];
+                                      copy[sIdx] = {
+                                        ...copy[sIdx],
+                                        ar: e.target.value,
+                                        harekesiz: stripHarakat(
+                                          e.target.value
+                                        ),
+                                      };
+                                      updateDraftField("es_anlamlilar", copy);
+                                    }}
+                                    placeholder="Harekeli Arapça..."
+                                    className="sm:col-span-5 h-9 px-2.5 rounded-lg bg-white border border-emerald-300 arabic text-lg font-bold text-[#065F46]"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={String(syn.tr || "")}
+                                    onChange={(e) => {
+                                      const copy = [
+                                        ...draftRecord.es_anlamlilar,
+                                      ];
+                                      copy[sIdx] = {
+                                        ...copy[sIdx],
+                                        tr: e.target.value,
+                                      };
+                                      updateDraftField("es_anlamlilar", copy);
+                                    }}
+                                    placeholder="Türkçe karşılığı..."
+                                    className="sm:col-span-5 h-9 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-bold"
+                                  />
+                                  <div className="sm:col-span-2 flex items-center justify-end gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (syn.ar)
+                                          void speakHybrid({ text: syn.ar });
+                                      }}
+                                      title="Dinle"
+                                      className="p-1.5 rounded-lg bg-white border border-emerald-300 text-[#065F46] hover:bg-emerald-100 cursor-pointer"
+                                    >
+                                      <Volume2 size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const filtered =
+                                          draftRecord.es_anlamlilar.filter(
+                                            (_: unknown, idx: number) =>
+                                              idx !== sIdx
+                                          );
+                                        updateDraftField(
+                                          "es_anlamlilar",
+                                          filtered
+                                        );
+                                      }}
+                                      title="Sil"
+                                      className="p-1.5 rounded-lg bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={String(syn.nuans_tr || "")}
+                                  onChange={(e) => {
+                                    const copy = [...draftRecord.es_anlamlilar];
+                                    const val = e.target.value;
+                                    const nextItem = { ...copy[sIdx] };
+                                    if (val.trim()) nextItem.nuans_tr = val;
+                                    else delete nextItem.nuans_tr;
+                                    copy[sIdx] = nextItem;
+                                    updateDraftField("es_anlamlilar", copy);
+                                  }}
+                                  placeholder="💡 الفروق اللغوية — İnce anlam farkı (opsiyonel)..."
+                                  className="w-full h-8 px-2.5 rounded-lg bg-white/90 border border-emerald-200 text-[11px] font-semibold text-emerald-950"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Zıt Anlamlılar (الأضداد) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-extrabold text-amber-900">
+                              ≠ Zıt Anlamlılar — الأضداد (
+                              {Array.isArray(draftRecord.zit_anlamlilar)
+                                ? draftRecord.zit_anlamlilar.length
+                                : 0}
+                              )
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                const current: SynonymAntonymSubItem[] =
+                                  Array.isArray(draftRecord.zit_anlamlilar)
+                                    ? draftRecord.zit_anlamlilar
+                                    : [];
+                                updateDraftField("zit_anlamlilar", [
+                                  ...current,
+                                  {
+                                    ar: "",
+                                    harekesiz: "",
+                                    tr: "",
+                                  },
+                                ]);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold cursor-pointer"
+                            >
+                              + Zıt Anlamlı Ekle
+                            </button>
+                          </div>
+
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            {(Array.isArray(draftRecord.zit_anlamlilar)
+                              ? draftRecord.zit_anlamlilar
+                              : []
+                            ).map((ant: SynonymAntonymSubItem, aIdx: number) => (
+                              <div
+                                key={aIdx}
+                                className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-300 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
+                              >
+                                <input
+                                  type="text"
+                                  dir="rtl"
+                                  value={String(ant.ar || "")}
+                                  onChange={(e) => {
+                                    const copy = [
+                                      ...draftRecord.zit_anlamlilar,
+                                    ];
+                                    copy[aIdx] = {
+                                      ...copy[aIdx],
+                                      ar: e.target.value,
+                                      harekesiz: stripHarakat(
+                                        e.target.value
+                                      ),
+                                    };
+                                    updateDraftField("zit_anlamlilar", copy);
+                                  }}
+                                  placeholder="Harekeli Arapça..."
+                                  className="sm:col-span-5 h-9 px-2.5 rounded-lg bg-white border border-amber-300 arabic text-lg font-bold text-amber-950"
+                                />
+                                <input
+                                  type="text"
+                                  value={String(ant.tr || "")}
+                                  onChange={(e) => {
+                                    const copy = [
+                                      ...draftRecord.zit_anlamlilar,
+                                    ];
+                                    copy[aIdx] = {
+                                      ...copy[aIdx],
+                                      tr: e.target.value,
+                                    };
+                                    updateDraftField("zit_anlamlilar", copy);
+                                  }}
+                                  placeholder="Türkçe zıt anlamı..."
+                                  className="sm:col-span-5 h-9 px-2.5 rounded-lg bg-white border border-amber-300 text-xs font-bold"
+                                />
+                                <div className="sm:col-span-2 flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (ant.ar)
+                                        void speakHybrid({ text: ant.ar });
+                                    }}
+                                    title="Dinle"
+                                    className="p-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 cursor-pointer"
+                                  >
+                                    <Volume2 size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const filtered =
+                                        draftRecord.zit_anlamlilar.filter(
+                                          (_: unknown, idx: number) =>
+                                            idx !== aIdx
+                                        );
+                                      updateDraftField(
+                                        "zit_anlamlilar",
+                                        filtered
+                                      );
+                                    }}
+                                    title="Sil"
+                                    className="p-1.5 rounded-lg bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Karşılaştırmalı Örnek Cümle */}
+                        <div className="space-y-2 pt-1 border-t border-[#E6D7BE]">
+                          <label className="text-[11px] font-extrabold text-[#065F46] block">
+                            📖 Karşılaştırmalı Bağlam Cümlesi (ornek_cumle_ar &amp; ornek_cumle_tr)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              dir="rtl"
+                              value={String(draftRecord.ornek_cumle_ar || "")}
+                              onChange={(e) =>
+                                updateDraftField(
+                                  "ornek_cumle_ar",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Harekeli Arapça örnek cümle..."
+                              className="flex-1 h-10 px-3 rounded-lg bg-white border border-[#087F5B]/40 arabic text-lg font-bold text-[#065F46]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (draftRecord.ornek_cumle_ar) {
+                                  void speakHybrid({
+                                    text: String(draftRecord.ornek_cumle_ar),
+                                  });
+                                }
+                              }}
+                              title="Örnek cümleyi dinle"
+                              className="h-10 px-3 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              <Volume2 size={14} />
+                              <span>Dinle</span>
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={String(draftRecord.ornek_cumle_tr || "")}
+                            onChange={(e) =>
+                              updateDraftField("ornek_cumle_tr", e.target.value)
+                            }
+                            placeholder="Örnek cümlenin Türkçe çevirisi..."
+                            className="w-full h-9 px-3 rounded-lg bg-white border border-[#E6D7BE] text-xs font-semibold"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3453,9 +3891,114 @@ export default function AdminStudioPage() {
                   </div>
                 )}
 
+                {/* EŞ & ZIT ANLAMLILAR CANLI KART & TTS ÖNİZLEMESİ */}
+                {activeTab === "es_zit_anlamlilar" && (
+                  <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-extrabold text-[var(--foreground)]">
+                        🔄 المرادفات والأضداد — Canlı Kart &amp; TTS Önizlemesi
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (draftRecord.kelime_ar) {
+                            void speakHybrid({
+                              text: String(draftRecord.kelime_ar),
+                            });
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Volume2 size={12} />
+                        <span>Ana Kelimeyi Dinle</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#FDFBF7] border border-[#E6D7BE] space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-extrabold text-[var(--foreground)]">
+                          {String(draftRecord.anlam_tr || "Türkçe Anlam")}
+                        </span>
+                        <span
+                          dir="rtl"
+                          lang="ar"
+                          className="arabic text-3xl font-bold text-[#065F46]"
+                        >
+                          {String(draftRecord.kelime_ar || "كَلِمَةٌ")}
+                        </span>
+                      </div>
+
+                      {Array.isArray(draftRecord.es_anlamlilar) &&
+                        draftRecord.es_anlamlilar.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {draftRecord.es_anlamlilar.map(
+                              (s: SynonymAntonymSubItem, i: number) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    if (s.ar) void speakHybrid({ text: s.ar });
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <span className="font-black text-emerald-700">
+                                    =
+                                  </span>
+                                  <span
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="arabic text-base font-bold"
+                                  >
+                                    {s.ar}
+                                  </span>
+                                  <span className="text-[11px] text-emerald-800">
+                                    ({s.tr})
+                                  </span>
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+
+                      {Array.isArray(draftRecord.zit_anlamlilar) &&
+                        draftRecord.zit_anlamlilar.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {draftRecord.zit_anlamlilar.map(
+                              (a: SynonymAntonymSubItem, i: number) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    if (a.ar) void speakHybrid({ text: a.ar });
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <span className="font-black text-amber-700">
+                                    ≠
+                                  </span>
+                                  <span
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="arabic text-base font-bold"
+                                  >
+                                    {a.ar}
+                                  </span>
+                                  <span className="text-[11px] text-amber-800">
+                                    ({a.tr})
+                                  </span>
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. 🖼️ GÖRSEL YÖNETİCİSİ (1:1 KARE ÖNİZLEME & OTOMATİK .WEBP DÖNÜŞTÜRÜCÜ) */}
                 {activeTab !== "efect_manager" &&
                   activeTab !== "youtube_tavsiyeleri" &&
+                  activeTab !== "es_zit_anlamlilar" &&
                   activeTab !== "diyalog_gramer" &&
                   activeTab !== "metin_gramer" &&
                   activeTab !== "ek_gramer" && (
@@ -3561,7 +4104,8 @@ export default function AdminStudioPage() {
                   )}
 
                 {/* 2. 🔊 SES YÖNETİCİSİ (ERKEK & KADIN .MP3 DİNLEME, YÜKLEME, MİKROFON VE TTS) */}
-                {activeTab !== "youtube_tavsiyeleri" && (
+                {activeTab !== "youtube_tavsiyeleri" &&
+                  activeTab !== "es_zit_anlamlilar" && (
                 <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-3.5 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5">

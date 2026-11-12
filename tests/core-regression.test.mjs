@@ -3539,6 +3539,175 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   );
 });
 
+test("34. 400 Eş & Zıt Anlamlılar (المرادفات والأضداد) veri bütünlüğü, O(1) sözlük eşleşmesi, çakışmasız quiz motoru, SRS/Hata Defteri ve Admin Stüdyosu entegrasyonu", async () => {
+  // 1. JSON dosyası bütünlüğü: 400 kayıt, 0 BOM, 0 tatweel (\u0640), %100 NFC
+  const fullPath = path.join(DATA_DIR, "es_zit_anlamlilar.json");
+  const rawBuffer = fs.readFileSync(fullPath);
+  assert.equal(
+    rawBuffer[0] === 0xef && rawBuffer[1] === 0xbb && rawBuffer[2] === 0xbf,
+    false,
+    "es_zit_anlamlilar.json başında UTF-8 BOM bulunmamalıdır"
+  );
+  const { raw, parsed } = readDataJson("es_zit_anlamlilar.json");
+  assert.equal(parsed.length, 400, "es_zit_anlamlilar.json tam 400 ana madde içermelidir");
+  assert.equal(raw.includes("\u0640"), false, "es_zit_anlamlilar.json içinde tatweel bulunmamalıdır");
 
+  const seenIds = new Set();
+  const allowedCefr = new Set(["A1", "A2", "B1", "B2"]);
+  const allowedTur = new Set(["isim", "fiil", "sifat", "zarf"]);
+  let totalSubWords = 0;
 
+  for (let i = 0; i < parsed.length; i++) {
+    const item = parsed[i];
+    const expectedId = `ez_${String(i + 1).padStart(3, "0")}`;
+    assert.equal(item.id, expectedId, `Sıra #${i + 1} ID değeri ${expectedId} olmalıdır`);
+    assert.equal(seenIds.has(item.id), false, `Mükerrer ID bulundu: ${item.id}`);
+    seenIds.add(item.id);
+    assert.equal(allowedCefr.has(item.cefr), true, `Geçersiz CEFR seviyesi: ${item.cefr}`);
+    assert.equal(allowedTur.has(item.tur), true, `Geçersiz kelime türü: ${item.tur}`);
+    assert.ok(typeof item.kelime_ar === "string" && item.kelime_ar.trim().length > 0);
+    assert.ok(typeof item.anlam_tr === "string" && item.anlam_tr.trim().length > 0);
+    assert.ok(Array.isArray(item.es_anlamlilar));
+    assert.ok(Array.isArray(item.zit_anlamlilar));
+    assert.ok(
+      item.es_anlamlilar.length + item.zit_anlamlilar.length >= 1,
+      `${item.id} en az 1 eş veya zıt anlamlı kelime içermelidir`
+    );
+    totalSubWords += 1 + item.es_anlamlilar.length + item.zit_anlamlilar.length;
+    assert.ok(typeof item.ornek_cumle_ar === "string" && item.ornek_cumle_ar.trim().length > 0);
+    assert.ok(typeof item.ornek_cumle_tr === "string" && item.ornek_cumle_tr.trim().length > 0);
+  }
+  assert.ok(totalSubWords >= 1800, `Toplam kelime havuzu 1800+ olmalıdır (bulunan: ${totalSubWords})`);
 
+  for (const s of collectStrings(parsed)) {
+    assert.equal(s, s.normalize("NFC"), `NFC formunda olmayan metin: ${s.slice(0, 40)}`);
+  }
+
+  // 2. data.ts & dict.ts O(1) eş/zıt anlam arama doğrulaması
+  const { pathToFileURL } = await import("node:url");
+  const {
+    esZitAnlamlilar,
+    getSynonymsAntonymsByLevel,
+    getSynonymAntonymById,
+    CONTENT_INVENTORY,
+    getContentCatalogStats,
+  } = await import(pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href);
+
+  assert.equal(esZitAnlamlilar.length, 400);
+  assert.equal(CONTENT_INVENTORY.synonymsAntonymsCount, 400);
+  assert.equal(getContentCatalogStats().totalSynonymsAntonyms, 400);
+  assert.equal(getSynonymAntonymById("ez_001")?.id, "ez_001");
+  assert.ok(getSynonymsAntonymsByLevel("A1").length > 0);
+  assert.ok(getSynonymsAntonymsByLevel("B2").length > 0);
+
+  const { findSynonymAntonymForWord } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "dict.ts")).href
+  );
+  const firstEntry = esZitAnlamlilar[0];
+  const matchedHead = findSynonymAntonymForWord(firstEntry.kelime_ar);
+  assert.ok(matchedHead, "Ana kelime üzerinden O(1) Eş/Zıt kaydı bulunmalıdır");
+  if (firstEntry.es_anlamlilar[0]) {
+    const matchedSub = findSynonymAntonymForWord(firstEntry.es_anlamlilar[0].ar);
+    assert.ok(matchedSub, "Alt eş anlamlı kelime üzerinden de ters indeksle kayıt bulunmalıdır");
+  }
+
+  // 3. Quiz Üreticileri: Çoktan Seçmeli, Çakışmasız Eşleştirme Tahtası ve Boşluk Doldurma
+  const {
+    getFilteredSynonymAntonymEntries,
+    generatePoolFromSynonymsAntonyms,
+    generateSynonymAntonymMcQuestions,
+    generateSynonymAntonymMatchingPairs,
+    generateSynonymAntonymFillQuestions,
+  } = await import(pathToFileURL(path.join(ROOT_DIR, "src", "lib", "quiz.ts")).href);
+
+  const fiilSubset = getFilteredSynonymAntonymEntries({ level: "B1", tur: "fiil" });
+  assert.ok(fiilSubset.length > 0 && fiilSubset.every((e) => e.cefr === "B1" && e.tur === "fiil"));
+
+  const dictPool = generatePoolFromSynonymsAntonyms({ level: "A1" });
+  assert.ok(Array.isArray(dictPool) && dictPool.length > 0 && dictPool.every((w) => w.level === "A1"));
+
+  const mcQuestions = generateSynonymAntonymMcQuestions(esZitAnlamlilar, 15);
+  assert.equal(mcQuestions.length, 15);
+  for (const q of mcQuestions) {
+    assert.equal(q.options.length, 4, "Her çoktan seçmeli soruda tam 4 benzersiz şık olmalıdır");
+    assert.equal(new Set(q.options.map((o) => o.text)).size, 4, "Şıklar birbirinden benzersiz olmalıdır");
+    assert.equal(q.options.filter((o) => o.isCorrect).length, 1, "Tam 1 doğru şık olmalıdır");
+    assert.ok(q.wordId.startsWith("ez_"));
+  }
+
+  const matchBoard = generateSynonymAntonymMatchingPairs(esZitAnlamlilar, 5);
+  assert.equal(matchBoard.length, 5);
+  const seenPrompts = new Set();
+  const seenAnswers = new Set();
+  for (const pair of matchBoard) {
+    assert.equal(seenPrompts.has(pair.trText), false, "Eşleştirme sol sütununda mükerrer kart olmamalıdır");
+    assert.equal(seenAnswers.has(pair.arText), false, "Eşleştirme sağ sütununda mükerrer Arapça cevap olmamalıdır");
+    seenPrompts.add(pair.trText);
+    seenAnswers.add(pair.arText);
+  }
+
+  const fillQuestions = generateSynonymAntonymFillQuestions(esZitAnlamlilar, 10);
+  assert.equal(fillQuestions.length, 10);
+  for (const fq of fillQuestions) {
+    assert.ok(fq.correctWord.length > 0, "Hedef kelime boş olmamalıdır");
+    assert.equal(fq.options.includes(fq.correctWord), true, "Kelime bankası hedef kelimeyi içermelidir");
+    assert.equal(new Set(fq.options).size, 4, "Boşluk doldurma şıkları 4 benzersiz kelimeden oluşmalıdır");
+  }
+
+  // 4. SRS & Hata Defteri Kanonik ID Çözümleme (ez_XXX & mc_ez_XXX)
+  const { normalizeToCanonicalMistakeId, resolveMistakesPool } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "mistakeUtils.ts")).href
+  );
+  assert.equal(normalizeToCanonicalMistakeId("mc_ez_005"), "ez_005");
+  assert.equal(normalizeToCanonicalMistakeId("mg_ez_012"), "ez_012");
+  assert.equal(normalizeToCanonicalMistakeId("fill_ez_020"), "ez_020");
+  const resolvedMistakes = resolveMistakesPool(["mc_ez_001", "ez_002"]);
+  assert.equal(resolvedMistakes.words.length, 2);
+  assert.equal(resolvedMistakes.totalMistakeItems, 2);
+
+  const { useUserStore } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "store", "userStore.ts")).href
+  );
+  useUserStore.getState().resetProgress();
+  useUserStore.getState().addMistake("mc_ez_007");
+  assert.equal(useUserStore.getState().isMistake("ez_007"), true);
+  useUserStore.getState().removeMistake("ez_007");
+  assert.equal(useUserStore.getState().isMistake("ez_007"), false);
+
+  // 5. Sözlük, WordTooltip, Kütüphane, Alıştırmalar ve Admin Stüdyosu bağlantıları
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  const tooltipCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "WordTooltip.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  const adminPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "admin", "page.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    sozlukCode.includes("Eş & Zıt Anlamlılar") &&
+      tooltipCode.includes("findSynonymAntonymForWord") &&
+      kutuphaneCode.includes('id: "es-zit"') &&
+      alistirmalarCode.includes('"synonyms_antonyms"') &&
+      adminRouteCode.includes('es_zit_anlamlilar: "es_zit_anlamlilar.json"') &&
+      adminPageCode.includes('key: "es_zit_anlamlilar"'),
+    true,
+    "Sözlük, WordTooltip, Kütüphane, Alıştırmalar ve Admin Stüdyosu Eş & Zıt Anlamlılar entegrasyonunu eksiksiz içermelidir"
+  );
+});

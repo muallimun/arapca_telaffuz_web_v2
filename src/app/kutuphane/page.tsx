@@ -51,6 +51,7 @@ import {
   cumleler1111,
   atasozleri,
   gorselKelimeler,
+  esZitAnlamlilar,
   youtubeTavsiyeleri,
   getYoutubeRecommendationsByContentId,
   getDialogueCoverUrl,
@@ -68,7 +69,10 @@ import {
   GramerHapBilgi,
   YoutubeCategory,
   YoutubeRecommendationItem,
+  SynonymAntonymWordTur,
 } from "@/types/data";
+import { synonymEntryToDictionaryItem } from "@/lib/mistakeUtils";
+import { getSynonymTurLabel } from "@/lib/quiz";
 import {
   YOUTUBE_CATEGORY_META,
   YOUTUBE_CATEGORY_ORDER,
@@ -150,6 +154,7 @@ type ViewSection =
   | "atasozleri"
   | "gorsel-kelimeler"
   | "gramer"
+  | "es-zit"
   | "videolar"
   | "saved-words"
   | "weak-words";
@@ -160,11 +165,14 @@ export default function LibraryPage() {
     completedDialogues,
     favoriteWords,
     weakWords,
+    mistakeIds,
     watchedVideos,
     toggleFavoriteDialogue,
     toggleCompletedDialogue,
     toggleFavoriteWord,
     removeWeakWord,
+    addMistake,
+    removeMistake,
   } = useUserStore();
 
   const {
@@ -259,6 +267,13 @@ export default function LibraryPage() {
   const [youtubeModalItems, setYoutubeModalItems] = useState<
     YoutubeRecommendationItem[] | null
   >(null);
+
+  const [synTurFilter, setSynTurFilter] = useState<
+    SynonymAntonymWordTur | "all"
+  >("all");
+  const [openSynNuanceMap, setOpenSynNuanceMap] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     void loadAudioManifest().then(() => {
@@ -385,6 +400,22 @@ export default function LibraryPage() {
               setYoutubeCategoryFilter(ytCat as YoutubeCategory);
             }
           } else if (
+            tab === "es-zit" ||
+            tab === "es_zit" ||
+            tab === "synonyms" ||
+            tab === "synonyms_antonyms"
+          ) {
+            setActiveSection("es-zit");
+            const turParam = params.get("tur") || hashParams.get("tur");
+            if (
+              turParam === "isim" ||
+              turParam === "fiil" ||
+              turParam === "sifat" ||
+              turParam === "zarf"
+            ) {
+              setSynTurFilter(turParam);
+            }
+          } else if (
             [
               "metinler",
               "cumleler",
@@ -470,6 +501,7 @@ export default function LibraryPage() {
     setCategoryFilter("all");
     setYoutubeCategoryFilter("all");
     setYoutubeKindFilter("all");
+    setSynTurFilter("all");
     setVisualSubSetFilter("all");
     setIsCategoryPanelOpen(false);
     setSelectedCardIndex(null);
@@ -982,6 +1014,90 @@ export default function LibraryPage() {
     watchedVideos,
   ]);
 
+  const filteredSynonymsAntonyms = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const cleanQ = cleanArabicText(search.trim());
+    const normQ = normalizeArabicText(search.trim());
+
+    return esZitAnlamlilar.filter((entry) => {
+      if (levelFilter !== "all" && entry.cefr !== levelFilter) return false;
+      if (synTurFilter !== "all" && entry.tur !== synTurFilter) return false;
+
+      if (q) {
+        const matchMainTr = entry.anlam_tr.toLowerCase().includes(q);
+        const matchExTr = entry.ornek_cumle_tr.toLowerCase().includes(q);
+        const matchId = entry.id.toLowerCase().includes(q);
+        const matchMainAr =
+          entry.kelime_ar.includes(search.trim()) ||
+          entry.kelime_harekesiz.includes(search.trim()) ||
+          (cleanQ.length > 0 &&
+            (cleanArabicText(entry.kelime_ar).includes(cleanQ) ||
+              entry.kelime_harekesiz.includes(cleanQ))) ||
+          (normQ.length > 0 &&
+            normalizeArabicText(entry.kelime_ar).includes(normQ));
+        const matchExAr =
+          entry.ornek_cumle_ar.includes(search.trim()) ||
+          (cleanQ.length > 0 &&
+            cleanArabicText(entry.ornek_cumle_ar).includes(cleanQ)) ||
+          (normQ.length > 0 &&
+            normalizeArabicText(entry.ornek_cumle_ar).includes(normQ));
+        const matchSyn = entry.es_anlamlilar.some(
+          (s) =>
+            s.tr.toLowerCase().includes(q) ||
+            (s.nuans_tr && s.nuans_tr.toLowerCase().includes(q)) ||
+            s.ar.includes(search.trim()) ||
+            s.harekesiz.includes(search.trim()) ||
+            (cleanQ.length > 0 &&
+              (cleanArabicText(s.ar).includes(cleanQ) ||
+                s.harekesiz.includes(cleanQ))) ||
+            (normQ.length > 0 && normalizeArabicText(s.ar).includes(normQ))
+        );
+        const matchAnt = entry.zit_anlamlilar.some(
+          (z) =>
+            z.tr.toLowerCase().includes(q) ||
+            z.ar.includes(search.trim()) ||
+            z.harekesiz.includes(search.trim()) ||
+            (cleanQ.length > 0 &&
+              (cleanArabicText(z.ar).includes(cleanQ) ||
+                z.harekesiz.includes(cleanQ))) ||
+            (normQ.length > 0 && normalizeArabicText(z.ar).includes(normQ))
+        );
+
+        if (
+          !matchMainTr &&
+          !matchExTr &&
+          !matchId &&
+          !matchMainAr &&
+          !matchExAr &&
+          !matchSyn &&
+          !matchAnt
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [levelFilter, synTurFilter, search]);
+
+  const synonymTurCounts = useMemo(() => {
+    const base = esZitAnlamlilar.filter(
+      (e) => levelFilter === "all" || e.cefr === levelFilter
+    );
+    return {
+      all: base.length,
+      isim: base.filter((e) => e.tur === "isim").length,
+      fiil: base.filter((e) => e.tur === "fiil").length,
+      sifat: base.filter((e) => e.tur === "sifat").length,
+      zarf: base.filter((e) => e.tur === "zarf").length,
+    };
+  }, [levelFilter]);
+
+  const mistakeIdsSet = useMemo(() => {
+    if (!mounted) return new Set<string>();
+    return new Set(mistakeIds);
+  }, [mounted, mistakeIds]);
+
   const activeModalListLength =
     activeSection === "cumleler"
       ? filteredSentences.length
@@ -1163,6 +1279,7 @@ export default function LibraryPage() {
     statusFilter !== "all" ||
     levelFilter !== "all" ||
     categoryFilter !== "all" ||
+    synTurFilter !== "all" ||
     youtubeCategoryFilter !== "all" ||
     youtubeKindFilter !== "all";
 
@@ -1330,6 +1447,8 @@ export default function LibraryPage() {
     if (activeSection === "saved-words") return "Kişisel Çalışma Defterim";
     if (activeSection === "gramer")
       return `${contentStats.grammarNoteCount} Odak Gramer Atlası`;
+    if (activeSection === "es-zit")
+      return `${contentStats.synonymsAntonymsCount} Eş & Zıt Anlamlılar`;
     if (activeSection === "videolar")
       return `${contentStats.youtubeCount} Video & İzleme Rehberi`;
     if (activeSection === "metinler")
@@ -2683,6 +2802,10 @@ export default function LibraryPage() {
                   label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
                 },
                 {
+                  id: "es-zit",
+                  label: `🔄 Eş & Zıt Anlamlılar (${contentStats.synonymsAntonymsCount})`,
+                },
+                {
                   id: "videolar",
                   label: `🎬 Video & İzleme Rehberi (${contentStats.youtubeCount})`,
                 },
@@ -3489,6 +3612,70 @@ export default function LibraryPage() {
             </div>
           </div>
 
+          {/* 9. Eş & Zıt Anlamlılar (المرادفات والأضداد) Vitrin Kartı */}
+          <div
+            onClick={() => handleSwitchSection("es-zit")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleSwitchSection("es-zit");
+              }
+            }}
+            className="group rounded-2xl border-2 border-emerald-400/80 dark:border-emerald-800/80 border-b-4 bg-gradient-to-r from-[#F7EFE1] via-emerald-50/75 to-amber-50/55 dark:from-[var(--surface)] dark:via-emerald-950/30 dark:to-amber-950/20 hover:border-[#087F5B] p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+          >
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 border-2 border-emerald-500 flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                <span className="text-2xl">🔄</span>
+                <span className="text-[10px] font-black text-emerald-900 dark:text-emerald-200 uppercase mt-0.5">
+                  {contentStats.synonymsAntonymsCount} Madde
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-black text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors">
+                    🔄 Eş &amp; Zıt Anlamlılar Atlası
+                  </h2>
+                  <span
+                    lang="ar"
+                    dir="rtl"
+                    className="arabic text-lg font-bold text-[#065F46] dark:text-emerald-400"
+                  >
+                    {getDisplayArabic("الْمُرَادِفَاتُ وَالْأَضْدَادُ")}
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
+                  İsim, fiil, sıfat ve zarf türlerinde{" "}
+                  <strong>{contentStats.synonymsAntonymsCount} ana madde</strong>{" "}
+                  ve <strong>1.800+ harekeli kelimeyi</strong> ince anlam farkları (
+                  <span lang="ar" dir="rtl" className="arabic font-bold">
+                    الْفُرُوقُ اللُّغَوِيَّةُ
+                  </span>
+                  ), zıt kavramlar ve sesli karşılaştırmalı örnek cümlelerle öğrenin.
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
+                    المرادفات • İnce Anlam Nüansları
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-white">
+                    الأضداد • Zıt Kavramlar
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
+                    İsim • Fiil • Sıfat • Zarf (A1–B2)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-auto flex items-center gap-2 lg:self-center shrink-0">
+              <span className="w-full lg:w-auto py-2.5 px-4 rounded-xl bg-[#087F5B] group-hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs sm:text-sm font-black inline-flex items-center justify-between lg:justify-center gap-1.5 shadow-xs transition-colors">
+                <span>🔄 Eş &amp; Zıt Anlamlıları Aç</span>
+                <ArrowRight size={15} className="shrink-0" />
+              </span>
+            </div>
+          </div>
+
           {/* Alt Hızlı Aksiyon Şeridi (Vitrin Alt Barı) */}
           <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="space-y-0.5">
@@ -3725,6 +3912,71 @@ export default function LibraryPage() {
                   {filteredGrammarAtlasItems.length} Konu
                 </span>
               </button>
+            </div>
+          )}
+
+          {/* Eş & Zıt Anlamlılar Kelime Türü Sekmeleri + Alıştırma Kısayolu */}
+          {activeSection === "es-zit" && (
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-0.5">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+                {(
+                  [
+                    {
+                      id: "all" as SynonymAntonymWordTur | "all",
+                      label: `Tümü (${synonymTurCounts.all})`,
+                    },
+                    {
+                      id: "isim" as SynonymAntonymWordTur,
+                      label: `📘 İsim (${synonymTurCounts.isim})`,
+                    },
+                    {
+                      id: "fiil" as SynonymAntonymWordTur,
+                      label: `⚡ Fiil (${synonymTurCounts.fiil})`,
+                    },
+                    {
+                      id: "sifat" as SynonymAntonymWordTur,
+                      label: `🎨 Sıfat (${synonymTurCounts.sifat})`,
+                    },
+                    {
+                      id: "zarf" as SynonymAntonymWordTur,
+                      label: `⏱️ Zarf (${synonymTurCounts.zarf})`,
+                    },
+                  ]
+                ).map((tab) => {
+                  const active = synTurFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSynTurFilter(tab.id);
+                        setVisibleCount(36);
+                      }}
+                      className={`px-3 py-1.5 text-xs rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                        active
+                          ? "bg-[#087F5B] border-[#065F46] text-white font-extrabold shadow-2xs"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <Link
+                href={`/alistirmalar?pool=synonyms_antonyms${
+                  levelFilter !== "all" ? `&level=${levelFilter}` : ""
+                }${synTurFilter !== "all" ? `&tur=${synTurFilter}` : ""}`}
+                onClick={() => playClick()}
+                className="min-h-[38px] w-full lg:w-auto px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#4C28B5] text-xs font-black inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 transition-all shadow-xs"
+              >
+                <Gamepad2 size={14} className="shrink-0" />
+                <span>
+                  🎯 Eş &amp; Zıt Anlam Alıştırması Çöz ({filteredSynonymsAntonyms.length} Kayıt)
+                </span>
+              </Link>
             </div>
           )}
 
@@ -6728,6 +6980,378 @@ export default function LibraryPage() {
                   >
                     Daha Fazla Video Göster (
                     {filteredYoutubeItems.length - visibleCount} kaldı)
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
+
+      {/* EŞ & ZIT ANLAMLILAR (المرادفات والأضداد) BÖLÜMÜ */}
+      {activeSection === "es-zit" && (
+        <section
+          aria-label="Eş ve Zıt Anlamlı Kelimeler"
+          className="space-y-4"
+        >
+          {/* Üst Bilgi Bandı */}
+          <div className="rounded-2xl border-2 border-emerald-400/70 dark:border-emerald-800/70 border-b-4 bg-gradient-to-r from-[#F7EFE1] via-emerald-50/70 to-amber-50/50 dark:from-[var(--surface)] dark:via-emerald-950/25 dark:to-amber-950/20 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
+                  🔄 المرادفات والأضداد
+                </span>
+                <h2 className="text-sm sm:text-base font-black text-[var(--foreground)]">
+                  Eş &amp; Zıt Anlamlılar ve الفروق اللغوية (İnce Anlam Farkları)
+                </h2>
+              </div>
+              <p className="text-xs font-medium text-[var(--muted)]">
+                Rozetlere tıklayarak telaffuzları dinleyebilir,{" "}
+                <strong className="text-emerald-700 dark:text-emerald-300">
+                  💡 الفروق
+                </strong>{" "}
+                düğmesiyle eş anlamlılar arasındaki bağlamsal farkları inceleyebilir ve zorlandığınız kelimeleri{" "}
+                <strong>Defterim</strong> veya <strong>Hata Defteri</strong>&apos;ne ekleyebilirsiniz.
+              </p>
+            </div>
+            <div className="text-xs font-extrabold text-[var(--muted)] shrink-0">
+              Gösterilen:{" "}
+              <strong className="text-[var(--foreground)]">
+                {filteredSynonymsAntonyms.length}
+              </strong>{" "}
+              / {contentStats.synonymsAntonymsCount} madde
+            </div>
+          </div>
+
+          {filteredSynonymsAntonyms.length === 0 ? (
+            <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-10 text-center space-y-3">
+              <p className="text-base font-extrabold text-[var(--foreground)]">
+                Aradığınız kriterlere uygun eş veya zıt anlamlı kelime bulunamadı.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSearch("");
+                  setLevelFilter("all");
+                  setSynTurFilter("all");
+                }}
+                className="px-4 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] cursor-pointer"
+              >
+                Filtreleri Temizle
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredSynonymsAntonyms
+                  .slice(0, visibleCount)
+                  .map((entry) => {
+                    const dictItem = synonymEntryToDictionaryItem(entry);
+                    const isSaved = mounted && favoriteIdsSet.has(dictItem.id);
+                    const inMistakes =
+                      mounted &&
+                      (mistakeIdsSet.has(entry.id) ||
+                        mistakeIdsSet.has(`mc_${entry.id}`) ||
+                        mistakeIdsSet.has(`mg_${entry.id}`) ||
+                        mistakeIdsSet.has(`fill_${entry.id}`));
+
+                    return (
+                      <article
+                        key={entry.id}
+                        className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-4 flex flex-col justify-between gap-3 shadow-2xs"
+                      >
+                        <div className="space-y-3">
+                          {/* Üst Başlık: Kelime + Ses + Tür/Kur Rozetleri */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black">
+                                  {entry.cefr}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[11px] font-extrabold text-[#4C28B5] dark:text-indigo-300">
+                                  {getSynonymTurLabel(entry.tur)}
+                                </span>
+                                <span className="text-[11px] font-bold text-[var(--muted)]">
+                                  #{entry.sira}
+                                </span>
+                              </div>
+                              <p className="text-sm sm:text-base font-black text-[var(--foreground)] leading-snug">
+                                {entry.anlam_tr}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  void speakHybrid({
+                                    text: entry.kelime_ar,
+                                    rate: speechRate,
+                                    voice:
+                                      preferredVoiceGender === "kadin"
+                                        ? "ar-SA-ZariyahNeural"
+                                        : "ar-SA-HamedNeural",
+                                  });
+                                }}
+                                title="Ana kelimeyi seslendir"
+                                className="px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] flex items-center gap-2 cursor-pointer transition-colors"
+                              >
+                                <Volume2
+                                  size={16}
+                                  className="text-[#087F5B] shrink-0"
+                                />
+                                <span
+                                  lang="ar"
+                                  dir="rtl"
+                                  className="arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-300 leading-normal"
+                                >
+                                  {getDisplayArabic(entry.kelime_ar)}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Eş Anlamlıları (المرادفات) */}
+                          {entry.es_anlamlilar.length > 0 && (
+                            <div className="rounded-xl bg-emerald-50/85 dark:bg-emerald-950/35 border border-emerald-300/80 dark:border-emerald-800/70 p-2.5 space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wide">
+                                  🔄 Eş Anlamlıları (المرادفات)
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {entry.es_anlamlilar.map((syn, idx) => {
+                                  const nuanceKey = `${entry.id}_syn_${idx}`;
+                                  const isNuanceOpen = Boolean(
+                                    openSynNuanceMap[nuanceKey]
+                                  );
+                                  return (
+                                    <div
+                                      key={nuanceKey}
+                                      className="inline-flex flex-col gap-1 max-w-full"
+                                    >
+                                      <div className="inline-flex flex-wrap items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-emerald-400/80 dark:border-emerald-700 shadow-2xs">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            playClick();
+                                            void speakHybrid({
+                                              text: syn.ar,
+                                              rate: speechRate,
+                                              voice:
+                                                preferredVoiceGender === "kadin"
+                                                  ? "ar-SA-ZariyahNeural"
+                                                  : "ar-SA-HamedNeural",
+                                            });
+                                          }}
+                                          className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-85"
+                                          title="Eş anlamlıyı dinle"
+                                        >
+                                          <Volume2
+                                            size={13}
+                                            className="text-emerald-700 dark:text-emerald-400 shrink-0"
+                                          />
+                                          <span
+                                            lang="ar"
+                                            dir="rtl"
+                                            className="arabic text-lg sm:text-xl font-bold text-emerald-900 dark:text-emerald-200"
+                                          >
+                                            {getDisplayArabic(syn.ar)}
+                                          </span>
+                                          <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                                            ({syn.tr})
+                                          </span>
+                                        </button>
+
+                                        {syn.nuans_tr && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              playClick();
+                                              setOpenSynNuanceMap((prev) => ({
+                                                ...prev,
+                                                [nuanceKey]: !prev[nuanceKey],
+                                              }));
+                                            }}
+                                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black cursor-pointer transition-colors ${
+                                              isNuanceOpen
+                                                ? "bg-emerald-700 text-white"
+                                                : "bg-emerald-100 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200"
+                                            }`}
+                                          >
+                                            💡 الفروق
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {syn.nuans_tr && isNuanceOpen && (
+                                        <div className="px-2.5 py-1.5 rounded-lg bg-emerald-100/90 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700 text-[11px] font-semibold text-emerald-950 dark:text-emerald-100 leading-relaxed">
+                                          <strong className="font-black">
+                                            İnce Anlam Farkı:{" "}
+                                          </strong>
+                                          <MixedText text={syn.nuans_tr} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Zıt Anlamlıları (الأضداد) */}
+                          {entry.zit_anlamlilar.length > 0 && (
+                            <div className="rounded-xl bg-amber-50/85 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-800/70 p-2.5 space-y-2">
+                              <span className="block text-[11px] font-black text-amber-900 dark:text-amber-300 uppercase tracking-wide">
+                                ⚡ Zıt Anlamlıları (الأضداد)
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {entry.zit_anlamlilar.map((ant, idx) => (
+                                  <button
+                                    key={`${entry.id}_ant_${idx}`}
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      void speakHybrid({
+                                        text: ant.ar,
+                                        rate: speechRate,
+                                        voice:
+                                          preferredVoiceGender === "kadin"
+                                            ? "ar-SA-ZariyahNeural"
+                                            : "ar-SA-HamedNeural",
+                                      });
+                                    }}
+                                    title="Zıt anlamlıyı dinle"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-amber-400/85 dark:border-amber-700 hover:border-amber-600 cursor-pointer shadow-2xs transition-colors"
+                                  >
+                                    <Volume2
+                                      size={13}
+                                      className="text-amber-700 dark:text-amber-400 shrink-0"
+                                    />
+                                    <span
+                                      lang="ar"
+                                      dir="rtl"
+                                      className="arabic text-lg sm:text-xl font-bold text-amber-950 dark:text-amber-200"
+                                    >
+                                      {getDisplayArabic(ant.ar)}
+                                    </span>
+                                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300">
+                                      ({ant.tr})
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Karşılaştırmalı Örnek Cümle */}
+                          {entry.ornek_cumle_ar && (
+                            <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300">
+                                  📖 Karşılaştırmalı Örnek Cümle
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    void speakHybrid({
+                                      text: entry.ornek_cumle_ar,
+                                      rate: speechRate,
+                                      voice:
+                                        preferredVoiceGender === "kadin"
+                                          ? "ar-SA-ZariyahNeural"
+                                          : "ar-SA-HamedNeural",
+                                    });
+                                  }}
+                                  className="px-2 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-indigo-950/50 border border-[#6741D9]/30 text-[11px] font-extrabold text-[#4C28B5] dark:text-indigo-200 inline-flex items-center gap-1 cursor-pointer hover:bg-[#E5DBFF]"
+                                >
+                                  <Volume2 size={12} />
+                                  <span>Cümleyi Dinle</span>
+                                </button>
+                              </div>
+                              <p
+                                lang="ar"
+                                dir="rtl"
+                                className="arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] leading-loose text-right"
+                              >
+                                {getDisplayArabic(entry.ornek_cumle_ar)}
+                              </p>
+                              <p className="text-xs font-semibold text-[var(--muted)] leading-relaxed">
+                                {entry.ornek_cumle_tr}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Alt Aksiyon Butonları: Çalışma Defterime Ekle + Hata Defterime Ekle */}
+                        <div className="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#E6D7BE]/80 dark:border-[var(--border)]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              toggleFavoriteWord(dictItem);
+                            }}
+                            className={`flex-1 min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                              isSaved
+                                ? "bg-rose-600 border-rose-700 text-white"
+                                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-rose-700 dark:text-rose-300 hover:border-rose-500"
+                            }`}
+                          >
+                            <Heart
+                              size={14}
+                              className={isSaved ? "fill-white" : ""}
+                            />
+                            <span>
+                              {isSaved
+                                ? "Çalışma Defterimde"
+                                : "Çalışma Defterime Ekle"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              if (inMistakes) {
+                                removeMistake(entry.id);
+                              } else {
+                                addMistake(entry.id);
+                              }
+                            }}
+                            className={`flex-1 min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                              inMistakes
+                                ? "bg-amber-600 border-amber-700 text-white"
+                                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-amber-800 dark:text-amber-300 hover:border-amber-500"
+                            }`}
+                          >
+                            <AlertTriangle size={14} />
+                            <span>
+                              {inMistakes
+                                ? "⚡ Hata Defterinde"
+                                : "⚡ Hata Defterime Ekle"}
+                            </span>
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+              </div>
+
+              {visibleCount < filteredSynonymsAntonyms.length && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setVisibleCount((prev) => prev + 36);
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] cursor-pointer transition-all"
+                  >
+                    Daha Fazla Göster (
+                    {filteredSynonymsAntonyms.length - visibleCount} kayıt kaldı)
                   </button>
                 </div>
               )}

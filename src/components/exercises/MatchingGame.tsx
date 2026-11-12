@@ -7,8 +7,12 @@ import {
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
-import { Dialogue, DictionaryItem } from "@/types/data";
-import { shuffleArray, stripParentheticalArabicExamples } from "@/lib/quiz";
+import { Dialogue, DictionaryItem, SynonymAntonymEntry } from "@/types/data";
+import {
+  shuffleArray,
+  stripParentheticalArabicExamples,
+  generateSynonymAntonymMatchingPairs,
+} from "@/lib/quiz";
 import { atasozleri } from "@/lib/data";
 import {
   RotateCcw,
@@ -27,6 +31,7 @@ import { playTTS } from "@/lib/audio";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { formatArabicText } from "@/lib/arabicTextUtils";
+import { MixedText } from "@/components/ui/MixedText";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { FeedbackMode, QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
@@ -36,6 +41,8 @@ interface Props {
   vocabulary: DictionaryItem[];
   idioms?: ArabicIdiom[];
   dialogues?: Dialogue[];
+  synonymEntries?: SynonymAntonymEntry[];
+  isSynonymsAntonymsMode?: boolean;
   contentType?: QuizContentType;
   timeLimit: number | null;
   questionCount?: number;
@@ -76,6 +83,8 @@ export default function MatchingGame({
   vocabulary,
   idioms = [],
   dialogues = [],
+  synonymEntries = [],
+  isSynonymsAntonymsMode = false,
   contentType = "words",
   timeLimit,
   feedbackMode = "instant",
@@ -168,6 +177,18 @@ export default function MatchingGame({
 
   // Build candidate pool
   const buildPairPool = useCallback((): PairDefinition[] => {
+    if (isSynonymsAntonymsMode && synonymEntries.length >= 2) {
+      return generateSynonymAntonymMatchingPairs(
+        synonymEntries,
+        pairTarget
+      ).map((p) => ({
+        matchId: p.matchId,
+        arText: p.arText,
+        trText: p.trText,
+        isSentence: false,
+      }));
+    }
+
     const wordPairs: PairDefinition[] = vocabulary
       .map((w) => ({
         matchId: `w_${w.id}`,
@@ -261,7 +282,15 @@ export default function MatchingGame({
       return dedupePairs(shuffleArray(combined)).slice(0, pairTarget);
     }
     return dedupePairs(shuffleArray(wordPairs)).slice(0, pairTarget);
-  }, [vocabulary, idioms, dialogues, contentType, pairTarget]);
+  }, [
+    isSynonymsAntonymsMode,
+    synonymEntries,
+    vocabulary,
+    idioms,
+    dialogues,
+    contentType,
+    pairTarget,
+  ]);
 
   const buildPairPoolRef = useRef(buildPairPool);
   useEffect(() => {
@@ -270,11 +299,12 @@ export default function MatchingGame({
 
   // Stable ID signature so parent re-renders with new array references never reset the board
   const itemsSignature = useMemo(() => {
+    const sIds = synonymEntries.map((i) => i.id).join("|");
     const vIds = vocabulary.map((i) => i.id).join("|");
     const iIds = idioms.map((i) => i.id).join("|");
     const dIds = dialogues.map((i) => i.id).join("|");
-    return `${contentType}::${vIds}::${iIds}::${dIds}`;
-  }, [vocabulary, idioms, dialogues, contentType]);
+    return `${isSynonymsAntonymsMode ? "syn" : "std"}::${contentType}::${sIds}::${vIds}::${iIds}::${dIds}`;
+  }, [isSynonymsAntonymsMode, synonymEntries, vocabulary, idioms, dialogues, contentType]);
 
   const lastInitializedSignatureRef = useRef<string | null>(null);
 
@@ -1009,9 +1039,9 @@ export default function MatchingGame({
                 }}
                 className={`h-auto min-h-[58px] py-2.5 px-2.5 sm:px-3.5 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer transition-all ${rowStyle}`}
               >
-                {/* Sol: Türkçe Anlamı (Kesilmeden Tam Görünür) */}
+                {/* Sol: Türkçe / Eş-Zıt İlişkisi (Kesilmeden Tam Görünür) */}
                 <span className="flex-1 min-w-0 text-left text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 leading-snug break-words">
-                  {trCard.text}
+                  <MixedText text={trCard.text} />
                 </span>
 
                 {/* Sağ İç Kenar: Orta Koridora Bakan Bağlantı Noktası (■) */}

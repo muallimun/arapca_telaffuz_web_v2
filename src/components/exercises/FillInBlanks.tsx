@@ -8,8 +8,11 @@ import {
   playFanfare,
   playClick,
 } from "@/lib/sfxManager";
-import { Dialogue, DictionaryItem } from "@/types/data";
-import { shuffleArray } from "@/lib/quiz";
+import { Dialogue, DictionaryItem, SynonymAntonymEntry } from "@/types/data";
+import {
+  shuffleArray,
+  generateSynonymAntonymFillQuestions,
+} from "@/lib/quiz";
 import {
   XCircle,
   Trophy,
@@ -69,6 +72,8 @@ interface Props {
   dialogues: Dialogue[];
   vocabulary: DictionaryItem[];
   idioms?: ArabicIdiom[];
+  synonymEntries?: SynonymAntonymEntry[];
+  isSynonymsAntonymsMode?: boolean;
   contentType?: QuizContentType;
   feedbackMode?: FeedbackMode;
   initialSubMode?: FillSubMode;
@@ -100,6 +105,8 @@ export default function FillInBlanks({
   dialogues,
   vocabulary,
   idioms = [],
+  synonymEntries = [],
+  isSynonymsAntonymsMode = false,
   contentType = "sentences",
   feedbackMode = "instant",
   initialSubMode = "choices",
@@ -178,13 +185,39 @@ export default function FillInBlanks({
 
   const itemsSignature = useMemo(
     () =>
-      `${dialogues.map((d) => d.id).join("|")}::${vocabulary
+      `${isSynonymsAntonymsMode ? "syn" : "std"}::${synonymEntries
+        .map((s) => s.id)
+        .join("|")}::${dialogues.map((d) => d.id).join("|")}::${vocabulary
         .map((v) => v.id)
         .join("|")}::${idioms.map((i) => i.id).join("|")}`,
-    [dialogues, vocabulary, idioms]
+    [isSynonymsAntonymsMode, synonymEntries, dialogues, vocabulary, idioms]
   );
 
   const generatedQuestions: FillQuestionItem[] = useMemo(() => {
+    if (isSynonymsAntonymsMode && synonymEntries.length > 0) {
+      const synGenerated = generateSynonymAntonymFillQuestions(
+        synonymEntries,
+        questionCount
+      ).map(
+        (q): FillQuestionItem => ({
+          id: q.id,
+          sentenceWithBlank: `${q.beforeBlank} [ ? ] ${q.afterBlank}`
+            .replace(/\s+/g, " ")
+            .trim(),
+          fullArabic: q.fullArabic,
+          correctWord: q.correctWord,
+          options: q.options,
+          turkce: q.turkce,
+          dialogueId: "",
+          lineSira: 1,
+          voice: "ar-SA-HamedNeural",
+        })
+      );
+      if (synGenerated.length > 0) {
+        return synGenerated;
+      }
+    }
+
     const generated: FillQuestionItem[] = [];
 
     const stripPunct = (w: string) =>

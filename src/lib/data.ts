@@ -7,6 +7,7 @@ import cumlelerJson from "@/data/1111_cumle.json";
 import atasozleriJson from "@/data/atasozleri.json";
 import gorselKelimelerJson from "@/data/gorselKelimeler_guncel.json";
 import youtubeTavsiyeleriJson from "@/data/youtube_tavsiyeleri.json";
+import esZitAnlamlilarJson from "@/data/es_zit_anlamlilar.json";
 import { getCombinedIdiomsCatalog } from "@/lib/arabicIdioms";
 import { unifiedDictionary } from "@/lib/dict";
 import { formatTurkishCategory } from "@/lib/arabicTextUtils";
@@ -20,6 +21,8 @@ import {
   Level,
   ReadingText,
   ResimliKelime,
+  SynonymAntonymEntry,
+  SynonymAntonymWordTur,
   YoutubeRecommendationItem,
 } from "@/types/data";
 
@@ -248,6 +251,39 @@ export const youtubeTavsiyeleri: YoutubeRecommendationItem[] = (
   }))
   .sort((a, b) => (a.sira || 0) - (b.sira || 0));
 
+// 8. 400 Ana Kayıt & 1.800+ Kelimelik Eş ve Zıt Anlamlılar Sözlüğü (es_zit_anlamlilar.json)
+export const esZitAnlamlilar: SynonymAntonymEntry[] = (
+  esZitAnlamlilarJson as SynonymAntonymEntry[]
+)
+  .map((entry, idx): SynonymAntonymEntry => ({
+    ...entry,
+    sira: entry.sira || idx + 1,
+    kelime_ar: normalizeCanonicalArabicLine(entry.kelime_ar || "").normalize("NFC"),
+    kelime_harekesiz: (entry.kelime_harekesiz || "").normalize("NFC"),
+    anlam_tr: (entry.anlam_tr || "").normalize("NFC"),
+    es_anlamlilar: Array.isArray(entry.es_anlamlilar)
+      ? entry.es_anlamlilar.map((sub) => ({
+          ar: normalizeCanonicalArabicLine(sub.ar || "").normalize("NFC"),
+          harekesiz: (sub.harekesiz || "").normalize("NFC"),
+          tr: (sub.tr || "").normalize("NFC"),
+          ...(sub.nuans_tr ? { nuans_tr: sub.nuans_tr.normalize("NFC") } : {}),
+        }))
+      : [],
+    zit_anlamlilar: Array.isArray(entry.zit_anlamlilar)
+      ? entry.zit_anlamlilar.map((sub) => ({
+          ar: normalizeCanonicalArabicLine(sub.ar || "").normalize("NFC"),
+          harekesiz: (sub.harekesiz || "").normalize("NFC"),
+          tr: (sub.tr || "").normalize("NFC"),
+          ...(sub.nuans_tr ? { nuans_tr: sub.nuans_tr.normalize("NFC") } : {}),
+        }))
+      : [],
+    ornek_cumle_ar: normalizeCanonicalArabicLine(
+      entry.ornek_cumle_ar || ""
+    ).normalize("NFC"),
+    ornek_cumle_tr: (entry.ornek_cumle_tr || "").normalize("NFC"),
+  }))
+  .sort((a, b) => (a.sira || 0) - (b.sira || 0));
+
 // ============================================================================
 // STANDART MEDYA YOLU YARDIMCILARI (/gorseller/... ve /sesler/...)
 // ============================================================================
@@ -405,6 +441,33 @@ export function getYoutubeRecommendationsByContentId(
   );
 }
 
+export function getSynonymsAntonymsByLevel(
+  level: Level | "all",
+  tur: SynonymAntonymWordTur | "all" = "all"
+): SynonymAntonymEntry[] {
+  return esZitAnlamlilar.filter((entry) => {
+    if (level !== "all" && entry.cefr !== level) return false;
+    if (tur !== "all" && entry.tur !== tur) return false;
+    return true;
+  });
+}
+
+export function getSynonymAntonymById(
+  id: string
+): SynonymAntonymEntry | undefined {
+  if (!id) return undefined;
+  const trimmed = id.trim();
+  const exact = esZitAnlamlilar.find((e) => e.id === trimmed);
+  if (exact) return exact;
+  const targetNum = parseInt(trimmed.replace(/\D+/g, ""), 10);
+  if (!isNaN(targetNum) && targetNum > 0) {
+    return esZitAnlamlilar.find(
+      (e) => parseInt(e.id.replace(/\D+/g, ""), 10) === targetNum
+    );
+  }
+  return undefined;
+}
+
 export interface ContentCatalogStats {
   totalDialogues: number;
   totalSentences: number;
@@ -413,6 +476,7 @@ export interface ContentCatalogStats {
   totalProverbs: number;
   totalVisualWords: number;
   totalDictionaryWords: number;
+  totalSynonymsAntonyms: number;
   totalIdioms: number;
   byLevel: Record<Level, { dialogues: number; sentences: number }>;
 }
@@ -435,6 +499,7 @@ export interface DynamicContentStats {
   grammarNoteCount: number;
   totalGrammarAtlasCount: number;
   youtubeCount: number;
+  synonymsAntonymsCount: number;
 }
 
 export function getMainVisualCategory(rawCatTr?: string): string {
@@ -489,6 +554,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     metinGramerNotlari.length;
   const totalGrammarAtlasCount = grammarNoteCount + sentenceGrammarCount;
   const youtubeCount = youtubeTavsiyeleri.length;
+  const synonymsAntonymsCount = esZitAnlamlilar.length;
 
   return {
     dialogueCount,
@@ -508,6 +574,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     grammarNoteCount,
     totalGrammarAtlasCount,
     youtubeCount,
+    synonymsAntonymsCount,
   };
 })();
 
@@ -520,6 +587,7 @@ export interface ContentInventory {
   grammarNotesCount: number;
   dictionaryWordsCount: number;
   youtubeVideosCount: number;
+  synonymsAntonymsCount: number;
   exerciseModulesCount: number;
 }
 
@@ -532,6 +600,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   grammarNotesCount: DYNAMIC_CONTENT_STATS.grammarNoteCount,
   dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
   youtubeVideosCount: DYNAMIC_CONTENT_STATS.youtubeCount,
+  synonymsAntonymsCount: DYNAMIC_CONTENT_STATS.synonymsAntonymsCount,
   exerciseModulesCount: 14,
 };
 
@@ -566,6 +635,7 @@ export function getContentCatalogStats(): ContentCatalogStats {
     totalProverbs: atasozleri.length,
     totalVisualWords: gorselKelimeler.length,
     totalDictionaryWords: sozluk.length,
+    totalSynonymsAntonyms: esZitAnlamlilar.length,
     totalIdioms: getCombinedIdiomsCatalog().length,
     byLevel,
   };

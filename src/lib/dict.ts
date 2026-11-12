@@ -2,6 +2,7 @@ import sozlukRaw from "@/data/yeni_tum_sozluk.json";
 import gorselKelimelerRaw from "@/data/gorselKelimeler_guncel.json";
 import diyaloglarRaw from "@/data/tum_diyaloglar_120.json";
 import metinlerRaw from "@/data/tum_metinler_60.json";
+import esZitRaw from "@/data/es_zit_anlamlilar.json";
 import { SUPPLEMENT_DICTIONARY } from "./supplementDict";
 import { registerDictionaryRootResolver } from "./arabicNlpEngine";
 import {
@@ -9,6 +10,7 @@ import {
   DictionaryItem,
   ReadingText,
   ResimliKelime,
+  SynonymAntonymEntry,
 } from "@/types/data";
 
 export type WordCategory = "fiil" | "isim" | "edat" | "ozel-isim";
@@ -5400,3 +5402,224 @@ function populateDictionaryCefrLevels(): void {
 }
 
 populateDictionaryCefrLevels();
+
+// ============================================================================
+// EŞ VE ZIT ANLAMLI KELİMELER (المرادفات والأضداد) HIZLI SORGULAMA İNDEKSİ
+// ============================================================================
+
+const SYNONYM_ANTONYM_ENTRIES: SynonymAntonymEntry[] = (
+  esZitRaw as SynonymAntonymEntry[]
+).map((entry) => ({
+  ...entry,
+  kelime_ar: (entry.kelime_ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+  kelime_harekesiz: (entry.kelime_harekesiz || "").normalize("NFC"),
+  anlam_tr: (entry.anlam_tr || "").normalize("NFC"),
+  es_anlamlilar: Array.isArray(entry.es_anlamlilar)
+    ? entry.es_anlamlilar.map((s) => ({
+        ar: (s.ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+        harekesiz: (s.harekesiz || "").normalize("NFC"),
+        tr: (s.tr || "").normalize("NFC"),
+        ...(s.nuans_tr ? { nuans_tr: s.nuans_tr.normalize("NFC") } : {}),
+      }))
+    : [],
+  zit_anlamlilar: Array.isArray(entry.zit_anlamlilar)
+    ? entry.zit_anlamlilar.map((s) => ({
+        ar: (s.ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+        harekesiz: (s.harekesiz || "").normalize("NFC"),
+        tr: (s.tr || "").normalize("NFC"),
+        ...(s.nuans_tr ? { nuans_tr: s.nuans_tr.normalize("NFC") } : {}),
+      }))
+    : [],
+  ornek_cumle_ar: (entry.ornek_cumle_ar || "")
+    .replace(/\u0640+/g, "")
+    .normalize("NFC"),
+  ornek_cumle_tr: (entry.ornek_cumle_tr || "").normalize("NFC"),
+}));
+
+function normalizeVocalizedKey(raw: string): string {
+  return (raw || "")
+    .replace(/\u0640+/g, "")
+    .replace(/[.,!?؟،;؛:"'«»()\[\]{}\d]/g, "")
+    .replace(/([\u064B-\u0650\u0652\u0670])\u0651/g, "\u0651$1")
+    .trim()
+    .normalize("NFC");
+}
+
+function stripCaseEndings(vocalized: string): string {
+  return vocalized
+    .replace(/(?:ًا|[\u064B-\u0650\u0652])$/u, "")
+    .replace(/^الْ?/, "")
+    .trim();
+}
+
+const synPrimaryVocalizedMap = new Map<string, SynonymAntonymEntry>();
+const synSubVocalizedMap = new Map<string, SynonymAntonymEntry>();
+const synPrimaryBareMap = new Map<string, SynonymAntonymEntry>();
+const synSubBareMap = new Map<string, SynonymAntonymEntry>();
+const synPrimaryCleanMap = new Map<string, SynonymAntonymEntry>();
+const synSubCleanMap = new Map<string, SynonymAntonymEntry>();
+
+function buildSynonymLookupIndices(): void {
+  const addKey = (
+    map: Map<string, SynonymAntonymEntry>,
+    key: string,
+    entry: SynonymAntonymEntry
+  ) => {
+    if (!key || key.length < 2) return;
+    if (!map.has(key)) {
+      map.set(key, entry);
+    }
+  };
+
+  for (const entry of SYNONYM_ANTONYM_ENTRIES) {
+    const primVoc = normalizeVocalizedKey(entry.kelime_ar);
+    const primVocStem = stripCaseEndings(primVoc);
+    addKey(synPrimaryVocalizedMap, primVoc, entry);
+    addKey(synPrimaryVocalizedMap, primVocStem, entry);
+
+    const primBare = stripHarakat(entry.kelime_ar);
+    const primHarek = (entry.kelime_harekesiz || "").trim();
+    for (const b of [primBare, primHarek]) {
+      addKey(synPrimaryBareMap, b, entry);
+      if (b.startsWith("ال") && b.length >= 4) {
+        addKey(synPrimaryBareMap, b.slice(2), entry);
+      }
+    }
+
+    const primClean = cleanArabicText(entry.kelime_ar);
+    addKey(synPrimaryCleanMap, primClean, entry);
+    if (primClean.startsWith("ال") && primClean.length >= 4) {
+      addKey(synPrimaryCleanMap, primClean.slice(2), entry);
+    }
+
+    for (const sub of [...entry.es_anlamlilar, ...entry.zit_anlamlilar]) {
+      const subVoc = normalizeVocalizedKey(sub.ar);
+      const subVocStem = stripCaseEndings(subVoc);
+      addKey(synSubVocalizedMap, subVoc, entry);
+      addKey(synSubVocalizedMap, subVocStem, entry);
+
+      const subBare = stripHarakat(sub.ar);
+      const subHarek = (sub.harekesiz || "").trim();
+      for (const b of [subBare, subHarek]) {
+        addKey(synSubBareMap, b, entry);
+        if (b.startsWith("ال") && b.length >= 4) {
+          addKey(synSubBareMap, b.slice(2), entry);
+        }
+      }
+
+      const subClean = cleanArabicText(sub.ar);
+      addKey(synSubCleanMap, subClean, entry);
+      if (subClean.startsWith("ال") && subClean.length >= 4) {
+        addKey(synSubCleanMap, subClean.slice(2), entry);
+      }
+    }
+  }
+}
+
+buildSynonymLookupIndices();
+
+/**
+ * Verilen Arapça kelimeyi (harekeli veya harekesiz, "ال" takılı veya bitişik edatlı)
+ * 400 kayıtlık Eş & Zıt Anlamlılar veri tabanında (ana kelime + eş/zıt alt kelimeler) arar.
+ */
+export function findSynonymAntonymForWord(
+  wordAr: string
+): SynonymAntonymEntry | null {
+  if (!wordAr || !wordAr.trim()) return null;
+
+  const rawVariants = wordAr
+    .split(/[\/،,]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  // 1. Katman: Harekeli tam / gövde eşleşmesi (homograf karışmasını önler)
+  for (const variant of rawVariants) {
+    const voc = normalizeVocalizedKey(variant);
+    const vocStem = stripCaseEndings(voc);
+    const hitPrimary =
+      synPrimaryVocalizedMap.get(voc) || synPrimaryVocalizedMap.get(vocStem);
+    if (hitPrimary) return hitPrimary;
+  }
+  for (const variant of rawVariants) {
+    const voc = normalizeVocalizedKey(variant);
+    const vocStem = stripCaseEndings(voc);
+    const hitSub =
+      synSubVocalizedMap.get(voc) || synSubVocalizedMap.get(vocStem);
+    if (hitSub) return hitSub;
+  }
+
+  // 2. Katman: Harekesiz (stripHarakat — ة ve ى korunur) + yaygın ön ek / müenneslik kontrolü
+  const expandBareCandidates = (bare: string): string[] => {
+    const out: string[] = [];
+    const pushIfValid = (s: string) => {
+      if (s && s.length >= 2 && !out.includes(s)) out.push(s);
+    };
+    pushIfValid(bare);
+    // Mansûb tenvin elifi (كبيرا -> كبير)
+    if (bare.endsWith("ا") && bare.length >= 4) {
+      pushIfValid(bare.slice(0, -1));
+    }
+    // Müennes ة (كبيرة -> كبير)
+    if (bare.endsWith("ة") && bare.length >= 4) {
+      pushIfValid(bare.slice(0, -1));
+    }
+    for (const pref of [
+      "وال",
+      "بال",
+      "فال",
+      "كال",
+      "لل",
+      "ال",
+      "و",
+      "ف",
+      "ب",
+      "ك",
+      "ل",
+    ]) {
+      if (bare.startsWith(pref) && bare.length - pref.length >= 2) {
+        const stripped = bare.slice(pref.length);
+        pushIfValid(stripped);
+        if (stripped.endsWith("ة") && stripped.length >= 4) {
+          pushIfValid(stripped.slice(0, -1));
+        }
+        if (stripped.endsWith("ا") && stripped.length >= 4) {
+          pushIfValid(stripped.slice(0, -1));
+        }
+      }
+    }
+    return out;
+  };
+
+  for (const variant of rawVariants) {
+    const bareCandidates = expandBareCandidates(stripHarakat(variant));
+    for (const cand of bareCandidates) {
+      const hit = synPrimaryBareMap.get(cand);
+      if (hit) return hit;
+    }
+  }
+  for (const variant of rawVariants) {
+    const bareCandidates = expandBareCandidates(stripHarakat(variant));
+    for (const cand of bareCandidates) {
+      const hit = synSubBareMap.get(cand);
+      if (hit) return hit;
+    }
+  }
+
+  // 3. Katman: Normalize edilmiş cleanArabicText eşleşmesi
+  for (const variant of rawVariants) {
+    const cleanCandidates = expandBareCandidates(cleanArabicText(variant));
+    for (const cand of cleanCandidates) {
+      const hit = synPrimaryCleanMap.get(cand);
+      if (hit) return hit;
+    }
+  }
+  for (const variant of rawVariants) {
+    const cleanCandidates = expandBareCandidates(cleanArabicText(variant));
+    for (const cand of cleanCandidates) {
+      const hit = synSubCleanMap.get(cand);
+      if (hit) return hit;
+    }
+  }
+
+  return null;
+}

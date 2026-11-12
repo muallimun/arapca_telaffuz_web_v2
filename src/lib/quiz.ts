@@ -3,6 +3,8 @@ import {
   DialogueLine,
   Level,
   ResimliKelime,
+  SynonymAntonymEntry,
+  SynonymAntonymWordTur,
 } from "@/types/data";
 import {
   diyaloglar,
@@ -11,6 +13,7 @@ import {
   atasozleri,
   gorselKelimeler,
   sozluk,
+  esZitAnlamlilar,
   getMainVisualCategory,
 } from "@/lib/data";
 import {
@@ -940,4 +943,418 @@ export function generateFillInBlanks(
   });
 
   return shuffleArray(questions).slice(0, 5);
+}
+
+// ============================================================================
+// 7. 400 EŞ & ZIT ANLAMLI KELİMELER HAVUZU VE AKILLI EGZERSİZ ÜRETİCİLERİ
+// ============================================================================
+
+export function getSynonymTurLabel(tur: SynonymAntonymWordTur | string): string {
+  if (tur === "fiil") return "⚡ Fiil";
+  if (tur === "sifat") return "🎨 Sıfat";
+  if (tur === "zarf") return "⏱️ Zarf";
+  return "📘 İsim";
+}
+
+function stripDiacriticsForQuiz(str: string): string {
+  return (str || "")
+    .normalize("NFC")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/[.,!?؟،؛:"'«»()[\]…]/g, "")
+    .trim();
+}
+
+export function getFilteredSynonymAntonymEntries(options?: {
+  level?: Level | "all";
+  tur?: SynonymAntonymWordTur | "all";
+}): SynonymAntonymEntry[] {
+  const lvl = options?.level || "all";
+  const tur = options?.tur || "all";
+  return esZitAnlamlilar.filter((entry) => {
+    if (lvl !== "all" && entry.cefr !== lvl) return false;
+    if (tur !== "all" && entry.tur !== tur) return false;
+    return true;
+  });
+}
+
+export function generatePoolFromSynonymsAntonyms(options?: {
+  level?: Level | "all";
+  tur?: SynonymAntonymWordTur | "all";
+}): WordItem[] {
+  const entries = getFilteredSynonymAntonymEntries(options);
+  return entries.map((entry) => {
+    const synList = entry.es_anlamlilar.map((s) => `${s.ar} (${s.tr})`).join("، ");
+    const antList = entry.zit_anlamlilar.map((z) => `${z.ar} (${z.tr})`).join("، ");
+    const summaryParts = [entry.anlam_tr];
+    if (synList) summaryParts.push(`Eş: ${synList}`);
+    if (antList) summaryParts.push(`Zıt: ${antList}`);
+    return {
+      id: entry.id,
+      type: "word" as const,
+      arabic: entry.kelime_ar,
+      turkish: summaryParts.join(" • "),
+      level: entry.cefr,
+      category: getSynonymTurLabel(entry.tur),
+      plural: entry.zit_anlamlilar[0]?.ar || entry.es_anlamlilar[0]?.ar,
+      exampleAr: entry.ornek_cumle_ar,
+      exampleTr: entry.ornek_cumle_tr,
+      partOfSpeech: entry.tur === "fiil" ? "fiil" : entry.tur === "zarf" ? "edat" : "isim",
+    };
+  });
+}
+
+export interface SynonymMcQuestionItem {
+  id: string;
+  kind: "word";
+  wordId: string;
+  topBadge: string;
+  arabic: string;
+  promptQuestionTr: string;
+  turkish: string;
+  metaLabel?: string;
+  usageNote?: string;
+  options: { text: string; isCorrect: boolean }[];
+}
+
+/**
+ * Çoktan Seçmeli Eş & Zıt Anlam Sorusu Üreticisi:
+ * «كَبِيرٌ» kelimesinin eş anlamlısı (مُرَادِف) / zıt anlamlısı (ضِدّ) aşağıdakilerden hangisidir?
+ * Çeldiriciler aynı sözcük türü (isim/fiil/sifat/zarf) ve öncelikle aynı CEFR seviyesinden seçilir;
+ * hedef kelimenin diğer eş/zıt anlamlıları kesinlikle çeldirici havuzundan dışlanır.
+ */
+export function generateSynonymAntonymMcQuestions(
+  entries: SynonymAntonymEntry[],
+  questionCount: number
+): SynonymMcQuestionItem[] {
+  const validEntries = entries.filter(
+    (e) => e.es_anlamlilar.length > 0 || e.zit_anlamlilar.length > 0
+  );
+  if (validEntries.length === 0) return [];
+
+  const shuffled = shuffleArray(validEntries).slice(
+    0,
+    Math.min(questionCount, validEntries.length)
+  );
+
+  return shuffled.map((entry, idx) => {
+    const hasSyn = entry.es_anlamlilar.length > 0;
+    const hasAnt = entry.zit_anlamlilar.length > 0;
+    const askAntonym =
+      hasSyn && hasAnt ? idx % 2 === 1 : hasAnt ? true : false;
+
+    const targetPool = askAntonym ? entry.zit_anlamlilar : entry.es_anlamlilar;
+    const chosenSub = targetPool[Math.floor(Math.random() * targetPool.length)];
+    const correctAr = chosenSub.ar.trim();
+
+    // Yasaklı kelimeler: ana kelime + tüm eş anlamlılar + tüm zıt anlamlılar
+    const forbiddenBare = new Set<string>([
+      stripDiacriticsForQuiz(entry.kelime_ar),
+      stripDiacriticsForQuiz(entry.kelime_harekesiz),
+      stripDiacriticsForQuiz(correctAr),
+    ]);
+    for (const s of entry.es_anlamlilar) {
+      forbiddenBare.add(stripDiacriticsForQuiz(s.ar));
+      forbiddenBare.add(stripDiacriticsForQuiz(s.harekesiz));
+    }
+    for (const z of entry.zit_anlamlilar) {
+      forbiddenBare.add(stripDiacriticsForQuiz(z.ar));
+      forbiddenBare.add(stripDiacriticsForQuiz(z.harekesiz));
+    }
+
+    const targetCefrNum = CEFR_ORDER[entry.cefr] ?? 1;
+    const candidateByTier: { ar: string; tier: number }[] = [];
+    const seenBare = new Set<string>(forbiddenBare);
+
+    for (const other of shuffleArray(esZitAnlamlilar)) {
+      if (other.id === entry.id) continue;
+      const sameTur = other.tur === entry.tur;
+      const cefrDiff = Math.abs((CEFR_ORDER[other.cefr] ?? 1) - targetCefrNum);
+      const tier = sameTur
+        ? cefrDiff === 0
+          ? 1
+          : cefrDiff === 1
+          ? 2
+          : 3
+        : 4;
+
+      const forms = [
+        other.kelime_ar,
+        ...other.es_anlamlilar.map((x) => x.ar),
+        ...other.zit_anlamlilar.map((x) => x.ar),
+      ];
+      for (const f of forms) {
+        const cleanF = f.trim();
+        const bareF = stripDiacriticsForQuiz(cleanF);
+        if (!cleanF || !bareF || seenBare.has(bareF)) continue;
+        seenBare.add(bareF);
+        candidateByTier.push({ ar: cleanF, tier });
+        break;
+      }
+    }
+
+    candidateByTier.sort((a, b) => a.tier - b.tier);
+    const distractors = candidateByTier.slice(0, 3).map((c) => c.ar);
+
+    const shortMeaning = entry.anlam_tr.split(",")[0].trim();
+    const promptQuestionTr = askAntonym
+      ? `«${entry.kelime_ar}» (${shortMeaning}) kelimesinin zıt anlamlısı (ضِدّ) aşağıdakilerden hangisidir?`
+      : `«${entry.kelime_ar}» (${shortMeaning}) kelimesinin eş anlamlısı (مُرَادِف) aşağıdakilerden hangisidir?`;
+
+    const nuancePart = chosenSub.nuans_tr
+      ? `💡 الفروق اللغوية: ${chosenSub.nuans_tr} • `
+      : "";
+    const usageNote = `${nuancePart}Doğru Cevap: ${chosenSub.ar} (${chosenSub.tr}) | Örnek: ${entry.ornek_cumle_ar} (${entry.ornek_cumle_tr})`;
+
+    return {
+      id: `mc_${entry.id}`,
+      kind: "word",
+      wordId: entry.id,
+      topBadge: askAntonym
+        ? "⚡ Zıt Anlamlısı (الضد)"
+        : "🔄 Eş Anlamlısı (المرادف)",
+      arabic: entry.kelime_ar,
+      promptQuestionTr,
+      turkish: `${chosenSub.ar} — ${chosenSub.tr}`,
+      metaLabel: `${getSynonymTurLabel(entry.tur)} • Seviye ${entry.cefr}`,
+      usageNote,
+      options: shuffleArray([
+        { text: correctAr, isCorrect: true },
+        ...distractors.map((text) => ({ text, isCorrect: false })),
+      ]),
+    };
+  });
+}
+
+export interface SynonymMatchingPairItem {
+  matchId: string;
+  wordId: string;
+  trText: string;
+  arText: string;
+}
+
+/**
+ * Eşleştirme Oyunu İçin Çakışmasız Eş / Zıt Anlam Çiftleri Üretir:
+ * Aynı 5'li tahta üzerinde hiçbir kart diğer bir kartın eş/zıt anlamlısıyla çakışmaz.
+ */
+export function generateSynonymAntonymMatchingPairs(
+  entries: SynonymAntonymEntry[],
+  pairCount = 5
+): SynonymMatchingPairItem[] {
+  const candidates = shuffleArray(
+    entries.filter(
+      (e) => e.es_anlamlilar.length > 0 || e.zit_anlamlilar.length > 0
+    )
+  );
+
+  const pairs: SynonymMatchingPairItem[] = [];
+  const boardForbiddenBare = new Set<string>();
+
+  for (const entry of candidates) {
+    if (pairs.length >= pairCount) break;
+    const hasSyn = entry.es_anlamlilar.length > 0;
+    const hasAnt = entry.zit_anlamlilar.length > 0;
+    const askAntonym =
+      hasSyn && hasAnt ? pairs.length % 2 === 1 : hasAnt ? true : false;
+    const subPool = askAntonym ? entry.zit_anlamlilar : entry.es_anlamlilar;
+    const chosenSub = subPool[0];
+    if (!chosenSub) continue;
+
+    const entryRelatedBares = [
+      stripDiacriticsForQuiz(entry.kelime_ar),
+      ...entry.es_anlamlilar.map((s) => stripDiacriticsForQuiz(s.ar)),
+      ...entry.zit_anlamlilar.map((z) => stripDiacriticsForQuiz(z.ar)),
+    ].filter(Boolean);
+
+    if (entryRelatedBares.some((b) => boardForbiddenBare.has(b))) {
+      continue;
+    }
+
+    for (const b of entryRelatedBares) {
+      boardForbiddenBare.add(b);
+    }
+
+    const shortMeaning = entry.anlam_tr.split(",")[0].trim();
+    const relationBadge = askAntonym
+      ? "⚡ Zıt (ضِدّ):"
+      : "🔄 Eş (مُرَادِف):";
+
+    pairs.push({
+      matchId: `mg_${entry.id}`,
+      wordId: entry.id,
+      trText: `${relationBadge} ${entry.kelime_ar} (${shortMeaning})`,
+      arText: chosenSub.ar.trim(),
+    });
+  }
+
+  return pairs;
+}
+
+export interface SynonymFillQuestionItem {
+  id: string;
+  wordId: string;
+  fullArabic: string;
+  turkce: string;
+  beforeBlank: string;
+  afterBlank: string;
+  correctWord: string;
+  options: string[];
+}
+
+function normalizeStemForSentenceMatch(raw: string): string {
+  let s = stripDiacriticsForQuiz(raw);
+  // Başta وَ / فَ / بِ / لِ / كَ + ال varsa soyutla
+  s = s.replace(/^(?:[وفبلك])?ال/, "");
+  s = s.replace(/^[وفبل]/, "");
+  // Sonda ة / ا (tenvin elifi) esnekliği
+  s = s.replace(/(?:ة|ا)$/, "");
+  return s;
+}
+
+/**
+ * Boşluk Doldurma Egzersizi İçin Karşılaştırmalı Örnek Cümleden Soru Üretir:
+ * `ornek_cumle_ar` içindeki hedef kelimeyi (veya zıt anlamlısını) bularak boşluk bırakır
+ * ve aynı sözcük türü / CEFR seviyesinden 3 harekeli Arapça çeldirici üretir.
+ */
+export function generateSynonymAntonymFillQuestions(
+  entries: SynonymAntonymEntry[],
+  maxQuestions = 10
+): SynonymFillQuestionItem[] {
+  const shuffled = shuffleArray(entries);
+  const results: SynonymFillQuestionItem[] = [];
+
+  for (const entry of shuffled) {
+    if (results.length >= maxQuestions) break;
+    if (!entry.ornek_cumle_ar?.trim() || !entry.ornek_cumle_tr?.trim()) continue;
+
+    const tokens = entry.ornek_cumle_ar.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length < 3) continue;
+
+    const targetForms = [
+      entry.kelime_ar,
+      ...entry.zit_anlamlilar.map((z) => z.ar),
+      ...entry.es_anlamlilar.map((s) => s.ar),
+    ];
+    const targetBares = new Set(
+      targetForms.map((f) => stripDiacriticsForQuiz(f)).filter(Boolean)
+    );
+    const targetStems = new Set(
+      targetForms
+        .map((f) => normalizeStemForSentenceMatch(f))
+        .filter((s) => s.length >= 2)
+    );
+
+    let matchedIdx = -1;
+    let cleanToken = "";
+    let leadPunct = "";
+    let trailPunct = "";
+
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      const m = tok.match(
+        /^([.,!?؟،؛:"'«»()[\]…]*)([\s\S]*?)([.,!?؟،؛:"'«»()[\]…]*)$/
+      );
+      const lp = m ? m[1] || "" : "";
+      const core = (m ? m[2] || "" : tok)
+        .replace(/[.,!?؟،؛:"'«»()[\]…]/g, "")
+        .trim();
+      const tp = m ? m[3] || "" : "";
+      const coreBare = stripDiacriticsForQuiz(core);
+      const coreNoAl = coreBare.replace(/^(?:[وفبلك])?ال/, "");
+      const coreStem = normalizeStemForSentenceMatch(core);
+
+      if (
+        targetBares.has(coreBare) ||
+        targetBares.has(coreNoAl) ||
+        (coreStem.length >= 2 && targetStems.has(coreStem))
+      ) {
+        matchedIdx = i;
+        cleanToken = core;
+        leadPunct = lp;
+        trailPunct = tp;
+        break;
+      }
+    }
+
+    if (matchedIdx === -1 || !cleanToken) continue;
+
+    const beforeParts = tokens.slice(0, matchedIdx);
+    const afterParts = tokens.slice(matchedIdx + 1);
+    const beforeBlank =
+      (beforeParts.length > 0 ? beforeParts.join(" ") + " " : "") + leadPunct;
+    const afterBlank =
+      trailPunct + (afterParts.length > 0 ? " " + afterParts.join(" ") : "");
+
+    const hasAlPrefix = /^ال/.test(stripDiacriticsForQuiz(cleanToken));
+
+    const forbiddenBare = new Set<string>([
+      stripDiacriticsForQuiz(cleanToken),
+      stripDiacriticsForQuiz(entry.kelime_ar),
+      ...entry.es_anlamlilar.map((s) => stripDiacriticsForQuiz(s.ar)),
+      ...entry.zit_anlamlilar.map((z) => stripDiacriticsForQuiz(z.ar)),
+      ...tokens.map((t) => stripDiacriticsForQuiz(t)),
+    ]);
+
+    const targetCefrNum = CEFR_ORDER[entry.cefr] ?? 1;
+    const distractorCandidates: { word: string; tier: number }[] = [];
+
+    for (const other of shuffleArray(esZitAnlamlilar)) {
+      if (other.id === entry.id) continue;
+      const sameTur = other.tur === entry.tur;
+      const cefrDiff = Math.abs((CEFR_ORDER[other.cefr] ?? 1) - targetCefrNum);
+      let candWord = other.kelime_ar.trim();
+      const candBare = stripDiacriticsForQuiz(candWord);
+      if (!candBare || forbiddenBare.has(candBare)) continue;
+
+      // Eğer boşluktaki isim/sıfat ال ile başlıyorsa ve aday tenvinli yalın isimse uyumlu marife formunu kontrol et
+      if (
+        hasAlPrefix &&
+        other.tur !== "fiil" &&
+        other.tur !== "zarf" &&
+        !/^ال/.test(candBare) &&
+        other.ornek_cumle_ar
+      ) {
+        const otherTokens = other.ornek_cumle_ar.split(/\s+/);
+        const defToken = otherTokens
+          .map((t) => t.replace(/[.,!?؟،؛:"'«»()[\]…]/g, "").trim())
+          .find(
+            (t) =>
+              /^ال/.test(stripDiacriticsForQuiz(t)) &&
+              normalizeStemForSentenceMatch(t) ===
+                normalizeStemForSentenceMatch(other.kelime_ar)
+          );
+        if (defToken) {
+          candWord = defToken;
+        }
+      }
+
+      const finalBare = stripDiacriticsForQuiz(candWord);
+      if (forbiddenBare.has(finalBare)) continue;
+      forbiddenBare.add(finalBare);
+
+      const alMatchBonus =
+        (/^ال/.test(finalBare) === hasAlPrefix ? 0 : 1);
+      const tier =
+        (sameTur ? 0 : 10) + cefrDiff * 2 + alMatchBonus;
+      distractorCandidates.push({ word: candWord, tier });
+    }
+
+    distractorCandidates.sort((a, b) => a.tier - b.tier);
+    const distractors = distractorCandidates.slice(0, 3).map((d) => d.word);
+    if (distractors.length < 3) continue;
+
+    results.push({
+      id: `fill_${entry.id}`,
+      wordId: entry.id,
+      fullArabic: entry.ornek_cumle_ar.trim(),
+      turkce: entry.ornek_cumle_tr.trim(),
+      beforeBlank,
+      afterBlank,
+      correctWord: cleanToken,
+      options: shuffleArray([cleanToken, ...distractors]),
+    });
+  }
+
+  return results;
 }

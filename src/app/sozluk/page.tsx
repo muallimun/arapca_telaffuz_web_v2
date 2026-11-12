@@ -29,9 +29,15 @@ import {
   sozluk,
   diyaloglar,
   gorselKelimeler,
+  esZitAnlamlilar,
   getVisualWordCoverUrl,
 } from "@/lib/data";
-import { DictionaryItem } from "@/types/data";
+import {
+  DictionaryItem,
+  Level,
+  SynonymAntonymEntry,
+  SynonymAntonymWordTur,
+} from "@/types/data";
 import {
   getDialogueVocabulary,
   DialogueVocabularyEntry,
@@ -43,6 +49,7 @@ import {
   getExampleSentencesForWord,
   ExampleSentenceMatch,
   mergeTurkishMeanings,
+  findSynonymAntonymForWord,
 } from "@/lib/dict";
 import {
   loadAudioManifest,
@@ -80,7 +87,11 @@ import {
   getCombinedIdiomsCatalog,
   extractDialogueIdioms,
 } from "@/lib/arabicIdioms";
-import { resolveMistakesPool, formatSrsBadgeInfo } from "@/lib/mistakeUtils";
+import {
+  resolveMistakesPool,
+  formatSrsBadgeInfo,
+  synonymEntryToDictionaryItem,
+} from "@/lib/mistakeUtils";
 import {
   getClassicalBridgeForRoot,
   getCognateInfoForDictionaryItem,
@@ -149,6 +160,7 @@ interface PreparedWordMeta {
   isIdiom: boolean;
   cognateInfo: TurkishArabicCognateEntry | null;
   classicalBridge: ClassicalRootBridgeEntry | null;
+  synonymAntonym: SynonymAntonymEntry | null;
   cleanRoot: string;
   searchLowerTr: string;
   searchRawAr: string;
@@ -382,8 +394,15 @@ export default function DictionaryPage() {
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [bridgeFilter, setBridgeFilter] = useState<
-    "none" | "cognates" | "classical"
+    "none" | "cognates" | "classical" | "synonyms"
   >("none");
+  const [synCefrFilter, setSynCefrFilter] = useState<"all" | Level>("all");
+  const [synTurFilter, setSynTurFilter] = useState<
+    "all" | SynonymAntonymWordTur
+  >("all");
+  const [openNuanceMap, setOpenNuanceMap] = useState<Record<string, boolean>>(
+    {}
+  );
   const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
   const [rootFilter, setRootFilter] = useState<string | null>(null);
   const [expandedCardIds, setExpandedCardIds] = useState<
@@ -416,6 +435,7 @@ export default function DictionaryPage() {
     favoriteWords,
     learnedWords,
     mistakeIds,
+    addMistake,
     removeMistake,
     isMistake,
     getSrsRecord,
@@ -450,6 +470,13 @@ export default function DictionaryPage() {
           setTypeFilter("all");
         } else if (tabParam === "cognates" || tabParam === "ortak") {
           setBridgeFilter("cognates");
+          setTypeFilter("all");
+        } else if (
+          tabParam === "synonyms" ||
+          tabParam === "es-zit" ||
+          tabParam === "es_zit"
+        ) {
+          setBridgeFilter("synonyms");
           setTypeFilter("all");
         } else if (
           tabParam === "isim" ||
@@ -584,11 +611,19 @@ export default function DictionaryPage() {
         .filter(Boolean)
         .join(" ");
 
+      const primaryForSyn = (item.mufret || item.mazi || "")
+        .split("/")[0]
+        .trim();
+      const synAntHit = primaryForSyn
+        ? findSynonymAntonymForWord(primaryForSyn)
+        : null;
+
       metaMap.set(item.id, {
         category,
         isIdiom,
         cognateInfo: getCognateInfoForDictionaryItem(item),
         classicalBridge: getClassicalBridgeForRoot(item.kok),
+        synonymAntonym: synAntHit,
         cleanRoot:
           item.kok && item.kok !== "-"
             ? cleanArabicText(item.kok).replace(/\s+/g, "")
@@ -597,10 +632,26 @@ export default function DictionaryPage() {
           item.anlam_tr || "",
           idmDetail?.literalTr || "",
           idmDetail?.usageNote || "",
+          synAntHit
+            ? [
+                ...synAntHit.es_anlamlilar.map((s) => `${s.tr} ${s.nuans_tr || ""}`),
+                ...synAntHit.zit_anlamlilar.map((z) => `${z.tr} ${z.nuans_tr || ""}`),
+              ].join(" ")
+            : "",
         ]
           .join(" ")
           .toLowerCase(),
-        searchRawAr: rawArJoined,
+        searchRawAr: [
+          rawArJoined,
+          synAntHit
+            ? [
+                ...synAntHit.es_anlamlilar.map((s) => s.ar),
+                ...synAntHit.zit_anlamlilar.map((z) => z.ar),
+              ].join(" ")
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
         searchCleanAr: cleanArabicText(rawArJoined),
         searchNormAr: normalizeArabicText(rawArJoined),
       });
@@ -633,11 +684,17 @@ export default function DictionaryPage() {
       ]
         .filter(Boolean)
         .join(" ");
+      const primaryForSyn = (word.mufret || word.mazi || "")
+        .split("/")[0]
+        .trim();
       const fallback: PreparedWordMeta = {
         category: getWordCategory(word),
         isIdiom,
         cognateInfo: getCognateInfoForDictionaryItem(word),
         classicalBridge: getClassicalBridgeForRoot(word.kok),
+        synonymAntonym: primaryForSyn
+          ? findSynonymAntonymForWord(primaryForSyn)
+          : null,
         cleanRoot:
           word.kok && word.kok !== "-"
             ? cleanArabicText(word.kok).replace(/\s+/g, "")
@@ -910,6 +967,86 @@ export default function DictionaryPage() {
     [filteredWords, currentPage, itemsPerPage]
   );
 
+  // 400 Eş & Zıt Anlamlılar (المرادفات والأضداد) sekmesi için filtrelenmiş ve sayfalanmış kayıtlar
+  const filteredSynonymEntries = useMemo(() => {
+    if (bridgeFilter !== "synonyms") return [];
+    let list = esZitAnlamlilar;
+
+    if (synCefrFilter !== "all") {
+      list = list.filter((e) => e.cefr === synCefrFilter);
+    }
+    if (synTurFilter !== "all") {
+      list = list.filter((e) => e.tur === synTurFilter);
+    }
+    if (mounted) {
+      if (statusFilter === "learned") {
+        const learnedSet = new Set(learnedWords);
+        list = list.filter((e) => learnedSet.has(e.id));
+      } else if (statusFilter === "unlearned") {
+        const learnedSet = new Set(learnedWords);
+        list = list.filter((e) => !learnedSet.has(e.id));
+      } else if (statusFilter === "favorites") {
+        const favSet = new Set(favoriteWords.map((f) => f.id));
+        list = list.filter((e) => favSet.has(e.id));
+      } else if (statusFilter === "mistakes") {
+        list = list.filter((e) => isMistake(e.id));
+      }
+    }
+
+    const q = deferredSearch.trim();
+    if (q) {
+      const qLower = q.toLocaleLowerCase("tr-TR");
+      const qCleanAr = cleanArabicText(q);
+      const qNormAr = normalizeArabicText(q);
+
+      list = list.filter((entry) => {
+        const trBlob = [
+          entry.anlam_tr,
+          entry.ornek_cumle_tr,
+          ...entry.es_anlamlilar.map((s) => `${s.tr} ${s.nuans_tr || ""}`),
+          ...entry.zit_anlamlilar.map((z) => `${z.tr} ${z.nuans_tr || ""}`),
+        ]
+          .join(" ")
+          .toLocaleLowerCase("tr-TR");
+        if (trBlob.includes(qLower)) return true;
+
+        const arBlob = [
+          entry.kelime_ar,
+          entry.kelime_harekesiz,
+          entry.ornek_cumle_ar,
+          ...entry.es_anlamlilar.map((s) => `${s.ar} ${s.harekesiz}`),
+          ...entry.zit_anlamlilar.map((z) => `${z.ar} ${z.harekesiz}`),
+        ].join(" ");
+        if (arBlob.includes(q)) return true;
+        if (qCleanAr && cleanArabicText(arBlob).includes(qCleanAr)) return true;
+        if (qNormAr && normalizeArabicText(arBlob).includes(qNormAr)) return true;
+        return false;
+      });
+    }
+
+    return list;
+  }, [
+    bridgeFilter,
+    synCefrFilter,
+    synTurFilter,
+    mounted,
+    statusFilter,
+    learnedWords,
+    favoriteWords,
+    isMistake,
+    deferredSearch,
+  ]);
+
+  const synonymPagination = useMemo(
+    () =>
+      paginateDictionaryItems(
+        filteredSynonymEntries,
+        currentPage,
+        itemsPerPage
+      ),
+    [filteredSynonymEntries, currentPage, itemsPerPage]
+  );
+
   const handlePageChange = (nextPage: number) => {
     playClick();
     setCurrentPage(nextPage);
@@ -1111,8 +1248,17 @@ export default function DictionaryPage() {
           </div>
 
           <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-extrabold text-[var(--foreground)] tabular-nums shrink-0">
-            {filteredWords.length.toLocaleString("tr-TR")} /{" "}
-            {basePool.length.toLocaleString("tr-TR")}
+            {bridgeFilter === "synonyms" ? (
+              <>
+                {filteredSynonymEntries.length.toLocaleString("tr-TR")} /{" "}
+                {esZitAnlamlilar.length.toLocaleString("tr-TR")}
+              </>
+            ) : (
+              <>
+                {filteredWords.length.toLocaleString("tr-TR")} /{" "}
+                {basePool.length.toLocaleString("tr-TR")}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1301,6 +1447,29 @@ export default function DictionaryPage() {
             );
           })}
 
+          {/* Alt Sekme: 🔄 Eş & Zıt Anlamlılar (400) */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setBridgeFilter((prev) =>
+                prev === "synonyms" ? "none" : "synonyms"
+              );
+              setTypeFilter("all");
+              if (statusFilter === "mistakes") {
+                setStatusFilter("all");
+              }
+              setCurrentPage(1);
+            }}
+            className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
+              bridgeFilter === "synonyms"
+                ? "bg-teal-700 border-teal-800 text-white font-bold shadow-2xs"
+                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-teal-800 dark:text-teal-300 font-semibold hover:border-teal-500"
+            }`}
+          >
+            🔄 Eş &amp; Zıt Anlamlılar ({esZitAnlamlilar.length.toLocaleString("tr-TR")})
+          </button>
+
           {/* Alt Sekme: 🤝 Türkçeyle Ortak Kelimeler */}
           <button
             type="button"
@@ -1475,13 +1644,481 @@ export default function DictionaryPage() {
             </button>
           </div>
         )}
+        {/* Eş & Zıt Anlamlılar Sekmesi Aktifken CEFR ve Sözcük Türü Alt Filtre Şeridi */}
+        {bridgeFilter === "synonyms" && (
+          <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center justify-between gap-2 bg-teal-50/75 dark:bg-teal-950/35 px-3 py-2 rounded-xl border border-teal-300/80 dark:border-teal-700/60">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-extrabold text-teal-900 dark:text-teal-200 mr-1">
+                Seviye:
+              </span>
+              {(["all", "A1", "A2", "B1", "B2"] as const).map((lvl) => {
+                const active = synCefrFilter === lvl;
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setSynCefrFilter(lvl);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      active
+                        ? "bg-teal-700 text-white shadow-2xs"
+                        : "bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {lvl === "all" ? "Tümü" : lvl}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-extrabold text-teal-900 dark:text-teal-200 mr-1">
+                Tür:
+              </span>
+              {(
+                [
+                  { id: "all", label: "Tümü" },
+                  { id: "isim", label: "📘 İsim" },
+                  { id: "fiil", label: "⚡ Fiil" },
+                  { id: "sifat", label: "🎨 Sıfat" },
+                  { id: "zarf", label: "⏱️ Zarf" },
+                ] as { id: "all" | SynonymAntonymWordTur; label: string }[]
+              ).map((t) => {
+                const active = synTurFilter === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setSynTurFilter(t.id);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      active
+                        ? "bg-[#087F5B] text-white shadow-2xs"
+                        : "bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+
+              <Link
+                href={`/alistirmalar?pool=synonyms_antonyms${
+                  synCefrFilter !== "all" ? `&level=${synCefrFilter}` : ""
+                }`}
+                onClick={() => playClick()}
+                className="ml-1 px-2.5 py-1 rounded-lg bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-2 border-[#4C28B5] transition-all"
+              >
+                🎯 Alıştırmasını Çöz →
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* LİSTE BAŞI ÇAPASI + SAYFA BAŞINA GÖSTER & HIZLI SAYFA ÖZETİ */}
       <div ref={listTopRef} className="scroll-mt-20" />
 
-      {/* SÖZLÜK KARTLARI IZGARASI */}
-      {filteredWords.length === 0 ? (
+      {/* SÖZLÜK KARTLARI VEYA 400 EŞ & ZIT ANLAMLILAR IZGARASI */}
+      {bridgeFilter === "synonyms" ? (
+        filteredSynonymEntries.length === 0 ? (
+          <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-10 text-center space-y-3">
+            <p className="text-base font-extrabold text-[var(--foreground)]">
+              Seçili filtre veya arama kriterine uygun eş/zıt anlamlı kelime bulunamadı.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setSearch("");
+                setSynCefrFilter("all");
+                setSynTurFilter("all");
+                setStatusFilter("all");
+                setCurrentPage(1);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-bold border-b-4 border-[#065F46] cursor-pointer"
+            >
+              Filtreleri Temizle
+            </button>
+          </div>
+        ) : (
+          <>
+            <SmartPaginationBar
+              compactTop={true}
+              currentPage={synonymPagination.currentPage}
+              totalPages={synonymPagination.totalPages}
+              totalItems={synonymPagination.totalItems}
+              startIndex={synonymPagination.startIndex}
+              endIndex={synonymPagination.endIndex}
+              tokens={synonymPagination.tokens}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {synonymPagination.items.map((entry) => {
+                const dictProxy = synonymEntryToDictionaryItem(entry);
+                const isFav = mounted && isWordFavorite(entry.id);
+                const isLearned = mounted && isWordLearned(entry.id);
+                const inMistakes = mounted && isMistake(entry.id);
+                const isSpeaking = speakingWordId === entry.id;
+                const turBadge =
+                  entry.tur === "fiil"
+                    ? {
+                        label: "⚡ Fiil (فعل)",
+                        cls: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700/60",
+                        border: "border-l-amber-500",
+                      }
+                    : entry.tur === "sifat"
+                    ? {
+                        label: "🎨 Sıfat (صفة)",
+                        cls: "bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-700/60",
+                        border: "border-l-teal-500",
+                      }
+                    : entry.tur === "zarf"
+                    ? {
+                        label: "⏱️ Zarf (ظرف)",
+                        cls: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-700/60",
+                        border: "border-l-purple-500",
+                      }
+                    : {
+                        label: "📘 İsim (اسم)",
+                        cls: "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-700/60",
+                        border: "border-l-sky-500",
+                      };
+
+                return (
+                  <div
+                    key={entry.id}
+                    className={`rounded-2xl border-2 border-b-4 border-l-4 ${turBadge.border} p-4 flex flex-col justify-between gap-3 transition-all ${
+                      isLearned
+                        ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9]"
+                        : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      {/* Başlık Satırı */}
+                      <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5">
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`px-2 py-0.5 rounded-md border text-[11px] font-extrabold ${turBadge.cls}`}
+                            >
+                              {turBadge.label}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-[#065F46] dark:text-emerald-300 text-[11px] font-extrabold">
+                              {entry.cefr}
+                            </span>
+                            <span className="text-[10px] font-bold text-[var(--muted)] tabular-nums">
+                              #{entry.sira}
+                            </span>
+                          </div>
+                          <p className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
+                            {entry.anlam_tr}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleListenWord(dictProxy)}
+                          title="Ana kelimeyi sesli dinle"
+                          className="text-right cursor-pointer shrink-0 group"
+                        >
+                          <span
+                            dir="rtl"
+                            className="arabic font-arabic text-3xl sm:text-4xl font-bold text-[#065F46] dark:text-emerald-300 group-hover:opacity-80 block leading-tight"
+                          >
+                            {getDisplayArabic(entry.kelime_ar)}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Eş Anlamlıları (المرادفات) - Zümrüt Yeşili */}
+                      {entry.es_anlamlilar.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+                            🔄 Eş Anlamlıları (المرادفات)
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entry.es_anlamlilar.map((syn, sIdx) => {
+                              const nKey = `${entry.id}_es_${sIdx}`;
+                              const isNuanceOpen = Boolean(openNuanceMap[nKey]);
+                              return (
+                                <div
+                                  key={nKey}
+                                  className="inline-flex flex-col gap-1 max-w-full"
+                                >
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/55 border border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleListenWord(dictProxy, syn.ar)
+                                      }
+                                      title="Sesli dinlemek için tıklayın"
+                                      className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80"
+                                    >
+                                      <Volume2
+                                        size={12}
+                                        className="text-emerald-700 dark:text-emerald-300 shrink-0"
+                                      />
+                                      <bdi
+                                        dir="rtl"
+                                        className="arabic font-arabic text-base sm:text-lg font-bold"
+                                      >
+                                        {getDisplayArabic(syn.ar)}
+                                      </bdi>
+                                      <span className="text-xs font-semibold opacity-90">
+                                        ({syn.tr})
+                                      </span>
+                                    </button>
+                                    {syn.nuans_tr && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          playClick();
+                                          setOpenNuanceMap((prev) => ({
+                                            ...prev,
+                                            [nKey]: !prev[nKey],
+                                          }));
+                                        }}
+                                        title={syn.nuans_tr}
+                                        className="px-1.5 py-0.5 rounded-md bg-emerald-200/85 dark:bg-emerald-800 text-[10px] font-black text-emerald-950 dark:text-emerald-100 cursor-pointer shrink-0"
+                                      >
+                                        💡 الفروق {isNuanceOpen ? "▴" : "▾"}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {syn.nuans_tr && isNuanceOpen && (
+                                    <p className="text-[11px] font-semibold leading-snug bg-white/95 dark:bg-[var(--background)] border border-emerald-300 dark:border-emerald-700 rounded-xl px-2.5 py-1.5 text-emerald-950 dark:text-emerald-100">
+                                      <strong className="font-black text-emerald-800 dark:text-emerald-300">
+                                        الفروق اللغوية (İnce Anlam Farkı):{" "}
+                                      </strong>
+                                      {syn.nuans_tr}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Zıt Anlamlıları (الأضداد) - Kehribar / Turuncu */}
+                      {entry.zit_anlamlilar.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                            ⚡ Zıt Anlamlıları (الأضداد)
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entry.zit_anlamlilar.map((ant, zIdx) => {
+                              const nKey = `${entry.id}_zit_${zIdx}`;
+                              const isNuanceOpen = Boolean(openNuanceMap[nKey]);
+                              return (
+                                <div
+                                  key={nKey}
+                                  className="inline-flex flex-col gap-1 max-w-full"
+                                >
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/55 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-100">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleListenWord(dictProxy, ant.ar)
+                                      }
+                                      title="Sesli dinlemek için tıklayın"
+                                      className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80"
+                                    >
+                                      <Volume2
+                                        size={12}
+                                        className="text-amber-700 dark:text-amber-300 shrink-0"
+                                      />
+                                      <bdi
+                                        dir="rtl"
+                                        className="arabic font-arabic text-base sm:text-lg font-bold"
+                                      >
+                                        {getDisplayArabic(ant.ar)}
+                                      </bdi>
+                                      <span className="text-xs font-semibold opacity-90">
+                                        ({ant.tr})
+                                      </span>
+                                    </button>
+                                    {ant.nuans_tr && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          playClick();
+                                          setOpenNuanceMap((prev) => ({
+                                            ...prev,
+                                            [nKey]: !prev[nKey],
+                                          }));
+                                        }}
+                                        title={ant.nuans_tr}
+                                        className="px-1.5 py-0.5 rounded-md bg-amber-200/85 dark:bg-amber-800 text-[10px] font-black text-amber-950 dark:text-amber-100 cursor-pointer shrink-0"
+                                      >
+                                        💡 الفروق {isNuanceOpen ? "▴" : "▾"}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {ant.nuans_tr && isNuanceOpen && (
+                                    <p className="text-[11px] font-semibold leading-snug bg-white/95 dark:bg-[var(--background)] border border-amber-300 dark:border-amber-700 rounded-xl px-2.5 py-1.5 text-amber-950 dark:text-amber-100">
+                                      <strong className="font-black text-amber-800 dark:text-amber-300">
+                                        الفروق اللغوية (İnce Anlam Farkı):{" "}
+                                      </strong>
+                                      {ant.nuans_tr}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Karşılaştırmalı Örnek Cümle */}
+                      {entry.ornek_cumle_ar && (
+                        <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6741D9] dark:text-indigo-300">
+                              📖 Karşılaştırmalı Örnek Cümle
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleListenWord(
+                                  dictProxy,
+                                  entry.ornek_cumle_ar
+                                )
+                              }
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#087F5B] hover:bg-[#065F46] text-white text-[10px] font-extrabold cursor-pointer"
+                            >
+                              <Volume2 size={11} />
+                              <span>Cümleyi Dinle</span>
+                            </button>
+                          </div>
+                          <p
+                            dir="rtl"
+                            className="arabic font-arabic text-lg font-bold text-[var(--foreground)] text-right leading-relaxed"
+                          >
+                            {getDisplayArabic(entry.ornek_cumle_ar)}
+                          </p>
+                          <p className="text-xs font-semibold text-[var(--muted)] leading-snug">
+                            {entry.ornek_cumle_tr}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Alt Aksiyon Butonları */}
+                    <div className="pt-2 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleListenWord(dictProxy)}
+                        className={`flex-1 h-9 px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          isSpeaking
+                            ? "bg-[#087F5B] border-[#065F46] text-white"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                        }`}
+                      >
+                        <Volume2
+                          size={14}
+                          className={
+                            isSpeaking
+                              ? "text-white"
+                              : "text-[#065F46] dark:text-emerald-400"
+                          }
+                        />
+                        <span>Dinle</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          if (inMistakes) {
+                            removeMistake(entry.id);
+                          } else {
+                            addMistake(entry.id);
+                          }
+                        }}
+                        title={
+                          inMistakes
+                            ? "Hata Defterinden Çıkar"
+                            : "Hata Defterime / Tekrar Listeme Ekle"
+                        }
+                        className={`h-9 px-2.5 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0 ${
+                          inMistakes
+                            ? "bg-amber-600 border-amber-700 text-white"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-amber-800 dark:text-amber-300 hover:border-amber-500"
+                        }`}
+                      >
+                        <span>⚡ {inMistakes ? "Defterimde" : "Hata Defteri"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          toggleFavoriteWord(dictProxy);
+                        }}
+                        aria-label={isFav ? "Favorilerden Çıkar" : "Favorilere Ekle"}
+                        className={`h-9 w-9 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                          isFav
+                            ? "bg-red-50 border-red-300 text-red-600"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-red-500"
+                        }`}
+                      >
+                        <Heart size={15} fill={isFav ? "currentColor" : "none"} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          toggleLearnedWord(entry.id);
+                          if (!isLearned && inMistakes) {
+                            removeMistake(entry.id);
+                          }
+                        }}
+                        aria-label={
+                          isLearned
+                            ? "Öğrenildi İşaretini Kaldır"
+                            : "Öğrendim Olarak İşaretle"
+                        }
+                        className={`h-9 w-9 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                          isLearned
+                            ? "bg-[#6741D9] border-[#5230B5] text-white"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[#065F46]"
+                        }`}
+                      >
+                        <CheckCircle2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <SmartPaginationBar
+              compactTop={false}
+              currentPage={synonymPagination.currentPage}
+              totalPages={synonymPagination.totalPages}
+              totalItems={synonymPagination.totalItems}
+              startIndex={synonymPagination.startIndex}
+              endIndex={synonymPagination.endIndex}
+              tokens={synonymPagination.tokens}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </>
+        )
+      ) : filteredWords.length === 0 ? (
         <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-10 text-center space-y-3">
           <p className="text-base font-extrabold text-[var(--foreground)]">
             {statusFilter === "mistakes"
@@ -1884,6 +2521,187 @@ export default function DictionaryPage() {
                                 {cognateInfo.nuanceNoteTr}
                               </p>
                             )}
+                          </div>
+                        )}
+
+                        {wordMeta.synonymAntonym && (
+                          <div className="rounded-xl bg-white/85 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2.5 space-y-2 text-[11px]">
+                            {wordMeta.synonymAntonym.es_anlamlilar.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+                                  🔄 Eş Anlamlıları (المرادفات)
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {wordMeta.synonymAntonym.es_anlamlilar.map(
+                                    (syn, sIdx) => {
+                                      const nKey = `${word.id}_std_es_${sIdx}`;
+                                      const nOpen = Boolean(openNuanceMap[nKey]);
+                                      return (
+                                        <div
+                                          key={nKey}
+                                          className="inline-flex flex-col gap-1 max-w-full"
+                                        >
+                                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleListenWord(word, syn.ar)
+                                              }
+                                              title="Sesli dinlemek için tıklayın"
+                                              className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80"
+                                            >
+                                              <Volume2
+                                                size={11}
+                                                className="text-emerald-700 dark:text-emerald-300 shrink-0"
+                                              />
+                                              <bdi
+                                                dir="rtl"
+                                                className="arabic font-arabic text-sm font-bold"
+                                              >
+                                                {getDisplayArabic(syn.ar)}
+                                              </bdi>
+                                              <span className="text-[10px] font-semibold opacity-90">
+                                                ({syn.tr})
+                                              </span>
+                                            </button>
+                                            {syn.nuans_tr && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  playClick();
+                                                  setOpenNuanceMap((prev) => ({
+                                                    ...prev,
+                                                    [nKey]: !prev[nKey],
+                                                  }));
+                                                }}
+                                                title={syn.nuans_tr}
+                                                className="px-1 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-800 text-[9px] font-black text-emerald-950 dark:text-emerald-100 cursor-pointer shrink-0"
+                                              >
+                                                💡 الفروق
+                                              </button>
+                                            )}
+                                          </div>
+                                          {syn.nuans_tr && nOpen && (
+                                            <p className="text-[10px] font-semibold leading-snug bg-emerald-50/90 dark:bg-emerald-950/75 border border-emerald-200 dark:border-emerald-800 rounded-lg px-2 py-1 text-emerald-950 dark:text-emerald-100">
+                                              <strong className="font-black">
+                                                الفروق اللغوية:{" "}
+                                              </strong>
+                                              {syn.nuans_tr}
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {wordMeta.synonymAntonym.zit_anlamlilar.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                                  ⚡ Zıt Anlamlıları (الأضداد)
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {wordMeta.synonymAntonym.zit_anlamlilar.map(
+                                    (ant, zIdx) => {
+                                      const nKey = `${word.id}_std_zit_${zIdx}`;
+                                      const nOpen = Boolean(openNuanceMap[nKey]);
+                                      return (
+                                        <div
+                                          key={nKey}
+                                          className="inline-flex flex-col gap-1 max-w-full"
+                                        >
+                                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleListenWord(word, ant.ar)
+                                              }
+                                              title="Sesli dinlemek için tıklayın"
+                                              className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80"
+                                            >
+                                              <Volume2
+                                                size={11}
+                                                className="text-amber-700 dark:text-amber-300 shrink-0"
+                                              />
+                                              <bdi
+                                                dir="rtl"
+                                                className="arabic font-arabic text-sm font-bold"
+                                              >
+                                                {getDisplayArabic(ant.ar)}
+                                              </bdi>
+                                              <span className="text-[10px] font-semibold opacity-90">
+                                                ({ant.tr})
+                                              </span>
+                                            </button>
+                                            {ant.nuans_tr && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  playClick();
+                                                  setOpenNuanceMap((prev) => ({
+                                                    ...prev,
+                                                    [nKey]: !prev[nKey],
+                                                  }));
+                                                }}
+                                                title={ant.nuans_tr}
+                                                className="px-1 py-0.5 rounded bg-amber-200/80 dark:bg-amber-800 text-[9px] font-black text-amber-950 dark:text-amber-100 cursor-pointer shrink-0"
+                                              >
+                                                💡 الفروق
+                                              </button>
+                                            )}
+                                          </div>
+                                          {ant.nuans_tr && nOpen && (
+                                            <p className="text-[10px] font-semibold leading-snug bg-amber-50/90 dark:bg-amber-950/75 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 text-amber-950 dark:text-amber-100">
+                                              <strong className="font-black">
+                                                الفروق اللغوية:{" "}
+                                              </strong>
+                                              {ant.nuans_tr}
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {isDrawerOpen &&
+                              wordMeta.synonymAntonym.ornek_cumle_ar && (
+                                <div className="pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6741D9] dark:text-indigo-300">
+                                      📖 Karşılaştırmalı Örnek
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleListenWord(
+                                          word,
+                                          wordMeta.synonymAntonym!.ornek_cumle_ar
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-bold cursor-pointer"
+                                    >
+                                      <Volume2 size={10} />
+                                      <span>Dinle</span>
+                                    </button>
+                                  </div>
+                                  <p
+                                    dir="rtl"
+                                    className="arabic font-arabic text-base font-bold text-[var(--foreground)] text-right leading-relaxed"
+                                  >
+                                    {getDisplayArabic(
+                                      wordMeta.synonymAntonym.ornek_cumle_ar
+                                    )}
+                                  </p>
+                                  <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                                    {wordMeta.synonymAntonym.ornek_cumle_tr}
+                                  </p>
+                                </div>
+                              )}
                           </div>
                         )}
 

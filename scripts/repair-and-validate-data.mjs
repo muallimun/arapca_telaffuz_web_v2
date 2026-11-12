@@ -19,6 +19,7 @@ const JSON_FILES = [
   "metinler_gramer_hap_bilgi.json",
   "ek_gramer_hap_bilgi.json",
   "seviye_tespit_sorulari.json",
+  "es_zit_anlamlilar.json",
 ];
 
 // ============================================================================
@@ -764,7 +765,8 @@ function deepApplyOrthographyFixes(node, keyName = "") {
 
 function readJson(fileName) {
   const fullPath = path.join(DATA_DIR, fileName);
-  return JSON.parse(fs.readFileSync(fullPath, "utf8"));
+  const raw = fs.readFileSync(fullPath, "utf8").replace(/^\uFEFF/, "");
+  return JSON.parse(raw);
 }
 
 function writeJson(fileName, data) {
@@ -931,6 +933,14 @@ function main() {
     `✅ seviye_tespit_sorulari.json: ${seviyeSorulari.length} seviye tespit ve konu tarama sorusu onarıldı.`
   );
 
+  // 11. es_zit_anlamlilar.json BOM temizliği ve NFC normalizasyonu (400 kayıt korunur)
+  let esZit = readJson("es_zit_anlamlilar.json");
+  esZit = deepCleanNode(esZit);
+  writeJson("es_zit_anlamlilar.json", esZit);
+  console.log(
+    `✅ es_zit_anlamlilar.json: ${esZit.length}/400 eş ve zıt anlamlı kelime kaydı NFC ile doğrulandı.`
+  );
+
   // ==========================================================================
   // DOĞRULAMA KONTROLLERİ (VALIDATION)
   // ==========================================================================
@@ -938,7 +948,11 @@ function main() {
 
   for (const fileName of JSON_FILES) {
     const rawContent = fs.readFileSync(path.join(DATA_DIR, fileName), "utf8");
-    const parsed = JSON.parse(rawContent);
+    if (rawContent.startsWith("\uFEFF")) {
+      console.error(`❌ HATA: ${fileName} başında hâlâ UTF-8 BOM var!`);
+      errors++;
+    }
+    const parsed = JSON.parse(rawContent.replace(/^\uFEFF/, ""));
 
     if (rawContent.includes("\u0640")) {
       console.error(`❌ HATA: ${fileName} içinde hâlâ tatweel (\\u0640) var!`);
@@ -993,13 +1007,20 @@ function main() {
     }
   }
 
+  if (!Array.isArray(esZit) || esZit.length !== 400) {
+    console.error(
+      `❌ HATA: es_zit_anlamlilar.json 400 kayıt olmalıydı, bulunan: ${esZit?.length}`
+    );
+    errors++;
+  }
+
   if (errors > 0) {
     console.error(`\n❌ Doğrulama ${errors} hata ile başarısız oldu.`);
     process.exit(1);
   }
 
   console.log(
-    `\n🎉 Tüm ${JSON_FILES.length} JSON veri dosyası başarıyla onarıldı ve %100 doğrulandı (0 tatweel, %100 NFC, ${sozluk.length} sözlük, 195/195 tam şema gramer)!`
+    `\n🎉 Tüm ${JSON_FILES.length} JSON veri dosyası başarıyla onarıldı ve %100 doğrulandı (0 tatweel, %100 NFC, ${sozluk.length} sözlük, ${esZit.length} eş-zıt anlamlı, 195/195 tam şema gramer)!`
   );
 }
 

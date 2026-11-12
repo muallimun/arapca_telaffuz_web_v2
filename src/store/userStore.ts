@@ -892,7 +892,7 @@ export const useUserStore = create<UserState>()(
           const cleanId = (id || "").trim();
           if (!cleanId) return state;
           const stripped = cleanId.replace(
-            /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_)/,
+            /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_|mc_(?=ez_)|mg_(?=ez_)|fill_(?=ez_)|w_(?=ez_))/,
             ""
           );
           return {
@@ -902,7 +902,11 @@ export const useUserStore = create<UserState>()(
                 m !== stripped &&
                 m !== `idiom_${stripped}` &&
                 m !== `word_${stripped}` &&
-                m !== `sent_${stripped}`
+                m !== `sent_${stripped}` &&
+                m !== `mc_${stripped}` &&
+                m !== `mg_${stripped}` &&
+                m !== `fill_${stripped}` &&
+                m !== `w_${stripped}`
             ),
           };
         }),
@@ -913,7 +917,7 @@ export const useUserStore = create<UserState>()(
         const cleanId = (id || "").trim();
         if (!cleanId) return false;
         const stripped = cleanId.replace(
-          /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_)/,
+          /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_|mc_(?=ez_)|mg_(?=ez_)|fill_(?=ez_)|w_(?=ez_))/,
           ""
         );
         const list = get().mistakeIds;
@@ -922,7 +926,11 @@ export const useUserStore = create<UserState>()(
           list.includes(stripped) ||
           list.includes(`idiom_${stripped}`) ||
           list.includes(`word_${stripped}`) ||
-          list.includes(`sent_${stripped}`)
+          list.includes(`sent_${stripped}`) ||
+          list.includes(`mc_${stripped}`) ||
+          list.includes(`mg_${stripped}`) ||
+          list.includes(`fill_${stripped}`) ||
+          list.includes(`w_${stripped}`)
         );
       },
 
@@ -940,7 +948,7 @@ export const useUserStore = create<UserState>()(
 
         set((state) => {
           const stripped = cleanId.replace(
-            /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_)/,
+            /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_|mc_(?=ez_)|mg_(?=ez_)|fill_(?=ez_)|w_(?=ez_))/,
             ""
           );
           const existing =
@@ -1150,7 +1158,7 @@ export const useUserStore = create<UserState>()(
         const records = get().srsRecords || {};
         if (records[cleanId]) return records[cleanId];
         const stripped = cleanId.replace(
-          /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_)/,
+          /^(word_|idiom_|idm_|mc_w_|mc_idm_|mc_sent_|mg_w_|mg_idm_|mg_s_|sb_idm_|sb_|mc_(?=ez_)|mg_(?=ez_)|fill_(?=ez_)|w_(?=ez_))/,
           ""
         );
         return (

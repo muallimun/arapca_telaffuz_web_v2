@@ -114,11 +114,10 @@ export default function OnboardingTourModal() {
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-base sm:text-lg font-black text-[#6741D9] dark:text-[#d0bfff] leading-tight block">
-              {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük Kaydı
+              {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük &amp; {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
-              5 kademeli morfolojik çözümleyici ile cümle içinden kök, müfret ve
-              cemî analizi
+              5 kademeli morfolojik çözümleyici, kök analizi ve المرادفات والأضداد nüans rehberi
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
@@ -370,11 +369,11 @@ export default function OnboardingTourModal() {
 
           <div className="p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-400 text-[11px] space-y-0.5">
             <span className="font-extrabold text-[#065F46] dark:text-emerald-300 block">
-              🌿 Sözlükte Kök Ailesi (İştikak) &amp; Canlı Örnek Cümleler:
+              🌿 Kök Ailesi (İştikak) &amp; 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş / Zıt Anlamlılar (الفروق):
             </span>
             <p className="text-[var(--muted)] leading-snug">
-              Bir kelimenin kökünden türeyen tüm kardeş kelimeleri ve
-              diyaloglardaki gerçek sesli örnek cümlelerini tek tıkla inceleyin.
+              Kelimelerin kök kardeşlerini, eş ve zıt anlamlılarını, ince anlam
+              farklarını (الفروق اللغوية) ve karşılaştırmalı örnek cümlelerini tek tıkla inceleyin.
             </p>
           </div>
         </div>
@@ -449,12 +448,12 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
-                🧩 14 Etkileşimli Modül + 🎯 Aralıklı Tekrar (SRS)
+                🧩 14 Etkileşimli Modül + 🔄 Eş &amp; Zıt Havuzu + 🎯 SRS
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
+                🔄 Eş &amp; Zıt Anlamlılar (المرادفات والأضداد) özel soru havuzu,
                 Dinle-Sırala, Görsel Eşleştirme, Hata Avcısı, Kör Dikte, Diyalog
-                Tamamlama, Müzekker/Müennes Tasnifi, Metin Kanıt Dedektifi,
-                İ&apos;rab Renk Boyama ve Sınıf Takım Yarışması ile 5 aşamalı SRS
+                Tamamlama, Müzekker/Müennes Tasnifi, İ&apos;rab Boyama ve 5 aşamalı SRS
                 tekrar sistemi.
               </span>
             </div>

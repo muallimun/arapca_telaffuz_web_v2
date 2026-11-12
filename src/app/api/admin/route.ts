@@ -20,7 +20,8 @@ export type AdminDatasetKey =
   | "metin_gramer"
   | "ek_gramer"
   | "seviye_sorulari"
-  | "youtube_tavsiyeleri";
+  | "youtube_tavsiyeleri"
+  | "es_zit_anlamlilar";
 
 export type AdminPostAction =
   | "verify_access"
@@ -40,6 +41,7 @@ const DATASET_FILE_MAP: Record<AdminDatasetKey, string> = {
   ek_gramer: "ek_gramer_hap_bilgi.json",
   seviye_sorulari: "seviye_tespit_sorulari.json",
   youtube_tavsiyeleri: "youtube_tavsiyeleri.json",
+  es_zit_anlamlilar: "es_zit_anlamlilar.json",
 };
 
 // Sıkı Depo Beyaz Listesi (Allowlist)
@@ -691,6 +693,55 @@ export async function POST(req: NextRequest) {
               {
                 ok: false,
                 error: `youtube_tavsiyeleri kayıt #${i + 1} şema doğrulamasından geçemedi (id, cefr, tur, kategori, baslik_tr, baslik_ar, kanal_adi ve url zorunludur).`,
+              },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
+      if (dataset === "es_zit_anlamlilar") {
+        if (!Array.isArray(data) || data.length === 0) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error:
+                "es_zit_anlamlilar veri seti boş olmayan bir dizi (array) olmalıdır.",
+            },
+            { status: 400 }
+          );
+        }
+        const allowedLevels = new Set(["A1", "A2", "B1", "B2"]);
+        const allowedTurs = new Set(["isim", "fiil", "sifat", "zarf"]);
+        for (let i = 0; i < data.length; i++) {
+          const item = data[i] as Record<string, unknown>;
+          const esList = Array.isArray(item?.es_anlamlilar)
+            ? item.es_anlamlilar
+            : null;
+          const zitList = Array.isArray(item?.zit_anlamlilar)
+            ? item.zit_anlamlilar
+            : null;
+          if (
+            !item ||
+            typeof item !== "object" ||
+            typeof item.id !== "string" ||
+            !item.id.trim() ||
+            typeof item.cefr !== "string" ||
+            !allowedLevels.has(item.cefr) ||
+            typeof item.tur !== "string" ||
+            !allowedTurs.has(item.tur) ||
+            typeof item.kelime_ar !== "string" ||
+            !item.kelime_ar.trim() ||
+            typeof item.anlam_tr !== "string" ||
+            !item.anlam_tr.trim() ||
+            !esList ||
+            !zitList ||
+            esList.length + zitList.length === 0
+          ) {
+            return NextResponse.json(
+              {
+                ok: false,
+                error: `es_zit_anlamlilar kayıt #${i + 1} şema doğrulamasından geçemedi (id, cefr, tur, kelime_ar, anlam_tr ve en az bir eş/zıt anlamlı kelime zorunludur).`,
               },
               { status: 400 }
             );

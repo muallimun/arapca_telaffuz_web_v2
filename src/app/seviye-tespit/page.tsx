@@ -1275,7 +1275,7 @@ function AssessmentPrintModal({
             >
               {effectiveTopics.map((t) => (
                 <option key={t.ust_konu} value={t.ust_konu}>
-                  {t.icon} {t.ust_konu} ({t.questionCount} Soru)
+                  [{t.primaryLevel}] {t.icon} {t.ust_konu} ({t.questionCount} Soru)
                 </option>
               ))}
             </select>
@@ -1826,11 +1826,34 @@ function SeviyeTespitContent() {
     return counts;
   }, [bank]);
 
-  // CEFR Kur filtresi ve hızlı arama kutusuna göre filtrelenmiş konular
+  // Her CEFR kur sekmesi için tekil ana seviyeye (primaryLevel) göre konu ve toplam soru sayıları
+  const levelFilterStats = useMemo(() => {
+    const compute = (lvl: "ALL" | Level) => {
+      const matching =
+        lvl === "ALL"
+          ? uniqueTopics
+          : uniqueTopics.filter((t) => t.primaryLevel === lvl);
+      const topicCount = matching.length;
+      const questionCount = matching.reduce(
+        (sum, t) => sum + (topicActualCounts[t.ust_konu] ?? t.questionCount),
+        0
+      );
+      return { topicCount, questionCount };
+    };
+    return {
+      ALL: compute("ALL"),
+      A1: compute("A1"),
+      A2: compute("A2"),
+      B1: compute("B1"),
+      B2: compute("B2"),
+    };
+  }, [topicActualCounts, uniqueTopics]);
+
+  // CEFR Kur filtresi (tekil primaryLevel) ve hızlı arama kutusuna göre pedagojik sıralı konular
   const filteredTopics = useMemo(() => {
     const query = topicSearchQuery.trim().toLocaleLowerCase("tr-TR");
     return uniqueTopics.filter((t) => {
-      if (topicLevelFilter !== "ALL" && t.levelCounts[topicLevelFilter] <= 0) {
+      if (topicLevelFilter !== "ALL" && t.primaryLevel !== topicLevelFilter) {
         return false;
       }
       if (query && !t.searchKeywords.includes(query)) {
@@ -1894,13 +1917,12 @@ function SeviyeTespitContent() {
     [bank, makeSessionRecord]
   );
 
-  // 2. MOD 2: Konu Tarama Testi (KTT) Başlat
+  // 2. MOD 2: Konu Tarama Testi (KTT) Başlat — ilgili üst konuya ait tüm sorular bölünmeden havuza dahil edilir
   const startTopicSession = useCallback(
     (
       topicName: string,
       lengthMode: "10" | "all" = topicQuizLength,
-      sourceBank: AssessmentQuestion[] = bank,
-      preferredLevel: "ALL" | Level = "ALL"
+      sourceBank: AssessmentQuestion[] = bank
     ) => {
       const topicPool = sourceBank.filter((q) => q.ust_konu === topicName);
       if (topicPool.length === 0) return;
@@ -1917,20 +1939,11 @@ function SeviyeTespitContent() {
         return copy;
       };
 
-      let picked: AssessmentQuestion[];
-      if (lengthMode === "all") {
-        picked = shuffleArr(topicPool);
-      } else if (preferredLevel !== "ALL") {
-        const matchingLvl = shuffleArr(
-          topicPool.filter((q) => q.seviye === preferredLevel)
-        );
-        const restLvl = shuffleArr(
-          topicPool.filter((q) => q.seviye !== preferredLevel)
-        );
-        picked = [...matchingLvl, ...restLvl].slice(0, 10);
-      } else {
-        picked = shuffleArr(topicPool).slice(0, 10);
-      }
+      const picked: AssessmentQuestion[] =
+        lengthMode === "all"
+          ? shuffleArr(topicPool)
+          : shuffleArr(topicPool).slice(0, Math.min(10, topicPool.length));
+
       // Zorluk sırasını yumuşak artan tutmak için hafif grupla
       picked.sort(
         (a, b) => getStepIndexForQuestion(a) - getStepIndexForQuestion(b)
@@ -3553,19 +3566,16 @@ function SeviyeTespitContent() {
             </div>
 
             {/* CEFR Kur Filtresi (Tümü | A1 | A2 | B1 | B2) + Hızlı Konu Arama Kutusu */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
               <div
                 role="group"
                 aria-label="CEFR Kur Filtresi"
-                className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-0.5"
+                className="flex flex-wrap items-center gap-1.5"
               >
                 {(["ALL", "A1", "A2", "B1", "B2"] as const).map((lvl) => {
                   const isActive = topicLevelFilter === lvl;
-                  const countForTab =
-                    lvl === "ALL"
-                      ? uniqueTopics.length
-                      : uniqueTopics.filter((t) => t.levelCounts[lvl] > 0)
-                          .length;
+                  const stats = levelFilterStats[lvl];
+                  const labelPrefix = lvl === "ALL" ? "Tümü" : lvl;
                   return (
                     <button
                       key={lvl}
@@ -3574,21 +3584,30 @@ function SeviyeTespitContent() {
                         playClick();
                         setTopicLevelFilter(lvl);
                       }}
-                      className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all tabular-nums ${
+                      className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold whitespace-nowrap cursor-pointer transition-all tabular-nums inline-flex items-center gap-1.5 ${
                         isActive
                           ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
                       }`}
                     >
-                      {lvl === "ALL"
-                        ? `Tümü (${countForTab})`
-                        : `${lvl} (${countForTab})`}
+                      <span>
+                        {labelPrefix} ({stats.topicCount} Konu)
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-300"
+                        }`}
+                      >
+                        {stats.questionCount} Soru
+                      </span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="relative flex-1 md:max-w-xs">
+              <div className="relative flex-1 xl:max-w-xs">
                 <Search
                   size={15}
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
@@ -3640,10 +3659,7 @@ function SeviyeTespitContent() {
               {filteredTopics.map((topic) => {
                 const qCount =
                   topicActualCounts[topic.ust_konu] || topic.questionCount;
-                const levelSpecificCount =
-                  topicLevelFilter !== "ALL"
-                    ? topic.levelCounts[topicLevelFilter]
-                    : null;
+                const topicLvlMeta = getLevelMeta(topic.primaryLevel);
                 const stat = mounted ? topicMastery[topic.ust_konu] : undefined;
                 const masteryPct =
                   stat && stat.total > 0
@@ -3659,13 +3675,13 @@ function SeviyeTespitContent() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xl">{topic.icon}</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[10px] font-extrabold text-[var(--muted)]">
-                            {topic.levelRange}
+                          <span
+                            className={`px-2 py-0.5 rounded-md border text-[10px] font-black tracking-wide ${topicLvlMeta.badgeCls}`}
+                          >
+                            {topic.primaryLevel}
                           </span>
                           <span className="px-2 py-0.5 rounded-md bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-300 text-[10px] font-extrabold tabular-nums">
-                            {levelSpecificCount !== null
-                              ? `${topicLevelFilter}: ${levelSpecificCount} / ${qCount} Soru`
-                              : `${qCount} Soru`}
+                            {qCount} Soru
                           </span>
                         </div>
                       </div>
@@ -3705,8 +3721,7 @@ function SeviyeTespitContent() {
                           startTopicSession(
                             topic.ust_konu,
                             topicQuizLength,
-                            bank,
-                            topicLevelFilter
+                            bank
                           )
                         }
                         className="w-full min-h-[44px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] hover:bg-[#087F5B] hover:text-white border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
@@ -3715,7 +3730,7 @@ function SeviyeTespitContent() {
                         <span>
                           {topicQuizLength === "10"
                             ? `${Math.min(10, qCount)} Soruluk Tarama Başlat`
-                            : `${qCount} Sorunun Tümünü Çöz`}
+                            : `Tüm Soruları Çöz (${qCount} Soru)`}
                         </span>
                       </button>
                     </div>

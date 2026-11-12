@@ -747,14 +747,14 @@ test("11. FAZ 3 — A4 PDF Üreticisi: escapeHtml, Arakom.ttf, tohumlu A/B Kitap
   assert.equal(rubricSum, 100);
 });
 
-test("12. FAZ 4A — seviye_tespit_sorulari.json (180 Soru): benzersiz ID, NFC, 0 tatweel, 13 konu ve %100 çeldirici analizi bütünlüğü", async () => {
+test("12. FAZ 4A — seviye_tespit_sorulari.json: benzersiz ID, NFC, 0 tatweel, tüm üst konular ve %100 çeldirici analizi bütünlüğü", async () => {
   const { raw, parsed } = readDataJson("seviye_tespit_sorulari.json");
   const { ASSESSMENT_TOPICS } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
   );
 
   assert.ok(Array.isArray(parsed), "seviye_tespit_sorulari.json dizi olmalıdır");
-  assert.equal(parsed.length, 180, "Toplam soru sayısı tam 180 olmalıdır");
+  assert.ok(parsed.length >= 180, "Toplam soru sayısı en az 180 olmalıdır");
   assert.equal(
     raw.includes("\u0640"),
     false,
@@ -810,7 +810,7 @@ test("12. FAZ 4A — seviye_tespit_sorulari.json (180 Soru): benzersiz ID, NFC, 
     }
   }
 
-  assert.equal(seenTopics.size, 13, "Tam 13 üst konu bulunmalıdır");
+  assert.equal(seenTopics.size, ASSESSMENT_TOPICS.length, "Üst konu sayısı ASSESSMENT_TOPICS ile eşleşmelidir");
   const configuredTopics = new Set(ASSESSMENT_TOPICS.map((t) => t.ust_konu));
   assert.deepEqual(seenTopics, configuredTopics);
 });
@@ -1736,7 +1736,7 @@ test("19. SEVİYE TESPİT İYİLEŞTİRMELERİ — Çok Satırlı Diyalog Konuş
   // 2. Dinamik Konu Keşfi: JSON'a yeni bir ust_konu eklendiğinde kod değişikliği gerektirmeden otomatik tanınmalı
   const { parsed: bank } = readDataJson("seviye_tespit_sorulari.json");
   const baseDynamicTopics = buildDynamicAssessmentTopics(bank);
-  assert.equal(baseDynamicTopics.length, 13);
+  assert.ok(baseDynamicTopics.length >= 29);
 
   const extendedBank = [
     ...bank,
@@ -1750,14 +1750,15 @@ test("19. SEVİYE TESPİT İYİLEŞTİRMELERİ — Çok Satırlı Diyalog Konuş
   const extendedTopics = buildDynamicAssessmentTopics(extendedBank);
   assert.equal(
     extendedTopics.length,
-    14,
-    "Yeni ust_konu eklendiğinde dinamik konu listesi otomatik olarak 14 konuya çıkmalıdır"
+    baseDynamicTopics.length + 1,
+    "Yeni ust_konu eklendiğinde dinamik konu listesi otomatik olarak +1 konuya çıkmalıdır"
   );
   const addedTopic = extendedTopics.find(
     (t) => t.ust_konu === "Belâgat ve Üslup Analizi"
   );
   assert.ok(addedTopic, "Yeni eklenen ust_konu dinamik listede bulunmalıdır");
   assert.equal(addedTopic.levelCounts.B2, 1);
+  assert.equal(addedTopic.primaryLevel, "B2");
   assert.equal(addedTopic.questionCount, 1);
 
   // 3. seviye-tespit/page.tsx: Soru Navigatörü, Önceki/Sonraki/Bitir, Gerekçeli Çözüm başlığı, 2x2 şık incelemesi, A4 çok satırlı diyalog ve CEFR filtresi
@@ -2411,5 +2412,103 @@ test("24. Sınıf / Tahta Modu (isClassroomMode) — createPortal ile Viewport S
     );
   }
 });
+
+test("25. Konu Tarama Testi (KTT) — Tekil Ana Seviye (primaryLevel), Net Konu/Soru Filtreleri, Pedagojik Sıralama, Dinamik 10/Tüm Sorular Butonu ve Dinamik Konu Başlıkları", async () => {
+  const { parsed: bank } = readDataJson("seviye_tespit_sorulari.json");
+  const { buildDynamicAssessmentTopics } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
+  );
+
+  const topics = buildDynamicAssessmentTopics(bank);
+  const validLevels = ["A1", "A2", "B1", "B2"];
+  const rank = { A1: 0, A2: 1, B1: 2, B2: 3 };
+
+  // 1. Her üst konuya tek bir primaryLevel atanmalı ve A1+A2+B1+B2 toplamı Tümü (topics.length) ile birebir eşit olmalı
+  const byLevel = {
+    A1: topics.filter((t) => t.primaryLevel === "A1"),
+    A2: topics.filter((t) => t.primaryLevel === "A2"),
+    B1: topics.filter((t) => t.primaryLevel === "B1"),
+    B2: topics.filter((t) => t.primaryLevel === "B2"),
+  };
+  assert.equal(
+    byLevel.A1.length + byLevel.A2.length + byLevel.B1.length + byLevel.B2.length,
+    topics.length,
+    "A1 + A2 + B1 + B2 konu sayılarının toplamı Tümü (topics.length) ile birebir eşit olmalıdır"
+  );
+
+  for (const t of topics) {
+    assert.ok(validLevels.includes(t.primaryLevel), `${t.ust_konu} tekil bir CEFR primaryLevel değerine sahip olmalıdır`);
+    assert.equal(t.levelRange, t.primaryLevel, `${t.ust_konu} levelRange tekil primaryLevel olmalıdır`);
+  }
+
+  // Pedagojik eşitlik kırılımı kontrolü: Günlük Kelime ve Bağlam -> A1, Okuduğunu Anlama -> A2
+  const vocabTopic = topics.find((t) => t.ust_konu === "Günlük Kelime ve Bağlam");
+  const readingTopic = topics.find((t) => t.ust_konu === "Okuduğunu Anlama");
+  assert.equal(vocabTopic?.primaryLevel, "A1");
+  assert.equal(readingTopic?.primaryLevel, "A2");
+
+  // 2. Seviye bazlı toplam soru sayıları bölünmeden tüm havuza eşit olmalı
+  const totalQSum = topics.reduce((sum, t) => sum + t.questionCount, 0);
+  assert.equal(totalQSum, bank.length, "Konu soru sayılarının toplamı soru bankası toplamına eşit olmalıdır");
+
+  // 3. Pedagojik sıralama: A1 -> A2 -> B1 -> B2; aynı seviyede sarf_nahiv konuları önce, genel beceri konuları en sonda
+  for (let i = 1; i < topics.length; i++) {
+    const prev = topics[i - 1];
+    const curr = topics[i];
+    assert.ok(
+      rank[prev.primaryLevel] <= rank[curr.primaryLevel],
+      `Kartlar A1 -> A2 -> B1 -> B2 sırasıyla dizilmelidir (${prev.ust_konu} [${prev.primaryLevel}] -> ${curr.ust_konu} [${curr.primaryLevel}])`
+    );
+    if (prev.primaryLevel === curr.primaryLevel) {
+      assert.ok(
+        !(prev.isGeneralSkill && !curr.isGeneralSkill),
+        `Aynı seviyede genel beceri konusu (${prev.ust_konu}) dilbilgisi konusundan (${curr.ust_konu}) önce gelmemelidir`
+      );
+    }
+  }
+  assert.equal(
+    byLevel.A1[byLevel.A1.length - 1]?.ust_konu,
+    "Günlük Kelime ve Bağlam",
+    "A1 seviyesinin en sonunda 'Günlük Kelime ve Bağlam' yer almalıdır"
+  );
+  assert.equal(
+    byLevel.A2[byLevel.A2.length - 1]?.ust_konu,
+    "Okuduğunu Anlama",
+    "A2 seviyesinin en sonunda 'Okuduğunu Anlama' yer almalıdır"
+  );
+
+  // 4 & 5. seviye-tespit/page.tsx: Filtre rozetleri, tekil primaryLevel rozeti, dinamik buton metni ve sabit sayı olmaması
+  const pageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    pageCode.includes("t.primaryLevel !== topicLevelFilter") &&
+      pageCode.includes("{labelPrefix} ({stats.topicCount} Konu)") &&
+      pageCode.includes("{stats.questionCount} Soru") &&
+      pageCode.includes("{topic.primaryLevel}") &&
+      !pageCode.includes("t.levelCounts[lvl] > 0") &&
+      !pageCode.includes("preferredLevel !== \"ALL\""),
+    true,
+    "KTT filtreleri primaryLevel üzerinden çalışmalı, konu+soru sayılarını göstermeli ve konu havuzunu bölmemelidir"
+  );
+  assert.equal(
+    pageCode.includes("`${Math.min(10, qCount)} Soruluk Tarama Başlat`") &&
+      pageCode.includes("`Tüm Soruları Çöz (${qCount} Soru)`") &&
+      !pageCode.includes("Sorunun Tümünü Çöz"),
+    true,
+    "KTT kart butonları '10 Soruluk Tarama Başlat' ve 'Tüm Soruları Çöz (X Soru)' metinlerini dinamik göstermelidir"
+  );
+  assert.equal(
+    !pageCode.includes("29 Konu") &&
+      !pageCode.includes("29 Üst Konu") &&
+      !pageCode.includes("13 Konu") &&
+      pageCode.includes("{uniqueTopics.length} Konu Tarama") &&
+      pageCode.includes("{uniqueTopics.length} Üst Konu Tarama Testi"),
+    true,
+    "KTT başlık ve sekmeleri sabit sayı yerine dinamik uniqueTopics.length kullanmalıdır"
+  );
+});
+
 
 

@@ -408,17 +408,72 @@ export function buildUnifiedGrammarAtlasCatalog(sources: {
   return items;
 }
 
-export const GRAMMAR_SHARE_BASE_URL =
-  "https://arapcatellaffuzwebv2.vercel.app/kutuphane?tab=gramer&card=";
+export const DEFAULT_GRAMMAR_ORIGIN =
+  "https://arapcatellaffuzwebv2.vercel.app";
 
-export function buildGrammarCardDeepLink(bagliId: string): string {
-  return `${GRAMMAR_SHARE_BASE_URL}${encodeURIComponent(bagliId.trim())}`;
+export const GRAMMAR_SHARE_BASE_URL = `${DEFAULT_GRAMMAR_ORIGIN}/kutuphane#card=`;
+
+export function resolveGrammarKutuphaneUrl(customOrigin?: string): string {
+  if (customOrigin && customOrigin.trim().length > 0) {
+    return `${customOrigin.trim().replace(/\/+$/, "")}/kutuphane`;
+  }
+  if (typeof window !== "undefined" && window.location?.origin) {
+    const pathname = window.location.pathname || "";
+    if (pathname === "/kutuphane" || pathname.endsWith("/kutuphane")) {
+      return `${window.location.origin}${pathname}`;
+    }
+    return `${window.location.origin}/kutuphane`;
+  }
+  return `${DEFAULT_GRAMMAR_ORIGIN}/kutuphane`;
+}
+
+export function buildGrammarCardDeepLink(
+  bagliId: string,
+  customOrigin?: string
+): string {
+  const baseUrl = resolveGrammarKutuphaneUrl(customOrigin);
+  return `${baseUrl}#card=${encodeURIComponent(bagliId.trim())}`;
 }
 
 /**
- * WhatsApp paylaşımı için istenen standart Muallimun Gramer Atlası metnini üretir.
+ * Hem yeni `#card=grm_XXX` hash yapısını hem de geriye dönük `?card=grm_XXX` sorgu parametresini çözümler.
  */
-export function buildGrammarWhatsAppText(card: GramerHapBilgi): string {
+export function extractGrammarCardIdFromUrl(
+  hash?: string,
+  search?: string
+): string | null {
+  const rawHash = (hash || "").trim().replace(/^#/, "");
+  if (rawHash) {
+    const hashMatch = rawHash.match(/(?:^|[&?])card=([^&#]+)/i);
+    if (hashMatch && hashMatch[1]) {
+      try {
+        return decodeURIComponent(hashMatch[1]).trim();
+      } catch {
+        return hashMatch[1].trim();
+      }
+    }
+    const hashParams = new URLSearchParams(rawHash.replace(/^\?/, ""));
+    const fromHashParams = hashParams.get("card")?.trim();
+    if (fromHashParams) return fromHashParams;
+  }
+
+  const rawSearch = (search || "").trim();
+  if (rawSearch) {
+    const searchParams = new URLSearchParams(rawSearch);
+    const fromSearch = searchParams.get("card")?.trim();
+    if (fromSearch) return fromSearch;
+  }
+
+  return null;
+}
+
+/**
+ * WhatsApp paylaşımı için istenen standart Muallimun Gramer Atlası metnini (#card= hash linkiyle) üretir.
+ */
+export function buildGrammarWhatsAppText(
+  card: GramerHapBilgi,
+  customOrigin?: string
+): string {
   const formul =
     card.ayrintili_anlatim?.formul_sema?.trim() ||
     "Cümle bağlamına göre hareke ve görev uyumu";
@@ -428,7 +483,7 @@ export function buildGrammarWhatsAppText(card: GramerHapBilgi): string {
     ornekAr && ornekTr
       ? `${ornekAr} — "${ornekTr}"`
       : ornekAr || ornekTr || "-";
-  const deepLink = buildGrammarCardDeepLink(card.bagli_id);
+  const deepLink = buildGrammarCardDeepLink(card.bagli_id, customOrigin);
 
   return [
     "📌 *Muallimun Arapça Gramer Atlası*",
@@ -442,7 +497,10 @@ export function buildGrammarWhatsAppText(card: GramerHapBilgi): string {
   ].join("\n");
 }
 
-export function buildGrammarWhatsAppShareUrl(card: GramerHapBilgi): string {
-  const text = buildGrammarWhatsAppText(card);
+export function buildGrammarWhatsAppShareUrl(
+  card: GramerHapBilgi,
+  customOrigin?: string
+): string {
+  const text = buildGrammarWhatsAppText(card, customOrigin);
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 }

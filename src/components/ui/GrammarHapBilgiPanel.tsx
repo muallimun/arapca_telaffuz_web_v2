@@ -62,6 +62,7 @@ import { MixedText } from "@/components/ui/MixedText";
 import WordTooltip from "@/components/ui/WordTooltip";
 import { playClick } from "@/lib/sfxManager";
 import {
+  DEFAULT_GRAMMAR_ORIGIN,
   GRAMMAR_DOMAINS,
   buildGrammarWhatsAppShareUrl,
   classifyGrammarCardDomain,
@@ -1910,10 +1911,16 @@ export function GrammarDeepDiveModal({
               <span>🖨️ A4 Ders Föyü (PDF)</span>
             </button>
             <a
-              href={buildGrammarWhatsAppShareUrl(grammarNote)}
+              href={buildGrammarWhatsAppShareUrl(
+                grammarNote,
+                DEFAULT_GRAMMAR_ORIGIN
+              )}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => playClick()}
+              onClick={(e) => {
+                playClick();
+                e.currentTarget.href = buildGrammarWhatsAppShareUrl(grammarNote);
+              }}
               className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 text-xs font-black inline-flex items-center gap-1.5"
             >
               <MessageCircle className="w-4 h-4 text-[#1da851] shrink-0" />
@@ -2112,10 +2119,17 @@ export function GrammarHapBilgiPanel({
                     <span>🖨️ A4 Ders Föyü (PDF)</span>
                   </button>
                   <a
-                    href={buildGrammarWhatsAppShareUrl(activeNote)}
+                    href={buildGrammarWhatsAppShareUrl(
+                      activeNote,
+                      DEFAULT_GRAMMAR_ORIGIN
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => playClick()}
+                    onClick={(e) => {
+                      playClick();
+                      e.currentTarget.href =
+                        buildGrammarWhatsAppShareUrl(activeNote);
+                    }}
                     className="min-h-[34px] px-2.5 py-1 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 font-extrabold text-[11px] inline-flex items-center gap-1.5 transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5 text-[#1da851] shrink-0" />
@@ -2170,10 +2184,17 @@ export function GrammarHapBilgiPanel({
                 <span>🖨️ A4 Ders Föyü (PDF)</span>
               </button>
               <a
-                href={buildGrammarWhatsAppShareUrl(activeNote)}
+                href={buildGrammarWhatsAppShareUrl(
+                  activeNote,
+                  DEFAULT_GRAMMAR_ORIGIN
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => playClick()}
+                onClick={(e) => {
+                  playClick();
+                  e.currentTarget.href =
+                    buildGrammarWhatsAppShareUrl(activeNote);
+                }}
                 className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-colors"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-[#1da851] shrink-0" />

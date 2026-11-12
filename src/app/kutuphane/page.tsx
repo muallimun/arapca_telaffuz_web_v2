@@ -99,10 +99,12 @@ const ShareContentCardModal = dynamic(
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
 import {
+  DEFAULT_GRAMMAR_ORIGIN,
   GRAMMAR_DOMAINS,
   GRAMMAR_DOMAIN_ORDER,
   buildGrammarWhatsAppShareUrl,
   buildUnifiedGrammarAtlasCatalog,
+  extractGrammarCardIdFromUrl,
   type GrammarDomainFilter,
 } from "@/lib/grammarTaxonomy";
 import {
@@ -229,14 +231,57 @@ export default function LibraryPage() {
     void loadAudioManifest().then(() => {
       void getDownloadedDialogueIds().then((ids) => setOfflineIds(ids));
     });
+
+    const applyCardDeepLink = () => {
+      if (typeof window === "undefined") return false;
+      const cardId = extractGrammarCardIdFromUrl(
+        window.location.hash,
+        window.location.search
+      );
+      if (!cardId) return false;
+
+      setActiveSection("gramer");
+      setLevelFilter("all");
+      setGrammarDomainFilter("all");
+      setSearch("");
+
+      const fullCatalog = buildUnifiedGrammarAtlasCatalog({
+        ekGramerNotlari,
+        diyalogGramerNotlari,
+        metinGramerNotlari,
+        diyaloglar,
+        metinler,
+      });
+      const matchIdx = fullCatalog.findIndex(
+        (c) => c.bagliId.toLowerCase() === cardId.toLowerCase()
+      );
+      if (matchIdx >= 0) {
+        const matched = fullCatalog[matchIdx];
+        setVisibleCount((prev) => Math.max(prev, matchIdx + 12));
+        setHighlightedGrammarCardId(matched.bagliId);
+        setActiveGrammarModal({
+          grammarNote: matched.rawNote,
+          dialogueId: matched.dialogueId,
+          readingId: matched.readingId,
+          sourceId: matched.bagliId,
+          grammarTopic: matched.grammarQuery,
+        });
+      }
+      return true;
+    };
+
     const raf = requestAnimationFrame(() => {
       setMounted(true);
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
+        const hashRaw = window.location.hash.replace(/^#/, "");
+        const hashParams = new URLSearchParams(hashRaw);
+
         const lvl = (params.get("level") ||
-          params.get("seviye")) as Level | null;
+          params.get("seviye") ||
+          hashParams.get("level")) as Level | null;
         const durum = params.get("durum");
-        const tab = params.get("tab");
+        const tab = params.get("tab") || hashParams.get("tab");
         const cat = params.get("cat") || params.get("category");
         const qParam = params.get("q");
         const hwParam = params.get("hw");
@@ -283,7 +328,8 @@ export default function LibraryPage() {
             tab === "gramer-atlasi"
           ) {
             setActiveSection("gramer");
-            const domParam = params.get("domain");
+            const domParam =
+              params.get("domain") || hashParams.get("domain");
             if (
               domParam === "nouns_pronouns_reading" ||
               domParam === "phrases_sentence_nahiv" ||
@@ -305,34 +351,14 @@ export default function LibraryPage() {
           }
         }
 
-        const cardParam = params.get("card")?.trim();
-        if (cardParam) {
-          setActiveSection("gramer");
-          const fullCatalog = buildUnifiedGrammarAtlasCatalog({
-            ekGramerNotlari,
-            diyalogGramerNotlari,
-            metinGramerNotlari,
-            diyaloglar,
-            metinler,
-          });
-          const matchIdx = fullCatalog.findIndex(
-            (c) => c.bagliId.toLowerCase() === cardParam.toLowerCase()
-          );
-          if (matchIdx >= 0) {
-            const matched = fullCatalog[matchIdx];
-            setVisibleCount((prev) => Math.max(prev, matchIdx + 12));
-            setHighlightedGrammarCardId(matched.bagliId);
-            setActiveGrammarModal({
-              grammarNote: matched.rawNote,
-              dialogueId: matched.dialogueId,
-              readingId: matched.readingId,
-              sourceId: matched.bagliId,
-              grammarTopic: matched.grammarQuery,
-            });
-          }
-        }
+        // #card=grm_XXX veya ?card=grm_XXX kontrolü: Gramer sekmesini açar, kartı vurgular ve detay panelini açar
+        applyCardDeepLink();
       }
     });
+
+    const handleHashChange = () => {
+      applyCardDeepLink();
+    };
 
     const handleOpenVitrinEvent = () => {
       sequentialTokenRef.current += 1;
@@ -347,6 +373,7 @@ export default function LibraryPage() {
     };
 
     if (typeof window !== "undefined") {
+      window.addEventListener("hashchange", handleHashChange);
       window.addEventListener(
         "muallimun:kutuphane-vitrin",
         handleOpenVitrinEvent
@@ -356,6 +383,7 @@ export default function LibraryPage() {
     return () => {
       cancelAnimationFrame(raf);
       if (typeof window !== "undefined") {
+        window.removeEventListener("hashchange", handleHashChange);
         window.removeEventListener(
           "muallimun:kutuphane-vitrin",
           handleOpenVitrinEvent
@@ -365,6 +393,22 @@ export default function LibraryPage() {
       stopAllAudio();
     };
   }, []);
+
+  // Derin bağlantı (#card=...) ile açılan gramer kartına yumuşak kaydırma (scroll)
+  useEffect(() => {
+    if (!mounted || activeSection !== "gramer" || !highlightedGrammarCardId) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const cardEl = document.getElementById(
+        `grammar-card-${highlightedGrammarCardId}`
+      );
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [mounted, activeSection, highlightedGrammarCardId, visibleCount]);
 
   const stopSequentialPlay = () => {
     sequentialTokenRef.current += 1;
@@ -5949,10 +5993,21 @@ export default function LibraryPage() {
                           </button>
 
                           <a
-                            href={buildGrammarWhatsAppShareUrl(gItem.rawNote)}
+                            href={
+                              mounted
+                                ? buildGrammarWhatsAppShareUrl(gItem.rawNote)
+                                : buildGrammarWhatsAppShareUrl(
+                                    gItem.rawNote,
+                                    DEFAULT_GRAMMAR_ORIGIN
+                                  )
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => playClick()}
+                            onClick={(e) => {
+                              playClick();
+                              e.currentTarget.href =
+                                buildGrammarWhatsAppShareUrl(gItem.rawNote);
+                            }}
                             className="min-h-[40px] py-2 px-3 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/55 text-emerald-950 dark:text-emerald-200 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
                           >
                             <MessageCircle

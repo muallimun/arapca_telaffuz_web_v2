@@ -3,6 +3,7 @@ import {
   GRAMMAR_DOMAINS,
   buildGrammarCardDeepLink,
   classifyGrammarCardDomain,
+  resolveGrammarKutuphaneUrl,
   type GrammarDomainFilter,
 } from "@/lib/grammarTaxonomy";
 import { diyaloglar, metinler } from "@/lib/data";
@@ -1157,7 +1158,7 @@ export function printGrammarBookletPdf(
   }
 
   const atlasQr = generateQrSvg(
-    "https://arapcatellaffuzwebv2.vercel.app/kutuphane?tab=gramer",
+    `${resolveGrammarKutuphaneUrl()}#tab=gramer`,
     84,
     { borderColor: "#087f5b", borderRadiusPx: 10, quietZone: 2 }
   );

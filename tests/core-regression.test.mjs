@@ -2652,7 +2652,7 @@ test("27. Gramer Atlası Seçenek A 4 alanlı tasnif, A4 Ders Föyü PDF, Toplu 
     );
   }
 
-  // WhatsApp paylaşım formatı ve doğrudan kart linki kontrolü
+  // WhatsApp paylaşım formatı ve #card= hash doğrudan kart linki kontrolü
   const sampleCard = ekGramerNotlari[0];
   const waText = taxonomyMod.buildGrammarWhatsAppText(sampleCard);
   assert.ok(waText.includes("📌 *Muallimun Arapça Gramer Atlası*"));
@@ -2662,8 +2662,20 @@ test("27. Gramer Atlası Seçenek A 4 alanlı tasnif, A4 Ders Föyü PDF, Toplu 
   assert.ok(waText.includes("*🎯 Örnek:*"));
   assert.ok(
     waText.includes(
-      `https://arapcatellaffuzwebv2.vercel.app/kutuphane?tab=gramer&card=${sampleCard.bagli_id}`
+      `https://arapcatellaffuzwebv2.vercel.app/kutuphane#card=${sampleCard.bagli_id}`
     )
+  );
+  assert.equal(
+    taxonomyMod.buildGrammarCardDeepLink("grm_005", "https://custom.vercel.app"),
+    "https://custom.vercel.app/kutuphane#card=grm_005"
+  );
+  assert.equal(
+    taxonomyMod.extractGrammarCardIdFromUrl("#card=grm_007", ""),
+    "grm_007"
+  );
+  assert.equal(
+    taxonomyMod.extractGrammarCardIdFromUrl("", "?tab=gramer&card=grm_012"),
+    "grm_012"
   );
 
   const kutuphaneCode = fs.readFileSync(
@@ -2683,9 +2695,12 @@ test("27. Gramer Atlası Seçenek A 4 alanlı tasnif, A4 Ders Föyü PDF, Toplu 
       kutuphaneCode.includes("🖨️ A4 Ders Föyü (PDF)") &&
       kutuphaneCode.includes("📑 Kur Kitapçığı İndir (PDF)") &&
       kutuphaneCode.includes("📲 WhatsApp") &&
-      kutuphaneCode.includes('params.get("card")'),
+      kutuphaneCode.includes("extractGrammarCardIdFromUrl") &&
+      kutuphaneCode.includes("window.location.hash") &&
+      kutuphaneCode.includes('"hashchange"') &&
+      kutuphaneCode.includes("scrollIntoView"),
     true,
-    "Kütüphane sayfası 4 dil bilimsel alan sekmesi, A4 PDF, Toplu Kur Kitapçığı PDF, WhatsApp paylaşımı ve ?card= derin bağlantısını desteklemelidir"
+    "Kütüphane sayfası #card= hash yönlendirmesi, hashchange dinleyicisi, scrollIntoView ve otomatik detay paneli açılışını desteklemelidir"
   );
 
   const pdfGenCode = fs.readFileSync(

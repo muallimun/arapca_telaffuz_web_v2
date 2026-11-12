@@ -35,7 +35,9 @@ import {
   getDialogueById,
   getDialogueCoverUrl,
   getDialogueGrammarNote,
+  getYoutubeRecommendationsByContentId,
 } from "@/lib/data";
+import { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
 import {
   GrammarHapBilgiPanel,
   LessonGrammarSplitPanel,
@@ -271,8 +273,12 @@ export default function DialogueDetailPage({
   const [isHwReportModalOpen, setIsHwReportModalOpen] =
     useState<boolean>(false);
   const [isHwQuizModalOpen, setIsHwQuizModalOpen] = useState<boolean>(false);
+  const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState<boolean>(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
+  const linkedYoutubeVideos = dialogue
+    ? getYoutubeRecommendationsByContentId(dialogue.id)
+    : [];
 
   // Öğrenci Ödev Takip Modu (?hw=1&listen=1&pron=3&quiz=1&title=...&aid=...) State
   const [hwConfig, setHwConfig] = useState<{
@@ -301,48 +307,45 @@ export default function DialogueDetailPage({
   );
   const [hwQuizCorrectCount, setHwQuizCorrectCount] = useState<number>(0);
 
-  const recordHwLinePractice = useCallback(
-    (
-      targetTextOrSira: string | number | undefined,
-      measuredScore?: number | null
-    ) => {
-      if (!hwConfig.active) return;
-      let lineId: number | null = null;
-      if (typeof targetTextOrSira === "number") {
-        lineId = targetTextOrSira;
-      } else if (typeof targetTextOrSira === "string" && targetTextOrSira.trim()) {
-        const cleaned = cleanArabicText(targetTextOrSira);
-        const matchedLine = dialogue.satirlar.find(
-          (s) => cleanArabicText(s.arapca) === cleaned
-        );
-        if (matchedLine) {
-          lineId = matchedLine.sira;
-        } else {
-          let h = 2166136261;
-          for (let i = 0; i < cleaned.length; i++) {
-            h ^= cleaned.charCodeAt(i);
-            h = Math.imul(h, 16777619);
-          }
-          lineId = -Math.max(1, (h >>> 0) % 100000);
+  const recordHwLinePractice = (
+    targetTextOrSira: string | number | undefined,
+    measuredScore?: number | null
+  ) => {
+    if (!hwConfig.active) return;
+    let lineId: number | null = null;
+    if (typeof targetTextOrSira === "number") {
+      lineId = targetTextOrSira;
+    } else if (typeof targetTextOrSira === "string" && targetTextOrSira.trim()) {
+      const cleaned = cleanArabicText(targetTextOrSira);
+      const matchedLine = dialogue.satirlar.find(
+        (s) => cleanArabicText(s.arapca) === cleaned
+      );
+      if (matchedLine) {
+        lineId = matchedLine.sira;
+      } else {
+        let h = 2166136261;
+        for (let i = 0; i < cleaned.length; i++) {
+          h ^= cleaned.charCodeAt(i);
+          h = Math.imul(h, 16777619);
         }
+        lineId = -Math.max(1, (h >>> 0) % 100000);
       }
-      if (lineId !== null) {
-        setHwPracticedLines((prev) => {
-          const next = prev.includes(lineId!) ? prev : [...prev, lineId!];
-          setHwPronouncedCount(next.length);
-          return next;
-        });
-      }
-      if (
-        typeof measuredScore === "number" &&
-        Number.isFinite(measuredScore) &&
-        measuredScore > 0
-      ) {
-        setHwCollectedScores((prev) => [...prev, measuredScore]);
-      }
-    },
-    [hwConfig.active, dialogue.satirlar]
-  );
+    }
+    if (lineId !== null) {
+      setHwPracticedLines((prev) => {
+        const next = prev.includes(lineId!) ? prev : [...prev, lineId!];
+        setHwPronouncedCount(next.length);
+        return next;
+      });
+    }
+    if (
+      typeof measuredScore === "number" &&
+      Number.isFinite(measuredScore) &&
+      measuredScore > 0
+    ) {
+      setHwCollectedScores((prev) => [...prev, measuredScore]);
+    }
+  };
 
   // Çevrimdışı Ders Paketi (Cache API) State
   const [isOfflineReady, setIsOfflineReady] = useState<boolean>(false);
@@ -876,7 +879,7 @@ export default function DialogueDetailPage({
       setStudyMode("listen");
     }
     setGrammarSplitOpen(true);
-  }, [isGrammarSplitOpen, studyMode, setGrammarSplitOpen]);
+  }, [isGrammarSplitOpen, studyMode, setGrammarSplitOpen, setStudyMode]);
 
   const getDisplayText = (text: string) =>
     formatArabicByHarekeMode(
@@ -2746,6 +2749,26 @@ export default function DialogueDetailPage({
                   <span>
                     {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
                   </span>
+                </button>
+              )}
+
+              {/* 4c. Bağlı Tavsiye YouTube Videosu / Oynatma Listesi Rozeti */}
+              {linkedYoutubeVideos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    playToken.current += 1;
+                    stop();
+                    stopAllAudio();
+                    setIsPlayingAll(false);
+                    setLoopingLineSira(null);
+                    setIsYoutubeModalOpen(true);
+                  }}
+                  data-tooltip="Bu diyalogla ilişkili küratörlü Arapça video/oynatma listesini uygulama içinde izle"
+                  className="inline-flex px-2.5 py-1.5 rounded-xl border border-rose-500 bg-rose-600 hover:bg-rose-700 text-white items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0 shadow-2xs"
+                >
+                  <span>🎬 İlgili Tavsiye Videoyu / Listeyi İzle</span>
                 </button>
               )}
 
@@ -5024,6 +5047,13 @@ export default function DialogueDetailPage({
         <ShareContentCardModal
           payload={shareCardTarget}
           onClose={() => setShareCardTarget(null)}
+        />
+      )}
+
+      {isYoutubeModalOpen && linkedYoutubeVideos.length > 0 && (
+        <YoutubePlayerModal
+          items={linkedYoutubeVideos}
+          onClose={() => setIsYoutubeModalOpen(false)}
         />
       )}
       </div>

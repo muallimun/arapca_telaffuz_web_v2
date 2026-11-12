@@ -44,6 +44,15 @@ import {
   getVisualWordCoverUrl,
 } from "@/lib/data";
 import { playClick, playSuccess, playError } from "@/lib/sfxManager";
+import {
+  YOUTUBE_CATEGORY_META,
+  YOUTUBE_CATEGORY_ORDER,
+  extractYoutubeIdsFromUrl,
+  resolveYoutubeIds,
+  buildYoutubeEmbedUrl,
+  getYoutubeThumbnailUrls,
+} from "@/lib/youtubeUtils";
+import type { YoutubeCategory, YoutubeRecommendationItem } from "@/types/data";
 import type { AdminDatasetKey } from "@/app/api/admin/route";
 
 type StudioTabKey = AdminDatasetKey | "efect_manager";
@@ -137,6 +146,14 @@ const STUDIO_TABS: DatasetMeta[] = [
     icon: "🧭",
     fileName: "seviye_tespit_sorulari.json",
     description: "A1–B2 seviye tespit, konu tarama soruları ve gerekçeli çeldirici analizleri",
+  },
+  {
+    key: "youtube_tavsiyeleri",
+    label: "🎬 YouTube & İzleme Rehberi (55)",
+    shortLabel: "YouTube Rehberi",
+    icon: "🎬",
+    fileName: "youtube_tavsiyeleri.json",
+    description: "CEFR A1–B2 seviyeli YouTube video & oynatma listeleri, pedagojik notlar ve odak kelimeler",
   },
   {
     key: "efect_manager",
@@ -330,10 +347,15 @@ function getRecordLevel(rec: GenericRecord): string {
 }
 
 function getRecordCategory(rec: GenericRecord): string {
+  if (typeof rec.kategori === "string" && rec.kategori in YOUTUBE_CATEGORY_META) {
+    const meta = YOUTUBE_CATEGORY_META[rec.kategori as YoutubeCategory];
+    return `${meta.emoji} ${meta.shortLabel}`;
+  }
   return String(
     rec.ktt_ust_konu ||
       rec.ust_konu ||
       rec.kategori_tr ||
+      rec.kategori ||
       rec.tema ||
       rec.odak_gramer ||
       rec.tur ||
@@ -875,12 +897,16 @@ export default function AdminStudioPage() {
         const trStr = getRecordTurkish(rec).toLowerCase();
         const catStr = getRecordCategory(rec).toLowerCase();
         const rootStr = String(rec.kok || "").toLowerCase();
+        const channelStr = String(rec.kanal_adi || "").toLowerCase();
+        const urlStr = String(rec.url || "").toLowerCase();
         return (
           idStr.includes(q) ||
           arStr.includes(q) ||
           trStr.includes(q) ||
           catStr.includes(q) ||
-          rootStr.includes(q)
+          rootStr.includes(q) ||
+          channelStr.includes(q) ||
+          urlStr.includes(q)
         );
       });
   }, [records, searchQuery, levelFilter, activeTab]);
@@ -1389,6 +1415,24 @@ export default function AdminStudioPage() {
         },
         ek_ornekler: [],
         ipucu: "Pedagojik ipucu notu.",
+      };
+    } else if (activeTab === "youtube_tavsiyeleri") {
+      const pad3 = String(nextNum).padStart(3, "0");
+      template = {
+        id: `yt_${pad3}`,
+        sira: nextNum,
+        cefr: "A1",
+        tur: "video",
+        kategori: "diyalog_egitim",
+        baslik_tr: "Yeni Tavsiye Video Başlığı",
+        baslik_ar: "عُنْوَانُ الْفِيدْيُو الْجَدِيدِ",
+        kanal_adi: "Muallimun Net",
+        url: "https://www.youtube.com/watch?v=",
+        video_id: "",
+        sure_etiketi: "10 dk",
+        pedagojik_not:
+          "Bu içeriği nasıl izlemeniz gerektiğine dair pedagojik rehber notu.",
+        odak_kelimeler: ["حِوَارٌ", "اِسْتِمَاعٌ"],
       };
     }
 
@@ -1997,7 +2041,7 @@ export default function AdminStudioPage() {
                 </span>
               </h1>
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted)]">
-                8 JSON Veri Tabanı + 1:1 .webp Görsel Dönüştürücü + Çift Cinsiyet .mp3 &amp; TTS Stüdyosu
+                11 JSON Veri Tabanı + YouTube Rehberi + 1:1 .webp Görsel Dönüştürücü + Çift Cinsiyet .mp3 &amp; TTS Stüdyosu
               </p>
             </div>
           </div>
@@ -2645,34 +2689,57 @@ export default function AdminStudioPage() {
 
                       <div>
                         <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
-                          Kategori / Tema / KTT Üst Konu
+                          {activeTab === "youtube_tavsiyeleri"
+                            ? "İzleme Kategorisi"
+                            : "Kategori / Tema / KTT Üst Konu"}
                         </label>
-                        <input
-                          type="text"
-                          value={String(
-                            draftRecord.ktt_ust_konu ||
-                              draftRecord.ust_konu ||
-                              draftRecord.kategori_tr ||
-                              draftRecord.tema ||
-                              draftRecord.odak_gramer ||
-                              draftRecord.tur ||
-                              ""
-                          )}
-                          onChange={(e) => {
-                            if ("ktt_ust_konu" in draftRecord)
-                              updateDraftField("ktt_ust_konu", e.target.value);
-                            else if ("ust_konu" in draftRecord)
-                              updateDraftField("ust_konu", e.target.value);
-                            else if ("kategori_tr" in draftRecord)
-                              updateDraftField("kategori_tr", e.target.value);
-                            else if ("tema" in draftRecord)
-                              updateDraftField("tema", e.target.value);
-                            else if ("odak_gramer" in draftRecord)
-                              updateDraftField("odak_gramer", e.target.value);
-                            else updateDraftField("tur", e.target.value);
-                          }}
-                          className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-bold"
-                        />
+                        {activeTab === "youtube_tavsiyeleri" ? (
+                          <select
+                            value={String(
+                              draftRecord.kategori || "diyalog_egitim"
+                            )}
+                            onChange={(e) =>
+                              updateDraftField("kategori", e.target.value)
+                            }
+                            className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-extrabold"
+                          >
+                            {YOUTUBE_CATEGORY_ORDER.map((catId) => {
+                              const meta = YOUTUBE_CATEGORY_META[catId];
+                              return (
+                                <option key={catId} value={catId}>
+                                  {meta.emoji} {meta.label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={String(
+                              draftRecord.ktt_ust_konu ||
+                                draftRecord.ust_konu ||
+                                draftRecord.kategori_tr ||
+                                draftRecord.tema ||
+                                draftRecord.odak_gramer ||
+                                draftRecord.tur ||
+                                ""
+                            )}
+                            onChange={(e) => {
+                              if ("ktt_ust_konu" in draftRecord)
+                                updateDraftField("ktt_ust_konu", e.target.value);
+                              else if ("ust_konu" in draftRecord)
+                                updateDraftField("ust_konu", e.target.value);
+                              else if ("kategori_tr" in draftRecord)
+                                updateDraftField("kategori_tr", e.target.value);
+                              else if ("tema" in draftRecord)
+                                updateDraftField("tema", e.target.value);
+                              else if ("odak_gramer" in draftRecord)
+                                updateDraftField("odak_gramer", e.target.value);
+                              else updateDraftField("tur", e.target.value);
+                            }}
+                            className="w-full h-9 px-3 rounded-xl bg-white border border-[#E6D7BE] text-xs font-bold"
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -3092,6 +3159,211 @@ export default function AdminStudioPage() {
                         )}
                       </div>
                     )}
+                    {/* YouTube & İzleme Rehberi Özel Alanları */}
+                    {activeTab === "youtube_tavsiyeleri" && (
+                      <div className="p-3.5 rounded-2xl bg-[#F7EFE1]/80 border-2 border-[#E6D7BE] space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold text-[#065F46]">
+                            🎬 YouTube Bağlantısı, Oynatma Türü &amp; Pedagojik Notlar
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              const extracted = extractYoutubeIdsFromUrl(
+                                String(draftRecord.url || "")
+                              );
+                              const nextDraft: GenericRecord = {
+                                ...draftRecord,
+                              };
+                              if (extracted.videoId) {
+                                nextDraft.video_id = extracted.videoId;
+                              }
+                              if (extracted.playlistId) {
+                                nextDraft.playlist_id = extracted.playlistId;
+                              }
+                              if (extracted.startSeconds) {
+                                nextDraft.baslangic_sn = extracted.startSeconds;
+                              }
+                              if (extracted.playlistId && !extracted.videoId) {
+                                nextDraft.tur = "playlist";
+                              } else if (extracted.videoId && !extracted.playlistId) {
+                                nextDraft.tur = "video";
+                              }
+                              setDraftRecord(nextDraft);
+                              setRawJsonText(JSON.stringify(nextDraft, null, 2));
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-[11px] font-extrabold cursor-pointer"
+                          >
+                            🔗 URL&apos;den ID Ayrıştır
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Kaynak Türü (tur)
+                            </label>
+                            <select
+                              value={String(draftRecord.tur || "video")}
+                              onChange={(e) =>
+                                updateDraftField("tur", e.target.value)
+                              }
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-extrabold"
+                            >
+                              <option value="video">▶️ Tekil Video (video)</option>
+                              <option value="playlist">
+                                📑 Oynatma Listesi (playlist)
+                              </option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Kanal Adı (kanal_adi)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.kanal_adi || "")}
+                              onChange={(e) =>
+                                updateDraftField("kanal_adi", e.target.value)
+                              }
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Süre / Seri Etiketi (sure_etiketi)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.sure_etiketi || "")}
+                              onChange={(e) =>
+                                updateDraftField("sure_etiketi", e.target.value)
+                              }
+                              placeholder="Örn: 14 dk veya 30 Bölümlük Dizi"
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                            Tam YouTube URL&apos;si (url)
+                          </label>
+                          <input
+                            type="url"
+                            value={String(draftRecord.url || "")}
+                            onChange={(e) =>
+                              updateDraftField("url", e.target.value)
+                            }
+                            placeholder="https://www.youtube.com/watch?v=... veya playlist?list=..."
+                            className="w-full h-9 px-3 rounded-lg bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Video ID (11 Karakter, Opsiyonel)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.video_id || "")}
+                              onChange={(e) => {
+                                const val = e.target.value.trim();
+                                const next = { ...draftRecord };
+                                if (val) next.video_id = val;
+                                else delete next.video_id;
+                                setDraftRecord(next);
+                                setRawJsonText(JSON.stringify(next, null, 2));
+                              }}
+                              placeholder="Örn: dQw4w9WgXcQ"
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Playlist ID (Opsiyonel)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.playlist_id || "")}
+                              onChange={(e) => {
+                                const val = e.target.value.trim();
+                                const next = { ...draftRecord };
+                                if (val) next.playlist_id = val;
+                                else delete next.playlist_id;
+                                setDraftRecord(next);
+                                setRawJsonText(JSON.stringify(next, null, 2));
+                              }}
+                              placeholder="Örn: PLEM4OKFQO5J..."
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                              Bağlı Ders ID (bagli_icerik_id)
+                            </label>
+                            <input
+                              type="text"
+                              value={String(draftRecord.bagli_icerik_id || "")}
+                              onChange={(e) => {
+                                const val = e.target.value.trim();
+                                const next = { ...draftRecord };
+                                if (val) next.bagli_icerik_id = val;
+                                else delete next.bagli_icerik_id;
+                                setDraftRecord(next);
+                                setRawJsonText(JSON.stringify(next, null, 2));
+                              }}
+                              placeholder="Örn: dlg_001, metin_005, grm_012"
+                              className="w-full h-9 px-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-mono font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[var(--muted)] block mb-1">
+                            Pedagojik İzleme Notu (pedagojik_not)
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={String(draftRecord.pedagojik_not || "")}
+                            onChange={(e) =>
+                              updateDraftField("pedagojik_not", e.target.value)
+                            }
+                            className="w-full p-2.5 rounded-lg bg-white border border-[#E6D7BE] text-xs font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-extrabold text-[#065F46] block mb-1">
+                            Odak Kelimeler (Virgülle Ayırın — Harekeli Arapça)
+                          </label>
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={
+                              Array.isArray(draftRecord.odak_kelimeler)
+                                ? draftRecord.odak_kelimeler.join("، ")
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const arr = e.target.value
+                                .split(/[,،\n]+/)
+                                .map((s) => s.trim())
+                                .filter(Boolean);
+                              updateDraftField("odak_kelimeler", arr);
+                            }}
+                            placeholder="حِوَارٌ، اِسْتِمَاعٌ، مَهَارَةٌ"
+                            className="w-full h-10 px-3 rounded-lg bg-white border border-[#087F5B]/40 arabic text-lg font-bold text-[#065F46]"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3102,8 +3374,88 @@ export default function AdminStudioPage() {
                   🎨 SAĞ SÜTUN — Canlı Görsel (.webp) &amp; Ses (.mp3) Stüdyosu
                 </h4>
 
+                {/* YOUTUBE ÖNİZLEME PANELİ */}
+                {activeTab === "youtube_tavsiyeleri" && (
+                  <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-extrabold text-[var(--foreground)]">
+                        🎬 Gömülü Oynatıcı &amp; Kapak Önizlemesi
+                      </span>
+                      {draftRecord.url && (
+                        <a
+                          href={String(draftRecord.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#087F5B] hover:underline"
+                        >
+                          <span>YouTube&apos;da Aç</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+
+                    {(() => {
+                      const ytDraft =
+                        draftRecord as unknown as YoutubeRecommendationItem;
+                      const resolvedIds = resolveYoutubeIds(ytDraft);
+                      const thumbs = getYoutubeThumbnailUrls(
+                        resolvedIds.videoId
+                      );
+                      const embedUrl = buildYoutubeEmbedUrl(ytDraft);
+                      const catMeta =
+                        YOUTUBE_CATEGORY_META[
+                          (ytDraft.kategori as YoutubeCategory) ||
+                            "diyalog_egitim"
+                        ] || YOUTUBE_CATEGORY_META.diyalog_egitim;
+
+                      return (
+                        <div className="space-y-2.5">
+                          <div className="aspect-video w-full rounded-xl overflow-hidden border border-[#E6D7BE] relative bg-slate-900">
+                            {thumbs.length > 0 && !imgPreviewBroken ? (
+                              <img
+                                src={thumbs[0]}
+                                alt={String(ytDraft.baslik_tr || "YouTube")}
+                                referrerPolicy="no-referrer"
+                                onError={() => setImgPreviewBroken(true)}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div
+                                className={`w-full h-full bg-gradient-to-br ${catMeta.gradientClass} p-4 flex flex-col items-center justify-center text-center`}
+                              >
+                                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-black/30 mb-2">
+                                  {ytDraft.tur === "playlist"
+                                    ? "📑 Oynatma Listesi Kapağı"
+                                    : "🎬 Tipografik Kapak"}
+                                </span>
+                                <p
+                                  dir="rtl"
+                                  lang="ar"
+                                  className="arabic text-xl font-bold leading-relaxed"
+                                >
+                                  {ytDraft.baslik_ar || "عُنْوَانُ الْفِيدْيُو"}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-extrabold text-[var(--muted)] block">
+                              Gizlilik Dostu Embed Adresi (youtube-nocookie.com):
+                            </span>
+                            <code className="text-[10px] font-mono text-[#065F46] break-all block bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                              {embedUrl || "Geçerli video_id veya playlist_id girildiğinde üretilir"}
+                            </code>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* 1. 🖼️ GÖRSEL YÖNETİCİSİ (1:1 KARE ÖNİZLEME & OTOMATİK .WEBP DÖNÜŞTÜRÜCÜ) */}
                 {activeTab !== "efect_manager" &&
+                  activeTab !== "youtube_tavsiyeleri" &&
                   activeTab !== "diyalog_gramer" &&
                   activeTab !== "metin_gramer" &&
                   activeTab !== "ek_gramer" && (
@@ -3209,6 +3561,7 @@ export default function AdminStudioPage() {
                   )}
 
                 {/* 2. 🔊 SES YÖNETİCİSİ (ERKEK & KADIN .MP3 DİNLEME, YÜKLEME, MİKROFON VE TTS) */}
+                {activeTab !== "youtube_tavsiyeleri" && (
                 <div className="rounded-2xl border-2 border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-3.5 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
@@ -3366,6 +3719,7 @@ export default function AdminStudioPage() {
                       );
                     })}
                 </div>
+                )}
               </div>
             </div>
 

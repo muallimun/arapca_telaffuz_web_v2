@@ -6,9 +6,11 @@ import ekGramerJson from "@/data/ek_gramer_hap_bilgi.json";
 import cumlelerJson from "@/data/1111_cumle.json";
 import atasozleriJson from "@/data/atasozleri.json";
 import gorselKelimelerJson from "@/data/gorselKelimeler_guncel.json";
+import youtubeTavsiyeleriJson from "@/data/youtube_tavsiyeleri.json";
 import { getCombinedIdiomsCatalog } from "@/lib/arabicIdioms";
 import { unifiedDictionary } from "@/lib/dict";
 import { formatTurkishCategory } from "@/lib/arabicTextUtils";
+import { doesYoutubeItemMatchContentId } from "@/lib/youtubeUtils";
 import {
   AnahtarCumle,
   AtasozuDeyim,
@@ -18,6 +20,7 @@ import {
   Level,
   ReadingText,
   ResimliKelime,
+  YoutubeRecommendationItem,
 } from "@/types/data";
 
 const LEVEL_UNITE_MAP: Record<Level, string> = {
@@ -224,6 +227,27 @@ export const gorselKelimeler: ResimliKelime[] = (
 // 6. Birleştirilmiş Kapsamlı Sözlük
 export const sozluk: DictionaryItem[] = unifiedDictionary;
 
+// 7. 55 Küratörlü YouTube Video & Oynatma Listesi Tavsiyesi (youtube_tavsiyeleri.json)
+export const youtubeTavsiyeleri: YoutubeRecommendationItem[] = (
+  youtubeTavsiyeleriJson as YoutubeRecommendationItem[]
+)
+  .map((item) => ({
+    ...item,
+    baslik_tr: (item.baslik_tr || "").normalize("NFC"),
+    baslik_ar: (item.baslik_ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+    kanal_adi: (item.kanal_adi || "").normalize("NFC"),
+    sure_etiketi: item.sure_etiketi
+      ? item.sure_etiketi.normalize("NFC")
+      : undefined,
+    pedagojik_not: (item.pedagojik_not || "").normalize("NFC"),
+    odak_kelimeler: Array.isArray(item.odak_kelimeler)
+      ? item.odak_kelimeler.map((w) =>
+          (w || "").replace(/\u0640+/g, "").normalize("NFC")
+        )
+      : [],
+  }))
+  .sort((a, b) => (a.sira || 0) - (b.sira || 0));
+
 // ============================================================================
 // STANDART MEDYA YOLU YARDIMCILARI (/gorseller/... ve /sesler/...)
 // ============================================================================
@@ -365,6 +389,22 @@ export function getReadingTextsByLevel(level: Level | "all"): ReadingText[] {
   return metinler.filter((m) => m.seviye === level);
 }
 
+export function getYoutubeRecommendationsByLevel(
+  level: Level | "all"
+): YoutubeRecommendationItem[] {
+  if (level === "all") return youtubeTavsiyeleri;
+  return youtubeTavsiyeleri.filter((item) => item.cefr === level);
+}
+
+export function getYoutubeRecommendationsByContentId(
+  contentId: string
+): YoutubeRecommendationItem[] {
+  if (!contentId) return [];
+  return youtubeTavsiyeleri.filter((item) =>
+    doesYoutubeItemMatchContentId(item, contentId)
+  );
+}
+
 export interface ContentCatalogStats {
   totalDialogues: number;
   totalSentences: number;
@@ -394,6 +434,7 @@ export interface DynamicContentStats {
   standaloneGrammarCount: number;
   grammarNoteCount: number;
   totalGrammarAtlasCount: number;
+  youtubeCount: number;
 }
 
 export function getMainVisualCategory(rawCatTr?: string): string {
@@ -447,6 +488,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     diyalogGramerNotlari.length +
     metinGramerNotlari.length;
   const totalGrammarAtlasCount = grammarNoteCount + sentenceGrammarCount;
+  const youtubeCount = youtubeTavsiyeleri.length;
 
   return {
     dialogueCount,
@@ -465,6 +507,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     standaloneGrammarCount,
     grammarNoteCount,
     totalGrammarAtlasCount,
+    youtubeCount,
   };
 })();
 
@@ -476,6 +519,7 @@ export interface ContentInventory {
   visualWordsCount: number;
   grammarNotesCount: number;
   dictionaryWordsCount: number;
+  youtubeVideosCount: number;
   exerciseModulesCount: number;
 }
 
@@ -487,6 +531,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   visualWordsCount: DYNAMIC_CONTENT_STATS.visualWordCount,
   grammarNotesCount: DYNAMIC_CONTENT_STATS.grammarNoteCount,
   dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
+  youtubeVideosCount: DYNAMIC_CONTENT_STATS.youtubeCount,
   exerciseModulesCount: 14,
 };
 

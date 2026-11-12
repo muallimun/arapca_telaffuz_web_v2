@@ -38,7 +38,9 @@ import {
   getReadingTextById,
   getReadingTextCoverUrl,
   getReadingTextGrammarNote,
+  getYoutubeRecommendationsByContentId,
 } from "@/lib/data";
+import { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
 import {
   GrammarHapBilgiPanel,
   LessonGrammarSplitPanel,
@@ -249,6 +251,10 @@ export default function ReadingTextDetailPage({
   const [spotlightMode, setSpotlightMode] = useState<boolean>(true);
   const [focusedLineIndex, setFocusedLineIndex] = useState<number>(0);
   const [isClassroomLoop, setIsClassroomLoop] = useState<boolean>(false);
+  const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState<boolean>(false);
+  const linkedYoutubeVideos = readingText
+    ? getYoutubeRecommendationsByContentId(readingText.id)
+    : [];
   const isClassroomLoopRef = useRef<boolean>(false);
   const isClassroomModeRef = useRef<boolean>(false);
   const togglePlayAllShortcutRef = useRef<() => void>(() => {});
@@ -398,16 +404,13 @@ export default function ReadingTextDetailPage({
     [setReadingLayoutMode]
   );
 
-  const toggleLineHareke = useCallback(
-    (sira: number) => {
-      playClick();
-      setLineHarekeOverrides((prev) => {
-        const current = prev[sira] !== undefined ? prev[sira] : showHareke;
-        return { ...prev, [sira]: !current };
-      });
-    },
-    [showHareke]
-  );
+  const toggleLineHareke = (sira: number) => {
+    playClick();
+    setLineHarekeOverrides((prev) => {
+      const current = prev[sira] !== undefined ? prev[sira] : showHareke;
+      return { ...prev, [sira]: !current };
+    });
+  };
 
   // Mobil ekranlarda (< 768px) Sınıf / Tahta Modu açık kaldıysa otomatik kapat
   useEffect(() => {
@@ -738,7 +741,7 @@ export default function ReadingTextDetailPage({
       setStudyMode("listen");
     }
     setGrammarSplitOpen(true);
-  }, [isGrammarSplitOpen, studyMode, setGrammarSplitOpen]);
+  }, [isGrammarSplitOpen, studyMode, setGrammarSplitOpen, setStudyMode]);
 
   // PDF Modal uyumu için Dialogue nesnesi
   const dialogueForPdf: Dialogue = useMemo(
@@ -2132,6 +2135,26 @@ export default function ReadingTextDetailPage({
                   <span>
                     {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
                   </span>
+                </button>
+              )}
+
+              {/* 5c. Bağlı Tavsiye YouTube Videosu / Oynatma Listesi Rozeti */}
+              {linkedYoutubeVideos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    playToken.current += 1;
+                    stop();
+                    stopAllAudio();
+                    setIsPlayingAll(false);
+                    setLoopingLineSira(null);
+                    setIsYoutubeModalOpen(true);
+                  }}
+                  data-tooltip="Bu okuma metniyle ilişkili küratörlü Arapça video/oynatma listesini uygulama içinde izle"
+                  className="inline-flex px-2.5 py-1.5 rounded-xl border border-rose-500 bg-rose-600 hover:bg-rose-700 text-white items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0 shadow-2xs"
+                >
+                  <span>🎬 İlgili Tavsiye Videoyu / Listeyi İzle</span>
                 </button>
               )}
 
@@ -4436,6 +4459,13 @@ export default function ReadingTextDetailPage({
         <ShareContentCardModal
           payload={shareCardTarget}
           onClose={() => setShareCardTarget(null)}
+        />
+      )}
+
+      {isYoutubeModalOpen && linkedYoutubeVideos.length > 0 && (
+        <YoutubePlayerModal
+          items={linkedYoutubeVideos}
+          onClose={() => setIsYoutubeModalOpen(false)}
         />
       )}
       </div>

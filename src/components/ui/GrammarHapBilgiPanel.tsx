@@ -43,7 +43,9 @@ import {
   ekGramerNotlari,
   diyaloglar,
   metinler,
+  getYoutubeRecommendationsByContentId,
 } from "@/lib/data";
+import { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
 import {
   speakHybrid,
   playDualGenderAudio,
@@ -2007,6 +2009,7 @@ export function GrammarHapBilgiPanel({
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [showAllSentences, setShowAllSentences] = useState(false);
   const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
+  const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const isSimpleMode = grammarDepthMode === "simple";
   const formatByDepth = (str: string) =>
     isSimpleMode ? simplifyGrammarTerminology(str) : str;
@@ -2028,6 +2031,14 @@ export function GrammarHapBilgiPanel({
   );
 
   const activeNote = resolvedNote || enrichNoteWithCanonicalDetail(grammarNote);
+  const activeBagliId = activeNote?.bagli_id || "";
+  const linkedYoutubeVideos = useMemo(
+    () =>
+      activeBagliId
+        ? getYoutubeRecommendationsByContentId(activeBagliId)
+        : [],
+    [activeBagliId]
+  );
 
   const handleListen = async (text: string, key: string) => {
     if (playingKey === key) {
@@ -2653,8 +2664,28 @@ export function GrammarHapBilgiPanel({
           >
             <span>🎨 İ&apos;rab Renkleriyle Boya</span>
           </Link>
+          {linkedYoutubeVideos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                stopAllAudio();
+                setIsYoutubeModalOpen(true);
+              }}
+              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white border-b-3 border-rose-800 text-xs sm:text-sm font-black text-center whitespace-normal shadow-sm cursor-pointer transition-all"
+            >
+              <span>🎬 İlgili Tavsiye Videoyu / Listeyi İzle</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {isYoutubeModalOpen && linkedYoutubeVideos.length > 0 && (
+        <YoutubePlayerModal
+          items={linkedYoutubeVideos}
+          onClose={() => setIsYoutubeModalOpen(false)}
+        />
+      )}
 
       {/* 2. KATMAN AYRINTILI KONU ANLATIMI PENCERESİ */}
       <GrammarDeepDiveModal

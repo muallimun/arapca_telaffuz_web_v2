@@ -3319,5 +3319,226 @@ test("32. Mobil UX, Arayüz Ferahlığı, Hata Defterim Standartlaştırması, S
   );
 });
 
+test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag LiteYoutubeCard, 14 Harici Platform, Çapraz Ders Bağlantıları ve Admin Desteği Doğrulaması", async () => {
+  // 1. next.config.ts CSP kontrolü
+  const nextConfigCode = fs.readFileSync(
+    path.join(ROOT_DIR, "next.config.ts"),
+    "utf8"
+  );
+  assert.equal(
+    nextConfigCode.includes(
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;"
+    ) &&
+      nextConfigCode.includes("https://i.ytimg.com") &&
+      nextConfigCode.includes("https://img.youtube.com"),
+    true,
+    "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src) ve kapak görseli (img-src) kuralları yer almalıdır"
+  );
+
+  // 2. youtube_tavsiyeleri.json 55 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
+  const { raw: ytRaw, parsed: ytItems } = readDataJson(
+    "youtube_tavsiyeleri.json"
+  );
+  assert.equal(
+    Array.isArray(ytItems) && ytItems.length === 55,
+    true,
+    "youtube_tavsiyeleri.json 55 gerçek kaydı eksiksiz korumalıdır"
+  );
+  assert.equal(
+    ytRaw.includes("\u0640"),
+    false,
+    "youtube_tavsiyeleri.json içinde tatweel (\\u0640) bulunmamalıdır"
+  );
+
+  const allowedCefr = new Set(["A1", "A2", "B1", "B2"]);
+  const allowedCategories = new Set([
+    "cizgi_animasyon",
+    "diyalog_egitim",
+    "hikaye_kissa",
+    "tarihi_dizi_film",
+    "islami_sohbet_ders",
+    "belgesel_basin",
+  ]);
+  for (let i = 0; i < ytItems.length; i++) {
+    const item = ytItems[i];
+    const expectedId = `yt_${String(i + 1).padStart(3, "0")}`;
+    assert.equal(item.id, expectedId, `Kayıt #${i + 1} ID'si ${expectedId} olmalıdır`);
+    assert.equal(allowedCefr.has(item.cefr), true, `${item.id} geçerli CEFR seviyesine sahip olmalıdır`);
+    assert.equal(
+      item.tur === "video" || item.tur === "playlist",
+      true,
+      `${item.id} tur alanı video veya playlist olmalıdır`
+    );
+    assert.equal(
+      allowedCategories.has(item.kategori),
+      true,
+      `${item.id} geçerli kategoriye sahip olmalıdır`
+    );
+    assert.equal(
+      typeof item.baslik_ar === "string" && item.baslik_ar.trim().length > 0,
+      true
+    );
+    assert.equal(
+      typeof item.baslik_tr === "string" && item.baslik_tr.trim().length > 0,
+      true
+    );
+    assert.equal(
+      typeof item.pedagojik_not === "string" && item.pedagojik_not.trim().length > 0,
+      true
+    );
+  }
+
+  // 3. youtubeUtils.ts fonksiyonları ve 14 harici platform kontrolü
+  const {
+    EXTERNAL_WATCH_PLATFORM_GROUPS,
+    extractYoutubeIdsFromUrl,
+    buildYoutubeEmbedUrl,
+    getYoutubeThumbnailUrls,
+    doesYoutubeItemMatchContentId,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
+  );
+
+  const totalExternalPlatforms = EXTERNAL_WATCH_PLATFORM_GROUPS.reduce(
+    (sum, g) => sum + g.platforms.length,
+    0
+  );
+  assert.equal(
+    totalExternalPlatforms,
+    14,
+    "Harici platformlar rehberinde 3 grup altında tam 14 platform yer almalıdır"
+  );
+
+  const parsedWatch = extractYoutubeIdsFromUrl(
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&t=45s"
+  );
+  assert.equal(parsedWatch.videoId, "dQw4w9WgXcQ");
+  assert.equal(parsedWatch.playlistId, "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx");
+  assert.equal(parsedWatch.startSeconds, 45);
+
+  const playlistOnlyEmbed = buildYoutubeEmbedUrl({
+    url: "https://www.youtube.com/playlist?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+    playlist_id: "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+  });
+  assert.equal(
+    playlistOnlyEmbed,
+    "https://www.youtube-nocookie.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1"
+  );
+
+  const dualEmbed = buildYoutubeEmbedUrl({
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+    video_id: "dQw4w9WgXcQ",
+    playlist_id: "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+  });
+  assert.equal(
+    dualEmbed,
+    "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1"
+  );
+
+  const thumbs = getYoutubeThumbnailUrls("dQw4w9WgXcQ");
+  assert.equal(
+    thumbs[0],
+    "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.webp"
+  );
+
+  // Sıfır dolgulu ID toleransı: metin_005 <-> metin_05
+  assert.equal(
+    doesYoutubeItemMatchContentId(
+      { bagli_icerik_id: "metin_005" },
+      "metin_05"
+    ),
+    true,
+    "bagli_icerik_id metin_005 ile metin_05 esnek olarak eşleşmelidir"
+  );
+
+  // 4. data.ts (bellekte NFC normalizasyonu) ve userStore.ts watchedVideos entegrasyonu
+  const {
+    youtubeTavsiyeleri,
+    getYoutubeRecommendationsByContentId,
+    CONTENT_INVENTORY,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
+  );
+  assert.equal(youtubeTavsiyeleri.length, 55);
+  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 55);
+  for (const runtimeItem of youtubeTavsiyeleri) {
+    assert.equal(runtimeItem.baslik_ar, runtimeItem.baslik_ar.normalize("NFC"));
+    assert.equal(runtimeItem.baslik_tr, runtimeItem.baslik_tr.normalize("NFC"));
+    assert.equal(runtimeItem.pedagojik_not, runtimeItem.pedagojik_not.normalize("NFC"));
+  }
+  assert.ok(getYoutubeRecommendationsByContentId("dlg_001").length >= 1);
+  assert.ok(getYoutubeRecommendationsByContentId("metin_05").length >= 1);
+  assert.ok(getYoutubeRecommendationsByContentId("grm_012").length >= 1);
+
+  const { useUserStore } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "store", "userStore.ts")).href
+  );
+  useUserStore.getState().resetProgress();
+  assert.deepEqual(useUserStore.getState().watchedVideos, []);
+  useUserStore.getState().toggleWatchedVideo("yt_001");
+  assert.equal(useUserStore.getState().isVideoWatched("yt_001"), true);
+  const exported = useUserStore.getState().exportProgress();
+  useUserStore.getState().resetProgress();
+  assert.equal(useUserStore.getState().isVideoWatched("yt_001"), false);
+  useUserStore.getState().importProgress(exported, "merge");
+  assert.equal(useUserStore.getState().isVideoWatched("yt_001"), true);
+
+  // 5. Bileşen, Sayfa ve Admin Stüdyosu bağlantıları
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  const adminPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "admin", "page.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    liteCardCode.includes("stopAllAudio") &&
+      liteCardCode.includes("speakHybrid") &&
+      liteCardCode.includes("/sozluk?q=") &&
+      liteCardCode.includes("YoutubePlayerModal"),
+    true,
+    "LiteYoutubeCard ses çakışma koruması (stopAllAudio), odak kelime telaffuz/sözlük köprüsü ve Sinema Modu içermelidir"
+  );
+  assert.equal(
+    kutuphaneCode.includes("Video & İzleme Rehberi") &&
+      kutuphaneCode.includes("Nasıl İzlemeliyim? &amp; Harici Platformlar Rehberi") &&
+      homeCode.includes("Seviyenize Uygun Tavsiye İzleme") &&
+      diyalogCode.includes("İlgili Tavsiye") &&
+      metinCode.includes("İlgili Tavsiye") &&
+      grammarPanelCode.includes("İlgili Tavsiye") &&
+      adminRouteCode.includes('youtube_tavsiyeleri: "youtube_tavsiyeleri.json"') &&
+      adminPageCode.includes('key: "youtube_tavsiyeleri"'),
+    true,
+    "Kütüphane, Ana Sayfa, Diyalog, Metin, Gramer Paneli ve Admin Stüdyosu YouTube entegrasyonlarını eksiksiz içermelidir"
+  );
+});
+
+
 
 

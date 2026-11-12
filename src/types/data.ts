@@ -201,3 +201,32 @@ export interface GramerKonu extends PedagogicalMeta {
   kurallar: string[];
   ornekler: { arapca: string; turkce: string; irab_notu?: string }[];
 }
+
+export type YoutubeResourceKind = "video" | "playlist";
+
+export type YoutubeCategory =
+  | "cizgi_animasyon"
+  | "diyalog_egitim"
+  | "hikaye_kissa"
+  | "tarihi_dizi_film"
+  | "islami_sohbet_ders"
+  | "belgesel_basin";
+
+export interface YoutubeRecommendationItem {
+  id: string;
+  sira: number;
+  cefr: Level;
+  tur: YoutubeResourceKind;
+  kategori: YoutubeCategory;
+  baslik_tr: string;
+  baslik_ar: string;
+  kanal_adi: string;
+  url: string;
+  video_id?: string;
+  playlist_id?: string;
+  sure_etiketi?: string;
+  baslangic_sn?: number;
+  pedagojik_not: string;
+  bagli_icerik_id?: string;
+  odak_kelimeler?: string[];
+}

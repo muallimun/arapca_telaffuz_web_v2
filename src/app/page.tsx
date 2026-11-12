@@ -24,6 +24,8 @@ import {
   BarChart3,
   ListChecks,
   GraduationCap,
+  Film,
+  ExternalLink,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -36,7 +38,11 @@ import {
   getReadingTextCoverUrl,
   getProverbCoverUrl,
   getDynamicContentStats,
+  getYoutubeRecommendationsByLevel,
 } from "@/lib/data";
+import { Level, YoutubeRecommendationItem } from "@/types/data";
+import { YOUTUBE_CATEGORY_META } from "@/lib/youtubeUtils";
+import { YoutubePlayerModal } from "@/components/LiteYoutubeCard";
 import {
   useUserStore,
   getTodayDateString,
@@ -50,6 +56,7 @@ import {
   loadAudioManifest,
   hasMp3,
   getMp3Path,
+  stopAllAudio,
 } from "@/lib/audio";
 import { useAudioStore } from "@/store/audioStore";
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
@@ -149,6 +156,7 @@ export default function HomePage() {
     topicMastery,
     skillStats,
     completedLevelExams,
+    watchedVideos,
     syncDailyProgress,
   } = useUserStore();
 
@@ -208,8 +216,35 @@ export default function HomePage() {
   const [shareCardTarget, setShareCardTarget] =
     useState<ShareCardPayload | null>(null);
   const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
+  const [activeYoutubeModalItems, setActiveYoutubeModalItems] = useState<
+    YoutubeRecommendationItem[] | null
+  >(null);
 
   const contentStats = getDynamicContentStats();
+
+  const activeWatchLevel: Level = useMemo(() => {
+    if (mounted && detectedCefrLevel) return detectedCefrLevel;
+    if (preferredLevel === "İleri") return "B2";
+    if (preferredLevel === "Orta") return "B1";
+    return "A1";
+  }, [mounted, detectedCefrLevel, preferredLevel]);
+
+  const recommendedYoutubeItems = useMemo(() => {
+    const pool = getYoutubeRecommendationsByLevel(activeWatchLevel);
+    const watchedSet = new Set(mounted ? watchedVideos || [] : []);
+    const unwatched = pool.filter((v) => !watchedSet.has(v.id));
+    const ordered = unwatched.length >= 3 ? unwatched : [...unwatched, ...pool];
+    const unique: YoutubeRecommendationItem[] = [];
+    const seen = new Set<string>();
+    for (const item of ordered) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        unique.push(item);
+      }
+      if (unique.length >= 3) break;
+    }
+    return unique;
+  }, [activeWatchLevel, mounted, watchedVideos]);
 
   const modules: ModuleItem[] = useMemo(
     () => [
@@ -1583,6 +1618,129 @@ export default function HomePage() {
           })}
         </div>
       </section>
+
+      {/* BÖLÜM 3.6: SEVİYENİZE UYGUN TAVSİYE İZLEME (YOUTUBE VİDEO & OYNATMA LİSTESİ REHBERİ) */}
+      {recommendedYoutubeItems.length > 0 && (
+        <section
+          aria-label="Seviyenize Uygun Tavsiye İzleme"
+          className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3.5 sm:p-4 space-y-3"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-600 text-white text-xs font-extrabold">
+                <Film size={13} />
+                <span>🎬 Seviyenize Uygun Tavsiye İzleme</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black">
+                {activeWatchLevel} Kuru
+              </span>
+              <span className="text-xs font-semibold text-[var(--muted)] hidden md:inline">
+                Günlük kulak aşinalığı için seçilmiş fasih Arapça diziler, dersler ve belgeseller
+              </span>
+            </div>
+
+            <Link
+              href={`/kutuphane?tab=videolar&level=${activeWatchLevel}`}
+              onClick={() => playClick()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-500 text-xs font-extrabold text-rose-700 dark:text-rose-300 shrink-0"
+            >
+              <span>Tüm İzleme Rehberini Aç ({contentStats.youtubeCount})</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {recommendedYoutubeItems.map((yt) => {
+              const catMeta =
+                YOUTUBE_CATEGORY_META[yt.kategori] ||
+                YOUTUBE_CATEGORY_META.cizgi_animasyon;
+              const isWatched =
+                mounted && (watchedVideos || []).includes(yt.id);
+              return (
+                <div
+                  key={yt.id}
+                  className="rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] p-3.5 flex flex-col justify-between gap-2.5 transition-all"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-md border text-[10px] font-extrabold ${catMeta.badgeClass}`}
+                      >
+                        {catMeta.emoji} {catMeta.shortLabel}
+                      </span>
+                      <span className="text-[10px] font-bold text-[var(--muted)] truncate">
+                        📺 {yt.kanal_adi}
+                      </span>
+                    </div>
+
+                    <h3 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug line-clamp-2">
+                      {yt.baslik_tr}
+                    </h3>
+
+                    <p
+                      lang="ar"
+                      dir="rtl"
+                      className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed line-clamp-1"
+                    >
+                      {formatArabicByHarekeMode(
+                        yt.baslik_ar,
+                        !mounted || !showHareke
+                          ? !mounted
+                            ? "full"
+                            : "none"
+                          : harekeMode,
+                        mounted ? arabicFont : "arakom"
+                      )}
+                    </p>
+
+                    <p className="text-[11px] font-medium text-[var(--muted)] line-clamp-2 leading-relaxed">
+                      {yt.pedagojik_not}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        stopAllAudio();
+                        setActiveYoutubeModalItems([yt]);
+                      }}
+                      className="flex-1 min-h-[36px] px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-extrabold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Play size={12} className="fill-white shrink-0" />
+                      <span>
+                        {isWatched ? "Tekrar İzle" : "Uygulama İçinde İzle"}
+                      </span>
+                    </button>
+
+                    <a
+                      href={yt.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        playClick();
+                        stopAllAudio();
+                      }}
+                      title="YouTube'da Aç"
+                      className="min-h-[36px] px-2.5 py-1.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] hover:border-rose-500 text-xs font-extrabold text-[var(--foreground)] inline-flex items-center justify-center gap-1"
+                    >
+                      <ExternalLink size={12} className="text-rose-600" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {activeYoutubeModalItems && activeYoutubeModalItems.length > 0 && (
+        <YoutubePlayerModal
+          items={activeYoutubeModalItems}
+          onClose={() => setActiveYoutubeModalItems(null)}
+        />
+      )}
 
       <GrammarQuickModal
         isOpen={Boolean(activeGrammarModal)}

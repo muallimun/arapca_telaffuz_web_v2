@@ -627,9 +627,11 @@ interface UserState {
   skillStats: Record<SkillKey, SkillStatRecord>;
   completedLevelExams: Level[];
   phonemeStats: Record<string, PhonemeStatRecord>;
+  watchedVideos: string[];
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
+  toggleWatchedVideo: (id: string) => void;
   toggleFavoriteWord: (word: DictionaryItem) => void;
   toggleLearnedWord: (id: string) => void;
   addWeakWord: (word: DictionaryItem) => void;
@@ -672,6 +674,7 @@ interface UserState {
 
   isDialogueFavorite: (id: string) => boolean;
   isDialogueCompleted: (id: string) => boolean;
+  isVideoWatched: (id: string) => boolean;
   isWordFavorite: (id: string) => boolean;
   isWordLearned: (id: string) => boolean;
 }
@@ -701,6 +704,7 @@ export const useUserStore = create<UserState>()(
       skillStats: createDefaultSkillStats(),
       completedLevelExams: [],
       phonemeStats: {},
+      watchedVideos: [],
 
       toggleFavoriteDialogue: (id) =>
         set((state) => ({
@@ -708,6 +712,19 @@ export const useUserStore = create<UserState>()(
             ? state.favoriteDialogues.filter((d) => d !== id)
             : [...state.favoriteDialogues, id],
         })),
+
+      toggleWatchedVideo: (id) =>
+        set((state) => {
+          const cleanId = (id || "").trim();
+          if (!cleanId) return state;
+          const currentList = sanitizeStringArray(state.watchedVideos);
+          const alreadyWatched = currentList.includes(cleanId);
+          return {
+            watchedVideos: alreadyWatched
+              ? currentList.filter((v) => v !== cleanId)
+              : [...currentList, cleanId],
+          };
+        }),
 
       toggleCompletedDialogue: (id) =>
         set((state) => {
@@ -1373,6 +1390,7 @@ export const useUserStore = create<UserState>()(
           skillStats: sanitizeSkillStats(state.skillStats),
           completedLevelExams: sanitizeCefrLevelArray(state.completedLevelExams),
           phonemeStats: sanitizePhonemeStats(state.phonemeStats),
+          watchedVideos: sanitizeStringArray(state.watchedVideos),
         };
         return JSON.stringify(payload, null, 2);
       },
@@ -1436,6 +1454,7 @@ export const useUserStore = create<UserState>()(
             "skillStats",
             "completedLevelExams",
             "phonemeStats",
+            "watchedVideos",
           ];
           if (!knownKeys.some((k) => k in data)) {
             return false;
@@ -1638,6 +1657,7 @@ export const useUserStore = create<UserState>()(
             data.completedLevelExams
           );
           const importedPhonemeStats = sanitizePhonemeStats(data.phonemeStats);
+          const importedWatchedVideos = sanitizeStringArray(data.watchedVideos);
 
           if (mode === "overwrite") {
             set({
@@ -1666,6 +1686,7 @@ export const useUserStore = create<UserState>()(
               skillStats: importedSkillStats,
               completedLevelExams: importedCompletedExams,
               phonemeStats: importedPhonemeStats,
+              watchedVideos: importedWatchedVideos,
             });
             return true;
           }
@@ -1881,6 +1902,10 @@ export const useUserStore = create<UserState>()(
               }
               return mergedPhonemes;
             })(),
+            watchedVideos: sanitizeStringArray([
+              ...(current.watchedVideos || []),
+              ...importedWatchedVideos,
+            ]),
           });
           return true;
         } catch {
@@ -1923,10 +1948,12 @@ export const useUserStore = create<UserState>()(
           skillStats: createDefaultSkillStats(),
           completedLevelExams: [],
           phonemeStats: {},
+          watchedVideos: [],
         }),
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
       isDialogueCompleted: (id) => get().completedDialogues.includes(id),
+      isVideoWatched: (id) => (get().watchedVideos || []).includes(id),
       isWordFavorite: (id) => get().favoriteWords.some((w) => w.id === id),
       isWordLearned: (id) => get().learnedWords.includes(id),
     }),
@@ -2015,6 +2042,7 @@ export const useUserStore = create<UserState>()(
           skillStats: sanitizeSkillStats(raw.skillStats),
           completedLevelExams: sanitizeCefrLevelArray(raw.completedLevelExams),
           phonemeStats: sanitizePhonemeStats(raw.phonemeStats),
+          watchedVideos: sanitizeStringArray(raw.watchedVideos),
         };
       },
     }

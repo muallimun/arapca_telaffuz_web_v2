@@ -37,6 +37,10 @@ import {
   ListChecks,
   Printer,
   MessageCircle,
+  ExternalLink,
+  Compass,
+  Film,
+  ListVideo,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -47,6 +51,8 @@ import {
   cumleler1111,
   atasozleri,
   gorselKelimeler,
+  youtubeTavsiyeleri,
+  getYoutubeRecommendationsByContentId,
   getDialogueCoverUrl,
   getReadingTextCoverUrl,
   getProverbCoverUrl,
@@ -55,7 +61,22 @@ import {
   getMainVisualCategory,
   getVisualSubGroupNo,
 } from "@/lib/data";
-import { Level, DictionaryItem, Dialogue, GramerHapBilgi } from "@/types/data";
+import {
+  Level,
+  DictionaryItem,
+  Dialogue,
+  GramerHapBilgi,
+  YoutubeCategory,
+  YoutubeRecommendationItem,
+} from "@/types/data";
+import {
+  YOUTUBE_CATEGORY_META,
+  YOUTUBE_CATEGORY_ORDER,
+  EXTERNAL_WATCH_PLATFORM_GROUPS,
+} from "@/lib/youtubeUtils";
+import LiteYoutubeCard, {
+  YoutubePlayerModal,
+} from "@/components/LiteYoutubeCard";
 import {
   extractDialogueVocabulary,
   cleanArabicText,
@@ -119,6 +140,7 @@ type SavedItemFilter =
   | "sentences"
   | "proverbs";
 
+type YoutubeSubFilter = "all" | "video" | "playlist" | "watched";
 type StatusFilter = "all" | "completed" | "ongoing" | "favorites";
 type ViewSection =
   | "vitrin"
@@ -128,6 +150,7 @@ type ViewSection =
   | "atasozleri"
   | "gorsel-kelimeler"
   | "gramer"
+  | "videolar"
   | "saved-words"
   | "weak-words";
 
@@ -137,6 +160,7 @@ export default function LibraryPage() {
     completedDialogues,
     favoriteWords,
     weakWords,
+    watchedVideos,
     toggleFavoriteDialogue,
     toggleCompletedDialogue,
     toggleFavoriteWord,
@@ -226,6 +250,15 @@ export default function LibraryPage() {
     sourceId?: string;
     grammarTopic?: string;
   } | null>(null);
+
+  const [youtubeCategoryFilter, setYoutubeCategoryFilter] = useState<
+    YoutubeCategory | "all"
+  >("all");
+  const [youtubeKindFilter, setYoutubeKindFilter] =
+    useState<YoutubeSubFilter>("all");
+  const [youtubeModalItems, setYoutubeModalItems] = useState<
+    YoutubeRecommendationItem[] | null
+  >(null);
 
   useEffect(() => {
     void loadAudioManifest().then(() => {
@@ -339,6 +372,19 @@ export default function LibraryPage() {
               setGrammarDomainFilter(domParam);
             }
           } else if (
+            tab === "videolar" ||
+            tab === "youtube" ||
+            tab === "izleme-rehberi"
+          ) {
+            setActiveSection("videolar");
+            const ytCat = params.get("ytcat") || params.get("cat");
+            if (
+              ytCat &&
+              YOUTUBE_CATEGORY_ORDER.includes(ytCat as YoutubeCategory)
+            ) {
+              setYoutubeCategoryFilter(ytCat as YoutubeCategory);
+            }
+          } else if (
             [
               "metinler",
               "cumleler",
@@ -422,6 +468,8 @@ export default function LibraryPage() {
     stopSequentialPlay();
     setActiveSection(sec);
     setCategoryFilter("all");
+    setYoutubeCategoryFilter("all");
+    setYoutubeKindFilter("all");
     setVisualSubSetFilter("all");
     setIsCategoryPanelOpen(false);
     setSelectedCardIndex(null);
@@ -824,6 +872,116 @@ export default function LibraryPage() {
     });
   }, [grammarAtlasCatalog, grammarDomainFilter, levelFilter, search]);
 
+  // 7. YOUTUBE VİDEO & OYNATMA LİSTESİ FİLTRELEMESİ (55 Küratörlü Kayıt)
+  const youtubeCounts = useMemo(() => {
+    const byLevel: Record<Level | "all", number> = {
+      all: youtubeTavsiyeleri.length,
+      A1: 0,
+      A2: 0,
+      B1: 0,
+      B2: 0,
+    };
+    const byCategory: Record<YoutubeCategory | "all", number> = {
+      all: 0,
+      cizgi_animasyon: 0,
+      diyalog_egitim: 0,
+      hikaye_kissa: 0,
+      tarihi_dizi_film: 0,
+      islami_sohbet_ders: 0,
+      belgesel_basin: 0,
+    };
+    let videoOnly = 0;
+    let playlistOnly = 0;
+    let watchedCount = 0;
+    const watchedSet = new Set(mounted ? watchedVideos || [] : []);
+
+    for (const item of youtubeTavsiyeleri) {
+      byLevel[item.cefr] = (byLevel[item.cefr] || 0) + 1;
+      if (levelFilter === "all" || item.cefr === levelFilter) {
+        byCategory.all += 1;
+        byCategory[item.kategori] = (byCategory[item.kategori] || 0) + 1;
+        if (
+          youtubeCategoryFilter === "all" ||
+          item.kategori === youtubeCategoryFilter
+        ) {
+          if (item.tur === "video") videoOnly += 1;
+          else playlistOnly += 1;
+          if (watchedSet.has(item.id)) watchedCount += 1;
+        }
+      }
+    }
+    return {
+      byLevel,
+      byCategory,
+      videoOnly,
+      playlistOnly,
+      watchedCount,
+      totalWatchedAll: watchedSet.size,
+    };
+  }, [levelFilter, youtubeCategoryFilter, mounted, watchedVideos]);
+
+  const filteredYoutubeItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const cleanQ = cleanArabicText(search.trim());
+    const normQ = normalizeArabicText(search.trim());
+    const watchedSet = new Set(mounted ? watchedVideos || [] : []);
+
+    return youtubeTavsiyeleri.filter((item) => {
+      if (levelFilter !== "all" && item.cefr !== levelFilter) return false;
+      if (
+        youtubeCategoryFilter !== "all" &&
+        item.kategori !== youtubeCategoryFilter
+      )
+        return false;
+      if (youtubeKindFilter === "video" && item.tur !== "video") return false;
+      if (youtubeKindFilter === "playlist" && item.tur !== "playlist")
+        return false;
+      if (youtubeKindFilter === "watched" && !watchedSet.has(item.id))
+        return false;
+
+      if (q) {
+        const matchTr = item.baslik_tr.toLowerCase().includes(q);
+        const matchChannel = item.kanal_adi.toLowerCase().includes(q);
+        const matchNote = item.pedagojik_not.toLowerCase().includes(q);
+        const matchCat = YOUTUBE_CATEGORY_META[item.kategori]?.label
+          .toLowerCase()
+          .includes(q);
+        const matchAr =
+          item.baslik_ar.includes(search.trim()) ||
+          (cleanQ.length > 0 &&
+            cleanArabicText(item.baslik_ar).includes(cleanQ)) ||
+          (normQ.length > 0 &&
+            normalizeArabicText(item.baslik_ar).includes(normQ));
+        const matchWords = Array.isArray(item.odak_kelimeler)
+          ? item.odak_kelimeler.some(
+              (w) =>
+                w.includes(search.trim()) ||
+                (cleanQ.length > 0 && cleanArabicText(w).includes(cleanQ)) ||
+                (normQ.length > 0 && normalizeArabicText(w).includes(normQ))
+            )
+          : false;
+        if (
+          !matchTr &&
+          !matchChannel &&
+          !matchNote &&
+          !matchCat &&
+          !matchAr &&
+          !matchWords
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [
+    levelFilter,
+    youtubeCategoryFilter,
+    youtubeKindFilter,
+    search,
+    mounted,
+    watchedVideos,
+  ]);
+
   const activeModalListLength =
     activeSection === "cumleler"
       ? filteredSentences.length
@@ -1004,7 +1162,9 @@ export default function LibraryPage() {
   const hasActiveFilter =
     statusFilter !== "all" ||
     levelFilter !== "all" ||
-    categoryFilter !== "all";
+    categoryFilter !== "all" ||
+    youtubeCategoryFilter !== "all" ||
+    youtubeKindFilter !== "all";
 
   const isDualGenderSection =
     activeSection === "cumleler" ||
@@ -1168,6 +1328,10 @@ export default function LibraryPage() {
     if (activeSection === "gorsel-kelimeler")
       return `${contentStats.visualWordCount} Görsel Kelime`;
     if (activeSection === "saved-words") return "Kişisel Çalışma Defterim";
+    if (activeSection === "gramer")
+      return `${contentStats.grammarNoteCount} Odak Gramer Atlası`;
+    if (activeSection === "videolar")
+      return `${contentStats.youtubeCount} Video & İzleme Rehberi`;
     if (activeSection === "metinler")
       return `${contentStats.readingCount} Okuma Metni`;
     return `${contentStats.dialogueCount} Diyalog`;
@@ -2518,6 +2682,10 @@ export default function LibraryPage() {
                   id: "gramer",
                   label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
                 },
+                {
+                  id: "videolar",
+                  label: `🎬 Video & İzleme Rehberi (${contentStats.youtubeCount})`,
+                },
               ] as { id: ViewSection; label: string }[]
             ).map((tab) => {
               const active = activeSection === tab.id;
@@ -3261,6 +3429,66 @@ export default function LibraryPage() {
             </div>
           </div>
 
+          {/* 8. Arapça Video & İzleme Rehberi Vitrin Kartı (Tam Genişlik Vurgulu) */}
+          <div
+            onClick={() => handleSwitchSection("videolar")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleSwitchSection("videolar");
+              }
+            }}
+            className="group rounded-2xl border-2 border-rose-300 dark:border-rose-800/80 border-b-4 bg-gradient-to-r from-[#F7EFE1] via-rose-50/65 to-[#F7EFE1] dark:from-[var(--surface)] dark:via-rose-950/30 dark:to-[var(--surface)] hover:border-rose-600 p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
+          >
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-rose-100 dark:bg-rose-950/80 border-2 border-rose-400 flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                <span className="text-2xl">🎬</span>
+                <span className="text-[10px] font-black text-rose-900 dark:text-rose-200 uppercase mt-0.5">
+                  {contentStats.youtubeCount} Kaynak
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-black text-[var(--foreground)] group-hover:text-rose-600 transition-colors">
+                    🎬 Seviyeli Arapça Video &amp; İzleme Rehberi
+                  </h2>
+                  <span
+                    lang="ar"
+                    dir="rtl"
+                    className="arabic text-lg font-bold text-[#065F46] dark:text-emerald-400"
+                  >
+                    {getDisplayArabic("دَلِيلُ الْمُشَاهَدَةِ وَالِاسْتِمَاعِ")}
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
+                  A1–B2 seviyelerine göre seçilmiş{" "}
+                  <strong>{contentStats.youtubeCount} video ve oynatma listesini</strong>{" "}
+                  (çizgi diziler, kıssalar, tarihî diziler, ilmî dersler ve Al Jazeera/BBC belgeselleri) sıfır gecikmeli uygulama içi oynatıcı ve izleme metodolojisiyle keşfedin.
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-rose-300 text-rose-900 dark:text-rose-200">
+                    6 Tematik Kategori • A1–B2
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
+                    14 Harici Arşiv Platformu
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
+                    İzlenen: {youtubeCounts.totalWatchedAll} / {contentStats.youtubeCount}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-auto flex items-center gap-2 lg:self-center shrink-0">
+              <span className="w-full lg:w-auto py-2.5 px-4 rounded-xl bg-rose-600 group-hover:bg-rose-700 text-white border-b-3 border-rose-800 text-xs sm:text-sm font-black inline-flex items-center justify-between lg:justify-center gap-1.5 shadow-xs transition-colors">
+                <span>🎬 İzleme Rehberini Aç</span>
+                <ArrowRight size={15} className="shrink-0" />
+              </span>
+            </div>
+          </div>
+
           {/* Alt Hızlı Aksiyon Şeridi (Vitrin Alt Barı) */}
           <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="space-y-0.5">
@@ -3313,6 +3541,7 @@ export default function LibraryPage() {
 
       {/* ORTAK ARAMA VE SEVİYE / DURUM FİLTRE ÇUBUĞU */}
       {activeSection !== "vitrin" &&
+        activeSection !== "videolar" &&
         activeSection !== "saved-words" &&
         activeSection !== "weak-words" && (
         <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
@@ -6028,6 +6257,26 @@ export default function LibraryPage() {
                             <Gamepad2 size={13} />
                             <span>Alıştırma Yap</span>
                           </Link>
+
+                          {(() => {
+                            const linkedYt = getYoutubeRecommendationsByContentId(
+                              gItem.bagliId
+                            );
+                            if (linkedYt.length === 0) return null;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  stopAllAudio();
+                                  setYoutubeModalItems(linkedYt);
+                                }}
+                                className="flex-1 min-w-[210px] min-h-[40px] py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs border-b-3 border-rose-800 flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                              >
+                                <span>🎬 İlgili Tavsiye Videoyu / Listeyi İzle</span>
+                              </button>
+                            );
+                          })()}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -6105,6 +6354,395 @@ export default function LibraryPage() {
         grammarTopic={activeGrammarModal?.grammarTopic}
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />
+
+      {/* 8. SEKME: 🎬 VİDEO & İZLEME REHBERİ (55 KAYIT + METODOLOJİ + 14 HARİCİ PLATFORM) */}
+      {activeSection === "videolar" && (
+        <section
+          aria-label="Arapça Video ve İzleme Rehberi"
+          className="space-y-4"
+        >
+          {/* EN ÜST: AÇILIR/KAPANIR "🧭 NASIL İZLEMELİYİM? & HARİCİ PLATFORMLAR REHBERİ" AKORDEON PANELİ */}
+          <details className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-gradient-to-br from-[#F7EFE1] via-[#FDFBF7] to-amber-50/50 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-slate-900 shadow-xs overflow-hidden">
+            <summary
+              onClick={() => playClick()}
+              className="list-none cursor-pointer p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none hover:bg-[#EFE3CE]/40 dark:hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-start sm:items-center gap-3 min-w-0">
+                <span className="w-11 h-11 rounded-2xl bg-[#087F5B] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Compass size={22} />
+                </span>
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-black text-[var(--foreground)]">
+                      🧭 Nasıl İzlemeliyim? &amp; Harici Platformlar Rehberi
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold">
+                      A1 → B2 Yol Haritası &amp; 14 Seçkin Arşiv
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-[var(--muted)]">
+                    Seviyelere göre günlük izleme metodolojisini ve SpaceToon, Al Jazeera Learning, Naseem Al-Sham gibi 14 harici platformu görüntülemek için tıklayın.
+                  </p>
+                </div>
+              </div>
+
+              <span className="self-start sm:self-center px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[#087F5B] dark:text-emerald-400 inline-flex items-center gap-1.5 shrink-0">
+                <span className="group-open:hidden">Rehberi Aç</span>
+                <span className="hidden group-open:inline">Rehberi Gizle</span>
+                <ChevronDown
+                  size={15}
+                  className="transition-transform duration-200 group-open:rotate-180"
+                />
+              </span>
+            </summary>
+
+            <div className="p-4 sm:p-5 pt-1 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)] space-y-5">
+              {/* BÖLÜM A: SEVİYELERE GÖRE İZLEME ROTASI VE METODOLOJİ */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs font-black">
+                    1. Adım
+                  </span>
+                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                    Seviyelere Göre İzleme Rotası ve Metodoloji
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+                  {/* Başlangıç Seviyesi (A1-A2) */}
+                  <div className="rounded-2xl border-2 border-emerald-300/90 dark:border-emerald-800 bg-white dark:bg-[var(--background)] p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-xs font-black">
+                        Başlangıç Seviyesi (A1–A2)
+                      </span>
+                      <span className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300">
+                        🎨 Çizgi Diziler &amp; Animasyonlar
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-[var(--foreground)] leading-relaxed">
+                      Her gün düzenli <strong>20 dakikalık</strong> kısa çizgi dizi bölümleriyle (<em>Baraaem</em>, <em>Nan ve Lili</em>, <em>Heidi</em>, <em>Sali</em>, <em>Favvaz ve Nura</em>) fasih Arapça kulak aşinalığı kazanın. Her kelimeyi sözlükten bakmak yerine görsel bağlamdan sezmeye odaklanın; <strong>30–40 bölüm</strong> izledikten sonra uzun metrajlı animasyonlara geçiş yapın.
+                    </p>
+                  </div>
+
+                  {/* Orta Seviye (B1) */}
+                  <div className="rounded-2xl border-2 border-[#6741D9]/45 dark:border-indigo-700 bg-white dark:bg-[var(--background)] p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-[#6741D9] text-white text-xs font-black">
+                        Orta Seviye (B1)
+                      </span>
+                      <span className="text-xs font-extrabold text-[#6741D9] dark:text-indigo-300">
+                        🏛️ Kıssalar, Diziler &amp; Sohbetler
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-[var(--foreground)] leading-relaxed">
+                      <em>Kelile ve Dimne</em>, <em>Kur&apos;an Kıssaları</em>, fasih dublajlı <em>Diriliş Ertuğrul</em>, <em>Yunus Emre</em>, <em>Selahaddin Eyyubi</em>, <em>Ahmed b. Hanbel</em> ve <em>Siyer / Riyâzü&apos;s-Sâlihîn</em> dersleriyle devam edin. Bu serilerle yeterli kulak dolgunluğu oluştuktan sonra, tarihî diziler içinde <strong>en fasih ve edebî dile sahip olan <em>Hz. Ömer</em> dizisine</strong> geçin.
+                    </p>
+                  </div>
+
+                  {/* İleri Seviye (B2) */}
+                  <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-700 bg-white dark:bg-[var(--background)] p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-amber-600 text-white text-xs font-black">
+                        İleri Seviye (B2)
+                      </span>
+                      <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300">
+                        🌍 İslâmî İlimler &amp; Basın
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-[var(--foreground)] leading-relaxed">
+                      <em>Ramazan el-Bûtî</em> ve <em>Nâbulsî</em> tefsir/akîde dersleri, <em>Al Jazeera</em> ve <em>BBC Arapça</em> belgeselleri (<em>Endülüs</em>, <em>Nekbe</em>, <em>El-Ezher</em>) ile <em>Bilâ Hudûd</em> ve <em>eş-Şerîa ve&apos;l-Hayât</em> tartışma programlarını takip ederek çağdaş basın, diplomasi ve akademi ıstılahlarını kazanın.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* BÖLÜM B: SEÇKİN HARİCİ İZLEME VE ARŞİV PLATFORMLARI */}
+              <div className="space-y-3 pt-2 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-xs font-black">
+                      2. Adım
+                    </span>
+                    <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                      Seçkin Harici İzleme ve Arşiv Platformları
+                    </h3>
+                  </div>
+                  <span className="text-[11px] font-bold text-[var(--muted)]">
+                    Yeni sekmede açılan güvenilir Arapça medya ve arşiv kaynakları
+                  </span>
+                </div>
+
+                <div className="space-y-3.5">
+                  {EXTERNAL_WATCH_PLATFORM_GROUPS.map((group) => (
+                    <div key={group.id} className="space-y-2">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#065F46] dark:text-emerald-400 flex items-center gap-1.5">
+                        <span>{group.emoji}</span>
+                        <span>{group.title}</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        {group.platforms.map((plat) => (
+                          <a
+                            key={plat.url}
+                            href={plat.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => playClick()}
+                            className="group/plat rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] bg-white dark:bg-[var(--background)] p-3 flex items-start justify-between gap-2.5 transition-all shadow-2xs"
+                          >
+                            <div className="min-w-0 space-y-0.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] group-hover/plat:text-[#087F5B] transition-colors">
+                                  {plat.name}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] text-[10px] font-bold text-[var(--muted)]">
+                                  {plat.badge}
+                                </span>
+                              </div>
+                              <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                                {plat.description}
+                              </p>
+                            </div>
+                            <ExternalLink
+                              size={14}
+                              className="text-[var(--muted)] group-hover/plat:text-[#087F5B] shrink-0 mt-0.5"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </details>
+
+          {/* FİLTRE PANELİ: ARAMA + CEFR SEVİYE + 6 TEMATİK KATEGORİ + TÜR/İZLENEN ALT FİLTRESİ */}
+          <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-3.5 space-y-2.5">
+            {/* Satır 1: Arama + Seviye Seçici (Tümü | A1 | A2 | B1 | B2) */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setVisibleCount(36);
+                  }}
+                  placeholder="Video adı, Arapça başlık, kanal, odak kelime veya konu ara..."
+                  className="w-full h-9 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] rounded-xl pl-8 pr-8 text-xs font-semibold text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[#087F5B]"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+                    aria-label="Aramayı Temizle"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] items-center gap-1 shrink-0">
+                {(["all", "A1", "A2", "B1", "B2"] as (Level | "all")[]).map(
+                  (lvl) => {
+                    const active = levelFilter === lvl;
+                    const count = youtubeCounts.byLevel[lvl] || 0;
+                    return (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setLevelFilter(lvl);
+                          setVisibleCount(36);
+                        }}
+                        className={`px-2.5 py-1 text-xs rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                          active
+                            ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                            : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {lvl === "all" ? `Tümü (${count})` : `${lvl} (${count})`}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+
+            {/* Satır 2: 6 Tematik YoutubeCategory Filtresi */}
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setYoutubeCategoryFilter("all");
+                  setVisibleCount(36);
+                }}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+                  youtubeCategoryFilter === "all"
+                    ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                Tüm Kategoriler ({youtubeCounts.byCategory.all})
+              </button>
+
+              {YOUTUBE_CATEGORY_ORDER.map((catId) => {
+                const meta = YOUTUBE_CATEGORY_META[catId];
+                const active = youtubeCategoryFilter === catId;
+                const count = youtubeCounts.byCategory[catId] || 0;
+                return (
+                  <button
+                    key={catId}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setYoutubeCategoryFilter(catId);
+                      setVisibleCount(36);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-all inline-flex items-center gap-1 ${
+                      active
+                        ? "bg-[#6741D9] border-[#4C28B5] text-white shadow-2xs"
+                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]"
+                    }`}
+                  >
+                    <span>{meta.emoji}</span>
+                    <span>{meta.shortLabel}</span>
+                    <span className="opacity-80">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Satır 3: Tür & İzlenme Durumu Alt Filtresi (Tümü | Tekil Videolar | Oynatma Listeleri | İzlediklerim) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5">
+                {(
+                  [
+                    {
+                      id: "all",
+                      label: `Tümü (${
+                        youtubeCounts.videoOnly + youtubeCounts.playlistOnly
+                      })`,
+                      icon: null,
+                    },
+                    {
+                      id: "video",
+                      label: `Tekil Videolar (${youtubeCounts.videoOnly})`,
+                      icon: <Film size={13} />,
+                    },
+                    {
+                      id: "playlist",
+                      label: `Oynatma Listeleri (${youtubeCounts.playlistOnly})`,
+                      icon: <ListVideo size={13} />,
+                    },
+                    {
+                      id: "watched",
+                      label: `İzlediklerim (${youtubeCounts.watchedCount})`,
+                      icon: <CheckCircle2 size={13} />,
+                    },
+                  ] as {
+                    id: YoutubeSubFilter;
+                    label: string;
+                    icon: React.ReactNode;
+                  }[]
+                ).map((sub) => {
+                  const active = youtubeKindFilter === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setYoutubeKindFilter(sub.id);
+                        setVisibleCount(36);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg border text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+                        active
+                          ? "bg-[#087F5B] border-[#065F46] text-white font-extrabold shadow-2xs"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {sub.icon}
+                      <span>{sub.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <span className="text-[11px] font-extrabold text-[var(--muted)]">
+                Gösterilen: <strong>{filteredYoutubeItems.length}</strong> içerik
+              </span>
+            </div>
+          </div>
+
+          {/* KART IZGARASI (SIFIR GECİKMELİ LITE YOUTUBE KARTLARI) */}
+          {filteredYoutubeItems.length === 0 ? (
+            <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] border-b-4 p-10 text-center space-y-3">
+              <p className="text-base font-extrabold text-[var(--foreground)]">
+                Seçtiğiniz filtrelere uygun video veya oynatma listesi bulunamadı.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSearch("");
+                  setLevelFilter("all");
+                  setYoutubeCategoryFilter("all");
+                  setYoutubeKindFilter("all");
+                }}
+                className="px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-extrabold cursor-pointer"
+              >
+                Filtreleri Temizle
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredYoutubeItems.slice(0, visibleCount).map((ytItem) => (
+                  <LiteYoutubeCard
+                    key={ytItem.id}
+                    item={ytItem}
+                    onOpenCinemaModal={(selected) =>
+                      setYoutubeModalItems([selected])
+                    }
+                  />
+                ))}
+              </div>
+
+              {visibleCount < filteredYoutubeItems.length && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setVisibleCount((prev) => prev + 36);
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs border-b-3 border-[#065F46] cursor-pointer transition-all"
+                  >
+                    Daha Fazla Video Göster (
+                    {filteredYoutubeItems.length - visibleCount} kaldı)
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
+
+      {/* GENİŞ SİNEMA MODU YOUTUBE OYNATICI MODALI */}
+      {youtubeModalItems && youtubeModalItems.length > 0 && (
+        <YoutubePlayerModal
+          items={youtubeModalItems}
+          onClose={() => setYoutubeModalItems(null)}
+        />
+      )}
 
       {shareCardTarget && (
         <ShareContentCardModal

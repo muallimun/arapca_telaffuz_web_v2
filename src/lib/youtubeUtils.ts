@@ -1,0 +1,485 @@
+import {
+  YoutubeCategory,
+  YoutubeRecommendationItem,
+} from "@/types/data";
+
+export interface YoutubeCategoryMeta {
+  id: YoutubeCategory;
+  label: string;
+  shortLabel: string;
+  emoji: string;
+  arabicTitle: string;
+  gradientClass: string;
+  badgeClass: string;
+  description: string;
+}
+
+export const YOUTUBE_CATEGORY_ORDER: YoutubeCategory[] = [
+  "cizgi_animasyon",
+  "diyalog_egitim",
+  "hikaye_kissa",
+  "tarihi_dizi_film",
+  "islami_sohbet_ders",
+  "belgesel_basin",
+];
+
+export const YOUTUBE_CATEGORY_META: Record<
+  YoutubeCategory,
+  YoutubeCategoryMeta
+> = {
+  cizgi_animasyon: {
+    id: "cizgi_animasyon",
+    label: "Çizgi Film & Animasyon",
+    shortLabel: "Çizgi & Animasyon",
+    emoji: "🎨",
+    arabicTitle: "الرُّسُومُ الْمُتَحَرِّكَةُ",
+    gradientClass:
+      "from-emerald-800 via-teal-700 to-cyan-800 text-emerald-50",
+    badgeClass:
+      "bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
+    description:
+      "A1–A2 seviyesinde yavaş, fasih ve görsel bağlamlı çizgi diziler",
+  },
+  diyalog_egitim: {
+    id: "diyalog_egitim",
+    label: "Diyalog & Eğitim",
+    shortLabel: "Diyalog & Eğitim",
+    emoji: "🗣️",
+    arabicTitle: "الْحِوَارُ وَالتَّعْلِيمُ",
+    gradientClass:
+      "from-indigo-800 via-violet-700 to-purple-800 text-indigo-50",
+    badgeClass:
+      "bg-violet-100 dark:bg-violet-950/70 text-violet-900 dark:text-violet-200 border-violet-300 dark:border-violet-700",
+    description:
+      "Günlük konuşma kalıpları, saatler ve uygulamalı dil dersleri",
+  },
+  hikaye_kissa: {
+    id: "hikaye_kissa",
+    label: "Hikâye & Kıssalar",
+    shortLabel: "Hikâye & Kıssa",
+    emoji: "📖",
+    arabicTitle: "الْقِصَصُ وَالْحِكَايَاتُ",
+    gradientClass:
+      "from-amber-800 via-orange-700 to-yellow-800 text-amber-50",
+    badgeClass:
+      "bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700",
+    description:
+      "Kelile ve Dimne, Kur'an kıssaları ve edebi tahkiye serileri",
+  },
+  tarihi_dizi_film: {
+    id: "tarihi_dizi_film",
+    label: "Tarihî Dizi & Sinema",
+    shortLabel: "Tarihî Dizi & Film",
+    emoji: "🏛️",
+    arabicTitle: "الدِّرَامَا التَّارِيخِيَّةُ",
+    gradientClass:
+      "from-stone-900 via-amber-900 to-emerald-950 text-amber-50",
+    badgeClass:
+      "bg-orange-100 dark:bg-orange-950/70 text-orange-900 dark:text-orange-200 border-orange-300 dark:border-orange-700",
+    description:
+      "Hz. Ömer, Selahaddin Eyyubi, Ertuğrul ve fasih dublajlı tarihî yapımlar",
+  },
+  islami_sohbet_ders: {
+    id: "islami_sohbet_ders",
+    label: "İslâmî Sohbet & İlim Dersleri",
+    shortLabel: "İslâmî Ders & Sohbet",
+    emoji: "🕌",
+    arabicTitle: "الدُّرُوسُ الْعِلْمِيَّةُ",
+    gradientClass:
+      "from-emerald-950 via-emerald-800 to-teal-900 text-emerald-50",
+    badgeClass:
+      "bg-teal-100 dark:bg-teal-950/70 text-teal-900 dark:text-teal-200 border-teal-300 dark:border-teal-700",
+    description:
+      "Siyer, Riyâzü's-Sâlihîn, tefsir, akîde ve klasik şerh halkaları",
+  },
+  belgesel_basin: {
+    id: "belgesel_basin",
+    label: "Belgesel & Basın Arapçası",
+    shortLabel: "Belgesel & Basın",
+    emoji: "🌍",
+    arabicTitle: "الْوَثَائِقِيَّاتُ وَالْإِعْلَامُ",
+    gradientClass:
+      "from-slate-900 via-sky-900 to-indigo-950 text-sky-50",
+    badgeClass:
+      "bg-sky-100 dark:bg-sky-950/70 text-sky-900 dark:text-sky-200 border-sky-300 dark:border-sky-700",
+    description:
+      "Al Jazeera, BBC Arabic belgeselleri ve ilmî-siyasî tartışma programları",
+  },
+};
+
+export interface ExternalWatchPlatform {
+  name: string;
+  url: string;
+  badge: string;
+  description: string;
+}
+
+export interface ExternalWatchPlatformGroup {
+  id: string;
+  title: string;
+  emoji: string;
+  platforms: ExternalWatchPlatform[];
+}
+
+export const EXTERNAL_WATCH_PLATFORM_GROUPS: ExternalWatchPlatformGroup[] = [
+  {
+    id: "cartoon_animation",
+    title: "Çizgi Film & Animasyon Arşivleri",
+    emoji: "🎨",
+    platforms: [
+      {
+        name: "SpaceToon Online",
+        url: "https://www.youtube.com/user/spacetoononline",
+        badge: "YouTube Kanalı",
+        description: "Arap dünyasının en köklü çocuk ve çizgi dizi kanalı",
+      },
+      {
+        name: "ATA Animation Studio",
+        url: "https://www.youtube.com/c/ATAAnimationStudio/playlists",
+        badge: "Oynatma Listeleri",
+        description: "Fasih Arapça tarihî ve eğitici animasyon serileri",
+      },
+      {
+        name: "StarDima",
+        url: "https://www.stardima.com/",
+        badge: "Web Arşivi",
+        description: "Arapça dublajlı çizgi film ve animasyon arşivi",
+      },
+      {
+        name: "Cartoon 3rbi",
+        url: "http://www.cartoon3rbi.net/films.html",
+        badge: "Film & Seri",
+        description: "Klasik fasih Arapça çizgi dizi ve sinema arşivi",
+      },
+      {
+        name: "Arabic-Toons",
+        url: "http://www.arabic-toons.com/cartoon.php",
+        badge: "Klasik Arşiv",
+        description: "Seviyeli Arapça çocuk dizileri ve animasyon bölümleri",
+      },
+      {
+        name: "Muzzy BBC",
+        url: "https://muzzybbc.com",
+        badge: "Dil Eğitimi",
+        description: "BBC'nin başlangıç düzeyi animasyonlu dil öğretim serisi",
+      },
+    ],
+  },
+  {
+    id: "education_dialogue",
+    title: "Eğitim & Diyalog Kanalları",
+    emoji: "🗣️",
+    platforms: [
+      {
+        name: "ArabicPod101",
+        url: "https://www.youtube.com/@ArabicPod101",
+        badge: "Dinleme & Diyalog",
+        description: "Seviyelere göre günlük Arapça dinleme ve kelime dersleri",
+      },
+      {
+        name: "Learn Arabic with Maha",
+        url: "https://www.youtube.com/@LearnArabicwithMaha",
+        badge: "Kültür & İletişim",
+        description: "Günlük ifadeler, telaffuz ve pratik Arapça dersleri",
+      },
+    ],
+  },
+  {
+    id: "islamic_doc_media",
+    title: "İslâmî İlimler, Belgesel & Basın",
+    emoji: "🌍",
+    platforms: [
+      {
+        name: "Naseem Al-Sham (Şam Âlimleri Arşivi)",
+        url: "https://naseemalsham.com/",
+        badge: "İlmî Arşiv",
+        description:
+          "Dr. Ramazan el-Bûtî ve Şam ulemasının sesli/görüntülü ders külliyatı",
+      },
+      {
+        name: "Al Jazeera Learning Arabic",
+        url: "https://learning.aljazeera.net",
+        badge: "Basın Arapçası",
+        description:
+          "Seviyelendirilmiş haber videoları, metinler ve interaktif sorular",
+      },
+      {
+        name: "Al Jazeera Documentary",
+        url: "https://www.youtube.com/user/aljazeeradoc/playlists",
+        badge: "Belgesel Külliyatı",
+        description:
+          "Tarih, kültür, bilim ve coğrafya temalı fasih Arapça belgeseller",
+      },
+      {
+        name: "NatGeo Abu Dhabi",
+        url: "https://www.youtube.com/@NatGeoAbuDhabi",
+        badge: "Bilim & Doğa",
+        description:
+          "Modern standart Arapça seslendirmeli bilim ve doğa belgeselleri",
+      },
+      {
+        name: "Havatır - Ahmed eş-Şukayrî",
+        url: "https://www.youtube.com/user/AhmadAlShugairi/playlists",
+        badge: "Kültür & Toplum",
+        description:
+          "İslam dünyası, ahlak ve medeniyet üzerine ödüllü kültür serisi",
+      },
+      {
+        name: "BBC Arabic",
+        url: "https://www.bbc.com/arabic",
+        badge: "Küresel Basın",
+        description:
+          "Güncel dünya haberleri, röportajlar ve medya Arapçası içerikleri",
+      },
+    ],
+  },
+];
+
+export interface ParsedYoutubeUrlInfo {
+  videoId?: string;
+  playlistId?: string;
+  startSeconds?: number;
+}
+
+const VALID_VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+const VALID_PLAYLIST_ID_RE = /^[A-Za-z0-9_-]{10,64}$/;
+
+function parseTimeParamToSeconds(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim().toLowerCase();
+  if (/^\d+$/.test(trimmed)) {
+    const val = parseInt(trimmed, 10);
+    return val > 0 ? val : undefined;
+  }
+  const match = trimmed.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/);
+  if (!match) return undefined;
+  const hours = parseInt(match[1] || "0", 10);
+  const mins = parseInt(match[2] || "0", 10);
+  const secs = parseInt(match[3] || "0", 10);
+  const total = hours * 3600 + mins * 60 + secs;
+  return total > 0 ? total : undefined;
+}
+
+/**
+ * YouTube URL'sinden (youtu.be/..., youtube.com/watch?v=..., youtube.com/playlist?list=..., youtube.com/embed/...)
+ * videoId, playlistId ve varsa başlangıç saniyesini güvenli şekilde ayrıştırır.
+ */
+export function extractYoutubeIdsFromUrl(rawUrl?: string): ParsedYoutubeUrlInfo {
+  if (!rawUrl || typeof rawUrl !== "string") return {};
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return {};
+
+  try {
+    const normalizedUrl =
+      trimmed.startsWith("http://") || trimmed.startsWith("https://")
+        ? trimmed
+        : `https://${trimmed}`;
+    const parsed = new URL(normalizedUrl);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+
+    let videoId: string | undefined;
+    let playlistId: string | undefined;
+
+    const listParam = parsed.searchParams.get("list")?.trim();
+    if (listParam && VALID_PLAYLIST_ID_RE.test(listParam)) {
+      playlistId = listParam;
+    }
+
+    if (host === "youtu.be") {
+      const seg = parsed.pathname.split("/").filter(Boolean)[0] || "";
+      if (VALID_VIDEO_ID_RE.test(seg)) {
+        videoId = seg;
+      }
+    } else if (
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "music.youtube.com" ||
+      host === "youtube-nocookie.com"
+    ) {
+      const vParam = parsed.searchParams.get("v")?.trim();
+      if (vParam && VALID_VIDEO_ID_RE.test(vParam)) {
+        videoId = vParam;
+      } else {
+        const pathParts = parsed.pathname.split("/").filter(Boolean);
+        if (
+          (pathParts[0] === "embed" ||
+            pathParts[0] === "shorts" ||
+            pathParts[0] === "live") &&
+          pathParts[1] &&
+          pathParts[1] !== "videoseries" &&
+          VALID_VIDEO_ID_RE.test(pathParts[1])
+        ) {
+          videoId = pathParts[1];
+        }
+      }
+    }
+
+    const startSeconds =
+      parseTimeParamToSeconds(parsed.searchParams.get("start")) ??
+      parseTimeParamToSeconds(parsed.searchParams.get("t"));
+
+    return { videoId, playlistId, startSeconds };
+  } catch {
+    return {};
+  }
+}
+
+export function resolveYoutubeIds(
+  item: Pick<
+    YoutubeRecommendationItem,
+    "url" | "video_id" | "playlist_id" | "baslangic_sn"
+  >
+): ParsedYoutubeUrlInfo {
+  const fromUrl = extractYoutubeIdsFromUrl(item.url);
+  const explicitVideoId = item.video_id?.trim();
+  const explicitPlaylistId = item.playlist_id?.trim();
+
+  const videoId =
+    explicitVideoId && VALID_VIDEO_ID_RE.test(explicitVideoId)
+      ? explicitVideoId
+      : fromUrl.videoId;
+
+  const playlistId =
+    explicitPlaylistId && VALID_PLAYLIST_ID_RE.test(explicitPlaylistId)
+      ? explicitPlaylistId
+      : fromUrl.playlistId;
+
+  const startSeconds =
+    typeof item.baslangic_sn === "number" &&
+    Number.isFinite(item.baslangic_sn) &&
+    item.baslangic_sn > 0
+      ? Math.floor(item.baslangic_sn)
+      : fromUrl.startSeconds;
+
+  return { videoId, playlistId, startSeconds };
+}
+
+/**
+ * Gizlilik dostu YouTube gömülü oynatıcı (youtube-nocookie.com) URL'sini üretir:
+ * - Hem videoId hem playlistId varsa: /embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1
+ * - Sadece playlistId varsa: /embed/videoseries?list=${playlistId}&rel=0&modestbranding=1
+ * - Sadece videoId varsa: /embed/${videoId}?rel=0&modestbranding=1(&start=...)
+ */
+export function buildYoutubeEmbedUrl(
+  item: Pick<
+    YoutubeRecommendationItem,
+    "url" | "video_id" | "playlist_id" | "baslangic_sn"
+  >,
+  options?: { autoplay?: boolean }
+): string {
+  const { videoId, playlistId, startSeconds } = resolveYoutubeIds(item);
+  const params = new URLSearchParams();
+
+  if (videoId && playlistId) {
+    params.set("list", playlistId);
+    params.set("rel", "0");
+    params.set("modestbranding", "1");
+    if (startSeconds && startSeconds > 0) {
+      params.set("start", String(startSeconds));
+    }
+    if (options?.autoplay) {
+      params.set("autoplay", "1");
+    }
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  }
+
+  if (playlistId) {
+    params.set("list", playlistId);
+    params.set("rel", "0");
+    params.set("modestbranding", "1");
+    if (options?.autoplay) {
+      params.set("autoplay", "1");
+    }
+    return `https://www.youtube-nocookie.com/embed/videoseries?${params.toString()}`;
+  }
+
+  if (videoId) {
+    params.set("rel", "0");
+    params.set("modestbranding", "1");
+    if (startSeconds && startSeconds > 0) {
+      params.set("start", String(startSeconds));
+    }
+    if (options?.autoplay) {
+      params.set("autoplay", "1");
+    }
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  }
+
+  return "";
+}
+
+export function getYoutubeThumbnailUrls(videoId?: string): string[] {
+  if (!videoId || !VALID_VIDEO_ID_RE.test(videoId.trim())) {
+    return [];
+  }
+  const cleanId = videoId.trim();
+  return [
+    `https://i.ytimg.com/vi/${cleanId}/hqdefault.webp`,
+    `https://i.ytimg.com/vi_webp/${cleanId}/hqdefault.webp`,
+    `https://i.ytimg.com/vi/${cleanId}/hqdefault.jpg`,
+  ];
+}
+
+/**
+ * İçerik ID eşleştirmesini sıfır dolgusu farklarından bağımsız olarak kanonikleştirir:
+ * ör. "metin_05" ve "metin_005" -> "metin:5", "dlg_001" -> "dlg:1", "grm_012" -> "grm:12".
+ */
+export function normalizeContentLinkKey(rawId?: string): string {
+  if (!rawId || typeof rawId !== "string") return "";
+  const cleaned = rawId.trim().toLowerCase();
+  if (!cleaned) return "";
+  const match = cleaned.match(/^([a-z]+)_0*(\d+)$/);
+  if (match) {
+    return `${match[1]}:${parseInt(match[2], 10)}`;
+  }
+  return cleaned;
+}
+
+export function doesYoutubeItemMatchContentId(
+  item: Pick<YoutubeRecommendationItem, "bagli_icerik_id">,
+  contentId: string
+): boolean {
+  if (!item.bagli_icerik_id || !contentId) return false;
+  const targetRaw = contentId.trim().toLowerCase();
+  const itemRaw = item.bagli_icerik_id.trim().toLowerCase();
+  if (itemRaw === targetRaw) return true;
+  const normTarget = normalizeContentLinkKey(targetRaw);
+  const normItem = normalizeContentLinkKey(itemRaw);
+  return Boolean(normTarget && normTarget === normItem);
+}
+
+export function getContentLinkHref(bagliIcerikId?: string): {
+  href: string;
+  label: string;
+} | null {
+  if (!bagliIcerikId) return null;
+  const clean = bagliIcerikId.trim().toLowerCase();
+  const match = clean.match(/^([a-z]+)_0*(\d+)$/);
+  if (!match) return null;
+  const prefix = match[1];
+  const num = parseInt(match[2], 10);
+  if (!Number.isFinite(num) || num <= 0) return null;
+
+  if (prefix === "dlg") {
+    const id = `dlg_${String(num).padStart(3, "0")}`;
+    return {
+      href: `/diyalog/${id}`,
+      label: `Diyalog #${num}`,
+    };
+  }
+  if (prefix === "metin") {
+    const id = `metin_${String(num).padStart(2, "0")}`;
+    return {
+      href: `/metin/${id}`,
+      label: `Okuma Metni #${num}`,
+    };
+  }
+  if (prefix === "grm") {
+    const id = `grm_${String(num).padStart(3, "0")}`;
+    return {
+      href: `/kutuphane#card=${id}`,
+      label: `Gramer Notu #${num}`,
+    };
+  }
+  return null;
+}

@@ -3125,7 +3125,7 @@ export default function DialogueDetailPage({
                     <span className="text-[10px] font-extrabold uppercase text-[var(--muted)] block">
                       Dinlenen Kelime Vurgusu
                     </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)]">
+                    <div className="grid grid-cols-2 gap-1.5 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)]">
                       {(
                         [
                           { id: "both", label: "Vurgu + Ok" },
@@ -3143,10 +3143,10 @@ export default function DialogueDetailPage({
                               playClick();
                               setWordTrackingStyle(ws.id);
                             }}
-                            className={`py-1.5 px-2 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                            className={`py-2 px-2.5 rounded-lg text-xs font-extrabold whitespace-nowrap text-center transition-all cursor-pointer ${
                               active
-                                ? "bg-[#6741D9] text-white"
-                                : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                                ? "bg-[#6741D9] text-white shadow-2xs"
+                                : "bg-[#F7EFE1]/55 dark:bg-slate-800/60 text-[var(--foreground)] hover:bg-[#F7EFE1]"
                             }`}
                           >
                             {ws.label}
@@ -3269,6 +3269,140 @@ export default function DialogueDetailPage({
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 4. SATIR: HIZLI ETKİNLİK & SINIF ARAÇLARI ŞERİDİ (Mobilde Yatay Kaydırılabilir, Masaüstünde Sarmalanır) */}
+          <div className="pt-1.5 border-t border-dashed border-[#E2D3B8]/80 dark:border-[var(--border-dashed)]">
+            <div
+              aria-label="Hızlı Etkinlik ve Sınıf Araçları"
+              className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 pb-0.5"
+            >
+              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 shrink-0 pr-0.5">
+                ✨ Hızlı Etkinlik:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  playToken.current += 1;
+                  stop();
+                  cleanupRoleplayMic();
+                  setIsPlayingAll(false);
+                  setLoopingLineSira(null);
+                  setIsRoleplayRunning(false);
+                  setRoleplayActiveLine(null);
+                  setRoleplaySpeakingLine(null);
+                  setStudyMode(studyMode === "roleplay" ? "listen" : "roleplay");
+                }}
+                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                  studyMode === "roleplay"
+                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
+                }`}
+              >
+                <span>🎭 Rol Yapma</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsInfoGapModalOpen(true);
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-700/70 bg-rose-50/90 dark:bg-rose-950/45 hover:border-rose-500 text-rose-900 dark:text-rose-200 text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>👥 İkili Kart (A/B)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setBlurArabic((v) => !v);
+                  setRevealedArabicLines({});
+                }}
+                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                  blurArabic
+                    ? "bg-amber-600 border-amber-800 text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-amber-500 text-[var(--foreground)]"
+                }`}
+              >
+                <span>👁️ Kör Dinleme</span>
+              </button>
+
+              {grammarNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    handleToggleGrammarSplit();
+                  }}
+                  className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                    isGrammarSplitOpen
+                      ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                      : "bg-amber-50 dark:bg-amber-950/45 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:border-amber-500"
+                  }`}
+                >
+                  <span>📐 Yan Yana Gramer</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPdfInitialDocMode("handout");
+                  setIsPdfModalOpen(true);
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)] hover:border-[#087F5B] text-[var(--foreground)] text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>📄 A4 PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsTeacherHwModalOpen(true);
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#6741D9]/45 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] hover:border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff] text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>🎯 Ödev &amp; Paylaş</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShareCardTarget({
+                    type: "dialogue",
+                    arabicText:
+                      dialogue.satirlar[0]?.arapca || dialogue.baslik_ar,
+                    titleAr: dialogue.baslik_ar,
+                    titleTr: dialogue.baslik_tr,
+                    turkishText:
+                      dialogue.satirlar[0]?.turkce || dialogue.baslik_tr,
+                    excerptLines: dialogue.satirlar.slice(0, 3).map((l) => ({
+                      speakerAr: l.konusmaci_ar,
+                      speakerTr: l.konusmaci,
+                      arapca: l.arapca,
+                      turkce: l.turkce,
+                    })),
+                    level: dialogue.seviye,
+                    category: dialogue.tema,
+                    imageUrl:
+                      dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                    deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
+                    initialShowTranslation:
+                      currentViewMode !== "arabic-only" && !isClickRevealActive,
+                  });
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-emerald-400/60 bg-emerald-50 dark:bg-emerald-950/45 hover:border-[#087F5B] text-[#065F46] dark:text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>🖼️ Görsel Kart</span>
+              </button>
             </div>
           </div>
 
@@ -4391,7 +4525,7 @@ export default function DialogueDetailPage({
                                 44,
                                 Math.round(arabicFontSize * classroomScale)
                               )}px`
-                            : `calc(${arabicFontSize}px * var(--font-arabic-scale, 1))`,
+                            : `calc(${arabicFontSize}px * var(--font-arabic-optical-scale, 1))`,
                           lineHeight: isClassroomMode ? 2.1 : undefined,
                         }}
                         className="order-1 md:order-2 arabic font-bold text-[var(--foreground)] text-right py-1.5"
@@ -4461,7 +4595,7 @@ export default function DialogueDetailPage({
                                 44,
                                 Math.round(arabicFontSize * classroomScale)
                               )}px`
-                            : `calc(${arabicFontSize}px * var(--font-arabic-scale, 1))`,
+                            : `calc(${arabicFontSize}px * var(--font-arabic-optical-scale, 1))`,
                           lineHeight: isClassroomMode ? 2.1 : undefined,
                         }}
                         className="arabic font-bold text-[var(--foreground)] text-right py-1.5"

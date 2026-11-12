@@ -47,7 +47,7 @@ import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import {
-  getArabicFontConfig,
+  applyGlobalTypographyCssVars,
   ARABIC_FONT_OPTIONS,
   ARABIC_FONT_SIZE_PRESETS,
 } from "@/lib/arabicTextUtils";
@@ -87,6 +87,7 @@ export default function Header() {
     arabicFontSize,
     arabicFontSizePreset,
     setArabicFontSizePreset,
+    turkishFontSize,
     showTooltips,
     toggleTooltips,
     micNoiseSuppression,
@@ -138,29 +139,13 @@ export default function Header() {
   }, [theme]);
 
   useEffect(() => {
-    const cfg = getArabicFontConfig(arabicFont);
-    const ratio = Number(((arabicFontSize / 34) * cfg.scale).toFixed(3));
-    document.documentElement.style.setProperty(
-      "--font-arabic-family",
-      cfg.cssFamily
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-scale",
-      String(cfg.scale)
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-line-height",
-      String(cfg.lineHeight)
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-size-px",
-      `${arabicFontSize}px`
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-size-ratio",
-      String(ratio)
-    );
-  }, [arabicFont, arabicFontSize]);
+    applyGlobalTypographyCssVars({
+      arabicFont,
+      arabicFontSize,
+      arabicFontSizePreset,
+      turkishFontSize,
+    });
+  }, [arabicFont, arabicFontSize, arabicFontSizePreset, turkishFontSize]);
 
   const closeMicTestResourcesOnly = useCallback(() => {
     if (rafRef.current) {
@@ -581,7 +566,7 @@ export default function Header() {
               </button>
 
               {fontMenuOpen && (
-                <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-13 sm:top-full sm:mt-2 sm:w-80 max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 border-b-4 p-3 shadow-2xl z-50 space-y-3 max-h-[82dvh] overflow-y-auto">
+                <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-13 sm:top-full sm:mt-2 sm:w-[348px] max-w-sm ml-auto rounded-2xl bg-[#FDFBF7] dark:bg-slate-900 border-2 border-[#E6D7BE] dark:border-slate-700 border-b-4 p-3 shadow-2xl z-50 space-y-3 max-h-[82dvh] overflow-y-auto">
                   <div className="flex items-center justify-between pb-1.5 border-b border-[#E6D7BE]/80 dark:border-slate-800">
                     <span className="text-xs font-extrabold text-[var(--foreground)]">
                       Arapça Font, Boyut ve Görünüm
@@ -599,7 +584,7 @@ export default function Header() {
                   {/* Arapça Yazı Boyutu */}
                   <div className="space-y-1.5">
                     <span className="block px-0.5 text-[11px] font-bold text-[var(--muted)]">
-                      Arapça Yazı Boyutu
+                      Yazı Boyutu (Tüm Uygulama)
                     </span>
                     <div className="grid grid-cols-4 gap-1">
                       {ARABIC_FONT_SIZE_PRESETS.map((preset) => {
@@ -613,13 +598,13 @@ export default function Header() {
                               playClick();
                               setArabicFontSizePreset(preset.id);
                             }}
-                            className={`py-1.5 rounded-xl text-[11px] font-extrabold border cursor-pointer transition-all ${
+                            className={`px-1 py-2 rounded-xl text-[11px] font-extrabold whitespace-nowrap text-center leading-tight border cursor-pointer transition-all ${
                               active
                                 ? "bg-[#087F5B] border-[#065F46] text-white"
                                 : "bg-[#F7EFE1] dark:bg-slate-800 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#087F5B]"
                             }`}
                           >
-                            {preset.label.split(" ")[0]}
+                            {preset.label.split(" (")[0]}
                           </button>
                         );
                       })}

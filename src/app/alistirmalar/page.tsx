@@ -2157,8 +2157,8 @@ function ExercisesPageContent() {
     <div
       className={
         isPlaying
-          ? "space-y-1.5 sm:space-y-2 pb-1 sm:pb-4"
-          : "space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
+          ? "tr-scale space-y-1.5 sm:space-y-2 pb-1 sm:pb-4"
+          : "tr-scale space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
       }
     >
       {/* ÜST BAŞLIK (Mobilde Görsel-Sesli Eşleştirme aktifken kendi iç Çık butonu olduğu için gizlenir, diğer aktif alıştırmalarda büyük başlık gizlenip tek satır kompakt bar gösterilir) */}

@@ -2502,7 +2502,7 @@ export default function ReadingTextDetailPage({
                     <span className="text-[10px] font-extrabold uppercase text-[var(--muted)] block">
                       Dinlenen Kelime Vurgusu
                     </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)]">
+                    <div className="grid grid-cols-2 gap-1.5 bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)]">
                       {(
                         [
                           { id: "both", label: "Vurgu + Ok" },
@@ -2521,10 +2521,10 @@ export default function ReadingTextDetailPage({
                               playClick();
                               setWordTrackingStyle(ws.id);
                             }}
-                            className={`py-1.5 px-2 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                            className={`py-2 px-2.5 rounded-lg text-xs font-extrabold whitespace-nowrap text-center transition-all cursor-pointer ${
                               active
-                                ? "bg-[#6741D9] text-white"
-                                : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                                ? "bg-[#6741D9] text-white shadow-2xs"
+                                : "bg-[#F7EFE1]/55 dark:bg-slate-800/60 text-[var(--foreground)] hover:bg-[#F7EFE1]"
                             }`}
                           >
                             {ws.label}
@@ -2649,6 +2649,134 @@ export default function ReadingTextDetailPage({
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 4. SATIR: HIZLI ETKİNLİK & SINIF ARAÇLARI ŞERİDİ (Mobilde Yatay Kaydırılabilir, Masaüstünde Sarmalanır) */}
+          <div className="pt-1.5 border-t border-dashed border-[#E2D3B8]/80 dark:border-[var(--border-dashed)]">
+            <div
+              aria-label="Hızlı Etkinlik ve Sınıf Araçları"
+              className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap md:flex-wrap items-center gap-1.5 pb-0.5"
+            >
+              <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 shrink-0 pr-0.5">
+                ✨ Hızlı Etkinlik:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStudyMode(studyMode === "shadowing" ? "listen" : "shadowing");
+                }}
+                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                  studyMode === "shadowing"
+                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
+                }`}
+              >
+                <span>🎙️ Sesli Okuma</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStudyMode(studyMode === "questions" ? "listen" : "questions");
+                }}
+                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                  studyMode === "questions"
+                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
+                }`}
+              >
+                <span>❓ Anlama Soruları ({readingText.sorular.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setBlurArabic((v) => !v);
+                  setRevealedArabicLines({});
+                }}
+                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                  blurArabic
+                    ? "bg-amber-600 border-amber-800 text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-amber-500 text-[var(--foreground)]"
+                }`}
+              >
+                <span>👁️ Kör Dinleme</span>
+              </button>
+
+              {grammarNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    handleToggleGrammarSplit();
+                  }}
+                  className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                    isGrammarSplitOpen
+                      ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                      : "bg-amber-50 dark:bg-amber-950/45 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:border-amber-500"
+                  }`}
+                >
+                  <span>📐 Yan Yana Gramer</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsPdfModalOpen(true);
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)] hover:border-[#087F5B] text-[var(--foreground)] text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>📄 A4 PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsTeacherHwModalOpen(true);
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#6741D9]/45 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] hover:border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff] text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>🎯 Ödev &amp; Paylaş</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShareCardTarget({
+                    type: "reading",
+                    arabicText:
+                      readingText.satirlar[0]?.arapca || readingText.baslik_ar,
+                    titleAr: readingText.baslik_ar,
+                    titleTr: readingText.baslik_tr,
+                    turkishText:
+                      readingText.satirlar[0]?.turkce || readingText.baslik_tr,
+                    excerptLines: readingText.satirlar.slice(0, 3).map((l) => ({
+                      arapca: l.arapca,
+                      turkce: l.turkce,
+                    })),
+                    level: readingText.seviye,
+                    category: readingText.tema,
+                    imageUrl:
+                      readingText.gorsel ||
+                      getReadingTextCoverUrl(readingText.id),
+                    deepLink: `https://app.muallimun.net/metin/${readingText.id}`,
+                    initialShowTranslation:
+                      currentViewMode !== "arabic-only" && !isClickRevealActive,
+                  });
+                }}
+                className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-emerald-400/60 bg-emerald-50 dark:bg-emerald-950/45 hover:border-[#087F5B] text-[#065F46] dark:text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
+              >
+                <span>🖼️ Görsel Kart</span>
+              </button>
             </div>
           </div>
 
@@ -3248,7 +3376,7 @@ export default function ReadingTextDetailPage({
                   <div dir="rtl" className="text-right flex-1">
                     <div
                       style={{
-                        fontSize: `calc(${arabicFontSize}px * 0.9 * var(--font-arabic-scale, 1))`,
+                        fontSize: `calc(${arabicFontSize}px * 0.9 * var(--font-arabic-optical-scale, 1))`,
                       }}
                       className="arabic font-bold text-[var(--foreground)]"
                     >
@@ -3539,7 +3667,7 @@ export default function ReadingTextDetailPage({
                           42,
                           Math.round(arabicFontSize * classroomScale)
                         )}px`
-                      : `calc(${arabicFontSize}px * var(--font-arabic-scale, 1))`,
+                      : `calc(${arabicFontSize}px * var(--font-arabic-optical-scale, 1))`,
                     lineHeight: isClassroomMode ? 2.35 : 2.25,
                   }}
                   className={`arabic font-bold text-[var(--foreground)] text-right leading-[2.25] ${
@@ -4007,7 +4135,7 @@ export default function ReadingTextDetailPage({
                                 44,
                                 Math.round(arabicFontSize * classroomScale)
                               )}px`
-                            : `calc(${arabicFontSize}px * var(--font-arabic-scale, 1))`,
+                            : `calc(${arabicFontSize}px * var(--font-arabic-optical-scale, 1))`,
                           lineHeight: isClassroomMode ? 2.1 : undefined,
                         }}
                         className="order-1 md:order-2 arabic font-bold text-[var(--foreground)] text-right py-1.5"
@@ -4079,7 +4207,7 @@ export default function ReadingTextDetailPage({
                                 44,
                                 Math.round(arabicFontSize * classroomScale)
                               )}px`
-                            : `calc(${arabicFontSize}px * var(--font-arabic-scale, 1))`,
+                            : `calc(${arabicFontSize}px * var(--font-arabic-optical-scale, 1))`,
                           lineHeight: isClassroomMode ? 2.1 : undefined,
                         }}
                         className="arabic font-bold text-[var(--foreground)] text-right py-1.5"

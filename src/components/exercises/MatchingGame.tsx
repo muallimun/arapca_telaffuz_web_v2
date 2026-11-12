@@ -1040,7 +1040,7 @@ export default function MatchingGame({
                 className={`h-auto min-h-[58px] py-2.5 px-2.5 sm:px-3.5 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer transition-all ${rowStyle}`}
               >
                 {/* Sol: Türkçe / Eş-Zıt İlişkisi (Kesilmeden Tam Görünür) */}
-                <span className="flex-1 min-w-0 text-left text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 leading-snug break-words">
+                <span className="flex-1 min-w-0 text-left text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-snug break-words">
                   <MixedText text={trCard.text} />
                 </span>
 
@@ -1118,8 +1118,8 @@ export default function MatchingGame({
                   dir="rtl"
                   className={`flex-1 min-w-0 text-right arabic font-arabic font-bold leading-relaxed break-words ${
                     arCard.isSentence
-                      ? "text-base sm:text-lg"
-                      : "text-base sm:text-xl"
+                      ? "text-lg sm:text-xl"
+                      : "text-xl sm:text-2xl"
                   }`}
                 >
                   {formatAr(arCard.text)}

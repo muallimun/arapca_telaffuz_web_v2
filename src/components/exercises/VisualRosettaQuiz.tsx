@@ -2664,7 +2664,7 @@ export default function VisualRosettaQuiz({
                     <span
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-sm sm:text-lg font-bold leading-none truncate"
+                      className="arabic text-base sm:text-xl font-bold leading-snug truncate"
                     >
                       {formatAr(option.arapca)}
                     </span>
@@ -2702,7 +2702,7 @@ export default function VisualRosettaQuiz({
                         <span
                           lang="ar"
                           dir="rtl"
-                          className="arabic text-sm sm:text-lg font-bold leading-none truncate"
+                          className="arabic text-base sm:text-xl font-bold leading-snug truncate"
                         >
                           {formatAr(targetPhrase.ar)}
                         </span>
@@ -2711,7 +2711,7 @@ export default function VisualRosettaQuiz({
                       <span
                         lang="ar"
                         dir="rtl"
-                        className="arabic text-xs sm:text-sm font-bold leading-none truncate"
+                        className="arabic text-sm sm:text-base font-bold leading-snug truncate"
                       >
                         {formatAr(option.arapca)}
                       </span>
@@ -2835,7 +2835,7 @@ export default function VisualRosettaQuiz({
                       <span
                         lang="ar"
                         dir="rtl"
-                        className="arabic text-lg sm:text-xl font-bold font-arabic text-emerald-950 dark:text-emerald-200 leading-none truncate"
+                        className="arabic text-xl sm:text-2xl font-bold font-arabic text-emerald-950 dark:text-emerald-200 leading-snug truncate"
                       >
                         {formatAr(option.arapca)}
                       </span>
@@ -2845,7 +2845,7 @@ export default function VisualRosettaQuiz({
                       <span
                         dir="ltr"
                         lang="tr"
-                        className="font-sans text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate"
+                        className="font-sans text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 truncate"
                       >
                         <MixedText text={cleanDoubleParens(option.turkce)} />
                       </span>

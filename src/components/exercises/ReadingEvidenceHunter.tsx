@@ -731,14 +731,14 @@ export default function ReadingEvidenceHunter({
                     <p
                       dir="rtl"
                       lang="ar"
-                      className="arabic font-arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] text-right leading-[1.95] flex-1 break-words"
+                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[var(--foreground)] text-right leading-[1.95] flex-1 break-words"
                     >
                       {fixArabicTypography(line.arapca, arabicFont)}
                     </p>
                   </div>
 
                   {(showTurkishHelp || isEvidenceHighlighted) && (
-                    <p className="text-xs font-medium text-[var(--muted)] mt-2 pt-1.5 border-t border-[#E6D7BE]/50 dark:border-[var(--border)]">
+                    <p className="text-sm sm:text-base font-semibold text-[var(--muted)] mt-2 pt-1.5 border-t border-[#E6D7BE]/50 dark:border-[var(--border)]">
                       {line.turkce}
                     </p>
                   )}
@@ -771,7 +771,7 @@ export default function ReadingEvidenceHunter({
               {fixArabicTypography(currentItem.soruAr, arabicFont)}
             </p>
             {(showTurkishHelp || step !== "answer") && (
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 pt-1.5 border-t border-[#6741D9]/20">
+              <p className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 pt-1.5 border-t border-[#6741D9]/20">
                 “{currentItem.soruTr}”
               </p>
             )}
@@ -800,7 +800,7 @@ export default function ReadingEvidenceHunter({
                     <span
                       dir="rtl"
                       lang="ar"
-                      className="arabic font-arabic text-xl sm:text-2xl font-bold text-right leading-[1.95] flex-1 break-words"
+                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-right leading-[1.95] flex-1 break-words"
                     >
                       {fixArabicTypography(opt, arabicFont)}
                     </span>

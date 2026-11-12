@@ -83,6 +83,86 @@ export function getArabicFontConfig(fontId?: string): ArabicFontConfig {
 }
 
 /**
+ * Kullanıcının seçtiği Arapça punto değerini (Küçük=28, Orta=34, Büyük=42, Çok Büyük=50 veya özel px)
+ * tüm sayfalarda (.arabic / .font-arabic) kullanılacak net ölçek çarpanına dönüştürür.
+ */
+export function computeArabicPuntoScale(
+  arabicFontSize: number,
+  preset?: ArabicFontSizePreset
+): number {
+  if (preset === "sm" && arabicFontSize === 28) return 0.9;
+  if (preset === "md" && arabicFontSize === 34) return 1.0;
+  if (preset === "lg" && arabicFontSize === 42) return 1.2;
+  if (preset === "xl" && arabicFontSize === 50) return 1.4;
+
+  const px = Number.isFinite(arabicFontSize) ? arabicFontSize : 34;
+  if (px <= 28) {
+    return Number(Math.max(0.78, 0.9 - ((28 - px) / 8) * 0.12).toFixed(3));
+  }
+  if (px <= 34) {
+    return Number((0.9 + ((px - 28) / 6) * 0.1).toFixed(3));
+  }
+  if (px <= 42) {
+    return Number((1.0 + ((px - 34) / 8) * 0.2).toFixed(3));
+  }
+  if (px <= 50) {
+    return Number((1.2 + ((px - 42) / 8) * 0.2).toFixed(3));
+  }
+  return Number(Math.min(1.65, 1.4 + ((px - 50) / 14) * 0.25).toFixed(3));
+}
+
+/**
+ * Alıştırmalar, Sözlük, Kütüphane ve Seviye Tespit sayfalarındaki Türkçe soru/anlam/şık
+ * metinleri için orantılı ve mobil taşma yapmayan punto çarpanı üretir.
+ */
+export function computeTurkishPuntoScale(
+  arabicFontSize: number,
+  turkishFontSize = 16
+): number {
+  const arUserScale = computeArabicPuntoScale(arabicFontSize);
+  const arBoost = 1 + (arUserScale - 1) * 0.4;
+  const trRatio = (Number.isFinite(turkishFontSize) ? turkishFontSize : 16) / 16;
+  const combined = arBoost * trRatio;
+  return Number(Math.min(1.36, Math.max(0.86, combined)).toFixed(3));
+}
+
+/**
+ * Kök `<html>` (`document.documentElement`) üzerine global tipografi CSS değişkenlerini yazar.
+ * Diyalog ve Okuma Metni sayfaları kendi `${arabicFontSize}px` hesabında `--font-arabic-optical-scale`
+ * kullanırken; Alıştırmalar, Sözlük, Kütüphane ve Sınav sayfaları `--font-arabic-scale` ve `--font-tr-scale`
+ * üzerinden anında ölçeklenir.
+ */
+export function applyGlobalTypographyCssVars(params: {
+  arabicFont?: string;
+  arabicFontSize: number;
+  arabicFontSizePreset?: ArabicFontSizePreset;
+  turkishFontSize?: number;
+}): void {
+  if (typeof document === "undefined") return;
+  const cfg = getArabicFontConfig(params.arabicFont);
+  const userScale = computeArabicPuntoScale(
+    params.arabicFontSize,
+    params.arabicFontSizePreset
+  );
+  const globalArabicScale = Number((userScale * cfg.scale).toFixed(3));
+  const ratio = Number(((params.arabicFontSize / 34) * cfg.scale).toFixed(3));
+  const trScale = computeTurkishPuntoScale(
+    params.arabicFontSize,
+    params.turkishFontSize ?? 16
+  );
+
+  const root = document.documentElement;
+  root.style.setProperty("--font-arabic-family", cfg.cssFamily);
+  root.style.setProperty("--font-arabic-optical-scale", String(cfg.scale));
+  root.style.setProperty("--font-arabic-user-scale", String(userScale));
+  root.style.setProperty("--font-arabic-scale", String(globalArabicScale));
+  root.style.setProperty("--font-arabic-line-height", String(cfg.lineHeight));
+  root.style.setProperty("--font-arabic-size-px", `${params.arabicFontSize}px`);
+  root.style.setProperty("--font-arabic-size-ratio", String(ratio));
+  root.style.setProperty("--font-tr-scale", String(trScale));
+}
+
+/**
  * Lafzatullah (اللّٰهَ / اللَّهَ / بالله / والله / لله / تالله / فالله) lafızlarında
  * OpenType font ligatürüyle çakışarak çift şedde görüntüsü oluşturan ikinci Lam (ل)
  * üzerindeki fazladan \u0651 (Şedde), \u0670 (Asâ/Çeker) ve \u064E (Fetha) işaretlerini

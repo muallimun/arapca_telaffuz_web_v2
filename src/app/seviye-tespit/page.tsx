@@ -2509,7 +2509,7 @@ function SeviyeTespitContent() {
       const examPassed = sessionMode === "exam" && scorePct >= 75;
 
       return (
-        <div className="max-w-4xl mx-auto space-y-4 pb-16">
+        <div className="tr-scale max-w-4xl mx-auto space-y-4 pb-16">
           {/* Üst Geri Dönüş Barı */}
           <div className="flex items-center justify-between gap-2">
             <button
@@ -2994,7 +2994,7 @@ function SeviyeTespitContent() {
     };
 
     return (
-      <div className="max-w-3xl mx-auto space-y-2.5 pb-16">
+      <div className="tr-scale max-w-3xl mx-auto space-y-2.5 pb-16">
         {/* Üst Kompakt İlerleme ve Çıkış Çubuğu */}
         <div className="flex items-center justify-between gap-2">
           <button
@@ -3198,11 +3198,11 @@ function SeviyeTespitContent() {
 
           {/* Türkçe Soru Yönergesi ve Bağlam */}
           <div className="space-y-1">
-            <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug">
+            <h2 className="text-base sm:text-lg font-extrabold text-[var(--foreground)] leading-snug">
               {q.soru_yonergesi_tr}
             </h2>
             {q.soru_baglam_tr && (
-              <p className="text-xs font-semibold text-[#6741D9] dark:text-[#d0bfff] bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 rounded-xl px-3 py-1.5 inline-block">
+              <p className="text-xs sm:text-sm font-semibold text-[#6741D9] dark:text-[#d0bfff] bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 rounded-xl px-3 py-1.5 inline-block">
                 💡 Bağlam: {q.soru_baglam_tr}
               </p>
             )}
@@ -3291,7 +3291,7 @@ function SeviyeTespitContent() {
                   type="button"
                   disabled={isOptionLocked}
                   onClick={() => handleAnswerOrSkip(opt, false)}
-                  className={`min-h-[52px] px-3.5 py-2.5 rounded-2xl border-2 border-b-3 transition-all flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default ${btnStyle}`}
+                  className={`min-h-[56px] px-3.5 py-2.5 rounded-2xl border-2 border-b-3 transition-all flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default min-w-0 ${btnStyle}`}
                 >
                   <span className="w-7 h-7 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-xs font-black text-[var(--foreground)] shrink-0">
                     {opt.displayHarf}
@@ -3300,10 +3300,10 @@ function SeviyeTespitContent() {
                   <span
                     dir={isArOpt ? "rtl" : "ltr"}
                     lang={isArOpt ? "ar" : "tr"}
-                    className={`[unicode-bidi:isolate] ${
+                    className={`[unicode-bidi:isolate] min-w-0 break-words ${
                       isArOpt
-                        ? "arabic font-arabic text-xl sm:text-2xl font-bold leading-[1.85] text-right flex-1"
-                        : "text-xs sm:text-sm font-bold leading-snug text-left flex-1"
+                        ? "arabic font-arabic text-2xl sm:text-3xl font-bold leading-[1.85] text-right flex-1"
+                        : "text-sm sm:text-base font-bold leading-snug text-left flex-1"
                     }`}
                   >
                     {isArOpt ? displayArabic(opt.metin) : opt.metin}
@@ -3410,7 +3410,7 @@ function SeviyeTespitContent() {
   // ANA ÖLÇME, SEVİYE TESPİT VE KONU TARAMA MERKEZİ SEÇİM EKRANI
   // ============================================================================
   return (
-    <div className="max-w-6xl mx-auto space-y-4 pb-16">
+    <div className="tr-scale max-w-6xl mx-auto space-y-4 pb-16">
       {/* ÜST BAŞLIK + A4 YAZDIRMA BUTONU */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">

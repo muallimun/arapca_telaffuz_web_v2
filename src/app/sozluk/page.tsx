@@ -1170,7 +1170,7 @@ export default function DictionaryPage() {
     Boolean(rootFilter);
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="tr-scale space-y-3 sm:space-y-4">
       {/* GÖLGELEME MODALI */}
       {shadowingTarget && (
         <ShadowingModal
@@ -1870,11 +1870,11 @@ export default function DictionaryPage() {
                                       />
                                       <bdi
                                         dir="rtl"
-                                        className="arabic font-arabic text-base sm:text-lg font-bold"
+                                        className="arabic font-arabic text-xl sm:text-2xl font-bold leading-snug"
                                       >
                                         {getDisplayArabic(syn.ar)}
                                       </bdi>
-                                      <span className="text-xs font-semibold opacity-90">
+                                      <span className="text-xs sm:text-sm font-bold opacity-95">
                                         ({syn.tr})
                                       </span>
                                     </button>
@@ -1940,11 +1940,11 @@ export default function DictionaryPage() {
                                       />
                                       <bdi
                                         dir="rtl"
-                                        className="arabic font-arabic text-base sm:text-lg font-bold"
+                                        className="arabic font-arabic text-xl sm:text-2xl font-bold leading-snug"
                                       >
                                         {getDisplayArabic(ant.ar)}
                                       </bdi>
-                                      <span className="text-xs font-semibold opacity-90">
+                                      <span className="text-xs sm:text-sm font-bold opacity-95">
                                         ({ant.tr})
                                       </span>
                                     </button>
@@ -2003,11 +2003,11 @@ export default function DictionaryPage() {
                           </div>
                           <p
                             dir="rtl"
-                            className="arabic font-arabic text-lg font-bold text-[var(--foreground)] text-right leading-relaxed"
+                            className="arabic font-arabic text-xl sm:text-2xl font-bold text-[var(--foreground)] text-right leading-relaxed"
                           >
                             {getDisplayArabic(entry.ornek_cumle_ar)}
                           </p>
-                          <p className="text-xs font-semibold text-[var(--muted)] leading-snug">
+                          <p className="text-xs sm:text-sm font-semibold text-[var(--muted)] leading-snug">
                             {entry.ornek_cumle_tr}
                           </p>
                         </div>
@@ -2234,7 +2234,7 @@ export default function DictionaryPage() {
                             <span>🌿 Kök:</span>
                             <bdi
                               dir="rtl"
-                              className={`arabic font-arabic text-sm font-bold inline-block ${
+                              className={`arabic font-arabic text-base font-bold inline-block ${
                                 rootFilter === word.kok
                                   ? "text-white"
                                   : "text-[var(--foreground)]"
@@ -2248,14 +2248,14 @@ export default function DictionaryPage() {
 
                       <p
                         dir="ltr"
-                        className="text-sm font-extrabold text-[var(--foreground)] leading-snug text-left"
+                        className="text-base sm:text-lg font-extrabold text-[var(--foreground)] leading-snug text-left break-words"
                       >
                         {splitMixedBidiText(word.anlam_tr).map((seg, sIdx) =>
                           seg.isArabic ? (
                             <bdi
                               key={sIdx}
                               dir="rtl"
-                              className="arabic font-arabic font-bold inline-block mx-0.5"
+                              className="arabic font-arabic text-xl font-bold inline-block mx-0.5"
                             >
                               {getDisplayArabic(seg.text)}
                             </bdi>
@@ -2275,8 +2275,8 @@ export default function DictionaryPage() {
                       <span
                         dir="rtl"
                         className={`arabic font-arabic ${
-                          isIdiomCard ? "text-2xl sm:text-3xl" : "text-3xl"
-                        } font-bold transition-colors block leading-tight ${
+                          isIdiomCard ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"
+                        } font-bold transition-colors block leading-tight break-words ${
                           theme.arabicColor
                         }`}
                       >
@@ -2375,7 +2375,7 @@ export default function DictionaryPage() {
                               </span>
                               <span
                                 dir="rtl"
-                                className="arabic text-base md:text-lg font-arabic font-bold text-[var(--foreground)]"
+                                className="arabic text-lg md:text-xl font-arabic font-bold text-[var(--foreground)]"
                               >
                                 {getDisplayArabic(word.muzari)}
                               </span>
@@ -2395,7 +2395,7 @@ export default function DictionaryPage() {
                               </span>
                               <span
                                 dir="rtl"
-                                className="arabic text-base md:text-lg font-arabic font-bold text-[var(--foreground)]"
+                                className="arabic text-lg md:text-xl font-arabic font-bold text-[var(--foreground)]"
                               >
                                 {getDisplayArabic(word.masdar)}
                               </span>
@@ -2414,7 +2414,7 @@ export default function DictionaryPage() {
                       ) : category === "ozel-isim" ? (
                         <span className="text-xs md:text-sm font-medium text-teal-700 dark:text-teal-300">
                           Müfret:{" "}
-                          <strong className="arabic text-base md:text-lg font-arabic font-bold text-[var(--foreground)]">
+                          <strong className="arabic text-lg md:text-xl font-arabic font-bold text-[var(--foreground)]">
                             {getDisplayArabic(mainArabic)}
                           </strong>
                         </span>
@@ -2423,7 +2423,7 @@ export default function DictionaryPage() {
                           {word.mufret && (
                             <span className="text-xs md:text-sm font-medium text-[var(--muted)]">
                               Müfret:{" "}
-                              <strong className="arabic text-base md:text-lg font-arabic font-bold text-[var(--foreground)]">
+                              <strong className="arabic text-lg md:text-xl font-arabic font-bold text-[var(--foreground)]">
                                 {getDisplayArabic(word.mufret)}
                               </strong>
                             </span>
@@ -2440,7 +2440,7 @@ export default function DictionaryPage() {
                               </span>
                               <span
                                 dir="rtl"
-                                className="arabic text-base md:text-lg font-arabic font-bold text-[var(--foreground)]"
+                                className="arabic text-lg md:text-xl font-arabic font-bold text-[var(--foreground)]"
                               >
                                 {getDisplayArabic(word.cemi)}
                               </span>
@@ -2556,11 +2556,11 @@ export default function DictionaryPage() {
                                               />
                                               <bdi
                                                 dir="rtl"
-                                                className="arabic font-arabic text-sm font-bold"
+                                                className="arabic font-arabic text-lg sm:text-xl font-bold leading-snug"
                                               >
                                                 {getDisplayArabic(syn.ar)}
                                               </bdi>
-                                              <span className="text-[10px] font-semibold opacity-90">
+                                              <span className="text-xs font-semibold opacity-95">
                                                 ({syn.tr})
                                               </span>
                                             </button>
@@ -2575,14 +2575,14 @@ export default function DictionaryPage() {
                                                   }));
                                                 }}
                                                 title={syn.nuans_tr}
-                                                className="px-1 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-800 text-[9px] font-black text-emerald-950 dark:text-emerald-100 cursor-pointer shrink-0"
+                                                className="px-1 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-800 text-[10px] font-black text-emerald-950 dark:text-emerald-100 cursor-pointer shrink-0"
                                               >
                                                 💡 الفروق
                                               </button>
                                             )}
                                           </div>
                                           {syn.nuans_tr && nOpen && (
-                                            <p className="text-[10px] font-semibold leading-snug bg-emerald-50/90 dark:bg-emerald-950/75 border border-emerald-200 dark:border-emerald-800 rounded-lg px-2 py-1 text-emerald-950 dark:text-emerald-100">
+                                            <p className="text-xs font-semibold leading-snug bg-emerald-50/90 dark:bg-emerald-950/75 border border-emerald-200 dark:border-emerald-800 rounded-lg px-2 py-1 text-emerald-950 dark:text-emerald-100">
                                               <strong className="font-black">
                                                 الفروق اللغوية:{" "}
                                               </strong>
@@ -2612,14 +2612,14 @@ export default function DictionaryPage() {
                                           key={nKey}
                                           className="inline-flex flex-col gap-1 max-w-full"
                                         >
-                                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200">
+                                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200">
                                             <button
                                               type="button"
                                               onClick={() =>
                                                 handleListenWord(word, ant.ar)
                                               }
                                               title="Sesli dinlemek için tıklayın"
-                                              className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80"
+                                              className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80"
                                             >
                                               <Volume2
                                                 size={11}
@@ -2627,11 +2627,11 @@ export default function DictionaryPage() {
                                               />
                                               <bdi
                                                 dir="rtl"
-                                                className="arabic font-arabic text-sm font-bold"
+                                                className="arabic font-arabic text-lg sm:text-xl font-bold leading-snug"
                                               >
                                                 {getDisplayArabic(ant.ar)}
                                               </bdi>
-                                              <span className="text-[10px] font-semibold opacity-90">
+                                              <span className="text-xs font-semibold opacity-95">
                                                 ({ant.tr})
                                               </span>
                                             </button>
@@ -2646,14 +2646,14 @@ export default function DictionaryPage() {
                                                   }));
                                                 }}
                                                 title={ant.nuans_tr}
-                                                className="px-1 py-0.5 rounded bg-amber-200/80 dark:bg-amber-800 text-[9px] font-black text-amber-950 dark:text-amber-100 cursor-pointer shrink-0"
+                                                className="px-1 py-0.5 rounded bg-amber-200/80 dark:bg-amber-800 text-[10px] font-black text-amber-950 dark:text-amber-100 cursor-pointer shrink-0"
                                               >
                                                 💡 الفروق
                                               </button>
                                             )}
                                           </div>
                                           {ant.nuans_tr && nOpen && (
-                                            <p className="text-[10px] font-semibold leading-snug bg-amber-50/90 dark:bg-amber-950/75 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 text-amber-950 dark:text-amber-100">
+                                            <p className="text-xs font-semibold leading-snug bg-amber-50/90 dark:bg-amber-950/75 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 text-amber-950 dark:text-amber-100">
                                               <strong className="font-black">
                                                 الفروق اللغوية:{" "}
                                               </strong>
@@ -2691,13 +2691,13 @@ export default function DictionaryPage() {
                                   </div>
                                   <p
                                     dir="rtl"
-                                    className="arabic font-arabic text-base font-bold text-[var(--foreground)] text-right leading-relaxed"
+                                    className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-relaxed"
                                   >
                                     {getDisplayArabic(
                                       wordMeta.synonymAntonym.ornek_cumle_ar
                                     )}
                                   </p>
-                                  <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                                  <p className="text-xs font-semibold text-[var(--muted)] leading-snug">
                                     {wordMeta.synonymAntonym.ornek_cumle_tr}
                                   </p>
                                 </div>
@@ -2714,13 +2714,13 @@ export default function DictionaryPage() {
                               <span
                                 dir="rtl"
                                 lang="ar"
-                                className="arabic font-arabic text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
+                                className="arabic font-arabic text-sm font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
                               >
                                 {classicalBridge.rootSpaced}
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
                               <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-emerald-200/70 dark:border-emerald-800/60 p-2 space-y-0.5">
                                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
                                   Günlük Fasih Kullanım
@@ -2728,11 +2728,11 @@ export default function DictionaryPage() {
                                 <p
                                   dir="rtl"
                                   lang="ar"
-                                  className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                  className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] leading-relaxed text-right"
                                 >
                                   {getDisplayArabic(classicalBridge.modernUsageAr)}
                                 </p>
-                                <p className="text-[11px] font-medium text-[var(--muted)]">
+                                <p className="text-xs font-semibold text-[var(--muted)]">
                                   {classicalBridge.modernUsageTr}
                                 </p>
                               </div>
@@ -2744,11 +2744,11 @@ export default function DictionaryPage() {
                                 <p
                                   dir="rtl"
                                   lang="ar"
-                                  className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                  className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] leading-relaxed text-right"
                                 >
                                   {getDisplayArabic(classicalBridge.classicalTermAr)}
                                 </p>
-                                <p className="text-[11px] font-medium text-[var(--muted)]">
+                                <p className="text-xs font-semibold text-[var(--muted)]">
                                   {classicalBridge.classicalTermTr}
                                 </p>
                               </div>
@@ -2777,11 +2777,11 @@ export default function DictionaryPage() {
                               <p
                                 dir="rtl"
                                 lang="ar"
-                                className="arabic font-arabic text-base font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.95] text-right"
+                                className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.95] text-right"
                               >
                                 ﴿ {getDisplayArabic(classicalBridge.quranicExampleAr)} ﴾
                               </p>
-                              <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-100 leading-snug">
+                              <p className="text-xs sm:text-sm font-semibold text-amber-950 dark:text-amber-100 leading-snug">
                                 &ldquo;{classicalBridge.quranicExampleTr}&rdquo;
                               </p>
                             </div>
@@ -2856,15 +2856,15 @@ export default function DictionaryPage() {
                                           type="button"
                                           onClick={() => handleListenWord(sib)}
                                           title={`${sib.anlam_tr} — Dinlemek için tıkla`}
-                                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-[11px] transition-all cursor-pointer"
+                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] text-xs transition-all cursor-pointer"
                                         >
                                           <bdi
                                             dir="rtl"
-                                            className="arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300"
+                                            className="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300"
                                           >
                                             {getDisplayArabic(sibAr)}
                                           </bdi>
-                                          <span className="font-semibold text-[var(--foreground)] max-w-[120px] truncate">
+                                          <span className="font-semibold text-[var(--foreground)] max-w-[140px] truncate">
                                             {sib.anlam_tr.split(",")[0]}
                                           </span>
                                         </button>
@@ -2921,13 +2921,13 @@ export default function DictionaryPage() {
                                         </div>
                                         <p
                                           dir="rtl"
-                                          className="arabic font-arabic text-base font-bold text-[var(--foreground)] text-right leading-snug"
+                                          className="arabic font-arabic text-lg sm:text-xl font-bold text-[var(--foreground)] text-right leading-relaxed"
                                         >
                                           {getDisplayArabic(ex.arapca)}
                                         </p>
                                         <p
                                           dir="ltr"
-                                          className="text-[11px] font-medium text-[var(--muted)] leading-snug"
+                                          className="text-xs font-semibold text-[var(--muted)] leading-snug"
                                         >
                                           {ex.turkce}
                                         </p>

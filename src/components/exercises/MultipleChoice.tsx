@@ -40,7 +40,11 @@ import { useCountdown } from "@/lib/useTimer";
 import { speakHybrid, playTTS } from "@/lib/audio";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
-import { formatArabicText } from "@/lib/arabicTextUtils";
+import {
+  formatArabicText,
+  hasArabicCharacters,
+  hasLatinCharacters,
+} from "@/lib/arabicTextUtils";
 import { MixedText } from "@/components/ui/MixedText";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
@@ -1147,10 +1151,13 @@ export default function MultipleChoice({
 
       {/* SORU KARTI */}
       <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 text-center space-y-3">
-        <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted)] border-b border-dashed border-[#E2D3B8] pb-2.5">
-          <span className="text-left">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 border-b border-dashed border-[#E2D3B8] pb-3">
+          <span className="text-left text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-relaxed min-w-0 flex-1 break-words">
             {currentQuestion.promptQuestionTr ? (
-              <MixedText text={currentQuestion.promptQuestionTr} />
+              <MixedText
+                text={currentQuestion.promptQuestionTr}
+                arabicClassName="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 mx-1 inline-block leading-relaxed"
+              />
             ) : currentQuestion.kind === "sentence" ? (
               "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
             ) : currentQuestion.kind === "idiom" ? (
@@ -1162,18 +1169,18 @@ export default function MultipleChoice({
           <button
             type="button"
             onClick={() => handleListenQuestion(currentQuestion)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] text-white font-bold border-b-2 border-[#087F5B] shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-[#087F5B] text-white text-xs sm:text-sm font-bold border-b-2 border-[#087F5B] shrink-0 cursor-pointer"
           >
-            <Volume2 size={14} />
+            <Volume2 size={15} />
             <span>Sesli Dinle</span>
           </button>
         </div>
 
         <h3
           dir="rtl"
-          className={`arabic font-bold text-[#065F46] dark:text-emerald-400 py-2 ${
+          className={`arabic font-bold text-[#065F46] dark:text-emerald-400 py-2 break-words ${
             currentQuestion.kind === "sentence"
-              ? "text-2xl sm:text-4xl leading-relaxed"
+              ? "text-3xl sm:text-4xl leading-relaxed"
               : currentQuestion.kind === "idiom"
               ? "text-3xl sm:text-5xl leading-relaxed"
               : "text-4xl sm:text-6xl"
@@ -1185,7 +1192,7 @@ export default function MultipleChoice({
         <p
           dir="ltr"
           lang="tr"
-          className="font-sans text-xs font-bold text-[var(--muted)]"
+          className="font-sans text-xs sm:text-sm font-bold text-[var(--muted)]"
         >
           <MixedText text={currentQuestion.metaLabel} />
         </p>
@@ -1206,6 +1213,9 @@ export default function MultipleChoice({
             feedbackMode === "instant"
               ? stripParentheticalArabicExamples(opt.text)
               : opt.text;
+          const isPureArabicOption =
+            hasArabicCharacters(displayOptionText) &&
+            !hasLatinCharacters(displayOptionText);
 
           return (
             <button
@@ -1215,29 +1225,47 @@ export default function MultipleChoice({
               disabled={
                 (feedbackMode === "instant" && Boolean(selected)) || isTimeUp
               }
-              className={`p-3.5 sm:p-4 rounded-2xl border-2 border-b-4 text-left font-extrabold text-xs sm:text-sm leading-snug transition-all flex items-center justify-between gap-2 cursor-pointer ${
+              className={`min-h-[60px] p-3.5 sm:p-4 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-between gap-2.5 cursor-pointer min-w-0 ${
+                isPureArabicOption
+                  ? "font-bold text-center"
+                  : "text-left font-bold text-sm sm:text-base leading-snug"
+              } ${
                 !selected
                   ? "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
                   : showNeutralSelected
                   ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff] -translate-y-0.5 shadow-xs"
                   : showCorrect
-                  ? "bg-emerald-50 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                  ? "bg-emerald-50 dark:bg-emerald-950/35 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
                   : showWrong
-                  ? "bg-rose-50 border-rose-400 text-rose-800"
+                  ? "bg-rose-50 dark:bg-rose-950/35 border-rose-400 text-rose-800 dark:text-rose-200"
                   : "bg-[#F7EFE1]/50 border-[#E6D7BE] text-[var(--muted)] opacity-65"
               }`}
             >
-              <span dir="ltr" lang="tr" className="font-sans text-left">
-                <MixedText text={displayOptionText} />
-              </span>
+              {isPureArabicOption ? (
+                <span
+                  dir="rtl"
+                  lang="ar"
+                  className="arabic font-arabic text-2xl sm:text-3xl font-bold leading-relaxed text-center flex-1 min-w-0 break-words"
+                >
+                  {formatArabicText(displayOptionText, showHareke, arabicFont)}
+                </span>
+              ) : (
+                <span
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-left flex-1 min-w-0 break-words"
+                >
+                  <MixedText text={displayOptionText} />
+                </span>
+              )}
               {showCorrect && (
-                <CheckCircle2 size={20} className="text-[#065F46] shrink-0" />
+                <CheckCircle2 size={20} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
               )}
               {showWrong && (
                 <XCircle size={20} className="text-rose-600 shrink-0" />
               )}
               {showNeutralSelected && (
-                <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold shrink-0">
+                <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[11px] font-extrabold shrink-0">
                   Seçildi
                 </span>
               )}
@@ -1250,7 +1278,7 @@ export default function MultipleChoice({
       {feedbackMode === "instant" &&
         Boolean(selected) &&
         (currentQuestion.literalTr || currentQuestion.usageNote) && (
-          <div className="rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9]/40 p-3.5 text-left text-xs space-y-1.5 animate-in fade-in duration-150">
+          <div className="rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9]/40 p-3.5 sm:p-4 text-left text-sm space-y-1.5 animate-in fade-in duration-150">
             {currentQuestion.literalTr && (
               <p
                 dir="ltr"

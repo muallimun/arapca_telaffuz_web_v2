@@ -3814,3 +3814,102 @@ test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane
     "KTT Yaprak Test PDF çıktısında soru üstü konu bilgisi varsayılan olarak gizli (false) olmalı ve isteğe bağlı açılabilmelidir"
   );
 });
+
+test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Alıştırma/Sözlük Tipografisi, Hızlı Etkinlik Şeridi ve Dinlenen Kelime Vurgusu 2x2 Düzeni", async () => {
+  const {
+    computeArabicPuntoScale,
+    computeTurkishPuntoScale,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts")).href
+  );
+
+  assert.equal(computeArabicPuntoScale(28, "sm"), 0.9);
+  assert.equal(computeArabicPuntoScale(34, "md"), 1.0);
+  assert.equal(computeArabicPuntoScale(42, "lg"), 1.2);
+  assert.equal(computeArabicPuntoScale(50, "xl"), 1.4);
+  assert.equal(computeTurkishPuntoScale(50, 16) > 1.1, true);
+
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  assert.equal(
+    globalsCss.includes("--text-2xl: calc(1.5rem * var(--font-arabic-scale, 1));") &&
+      globalsCss.includes(".tr-scale {") &&
+      globalsCss.includes(".arabic-inline-mixed {"),
+    true,
+    "globals.css içinde .arabic/.font-arabic ve .tr-scale için Tailwind v4 CSS değişken ölçeklemesi tanımlı olmalıdır"
+  );
+
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    headerCode.includes('{preset.label.split(" (")[0]}') &&
+      !headerCode.includes('{preset.label.split(" ")[0]}') &&
+      headerCode.includes("applyGlobalTypographyCssVars({"),
+    true,
+    "Üst bar T menüsünde Çok Büyük etiketi 'Çok' olarak kesilmemeli ve applyGlobalTypographyCssVars ile tüm uygulamaya senkronize edilmelidir"
+  );
+
+  const mcCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    mcCode.includes("isPureArabicOption") &&
+      mcCode.includes("text-2xl sm:text-3xl font-bold leading-relaxed text-center") &&
+      mcCode.includes("text-left font-bold text-sm sm:text-base leading-snug"),
+    true,
+    "MultipleChoice.tsx içinde saf Arapça şıklar text-2xl sm:text-3xl ve Türkçe şıklar text-sm sm:text-base boyutunda ferah gösterilmelidir"
+  );
+
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    alistirmalarCode.includes("tr-scale") &&
+      sozlukCode.includes("tr-scale") &&
+      kutuphaneCode.includes("tr-scale") &&
+      seviyeCode.includes("tr-scale"),
+    true,
+    "Alıştırmalar, Sözlük, Kütüphane ve Seviye Tespit sayfaları global .tr-scale punto ölçekleyicisine bağlı olmalıdır"
+  );
+
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    diyalogCode.includes("✨ Hızlı Etkinlik:") &&
+      diyalogCode.includes("👥 İkili Kart (A/B)") &&
+      diyalogCode.includes("👁️ Kör Dinleme") &&
+      metinCode.includes("✨ Hızlı Etkinlik:") &&
+      metinCode.includes("❓ Anlama Soruları") &&
+      !diyalogCode.includes("grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white") &&
+      !metinCode.includes("grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white") &&
+      diyalogCode.includes("var(--font-arabic-optical-scale, 1)") &&
+      metinCode.includes("var(--font-arabic-optical-scale, 1)"),
+    true,
+    "Diyalog ve Metin sayfalarında Hızlı Etkinlik şeridi bulunmalı, Dinlenen Kelime Vurgusu 2x2 düzende kesilmeden görünmeli ve çift ölçekleme engellenmelidir"
+  );
+});
+

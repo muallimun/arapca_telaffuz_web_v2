@@ -57,6 +57,7 @@ import {
   clearOfflineAudioCache,
 } from "@/lib/offlineManager";
 import {
+  applyGlobalTypographyCssVars,
   ARABIC_FONT_OPTIONS,
   ARABIC_FONT_SIZE_PRESETS,
   formatArabicByHarekeMode,
@@ -180,29 +181,13 @@ export default function SettingsPage() {
   }, [theme]);
 
   useEffect(() => {
-    const cfg = getArabicFontConfig(arabicFont);
-    const ratio = Number(((arabicFontSize / 34) * cfg.scale).toFixed(3));
-    document.documentElement.style.setProperty(
-      "--font-arabic-family",
-      cfg.cssFamily
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-scale",
-      String(cfg.scale)
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-line-height",
-      String(cfg.lineHeight)
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-size-px",
-      `${arabicFontSize}px`
-    );
-    document.documentElement.style.setProperty(
-      "--font-arabic-size-ratio",
-      String(ratio)
-    );
-  }, [arabicFont, arabicFontSize]);
+    applyGlobalTypographyCssVars({
+      arabicFont,
+      arabicFontSize,
+      arabicFontSizePreset,
+      turkishFontSize,
+    });
+  }, [arabicFont, arabicFontSize, arabicFontSizePreset, turkishFontSize]);
 
   if (!mounted) return null;
 

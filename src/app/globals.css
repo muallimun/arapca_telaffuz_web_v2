@@ -60,7 +60,11 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-arabic: "Arakom", "ArakomFont", "Amiri", "Noto Naskh Arabic", var(--font-sans), system-ui, -apple-system, sans-serif;
   --font-arabic-family: "Arakom", "ArakomFont", "Amiri", "Noto Naskh Arabic", var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-arabic-optical-scale: 1;
+  --font-arabic-user-scale: 1;
   --font-arabic-scale: 1;
+  --font-tr-scale: 1;
+  --local-tr-scale: 1;
   --font-arabic-line-height: 2.05;
 
   --speaker-1: #087f5b;
@@ -129,7 +133,7 @@ body {
   max-width: 100vw;
 }
 
-/* Arapça Metinler İçin Dinamik Font Ailesi ve Ölçekleme (Türkçe/Latin Fallback Korumalı) */
+/* Arapça Metinler İçin Dinamik Font Ailesi ve Global Punto Ölçekleme (Tailwind v4 uyumlu) */
 .arabic,
 .font-arabic {
   font-family: var(
@@ -145,10 +149,38 @@ body {
   line-height: var(--font-arabic-line-height, 2.05);
   letter-spacing: 0;
   font-feature-settings: "liga" 1, "calt" 1;
+  --text-xs: calc(0.75rem * var(--font-arabic-scale, 1));
+  --text-sm: calc(0.875rem * var(--font-arabic-scale, 1));
+  --text-base: calc(1rem * var(--font-arabic-scale, 1));
+  --text-lg: calc(1.125rem * var(--font-arabic-scale, 1));
+  --text-xl: calc(1.25rem * var(--font-arabic-scale, 1));
+  --text-2xl: calc(1.5rem * var(--font-arabic-scale, 1));
+  --text-3xl: calc(1.875rem * var(--font-arabic-scale, 1));
+  --text-4xl: calc(2.25rem * var(--font-arabic-scale, 1));
+  --text-5xl: calc(3rem * var(--font-arabic-scale, 1));
+  --text-6xl: calc(3.75rem * var(--font-arabic-scale, 1));
 }
 
 .arabic:not([dir="ltr"]) {
   direction: rtl;
+}
+
+/* Türkçe metin içinde geçen satır içi Arapça kelimeler (MixedText) için çift ölçekleme yapmayan net boyut */
+.arabic-inline-mixed {
+  font-size: calc(
+    1.28em * var(--font-arabic-scale, 1) / var(--local-tr-scale, 1)
+  );
+}
+
+/* Alıştırmalar, Sözlük, Kütüphane ve Seviye Tespit sayfalarında Türkçe metin punto ölçeklemesi */
+.tr-scale {
+  --local-tr-scale: var(--font-tr-scale, 1);
+  --text-xs: calc(0.75rem * var(--font-tr-scale, 1));
+  --text-sm: calc(0.875rem * var(--font-tr-scale, 1));
+  --text-base: calc(1rem * var(--font-tr-scale, 1));
+  --text-lg: calc(1.125rem * var(--font-tr-scale, 1));
+  --text-xl: calc(1.25rem * var(--font-tr-scale, 1));
+  --text-2xl: calc(1.5rem * var(--font-tr-scale, 1));
 }
 
 /* 3B Dokunsal Kart & Buton Yardımcı Sınıfları */

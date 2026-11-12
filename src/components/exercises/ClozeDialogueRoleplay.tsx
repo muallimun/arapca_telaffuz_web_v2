@@ -697,7 +697,7 @@ export default function ClozeDialogueRoleplay({
                   <span
                     dir="rtl"
                     lang="ar"
-                    className="arabic font-arabic text-xl sm:text-2xl font-bold text-right leading-[1.95] flex-1 break-words"
+                    className="arabic font-arabic text-2xl sm:text-3xl font-bold text-right leading-[1.95] flex-1 break-words"
                   >
                     {fixArabicTypography(opt.arapca, arabicFont)}
                   </span>

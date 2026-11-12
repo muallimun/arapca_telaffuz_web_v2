@@ -29,7 +29,7 @@ export function renderMixedArTrText(
 
   const defaultArabicClass =
     options?.arabicSpanClassName ||
-    "arabic font-arabic text-[1.18em] font-bold text-emerald-950 dark:text-emerald-300 mx-0.5 inline-block leading-normal";
+    "arabic font-arabic arabic-inline-mixed font-bold text-emerald-950 dark:text-emerald-300 mx-0.5 inline-block leading-relaxed";
 
   const parts = text.split(ARABIC_RUN_CAPTURE_REGEX);
 

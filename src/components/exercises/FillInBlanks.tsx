@@ -1621,7 +1621,7 @@ export default function FillInBlanks({
                     playClick();
                     handleChooseOption(w);
                   }}
-                  className="px-3 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-[#6741D9]/40 hover:border-[#6741D9] arabic text-xl font-bold text-[#4C28B5] dark:text-[#d0bfff] cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#6741D9]/40 hover:border-[#6741D9] arabic text-2xl font-bold text-[#4C28B5] dark:text-[#d0bfff] cursor-pointer"
                 >
                   {formatAr(w)}
                 </button>
@@ -1724,7 +1724,7 @@ export default function FillInBlanks({
         {/* ARAPÇA CÜMLE VE BOŞLUK ALANI */}
         <div
           dir="rtl"
-          className="arabic text-2xl sm:text-4xl leading-[2.4] font-bold text-[var(--foreground)] text-center py-1"
+          className="arabic text-3xl sm:text-4xl leading-[2.4] font-bold text-[var(--foreground)] text-center py-1 break-words"
         >
           {currentQ.sentenceWithBlank.split("[ ? ]").map((part, i, arr) => {
             const targetWordClean =
@@ -1791,7 +1791,7 @@ export default function FillInBlanks({
                         placeholder="....."
                         aria-label="Eksik Arapça kelimeyi yazın"
                         style={{ width: `${inputWidthRem}rem` }}
-                        className={`inline-block align-middle max-w-[85vw] mx-1.5 px-2 py-0.5 h-9 sm:h-10 text-center font-arabic arabic text-xl rounded-xl border-2 font-bold focus:outline-none transition-all ${
+                        className={`inline-block align-middle max-w-[85vw] mx-1.5 px-2.5 py-0.5 h-10 sm:h-11 text-center font-arabic arabic text-2xl rounded-xl border-2 font-bold focus:outline-none transition-all ${
                           feedback === "wrong"
                             ? "bg-rose-50 border-rose-500 text-rose-800"
                             : "bg-white dark:bg-[var(--background)] border-[#6741D9] text-[#065F46] dark:text-emerald-400 focus:ring-4 focus:ring-[#6741D9]/20"
@@ -1825,7 +1825,7 @@ export default function FillInBlanks({
           <p
             dir="ltr"
             lang="tr"
-            className="font-sans text-xs sm:text-sm font-semibold text-[var(--muted)] flex-1 text-center sm:text-left"
+            className="font-sans text-sm sm:text-base font-bold text-[var(--foreground)]/85 flex-1 text-center sm:text-left"
           >
             “<MixedText text={currentQ.turkce} />”
           </p>

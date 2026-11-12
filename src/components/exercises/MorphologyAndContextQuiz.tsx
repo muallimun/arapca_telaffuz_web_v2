@@ -1412,28 +1412,28 @@ export default function MorphologyAndContextQuiz({
                     currentQuestion.heroAudio &&
                     playQuestionAudio(currentQuestion.heroAudio)
                   }
-                  className={`arabic font-black text-[var(--foreground)] leading-relaxed px-3 py-2 rounded-2xl bg-[#F7EFE1]/80 dark:bg-[var(--surface)] border border-[#E6D7BE] ${
+                  className={`arabic font-black text-[var(--foreground)] leading-relaxed px-3 py-2 rounded-2xl bg-[#F7EFE1]/80 dark:bg-[var(--surface)] border border-[#E6D7BE] break-words ${
                     currentQuestion.subMode === "root_hunter"
-                      ? "text-2xl sm:text-3xl text-[#4C28B5] dark:text-indigo-300 tracking-wider"
-                      : "text-xl sm:text-2xl"
+                      ? "text-3xl sm:text-4xl text-[#4C28B5] dark:text-indigo-300 tracking-wider"
+                      : "text-2xl sm:text-3xl"
                   } ${currentQuestion.heroAudio ? "cursor-pointer hover:border-[#087F5B]" : ""}`}
                 >
                   {currentQuestion.heroArabic}
                 </div>
               )}
 
-              <div className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] leading-snug text-center">
+              <div className="text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-snug text-center">
                 <MixedText
                   text={currentQuestion.promptTitleTr}
-                  arabicClassName="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                  arabicClassName="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
                 />
               </div>
 
               {currentQuestion.promptSubtitleTr && (
-                <div className="text-[11px] sm:text-xs font-semibold text-[#065F46] dark:text-emerald-400 leading-snug text-center">
+                <div className="text-xs sm:text-sm font-bold text-[#065F46] dark:text-emerald-400 leading-snug text-center">
                   <MixedText
                     text={currentQuestion.promptSubtitleTr}
-                    arabicClassName="arabic font-arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                    arabicClassName="arabic font-arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
                   />
                 </div>
               )}
@@ -1497,10 +1497,10 @@ export default function MorphologyAndContextQuiz({
                               ses_kadin: sib.ses_kadin,
                             })
                           }
-                          className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-xs inline-flex items-center gap-1.5 cursor-pointer"
                         >
-                          <Volume2 size={11} className="text-[#087F5B]" />
-                          <span dir="rtl" lang="ar" className="arabic font-bold">
+                          <Volume2 size={12} className="text-[#087F5B]" />
+                          <span dir="rtl" lang="ar" className="arabic text-base sm:text-lg font-bold">
                             {sib.arabic}
                           </span>
                           <span
@@ -1535,19 +1535,19 @@ export default function MorphologyAndContextQuiz({
                             onClick={() =>
                               playQuestionAudio({ text: st.arabic })
                             }
-                            className="px-2 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs inline-flex items-center gap-1.5 cursor-pointer"
                           >
-                            <span className="text-[10px] font-bold text-[var(--muted)]">
+                            <span className="text-[11px] font-bold text-[var(--muted)]">
                               {st.label}:
                             </span>
                             <span
                               dir="rtl"
                               lang="ar"
-                              className="arabic font-black text-sm text-[#4C28B5] dark:text-indigo-300"
+                              className="arabic font-black text-base sm:text-lg text-[#4C28B5] dark:text-indigo-300"
                             >
                               {st.arabic}
                             </span>
-                            <Volume2 size={11} className="text-[#087F5B]" />
+                            <Volume2 size={12} className="text-[#087F5B]" />
                           </button>
                           {i < currentQuestion.morphChain!.steps.length - 1 && (
                             <span className="text-xs font-black text-[var(--muted)]">
@@ -1565,13 +1565,13 @@ export default function MorphologyAndContextQuiz({
                 currentQuestion.exampleSentence && (
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[10px] font-black text-[#065F46] dark:text-emerald-400">
+                      <div className="text-[11px] font-black text-[#065F46] dark:text-emerald-400">
                         💬 Örnek Cümle İçinde Kullanımı:
                       </div>
                       <div
                         dir="rtl"
                         lang="ar"
-                        className="arabic text-sm sm:text-base font-bold text-[var(--foreground)]"
+                        className="arabic text-lg sm:text-xl font-bold text-[var(--foreground)]"
                       >
                         {currentQuestion.exampleSentence.arabic}
                       </div>
@@ -1773,7 +1773,7 @@ export default function MorphologyAndContextQuiz({
                     <div
                       dir="ltr"
                       lang="tr"
-                      className="font-sans text-sm sm:text-base font-extrabold text-[var(--foreground)] text-left leading-snug my-auto flex items-start gap-1.5"
+                      className="font-sans text-sm sm:text-base font-extrabold text-[var(--foreground)] text-left leading-snug my-auto flex items-start gap-1.5 min-w-0 break-words"
                     >
                       {hasLeadingPin && (
                         <span className="shrink-0 select-none mt-0.5">📌</span>
@@ -1781,14 +1781,14 @@ export default function MorphologyAndContextQuiz({
                       <MixedText
                         text={cleanOptionText}
                         className="font-sans font-extrabold text-[var(--foreground)] leading-snug"
-                        arabicClassName="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                        arabicClassName="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
                       />
                     </div>
                   ) : (
                     <div
                       dir="rtl"
                       lang="ar"
-                      className="arabic font-arabic text-xl sm:text-2xl font-black text-[var(--foreground)] text-right leading-snug my-auto"
+                      className="arabic font-arabic text-2xl sm:text-3xl font-black text-[var(--foreground)] text-right leading-relaxed my-auto break-words"
                     >
                       {opt.arabic}
                     </div>
@@ -1799,26 +1799,26 @@ export default function MorphologyAndContextQuiz({
                     <div
                       dir="ltr"
                       lang="tr"
-                      className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center justify-between gap-1 text-[11px] font-bold text-left"
+                      className="pt-1.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] flex flex-wrap items-center justify-between gap-1 text-xs sm:text-sm font-bold text-left"
                     >
                       <span className="font-sans text-[var(--foreground)] inline-flex items-start gap-1">
                         <span className="shrink-0">🇹🇷</span>
                         <MixedText
                           text={opt.turkish}
-                          arabicClassName="arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                          arabicClassName="arabic font-arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
                         />
                       </span>
                       {opt.rootFormatted && opt.rootFormatted !== "-" && (
                         <span
                           dir="ltr"
                           lang="tr"
-                          className="font-sans px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-[11px] font-bold inline-flex items-center gap-1"
+                          className="font-sans px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/70 text-[#4C28B5] dark:text-indigo-300 text-xs font-bold inline-flex items-center gap-1"
                         >
                           <span>Kök:</span>
                           <bdi
                             dir="rtl"
                             lang="ar"
-                            className="arabic font-arabic text-xs font-bold"
+                            className="arabic font-arabic text-sm sm:text-base font-bold"
                           >
                             {opt.rootFormatted}
                           </bdi>

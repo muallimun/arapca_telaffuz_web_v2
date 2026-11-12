@@ -1002,7 +1002,7 @@ export default function SentenceBuilder({
                   type="button"
                   onClick={() => handleRemoveFromPlaced(tok)}
                   title="Geri kelime havuzuna göndermek için dokunun"
-                  className={`min-h-[42px] px-3.5 py-2 text-lg sm:text-xl font-arabic arabic font-bold select-none active:scale-95 transition-transform rounded-xl border-2 border-b-4 cursor-pointer ${tokenColor}`}
+                  className={`min-h-[46px] px-3.5 py-2 text-xl sm:text-2xl font-arabic arabic font-bold select-none active:scale-95 transition-transform rounded-xl border-2 border-b-4 cursor-pointer ${tokenColor}`}
                 >
                   {formatAr(tok.text)}
                 </button>
@@ -1104,7 +1104,7 @@ export default function SentenceBuilder({
                 key={tok.tokenId}
                 type="button"
                 onClick={() => handleSelectFromPool(tok)}
-                className="min-h-[42px] px-3.5 py-2 text-lg sm:text-xl font-arabic arabic font-bold select-none active:scale-95 transition-transform rounded-xl bg-white dark:bg-slate-800 hover:bg-[#F3F0FF] dark:hover:bg-indigo-950/80 text-[var(--foreground)] dark:text-slate-100 border-2 border-[#E6D7BE] dark:border-slate-600 border-b-4 hover:border-[#6741D9] dark:hover:border-indigo-400 cursor-pointer shadow-2xs"
+                className="min-h-[46px] px-3.5 py-2 text-xl sm:text-2xl font-arabic arabic font-bold select-none active:scale-95 transition-transform rounded-xl bg-white dark:bg-slate-800 hover:bg-[#F3F0FF] dark:hover:bg-indigo-950/80 text-[var(--foreground)] dark:text-slate-100 border-2 border-[#E6D7BE] dark:border-slate-600 border-b-4 hover:border-[#6741D9] dark:hover:border-indigo-400 cursor-pointer shadow-2xs"
               >
                 {formatAr(tok.text)}
               </button>

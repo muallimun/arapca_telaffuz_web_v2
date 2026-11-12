@@ -1265,7 +1265,7 @@ export default function BlindDictation({
           /* MOD B: İ'RAB & SON HAREKE ATÖLYESİ (TASHKEEL) */
           <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E6D7BE]/70 dark:border-[var(--border)]">
-              <p className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+              <p className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
                 Parlayan <span className="text-[#6741D9] dark:text-indigo-300">?</span> halkalı kelimenin son harfine doğru i&apos;rab harekesini yerleştirin:
               </p>
               <button
@@ -1353,7 +1353,7 @@ export default function BlindDictation({
               <p
                 dir="ltr"
                 lang="tr"
-                className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 pt-3 border-t border-[#E6D7BE]/60 dark:border-[var(--border)]"
+                className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 pt-3 border-t border-[#E6D7BE]/60 dark:border-[var(--border)]"
               >
                 Türkçe Anlamı: “{currentEntry.turkish}”
               </p>
@@ -1459,7 +1459,7 @@ export default function BlindDictation({
               {fixArabicTypography(currentEntry.arabic, arabicFont)}
             </p>
 
-            <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <p className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200">
               “{currentEntry.turkish}”
             </p>
 

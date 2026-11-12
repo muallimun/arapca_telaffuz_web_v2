@@ -725,17 +725,17 @@ export default function Flashcard({
                 {displayArabic}
               </span>
               {currentWord && currentWord.cemi && currentWord.cemi !== "-" && (
-                <span className="text-xs font-bold text-[var(--muted)] block">
+                <span className="text-xs sm:text-sm font-bold text-[var(--muted)] block">
                   Çoğul:{" "}
-                  <strong className="arabic text-base text-[var(--foreground)]">
+                  <strong className="arabic text-xl sm:text-2xl text-[var(--foreground)]">
                     {formatAr(currentWord.cemi)}
                   </strong>
                 </span>
               )}
               {currentWord && currentWord.muzari && (
-                <span className="text-xs font-bold text-[var(--muted)] block">
+                <span className="text-xs sm:text-sm font-bold text-[var(--muted)] block">
                   Muzâri:{" "}
-                  <strong className="arabic text-base text-[var(--foreground)]">
+                  <strong className="arabic text-xl sm:text-2xl text-[var(--foreground)]">
                     {formatAr(currentWord.muzari)}
                   </strong>
                 </span>
@@ -753,7 +753,7 @@ export default function Flashcard({
                   ? "✨ KALIP İFADENİN DEYİMSEL ANLAMI"
                   : "TÜRKÇE ANLAMI"}
               </span>
-              <span className="arabic text-lg truncate max-w-[220px]" dir="rtl">
+              <span className="arabic text-xl truncate max-w-[220px]" dir="rtl">
                 {displayArabic}
               </span>
             </div>

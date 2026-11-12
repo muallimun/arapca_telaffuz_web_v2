@@ -528,10 +528,10 @@ export default function LibraryPage() {
 
   const activeFontCfg = getArabicFontConfig(mounted ? arabicFont : "arakom");
   const libraryCardArabicFontSizePx = Math.round(
-    (mounted ? arabicFontSize : 34) * 0.82 * activeFontCfg.scale
+    (mounted ? arabicFontSize : 34) * 0.94 * activeFontCfg.scale
   );
   const librarySubArabicFontSizePx = Math.round(
-    (mounted ? arabicFontSize : 34) * 0.65 * activeFontCfg.scale
+    (mounted ? arabicFontSize : 34) * 0.78 * activeFontCfg.scale
   );
 
   const getDisplayArabic = (text: string) =>
@@ -1681,7 +1681,7 @@ export default function LibraryPage() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="tr-scale space-y-3 sm:space-y-4">
       {/* GÖLGELEME MODALI */}
       {shadowingTarget && (
         <ShadowingModal

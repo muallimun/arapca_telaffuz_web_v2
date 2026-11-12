@@ -1437,7 +1437,7 @@ export default function ClassroomTeamBattle({
                   <div
                     dir="rtl"
                     lang="ar"
-                    className="w-full font-black text-[var(--foreground)] leading-snug my-auto arabic text-lg sm:text-xl text-right"
+                    className="w-full font-black text-[var(--foreground)] leading-relaxed my-auto arabic text-xl sm:text-2xl text-right break-words"
                   >
                     {displayPrimaryText}
                   </div>
@@ -1445,11 +1445,11 @@ export default function ClassroomTeamBattle({
                   <div
                     dir="ltr"
                     lang="tr"
-                    className="w-full font-sans font-black text-[var(--foreground)] leading-snug my-auto text-xs sm:text-sm text-left"
+                    className="w-full font-sans font-extrabold text-[var(--foreground)] leading-snug my-auto text-sm sm:text-base text-left break-words"
                   >
                     <MixedText
                       text={displayPrimaryText}
-                      arabicClassName="arabic font-arabic text-base font-bold mx-0.5 inline-block"
+                      arabicClassName="arabic font-arabic text-lg sm:text-xl font-bold mx-0.5 inline-block"
                     />
                   </div>
                 )}
@@ -1461,7 +1461,7 @@ export default function ClassroomTeamBattle({
                       <span
                         dir="rtl"
                         lang="ar"
-                        className="font-bold text-[#065F46] dark:text-emerald-300 arabic text-sm text-right"
+                        className="font-bold text-[#065F46] dark:text-emerald-300 arabic text-base sm:text-lg text-right"
                       >
                         {secondaryText}
                       </span>
@@ -1469,11 +1469,11 @@ export default function ClassroomTeamBattle({
                       <span
                         dir="ltr"
                         lang="tr"
-                        className="font-sans font-bold text-[#065F46] dark:text-emerald-300 text-[11px] text-left"
+                        className="font-sans font-bold text-[#065F46] dark:text-emerald-300 text-xs text-left"
                       >
                         <MixedText
                           text={secondaryText}
-                          arabicClassName="arabic font-arabic text-sm font-bold mx-0.5 inline-block"
+                          arabicClassName="arabic font-arabic text-base font-bold mx-0.5 inline-block"
                         />
                       </span>
                     )}
@@ -1684,7 +1684,7 @@ export default function ClassroomTeamBattle({
                   dir="rtl"
                   lang="ar"
                   onClick={playTargetAudio}
-                  className="arabic text-xl sm:text-2xl font-black text-[var(--foreground)] leading-snug cursor-pointer"
+                  className="arabic text-2xl sm:text-3xl font-black text-[var(--foreground)] leading-relaxed cursor-pointer break-words"
                 >
                   {currentQuestion.promptArabic}
                 </div>
@@ -1694,7 +1694,7 @@ export default function ClassroomTeamBattle({
                 <div
                   dir="ltr"
                   lang="tr"
-                  className="font-sans text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-indigo-300"
+                  className="font-sans text-sm sm:text-base font-extrabold text-[#4C28B5] dark:text-indigo-300"
                 >
                   <MixedText text={currentQuestion.promptTurkish} />
                 </div>
@@ -1703,7 +1703,7 @@ export default function ClassroomTeamBattle({
               <p
                 dir="ltr"
                 lang="tr"
-                className="font-sans text-[11px] sm:text-xs font-bold text-[var(--muted)] leading-snug"
+                className="font-sans text-xs sm:text-sm font-bold text-[var(--muted)] leading-snug"
               >
                 <MixedText text={currentQuestion.promptTypeLabel} />
               </p>

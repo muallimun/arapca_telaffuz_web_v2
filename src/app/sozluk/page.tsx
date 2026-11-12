@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useDeferredValue,
+  memo,
+} from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Search,
   ChevronLeft,
+  ChevronRight,
   Heart,
   CheckCircle2,
   Mic,
@@ -76,7 +84,16 @@ import { resolveMistakesPool, formatSrsBadgeInfo } from "@/lib/mistakeUtils";
 import {
   getClassicalBridgeForRoot,
   getCognateInfoForDictionaryItem,
+  type ClassicalRootBridgeEntry,
+  type TurkishArabicCognateEntry,
 } from "@/lib/classicalBridgeData";
+import {
+  DEFAULT_ITEMS_PER_PAGE,
+  ITEMS_PER_PAGE_OPTIONS,
+  paginateDictionaryItems,
+  type ItemsPerPageOption,
+  type PaginationToken,
+} from "@/lib/dictionaryPagination";
 
 type StatusFilter = "all" | "learned" | "unlearned" | "favorites" | "mistakes";
 type TypeFilter =
@@ -127,9 +144,226 @@ function getCategoryCardTheme(category: WordCategory) {
   };
 }
 
+interface PreparedWordMeta {
+  category: WordCategory;
+  isIdiom: boolean;
+  cognateInfo: TurkishArabicCognateEntry | null;
+  classicalBridge: ClassicalRootBridgeEntry | null;
+  cleanRoot: string;
+  searchLowerTr: string;
+  searchRawAr: string;
+  searchCleanAr: string;
+  searchNormAr: string;
+}
+
+const ROOT_SIBLINGS_CACHE = new Map<string, DictionaryItem[]>();
+const EXAMPLE_SENTENCES_CACHE = new Map<string, ExampleSentenceMatch[]>();
+
+function getCachedRootSiblings(root: string, excludeId: string): DictionaryItem[] {
+  const key = `${root}__${excludeId}`;
+  const hit = ROOT_SIBLINGS_CACHE.get(key);
+  if (hit) return hit;
+  const computed = getWordsByRoot(root, excludeId);
+  ROOT_SIBLINGS_CACHE.set(key, computed);
+  return computed;
+}
+
+function getCachedExampleSentences(word: DictionaryItem): ExampleSentenceMatch[] {
+  const hit = EXAMPLE_SENTENCES_CACHE.get(word.id);
+  if (hit) return hit;
+  const computed = getExampleSentencesForWord(word, 2);
+  EXAMPLE_SENTENCES_CACHE.set(word.id, computed);
+  return computed;
+}
+
+const SmartPaginationBar = memo(function SmartPaginationBar({
+  currentPage,
+  totalPages,
+  totalItems,
+  startIndex,
+  endIndex,
+  tokens,
+  itemsPerPage,
+  onPageChange,
+  onItemsPerPageChange,
+  compactTop = false,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  startIndex: number;
+  endIndex: number;
+  tokens: PaginationToken[];
+  itemsPerPage: ItemsPerPageOption;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (limit: ItemsPerPageOption) => void;
+  compactTop?: boolean;
+}) {
+  if (totalItems === 0) return null;
+
+  const shownStart = totalItems === 0 ? 0 : startIndex + 1;
+  const shownEnd = endIndex;
+
+  if (compactTop) {
+    return (
+      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="text-xs font-bold text-[var(--muted)] tabular-nums">
+          Gösterilen:{" "}
+          <strong className="text-[var(--foreground)] font-extrabold">
+            {shownStart.toLocaleString("tr-TR")}–
+            {shownEnd.toLocaleString("tr-TR")}
+          </strong>{" "}
+          /{" "}
+          <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
+            {totalItems.toLocaleString("tr-TR")}
+          </strong>{" "}
+          kayıt
+          {totalPages > 1 && (
+            <span className="ml-1.5 text-[var(--muted)]">
+              • Sayfa {currentPage} / {totalPages}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Sayfa Başına Göster Seçicisi */}
+          <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
+              Sayfa Başına Göster:
+            </span>
+            {ITEMS_PER_PAGE_OPTIONS.map((opt) => {
+              const active = itemsPerPage === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => onItemsPerPageChange(opt.value)}
+                  className={`min-w-[34px] h-7 px-2 rounded-lg text-xs transition-all cursor-pointer tabular-nums ${
+                    active
+                      ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] hover:bg-[#F7EFE1]/70 dark:hover:bg-[var(--surface)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Üst Hızlı İleri/Geri Sayfa Geçişi */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => onPageChange(currentPage - 1)}
+                aria-label="Önceki Sayfa"
+                className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ChevronLeft size={14} />
+                <span className="hidden sm:inline">Önceki</span>
+              </button>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => onPageChange(currentPage + 1)}
+                aria-label="Sonraki Sayfa"
+                className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <span className="hidden sm:inline">Sonraki</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <nav
+      aria-label="Sözlük Sayfalama Paneli"
+      className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3"
+    >
+      <div className="text-xs font-bold text-[var(--muted)] tabular-nums text-center sm:text-left">
+        Toplam{" "}
+        <strong className="text-[var(--foreground)] font-extrabold">
+          {totalItems.toLocaleString("tr-TR")}
+        </strong>{" "}
+        kayıttan{" "}
+        <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
+          {shownStart.toLocaleString("tr-TR")}–
+          {shownEnd.toLocaleString("tr-TR")}
+        </strong>{" "}
+        arası gösteriliyor
+        {totalPages > 1 && (
+          <span>
+            {" "}
+            (Sayfa {currentPage} / {totalPages})
+          </span>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full">
+          <button
+            type="button"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+          >
+            <span>« Önceki</span>
+          </button>
+
+          {tokens.map((token, idx) => {
+            if (token === "ellipsis-left" || token === "ellipsis-right") {
+              return (
+                <span
+                  key={`${token}_${idx}`}
+                  aria-hidden="true"
+                  className="px-1.5 text-xs font-black text-[var(--muted)] select-none"
+                >
+                  …
+                </span>
+              );
+            }
+
+            const isCurrent = token === currentPage;
+            return (
+              <button
+                key={token}
+                type="button"
+                aria-current={isCurrent ? "page" : undefined}
+                onClick={() => onPageChange(token)}
+                className={`min-w-[38px] min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold tabular-nums transition-all cursor-pointer ${
+                  isCurrent
+                    ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                }`}
+              >
+                {token}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+          >
+            <span>Sonraki »</span>
+          </button>
+        </div>
+      )}
+    </nav>
+  );
+});
+
 export default function DictionaryPage() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [selectedDialogueId, setSelectedDialogueId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [shareCardTarget, setShareCardTarget] =
@@ -145,6 +379,7 @@ export default function DictionaryPage() {
     }
     return map;
   }, []);
+
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [bridgeFilter, setBridgeFilter] = useState<
     "none" | "cognates" | "classical"
@@ -160,8 +395,11 @@ export default function DictionaryPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [speakingWordId, setSpeakingWordId] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Record<string, string[]>>({});
-  const [visibleCount, setVisibleCount] = useState<number>(48);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPageOption>(
+    DEFAULT_ITEMS_PER_PAGE
+  );
+  const listTopRef = useRef<HTMLDivElement | null>(null);
 
   const [shadowingTarget, setShadowingTarget] = useState<{
     text: string;
@@ -202,10 +440,28 @@ export default function DictionaryPage() {
         const dlg = params.get("diyalog");
         const kokParam = params.get("kok");
         const qParam = params.get("q");
+        const tabParam = params.get("tab");
         if (durum === "learned") setStatusFilter("learned");
         if (dlg) setSelectedDialogueId(dlg);
         if (kokParam) setRootFilter(kokParam);
         if (qParam) setSearch(qParam);
+        if (tabParam === "classical" || tabParam === "kuran") {
+          setBridgeFilter("classical");
+          setTypeFilter("all");
+        } else if (tabParam === "cognates" || tabParam === "ortak") {
+          setBridgeFilter("cognates");
+          setTypeFilter("all");
+        } else if (
+          tabParam === "isim" ||
+          tabParam === "fiil" ||
+          tabParam === "edat" ||
+          tabParam === "ozel-isim" ||
+          tabParam === "ifade"
+        ) {
+          setTypeFilter(tabParam);
+          setBridgeFilter("none");
+        }
+        setCurrentPage(1);
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -214,46 +470,47 @@ export default function DictionaryPage() {
   const getDisplayArabic = (text: string) =>
     formatArabicText(text, !mounted || showHareke, arabicFont);
 
-  // Kelime ve Kalıp İfade (idiom_ / idm_) havuzunu tekilleştirip Türkçe anlamları birleştiren katalog haritası
+  // O(N) tekilleştirilmiş kelime + kalıp ifade kataloğu ve O(1) ön-indeksli arama/filtre haritası
   const {
     idiomsByIdMap,
     idiomDetailsByIdMap,
     unifiedAllWordsAndIdioms,
+    preparedMetaMap,
   } = useMemo(() => {
     const idMap = new Map<string, DictionaryItem>();
     const detailMap = new Map<string, ArabicIdiom>();
     const normMap = new Map<string, DictionaryItem>();
     const cleanMap = new Map<string, DictionaryItem>();
+    const sameVocalAndCatMap = new Map<string, DictionaryItem>();
     const unifiedList: DictionaryItem[] = [];
 
-    // 1. Önce sozluk içindeki tüm kayıtları (klonlayarak) listeye ve normalize haritasına ekle
+    // 1. Sözlük içindeki tüm kayıtları O(1) harita ile tekilleştirerek ekle
     for (const w of sozluk) {
       const primaryAr = (w.mufret || w.mazi || "").split("/")[0].trim();
       if (!primaryAr) continue;
-      const normKey = normalizeArabicText(primaryAr);
-      const cleanKey = cleanArabicText(primaryAr);
-      const cloned: DictionaryItem = { ...w };
+      const cat = getWordCategory(w);
+      const dedupKey = `${primaryAr}__${cat}`;
+      const existingSameVocalAndCat = sameVocalAndCatMap.get(dedupKey);
 
-      const existingSameVocalAndCat = unifiedList.find(
-        (u) =>
-          (u.mufret || u.mazi || "").trim() === primaryAr &&
-          getWordCategory(u) === getWordCategory(cloned)
-      );
       if (existingSameVocalAndCat) {
         existingSameVocalAndCat.anlam_tr = mergeTurkishMeanings(
           existingSameVocalAndCat.anlam_tr,
-          cloned.anlam_tr
+          w.anlam_tr
         );
         continue;
       }
 
+      const cloned: DictionaryItem = { ...w };
+      sameVocalAndCatMap.set(dedupKey, cloned);
       unifiedList.push(cloned);
+
+      const normKey = normalizeArabicText(primaryAr);
+      const cleanKey = cleanArabicText(primaryAr);
       if (normKey && !normMap.has(normKey)) normMap.set(normKey, cloned);
       if (cleanKey && !cleanMap.has(cleanKey)) cleanMap.set(cleanKey, cloned);
     }
 
-    // 2. Kalıp ifadeleri kontrol et: Eğer kelime havuzunda zaten varsa (ör. بِالضَّبْطِ) ikinci kart oluşturma,
-    // Türkçe anlamlarını mergeTurkishMeanings ile birleştir ve Harfiyen Anlamı / Kullanım İpucu bilgilerini tek karta bağla!
+    // 2. Kalıp ifadeleri birleştir
     const catalog = getCombinedIdiomsCatalog();
     for (const idm of catalog) {
       const canonicalId = idm.id.startsWith("idiom_")
@@ -307,12 +564,99 @@ export default function DictionaryPage() {
       }
     }
 
+    // 3. Her kayıt için kategori, kök, Kur'ân Köprüsü, ortak kelime ve arama indekslerini bir kez hesapla
+    const metaMap = new Map<string, PreparedWordMeta>();
+    for (const item of unifiedList) {
+      const idmDetail = detailMap.get(item.id);
+      const isIdiom =
+        (item.tur || "").toLowerCase() === "ifade" ||
+        item.id.startsWith("idiom_") ||
+        Boolean(idmDetail);
+      const category = getWordCategory(item);
+      const rawArJoined = [
+        item.mufret || "",
+        item.cemi || "",
+        item.mazi || "",
+        item.muzari || "",
+        item.masdar || "",
+        item.kok || "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      metaMap.set(item.id, {
+        category,
+        isIdiom,
+        cognateInfo: getCognateInfoForDictionaryItem(item),
+        classicalBridge: getClassicalBridgeForRoot(item.kok),
+        cleanRoot:
+          item.kok && item.kok !== "-"
+            ? cleanArabicText(item.kok).replace(/\s+/g, "")
+            : "",
+        searchLowerTr: [
+          item.anlam_tr || "",
+          idmDetail?.literalTr || "",
+          idmDetail?.usageNote || "",
+        ]
+          .join(" ")
+          .toLowerCase(),
+        searchRawAr: rawArJoined,
+        searchCleanAr: cleanArabicText(rawArJoined),
+        searchNormAr: normalizeArabicText(rawArJoined),
+      });
+    }
+
     return {
       idiomsByIdMap: idMap,
       idiomDetailsByIdMap: detailMap,
       unifiedAllWordsAndIdioms: unifiedList,
+      preparedMetaMap: metaMap,
     };
   }, []);
+
+  const getWordMeta = useMemo(() => {
+    return (word: DictionaryItem): PreparedWordMeta => {
+      const cached = preparedMetaMap.get(word.id);
+      if (cached) return cached;
+      const idmDetail = idiomDetailsByIdMap.get(word.id);
+      const isIdiom =
+        (word.tur || "").toLowerCase() === "ifade" ||
+        word.id.startsWith("idiom_") ||
+        Boolean(idmDetail);
+      const rawArJoined = [
+        word.mufret || "",
+        word.cemi || "",
+        word.mazi || "",
+        word.muzari || "",
+        word.masdar || "",
+        word.kok || "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const fallback: PreparedWordMeta = {
+        category: getWordCategory(word),
+        isIdiom,
+        cognateInfo: getCognateInfoForDictionaryItem(word),
+        classicalBridge: getClassicalBridgeForRoot(word.kok),
+        cleanRoot:
+          word.kok && word.kok !== "-"
+            ? cleanArabicText(word.kok).replace(/\s+/g, "")
+            : "",
+        searchLowerTr: [
+          word.anlam_tr || "",
+          idmDetail?.literalTr || "",
+          idmDetail?.usageNote || "",
+        ]
+          .join(" ")
+          .toLowerCase(),
+        searchRawAr: rawArJoined,
+        searchCleanAr: cleanArabicText(rawArJoined),
+        searchNormAr: normalizeArabicText(rawArJoined),
+      };
+      preparedMetaMap.set(word.id, fallback);
+      return fallback;
+    };
+  }, [preparedMetaMap, idiomDetailsByIdMap]);
 
   // Seçili diyaloğun morfolojik kelime haritası (getDialogueVocabulary ile)
   const dialogueContextMap = useMemo(() => {
@@ -365,7 +709,6 @@ export default function DictionaryPage() {
       }
       return [...vocabItems, ...extraDlgIdiomItems];
     }
-    // Tüm sözlük + Kalıp İfadeler (tekilleştirilmiş gerçek liste)
     return unifiedAllWordsAndIdioms;
   }, [
     dialogueContextMap,
@@ -373,6 +716,33 @@ export default function DictionaryPage() {
     idiomsByIdMap,
     unifiedAllWordsAndIdioms,
   ]);
+
+  // Sekme üstü anlık kayıt sayıları (O(N) hafif meta okuması)
+  const sectionCounts = useMemo(() => {
+    const counts = {
+      all: 0,
+      isim: 0,
+      fiil: 0,
+      edat: 0,
+      "ozel-isim": 0,
+      ifade: 0,
+      cognates: 0,
+      classical: 0,
+    };
+    for (const w of basePool) {
+      if (!w || !w.id || !(w.mufret || w.mazi) || !w.anlam_tr) continue;
+      counts.all += 1;
+      const meta = getWordMeta(w);
+      if (meta.isIdiom) {
+        counts.ifade += 1;
+      } else {
+        counts[meta.category] += 1;
+      }
+      if (meta.cognateInfo) counts.cognates += 1;
+      if (meta.classicalBridge) counts.classical += 1;
+    }
+    return counts;
+  }, [basePool, getWordMeta]);
 
   const filteredWords = useMemo(() => {
     let result: DictionaryItem[] = basePool;
@@ -393,7 +763,6 @@ export default function DictionaryPage() {
             finalMistakeWords.push(baseMap.get(mw.id) || mw);
           }
         }
-        // Ayrıca raw mistakeIds içinde eşleşenleri kontrol et
         for (const w of result) {
           if (
             (mistakeWordIds.has(w.id) || isMistake(w.id)) &&
@@ -464,21 +833,14 @@ export default function DictionaryPage() {
       }
     }
 
-    // 2. Kelime türüne göre filtreleme
+    // 2. Kelime türüne göre O(1) meta filtreleme
     if (typeFilter === "ifade") {
-      result = result.filter(
-        (w) =>
-          (w.tur || "").toLowerCase() === "ifade" ||
-          w.id.startsWith("idiom_") ||
-          idiomDetailsByIdMap.has(w.id)
-      );
+      result = result.filter((w) => getWordMeta(w).isIdiom);
     } else if (typeFilter !== "all") {
-      result = result.filter(
-        (w) =>
-          (w.tur || "").toLowerCase() !== "ifade" &&
-          !w.id.startsWith("idiom_") &&
-          getWordCategory(w) === typeFilter
-      );
+      result = result.filter((w) => {
+        const meta = getWordMeta(w);
+        return !meta.isIdiom && meta.category === typeFilter;
+      });
     }
 
     // 2.5. Kök Ailesi (İştikak) Filtresi
@@ -486,58 +848,39 @@ export default function DictionaryPage() {
       const targetRootClean = cleanArabicText(rootFilter).replace(/\s+/g, "");
       if (targetRootClean.length >= 2) {
         result = result.filter(
-          (w) =>
-            Boolean(w.kok && w.kok !== "-") &&
-            cleanArabicText(w.kok || "").replace(/\s+/g, "") === targetRootClean
+          (w) => getWordMeta(w).cleanRoot === targetRootClean
         );
       }
     }
 
     // 2.6. Türkçeyle Ortak Kelimeler veya Kur'ân & Klasik Köprü Hızlı Filtresi
     if (bridgeFilter === "cognates") {
-      result = result.filter((w) => Boolean(getCognateInfoForDictionaryItem(w)));
+      result = result.filter((w) => Boolean(getWordMeta(w).cognateInfo));
     } else if (bridgeFilter === "classical") {
-      result = result.filter((w) => Boolean(getClassicalBridgeForRoot(w.kok)));
+      result = result.filter((w) => Boolean(getWordMeta(w).classicalBridge));
     }
 
-    // 3. Arapça (çekimli/yalın/harekesiz/fonetik) veya Türkçe Anlık Arama
-    if (search.trim()) {
-      const qLower = search.trim().toLowerCase();
-      const qCleanAr = cleanArabicText(search.trim());
-      const qNormAr = normalizeArabicText(search.trim());
-      const morphMatched = analyzeAndMatchWord(search.trim());
+    // 3. Ön-indeksli Arapça / Türkçe Anlık Arama
+    const trimmedQuery = deferredSearch.trim();
+    if (trimmedQuery) {
+      const qLower = trimmedQuery.toLowerCase();
+      const qCleanAr = cleanArabicText(trimmedQuery);
+      const qNormAr = normalizeArabicText(trimmedQuery);
+      const morphMatched = analyzeAndMatchWord(trimmedQuery);
+      const morphMatchedId = morphMatched?.item.id;
 
       result = result.filter((word) => {
-        if (morphMatched && morphMatched.item.id === word.id) return true;
-        const idmDetail = idiomDetailsByIdMap.get(word.id);
-        const matchesTurkish =
-          word.anlam_tr.toLowerCase().includes(qLower) ||
-          Boolean(idmDetail?.literalTr?.toLowerCase().includes(qLower)) ||
-          Boolean(idmDetail?.usageNote?.toLowerCase().includes(qLower));
-        const rawArFields = [
-          word.mufret || "",
-          word.cemi || "",
-          word.mazi || "",
-          word.muzari || "",
-          word.masdar || "",
-          word.kok || "",
-        ];
-        const matchesArabicRaw = rawArFields.some((f) =>
-          f.includes(search.trim())
-        );
-        const matchesArabicClean =
-          qCleanAr.length > 0 &&
-          rawArFields.some((f) => cleanArabicText(f).includes(qCleanAr));
-        const matchesArabicNorm =
-          qNormAr.length > 0 &&
-          rawArFields.some((f) => normalizeArabicText(f).includes(qNormAr));
-
-        return (
-          matchesTurkish ||
-          matchesArabicRaw ||
-          matchesArabicClean ||
-          matchesArabicNorm
-        );
+        if (morphMatchedId && morphMatchedId === word.id) return true;
+        const meta = getWordMeta(word);
+        if (meta.searchLowerTr.includes(qLower)) return true;
+        if (meta.searchRawAr.includes(trimmedQuery)) return true;
+        if (qCleanAr.length > 0 && meta.searchCleanAr.includes(qCleanAr)) {
+          return true;
+        }
+        if (qNormAr.length > 0 && meta.searchNormAr.includes(qNormAr)) {
+          return true;
+        }
+        return false;
       });
     }
 
@@ -551,37 +894,35 @@ export default function DictionaryPage() {
     bridgeFilter,
     rootFilter,
     statusFilter,
-    search,
+    deferredSearch,
     mounted,
     learnedWords,
     favoriteWords,
     mistakeIds,
     isMistake,
     idiomsByIdMap,
-    idiomDetailsByIdMap,
+    getWordMeta,
   ]);
 
-  const visibleWords = useMemo(
-    () => filteredWords.slice(0, visibleCount),
-    [filteredWords, visibleCount]
+  // Performans dostu sayfalama (slice): Sadece aktif sayfadaki kartlar DOM'a basılır
+  const pagination = useMemo(
+    () => paginateDictionaryItems(filteredWords, currentPage, itemsPerPage),
+    [filteredWords, currentPage, itemsPerPage]
   );
 
-  useEffect(() => {
-    const sentinel = loadMoreRef.current;
-    if (!sentinel || visibleCount >= filteredWords.length) return;
-    if (typeof IntersectionObserver === "undefined") return;
+  const handlePageChange = (nextPage: number) => {
+    playClick();
+    setCurrentPage(nextPage);
+    if (typeof window !== "undefined" && listTopRef.current) {
+      listTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) => Math.min(filteredWords.length, prev + 48));
-        }
-      },
-      { rootMargin: "240px" }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [visibleCount, filteredWords.length]);
+  const handleItemsPerPageChange = (nextLimit: ItemsPerPageOption) => {
+    playClick();
+    setItemsPerPage(nextLimit);
+    setCurrentPage(1);
+  };
 
   // Kelimeyi sesli dinle (Çift Cinsiyetli MP3 varsa MP3, yoksa seçili cinsiyette TTS)
   const handleListenWord = async (
@@ -776,7 +1117,7 @@ export default function DictionaryPage() {
         </div>
       </div>
 
-      {/* KOMPAKT KONTROL ŞERİDİ (MOBİLDE TEK SATIR ARAMA + [SlidersHorizontal] FİLTRELER + YATAY KAYDIRILABİLİR HAPLAR) */}
+      {/* KOMPAKT KONTROL ŞERİDİ (MOBİLDE TEK SATIR ARAMA + FİLTRELER + ALT SEKMELER) */}
       <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-2.5 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {/* 1. Anlık Arapça/Türkçe Arama */}
@@ -791,7 +1132,7 @@ export default function DictionaryPage() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(48);
+                setCurrentPage(1);
               }}
               className="w-full h-9 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] rounded-xl pl-8 pr-8 text-xs font-semibold text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[#087F5B]"
             />
@@ -800,7 +1141,7 @@ export default function DictionaryPage() {
                 type="button"
                 onClick={() => {
                   setSearch("");
-                  setVisibleCount(48);
+                  setCurrentPage(1);
                 }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
                 aria-label="Aramayı Temizle"
@@ -834,7 +1175,7 @@ export default function DictionaryPage() {
               onChange={(e) => {
                 playClick();
                 setSelectedDialogueId(e.target.value);
-                setVisibleCount(48);
+                setCurrentPage(1);
               }}
               className="bg-transparent text-xs font-bold text-[var(--foreground)] focus:outline-none cursor-pointer max-w-[190px] truncate"
             >
@@ -878,7 +1219,7 @@ export default function DictionaryPage() {
                   onClick={() => {
                     playClick();
                     setStatusFilter(tab.id);
-                    setVisibleCount(48);
+                    setCurrentPage(1);
                   }}
                   className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                     active
@@ -895,43 +1236,46 @@ export default function DictionaryPage() {
           </div>
         </div>
 
-        {/* 4. Mobil Uyumlu Kategori ve Hızlı Filtre Sekmeleri (Mobilde Tek Satır Yatay Kaydırılabilir, Masaüstünde Esnek Haplar) */}
+        {/* 4. Mobil Uyumlu Kategori ve Hızlı Alt Sekmeler (Her sekme kendi verisi üzerinde bağımsız sayfalanır) */}
         <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1">
           {(
             [
               {
                 id: "all",
-                label: "Tümü",
+                label: `Tümü (${sectionCounts.all.toLocaleString("tr-TR")})`,
                 activeClass: "bg-[#087F5B] border-[#065F46] text-white",
               },
               {
                 id: "isim",
-                label: "📘 İsimler",
+                label: `📘 İsimler (${sectionCounts.isim.toLocaleString("tr-TR")})`,
                 activeClass: "bg-sky-600 border-sky-700 text-white",
               },
               {
                 id: "fiil",
-                label: "⚡ Fiiller",
+                label: `⚡ Fiiller (${sectionCounts.fiil.toLocaleString("tr-TR")})`,
                 activeClass: "bg-amber-600 border-amber-700 text-white",
               },
               {
                 id: "edat",
-                label: "🔗 Edatlar",
+                label: `🔗 Edatlar (${sectionCounts.edat.toLocaleString("tr-TR")})`,
                 activeClass: "bg-purple-600 border-purple-700 text-white",
               },
               {
                 id: "ozel-isim",
-                label: "👤 Özel İsimler",
+                label: `👤 Özel İsimler (${sectionCounts["ozel-isim"].toLocaleString("tr-TR")})`,
                 activeClass: "bg-teal-600 border-teal-700 text-white",
               },
               {
                 id: "ifade",
-                label: "✨ Kalıp İfadeler",
+                label: `✨ Kalıp İfadeler (${sectionCounts.ifade.toLocaleString("tr-TR")})`,
                 activeClass: "bg-[#6741D9] border-[#5230B5] text-white",
               },
             ] as { id: TypeFilter; label: string; activeClass: string }[]
           ).map((t) => {
-            const active = typeFilter === t.id && statusFilter !== "mistakes";
+            const active =
+              typeFilter === t.id &&
+              bridgeFilter === "none" &&
+              statusFilter !== "mistakes";
             return (
               <button
                 key={t.id}
@@ -939,8 +1283,9 @@ export default function DictionaryPage() {
                 onClick={() => {
                   playClick();
                   setTypeFilter(t.id);
-                  setVisibleCount(48);
-                  if (statusFilter === "mistakes" && t.id === "all") {
+                  setBridgeFilter("none");
+                  setCurrentPage(1);
+                  if (statusFilter === "mistakes") {
                     setStatusFilter("all");
                   }
                 }}
@@ -955,7 +1300,7 @@ export default function DictionaryPage() {
             );
           })}
 
-          {/* Hızlı Filtre: 🤝 Türkçeyle Ortak Kelimeler */}
+          {/* Alt Sekme: 🤝 Türkçeyle Ortak Kelimeler */}
           <button
             type="button"
             onClick={() => {
@@ -963,7 +1308,11 @@ export default function DictionaryPage() {
               setBridgeFilter((prev) =>
                 prev === "cognates" ? "none" : "cognates"
               );
-              setVisibleCount(48);
+              setTypeFilter("all");
+              if (statusFilter === "mistakes") {
+                setStatusFilter("all");
+              }
+              setCurrentPage(1);
             }}
             className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
               bridgeFilter === "cognates"
@@ -971,10 +1320,10 @@ export default function DictionaryPage() {
                 : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-emerald-800 dark:text-emerald-300 font-semibold hover:border-emerald-500"
             }`}
           >
-            🤝 Türkçeyle Ortak Kelimeler
+            🤝 Türkçeyle Ortak Kelimeler ({sectionCounts.cognates.toLocaleString("tr-TR")})
           </button>
 
-          {/* Hızlı Filtre: 🕌 Kur'ân & Klasik Köprü */}
+          {/* Alt Sekme: 🕌 Kur'ân & Klasik Köprü */}
           <button
             type="button"
             onClick={() => {
@@ -982,7 +1331,11 @@ export default function DictionaryPage() {
               setBridgeFilter((prev) =>
                 prev === "classical" ? "none" : "classical"
               );
-              setVisibleCount(48);
+              setTypeFilter("all");
+              if (statusFilter === "mistakes") {
+                setStatusFilter("all");
+              }
+              setCurrentPage(1);
             }}
             className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
               bridgeFilter === "classical"
@@ -990,7 +1343,7 @@ export default function DictionaryPage() {
                 : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[#92400E] dark:text-amber-300 font-semibold hover:border-amber-500"
             }`}
           >
-            🕌 Kur&apos;ân &amp; Klasik Köprü
+            🕌 Kur&apos;ân &amp; Klasik Köprü ({sectionCounts.classical.toLocaleString("tr-TR")})
           </button>
 
           {/* Hızlı Filtre: ⚡ Zorlandıklarım (Hem Mobil Hem Masaüstünde Tek Dokunuşla) */}
@@ -1001,7 +1354,7 @@ export default function DictionaryPage() {
               setStatusFilter((prev) =>
                 prev === "mistakes" ? "all" : "mistakes"
               );
-              setVisibleCount(48);
+              setCurrentPage(1);
             }}
             className={`whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm rounded-xl border transition-all shrink-0 cursor-pointer ${
               statusFilter === "mistakes"
@@ -1025,7 +1378,7 @@ export default function DictionaryPage() {
                 onChange={(e) => {
                   playClick();
                   setSelectedDialogueId(e.target.value);
-                  setVisibleCount(48);
+                  setCurrentPage(1);
                 }}
                 className="bg-transparent text-xs font-bold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
               >
@@ -1068,7 +1421,7 @@ export default function DictionaryPage() {
                     onClick={() => {
                       playClick();
                       setStatusFilter(tab.id);
-                      setVisibleCount(48);
+                      setCurrentPage(1);
                     }}
                     className={`whitespace-nowrap px-3 py-1.5 text-xs rounded-xl border transition-all shrink-0 cursor-pointer ${
                       active
@@ -1106,7 +1459,7 @@ export default function DictionaryPage() {
               onClick={() => {
                 playClick();
                 setRootFilter(null);
-                setVisibleCount(48);
+                setCurrentPage(1);
               }}
               className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-rose-50 border border-emerald-400 hover:border-rose-400 text-xs font-extrabold text-[var(--foreground)] hover:text-rose-600 transition-all cursor-pointer shrink-0"
             >
@@ -1115,6 +1468,9 @@ export default function DictionaryPage() {
           </div>
         )}
       </section>
+
+      {/* LİSTE BAŞI ÇAPASI + SAYFA BAŞINA GÖSTER & HIZLI SAYFA ÖZETİ */}
+      <div ref={listTopRef} className="scroll-mt-20" />
 
       {/* SÖZLÜK KARTLARI IZGARASI */}
       {filteredWords.length === 0 ? (
@@ -1132,8 +1488,9 @@ export default function DictionaryPage() {
               setSelectedDialogueId("all");
               setStatusFilter("all");
               setTypeFilter("all");
+              setBridgeFilter("none");
               setRootFilter(null);
-              setVisibleCount(48);
+              setCurrentPage(1);
             }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#087F5B] text-white text-xs font-bold border-b-4 border-[#065F46] cursor-pointer"
           >
@@ -1142,27 +1499,38 @@ export default function DictionaryPage() {
         </div>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visibleWords.map((word) => {
-            const isFav = mounted && isWordFavorite(word.id);
-            const isLearned =
-              mounted &&
-              (isWordLearned(word.id) ||
-                isWordLearned(word.id.replace(/^idiom_/, "")));
-            const isSpeaking = speakingWordId === word.id;
-            const mainArabic = word.mufret || word.mazi || "";
-            const contextEntry = dialogueContextMap?.get(word.id);
-            const isIdiomCard =
-              (word.tur || "").toLowerCase() === "ifade" ||
-              word.id.startsWith("idiom_") ||
-              idiomDetailsByIdMap.has(word.id);
-            const idiomDetail = idiomDetailsByIdMap.get(word.id);
-            const srsRecord = mounted
-              ? getSrsRecord(word.id) ||
-                getSrsRecord(word.id.replace(/^idiom_/, ""))
-              : undefined;
-            const srsBadge = formatSrsBadgeInfo(srsRecord);
-            const category = getWordCategory(word);
+          <SmartPaginationBar
+            compactTop={true}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            startIndex={pagination.startIndex}
+            endIndex={pagination.endIndex}
+            tokens={pagination.tokens}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pagination.items.map((word) => {
+              const wordMeta = getWordMeta(word);
+              const isFav = mounted && isWordFavorite(word.id);
+              const isLearned =
+                mounted &&
+                (isWordLearned(word.id) ||
+                  isWordLearned(word.id.replace(/^idiom_/, "")));
+              const isSpeaking = speakingWordId === word.id;
+              const mainArabic = word.mufret || word.mazi || "";
+              const contextEntry = dialogueContextMap?.get(word.id);
+              const isIdiomCard = wordMeta.isIdiom;
+              const idiomDetail = idiomDetailsByIdMap.get(word.id);
+              const srsRecord = mounted
+                ? getSrsRecord(word.id) ||
+                  getSrsRecord(word.id.replace(/^idiom_/, ""))
+                : undefined;
+              const srsBadge = formatSrsBadgeInfo(srsRecord);
+              const category = wordMeta.category;
             const theme = isIdiomCard
               ? {
                   leftBorder: "border-l-4 border-l-[#6741D9]",
@@ -1209,7 +1577,7 @@ export default function DictionaryPage() {
                               setRootFilter((prev) =>
                                 prev === word.kok ? null : word.kok || null
                               );
-                              setVisibleCount(48);
+                              setCurrentPage(1);
                             }}
                             title="Bu kökten türeyen tüm kelimeleri (Kök Ailesini) filtrelemek için tıklayın"
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold transition-all cursor-pointer ${
@@ -1464,19 +1832,20 @@ export default function DictionaryPage() {
                     </div>
                   )}
 
-                  {/* Sözlük Kartı Altında Ortak Kelime / Yalancı Eşdeğer Uyarısı + Açılır/Kapanır Çekmece */}
+                  {/* Sözlük Kartı Altında Ortak Kelime / Kur'ân Köprüsü + Açılır/Kapanır Çekmece (O(1) Önbellekli) */}
                   {(() => {
-                    const cognateInfo = getCognateInfoForDictionaryItem(word);
-                    const classicalBridge = getClassicalBridgeForRoot(word.kok);
-                    const isDrawerOpen =
-                      Boolean(expandedCardIds[word.id]) ||
-                      bridgeFilter === "classical";
+                    const cognateInfo = wordMeta.cognateInfo;
+                    const classicalBridge = wordMeta.classicalBridge;
+                    const isDrawerOpen = Boolean(expandedCardIds[word.id]);
+                    const showClassicalBridgePanel =
+                      Boolean(classicalBridge) &&
+                      (bridgeFilter === "classical" || isDrawerOpen);
                     const rootSiblings =
                       isDrawerOpen && word.kok && word.kok !== "-"
-                        ? getWordsByRoot(word.kok, word.id)
+                        ? getCachedRootSiblings(word.kok, word.id)
                         : [];
                     const exampleSentences = isDrawerOpen
-                      ? getExampleSentencesForWord(word, 2)
+                      ? getCachedExampleSentences(word)
                       : [];
 
                     return (
@@ -1510,6 +1879,89 @@ export default function DictionaryPage() {
                           </div>
                         )}
 
+                        {showClassicalBridgePanel && classicalBridge && (
+                          <div className="rounded-xl bg-gradient-to-br from-emerald-50 via-[#FDFBF7] to-amber-50/80 dark:from-emerald-950/45 dark:via-[var(--surface)] dark:to-amber-950/30 border-2 border-emerald-300/80 dark:border-emerald-700/70 p-2.5 space-y-2">
+                            <div className="flex items-center justify-between gap-2 border-b border-emerald-200/80 dark:border-emerald-800/60 pb-1.5">
+                              <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200">
+                                🕌 Fasih ↔ Kur&apos;ân ve Klasik Metin Köprüsü
+                              </span>
+                              <span
+                                dir="rtl"
+                                lang="ar"
+                                className="arabic font-arabic text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
+                              >
+                                {classicalBridge.rootSpaced}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+                              <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-emerald-200/70 dark:border-emerald-800/60 p-2 space-y-0.5">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+                                  Günlük Fasih Kullanım
+                                </span>
+                                <p
+                                  dir="rtl"
+                                  lang="ar"
+                                  className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                >
+                                  {getDisplayArabic(classicalBridge.modernUsageAr)}
+                                </p>
+                                <p className="text-[11px] font-medium text-[var(--muted)]">
+                                  {classicalBridge.modernUsageTr}
+                                </p>
+                              </div>
+
+                              <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-amber-200/80 dark:border-amber-800/60 p-2 space-y-0.5">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
+                                  Klasik Istılah
+                                </span>
+                                <p
+                                  dir="rtl"
+                                  lang="ar"
+                                  className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
+                                >
+                                  {getDisplayArabic(classicalBridge.classicalTermAr)}
+                                </p>
+                                <p className="text-[11px] font-medium text-[var(--muted)]">
+                                  {classicalBridge.classicalTermTr}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="rounded-lg bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/70 p-2 space-y-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                                  📖 Kur&apos;ân-ı Kerîm&apos;den Örnek ({classicalBridge.surahRef})
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    void playTTS(
+                                      classicalBridge.quranicExampleAr,
+                                      mounted ? speechRate : 1
+                                    );
+                                  }}
+                                  className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-amber-300 dark:border-amber-700 text-[10px] font-extrabold text-amber-900 dark:text-amber-200 inline-flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Volume2 size={11} />
+                                  <span>Dinle</span>
+                                </button>
+                              </div>
+                              <p
+                                dir="rtl"
+                                lang="ar"
+                                className="arabic font-arabic text-base font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.95] text-right"
+                              >
+                                ﴿ {getDisplayArabic(classicalBridge.quranicExampleAr)} ﴾
+                              </p>
+                              <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-100 leading-snug">
+                                &ldquo;{classicalBridge.quranicExampleTr}&rdquo;
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => {
@@ -1526,7 +1978,7 @@ export default function DictionaryPage() {
                           }`}
                         >
                           <span>
-                            {classicalBridge
+                            {classicalBridge && bridgeFilter !== "classical"
                               ? "🕌 Kur'ân Köprüsü, Kök & Örnekler"
                               : "📖 Örnek Cümleler & Kök Ailesi"}
                           </span>
@@ -1539,90 +1991,6 @@ export default function DictionaryPage() {
 
                         {isDrawerOpen && (
                           <div className="mt-2 p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] space-y-2.5 text-left animate-in fade-in duration-150">
-                            {/* 0. Fasih ↔ Kur'ân ve Klasik Metin Köprüsü */}
-                            {classicalBridge && (
-                              <div className="rounded-xl bg-gradient-to-br from-emerald-50 via-[#FDFBF7] to-amber-50/80 dark:from-emerald-950/45 dark:via-[var(--surface)] dark:to-amber-950/30 border-2 border-emerald-300/80 dark:border-emerald-700/70 p-2.5 space-y-2">
-                                <div className="flex items-center justify-between gap-2 border-b border-emerald-200/80 dark:border-emerald-800/60 pb-1.5">
-                                  <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200">
-                                    🕌 Fasih ↔ Kur&apos;ân ve Klasik Metin Köprüsü
-                                  </span>
-                                  <span
-                                    dir="rtl"
-                                    lang="ar"
-                                    className="arabic font-arabic text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
-                                  >
-                                    {classicalBridge.rootSpaced}
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
-                                  <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-emerald-200/70 dark:border-emerald-800/60 p-2 space-y-0.5">
-                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
-                                      Günlük Fasih Kullanım
-                                    </span>
-                                    <p
-                                      dir="rtl"
-                                      lang="ar"
-                                      className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
-                                    >
-                                      {getDisplayArabic(classicalBridge.modernUsageAr)}
-                                    </p>
-                                    <p className="text-[11px] font-medium text-[var(--muted)]">
-                                      {classicalBridge.modernUsageTr}
-                                    </p>
-                                  </div>
-
-                                  <div className="rounded-lg bg-white/85 dark:bg-[var(--background)] border border-amber-200/80 dark:border-amber-800/60 p-2 space-y-0.5">
-                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
-                                      Klasik Istılah
-                                    </span>
-                                    <p
-                                      dir="rtl"
-                                      lang="ar"
-                                      className="arabic font-arabic text-sm font-bold text-[var(--foreground)] leading-relaxed text-right"
-                                    >
-                                      {getDisplayArabic(classicalBridge.classicalTermAr)}
-                                    </p>
-                                    <p className="text-[11px] font-medium text-[var(--muted)]">
-                                      {classicalBridge.classicalTermTr}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="rounded-lg bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/70 p-2 space-y-1">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
-                                      📖 Kur&apos;ân-ı Kerîm&apos;den Örnek ({classicalBridge.surahRef})
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        playClick();
-                                        void playTTS(
-                                          classicalBridge.quranicExampleAr,
-                                          mounted ? speechRate : 1
-                                        );
-                                      }}
-                                      className="px-2 py-0.5 rounded-md bg-white dark:bg-[var(--background)] border border-amber-300 dark:border-amber-700 text-[10px] font-extrabold text-amber-900 dark:text-amber-200 inline-flex items-center gap-1 cursor-pointer"
-                                    >
-                                      <Volume2 size={11} />
-                                      <span>Dinle</span>
-                                    </button>
-                                  </div>
-                                  <p
-                                    dir="rtl"
-                                    lang="ar"
-                                    className="arabic font-arabic text-base font-bold text-[#064E3B] dark:text-emerald-200 leading-[1.95] text-right"
-                                  >
-                                    ﴿ {getDisplayArabic(classicalBridge.quranicExampleAr)} ﴾
-                                  </p>
-                                  <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-100 leading-snug">
-                                    &ldquo;{classicalBridge.quranicExampleTr}&rdquo;
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
                             {/* 1. Aynı Kökten Türeyen Kelimeler (Kök Ailesi / İştikak) */}
                             {word.kok && word.kok !== "-" && (
                               <div className="space-y-1.5">
@@ -1636,6 +2004,7 @@ export default function DictionaryPage() {
                                       onClick={() => {
                                         playClick();
                                         setRootFilter(word.kok || null);
+                                        setCurrentPage(1);
                                       }}
                                       className="text-[10px] font-extrabold text-[#6741D9] dark:text-indigo-300 hover:underline cursor-pointer"
                                     >
@@ -1888,28 +2257,20 @@ export default function DictionaryPage() {
               </div>
             );
           })}
-        </div>
-
-        {visibleCount < filteredWords.length && (
-          <div
-            ref={loadMoreRef}
-            className="pt-2 pb-4 flex flex-col items-center justify-center gap-2"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setVisibleCount((prev) =>
-                  Math.min(filteredWords.length, prev + 48)
-                );
-              }}
-              className="px-5 py-2.5 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs sm:text-sm font-extrabold border-b-4 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all cursor-pointer shadow-xs"
-            >
-              Daha Fazla Kelime Göster (+48) · ({visibleWords.length} /{" "}
-              {filteredWords.length})
-            </button>
           </div>
-        )}
+
+          <SmartPaginationBar
+            compactTop={false}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            startIndex={pagination.startIndex}
+            endIndex={pagination.endIndex}
+            tokens={pagination.tokens}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
         </>
       )}
 

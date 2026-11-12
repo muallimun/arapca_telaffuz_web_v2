@@ -2722,6 +2722,91 @@ test("27. Gramer Atlası Seçenek A 4 alanlı tasnif, A4 Ders Föyü PDF, Toplu 
   );
 });
 
+test("28. Sözlük & Kur'ân Köprüsü Performans ve Sayfalama Mimarisi ([25, 50, 100, 500, Tümü], varsayılan 50, akıllı sayfalama ve O(1) önbellek)", async () => {
+  const {
+    DEFAULT_ITEMS_PER_PAGE,
+    ITEMS_PER_PAGE_OPTIONS,
+    buildPaginationTokens,
+    paginateDictionaryItems,
+  } = await import("../src/lib/dictionaryPagination.ts");
 
+  assert.equal(
+    DEFAULT_ITEMS_PER_PAGE,
+    50,
+    "Varsayılan sayfa başına gösterim sayısı 50 olmalıdır"
+  );
 
+  assert.deepEqual(
+    ITEMS_PER_PAGE_OPTIONS.map((opt) => opt.value),
+    [25, 50, 100, 500, "all"],
+    "Sayfa başına gösterim seçenekleri [25, 50, 100, 500, Tümü] olmalıdır"
+  );
 
+  const mockDataset = Array.from({ length: 3335 }, (_, idx) => ({
+    id: `w_${idx + 1}`,
+  }));
+
+  const page1 = paginateDictionaryItems(mockDataset, 1, 50);
+  assert.equal(page1.totalPages, 67, "3.335 kayıt 50'şerli 67 sayfa olmalıdır");
+  assert.equal(page1.items.length, 50, "1. sayfada tam 50 kayıt yer almalıdır");
+  assert.equal(page1.startIndex, 0);
+  assert.equal(page1.endIndex, 50);
+  assert.equal(
+    page1.tokens.length <= 7,
+    true,
+    "Akıllı sayfalama dizisi mobilde taşmaması için en fazla 7 elemanlı olmalıdır"
+  );
+
+  const lastPage = paginateDictionaryItems(mockDataset, 999, 50);
+  assert.equal(
+    lastPage.currentPage,
+    67,
+    "Aralık dışı sayfa isteği güvenli biçimde son sayfaya sabitlenmelidir"
+  );
+  assert.equal(
+    lastPage.items.length,
+    35,
+    "Son sayfada kalan 35 kayıt gösterilmelidir"
+  );
+
+  const midTokens = buildPaginationTokens(15, 67);
+  assert.deepEqual(midTokens, [
+    1,
+    "ellipsis-left",
+    14,
+    15,
+    16,
+    "ellipsis-right",
+    67,
+  ]);
+
+  const allItemsResult = paginateDictionaryItems(mockDataset, 3, "all");
+  assert.equal(allItemsResult.totalPages, 1);
+  assert.equal(allItemsResult.currentPage, 1);
+  assert.equal(allItemsResult.items.length, 3335);
+
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    !sozlukCode.includes("IntersectionObserver") &&
+      !sozlukCode.includes("visibleCount"),
+    true,
+    "Eski sonsuz kaydırma (IntersectionObserver / visibleCount) kaldırılmış olmalıdır"
+  );
+
+  assert.equal(
+    sozlukCode.includes("paginateDictionaryItems") &&
+      sozlukCode.includes("Sayfa Başına Göster:") &&
+      sozlukCode.includes("« Önceki") &&
+      sozlukCode.includes("Sonraki »") &&
+      sozlukCode.includes("setCurrentPage(1)") &&
+      sozlukCode.includes("useDeferredValue") &&
+      sozlukCode.includes("preparedMetaMap") &&
+      sozlukCode.includes("showClassicalBridgePanel"),
+    true,
+    "Sözlük sayfası dilimli sayfalama, Sayfa Başına Göster seçicisi, O(1) meta önbelleği ve hızlı Kur'ân Köprüsü panelini içermelidir"
+  );
+});

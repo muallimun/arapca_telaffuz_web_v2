@@ -81,7 +81,7 @@ import {
   hashStringSeed,
   mulberry32,
   seededShuffle,
-} from "@/components/ui/DialoguePdfModal";
+} from "@/lib/pdfDeterministicUtils";
 
 type AssessmentCenterTab = "cat" | "topic" | "exam";
 

@@ -3319,7 +3319,7 @@ test("32. Mobil UX, Arayüz Ferahlığı, Hata Defterim Standartlaştırması, S
   );
 });
 
-test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag LiteYoutubeCard, 14 Harici Platform, Çapraz Ders Bağlantıları ve Admin Desteği Doğrulaması", async () => {
+test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag LiteYoutubeCard, 14 Harici Platform, Çapraz Ders Bağlantıları ve Admin Desteği Doğrulaması", async () => {
   // 1. next.config.ts CSP kontrolü
   const nextConfigCode = fs.readFileSync(
     path.join(ROOT_DIR, "next.config.ts"),
@@ -3336,14 +3336,14 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
     "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src + child-src) ve kapak görseli (img-src) kuralları yer almalıdır"
   );
 
-  // 2. youtube_tavsiyeleri.json 55 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
+  // 2. youtube_tavsiyeleri.json 45 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
   const { raw: ytRaw, parsed: ytItems } = readDataJson(
     "youtube_tavsiyeleri.json"
   );
   assert.equal(
-    Array.isArray(ytItems) && ytItems.length === 55,
+    Array.isArray(ytItems) && ytItems.length === 45,
     true,
-    "youtube_tavsiyeleri.json 55 gerçek kaydı eksiksiz korumalıdır"
+    "youtube_tavsiyeleri.json 45 gerçek kaydı eksiksiz korumalıdır"
   );
   assert.equal(
     ytRaw.includes("\u0640"),
@@ -3460,8 +3460,8 @@ test("33. YouTube Video & İzleme Rehberi (55 Gerçek Kayıt), CSP, Zero-Lag Lit
   } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
   );
-  assert.equal(youtubeTavsiyeleri.length, 55);
-  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 55);
+  assert.equal(youtubeTavsiyeleri.length, 45);
+  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 45);
   for (const runtimeItem of youtubeTavsiyeleri) {
     assert.equal(runtimeItem.baslik_ar, runtimeItem.baslik_ar.normalize("NFC"));
     assert.equal(runtimeItem.baslik_tr, runtimeItem.baslik_tr.normalize("NFC"));
@@ -4000,4 +4000,132 @@ test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 55 Kayıtt
   );
 });
 
+test("38. 10 Ölü YouTube Link Temizliği (45 Sıralı Kayıt + Tek Aktif Iframe), Gramer Modal Z-Index/Başlık/2 Sütun Buton/1111 Ses Yolu, Görsel Kelime Kart/Modal/Hemze-i Vasıl İmlası ve Mobil Safe-Area/md Breakpoint Koruması", async () => {
+  // 1. 10 ölü playlist'in kaldırıldığını ve yt_001..yt_045 / sira 1..45 dizilimini doğrula
+  const { raw: ytRaw, parsed: ytItems } = readDataJson(
+    "youtube_tavsiyeleri.json"
+  );
+  const removedPlaylists = [
+    "PL-WDURy0fRf-mck3BfgGOUbP55yPlmRxf",
+    "PLnmMHGHL1sYU8yz3n56YJgxeJ2PUs2R83",
+    "PLEM4OKFQO5J3rlg7pBlwKK_bYsF6M71nZ",
+    "PLGQT5cJOzEnIYS9syaI5IfAC39VNN3eUC",
+    "PLZhY-MJA-pw9VLX8xXm1MSMz-8qw6NvXo",
+    "PLtHEKBuBgFdUohIFK6BTp0iUbFv11tpjQ",
+    "PLodYDGnGsvlbLjWgB1LVL4fSHfee5IOIk",
+    "PL9nkZtQYDOGsT3Pf3ILhy9TB-ur2Ve2LW",
+    "PLOpvfjrLz9uf2KZoY0zxAXwfiGulloRP_",
+    "PLOpvfjrLz9ud1R6KskpOGZFctyb_TB9MC",
+  ];
+  assert.equal(ytItems.length, 45, "youtube_tavsiyeleri.json tam 45 kayıt içermelidir");
+  for (const deadPl of removedPlaylists) {
+    assert.equal(
+      ytRaw.includes(deadPl),
+      false,
+      `Ölü oynatma listesi (${deadPl}) tamamen kaldırılmış olmalıdır`
+    );
+  }
+  for (let i = 0; i < ytItems.length; i++) {
+    assert.equal(ytItems[i].id, `yt_${String(i + 1).padStart(3, "0")}`);
+    assert.equal(ytItems[i].sira, i + 1);
+  }
 
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    liteCardCode.includes("activeInlineYoutubeInstanceId") &&
+      liteCardCode.includes("notifyActiveInlineYoutube(instanceId)") &&
+      liteCardCode.includes("notifyActiveInlineYoutube(null)") &&
+      liteCardCode.includes("leading-[1.85] py-0.5"),
+    true,
+    "LiteYoutubeCard aynı anda yalnızca tek aktif iframe oynatıcıya izin vermeli ve Arapça başlıklarda hareke kesilmesini önlemelidir"
+  );
+
+  // 2. Gramer Hap Bilgi Modalları (z-[85], 2 satırlı sticky başlık, 2 sütunlu aksiyon çubuğu ve 1111 cümle ses yolu)
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    grammarPanelCode.includes("fixed inset-0 lg:top-[var(--header-height,56px)] z-[85]") &&
+      grammarPanelCode.includes("sticky top-0 z-20") &&
+      grammarPanelCode.includes('aria-label="Gramer Anlatım Derinliği Seçici"') &&
+      grammarPanelCode.includes("grid grid-cols-2 sm:flex sm:flex-wrap") &&
+      grammarPanelCode.includes("/sesler/cumleler/erkek/${sent.id}.mp3") &&
+      grammarPanelCode.includes("/sesler/cumleler/kadin/${sent.id}.mp3") &&
+      !grammarPanelCode.includes("_m.mp3") &&
+      !grammarPanelCode.includes("_f.mp3"),
+    true,
+    "GrammarHapBilgiPanel mobil z-[85], çakışmasız 2 satırlı başlık, kompakt 2 sütunlu buton ızgarası ve gerçek CDN cümle ses yollarını içermelidir"
+  );
+
+  // 3. Görsel Kelime Kartları, Detay Modalı ve Hemze-i Vasıl (اشْتَرَيْتُ) İmla Doğrulaması
+  const { parsed: visualWords } = readDataJson("gorselKelimeler_guncel.json");
+  const hediyeItem = visualWords.find((w) => w.id === "0004_01_hediye");
+  assert.ok(hediyeItem, "0004_01_hediye kaydı bulunmalıdır");
+  assert.equal(
+    hediyeItem.ornek_ar,
+    "اشْتَرَيْتُ هَدِيَّةً جَمِيلَةً لِصَدِيقِي.",
+    "İftial babı اشْتَرَيْتُ fiili hemze-i kat' (إ) olmadan hemze-i vasıl ile yazılmalıdır"
+  );
+
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const tooltipCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "WordTooltip.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !kutuphaneCode.includes('#${currentVisual.id.replace("gorsel_", "")}') &&
+      kutuphaneCode.includes("currentVisual.sira") &&
+      kutuphaneCode.includes("centered") &&
+      tooltipCode.includes("centered?: boolean;") &&
+      kutuphaneCode.includes('aria-label="Önceki Kart"') &&
+      kutuphaneCode.includes('aria-label="Sonraki Kart"') &&
+      kutuphaneCode.includes("flex flex-wrap items-center gap-1.5 pt-1"),
+    true,
+    "Görsel Kelime kartları ve detay modalı 360px taşmasız butonlara, temiz sıra rozetine, ortalanmış Arapça kelimeye ve simetrik Önceki/Sonraki oklarına sahip olmalıdır"
+  );
+
+  // 4. Mobil Safe-Area, md: Breakpoint Tutarlılığı ve metadata.json Koruması
+  const layoutCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  const mobileNavCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "MobileNav.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const scrollTopCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ScrollToTopButton.tsx"),
+    "utf8"
+  );
+  const keyboardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ArabicVirtualKeyboard.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    layoutCode.includes('viewportFit: "cover"') &&
+      mobileNavCode.includes("pb-[max(0.25rem,env(safe-area-inset-bottom))]") &&
+      alistirmalarCode.includes("pb-20 md:pb-4") &&
+      scrollTopCode.includes("fixed right-3 bottom-20 md:bottom-6 md:right-6") &&
+      keyboardCode.includes("mb-16 md:mb-2") &&
+      diyalogCode.includes("leading-[1.85] py-0.5") &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Safe-area, md: breakpoint uyumu, Arapça başlık satır yüksekliği ve metadata.json eksiksiz korunmalıdır"
+  );
+});

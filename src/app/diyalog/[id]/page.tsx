@@ -2507,7 +2507,7 @@ export default function DialogueDetailPage({
                 </span>
                 <span
                   dir="rtl"
-                  className="arabic text-base sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-snug line-clamp-1"
+                  className="arabic text-base sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-[1.85] py-0.5 line-clamp-1"
                 >
                   {getDisplayText(dialogue.baslik_ar)}
                 </span>
@@ -3778,7 +3778,7 @@ export default function DialogueDetailPage({
                           </span>
                           <span
                             dir="rtl"
-                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                            className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                           >
                             {getDisplayText(primaryAr)}
                           </span>
@@ -4786,7 +4786,7 @@ export default function DialogueDetailPage({
                         {roleplayInterimText ? (
                           <span
                             dir="rtl"
-                            className="arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 truncate"
+                            className="arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 leading-[1.85] py-0.5 line-clamp-1"
                           >
                             {roleplayInterimText}
                           </span>
@@ -5042,7 +5042,7 @@ export default function DialogueDetailPage({
                       </span>
                       <span
                         dir="rtl"
-                        className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                        className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                       >
                         {getDisplayText(primaryAr)}
                       </span>

@@ -86,7 +86,7 @@ export default function ArabicVirtualKeyboard({
     <div
       dir="ltr"
       data-virtual-keyboard="true"
-      className="w-full rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-3.5 mb-16 sm:mb-2 shadow-md space-y-1.5 sm:space-y-2 select-none animate-in fade-in slide-in-from-top-2 duration-150"
+      className="w-full rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2 sm:p-3.5 mb-16 md:mb-2 shadow-md space-y-1.5 sm:space-y-2 select-none animate-in fade-in slide-in-from-top-2 duration-150"
     >
       {/* Üst Başlık ve Hareke Satırı (Tek Satırda Kaydırmasız / Alt Satıra Düşmeyen) */}
       <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar py-1 px-1 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">

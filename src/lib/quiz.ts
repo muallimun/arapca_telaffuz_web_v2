@@ -492,8 +492,8 @@ export function generatePoolFrom1111Sentences(options?: {
     category: item.tema || item.kategori || "Genel",
     grammarTopic: item.odak_kalip,
     context: item.baglam || item.not_tr,
-    audioUrl: item.ses_erkek || `/sesler/cumleler/${item.id}_m.mp3`,
-    audioFemaleUrl: item.ses_kadin || `/sesler/cumleler/${item.id}_f.mp3`,
+    audioUrl: item.ses_erkek || `/sesler/cumleler/erkek/${item.id}.mp3`,
+    audioFemaleUrl: item.ses_kadin || `/sesler/cumleler/kadin/${item.id}.mp3`,
   }));
 }
 
@@ -525,8 +525,8 @@ export function generatePoolFromProverbs(options?: {
       level: item.cefr || "B1",
       category: item.tema || "Atasözü",
       imageUrl: item.gorsel,
-      audioUrl: item.ses_erkek || `/sesler/atasozleri/${item.id}_m.mp3`,
-      audioFemaleUrl: item.ses_kadin || `/sesler/atasozleri/${item.id}_f.mp3`,
+      audioUrl: item.ses_erkek || `/sesler/atasozleri/erkek/${item.id}.wav`,
+      audioFemaleUrl: item.ses_kadin || `/sesler/atasozleri/kadin/${item.id}.wav`,
     }));
 }
 

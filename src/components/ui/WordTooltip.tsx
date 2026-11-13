@@ -39,6 +39,7 @@ interface Props {
   isClassroomMode?: boolean;
   forceShowHareke?: boolean;
   inlineFlow?: boolean;
+  centered?: boolean;
 }
 
 function buildWordForms(item: DictionaryItem): TargetForm[] {
@@ -130,6 +131,7 @@ export default function WordTooltip({
   isClassroomMode = false,
   forceShowHareke,
   inlineFlow = false,
+  centered = false,
 }: Props) {
   const {
     showTooltips,
@@ -375,7 +377,11 @@ export default function WordTooltip({
         onClick={(e) => e.stopPropagation()}
         className={
           inlineFlow
-            ? "inline text-right"
+            ? centered
+              ? "inline text-center"
+              : "inline text-right"
+            : centered
+            ? "flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-2 text-center w-full"
             : "flex flex-wrap items-baseline justify-start gap-x-1.5 gap-y-2 text-right"
         }
       >

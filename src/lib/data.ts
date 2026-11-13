@@ -213,11 +213,12 @@ export const gorselKelimeler: ResimliKelime[] = (
   gorselKelimelerJson as ResimliKelime[]
 ).map((gk, idx) => {
   const prefix = (gk.id || "").split("_")[0];
-  const num4 = String(
-    gk.sira || parseInt(prefix.replace(/\D+/g, ""), 10) || idx + 1
-  ).padStart(4, "0");
+  const parsedSira =
+    gk.sira || parseInt(prefix.replace(/\D+/g, ""), 10) || idx + 1;
+  const num4 = String(parsedSira).padStart(4, "0");
   return {
     ...gk,
+    sira: parsedSira,
     kategori_tr: formatTurkishCategory(gk.kategori_tr || gk.kategori),
     arapca: normalizeCanonicalArabicLine(gk.arapca),
     ornek_ar: normalizeCanonicalArabicLine(gk.ornek_ar || ""),
@@ -230,7 +231,7 @@ export const gorselKelimeler: ResimliKelime[] = (
 // 6. Birleştirilmiş Kapsamlı Sözlük
 export const sozluk: DictionaryItem[] = unifiedDictionary;
 
-// 7. 55 Küratörlü YouTube Video & Oynatma Listesi Tavsiyesi (youtube_tavsiyeleri.json)
+// 7. 45 Küratörlü YouTube Video & Oynatma Listesi Tavsiyesi (youtube_tavsiyeleri.json)
 export const youtubeTavsiyeleri: YoutubeRecommendationItem[] = (
   youtubeTavsiyeleriJson as YoutubeRecommendationItem[]
 )

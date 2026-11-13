@@ -100,7 +100,7 @@ export default function MobileNav() {
     <nav
       aria-label="Mobil Alt Navigasyon"
       aria-hidden={isKeyboardOpen || undefined}
-      className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FBF6EC]/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md border-t-2 border-[#E6D7BE] dark:border-[var(--border)] transition-transform duration-200 ${
+      className={`md:hidden fixed bottom-0 left-0 right-0 z-40 pb-[max(0.25rem,env(safe-area-inset-bottom))] bg-[#FBF6EC]/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md border-t-2 border-[#E6D7BE] dark:border-[var(--border)] transition-transform duration-200 ${
         isKeyboardOpen
           ? "translate-y-full pointer-events-none opacity-0"
           : "translate-y-0 opacity-100"

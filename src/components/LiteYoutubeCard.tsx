@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId } from "react";
 import Link from "next/link";
 import {
   Play,
@@ -42,11 +42,21 @@ const CEFR_BADGE_STYLE: Record<string, string> = {
   B2: "bg-amber-600 text-white border-amber-800",
 };
 
+// Sayfa genelinde aynı anda yalnızca TEK BİR gömülü YouTube <iframe> oynatıcısının açık kalmasını sağlar
+let activeInlineYoutubeInstanceId: string | null = null;
+const inlineYoutubeSubscribers = new Set<(activeId: string | null) => void>();
+
+function notifyActiveInlineYoutube(nextId: string | null) {
+  activeInlineYoutubeInstanceId = nextId;
+  inlineYoutubeSubscribers.forEach((listener) => listener(nextId));
+}
+
 export default function LiteYoutubeCard({
   item,
   onOpenCinemaModal,
   compact = false,
 }: LiteYoutubeCardProps) {
+  const instanceId = useId();
   const { showHareke, harekeMode, speechRate } = useSettings();
   const { watchedVideos, toggleWatchedVideo } = useUserStore();
 
@@ -59,6 +69,21 @@ export default function LiteYoutubeCard({
     const raf = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  useEffect(() => {
+    const handleActiveChange = (activeId: string | null) => {
+      if (activeId !== instanceId) {
+        setIsPlaying(false);
+      }
+    };
+    inlineYoutubeSubscribers.add(handleActiveChange);
+    return () => {
+      inlineYoutubeSubscribers.delete(handleActiveChange);
+      if (activeInlineYoutubeInstanceId === instanceId) {
+        activeInlineYoutubeInstanceId = null;
+      }
+    };
+  }, [instanceId]);
 
   const { videoId, playlistId } = resolveYoutubeIds(item);
   const thumbnailUrl =
@@ -87,17 +112,22 @@ export default function LiteYoutubeCard({
     playClick();
     stopAllAudio();
     if (!embedUrl) return;
+    notifyActiveInlineYoutube(instanceId);
     setIsPlaying(true);
   };
 
   const handleStopInlinePlay = () => {
     playClick();
+    if (activeInlineYoutubeInstanceId === instanceId) {
+      notifyActiveInlineYoutube(null);
+    }
     setIsPlaying(false);
   };
 
   const handleOpenCinema = () => {
     playClick();
     stopAllAudio();
+    notifyActiveInlineYoutube(null);
     setIsPlaying(false);
     onOpenCinemaModal?.(item);
   };
@@ -208,7 +238,7 @@ export default function LiteYoutubeCard({
                   <p
                     lang="ar"
                     dir="rtl"
-                    className="arabic text-base sm:text-xl font-bold leading-snug drop-shadow-sm line-clamp-2 max-w-[96%] z-10"
+                    className="arabic text-base sm:text-xl font-bold leading-[1.85] py-0.5 drop-shadow-sm line-clamp-2 max-w-[96%] z-10"
                   >
                     {displayArabicTitle}
                   </p>
@@ -314,7 +344,7 @@ export default function LiteYoutubeCard({
             <p
               lang="ar"
               dir="rtl"
-              className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 text-right leading-relaxed"
+              className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
             >
               {displayArabicTitle}
             </p>
@@ -496,6 +526,7 @@ export function YoutubePlayerModal({
 
   useEffect(() => {
     stopAllAudio();
+    notifyActiveInlineYoutube(null);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();

@@ -1926,9 +1926,13 @@ export default function LibraryPage() {
             : null;
 
           const headerBadge = currentVisual
-            ? `#${currentVisual.id.replace("gorsel_", "")} • ${
-                currentVisual.cefr
-              } • ${formatVisualCategoryBadge(currentVisual.kategori_tr)}`
+            ? `#${
+                currentVisual.sira ||
+                parseInt(currentVisual.id.split("_")[0], 10) ||
+                safeIndex + 1
+              } • ${currentVisual.cefr} • ${formatVisualCategoryBadge(
+                currentVisual.kategori_tr
+              )}`
             : currentProverb
             ? `#${
                 currentProverb.sira || currentProverb.id.replace("ata_", "")
@@ -2007,19 +2011,129 @@ export default function LibraryPage() {
                   }
                 }}
               >
-                {/* 1. Tek Satırlık Üst Başlık Barı */}
-                <div className="px-3.5 sm:px-5 lg:px-7 py-2.5 sm:py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs sm:text-sm font-extrabold truncate max-w-[185px] sm:max-w-[360px] lg:max-w-[480px]">
-                      {headerBadge}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs sm:text-sm font-extrabold tabular-nums text-[var(--foreground)] shrink-0">
-                      {safeIndex + 1} / {activeModalListLength}
-                    </span>
+                {/* 1. Üst Başlık Barı (Mobilde Sağ Üst ✕ Kapat Sabit, Filtre Anahtarları 2. Satırda Taşmasız) */}
+                <div className="px-2.5 sm:px-5 lg:px-7 py-2 sm:py-3 bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs sm:text-sm font-extrabold truncate max-w-[195px] sm:max-w-[360px] lg:max-w-[480px]">
+                        {headerBadge}
+                      </span>
+                      <span className="px-2 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-[11px] sm:text-sm font-extrabold tabular-nums text-[var(--foreground)] shrink-0">
+                        {safeIndex + 1} / {activeModalListLength}
+                      </span>
+                    </div>
+
+                    {/* Masaüstünde tek satırda görünürlük anahtarları + Sağ üstte her zaman sabit ✕ Kapat */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
+                        {(() => {
+                          const modalFavItem = currentVisual
+                            ? toVisualWordFavoriteItem(currentVisual)
+                            : currentProverb
+                            ? toProverbFavoriteItem(currentProverb)
+                            : currentSentence
+                            ? toSentenceFavoriteItem(currentSentence)
+                            : null;
+                          const isModalFav =
+                            mounted &&
+                            modalFavItem &&
+                            (currentVisual
+                              ? isVisualWordFavorited(currentVisual)
+                              : favoriteIdsSet.has(modalFavItem.id));
+                          return modalFavItem ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                toggleFavoriteWord(modalFavItem);
+                              }}
+                              title={
+                                isModalFav
+                                  ? "Defterimden Çıkar"
+                                  : "Defterime Ekle"
+                              }
+                              className={`h-9 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                isModalFav
+                                  ? "bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-600 dark:text-rose-300 shadow-2xs"
+                                  : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-600"
+                              }`}
+                            >
+                              <Heart
+                                size={14}
+                                fill={isModalFav ? "currentColor" : "none"}
+                              />
+                              <span>
+                                {isModalFav ? "Defterimde" : "Defterime Ekle"}
+                              </span>
+                            </button>
+                          ) : null;
+                        })()}
+
+                        <button
+                          type="button"
+                          onClick={toggleBulkArabic}
+                          title={showArabic ? "Arapça Açık" : "Arapça Gizli"}
+                          className={`h-9 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            showArabic
+                              ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                          }`}
+                        >
+                          {showArabic ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>Arapça</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={toggleBulkTurkish}
+                          title={showTurkish ? "Türkçe Açık" : "Türkçe Gizli"}
+                          className={`h-9 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            showTurkish
+                              ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                          }`}
+                        >
+                          {showTurkish ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>Türkçe</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            toggleHareke();
+                          }}
+                          title={
+                            !mounted || showHareke ? "Hareke Açık" : "Hareke Kapalı"
+                          }
+                          className={`h-9 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            !mounted || showHareke
+                              ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
+                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                          }`}
+                        >
+                          <span>✨ Hareke</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setSelectedCardIndex(null);
+                        }}
+                        aria-label="Kapat"
+                        title="Pencereyi Kapat (Esc)"
+                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 sm:bg-white sm:dark:bg-[var(--surface)] sm:hover:bg-rose-50 border border-rose-700 sm:border-[#E6D7BE] text-xs font-extrabold text-white sm:text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                      >
+                        <X size={16} />
+                        <span className="hidden sm:inline">Kapat</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Görünürlük Anahtarları + Defterime Ekle + Kapat */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                  {/* Mobil (< 640px) Görünürlük & Defter Anahtarları — Taşmasız Kompakt Satır */}
+                  <div className="sm:hidden flex items-center justify-between gap-1.5 w-full">
                     {(() => {
                       const modalFavItem = currentVisual
                         ? toVisualWordFavoriteItem(currentVisual)
@@ -2046,19 +2160,16 @@ export default function LibraryPage() {
                               ? "Defterimden Çıkar"
                               : "Defterime Ekle"
                           }
-                          className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          className={`h-8 w-9 rounded-xl border text-xs font-extrabold flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                             isModalFav
-                              ? "bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-600 dark:text-rose-300 shadow-2xs"
-                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-600"
+                              ? "bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-600 dark:text-rose-300"
+                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                           }`}
                         >
                           <Heart
                             size={14}
                             fill={isModalFav ? "currentColor" : "none"}
                           />
-                          <span className="hidden sm:inline">
-                            {isModalFav ? "Defterimde" : "Defterime Ekle"}
-                          </span>
                         </button>
                       ) : null;
                     })()}
@@ -2066,28 +2177,26 @@ export default function LibraryPage() {
                     <button
                       type="button"
                       onClick={toggleBulkArabic}
-                      title={showArabic ? "Arapça Açık" : "Arapça Gizli"}
-                      className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 h-8 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap min-w-0 ${
                         showArabic
-                          ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                          ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                       }`}
                     >
-                      {showArabic ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {showArabic ? <Eye size={12} /> : <EyeOff size={12} />}
                       <span>Arapça</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={toggleBulkTurkish}
-                      title={showTurkish ? "Türkçe Açık" : "Türkçe Gizli"}
-                      className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 h-8 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap min-w-0 ${
                         showTurkish
-                          ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                          ? "bg-[#6741D9] border-[#5230B5] text-white"
                           : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                       }`}
                     >
-                      {showTurkish ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {showTurkish ? <Eye size={12} /> : <EyeOff size={12} />}
                       <span>Türkçe</span>
                     </button>
 
@@ -2097,29 +2206,13 @@ export default function LibraryPage() {
                         playClick();
                         toggleHareke();
                       }}
-                      title={
-                        !mounted || showHareke ? "Hareke Açık" : "Hareke Kapalı"
-                      }
-                      className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 h-8 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap min-w-0 ${
                         !mounted || showHareke
                           ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
                           : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                       }`}
                     >
                       <span>✨ Hareke</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedCardIndex(null);
-                      }}
-                      aria-label="Kapat"
-                      className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-rose-50 border border-[#E6D7BE] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <X size={15} />
-                      <span className="hidden sm:inline">Kapat</span>
                     </button>
                   </div>
                 </div>
@@ -2183,12 +2276,13 @@ export default function LibraryPage() {
                     {isModalArVisible ? (
                       <div
                         dir="rtl"
-                        className="rounded-2xl border border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-4 lg:p-6 shadow-xs text-center relative"
+                        className="rounded-2xl border border-[#E6D7BE] bg-white dark:bg-[var(--background)] p-4 lg:p-6 min-h-[84px] lg:min-h-[116px] shadow-xs flex flex-col items-center justify-center text-center relative"
                       >
-                        <div className="arabic font-arabic text-[clamp(1.6rem,3vw,3.25rem)] font-bold text-[#065F46] dark:text-emerald-400 leading-[1.65]">
+                        <div className="arabic font-arabic text-[clamp(2rem,4vw,3.5rem)] font-bold text-[#065F46] dark:text-emerald-400 leading-[1.85] py-0.5 w-full flex items-center justify-center text-center">
                           <WordTooltip
                             text={activeItem.arapca}
                             contextSentenceTr={activeItem.turkce}
+                            centered
                           />
                         </div>
                         {!showArabic && (
@@ -2405,31 +2499,32 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
-                {/* 3. Birleştirilmiş Alt Kontrol İskelesi (Unified Bottom Dock — Tek Bar) */}
-                <div className="flex items-center justify-between gap-2 sm:gap-3 px-3.5 sm:px-5 lg:px-7 py-2.5 sm:py-3.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                {/* 3. Birleştirilmiş Alt Kontrol İskelesi (360px Mobilde Sol < Önceki ve Sağ Sonraki > Simetrik ve Taşmasız) */}
+                <div className="flex items-center justify-between gap-1 sm:gap-3 px-2 sm:px-5 lg:px-7 py-2 sm:py-3.5 bg-[#F7EFE1] dark:bg-[var(--background)] border-t border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
                   <button
                     type="button"
                     onClick={goPrev}
+                    aria-label="Önceki Kart"
                     title="Önceki Kart (Sol Ok)"
-                    className="px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-[#EFE3CE] border-2 border-[#E6D7BE] border-b-3 text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer active:translate-y-0.5 shrink-0"
+                    className="h-10 w-9 sm:w-auto sm:h-auto px-0 sm:px-4 lg:px-6 sm:py-2.5 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-white dark:bg-[var(--surface)] hover:bg-[#EFE3CE] border-2 border-[#E6D7BE] border-b-3 text-[var(--foreground)] flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 shrink-0"
                   >
                     <ChevronLeft size={18} />
                     <span className="hidden sm:inline">Önceki</span>
                   </button>
 
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-center gap-1 sm:gap-3 flex-1 min-w-0">
                     <button
                       type="button"
                       onClick={() => void handleListenDualGender(activeItem)}
                       title="Dinle (Boşluk Tuşu)"
-                      className={`px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold rounded-xl border-2 border-b-3 flex items-center justify-center gap-2 transition-all cursor-pointer truncate ${
+                      className={`h-10 sm:h-auto px-2 sm:px-4 lg:px-6 sm:py-2.5 lg:py-3 text-xs sm:text-sm lg:text-base font-semibold rounded-xl border-2 border-b-3 flex items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer min-w-0 whitespace-nowrap ${
                         isItemPlaying
                           ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
                       }`}
                     >
                       <Volume2
-                        size={18}
+                        size={16}
                         className={
                           isItemPlaying
                             ? "text-white shrink-0"
@@ -2437,11 +2532,11 @@ export default function LibraryPage() {
                         }
                       />
                       <span className="truncate">
-                        {isItemPlaying ? "Dinleniyor..." : "Dinle"}
+                        {isItemPlaying ? "Dur" : "Dinle"}
                       </span>
                     </button>
 
-                    <div className="flex items-center bg-white dark:bg-[var(--surface)] p-1 rounded-xl border-2 border-[#E6D7BE] shrink-0">
+                    <div className="flex items-center bg-white dark:bg-[var(--surface)] p-0.5 sm:p-1 rounded-xl border-2 border-[#E6D7BE] shrink-0">
                       {(
                         [
                           { id: "erkek", label: "👨 Erkek" },
@@ -2463,7 +2558,7 @@ export default function LibraryPage() {
                               playClick();
                               setPreferredVoiceGender(g.id);
                             }}
-                            className={`px-2.5 py-1.5 lg:px-3.5 lg:py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all cursor-pointer ${
+                            className={`px-1.5 py-1.5 sm:px-2.5 lg:px-3.5 lg:py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all cursor-pointer ${
                               active
                                 ? "bg-[#087F5B] text-white"
                                 : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -2491,9 +2586,9 @@ export default function LibraryPage() {
                           forms: modalForms,
                         });
                       }}
-                      className="px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                      className="h-10 sm:h-auto px-2 sm:px-4 lg:px-6 sm:py-2.5 lg:py-3 text-xs sm:text-sm lg:text-base font-semibold rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
                     >
-                      <Mic size={17} />
+                      <Mic size={15} className="shrink-0" />
                       <span>Telaffuz</span>
                     </button>
 
@@ -2574,9 +2669,9 @@ export default function LibraryPage() {
                         }
                       }}
                       title="Görsel Kart Olarak Paylaş"
-                      className="px-3.5 py-2.5 lg:px-5 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                      className="h-10 w-9 sm:w-auto sm:h-auto px-0 sm:px-3.5 lg:px-5 sm:py-2.5 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                     >
-                      <Share2 size={17} />
+                      <Share2 size={16} />
                       <span className="hidden sm:inline">Paylaş</span>
                     </button>
                   </div>
@@ -2584,8 +2679,9 @@ export default function LibraryPage() {
                   <button
                     type="button"
                     onClick={goNext}
+                    aria-label="Sonraki Kart"
                     title="Sonraki Kart (Sağ Ok)"
-                    className="px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-[#087F5B] hover:bg-[#065F46] border-2 border-[#065F46] border-b-3 text-white flex items-center gap-1.5 cursor-pointer active:translate-y-0.5 shrink-0"
+                    className="h-10 w-9 sm:w-auto sm:h-auto px-0 sm:px-4 lg:px-6 sm:py-2.5 lg:py-3 text-sm lg:text-base font-semibold rounded-xl bg-[#087F5B] hover:bg-[#065F46] border-2 border-[#065F46] border-b-3 text-white flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 shrink-0"
                   >
                     <span className="hidden sm:inline">Sonraki</span>
                     <ChevronRight size={18} />
@@ -2931,7 +3027,7 @@ export default function LibraryPage() {
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic("الحِوَارَاتُ اليَوْمِيَّة")}
                     </div>
@@ -3038,7 +3134,7 @@ export default function LibraryPage() {
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#6741D9] dark:text-[#d0bfff] text-right leading-snug"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#6741D9] dark:text-[#d0bfff] text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic("نُصُوصُ القِرَاءَة")}
                     </div>
@@ -3145,7 +3241,7 @@ export default function LibraryPage() {
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic("المُفْرَدَاتُ المُصَوَّرَة")}
                     </div>
@@ -3238,7 +3334,7 @@ export default function LibraryPage() {
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic("الجُمَلُ اليَوْمِيَّة")}
                     </div>
@@ -3270,7 +3366,7 @@ export default function LibraryPage() {
                     <div
                       dir="rtl"
                       lang="ar"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 text-right leading-snug"
+                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic(cumleler1111[0].arapca)}
                     </div>
@@ -3332,7 +3428,7 @@ export default function LibraryPage() {
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300 text-right leading-snug"
+                      className="arabic text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic("الأَمْثَالُ وَالحِكَم")}
                     </div>
@@ -3364,7 +3460,7 @@ export default function LibraryPage() {
                     <div
                       dir="rtl"
                       lang="ar"
-                      className="arabic text-base font-bold text-amber-800 dark:text-amber-300 text-right leading-snug"
+                      className="arabic text-base font-bold text-amber-800 dark:text-amber-300 text-right leading-[1.85] py-0.5"
                     >
                       {getDisplayArabic(atasozleri[0].arapca)}
                     </div>
@@ -4366,7 +4462,7 @@ export default function LibraryPage() {
                           <div
                             lang="ar"
                             dir="rtl"
-                            className="arabic text-[#065F46] dark:text-emerald-400 text-lg sm:text-xl font-bold leading-snug text-right line-clamp-2"
+                            className="arabic text-[#065F46] dark:text-emerald-400 text-lg sm:text-xl font-bold leading-[1.85] py-0.5 text-right line-clamp-2"
                           >
                             {getDisplayArabic(dlg.baslik_ar)}
                           </div>
@@ -4621,7 +4717,7 @@ export default function LibraryPage() {
                           <div
                             lang="ar"
                             dir="rtl"
-                            className="arabic text-[#065F46] dark:text-emerald-400 text-lg sm:text-xl font-bold leading-snug text-right line-clamp-2"
+                            className="arabic text-[#065F46] dark:text-emerald-400 text-lg sm:text-xl font-bold leading-[1.85] py-0.5 text-right line-clamp-2"
                           >
                             {getDisplayArabic(txt.baslik_ar)}
                           </div>
@@ -5753,12 +5849,12 @@ export default function LibraryPage() {
                     </div>
                   </div>
 
-                  {/* Alt Aksiyon Satırı */}
-                  <div className="flex items-center gap-2 pt-1">
+                  {/* Alt Aksiyon Satırı (360px Mobil Uyumlu flex-wrap + whitespace-nowrap) */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
                     <button
                       type="button"
                       onClick={() => void handleListenDualGender(item)}
-                      className={`flex-1 min-h-[40px] px-3 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      className={`flex-1 min-w-[116px] min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                         isPlaying
                           ? "bg-[#087F5B] border-[#065F46] text-white"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)] hover:border-[#087F5B]"
@@ -5766,7 +5862,9 @@ export default function LibraryPage() {
                     >
                       <Volume2
                         size={14}
-                        className={isPlaying ? "text-white" : "text-[#065F46]"}
+                        className={`shrink-0 ${
+                          isPlaying ? "text-white" : "text-[#065F46]"
+                        }`}
                       />
                       <span>
                         {isPlaying
@@ -5792,9 +5890,9 @@ export default function LibraryPage() {
                           forms,
                         });
                       }}
-                      className="min-h-[40px] px-3 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/75 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
                     >
-                      <Mic size={14} />
+                      <Mic size={13} className="shrink-0" />
                       <span>Telaffuz</span>
                     </button>
 
@@ -5809,7 +5907,7 @@ export default function LibraryPage() {
                           ? "Defterimden Çıkar"
                           : "Defterime Ekle"
                       }
-                      className={`min-h-[40px] w-10 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                      className={`min-h-[38px] w-9 rounded-xl border-2 border-b-3 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                         mounted && isVisualWordFavorited(item)
                           ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 text-rose-600"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] hover:text-rose-500"
@@ -5862,7 +5960,7 @@ export default function LibraryPage() {
                         });
                       }}
                       title="Görsel Kelimeyi Kart Olarak Paylaş"
-                      className="min-h-[40px] w-10 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center cursor-pointer shrink-0"
+                      className="min-h-[38px] w-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 flex items-center justify-center cursor-pointer shrink-0"
                     >
                       <Share2 size={14} />
                     </button>
@@ -5874,9 +5972,9 @@ export default function LibraryPage() {
                         setSelectedCardIndex(idx);
                       }}
                       title="Tekil Kart Görünümünde Aç"
-                      className="min-h-[40px] px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                      className="min-h-[38px] w-9 sm:w-auto sm:px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] flex items-center justify-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
                     >
-                      <Maximize2 size={13} className="text-[#087F5B]" />
+                      <Maximize2 size={13} className="text-[#087F5B] shrink-0" />
                       <span className="hidden sm:inline">Kartı Aç</span>
                     </button>
                   </div>

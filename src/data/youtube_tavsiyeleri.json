@@ -6,14 +6,19 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça Çocuk Şarkıları (Neşîdü'l-Arabiyye)",
-    "baslik_ar": "أَنَاشِيدُ الْأَطْفَالِ الْعَرَبِيَّةُ",
+    "baslik_ar": "أَنَاشِيدُ الْأَطْفَالِ الْعَرَبِيَّةُ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
     "playlist_id": "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
     "sure_etiketi": "Oynatma Listesi",
     "pedagojik_not": "Ritim ve tekrarlarla temel Arapça kelimeleri, renkleri, sayıları ve günlük ifadeleri kulak aşinalığıyla ezberlemek için idealdir.",
     "bagli_icerik_id": "dlg_001",
-    "odak_kelimeler": ["أُنْشُودَةٌ", "طِفْلٌ", "صَوْتٌ", "تَكْرَارٌ"]
+    "odak_kelimeler": [
+      "أُنْشُودَةٌ",
+      "طِفْلٌ",
+      "صَوْتٌ",
+      "تَكْرَارٌ"
+    ]
   },
   {
     "id": "yt_002",
@@ -22,13 +27,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 01: Nan ve Lili",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: نَانْ وَلِيلِي",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: نَانْ وَلِيلِي",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2G4hM9RVHm2E6_ECxqt--t",
     "playlist_id": "PLEM4OKFQO5J2G4hM9RVHm2E6_ECxqt--t",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Tam başlangıç seviyesinde yavaş ve anlaşılır fasih Arapça seslendirmeyle temel nesne ve eylemleri tanıtır.",
-    "odak_kelimeler": ["بَيْتٌ", "لُعْبَةٌ", "صَدِيقٌ"]
+    "odak_kelimeler": [
+      "بَيْتٌ",
+      "لُعْبَةٌ",
+      "صَدِيقٌ"
+    ]
   },
   {
     "id": "yt_003",
@@ -37,13 +46,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 02: Talal ve Bilal",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: طَلَالٌ وَبِلَالٌ",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: طَلَالٌ وَبِلَالٌ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J3v_uRfm7x9neOOCGDK3S1p",
     "playlist_id": "PLEM4OKFQO5J3v_uRfm7x9neOOCGDK3S1p",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Günlük hayattaki basit diyalog kalıplarını ve kardeş/arkadaş iletişimi ifadelerini görsel bağlamda öğretir.",
-    "odak_kelimeler": ["أَخٌ", "تَعَاوُنٌ", "حِوَارٌ"]
+    "odak_kelimeler": [
+      "أَخٌ",
+      "تَعَاوُنٌ",
+      "حِوَارٌ"
+    ]
   },
   {
     "id": "yt_004",
@@ -52,13 +65,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 04: Baraaem (Berâim)",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: بَرَاعِمُ",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: بَرَاعِمُ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J3KbKKmV237wQ-_sYWVUXf9",
     "playlist_id": "PLEM4OKFQO5J3KbKKmV237wQ-_sYWVUXf9",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Kısa ve net cümlelerle temel kavramları, hayvanları ve çevre bilincini başlangıç seviyesinde kazandırır.",
-    "odak_kelimeler": ["طَبِيعَةٌ", "حَيَوَانٌ", "تَعَلُّمٌ"]
+    "odak_kelimeler": [
+      "طَبِيعَةٌ",
+      "حَيَوَانٌ",
+      "تَعَلُّمٌ"
+    ]
   },
   {
     "id": "yt_005",
@@ -67,13 +84,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 05: Bim ve Bam",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: بِيمْ وَبَامْ",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: بِيمْ وَبَامْ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2knwB5vlz5Lj_0VUIl3kht",
     "playlist_id": "PLEM4OKFQO5J2knwB5vlz5Lj_0VUIl3kht",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Temel sıfatları, zıt kavramları ve basit fiil cümlelerini eğlenceli animasyonlarla pekiştirir.",
-    "odak_kelimeler": ["كَبِيرٌ", "صَغِيرٌ", "سَرِيعٌ"]
+    "odak_kelimeler": [
+      "كَبِيرٌ",
+      "صَغِيرٌ",
+      "سَرِيعٌ"
+    ]
   },
   {
     "id": "yt_006",
@@ -82,13 +103,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 06: es-Sirk el-Acîb",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: السِّيرْكُ الْعَجِيبُ",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: السِّيرْكُ الْعَجِيبُ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J0UgDpOuMNeLzLYZnpdy_1P",
     "playlist_id": "PLEM4OKFQO5J0UgDpOuMNeLzLYZnpdy_1P",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Hareket fiillerini, sayıları ve gösteri dünyasıyla ilgili temel kelimeleri görsel hafızayla birleştirir.",
-    "odak_kelimeler": ["حَرَكَةٌ", "لَعِبٌ", "مَهَارَةٌ"]
+    "odak_kelimeler": [
+      "حَرَكَةٌ",
+      "لَعِبٌ",
+      "مَهَارَةٌ"
+    ]
   },
   {
     "id": "yt_007",
@@ -97,13 +122,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 07: er-Ressâm",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: الرَّسَّامُ",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: الرَّسَّامُ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J0cY7zm6tE9pxBcMLoscdFV",
     "playlist_id": "PLEM4OKFQO5J0cY7zm6tE9pxBcMLoscdFV",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Renkler, şekiller ve çizimle ilgili başlangıç düzeyi Arapça kelimeleri bağlam içinde öğretir.",
-    "odak_kelimeler": ["لَوْنٌ", "صُورَةٌ", "رَسْمٌ"]
+    "odak_kelimeler": [
+      "لَوْنٌ",
+      "صُورَةٌ",
+      "رَسْمٌ"
+    ]
   },
   {
     "id": "yt_008",
@@ -112,13 +141,17 @@
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Arapça 1. Düzey Videolar - 08: Maylu",
-    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: مَايْلُو",
+    "baslik_ar": "فِيدْيُوهَاتُ الْمُسْتَوَى الْأَوَّلِ: مَايْلُو",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2xNEHD_r4-usUGki1gzq9C",
     "playlist_id": "PLEM4OKFQO5J2xNEHD_r4-usUGki1gzq9C",
     "sure_etiketi": "1. Düzey Seri",
     "pedagojik_not": "Günlük keşif hikayeleri üzerinden temel soru edatlarını (مَا هَذَا؟ / أَيْنَ؟) ve kısa cevapları kavratır.",
-    "odak_kelimeler": ["سُؤَالٌ", "جَوَابٌ", "اِكْتِشَافٌ"]
+    "odak_kelimeler": [
+      "سُؤَالٌ",
+      "جَوَابٌ",
+      "اِكْتِشَافٌ"
+    ]
   },
   {
     "id": "yt_009",
@@ -127,14 +160,19 @@
     "tur": "playlist",
     "kategori": "diyalog_egitim",
     "baslik_tr": "Arapça Saatler ve Zaman İfadeleri",
-    "baslik_ar": "السَّاعَاتُ وَالتَّعْبِيرَاتُ الزَّمَنِيَّةُ بِالْعَرَبِيَّةِ",
+    "baslik_ar": "السَّاعَاتُ وَالتَّعْبِيرَاتُ الزَّمَنِيَّةُ بِالْعَرَبِيَّةِ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2wFl5jXUMnYbseB3ani4gX",
     "playlist_id": "PLEM4OKFQO5J2wFl5jXUMnYbseB3ani4gX",
     "sure_etiketi": "Konu Anlatım & Pratik",
-    "pedagojik_not": "Arapçada saat sorma (كَمِ السَّاعَةُ؟), tam, buçuk ve çeyrek saatleri söyleme kalıplarını uygulamalı öğretir.",
+    "pedagojik_not": "Arapçada saat sorma (كَمِ السَّاعَةُ؟), tam, buçuk ve çeyrek saatleri söyleme kalıplarını uygulamalı öğretir.",
     "bagli_icerik_id": "grm_012",
-    "odak_kelimeler": ["سَاعَةٌ", "نِصْفٌ", "رُبْعٌ", "دَقِيقَةٌ"]
+    "odak_kelimeler": [
+      "سَاعَةٌ",
+      "نِصْفٌ",
+      "رُبْعٌ",
+      "دَقِيقَةٌ"
+    ]
   },
   {
     "id": "yt_010",
@@ -142,127 +180,107 @@
     "cefr": "A1",
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
-    "baslik_tr": "Maşa ve Ayı (Fasih Arapça Dublaj)",
-    "baslik_ar": "مَاشَا وَالدُّبُّ بِالْعَرَبِيَّةِ الْفُصْحَى",
-    "kanal_adi": "Masha and The Bear Arabic",
-    "url": "https://www.youtube.com/playlist?list=PL-WDURy0fRf-mck3BfgGOUbP55yPlmRxf",
-    "playlist_id": "PL-WDURy0fRf-mck3BfgGOUbP55yPlmRxf",
-    "sure_etiketi": "Çizgi Dizi Serisi",
-    "pedagojik_not": "Görsel aksiyonun güçlü olması sayesinde kelimeleri sözlüğe bakmadan bağlamdan tahmin etme yeteneğini geliştirir.",
-    "odak_kelimeler": ["غَابَةٌ", "دُبٌّ", "مُغَامَرَةٌ"]
-  },
-  {
-    "id": "yt_011",
-    "sira": 11,
-    "cefr": "A1",
-    "tur": "playlist",
-    "kategori": "cizgi_animasyon",
     "baslik_tr": "Heidi (Fasih Arapça Çizgi Dizi)",
-    "baslik_ar": "مُسَلْسَلُ الكَرْتُونِ هَايْدِي بِالْعَرَبِيَّةِ",
+    "baslik_ar": "مُسَلْسَلُ الكَرْتُونِ هَايْدِي بِالْعَرَبِيَّةِ",
     "kanal_adi": "Klasik Arapça Çizgi Dizi",
     "url": "https://www.youtube.com/watch?v=N6kslYvDUDE&list=PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp",
     "video_id": "N6kslYvDUDE",
     "playlist_id": "PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp",
     "sure_etiketi": "Bölümler Listesi",
     "pedagojik_not": "Tane tane konuşulan fasih Arapça dublajıyla günlük yaşam, doğa ve aile kelimelerini öğrenmek için harika bir başlangıçtır.",
-    "odak_kelimeler": ["جَبَلٌ", "جَدٌّ", "قَرْيَةٌ", "طَبِيعَةٌ"]
+    "odak_kelimeler": [
+      "جَبَلٌ",
+      "جَدٌّ",
+      "قَرْيَةٌ",
+      "طَبِيعَةٌ"
+    ]
   },
   {
-    "id": "yt_012",
-    "sira": 12,
-    "cefr": "A1",
-    "tur": "playlist",
-    "kategori": "cizgi_animasyon",
-    "baslik_tr": "Sali (Fasih Arapça Klasik Çizgi Dizi)",
-    "baslik_ar": "مُسَلْسَلُ الكَرْتُونِ سَالِي بِالْعَرَبِيَّةِ الْفُصْحَى",
-    "kanal_adi": "Klasik Arapça Çizgi Dizi",
-    "url": "https://www.youtube.com/playlist?list=PLnmMHGHL1sYU8yz3n56YJgxeJ2PUs2R83",
-    "playlist_id": "PLnmMHGHL1sYU8yz3n56YJgxeJ2PUs2R83",
-    "sure_etiketi": "Bölümler Listesi",
-    "pedagojik_not": "Okul, arkadaşlık, sabır ve duyguları anlatan temel cümle yapılarını net bir telaffuzla sunar.",
-    "odak_kelimeler": ["مَدْرَسَةٌ", "صَبْرٌ", "أَمَلٌ", "صَدَاقَةٌ"]
-  },
-  {
-    "id": "yt_013",
-    "sira": 13,
+    "id": "yt_011",
+    "sira": 11,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "cizgi_animasyon",
     "baslik_tr": "Favvaz ve Nura (Arapça - Türkçe Altyazılı Çizgi Dizi)",
-    "baslik_ar": "فَوَّازٌ وَنُورَةُ - رُسُومٌ مُتَحَرِّكَةٌ تَعْلِيمِيَّةٌ",
+    "baslik_ar": "فَوَّازٌ وَنُورَةُ - رُسُومٌ مُتَحَرِّكَةٌ تَعْلِيمِيَّةٌ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2XkmhBlNx_yxL4jY0YT00h",
     "playlist_id": "PLEM4OKFQO5J2XkmhBlNx_yxL4jY0YT00h",
     "sure_etiketi": "Altyazılı Seri",
     "pedagojik_not": "Aile içi günlük konuşmaları, görgü kurallarını ve değerler eğitimini hem Arapça hem Türkçe altyazı desteğiyle kavratır.",
     "bagli_icerik_id": "dlg_010",
-    "odak_kelimeler": ["أُسْرَةٌ", "أَدَبٌ", "اِحْتِرَامٌ", "حِوَارٌ"]
+    "odak_kelimeler": [
+      "أُسْرَةٌ",
+      "أَدَبٌ",
+      "اِحْتِرَامٌ",
+      "حِوَارٌ"
+    ]
   },
   {
-    "id": "yt_014",
-    "sira": 14,
+    "id": "yt_012",
+    "sira": 12,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "diyalog_egitim",
     "baslik_tr": "Arapça - Türkçe Altyazılı Diyalog Animasyonları",
-    "baslik_ar": "رُسُومٌ مُتَحَرِّكَةٌ لِحِوَارَاتٍ عَرَبِيَّةٍ مُتَرْجَمَةٍ إِلَى التُّرْكِيَّةِ",
+    "baslik_ar": "رُسُومٌ مُتَحَرِّكَةٌ لِحِوَارَاتٍ عَرَبِيَّةٍ مُتَرْجَمَةٍ إِلَى التُّرْكِيَّةِ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2Ouc_eZm5YjYDWNSKTEFeR",
     "playlist_id": "PLEM4OKFQO5J2Ouc_eZm5YjYDWNSKTEFeR",
     "sure_etiketi": "Diyalog Serisi",
     "pedagojik_not": "Alışveriş, okul, yolculuk ve tanışma gibi gerçek hayat senaryolarını iki dilli altyazıyla takip ederek konuşma pratiği yapın.",
     "bagli_icerik_id": "dlg_005",
-    "odak_kelimeler": ["تَعَارُفٌ", "سُوقٌ", "سَفَرٌ", "مُحَادَثَةٌ"]
+    "odak_kelimeler": [
+      "تَعَارُفٌ",
+      "سُوقٌ",
+      "سَفَرٌ",
+      "مُحَادَثَةٌ"
+    ]
   },
   {
-    "id": "yt_015",
-    "sira": 15,
-    "cefr": "A2",
-    "tur": "playlist",
-    "kategori": "diyalog_egitim",
-    "baslik_tr": "Görsel ve İşitsel Animasyonlarla Arapça Dersleri",
-    "baslik_ar": "دُرُوسُ اللُّغَةِ الْعَرَبِيَّةِ بِالرُّسُومِ الْمُتَحَرِّكَةِ - سَمْعِيَّةٌ وَبَصَرِيَّةٌ",
-    "kanal_adi": "Muallimun Net",
-    "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J3rlg7pBlwKK_bYsF6M71nZ",
-    "playlist_id": "PLEM4OKFQO5J3rlg7pBlwKK_bYsF6M71nZ",
-    "sure_etiketi": "Görsel-İşitsel Seri",
-    "pedagojik_not": "Cümle yapılarını, fiil çekimlerini ve günlük kalıpları görsel-işitsel hafıza teknikleriyle A2-B1 geçiş düzeyinde pekiştirir.",
-    "odak_kelimeler": ["جُمْلَةٌ", "مُشَاهَدَةٌ", "اِسْتِمَاعٌ", "قَوَاعِدُ"]
-  },
-  {
-    "id": "yt_016",
-    "sira": 16,
+    "id": "yt_013",
+    "sira": 13,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
     "baslik_tr": "Tabiin Hikayeleri (Min Kısası't-Tâbiîn)",
-    "baslik_ar": "مِنْ قَصَصِ التَّابِعِينَ",
+    "baslik_ar": "مِنْ قَصَصِ التَّابِعِينَ",
     "kanal_adi": "Muallimun Net",
     "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J2DY32UzOEGR4rhk5q7Mgp2",
     "playlist_id": "PLEM4OKFQO5J2DY32UzOEGR4rhk5q7Mgp2",
     "sure_etiketi": "Kıssa Serisi",
     "pedagojik_not": "Kısa ve akıcı hikâye diliyle geçmiş zaman (mazi fiil) yapılarını ve hikmetli ifadeleri dinleyerek öğrenmenizi sağlar.",
     "bagli_icerik_id": "metin_005",
-    "odak_kelimeler": ["قِصَّةٌ", "حِكْمَةٌ", "صِدْقٌ", "عِلْمٌ"]
+    "odak_kelimeler": [
+      "قِصَّةٌ",
+      "حِكْمَةٌ",
+      "صِدْقٌ",
+      "عِلْمٌ"
+    ]
   },
   {
-    "id": "yt_017",
-    "sira": 17,
+    "id": "yt_014",
+    "sira": 14,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
     "baslik_tr": "Sadaka Rasûlullâh: İmam Buhârî Çizgi Dizisi",
-    "baslik_ar": "صَدَقَ رَسُولُ اللهِ: الْإِمَامُ الْبُخَارِيُّ",
+    "baslik_ar": "صَدَقَ رَسُولُ اللهِ: الْإِمَامُ الْبُخَارِيُّ",
     "kanal_adi": "İslami Çizgi Dizi Arşivi",
     "url": "https://www.youtube.com/playlist?list=PLL5-Y6lgu7SK5dxbRcQe665isxbGtzvJZ",
     "playlist_id": "PLL5-Y6lgu7SK5dxbRcQe665isxbGtzvJZ",
     "sure_etiketi": "Çizgi Dizi",
     "pedagojik_not": "Hadislerin hikayelerini ve İmam Buhârî'nin ilim yolculuğunu sade ve anlaşılır bir fasih Arapçayla anlatır.",
-    "odak_kelimeler": ["حَدِيثٌ", "رِحْلَةٌ", "عَالِمٌ", "أَمَانَةٌ"]
+    "odak_kelimeler": [
+      "حَدِيثٌ",
+      "رِحْلَةٌ",
+      "عَالِمٌ",
+      "أَمَانَةٌ"
+    ]
   },
   {
-    "id": "yt_018",
-    "sira": 18,
+    "id": "yt_015",
+    "sira": 15,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
@@ -274,11 +292,16 @@
     "playlist_id": "PLsDEtQxRG8bE-JKKPx0vCAAK0R511rrT8",
     "sure_etiketi": "Biyografik Animasyon",
     "pedagojik_not": "İslam medeniyetindeki bilim insanlarının hayatlarını ve buluşlarını temel akademik ve günlük kelimelerle tanıtır.",
-    "odak_kelimeler": ["تَارِيخٌ", "طِبٌّ", "فَلَكٌ", "حَضَارَةٌ"]
+    "odak_kelimeler": [
+      "تَارِيخٌ",
+      "طِبٌّ",
+      "فَلَكٌ",
+      "حَضَارَةٌ"
+    ]
   },
   {
-    "id": "yt_019",
-    "sira": 19,
+    "id": "yt_016",
+    "sira": 16,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
@@ -290,11 +313,16 @@
     "playlist_id": "PLJ0WU3XQoz4-x5FPOHh3s8nRkeal-4ED7",
     "sure_etiketi": "Kıssa Oynatma Listesi",
     "pedagojik_not": "Ayetlerde geçen kıssaları görsel canlandırmalarla izleyerek Kur'ânî kelimelerin günlük fasih Arapçadaki karşılıklarını kavrayın.",
-    "odak_kelimeler": ["آيَةٌ", "عِبْرَةٌ", "صَبْرٌ", "شُكْرٌ"]
+    "odak_kelimeler": [
+      "آيَةٌ",
+      "عِبْرَةٌ",
+      "صَبْرٌ",
+      "شُكْرٌ"
+    ]
   },
   {
-    "id": "yt_020",
-    "sira": 20,
+    "id": "yt_017",
+    "sira": 17,
     "cefr": "A2",
     "tur": "video",
     "kategori": "hikaye_kissa",
@@ -304,148 +332,155 @@
     "url": "https://www.youtube.com/watch?v=wuKVKYW0Ois",
     "video_id": "wuKVKYW0Ois",
     "sure_etiketi": "Uzun Bölüm",
-    "pedagojik_not": "Olaya dayalı anlatım sayesinde dinleme dikkatinizi uzun süre korumayı ve bağlaçları (ثُمَّ، فَلَمَّا، بَعْدَ ذَلِكَ) yakalamayı öğretir.",
-    "odak_kelimeler": ["قِصَّةٌ", "مُعْجِزَةٌ", "إِيمَانٌ"]
+    "pedagojik_not": "Olaya dayalı anlatım sayesinde dinleme dikkatinizi uzun süre korumayı ve bağlaçları (ثُمَّ، فَلَمَّا، بَعْدَ ذَلِكَ) yakalamayı öğretir.",
+    "odak_kelimeler": [
+      "قِصَّةٌ",
+      "مُعْجِزَةٌ",
+      "إِيمَانٌ"
+    ]
   },
   {
-    "id": "yt_021",
-    "sira": 21,
+    "id": "yt_018",
+    "sira": 18,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
     "baslik_tr": "Habîbullâh: Peygamber Efendimiz'in (s.a.s.) Hayatı",
-    "baslik_ar": "حَبِيبُ اللهِ - السِّيرَةُ النَّبَوِيَّةُ",
+    "baslik_ar": "حَبِيبُ اللهِ - السِّيرَةُ النَّبَوِيَّةُ",
     "kanal_adi": "Siyer Animasyon Serisi",
     "url": "https://www.youtube.com/playlist?list=PLEbF07nYAB8KKoxHUK-B-hdo2f3p6yJBR",
     "playlist_id": "PLEbF07nYAB8KKoxHUK-B-hdo2f3p6yJBR",
     "sure_etiketi": "3 Sezonluk Seri",
     "pedagojik_not": "Siyer-i Nebî olaylarını son derece berrak bir fasih Arapça seslendirmeyle izleyerek dini ve tarihi kelime hazinenizi geliştirin.",
-    "odak_kelimeler": ["سِيرَةٌ", "رَسُولٌ", "هِجْرَةٌ", "مَكَّةُ"]
+    "odak_kelimeler": [
+      "سِيرَةٌ",
+      "رَسُولٌ",
+      "هِجْرَةٌ",
+      "مَكَّةُ"
+    ]
   },
   {
-    "id": "yt_022",
-    "sira": 22,
+    "id": "yt_019",
+    "sira": 19,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
     "baslik_tr": "Halîlullâh: Hz. İbrahim (a.s.) Kıssası",
-    "baslik_ar": "خَلِيلُ اللهِ إِبْرَاهِيمُ عَلَيْهِ السَّلَامُ",
+    "baslik_ar": "خَلِيلُ اللهِ إِبْرَاهِيمُ عَلَيْهِ السَّلَامُ",
     "kanal_adi": "Peygamber Kıssaları",
     "url": "https://www.youtube.com/playlist?list=PLEbF07nYAB8JOyYWBShjdHotL2NSQm36Y",
     "playlist_id": "PLEbF07nYAB8JOyYWBShjdHotL2NSQm36Y",
     "sure_etiketi": "Tam Seri",
     "pedagojik_not": "Peygamber kıssalarındaki tevhid, davet ve diyalog sahnelerini anlaşılır cümle kalıplarıyla takip edebilirsiniz.",
-    "odak_kelimeler": ["دَعْوَةٌ", "حُجَّةٌ", "يَقِينٌ", "كَعْبَةٌ"]
+    "odak_kelimeler": [
+      "دَعْوَةٌ",
+      "حُجَّةٌ",
+      "يَقِينٌ",
+      "كَعْبَةٌ"
+    ]
   },
   {
-    "id": "yt_023",
-    "sira": 23,
+    "id": "yt_020",
+    "sira": 20,
     "cefr": "A2",
     "tur": "playlist",
     "kategori": "hikaye_kissa",
     "baslik_tr": "Kelîmullâh: Hz. Musa (a.s.) Kıssası",
-    "baslik_ar": "كَلِيمُ اللهِ مُوسَى عَلَيْهِ السَّلَامُ",
+    "baslik_ar": "كَلِيمُ اللهِ مُوسَى عَلَيْهِ السَّلَامُ",
     "kanal_adi": "Peygamber Kıssaları",
     "url": "https://www.youtube.com/watch?v=PgBQLA_Nl2A&list=PLEbF07nYAB8I3d4lV_xK_Y_yI6Xf8rZ-Y",
     "video_id": "PgBQLA_Nl2A",
     "playlist_id": "PLEbF07nYAB8I3d4lV_xK_Y_yI6Xf8rZ-Y",
     "sure_etiketi": "30 Bölüm",
     "pedagojik_not": "Kur'an'da en çok geçen kıssalardan biri olan Hz. Musa kıssasını dinleyerek ayetlerdeki kelimelere aşinalık kazanın.",
-    "odak_kelimeler": ["بَحْرٌ", "عَصًا", "نَجَاةٌ", "حَقٌّ"]
+    "odak_kelimeler": [
+      "بَحْرٌ",
+      "عَصًا",
+      "نَجَاةٌ",
+      "حَقٌّ"
+    ]
+  },
+  {
+    "id": "yt_021",
+    "sira": 21,
+    "cefr": "B1",
+    "tur": "playlist",
+    "kategori": "hikaye_kissa",
+    "baslik_tr": "Arapça Çizgi Filmler - 5: Kasasu'l-Kur'ân",
+    "baslik_ar": "قَصَصُ الْقُرْآنِ بِالرُّسُومِ الْمُتَحَرِّكَةِ",
+    "kanal_adi": "Muallimun Net",
+    "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J3fJe9ftTrxJNfUpypqD2au",
+    "playlist_id": "PLEM4OKFQO5J3fJe9ftTrxJNfUpypqD2au",
+    "sure_etiketi": "Seçkin Seri",
+    "pedagojik_not": "Orta seviyeye uygun zengin kelime kadrosu ve edebi anlatımıyla Kur'an kıssalarını derinlemesine anlama becerisi kazandırır.",
+    "odak_kelimeler": [
+      "تَدَبُّرٌ",
+      "بَلَاغَةٌ",
+      "مَوْعِظَةٌ"
+    ]
+  },
+  {
+    "id": "yt_022",
+    "sira": 22,
+    "cefr": "B1",
+    "tur": "playlist",
+    "kategori": "hikaye_kissa",
+    "baslik_tr": "Kelîle ve Dimne (Fasih ve Edebi Klasik Hikâyeler)",
+    "baslik_ar": "كَلِيلَةُ وَدِمْنَةُ - حِكَايَاتٌ تَرْبَوِيَّةٌ فُصْحَى",
+    "kanal_adi": "Klasik Arap Edebiyatı",
+    "url": "https://www.youtube.com/playlist?list=PL5x-lFqMI-Bql967Tb92MOioBOrG5LOg0",
+    "playlist_id": "PL5x-lFqMI-Bql967Tb92MOioBOrG5LOg0",
+    "sure_etiketi": "Edebi Seri",
+    "pedagojik_not": "İbnü'l-Mukaffa'nın klasik eserinden uyarlanan bu seri, fabl üzerinden yüksek fasih Arapça ve hikmetli deyimler öğretir.",
+    "odak_kelimeler": [
+      "مَثَلٌ",
+      "فِطْنَةٌ",
+      "مَشُورَةٌ",
+      "وَفَاءٌ"
+    ]
+  },
+  {
+    "id": "yt_023",
+    "sira": 23,
+    "cefr": "B1",
+    "tur": "video",
+    "kategori": "hikaye_kissa",
+    "baslik_tr": "Kıssa ve Mesel (Arapça Atasözlerinin Hikâyeleri)",
+    "baslik_ar": "قِصَّةٌ وَمَثَلٌ - أَمْثَالٌ عَرَبِيَّةٌ",
+    "kanal_adi": "Arapça Edebiyat ve Emsâl",
+    "url": "https://www.youtube.com/watch?v=dg1SdmDhCIA",
+    "video_id": "dg1SdmDhCIA",
+    "sure_etiketi": "Özel Bölüm",
+    "pedagojik_not": "Uygulamamızdaki 508 Atasözü havuzuyla doğrudan örtüşür; atasözlerinin ortaya çıkış öykülerini fasih Arapçayla anlatır.",
+    "odak_kelimeler": [
+      "مَثَلٌ",
+      "تُرَاثٌ",
+      "بَلَاغَةٌ"
+    ]
   },
   {
     "id": "yt_024",
     "sira": 24,
     "cefr": "B1",
     "tur": "playlist",
-    "kategori": "hikaye_kissa",
-    "baslik_tr": "Arapça Çizgi Filmler - 5: Kasasu'l-Kur'ân",
-    "baslik_ar": "قَصَصُ الْقُرْآنِ بِالرُّسُومِ الْمُتَحَرِّكَةِ",
-    "kanal_adi": "Muallimun Net",
-    "url": "https://www.youtube.com/playlist?list=PLEM4OKFQO5J3fJe9ftTrxJNfUpypqD2au",
-    "playlist_id": "PLEM4OKFQO5J3fJe9ftTrxJNfUpypqD2au",
-    "sure_etiketi": "Seçkin Seri",
-    "pedagojik_not": "Orta seviyeye uygun zengin kelime kadrosu ve edebi anlatımıyla Kur'an kıssalarını derinlemesine anlama becerisi kazandırır.",
-    "odak_kelimeler": ["تَدَبُّرٌ", "بَلَاغَةٌ", "مَوْعِظَةٌ"]
-  },
-  {
-    "id": "yt_025",
-    "sira": 25,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "hikaye_kissa",
-    "baslik_tr": "Kelîle ve Dimne (Fasih ve Edebi Klasik Hikâyeler)",
-    "baslik_ar": "كَلِيلَةُ وَدِمْنَةُ - حِكَايَاتٌ تَرْبَوِيَّةٌ فُصْحَى",
-    "kanal_adi": "Klasik Arap Edebiyatı",
-    "url": "https://www.youtube.com/playlist?list=PL5x-lFqMI-Bql967Tb92MOioBOrG5LOg0",
-    "playlist_id": "PL5x-lFqMI-Bql967Tb92MOioBOrG5LOg0",
-    "sure_etiketi": "Edebi Seri",
-    "pedagojik_not": "İbnü'l-Mukaffa'nın klasik eserinden uyarlanan bu seri, fabl üzerinden yüksek fasih Arapça ve hikmetli deyimler öğretir.",
-    "odak_kelimeler": ["مَثَلٌ", "فِطْنَةٌ", "مَشُورَةٌ", "وَفَاءٌ"]
-  },
-  {
-    "id": "yt_026",
-    "sira": 26,
-    "cefr": "B1",
-    "tur": "video",
-    "kategori": "hikaye_kissa",
-    "baslik_tr": "Kıssa ve Mesel (Arapça Atasözlerinin Hikâyeleri)",
-    "baslik_ar": "قِصَّةٌ وَمَثَلٌ - أَمْثَالٌ عَرَبِيَّةٌ",
-    "kanal_adi": "Arapça Edebiyat ve Emsâl",
-    "url": "https://www.youtube.com/watch?v=dg1SdmDhCIA",
-    "video_id": "dg1SdmDhCIA",
-    "sure_etiketi": "Özel Bölüm",
-    "pedagojik_not": "Uygulamamızdaki 508 Atasözü havuzuyla doğrudan örtüşür; atasözlerinin ortaya çıkış öykülerini fasih Arapçayla anlatır.",
-    "odak_kelimeler": ["مَثَلٌ", "تُرَاثٌ", "بَلَاغَةٌ"]
-  },
-  {
-    "id": "yt_027",
-    "sira": 27,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "cizgi_animasyon",
-    "baslik_tr": "Selahaddin (Çizgi Dizi - 1. ve 2. Sezonlar)",
-    "baslik_ar": "مُسَلْسَلُ الكَرْتُونِ صَلَاحُ الدِّينِ",
-    "kanal_adi": "Tarihi Animasyon",
-    "url": "https://www.youtube.com/playlist?list=PLGQT5cJOzEnIYS9syaI5IfAC39VNN3eUC",
-    "playlist_id": "PLGQT5cJOzEnIYS9syaI5IfAC39VNN3eUC",
-    "sure_etiketi": "2 Sezon",
-    "pedagojik_not": "Tarihi dizilere geçmeden önce savunma, adalet, strateji ve liderlik kavramlarını animasyon diliyle öğrenmek için ideal köprüdür.",
-    "odak_kelimeler": ["شَجَاعَةٌ", "عَدْلٌ", "قَائِدٌ", "نَصْرٌ"]
-  },
-  {
-    "id": "yt_028",
-    "sira": 28,
-    "cefr": "B1",
-    "tur": "playlist",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Diriliş Ertuğrul (Fasih Arapça Dublaj - 1. Sezon)",
-    "baslik_ar": "مُسَلْسَلُ قِيَامَةِ أَرْطُغْرُلَ - الْمَوْسِمُ الْأَوَّلُ",
+    "baslik_ar": "مُسَلْسَلُ قِيَامَةِ أَرْطُغْرُلَ - الْمَوْسِمُ الْأَوَّلُ",
     "kanal_adi": "Tarihi Dizi Arşivi",
     "url": "https://www.youtube.com/playlist?list=PLhQ-0joa8ZrqwFOlQKJiLav74myv2aYnW",
     "playlist_id": "PLhQ-0joa8ZrqwFOlQKJiLav74myv2aYnW",
     "sure_etiketi": "1. Sezon",
     "pedagojik_not": "Konusuna aşina olduğunuz bir yapımı fasih Arapça dublajla izlemek, bilmediğiniz kelimeleri bağlamdan çıkarma hızınızı ikiye katlar.",
-    "odak_kelimeler": ["قَبِيلَةٌ", "حَقٌّ", "سَيْفٌ", "عَهْدٌ"]
+    "odak_kelimeler": [
+      "قَبِيلَةٌ",
+      "حَقٌّ",
+      "سَيْفٌ",
+      "عَهْدٌ"
+    ]
   },
   {
-    "id": "yt_029",
-    "sira": 29,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "tarihi_dizi_film",
-    "baslik_tr": "Diriliş Ertuğrul (Fasih Arapça Dublaj - 2. Sezon)",
-    "baslik_ar": "مُسَلْسَلُ قِيَامَةِ أَرْطُغْرُلَ - الْمَوْسِمُ الثَّانِي",
-    "kanal_adi": "Tarihi Dizi Arşivi",
-    "url": "https://www.youtube.com/playlist?list=PLZhY-MJA-pw9VLX8xXm1MSMz-8qw6NvXo",
-    "playlist_id": "PLZhY-MJA-pw9VLX8xXm1MSMz-8qw6NvXo",
-    "sure_etiketi": "2. Sezon",
-    "pedagojik_not": "Günlük 20-30 dakikalık bölümler halinde düzenli izlenerek orta seviye dinleme akıcılığı kazanılır.",
-    "odak_kelimeler": ["صَبْرٌ", "شُورَى", "فَتْحٌ"]
-  },
-  {
-    "id": "yt_030",
-    "sira": 30,
+    "id": "yt_025",
+    "sira": 25,
     "cefr": "B1",
     "tur": "playlist",
     "kategori": "tarihi_dizi_film",
@@ -457,371 +492,381 @@
     "playlist_id": "PLzry_OY8aj4qs2Utv4Wkj2aAwYP_rIsII",
     "sure_etiketi": "1. Sezon",
     "pedagojik_not": "Dergâh, hikmet, tasavvuf ve ahlak kavramlarını sakin ve tane tane konuşulan fasih Arapça diyaloglarla dinleyin.",
-    "odak_kelimeler": ["حِكْمَةٌ", "تَوَاضُعٌ", "مَحَبَّةٌ", "نَفْسٌ"]
+    "odak_kelimeler": [
+      "حِكْمَةٌ",
+      "تَوَاضُعٌ",
+      "مَحَبَّةٌ",
+      "نَفْسٌ"
+    ]
   },
   {
-    "id": "yt_031",
-    "sira": 31,
+    "id": "yt_026",
+    "sira": 26,
     "cefr": "B1",
     "tur": "playlist",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Yunus Emre (Fasih Arapça - 2. Sezon)",
-    "baslik_ar": "مُسَلْسَلُ يُونُسَ إِيمْرَه - الْمَوْسِمُ الثَّانِي",
+    "baslik_ar": "مُسَلْسَلُ يُونُسَ إِيمْرَه - الْمَوْسِمُ الثَّانِي",
     "kanal_adi": "TRT Arapça Dublaj",
     "url": "https://www.youtube.com/playlist?list=PLj24M29o8jV81PfeHhTjUxgMDhyLx1xVP",
     "playlist_id": "PLj24M29o8jV81PfeHhTjUxgMDhyLx1xVP",
     "sure_etiketi": "2. Sezon",
     "pedagojik_not": "Soyut kavramları ve içsel tefekkür cümlelerini anlamlandırmak için B1 seviyesinde çok faydalı bir seridir.",
-    "odak_kelimeler": ["تَفَكُّرٌ", "إِخْلَاصٌ", "صِدْقٌ"]
+    "odak_kelimeler": [
+      "تَفَكُّرٌ",
+      "إِخْلَاصٌ",
+      "صِدْقٌ"
+    ]
   },
   {
-    "id": "yt_032",
-    "sira": 32,
+    "id": "yt_027",
+    "sira": 27,
     "cefr": "B1",
     "tur": "playlist",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Selahaddin Eyyubi (Tarihi Dizi)",
-    "baslik_ar": "مُسَلْسَلُ صَلَاحِ الدِّينِ الْأَيُّوبِيِّ",
+    "baslik_ar": "مُسَلْسَلُ صَلَاحِ الدِّينِ الْأَيُّوبِيِّ",
     "kanal_adi": "Arapça Tarihi Drama",
     "url": "https://www.youtube.com/playlist?list=PLOpvfjrLz9udFIKYigqh1NpG19pEIrO18",
     "playlist_id": "PLOpvfjrLz9udFIKYigqh1NpG19pEIrO18",
     "sure_etiketi": "30 Bölüm",
     "pedagojik_not": "Suriye-Mısır tarihçilerinin danışmanlığında çekilen bu dizi, klasik hitabet ve diplomasi Arapçasını güçlü şekilde yansıtır.",
-    "odak_kelimeler": ["قُدْسٌ", "وَحْدَةٌ", "جِهَادٌ", "عَهْدٌ"]
+    "odak_kelimeler": [
+      "قُدْسٌ",
+      "وَحْدَةٌ",
+      "جِهَادٌ",
+      "عَهْدٌ"
+    ]
   },
   {
-    "id": "yt_033",
-    "sira": 33,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "tarihi_dizi_film",
-    "baslik_tr": "Ahmed b. Hanbel (Müselselü'l-İmâm)",
-    "baslik_ar": "مُسَلْسَلُ الْإِمَامِ أَحْمَدَ بْنِ حَنْبَلٍ",
-    "kanal_adi": "Tarihi Biyografi",
-    "url": "https://www.youtube.com/watch?v=fLEZJYlwFpA&list=PLtHEKBuBgFdUohIFK6BTp0iUbFv11tpjQ",
-    "video_id": "fLEZJYlwFpA",
-    "playlist_id": "PLtHEKBuBgFdUohIFK6BTp0iUbFv11tpjQ",
-    "sure_etiketi": "31 Bölüm",
-    "pedagojik_not": "Abbâsî dönemi ilim meclislerini, fıkıh ve hadis ıstılahlarını fasih ve akıcı bir dille sunar.",
-    "odak_kelimeler": ["فِقْهٌ", "مِحْنَةٌ", "ثَبَاتٌ", "مَجْلِسٌ"]
-  },
-  {
-    "id": "yt_034",
-    "sira": 34,
+    "id": "yt_028",
+    "sira": 28,
     "cefr": "B1",
     "tur": "video",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Çağrı Filmi (er-Risâle - Orijinal Arapça Versiyonu)",
-    "baslik_ar": "فِيلْمُ الرِّسَالَةِ بِالْعَرَبِيَّةِ الْفُصْحَى",
+    "baslik_ar": "فِيلْمُ الرِّسَالَةِ بِالْعَرَبِيَّةِ الْفُصْحَى",
     "kanal_adi": "İslami Sinema Klasikleri",
     "url": "https://www.youtube.com/watch?v=L9AawU0i2t0",
     "video_id": "L9AawU0i2t0",
     "sure_etiketi": "Tam Film",
     "pedagojik_not": "Mustafa Akkad'ın Arap oyuncularla çektiği orijinal Arapça versiyondur; telaffuz netliği ve edebi gücü en üst düzeydedir.",
-    "odak_kelimeler": ["رِسَالَةٌ", "وَحيٌ", "بَلَاغٌ", "حُرِّيَّةٌ"]
+    "odak_kelimeler": [
+      "رِسَالَةٌ",
+      "وَحيٌ",
+      "بَلَاغٌ",
+      "حُرِّيَّةٌ"
+    ]
   },
   {
-    "id": "yt_035",
-    "sira": 35,
+    "id": "yt_029",
+    "sira": 29,
     "cefr": "B1",
     "tur": "video",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Hz. Yusuf Filmi (Fasih Arapça)",
-    "baslik_ar": "قِصَّةُ النَّبِيِّ يُوسُفَ الصِّدِّيقِ",
+    "baslik_ar": "قِصَّةُ النَّبِيِّ يُوسُفَ الصِّدِّيقِ",
     "kanal_adi": "Peygamber Kıssaları Sinema",
     "url": "https://www.youtube.com/watch?v=5v-GfakBoKs",
     "video_id": "5v-GfakBoKs",
     "sure_etiketi": "Sinema Versiyonu",
     "pedagojik_not": "Yusuf Suresi'ndeki diyalog ve kıssa akışını görsel sahnelerle birleştirerek dinleme kavrayışını güçlendirir.",
-    "odak_kelimeler": ["رُؤْيَا", "تَأْوِيلٌ", "عَفْوٌ", "إِحْسَانٌ"]
+    "odak_kelimeler": [
+      "رُؤْيَا",
+      "تَأْوِيلٌ",
+      "عَفْوٌ",
+      "إِحْسَانٌ"
+    ]
   },
   {
-    "id": "yt_036",
-    "sira": 36,
+    "id": "yt_030",
+    "sira": 30,
     "cefr": "B1",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Siyer Dersleri (Dr. Muhammed Saîd Ramazan el-Bûtî)",
-    "baslik_ar": "دُرُوسُ فِقْهِ السِّيرَةِ النَّبَوِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
+    "baslik_ar": "دُرُوسُ فِقْهِ السِّيرَةِ النَّبَوِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
     "kanal_adi": "Ramazan el-Bûtî Arşivi",
     "url": "https://www.youtube.com/watch?v=RC0a2_0wgvw&list=PL01kYZIehH-qxUD5MiDAZUzOTsNKYE9zN",
     "video_id": "RC0a2_0wgvw",
     "playlist_id": "PL01kYZIehH-qxUD5MiDAZUzOTsNKYE9zN",
     "sure_etiketi": "Ders Serisi",
     "pedagojik_not": "Bûtî'nin berrak, kurallı ve tane tane konuştuğu fasih Arapçası, ilmi ders dinlemeye başlamak için en ideal kaynaktır.",
-    "odak_kelimeler": ["فِقْهٌ", "سِيرَةٌ", "عِبْرَةٌ", "مَنْهَجٌ"]
+    "odak_kelimeler": [
+      "فِقْهٌ",
+      "سِيرَةٌ",
+      "عِبْرَةٌ",
+      "مَنْهَجٌ"
+    ]
   },
   {
-    "id": "yt_037",
-    "sira": 37,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "islami_sohbet_ders",
-    "baslik_tr": "Siyer Dersleri (Dr. Muhammed Râtib en-Nâbulsî)",
-    "baslik_ar": "السِّيرَةُ النَّبَوِيَّةُ - الدُّكْتُورُ مُحَمَّد رَاتِب النَّابُلْسِيُّ",
-    "kanal_adi": "Nâbulsî Ders Arşivi",
-    "url": "https://www.youtube.com/watch?v=dFX5Y6ESOhk&list=PLodYDGnGsvlbLjWgB1LVL4fSHfee5IOIk",
-    "video_id": "dFX5Y6ESOhk",
-    "playlist_id": "PLodYDGnGsvlbLjWgB1LVL4fSHfee5IOIk",
-    "sure_etiketi": "Ders Serisi",
-    "pedagojik_not": "Kısa cümleli, vurgulu ve güncel örneklerle zenginleştirilmiş anlatımı sayesinde orta seviye öğrencileri tarafından rahatlıkla anlaşılır.",
-    "odak_kelimeler": ["أُسْوَةٌ", "أَخْلَاقٌ", "تَزْكِيَةٌ"]
-  },
-  {
-    "id": "yt_038",
-    "sira": 38,
-    "cefr": "B1",
-    "tur": "playlist",
-    "kategori": "islami_sohbet_ders",
-    "baslik_tr": "Siyer Dersleri (Ethem el-Asemî)",
-    "baslik_ar": "دُرُوسُ السِّيرَةِ النَّبَوِيَّةِ - أَدْهَمُ الْعَسَمِيُّ",
-    "kanal_adi": "İslami İlimler",
-    "url": "https://www.youtube.com/watch?v=1TkDHH0h3_E&list=PL9nkZtQYDOGsT3Pf3ILhy9TB-ur2Ve2LW",
-    "video_id": "1TkDHH0h3_E",
-    "playlist_id": "PL9nkZtQYDOGsT3Pf3ILhy9TB-ur2Ve2LW",
-    "sure_etiketi": "Ders Serisi",
-    "pedagojik_not": "Olay örgüsünü kronolojik ve akıcı bir dille sunarak dinleme pratiğinizi güçlendirir.",
-    "odak_kelimeler": ["غَزْوَةٌ", "صَحَابَةٌ", "عَهْدٌ"]
-  },
-  {
-    "id": "yt_039",
-    "sira": 39,
+    "id": "yt_031",
+    "sira": 31,
     "cefr": "B1",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Riyâzü’s-Sâlihîn Şerhi Dersleri (Ramazan el-Bûtî)",
-    "baslik_ar": "شَرْحُ رِيَاضِ الصَّالِحِينَ - الدُّكْتُورُ الْبُوطِيُّ",
+    "baslik_ar": "شَرْحُ رِيَاضِ الصَّالِحِينَ - الدُّكْتُورُ الْبُوطِيُّ",
     "kanal_adi": "Ramazan el-Bûtî Arşivi",
     "url": "https://www.youtube.com/watch?v=Q_GaoK54klc&list=PL01kYZIehH-ootb2tV22DU5pD5Fqa2R57",
     "video_id": "Q_GaoK54klc",
     "playlist_id": "PL01kYZIehH-ootb2tV22DU5pD5Fqa2R57",
     "sure_etiketi": "Hadis Şerhi",
     "pedagojik_not": "İmam Nevevî'nin seçtiği hadis-i şeriflerin kelime kelime açıklamasını ve ahlaki hükümlerini fasih Arapçayla dinleyin.",
-    "odak_kelimeler": ["حَدِيثٌ", "نِيَّةٌ", "إِخْلَاصٌ", "تَقْوَى"]
+    "odak_kelimeler": [
+      "حَدِيثٌ",
+      "نِيَّةٌ",
+      "إِخْلَاصٌ",
+      "تَقْوَى"
+    ]
   },
   {
-    "id": "yt_040",
-    "sira": 40,
+    "id": "yt_032",
+    "sira": 32,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Hz. Ömer Dizisi (Meselselü Ömer - En Fasih ve Edebi Dil)",
-    "baslik_ar": "مُسَلْسَلُ الفَارُوقِ عُمَرَ بْنِ الْخَطَّابِ",
+    "baslik_ar": "مُسَلْسَلُ الفَارُوقِ عُمَرَ بْنِ الْخَطَّابِ",
     "kanal_adi": "Tarihi İslam Klasikleri",
     "url": "https://www.youtube.com/playlist?list=PLQP03I9fS2V_Kl1XbsmKPVETTjXsejOKI",
     "playlist_id": "PLQP03I9fS2V_Kl1XbsmKPVETTjXsejOKI",
     "sure_etiketi": "31 Bölüm (Tam)",
     "pedagojik_not": "Tarihi diziler içinde en fasih, belagatli ve edebi Arapçaya sahip yapımdır; B2 ve üzeri için zirve dinleme kaynağıdır.",
-    "odak_kelimeler": ["عَدَالَةٌ", "خِلَافَةٌ", "فَصَاحَةٌ", "شُورَى"]
+    "odak_kelimeler": [
+      "عَدَالَةٌ",
+      "خِلَافَةٌ",
+      "فَصَاحَةٌ",
+      "شُورَى"
+    ]
   },
   {
-    "id": "yt_041",
-    "sira": 41,
-    "cefr": "B2",
-    "tur": "playlist",
-    "kategori": "tarihi_dizi_film",
-    "baslik_tr": "Endülüs Tarihi Üçlemesi - 1: Kuruluş (Sakrü Kureyş)",
-    "baslik_ar": "ثُلَاثِيَّةُ الْأَنْدَلُسِ: صَقْرُ قُرَيْشٍ",
-    "kanal_adi": "Endülüs Tarihi",
-    "url": "https://www.youtube.com/watch?v=-4fDUoAyxMY&list=PLOpvfjrLz9uf2KZoY0zxAXwfiGulloRP_",
-    "video_id": "-4fDUoAyxMY",
-    "playlist_id": "PLOpvfjrLz9uf2KZoY0zxAXwfiGulloRP_",
-    "sure_etiketi": "1. Seri",
-    "pedagojik_not": "Abdurrahman ed-Dâhil dönemini ve Endülüs'ün kuruluşunu klasik Arap şiiri ve yüksek edebi hitabetle işler.",
-    "odak_kelimeler": ["أَنْدَلُسُ", "إِمَارَةٌ", "شِعْرٌ", "تَارِيخٌ"]
-  },
-  {
-    "id": "yt_042",
-    "sira": 42,
+    "id": "yt_033",
+    "sira": 33,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "Endülüs Tarihi Üçlemesi - 2: Kurtuba Baharı (Rabîu Kurtuba)",
-    "baslik_ar": "ثُلَاثِيَّةُ الْأَنْدَلُسِ: رَبِيعُ قُرْطُبَةَ",
+    "baslik_ar": "ثُلَاثِيَّةُ الْأَنْدَلُسِ: رَبِيعُ قُرْطُبَةَ",
     "kanal_adi": "Endülüs Tarihi",
     "url": "https://www.youtube.com/watch?v=L4dLtzEyo7g&list=PLOpvfjrLz9uea0zArhIBBrsz-sELnp36u",
     "video_id": "L4dLtzEyo7g",
     "playlist_id": "PLOpvfjrLz9uea0zArhIBBrsz-sELnp36u",
     "sure_etiketi": "2. Seri",
     "pedagojik_not": "Kurtuba medeniyetinin zirve dönemini, ilim ve siyaset dilini ileri seviye fasih Arapçayla sunar.",
-    "odak_kelimeler": ["قُرْطُبَةُ", "حَضَارَةٌ", "عِمَارَةٌ"]
+    "odak_kelimeler": [
+      "قُرْطُبَةُ",
+      "حَضَارَةٌ",
+      "عِمَارَةٌ"
+    ]
   },
   {
-    "id": "yt_043",
-    "sira": 43,
-    "cefr": "B2",
-    "tur": "playlist",
-    "kategori": "tarihi_dizi_film",
-    "baslik_tr": "Endülüs Tarihi Üçlemesi - 3: Tavaif Dönemi (Mülûkü't-Tavâif)",
-    "baslik_ar": "ثُلَاثِيَّةُ الْأَنْدَلُسِ: مُلُوكُ الطَّوَائِفِ",
-    "kanal_adi": "Endülüs Tarihi",
-    "url": "https://www.youtube.com/watch?v=s5hy5rOsyuw&list=PLOpvfjrLz9ud1R6KskpOGZFctyb_TB9MC",
-    "video_id": "s5hy5rOsyuw",
-    "playlist_id": "PLOpvfjrLz9ud1R6KskpOGZFctyb_TB9MC",
-    "sure_etiketi": "3. Seri",
-    "pedagojik_not": "Siyasi bölünme, edebi meclisler ve Mu'temid b. Abbâd dönemini yüksek edebi üslupla anlatır.",
-    "odak_kelimeler": ["فُرْقَةٌ", "أَدَبٌ", "سِيَاسَةٌ"]
-  },
-  {
-    "id": "yt_044",
-    "sira": 44,
+    "id": "yt_034",
+    "sira": 34,
     "cefr": "B2",
     "tur": "video",
     "kategori": "tarihi_dizi_film",
     "baslik_tr": "İbn Arabî’nin Hayatı (Makâmâtü'l-Işk)",
-    "baslik_ar": "حَيَاةُ مُحْيِي الدِّينِ بْنِ عَرَبِيٍّ - مَقَامَاتُ الْعِشْقِ",
+    "baslik_ar": "حَيَاةُ مُحْيِي الدِّينِ بْنِ عَرَبِيٍّ - مَقَامَاتُ الْعِشْقِ",
     "kanal_adi": "Tarihi Biyografi",
     "url": "https://www.youtube.com/watch?v=rKeLvZYYyD4",
     "video_id": "rKeLvZYYyD4",
     "sure_etiketi": "1. Bölüm & Seri",
     "pedagojik_not": "Tasavvufi, felsefi ve edebi kavramların yoğun olduğu ileri düzey bir dinleme materyalidir.",
-    "odak_kelimeler": ["مَعْرِفَةٌ", "حِكْمَةٌ", "سَفَرٌ"]
+    "odak_kelimeler": [
+      "مَعْرِفَةٌ",
+      "حِكْمَةٌ",
+      "سَفَرٌ"
+    ]
   },
   {
-    "id": "yt_045",
-    "sira": 45,
+    "id": "yt_035",
+    "sira": 35,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Tefsir Dersleri (Dr. Muhammed Saîd Ramazan el-Bûtî)",
-    "baslik_ar": "دُرُوسُ تَفْسِيرِ الْقُرْآنِ الْكَرِيمِ - الدُّكْتُورُ الْبُوطِيُّ",
+    "baslik_ar": "دُرُوسُ تَفْسِيرِ الْقُرْآنِ الْكَرِيمِ - الدُّكْتُورُ الْبُوطِيُّ",
     "kanal_adi": "Ramazan el-Bûtî Arşivi",
     "url": "https://www.youtube.com/watch?v=MgujOjDesPA&list=PL01kYZIehH-rlXyk7SjyQL1GG2AuwSIqy",
     "video_id": "MgujOjDesPA",
     "playlist_id": "PL01kYZIehH-rlXyk7SjyQL1GG2AuwSIqy",
     "sure_etiketi": "Tefsir Külliyatı",
     "pedagojik_not": "Kur'an ayetlerinin belagat, i'rab ve tefsir inceliklerini akademik fasih Arapçayla dinlemek için eşsiz bir hazinedir.",
-    "odak_kelimeler": ["تَفْسِيرٌ", "تَأْوِيلٌ", "بَيَانٌ", "أَحْكَامٌ"]
+    "odak_kelimeler": [
+      "تَفْسِيرٌ",
+      "تَأْوِيلٌ",
+      "بَيَانٌ",
+      "أَحْكَامٌ"
+    ]
   },
   {
-    "id": "yt_046",
-    "sira": 46,
+    "id": "yt_036",
+    "sira": 36,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Akîde Dersleri: Kübra'l-Yakîniyyâti'l-Kevniyye (Bûtî)",
-    "baslik_ar": "شَرْحُ كُبْرَى الْيَقِينِيَّاتِ الْكَوْنِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
+    "baslik_ar": "شَرْحُ كُبْرَى الْيَقِينِيَّاتِ الْكَوْنِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
     "kanal_adi": "Ramazan el-Bûtî Arşivi",
     "url": "https://www.youtube.com/watch?v=Ma2uF_aiLXQ&list=PLLCKx4xWxtxgsUKVuWilVYTcg6xIuRhrE",
     "video_id": "Ma2uF_aiLXQ",
     "playlist_id": "PLLCKx4xWxtxgsUKVuWilVYTcg6xIuRhrE",
     "sure_etiketi": "Kelam & Akide",
     "pedagojik_not": "Kelam, mantık ve İslam akaidi ıstılahlarını analitik cümle yapılarıyla kavramak için B2 düzeyinde temel kaynaktır.",
-    "odak_kelimeler": ["عَقِيدَةٌ", "بُرْهَانٌ", "وُجُودٌ", "تَوْحِيدٌ"]
+    "odak_kelimeler": [
+      "عَقِيدَةٌ",
+      "بُرْهَانٌ",
+      "وُجُودٌ",
+      "تَوْحِيدٌ"
+    ]
   },
   {
-    "id": "yt_047",
-    "sira": 47,
+    "id": "yt_037",
+    "sira": 37,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Şerhü’l-Akâidi'n-Nesefiyye Dersleri",
-    "baslik_ar": "دُرُوسُ شَرْحِ الْعَقَائِدِ النَّسَفِيَّةِ",
+    "baslik_ar": "دُرُوسُ شَرْحِ الْعَقَائِدِ النَّسَفِيَّةِ",
     "kanal_adi": "Klasik İlim Meclisi",
     "url": "https://www.youtube.com/watch?v=cD8geQHrxSI&list=PLMAKjF-QQ-CeURT782JNPaNOneSYjUPqg",
     "video_id": "cD8geQHrxSI",
     "playlist_id": "PLMAKjF-QQ-CeURT782JNPaNOneSYjUPqg",
     "sure_etiketi": "Medrese Serisi",
     "pedagojik_not": "Klasik medrese metinlerinin nasıl okunduğunu ve şerh edildiğini görmek isteyen ileri düzey öğrenciler içindir.",
-    "odak_kelimeler": ["مَتْنٌ", "شَرْحٌ", "دَلِيلٌ", "عِلْمٌ"]
+    "odak_kelimeler": [
+      "مَتْنٌ",
+      "شَرْحٌ",
+      "دَلِيلٌ",
+      "عِلْمٌ"
+    ]
   },
   {
-    "id": "yt_048",
-    "sira": 48,
+    "id": "yt_038",
+    "sira": 38,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "islami_sohbet_ders",
     "baslik_tr": "Hikem-i Atâiyye Şerhi Dersleri (Ramazan el-Bûtî)",
-    "baslik_ar": "شَرْحُ الْحِكَمِ الْعَطَائِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
+    "baslik_ar": "شَرْحُ الْحِكَمِ الْعَطَائِيَّةِ - الدُّكْتُورُ الْبُوطِيُّ",
     "kanal_adi": "Ramazan el-Bûtî Arşivi",
     "url": "https://www.youtube.com/watch?v=3mqsp7NgDwA&list=PL01kYZIehH-qEAbKAJ9Lvmqj6HxDzO4ik",
     "video_id": "3mqsp7NgDwA",
     "playlist_id": "PL01kYZIehH-qEAbKAJ9Lvmqj6HxDzO4ik",
     "sure_etiketi": "Tasavvuf & Hikmet",
     "pedagojik_not": "İbn Atâullah el-İskenderî'nin veciz hikmetlerinin edebi ve ruhi tahlillerini en üst düzey fasih Arapçayla sunar.",
-    "odak_kelimeler": ["حِكْمَةٌ", "بَصِيرَةٌ", "قَلْبٌ", "تَوَكُّلٌ"]
+    "odak_kelimeler": [
+      "حِكْمَةٌ",
+      "بَصِيرَةٌ",
+      "قَلْبٌ",
+      "تَوَكُّلٌ"
+    ]
   },
   {
-    "id": "yt_049",
-    "sira": 49,
+    "id": "yt_039",
+    "sira": 39,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "Endülüs’ün Düşüşü Belgeseli (Sukûtu'l-Endelüs)",
-    "baslik_ar": "وَثَائِقِيُّ سُقُوطِ الْأَنْدَلُسِ",
+    "baslik_ar": "وَثَائِقِيُّ سُقُوطِ الْأَنْدَلُسِ",
     "kanal_adi": "Tarih Belgeselleri",
     "url": "https://www.youtube.com/playlist?list=PLHFVYBxoGZFdR0pP_Zw5poNH0aBIsQ6p3",
     "playlist_id": "PLHFVYBxoGZFdR0pP_Zw5poNH0aBIsQ6p3",
     "sure_etiketi": "Belgesel Serisi",
     "pedagojik_not": "Modern belgesel anlatım dili (الفصحى المعاصرة) ve tarih terminolojisine geçiş için çok akıcı bir seridir.",
-    "odak_kelimeler": ["وَثَائِقِيٌّ", "سُقُوطٌ", "تَارِيخٌ", "دَوْلَةٌ"]
+    "odak_kelimeler": [
+      "وَثَائِقِيٌّ",
+      "سُقُوطٌ",
+      "تَارِيخٌ",
+      "دَوْلَةٌ"
+    ]
   },
   {
-    "id": "yt_050",
-    "sira": 50,
+    "id": "yt_040",
+    "sira": 40,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "en-Nekbe: Filistin’in İşgali Belgeseli (Al Jazeera)",
-    "baslik_ar": "سِلْسِلَةُ النَّكْبَةِ الْوَثَائِقِيَّةُ - الْجَزِيرَةُ",
+    "baslik_ar": "سِلْسِلَةُ النَّكْبَةِ الْوَثَائِقِيَّةُ - الْجَزِيرَةُ",
     "kanal_adi": "Al Jazeera Documentary",
     "url": "https://www.youtube.com/watch?v=5MpKTapFjxU&list=PLmrET10kAE941fS3vs8Yq0U39ko1b6qZ7",
     "video_id": "5MpKTapFjxU",
     "playlist_id": "PLmrET10kAE941fS3vs8Yq0U39ko1b6qZ7",
     "sure_etiketi": "4 Bölümlük Başyapıt",
     "pedagojik_not": "Basın Arapçası, uluslararası ilişkiler ve yakın tarih ıstılahlarını öğrenmek için en güçlü belgesellerden biridir.",
-    "odak_kelimeler": ["قَضِيَّةٌ", "فِلَسْطِينُ", "شَهَادَةٌ", "وَثِيقَةٌ"]
+    "odak_kelimeler": [
+      "قَضِيَّةٌ",
+      "فِلَسْطِينُ",
+      "شَهَادَةٌ",
+      "وَثِيقَةٌ"
+    ]
   },
   {
-    "id": "yt_051",
-    "sira": 51,
+    "id": "yt_041",
+    "sira": 41,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "Haçlı Seferleri Belgeseli (el-Hurûbü's-Salîbiyye)",
-    "baslik_ar": "وَثَائِقِيُّ الْحُرُوبِ الصَّلِيبِيَّةِ - الْجَزِيرَةُ",
+    "baslik_ar": "وَثَائِقِيُّ الْحُرُوبِ الصَّلِيبِيَّةِ - الْجَزِيرَةُ",
     "kanal_adi": "Al Jazeera Documentary",
     "url": "https://www.youtube.com/playlist?list=PLmrET10kAE97RuC47XUMWxQ9BlXB_9QDB",
     "playlist_id": "PLmrET10kAE97RuC47XUMWxQ9BlXB_9QDB",
     "sure_etiketi": "Belgesel Serisi",
     "pedagojik_not": "Tarihçilerin röportajları ve profesyonel seslendirmeyle akademik dinleme becerinizi üst seviyeye taşır.",
-    "odak_kelimeler": ["حَمْلَةٌ", "شَرْقٌ", "مُقَاوَمَةٌ"]
+    "odak_kelimeler": [
+      "حَمْلَةٌ",
+      "شَرْقٌ",
+      "مُقَاوَمَةٌ"
+    ]
   },
   {
-    "id": "yt_052",
-    "sira": 52,
+    "id": "yt_042",
+    "sira": 42,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "El-Ezher Belgeseli (Bin Yıllık İlim Merkezi)",
-    "baslik_ar": "وَثَائِقِيُّ الْأَزْهَرِ الشَّرِيفِ",
+    "baslik_ar": "وَثَائِقِيُّ الْأَزْهَرِ الشَّرِيفِ",
     "kanal_adi": "Al Jazeera Documentary",
     "url": "https://www.youtube.com/watch?v=DAi8J16szYA&list=PLmrET10kAE958qZz2gpmoWrO4hKnsF_ee",
     "video_id": "DAi8J16szYA",
     "playlist_id": "PLmrET10kAE958qZz2gpmoWrO4hKnsF_ee",
     "sure_etiketi": "Belgesel Serisi",
     "pedagojik_not": "İslam eğitim tarihi, vakıflar ve ilmi kurumlarla ilgili zengin bir kelime hazinesi sunar.",
-    "odak_kelimeler": ["جَامِعٌ", "عُلَمَاءُ", "تُرَاثٌ", "وَقْفٌ"]
+    "odak_kelimeler": [
+      "جَامِعٌ",
+      "عُلَمَاءُ",
+      "تُرَاثٌ",
+      "وَقْفٌ"
+    ]
   },
   {
-    "id": "yt_053",
-    "sira": 53,
+    "id": "yt_043",
+    "sira": 43,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "BBC Arapça Seçme Belgeseller",
-    "baslik_ar": "أَفْلَامٌ وَثَائِقِيَّةٌ مُخْتَارَةٌ - بِي بِي سِي عَرَبِيٌّ",
+    "baslik_ar": "أَفْلَامٌ وَثَائِقِيَّةٌ مُخْتَارَةٌ - بِي بِي سِي عَرَبِيٌّ",
     "kanal_adi": "BBC News عربي",
     "url": "https://www.youtube.com/watch?v=KkqFy_839pU&list=PL439F79F627C5A421",
     "video_id": "KkqFy_839pU",
     "playlist_id": "PL439F79F627C5A421",
     "sure_etiketi": "Basın & Belgesel",
     "pedagojik_not": "Modern standart medya Arapçasını (العربية الإعلامية) ve küresel güncel konuları takip etmek için idealdir.",
-    "odak_kelimeler": ["إِعْلَامٌ", "تَقْرِيرٌ", "عَالَمٌ"]
+    "odak_kelimeler": [
+      "إِعْلَامٌ",
+      "تَقْرِيرٌ",
+      "عَالَمٌ"
+    ]
   },
   {
-    "id": "yt_054",
-    "sira": 54,
+    "id": "yt_044",
+    "sira": 44,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
@@ -833,22 +878,32 @@
     "playlist_id": "PLJyrzEL-wvYI-ejftuApVi84EBgGjhcAA",
     "sure_etiketi": "Tartışma Programı",
     "pedagojik_not": "Canlı soru-cevap, siyasi analiz ve diplomatik münazara kalıplarını doğal hızında dinleme pratiği sağlar.",
-    "odak_kelimeler": ["حِوَارٌ", "قَضِيَّةٌ", "سِيَاسَةٌ", "تَحْلِيلٌ"]
+    "odak_kelimeler": [
+      "حِوَارٌ",
+      "قَضِيَّةٌ",
+      "سِيَاسَةٌ",
+      "تَحْلِيلٌ"
+    ]
   },
   {
-    "id": "yt_055",
-    "sira": 55,
+    "id": "yt_045",
+    "sira": 45,
     "cefr": "B2",
     "tur": "playlist",
     "kategori": "belgesel_basin",
     "baslik_tr": "eş-Şerîa ve’l-Hayât (Dr. Yûsuf el-Karadâvî)",
-    "baslik_ar": "بَرْنَامَجُ الشَّرِيعَةِ وَالْحَيَاةِ",
+    "baslik_ar": "بَرْنَامَجُ الشَّرِيعَةِ وَالْحَيَاةِ",
     "kanal_adi": "Al Jazeera Arabic",
     "url": "https://www.youtube.com/watch?v=ukklByd7_aQ&list=PLJyrzEL-wvYLVTPuVMl7A-7hqL9q3JZQ9",
     "video_id": "ukklByd7_aQ",
     "playlist_id": "PLJyrzEL-wvYLVTPuVMl7A-7hqL9q3JZQ9",
     "sure_etiketi": "İlmî Münazara",
     "pedagojik_not": "Çağdaş fıkhi ve toplumsal meselelerin modern fasih Arapçayla ele alındığı üst düzey bir programdır.",
-    "odak_kelimeler": ["شَرِيعَةٌ", "حَيَاةٌ", "مُجْتَمَعٌ", "فَتْوَى"]
+    "odak_kelimeler": [
+      "شَرِيعَةٌ",
+      "حَيَاةٌ",
+      "مُجْتَمَعٌ",
+      "فَتْوَى"
+    ]
   }
 ]

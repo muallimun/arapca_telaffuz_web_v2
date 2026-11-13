@@ -2157,7 +2157,7 @@ function ExercisesPageContent() {
     <div
       className={
         isPlaying
-          ? "tr-scale space-y-1.5 sm:space-y-2 pb-1 sm:pb-4"
+          ? "tr-scale space-y-1.5 sm:space-y-2 pb-20 md:pb-4"
           : "tr-scale space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
       }
     >

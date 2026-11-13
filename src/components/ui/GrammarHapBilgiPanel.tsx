@@ -1288,62 +1288,104 @@ export function GrammarDeepDiveModal({
         className="bg-[#FDFBF7] dark:bg-[var(--background)] rounded-none sm:rounded-3xl border-0 sm:border-2 border-[#E6D7BE] dark:border-[var(--border)] sm:border-b-4 w-screen max-w-[100vw] h-[100dvh] sm:w-[96vw] lg:w-[88vw] sm:max-w-5xl sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ÜST SABİT BAŞLIK ÇUBUĞU */}
-        <div className="px-3.5 sm:px-6 py-3 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
-                  {isSimpleMode
-                    ? "Sade Konu Özeti & Şema"
-                    : "Ayrıntılı Anlatım & İ'rab"}
-                </span>
-                {linkedLevel && (
-                  <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-black">
-                    Seviye {linkedLevel}
-                  </span>
-                )}
+        {/* ÜST SABİT BAŞLIK ÇUBUĞU (Mobilde 2 Satırlı Çakışmasız Yapı) */}
+        <div className="sticky top-0 z-20 px-3 sm:px-6 pt-[max(0.65rem,env(safe-area-inset-top))] pb-2.5 sm:py-3.5 bg-gradient-to-r from-[#065F46] via-[#087F5B] to-teal-900 text-white flex flex-col gap-2 shrink-0 shadow-md">
+          <div className="flex items-start justify-between gap-2 w-full">
+            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 mt-0.5">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
               </div>
-              <h2
-                dir="ltr"
-                lang="tr"
-                className="font-sans text-xs sm:text-lg font-black text-white text-left leading-snug break-words line-clamp-2"
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                    {isSimpleMode
+                      ? "Sade Konu Özeti & Şema"
+                      : "Ayrıntılı Anlatım & İ'rab"}
+                  </span>
+                  {linkedLevel && (
+                    <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-black shrink-0">
+                      Seviye {linkedLevel}
+                    </span>
+                  )}
+                </div>
+                <h2
+                  dir="ltr"
+                  lang="tr"
+                  className="font-sans text-xs sm:text-lg font-black text-white text-left leading-relaxed break-words line-clamp-2"
+                >
+                  {renderTurkishWithIsolatedArabic(
+                    formatByDepth(grammarNote.konu_basligi),
+                    "arabic font-arabic text-[1.15em] font-bold text-amber-200 mx-0.5 inline-block leading-[1.85]"
+                  )}
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="hidden md:block">
+                <GrammarDepthSwitch
+                  mode={grammarDepthMode}
+                  onChange={setGrammarDepthMode}
+                  variant="headerDark"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  stopAllAudio();
+                  onClose();
+                }}
+                className="min-h-[34px] px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-400/50 font-black text-xs inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                title="Ayrıntılı Anlatımı Kapat (Esc)"
               >
-                {renderTurkishWithIsolatedArabic(
-                  formatByDepth(grammarNote.konu_basligi),
-                  "arabic font-arabic text-[1.15em] font-bold text-amber-200 mx-0.5 inline-block"
-                )}
-              </h2>
+                <X className="w-4 h-4 shrink-0" />
+                <span>Kapat</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
-            <GrammarDepthSwitch
-              mode={grammarDepthMode}
-              onChange={setGrammarDepthMode}
-              variant="headerDark"
-            />
+          {/* Mobil (< 768px) Tam Genişlik Sade / Akademik Seçici Satırı (Seviye Rozetiyle Çakışmaz) */}
+          <div
+            role="group"
+            aria-label="Gramer Anlatım Derinliği Seçici"
+            className="md:hidden grid grid-cols-2 gap-1 p-1 rounded-xl bg-black/25 border border-white/20 w-full"
+          >
             <button
               type="button"
               onClick={() => {
                 playClick();
-                stopAllAudio();
-                onClose();
+                setGrammarDepthMode("simple");
               }}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white border border-rose-400/50 font-black text-xs inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer shrink-0"
-              title="Ayrıntılı Anlatımı Kapat (Esc)"
+              aria-pressed={grammarDepthMode === "simple"}
+              className={`min-h-[32px] px-2 py-1 rounded-lg text-[11px] font-black inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap ${
+                grammarDepthMode === "simple"
+                  ? "bg-white text-[#065F46] shadow-xs"
+                  : "text-white/90 hover:bg-white/10"
+              }`}
             >
-              <X className="w-4 h-4 shrink-0" />
-              <span>Kapat</span>
+              <span>🌱 Sade Anlatım</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setGrammarDepthMode("academic");
+              }}
+              aria-pressed={grammarDepthMode === "academic"}
+              className={`min-h-[32px] px-2 py-1 rounded-lg text-[11px] font-black inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap ${
+                grammarDepthMode === "academic"
+                  ? "bg-amber-300 text-slate-950 shadow-xs"
+                  : "text-white/90 hover:bg-white/10"
+              }`}
+            >
+              <span>🎓 Akademik &amp; İ&apos;rab</span>
             </button>
           </div>
         </div>
 
         {/* KAYDIRILABİLİR 5 BÖLÜMLÜ PEDAGOJİK GÖVDE */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-4 sm:p-6 space-y-4 sm:space-y-5">
           {/* KART 1: GÖRSEL FORMÜL & ŞEMA KUTUSU (Model Örnek Cümle + RTL formul_sema) */}
           <section className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 bg-gradient-to-br from-[#F3F0FF] via-white to-[#F7EFE1] dark:from-indigo-950/60 dark:via-[var(--surface)] dark:to-[var(--background)] p-3.5 sm:p-6 shadow-xs space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1401,7 +1443,7 @@ export function GrammarDeepDiveModal({
                 <p
                   dir="rtl"
                   lang="ar"
-                  className="arabic font-arabic text-2xl sm:text-3xl font-bold text-emerald-950 dark:text-emerald-300 leading-loose text-right break-words"
+                  className="arabic font-arabic text-2xl sm:text-3xl font-bold text-emerald-950 dark:text-emerald-300 leading-[2.0] py-1 text-right break-words"
                 >
                   {fixArabicTypography(modelExample.arapca, arabicFont)}
                 </p>
@@ -1874,103 +1916,107 @@ export function GrammarDeepDiveModal({
           </section>
         </div>
 
-        {/* ALT SABİT AKSİYON ÇUBUĞU */}
-        <div className="px-3.5 sm:px-6 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3 bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex flex-wrap items-center gap-2 flex-1 sm:flex-initial">
-            {linkedLessonUrl && linkedLessonTitle && (
-              <Link
-                href={linkedLessonUrl}
-                onClick={() => onClose()}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5"
+        {/* ALT SABİT AKSİYON ÇUBUĞU (Mobilde Kompakt 2 Sütunlu Grid — Okuma Alanını Daraltmaz) */}
+        <div className="px-2.5 sm:px-6 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] sm:py-3 bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-between gap-1.5 sm:gap-2 w-full">
+            <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+              {linkedLessonUrl && linkedLessonTitle && (
+                <Link
+                  href={linkedLessonUrl}
+                  onClick={() => onClose()}
+                  title={`Derse Git (${linkedLessonTitle})`}
+                  className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] hover:border-[#087F5B] text-[11px] sm:text-xs font-extrabold text-[var(--foreground)] inline-flex items-center justify-center gap-1.5 min-w-0"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-[#087F5B] shrink-0" />
+                  <span className="truncate">
+                    Derse Git ({linkedLessonTitle})
+                  </span>
+                </Link>
+              )}
+              {grammarNote.ktt_ust_konu && (
+                <Link
+                  href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
+                    grammarNote.ktt_ust_konu
+                  )}`}
+                  onClick={() => onClose()}
+                  title="Bu Konunun Tarama Testini Çöz"
+                  className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
+                >
+                  <ListChecks className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">Bu Konunun Tarama Testini Çöz</span>
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  printSingleGrammarSheetPdf(grammarNote);
+                }}
+                className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-[#065F46] dark:text-emerald-300 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 cursor-pointer min-w-0"
               >
-                <BookOpen className="w-3.5 h-3.5 text-[#087F5B] shrink-0" />
-                <span className="truncate max-w-[160px] sm:max-w-none">
-                  Derse Git ({linkedLessonTitle})
-                </span>
-              </Link>
-            )}
-            {grammarNote.ktt_ust_konu && (
-              <Link
-                href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
-                  grammarNote.ktt_ust_konu
-                )}`}
-                onClick={() => onClose()}
-                className="min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 text-xs font-black inline-flex items-center gap-1.5"
+                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="truncate">🖨️ A4 Ders Föyü (PDF)</span>
+              </button>
+              <a
+                href={buildGrammarWhatsAppShareUrl(
+                  grammarNote,
+                  DEFAULT_GRAMMAR_ORIGIN
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  playClick();
+                  e.currentTarget.href = buildGrammarWhatsAppShareUrl(grammarNote);
+                }}
+                className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
               >
-                <ListChecks className="w-4 h-4 shrink-0" />
-                <span>Bu Konunun Tarama Testini Çöz</span>
+                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1da851] shrink-0" />
+                <span className="truncate">📲 WhatsApp&apos;ta Paylaş</span>
+              </a>
+              <Link
+                href={`/alistirmalar?pool=sentences_1111${
+                  activeGrammarQuery
+                    ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
+                    : ""
+                }`}
+                onClick={() => onClose()}
+                className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
+              >
+                <Gamepad2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="truncate">Bu Kalıpla Alıştırma Yap</span>
               </Link>
-            )}
+              <Link
+                href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
+                  grammarNote.konu_basligi || activeGrammarQuery || ""
+                )}&autostart=1`}
+                onClick={() => onClose()}
+                className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 border-b-2 border-amber-700 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
+              >
+                <span className="truncate">🕵️ Hata Avcısı</span>
+              </Link>
+              <Link
+                href={`/alistirmalar?mode=irab-painter&grammar=${encodeURIComponent(
+                  grammarNote.konu_basligi || activeGrammarQuery || ""
+                )}&autostart=1`}
+                onClick={() => onClose()}
+                className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-2 border-[#4C28B5] text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
+              >
+                <span className="truncate">🎨 İ&apos;rab Boyama</span>
+              </Link>
+            </div>
+
             <button
               type="button"
               onClick={() => {
                 playClick();
-                printSingleGrammarSheetPdf(grammarNote);
+                stopAllAudio();
+                onClose();
               }}
-              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-[#065F46] dark:text-emerald-300 text-xs font-black inline-flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[36px] sm:min-h-[40px] px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--foreground)] text-[11px] sm:text-xs font-black inline-flex items-center justify-center cursor-pointer shrink-0 min-w-0"
             >
-              <Printer className="w-4 h-4 shrink-0" />
-              <span>🖨️ A4 Ders Föyü (PDF)</span>
+              <span className="truncate">Özete Dön</span>
             </button>
-            <a
-              href={buildGrammarWhatsAppShareUrl(
-                grammarNote,
-                DEFAULT_GRAMMAR_ORIGIN
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => {
-                playClick();
-                e.currentTarget.href = buildGrammarWhatsAppShareUrl(grammarNote);
-              }}
-              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 text-xs font-black inline-flex items-center gap-1.5"
-            >
-              <MessageCircle className="w-4 h-4 text-[#1da851] shrink-0" />
-              <span>📲 WhatsApp&apos;ta Paylaş</span>
-            </a>
-            <Link
-              href={`/alistirmalar?pool=sentences_1111${
-                activeGrammarQuery
-                  ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
-                  : ""
-              }`}
-              onClick={() => onClose()}
-              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-2 border-[#065F46] text-xs font-black inline-flex items-center gap-1.5"
-            >
-              <Gamepad2 className="w-4 h-4 shrink-0" />
-              <span>Bu Kalıpla Alıştırma Yap</span>
-            </Link>
-            <Link
-              href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
-                grammarNote.konu_basligi || activeGrammarQuery || ""
-              )}&autostart=1`}
-              onClick={() => onClose()}
-              className="min-h-[40px] px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 border-b-2 border-amber-700 text-xs font-black inline-flex items-center gap-1.5"
-            >
-              <span>🕵️ Hata Avcısı</span>
-            </Link>
-            <Link
-              href={`/alistirmalar?mode=irab-painter&grammar=${encodeURIComponent(
-                grammarNote.konu_basligi || activeGrammarQuery || ""
-              )}&autostart=1`}
-              onClick={() => onClose()}
-              className="min-h-[40px] px-3 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-2 border-[#4C28B5] text-xs font-black inline-flex items-center gap-1.5"
-            >
-              <span>🎨 İ&apos;rab Boyama</span>
-            </Link>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              stopAllAudio();
-              onClose();
-            }}
-            className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--foreground)] text-xs font-black cursor-pointer shrink-0"
-          >
-            Özete Dön
-          </button>
         </div>
       </div>
     </div>
@@ -2065,8 +2111,8 @@ export function GrammarHapBilgiPanel({
       await playDualGenderAudio({
         text: sent.arapca,
         id: sent.id,
-        ses_erkek: sent.ses_erkek || `/sesler/cumleler/${sent.id}_m.mp3`,
-        ses_kadin: sent.ses_kadin || `/sesler/cumleler/${sent.id}_f.mp3`,
+        ses_erkek: sent.ses_erkek || `/sesler/cumleler/erkek/${sent.id}.mp3`,
+        ses_kadin: sent.ses_kadin || `/sesler/cumleler/kadin/${sent.id}.mp3`,
         gender: preferredVoiceGender,
         rate: speechRate,
       });
@@ -2615,14 +2661,14 @@ export function GrammarHapBilgiPanel({
         <div
           className={
             isCompactDrawer
-              ? "grid grid-cols-1 gap-2 w-full"
-              : "grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full"
+              ? "grid grid-cols-2 gap-1.5 w-full"
+              : "grid grid-cols-2 gap-1.5 sm:gap-2.5 w-full"
           }
         >
           {!hideLessonSelfLink && linkedLessonUrl && (
             <Link
               href={linkedLessonUrl}
-              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-xs sm:text-sm font-semibold text-center whitespace-normal transition-all"
+              className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 text-[11px] sm:text-sm font-semibold text-center leading-tight transition-all"
             >
               <span>📖 İlgili Derse Git</span>
             </Link>
@@ -2632,9 +2678,9 @@ export function GrammarHapBilgiPanel({
               href={`/seviye-tespit?mode=topic&topic=${encodeURIComponent(
                 activeNote.ktt_ust_konu
               )}`}
-              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white text-[#065F46] hover:bg-emerald-50 border-b-3 border-emerald-900/40 text-xs sm:text-sm font-black text-center whitespace-normal shadow-sm transition-all"
+              className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-white text-[#065F46] hover:bg-emerald-50 border-b-3 border-emerald-900/40 text-[11px] sm:text-sm font-black text-center leading-tight shadow-sm transition-all"
             >
-              <ListChecks className="w-4 h-4 shrink-0" />
+              <ListChecks className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span>Bu Konunun Tarama Testini Çöz</span>
             </Link>
           )}
@@ -2644,7 +2690,7 @@ export function GrammarHapBilgiPanel({
                 ? `&grammar=${encodeURIComponent(activeGrammarQuery)}`
                 : ""
             }`}
-            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-xs sm:text-sm font-bold text-center whitespace-normal shadow-sm transition-all"
+            className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-3 border-amber-600 text-[11px] sm:text-sm font-bold text-center leading-tight shadow-sm transition-all"
           >
             <span>🎮 Bu Kalıpla Alıştırma Yap</span>
           </Link>
@@ -2652,7 +2698,7 @@ export function GrammarHapBilgiPanel({
             href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
               activeNote.konu_basligi || activeGrammarQuery || ""
             )}&autostart=1`}
-            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-amber-300/50 text-xs sm:text-sm font-bold text-center whitespace-normal transition-all"
+            className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-amber-300/50 text-[11px] sm:text-sm font-bold text-center leading-tight transition-all"
           >
             <span>🕵️ Hata Avcısı (Bu Kural)</span>
           </Link>
@@ -2660,7 +2706,7 @@ export function GrammarHapBilgiPanel({
             href={`/alistirmalar?mode=irab-painter&grammar=${encodeURIComponent(
               activeNote.konu_basligi || activeGrammarQuery || ""
             )}&autostart=1`}
-            className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-500/80 hover:bg-indigo-500 text-white border border-indigo-300/50 text-xs sm:text-sm font-bold text-center whitespace-normal transition-all"
+            className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-indigo-500/80 hover:bg-indigo-500 text-white border border-indigo-300/50 text-[11px] sm:text-sm font-bold text-center leading-tight transition-all"
           >
             <span>🎨 İ&apos;rab Renkleriyle Boya</span>
           </Link>
@@ -2672,7 +2718,7 @@ export function GrammarHapBilgiPanel({
                 stopAllAudio();
                 setIsYoutubeModalOpen(true);
               }}
-              className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white border-b-3 border-rose-800 text-xs sm:text-sm font-black text-center whitespace-normal shadow-sm cursor-pointer transition-all"
+              className="min-h-[40px] sm:min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white border-b-3 border-rose-800 text-[11px] sm:text-sm font-black text-center leading-tight shadow-sm cursor-pointer transition-all"
             >
               <span>🎬 İlgili Tavsiye Videoyu / Listeyi İzle</span>
             </button>
@@ -2955,7 +3001,7 @@ export function GrammarHapBilgiModal({
       className={
         isSmartboard
           ? "fixed inset-0 z-[90] bg-black/70 backdrop-blur-xs flex items-center justify-center p-0 lg:p-4 overflow-hidden animate-in fade-in duration-200"
-          : `fixed inset-x-0 bottom-0 top-[var(--header-height,48px)] z-[45] lg:pointer-events-none flex items-end lg:items-stretch ${
+          : `fixed inset-0 lg:top-[var(--header-height,56px)] z-[85] lg:z-[45] lg:pointer-events-none flex items-end lg:items-stretch ${
               drawerSide === "left" ? "lg:justify-start" : "lg:justify-end"
             } overflow-hidden`
       }
@@ -2968,11 +3014,11 @@ export function GrammarHapBilgiModal({
           : undefined
       }
     >
-      {/* Yan Panel (Drawer) modunda mobil/tablette (< 1024px) arka plan karartması */}
+      {/* Yan Panel (Drawer) modunda mobil/tablette (< 1024px) tam ekran karartma — Header (z-50) üzerinde z-[85] */}
       {!isSmartboard && (
         <div
           aria-hidden="true"
-          className="lg:hidden fixed inset-0 top-[var(--header-height,48px)] bg-black/45 backdrop-blur-[1px] pointer-events-auto transition-opacity"
+          className="lg:hidden fixed inset-0 bg-black/65 backdrop-blur-xs pointer-events-auto transition-opacity"
           onClick={() => {
             playClick();
             stopAllAudio();
@@ -2985,7 +3031,7 @@ export function GrammarHapBilgiModal({
         className={
           isSmartboard
             ? "pointer-events-auto bg-[#FDFBF7] dark:bg-[var(--background)] w-screen max-w-[100vw] h-[100dvh] rounded-none border-0 lg:rounded-3xl lg:border-2 border-[#E6D7BE] dark:border-[var(--border)] lg:border-b-4 lg:w-[85vw] lg:max-w-[1350px] lg:h-[85vh] flex flex-col shadow-2xl relative overflow-hidden"
-            : `pointer-events-auto bg-[#FDFBF7] dark:bg-slate-900 w-full max-w-[100vw] max-h-[82dvh] rounded-t-3xl border-t-2 border-[#087F5B] dark:border-emerald-500 shadow-[0_-12px_40px_rgba(0,0,0,0.28)] lg:rounded-none lg:border-t-0 ${
+            : `pointer-events-auto bg-[#FDFBF7] dark:bg-slate-900 w-full max-w-[100vw] h-[100dvh] max-h-[100dvh] pt-[env(safe-area-inset-top)] rounded-none border-0 sm:h-auto sm:max-h-[92dvh] sm:rounded-t-3xl sm:border-t-2 border-[#087F5B] dark:border-emerald-500 shadow-[0_-12px_40px_rgba(0,0,0,0.28)] lg:pt-0 lg:rounded-none lg:border-t-0 ${
                 drawerSide === "left"
                   ? "lg:border-r-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-left"
                   : "lg:border-l-4 lg:border-[#087F5B] dark:lg:border-emerald-600 lg:shadow-[-12px_0_35px_rgba(0,0,0,0.22)] lg:animate-in lg:slide-in-from-right"

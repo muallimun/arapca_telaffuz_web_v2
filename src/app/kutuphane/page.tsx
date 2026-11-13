@@ -914,7 +914,7 @@ export default function LibraryPage() {
     });
   }, [grammarAtlasCatalog, grammarDomainFilter, levelFilter, search]);
 
-  // 7. YOUTUBE VİDEO & OYNATMA LİSTESİ FİLTRELEMESİ (55 Küratörlü Kayıt)
+  // 7. YOUTUBE VİDEO & OYNATMA LİSTESİ FİLTRELEMESİ (60 Küratörlü Kayıt)
   const youtubeCounts = useMemo(() => {
     const byLevel: Record<Level | "all", number> = {
       all: youtubeTavsiyeleri.length,
@@ -3723,7 +3723,11 @@ export default function LibraryPage() {
                     6 Tematik Kategori • A1–B2
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
-                    14 Harici Arşiv Platformu
+                    {EXTERNAL_WATCH_PLATFORM_GROUPS.reduce(
+                      (sum, g) => sum + g.platforms.length,
+                      0
+                    )}{" "}
+                    Harici Arşiv Platformu
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
                     İzlenen: {youtubeCounts.totalWatchedAll} / {contentStats.youtubeCount}
@@ -6766,11 +6770,21 @@ export default function LibraryPage() {
                       🧭 Nasıl İzlemeliyim? &amp; Harici Platformlar Rehberi
                     </h2>
                     <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 border border-amber-300 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold">
-                      A1 → B2 Yol Haritası &amp; 14 Seçkin Arşiv
+                      A1 → B2 Yol Haritası &amp;{" "}
+                      {EXTERNAL_WATCH_PLATFORM_GROUPS.reduce(
+                        (sum, g) => sum + g.platforms.length,
+                        0
+                      )}{" "}
+                      Seçkin Arşiv
                     </span>
                   </div>
                   <p className="text-xs font-medium text-[var(--muted)]">
-                    Seviyelere göre günlük izleme metodolojisini ve SpaceToon, Al Jazeera Learning, Naseem Al-Sham gibi 14 harici platformu görüntülemek için tıklayın.
+                    Seviyelere göre günlük izleme metodolojisini ve SpaceToon, Learn with Zakaria, Khan Academy Arabi, Al Jazeera Learning, DW Documentary gibi{" "}
+                    {EXTERNAL_WATCH_PLATFORM_GROUPS.reduce(
+                      (sum, g) => sum + g.platforms.length,
+                      0
+                    )}{" "}
+                    harici platformu görüntülemek için tıklayın.
                   </p>
                 </div>
               </div>

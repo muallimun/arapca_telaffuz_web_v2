@@ -20,7 +20,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   visualWordsCount: 998,
   grammarNotesCount: 195,
   dictionaryWordsCount: 3225,
-  youtubeVideosCount: 45,
+  youtubeVideosCount: 60,
   synonymsAntonymsCount: 400,
   assessmentQuestionsCount: 550,
   exerciseModulesCount: 14,

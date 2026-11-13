@@ -146,22 +146,11 @@ export const EXTERNAL_WATCH_PLATFORM_GROUPS: ExternalWatchPlatformGroup[] = [
         description: "Arapça dublajlı çizgi film ve animasyon arşivi",
       },
       {
-        name: "Cartoon 3rbi",
-        url: "http://www.cartoon3rbi.net/films.html",
-        badge: "Film & Seri",
-        description: "Klasik fasih Arapça çizgi dizi ve sinema arşivi",
-      },
-      {
-        name: "Arabic-Toons",
-        url: "http://www.arabic-toons.com/cartoon.php",
-        badge: "Klasik Arşiv",
-        description: "Seviyeli Arapça çocuk dizileri ve animasyon bölümleri",
-      },
-      {
-        name: "Muzzy BBC",
-        url: "https://muzzybbc.com",
-        badge: "Dil Eğitimi",
-        description: "BBC'nin başlangıç düzeyi animasyonlu dil öğretim serisi",
+        name: "Learn with Zakaria (تعلم مع زكريا)",
+        url: "https://www.youtube.com/@LearnwithZakaria",
+        badge: "A1 Görsel Arapça",
+        description:
+          "Çocuklar ve A1 başlangıç seviyesi için görsel destekli Fasih Arapça kelime ve kavram videoları",
       },
     ],
   },
@@ -181,6 +170,13 @@ export const EXTERNAL_WATCH_PLATFORM_GROUPS: ExternalWatchPlatformGroup[] = [
         url: "https://www.youtube.com/@LearnArabicwithMaha",
         badge: "Kültür & İletişim",
         description: "Günlük ifadeler, telaffuz ve pratik Arapça dersleri",
+      },
+      {
+        name: "Khan Academy Arabi (أكاديمية خان)",
+        url: "https://www.youtube.com/@KhanAcademyArabi",
+        badge: "Akademik & Bilimsel Arapça",
+        description:
+          "Matematik, fen ve bilim konularında açık ve anlaşılır akademik Fasih Arapça ders anlatımları",
       },
     ],
   },
@@ -211,11 +207,18 @@ export const EXTERNAL_WATCH_PLATFORM_GROUPS: ExternalWatchPlatformGroup[] = [
           "Tarih, kültür, bilim ve coğrafya temalı fasih Arapça belgeseller",
       },
       {
-        name: "NatGeo Abu Dhabi",
-        url: "https://www.youtube.com/@NatGeoAbuDhabi",
-        badge: "Bilim & Doğa",
+        name: "DW Documentary (وثائقية دي دبليو)",
+        url: "https://www.youtube.com/@dwdocumentaryar",
+        badge: "Fasih Arapça Belgeseller",
         description:
-          "Modern standart Arapça seslendirmeli bilim ve doğa belgeselleri",
+          "Bilim, çevre, tarih ve küresel konular üzerine profesyonel Fasih Arapça belgeseller",
+      },
+      {
+        name: "AJ+ Kibrit (AJ+ كبريت)",
+        url: "https://www.youtube.com/@ajpluskabreet",
+        badge: "Kısa Kültür & Tarih Videoları",
+        description:
+          "Kelime kökenleri, tarih, bilim ve kültür üzerine dinamik kısa Fasih Arapça videolar",
       },
       {
         name: "Havatır - Ahmed eş-Şukayrî",

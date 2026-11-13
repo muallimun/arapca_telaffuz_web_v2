@@ -1244,8 +1244,8 @@ export default function SettingsPage() {
                   <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
                     Seslendirici Tercihi (Erkek / Kadın)
                   </span>
-                  <span className="block text-[11px] text-[var(--muted)]">
-                    Kelimeler, 1111 Cümle, 508 Atasözü ve Sözlük seslendirmeleri için varsayılan ses
+                  <span className="block text-[11px] text-[var(--muted)] leading-snug">
+                    1111 Cümle, Görsel Kelimeler ve Atasözleri için geçerlidir (Sözlük dahil; Diyalog ve Metinler kendi orijinal ses kaydını çalar)
                   </span>
                 </div>
               </div>

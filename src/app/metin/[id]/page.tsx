@@ -179,8 +179,6 @@ export default function ReadingTextDetailPage({
     turkishFontSize,
     speechRate,
     setSpeechRate,
-    preferredVoiceGender,
-    togglePreferredVoiceGender,
     dialogueLoopCount,
     cycleDialogueLoopCount,
     wordTrackingStyle,
@@ -697,12 +695,12 @@ export default function ReadingTextDetailPage({
         sira: l.sira,
         konusmaci: "Anlatıcı",
         konusmaci_ar: "الراوي",
-        cinsiyet: (preferredVoiceGender === "kadin" ? "K" : "E") as "E" | "K",
+        cinsiyet: "E" as "E" | "K",
         arapca: l.arapca,
         turkce: l.turkce,
         ses_dosyasi: l.ses_dosyasi,
       })),
-    [readingText.satirlar, preferredVoiceGender]
+    [readingText.satirlar]
   );
 
   const textIdioms: ExtractedDialogueIdiom[] = useMemo(
@@ -761,19 +759,16 @@ export default function ReadingTextDetailPage({
         sira: l.sira,
         konusmaci: `Cümle ${l.sira}`,
         konusmaci_ar: `#${l.sira}`,
-        cinsiyet: preferredVoiceGender === "kadin" ? "K" : "E",
+        cinsiyet: "E",
         arapca: l.arapca,
         turkce: l.turkce,
         ses_dosyasi: l.ses_dosyasi,
       })),
     }),
-    [readingText, grammarNote, imagePath, preferredVoiceGender]
+    [readingText, grammarNote, imagePath]
   );
 
-  const getNarratorVoice = (): VoiceOption =>
-    preferredVoiceGender === "kadin"
-      ? "ar-SA-ZariyahNeural"
-      : "ar-SA-HamedNeural";
+  const getNarratorVoice = (): VoiceOption => "ar-SA-HamedNeural";
 
   const getDisplayText = (text: string, harekeOverride?: boolean) => {
     if (harekeOverride !== undefined) {
@@ -1903,7 +1898,7 @@ export default function ReadingTextDetailPage({
             </Link>
 
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-600 dark:bg-emerald-600 text-white font-extrabold text-[10px] tabular-nums shrink-0">
                   Metin #{String(rawNum).padStart(2, "0")} • {readingText.seviye}
                 </span>
@@ -2075,28 +2070,7 @@ export default function ReadingTextDetailPage({
                 </span>
               </button>
 
-              {/* 4. Seslendirici Cinsiyeti (👨 Erkek / 👩 Kadın) */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  togglePreferredVoiceGender();
-                }}
-                data-tooltip="Seslendirici Cinsiyetini Değiştir (Erkek / Kadın)"
-                aria-label="Seslendirici Cinsiyeti"
-                className="px-2 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer shrink-0"
-              >
-                <span>
-                  {!mounted || preferredVoiceGender === "erkek" ? "👨" : "👩"}
-                </span>
-                <span className="hidden sm:inline">
-                  {!mounted || preferredVoiceGender === "erkek"
-                    ? "Erkek"
-                    : "Kadın"}
-                </span>
-              </button>
-
-              {/* 5. METİN SAYFASINA ÖZEL: Paragraf / Cümle Görünümü Geçiş Butonu */}
+              {/* 4. METİN SAYFASINA ÖZEL: Paragraf / Cümle Görünümü Geçiş Butonu */}
               {(activeTabId === "listen" || activeTabId === "shadowing") && (
                 <button
                   type="button"
@@ -2129,38 +2103,6 @@ export default function ReadingTextDetailPage({
                       <span>📑 Cümle</span>
                     </>
                   )}
-                </button>
-              )}
-
-              {/* 5b. Yan Yana Gramer Toggle Butonu (Masaüstünde 2 Sütunlu Panel, Mobilde Alt Çekmece) */}
-              {grammarNote && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    handleToggleGrammarSplit();
-                  }}
-                  aria-pressed={isGrammarSplitOpen}
-                  data-tooltip={
-                    isGrammarSplitOpen
-                      ? "Gramer Panelini Kapat"
-                      : "Gramer Notunu Metinle Yan Yana Aç"
-                  }
-                  aria-label={
-                    isGrammarSplitOpen
-                      ? "Gramer Panelini Kapat"
-                      : "Yan Yana Gramer"
-                  }
-                  className={`inline-flex px-2.5 py-1.5 rounded-xl border items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    isGrammarSplitOpen
-                      ? "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46] text-white shadow-xs"
-                      : "bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
-                  }`}
-                >
-                  <Columns2 size={13} className="shrink-0" />
-                  <span>
-                    {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
-                  </span>
                 </button>
               )}
 
@@ -2692,36 +2634,6 @@ export default function ReadingTextDetailPage({
                 type="button"
                 onClick={() => {
                   playClick();
-                  setStudyMode(studyMode === "shadowing" ? "listen" : "shadowing");
-                }}
-                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
-                  studyMode === "shadowing"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
-                }`}
-              >
-                <span>🎙️ Sesli Okuma</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setStudyMode(studyMode === "questions" ? "listen" : "questions");
-                }}
-                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
-                  studyMode === "questions"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
-                }`}
-              >
-                <span>❓ Anlama Soruları ({readingText.sorular.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
                   setBlurArabic((v) => !v);
                   setRevealedArabicLines({});
                 }}
@@ -2741,13 +2653,26 @@ export default function ReadingTextDetailPage({
                     playClick();
                     handleToggleGrammarSplit();
                   }}
+                  aria-pressed={isGrammarSplitOpen}
+                  data-tooltip={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Gramer Notunu Metinle Yan Yana Aç"
+                  }
+                  aria-label={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Yan Yana Gramer"
+                  }
                   className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
                     isGrammarSplitOpen
                       ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
                       : "bg-amber-50 dark:bg-amber-950/45 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:border-amber-500"
                   }`}
                 >
-                  <span>📐 Yan Yana Gramer</span>
+                  <span>
+                    📐 {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
+                  </span>
                 </button>
               )}
 

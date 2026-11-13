@@ -235,7 +235,7 @@ export const gorselKelimeler: ResimliKelime[] = (
 // 6. Birleştirilmiş Kapsamlı Sözlük
 export const sozluk: DictionaryItem[] = unifiedDictionary;
 
-// 7. 45 Küratörlü YouTube Video & Oynatma Listesi Tavsiyesi (youtube_tavsiyeleri.json)
+// 7. 60 Küratörlü YouTube Video & Oynatma Listesi Tavsiyesi (youtube_tavsiyeleri.json)
 export const youtubeTavsiyeleri: YoutubeRecommendationItem[] = (
   youtubeTavsiyeleriJson as YoutubeRecommendationItem[]
 )

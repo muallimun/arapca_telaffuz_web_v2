@@ -3348,14 +3348,14 @@ test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag Lit
     "next.config.ts CSP başlığında YouTube gömülü oynatıcı (frame-src + child-src) ve kapak görseli (img-src) kuralları yer almalıdır"
   );
 
-  // 2. youtube_tavsiyeleri.json 45 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
+  // 2. youtube_tavsiyeleri.json 60 gerçek kaydın bütünlüğü, 0 tatweel ve %100 NFC kontrolü
   const { raw: ytRaw, parsed: ytItems } = readDataJson(
     "youtube_tavsiyeleri.json"
   );
   assert.equal(
-    Array.isArray(ytItems) && ytItems.length === 45,
+    Array.isArray(ytItems) && ytItems.length === 60,
     true,
-    "youtube_tavsiyeleri.json 45 gerçek kaydı eksiksiz korumalıdır"
+    "youtube_tavsiyeleri.json 60 gerçek kaydı eksiksiz korumalıdır"
   );
   assert.equal(
     ytRaw.includes("\u0640"),
@@ -3472,8 +3472,8 @@ test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag Lit
   } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
   );
-  assert.equal(youtubeTavsiyeleri.length, 45);
-  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 45);
+  assert.equal(youtubeTavsiyeleri.length, 60);
+  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   for (const runtimeItem of youtubeTavsiyeleri) {
     assert.equal(runtimeItem.baslik_ar, runtimeItem.baslik_ar.normalize("NFC"));
     assert.equal(runtimeItem.baslik_tr, runtimeItem.baslik_tr.normalize("NFC"));
@@ -3920,7 +3920,7 @@ test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Al
       diyalogCode.includes("👥 İkili Kart (A/B)") &&
       diyalogCode.includes("👁️ Kör Dinleme") &&
       metinCode.includes("✨ Hızlı Etkinlik:") &&
-      metinCode.includes("❓ Anlama Soruları") &&
+      metinCode.includes("👁️ Kör Dinleme") &&
       !diyalogCode.includes("grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white") &&
       !metinCode.includes("grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white") &&
       diyalogCode.includes("var(--font-arabic-optical-scale, 1)") &&
@@ -3930,7 +3930,7 @@ test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Al
   );
 });
 
-test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 55 Kayıtta Standart www.youtube.com/embed URL Doğrulaması, Regex Ayıklama, Zero-Iframe Kapak + imageError Fallback ve Mobil Sinema Modu", async () => {
+test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 60 Kayıtta Standart www.youtube.com/embed URL Doğrulaması, Regex Ayıklama, Zero-Iframe Kapak + imageError Fallback ve Mobil Sinema Modu", async () => {
   // 1. next.config.ts COEP/COOP kaldırılmış olmalı, Referrer-Policy ve CSP tam uyumlu olmalı
   const nextConfigCode = fs.readFileSync(
     path.join(ROOT_DIR, "next.config.ts"),
@@ -3956,7 +3956,7 @@ test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 55 Kayıtt
     "next.config.ts Referrer-Policy ve CSP kuralları YouTube iframe, kapak ve medya akışlarına tam izin vermelidir"
   );
 
-  // 2. Tüm 55 kayıtta standart www.youtube.com/embed/... URL kontrolü ve Regex fallback doğrulaması
+  // 2. Tüm 60 kayıtta standart www.youtube.com/embed/... URL kontrolü ve Regex fallback doğrulaması
   const { buildYoutubeEmbedUrl } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
   );
@@ -4016,8 +4016,8 @@ test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 55 Kayıtt
   );
 });
 
-test("38. 10 Ölü YouTube Link Temizliği (45 Sıralı Kayıt + Tek Aktif Iframe), Gramer Modal Z-Index/Başlık/2 Sütun Buton/1111 Ses Yolu, Görsel Kelime Kart/Modal/Hemze-i Vasıl İmlası ve Mobil Safe-Area/md Breakpoint Koruması", async () => {
-  // 1. 10 ölü playlist'in kaldırıldığını ve yt_001..yt_045 / sira 1..45 dizilimini doğrula
+test("38. Ölü YouTube Link Temizliği (60 Sıralı Kayıt + Tek Aktif Iframe), Gramer Modal Z-Index/Başlık/2 Sütun Buton/1111 Ses Yolu, Görsel Kelime Kart/Modal/Hemze-i Vasıl İmlası ve Mobil Safe-Area/md Breakpoint Koruması", async () => {
+  // 1. 10 ölü playlist'in kaldırıldığını ve yt_001..yt_060 / sira 1..60 dizilimini doğrula
   const { raw: ytRaw, parsed: ytItems } = readDataJson(
     "youtube_tavsiyeleri.json"
   );
@@ -4033,7 +4033,7 @@ test("38. 10 Ölü YouTube Link Temizliği (45 Sıralı Kayıt + Tek Aktif Ifram
     "PLOpvfjrLz9uf2KZoY0zxAXwfiGulloRP_",
     "PLOpvfjrLz9ud1R6KskpOGZFctyb_TB9MC",
   ];
-  assert.equal(ytItems.length, 45, "youtube_tavsiyeleri.json tam 45 kayıt içermelidir");
+  assert.equal(ytItems.length, 60, "youtube_tavsiyeleri.json tam 60 kayıt içermelidir");
   for (const deadPl of removedPlaylists) {
     assert.equal(
       ytRaw.includes(deadPl),
@@ -4743,5 +4743,148 @@ test("41. İstemci Paket Boyutu Küçültme, Ölü Kod/Paket/Font/SW Temizliği,
     "AudioStopper.tsx son 3 dakikada kullanıcı etkileşimi veya aktif ses çalma kontrolü yapmalıdır"
   );
 });
+
+test("42. Metin/Diyalog Üst Bar Tekrar Temizliği, Seslendirici Tercihi Kapsam Netleştirmesi, Rozet Hizalaması, HTTPS Harici İzleme Platformları ve 60 Kayıtlık YouTube Envanteri", async () => {
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const ayarlarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. Metin ve Diyalog sayfalarında Kadın/Erkek ses değiştirme butonu bulunmamalı, doğrudan kendi ses_dosyasi oynatılmalı
+  assert.equal(
+    !metinCode.includes("preferredVoiceGender") &&
+      !metinCode.includes("togglePreferredVoiceGender") &&
+      !metinCode.includes('aria-label="Seslendirici Cinsiyeti"') &&
+      !diyalogCode.includes("preferredVoiceGender") &&
+      !diyalogCode.includes("togglePreferredVoiceGender") &&
+      !diyalogCode.includes('aria-label="Seslendirici Cinsiyeti"') &&
+      metinCode.includes("getMp3Path(readingText.id, line.sira)") &&
+      diyalogCode.includes("getMp3Path(dialogue.id, line.sira)"),
+    true,
+    "Metin ve Diyalog sayfalarında işlevsiz Erkek/Kadın ses değiştirici yer almamalı, her satır kendi orijinal ses_dosyasi kaydını çalmalıdır"
+  );
+
+  // Header (...) menüsü ve Ayarlar sayfasında kapsam açıklaması yer almalı
+  const expectedScopeNote =
+    "1111 Cümle, Görsel Kelimeler ve Atasözleri için geçerlidir";
+  assert.equal(
+    headerCode.includes(expectedScopeNote) &&
+      ayarlarCode.includes(expectedScopeNote),
+    true,
+    "Header.tsx ve ayarlar/page.tsx içinde Seslendirici Tercihi kapsam açıklaması yer almalıdır"
+  );
+
+  // 2. Üst kontrol çubuğu (3. Satır) ve Hızlı Etkinlik şeridi (4. Satır) tekrarlarının giderilmesi
+  const countOccurrences = (src, needle) => src.split(needle).length - 1;
+  assert.equal(
+    countOccurrences(metinCode, "handleToggleGrammarSplit()") === 1 &&
+      countOccurrences(diyalogCode, "handleToggleGrammarSplit()") === 1 &&
+      !diyalogCode.includes('aria-label="Rol Yapma Modu"') &&
+      countOccurrences(diyalogCode, "🎭 Rol Yapma") === 1 &&
+      !metinCode.includes("🎙️ Sesli Okuma") &&
+      !metinCode.includes("❓ Anlama Soruları ("),
+    true,
+    "Metin ve Diyalog sayfalarında Yan Yana Gramer, Rol Yapma, Sesli Okuma ve Anlama Soruları butonları mükerrer olarak tekrarlanmamalıdır"
+  );
+
+  // Hızlı Etkinlik şeridinde benzersiz pedagojik araçlar korunmalı
+  assert.equal(
+    diyalogCode.includes("👥 İkili Kart (A/B)") &&
+      diyalogCode.includes("👁️ Kör Dinleme") &&
+      diyalogCode.includes("📄 A4 PDF") &&
+      diyalogCode.includes("🎯 Ödev &amp; Paylaş") &&
+      diyalogCode.includes("🖼️ Görsel Kart") &&
+      metinCode.includes("👁️ Kör Dinleme") &&
+      metinCode.includes("📄 A4 PDF") &&
+      metinCode.includes("🎯 Ödev &amp; Paylaş") &&
+      metinCode.includes("🖼️ Görsel Kart"),
+    true,
+    "Hızlı Etkinlik şeridi benzersiz sınıf ve çalışma araçlarını eksiksiz korumalıdır"
+  );
+
+  // 3. Üst bilgi rozetleri ferah gap-2.5 ve tutarlı 'Diyalog #01 • A1' / 'Metin #55 • B2' formatında olmalı
+  assert.equal(
+    diyalogCode.includes(
+      'Diyalog #{String(rawNum).padStart(2, "0")} • {dialogue.seviye}'
+    ) &&
+      metinCode.includes(
+        'Metin #{String(rawNum).padStart(2, "0")} • {readingText.seviye}'
+      ) &&
+      diyalogCode.includes('<div className="flex flex-wrap items-center gap-2.5">') &&
+      metinCode.includes('<div className="flex flex-wrap items-center gap-2.5">'),
+    true,
+    "Diyalog ve Metin üst bilgi rozetleri tutarlı formatta ve gap-2.5 boşlukla hizalanmalıdır"
+  );
+
+  // 4. Harici İzleme Platformları: Ücretli/ölü/HTTP linklerin temizlenmesi ve 4 resmi ücretsiz HTTPS kanalın eklenmesi
+  const { EXTERNAL_WATCH_PLATFORM_GROUPS } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
+  );
+  const allPlatforms = EXTERNAL_WATCH_PLATFORM_GROUPS.flatMap(
+    (g) => g.platforms
+  );
+  const allUrls = allPlatforms.map((p) => p.url);
+
+  for (const banned of [
+    "muzzybbc",
+    "NatGeoAbuDhabi",
+    "cartoon3rbi",
+    "arabic-toons",
+  ]) {
+    assert.equal(
+      allUrls.some((u) => u.toLowerCase().includes(banned.toLowerCase())),
+      false,
+      `Kaldırılan ölü/ücretli/HTTP platform (${banned}) listede bulunmamalıdır`
+    );
+  }
+  assert.equal(
+    allUrls.every((u) => u.startsWith("https://")),
+    true,
+    "Tüm harici izleme platformu bağlantıları güvenli HTTPS protokolünü kullanmalıdır"
+  );
+  for (const requiredUrl of [
+    "https://www.youtube.com/@LearnwithZakaria",
+    "https://www.youtube.com/@KhanAcademyArabi",
+    "https://www.youtube.com/@dwdocumentaryar",
+    "https://www.youtube.com/@ajpluskabreet",
+  ]) {
+    assert.equal(
+      allUrls.includes(requiredUrl),
+      true,
+      `Yeni resmi ücretsiz Fasih Arapça kanalı (${requiredUrl}) harici platform listesinde yer almalıdır`
+    );
+  }
+
+  // 5. 60 kayıtlık youtube_tavsiyeleri.json (A1:15, A2:15, B1:15, B2:15) ve metadata.json koruması
+  const { parsed: ytItems } = readDataJson("youtube_tavsiyeleri.json");
+  const byCefr = { A1: 0, A2: 0, B1: 0, B2: 0 };
+  for (const item of ytItems) {
+    byCefr[item.cefr] = (byCefr[item.cefr] || 0) + 1;
+  }
+  assert.deepEqual(byCefr, { A1: 15, A2: 15, B1: 15, B2: 15 });
+
+  const { CONTENT_INVENTORY } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
+  );
+  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizindeki metadata.json dosyası korunmalıdır"
+  );
+});
+
 
 

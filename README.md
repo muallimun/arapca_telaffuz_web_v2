@@ -7,7 +7,7 @@
 ![Whisper AI](https://img.shields.io/badge/AI-Whisper_WebGPU_%26_WASM-0CA678?style=for-the-badge)
 ![CEFR](https://img.shields.io/badge/CEFR-A1--B2_(120_Diyalog)-D97706?style=for-the-badge)
 
-**Muallimun Arapça (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu **120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi**, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, 998 Görsel Kelime, 1111 Kalıp Cümle, 550 soruluk Seviye Tespit ve Konu Tarama Merkezi ve Akıllı A4 PDF Çalışma Kağıdı Üreticisi içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
+**Muallimun Arapça (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu **120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi**, 60 Seçkin Video & İzleme Rehberi, 400 Eş ve Zıt Anlamlı Kelime Ağı, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, 998 Görsel Kelime, 1111 Kalıp Cümle, 550 soruluk Seviye Tespit ve Konu Tarama Merkezi ve Akıllı A4 PDF Çalışma Kağıdı Üreticisi içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
 
 🌐 **Canlı Uygulama:** [https://app.muallimun.net](https://app.muallimun.net)  
 🏛️ **Ana Portal:** [https://muallimun.net](https://muallimun.net)

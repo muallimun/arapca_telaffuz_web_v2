@@ -874,16 +874,21 @@ export default function Header() {
                       togglePreferredVoiceGender();
                       playClick();
                     }}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-between text-xs font-bold text-[var(--foreground)] hover:border-[#087F5B] transition-colors cursor-pointer"
+                    className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-between gap-2 text-left text-xs font-bold text-[var(--foreground)] hover:border-[#087F5B] transition-colors cursor-pointer"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-start gap-2 min-w-0">
                       <Users
                         size={15}
-                        className="text-[#087F5B] dark:text-emerald-400 shrink-0"
+                        className="text-[#087F5B] dark:text-emerald-400 shrink-0 mt-0.5"
                       />
-                      <span>Seslendirici Tercihi</span>
+                      <span className="min-w-0">
+                        <span className="block">Seslendirici Tercihi</span>
+                        <span className="block text-[10px] font-medium text-[var(--muted)] leading-snug mt-0.5">
+                          1111 Cümle, Görsel Kelimeler ve Atasözleri için geçerlidir
+                        </span>
+                      </span>
                     </span>
-                    <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300">
+                    <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 shrink-0">
                       {mounted && preferredVoiceGender === "kadin"
                         ? "👩 Kadın Sesi"
                         : "👨 Erkek Sesi"}

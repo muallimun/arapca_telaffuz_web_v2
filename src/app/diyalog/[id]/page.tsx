@@ -2503,9 +2503,9 @@ export default function DialogueDetailPage({
             </Link>
 
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-600 dark:bg-emerald-600 text-white font-extrabold text-[10px] tabular-nums shrink-0">
-                  #{String(rawNum).padStart(2, "0")} • {dialogue.seviye}
+                  Diyalog #{String(rawNum).padStart(2, "0")} • {dialogue.seviye}
                 </span>
                 <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
                   {dialogue.satirlar.length} Cümle • {dialogueVocabEntries.length} Kelime
@@ -2706,64 +2706,6 @@ export default function DialogueDetailPage({
                     : "Harekesiz"}
                 </span>
               </button>
-
-              {/* 4. Canlandırma / Rol Yapma Hızlı İkon Butonu (Masaüstünde görünür, mobilde sekmede/menüde) */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  playToken.current += 1;
-                  stop();
-                  cleanupRoleplayMic();
-                  setIsPlayingAll(false);
-                  setLoopingLineSira(null);
-                  setIsRoleplayRunning(false);
-                  setRoleplayActiveLine(null);
-                  setRoleplaySpeakingLine(null);
-                  setStudyMode(studyMode === "roleplay" ? "listen" : "roleplay");
-                }}
-                data-tooltip="Karşılıklı Rol Yapma (Role-Play) Modu"
-                aria-label="Rol Yapma Modu"
-                className={`hidden sm:flex w-8 h-8 rounded-xl border items-center justify-center text-sm transition-all cursor-pointer shrink-0 ${
-                  studyMode === "roleplay"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                    : "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9]/50 hover:border-[#6741D9] text-[#4C28B5] dark:text-[#d0bfff]"
-                }`}
-              >
-                <span aria-hidden="true">🎭</span>
-              </button>
-
-              {/* 4b. Yan Yana Gramer Toggle Butonu (Masaüstünde 2 Sütunlu Panel, Mobilde Alt Çekmece) */}
-              {grammarNote && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    handleToggleGrammarSplit();
-                  }}
-                  aria-pressed={isGrammarSplitOpen}
-                  data-tooltip={
-                    isGrammarSplitOpen
-                      ? "Gramer Panelini Kapat"
-                      : "Gramer Notunu Metinle Yan Yana Aç"
-                  }
-                  aria-label={
-                    isGrammarSplitOpen
-                      ? "Gramer Panelini Kapat"
-                      : "Yan Yana Gramer"
-                  }
-                  className={`inline-flex px-2.5 py-1.5 rounded-xl border items-center gap-1.5 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    isGrammarSplitOpen
-                      ? "bg-[#087F5B] hover:bg-[#065F46] border-[#065F46] text-white shadow-xs"
-                      : "bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
-                  }`}
-                >
-                  <Columns2 size={13} className="shrink-0" />
-                  <span>
-                    {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
-                  </span>
-                </button>
-              )}
 
               {/* 4c. Bağlı Tavsiye YouTube Videosu / Oynatma Listesi Rozeti */}
               {linkedYoutubeVideos.length > 0 && (
@@ -3299,29 +3241,6 @@ export default function DialogueDetailPage({
                 type="button"
                 onClick={() => {
                   playClick();
-                  playToken.current += 1;
-                  stop();
-                  cleanupRoleplayMic();
-                  setIsPlayingAll(false);
-                  setLoopingLineSira(null);
-                  setIsRoleplayRunning(false);
-                  setRoleplayActiveLine(null);
-                  setRoleplaySpeakingLine(null);
-                  setStudyMode(studyMode === "roleplay" ? "listen" : "roleplay");
-                }}
-                className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
-                  studyMode === "roleplay"
-                    ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-[var(--foreground)]"
-                }`}
-              >
-                <span>🎭 Rol Yapma</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
                   setIsInfoGapModalOpen(true);
                 }}
                 className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-700/70 bg-rose-50/90 dark:bg-rose-950/45 hover:border-rose-500 text-rose-900 dark:text-rose-200 text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all"
@@ -3352,13 +3271,26 @@ export default function DialogueDetailPage({
                     playClick();
                     handleToggleGrammarSplit();
                   }}
+                  aria-pressed={isGrammarSplitOpen}
+                  data-tooltip={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Gramer Notunu Metinle Yan Yana Aç"
+                  }
+                  aria-label={
+                    isGrammarSplitOpen
+                      ? "Gramer Panelini Kapat"
+                      : "Yan Yana Gramer"
+                  }
                   className={`min-h-[36px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
                     isGrammarSplitOpen
                       ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
                       : "bg-amber-50 dark:bg-amber-950/45 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:border-amber-500"
                   }`}
                 >
-                  <span>📐 Yan Yana Gramer</span>
+                  <span>
+                    📐 {isGrammarSplitOpen ? "Gramer Panelini Kapat" : "Yan Yana Gramer"}
+                  </span>
                 </button>
               )}
 

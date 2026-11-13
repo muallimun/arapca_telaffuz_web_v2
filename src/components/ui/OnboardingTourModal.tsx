@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { formatArabicText } from "@/lib/arabicTextUtils";
-import { CONTENT_INVENTORY, sozluk } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 import { useSettings } from "@/store/settings";
 
 export const ONBOARDING_STORAGE_KEY = "arapca_onboarding_done_v1";
@@ -82,8 +82,10 @@ export default function OnboardingTourModal() {
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-base sm:text-lg font-black text-[#6741D9] dark:text-[#d0bfff] leading-tight block">
-              {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük &amp;{" "}
-              {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
+              {(
+                Math.floor(CONTENT_INVENTORY.dictionaryWordsCount / 100) * 100
+              ).toLocaleString("tr-TR")}
+              + Sözlük &amp; {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
               5 kademeli morfolojik çözümleyici, kök analizi ve{" "}

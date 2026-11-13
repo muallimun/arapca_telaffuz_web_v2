@@ -417,7 +417,7 @@ function buildPrintStylesheet(): string {
 
   return `
     @font-face {
-      font-family: "ArakomPrint";
+      font-family: "Arakom";
       src: url("${origin}/fonts/Arakom.ttf") format("truetype");
       font-weight: normal;
       font-style: normal;
@@ -450,7 +450,7 @@ function buildPrintStylesheet(): string {
     .ar-sentence,
     .ar-sentence-sm,
     .ar-cell {
-      font-family: "Amiri", "Scheherazade New", "ArakomPrint", "Traditional Arabic", "Noto Naskh Arabic", serif !important;
+      font-family: "Amiri", "Scheherazade New", "Arakom", "Traditional Arabic", "Noto Naskh Arabic", serif !important;
       font-feature-settings: "liga" 1, "calt" 1, "mark" 1, "mkmk" 1;
       letter-spacing: 0;
     }
@@ -495,7 +495,7 @@ function buildPrintStylesheet(): string {
     }
 
     .cover-ar-kicker {
-      font-family: "Amiri", "Scheherazade New", "ArakomPrint", serif;
+      font-family: "Amiri", "Scheherazade New", "Arakom", serif;
       font-size: 24pt;
       font-weight: 700;
       color: #065f46;

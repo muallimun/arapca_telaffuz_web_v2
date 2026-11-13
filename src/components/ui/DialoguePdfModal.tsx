@@ -2096,7 +2096,7 @@ export default function DialoguePdfModal({
         <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Lateef:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
         <style>
           @font-face {
-            font-family: "ArakomFont";
+            font-family: "Arakom";
             src: url("${originStr}/fonts/Arakom.ttf") format("truetype");
             font-weight: 100 900;
             font-style: normal;

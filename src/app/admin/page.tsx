@@ -430,7 +430,7 @@ function getDefaultImagePath(
     return `/gorseller/kelimeler/gorsel_${num}.webp`;
   }
   if (tab === "atasozleri_508") {
-    const num = String(rec.sira || idx + 1).padStart(3, "0");
+    const num = String(rec.sira || idx + 1).padStart(4, "0");
     return `/gorseller/atasozleri/ata_${num}.webp`;
   }
   if (tab === "diyaloglar_120") {
@@ -1407,8 +1407,8 @@ export default function AdminStudioPage() {
         ornek_ar: "هٰذِهِ كَلِمَةٌ مُفِيدَةٌ.",
         ornek_tr: "Bu faydalı bir kelimedir.",
         gorsel: `/gorseller/kelimeler/gorsel_${pad4}.webp`,
-        ses_erkek: `/sesler/kelimeler/erkek/${pad4}.mp3`,
-        ses_kadin: `/sesler/kelimeler/kadin/${pad4}.mp3`,
+        ses_erkek: `/sesler/kelimeler/erkek/${pad4}.wav`,
+        ses_kadin: `/sesler/kelimeler/kadin/${pad4}.wav`,
       };
     } else if (activeTab === "cumleler_1111") {
       const pad4 = String(nextNum).padStart(4, "0");
@@ -1424,18 +1424,18 @@ export default function AdminStudioPage() {
         ses_kadin: `/sesler/cumleler/kadin/cumle_${pad4}.mp3`,
       };
     } else if (activeTab === "atasozleri_508") {
-      const pad3 = String(nextNum).padStart(3, "0");
+      const pad4 = String(nextNum).padStart(4, "0");
       template = {
-        id: `ata_${pad3}`,
+        id: `ata_${pad4}`,
         sira: nextNum,
         cefr: "B1",
         tema: "Hikmet ve Sabır",
         arapca: "الصَّبْرُ مِفْتَاحُ الْفَرَجِ",
         turkce: "Sabır ferahlığın anahtarıdır.",
         lafzi_ceviri: "Sabır kurtuluşun anahtarıdır.",
-        gorsel: `/gorseller/atasozleri/ata_${pad3}.webp`,
-        ses_erkek: `/sesler/atasozleri/erkek/ata_${pad3}.mp3`,
-        ses_kadin: `/sesler/atasozleri/kadin/ata_${pad3}.mp3`,
+        gorsel: `/gorseller/atasozleri/ata_${pad4}.webp`,
+        ses_erkek: `/sesler/atasozleri/erkek/ata_${pad4}.wav`,
+        ses_kadin: `/sesler/atasozleri/kadin/ata_${pad4}.wav`,
       };
     } else if (activeTab === "sozluk") {
       template = {
@@ -2310,8 +2310,8 @@ export default function AdminStudioPage() {
         </div>
       )}
 
-      {/* 2. ÜST SEKMELER (10 VERİ SETİ + SES EFEKTLERİ YÖNETİCİSİ) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-1.5">
+      {/* 2. ÜST SEKMELER (VERİ SETLERİ + SES EFEKTLERİ YÖNETİCİSİ) */}
+      <div className="flex flex-wrap gap-1.5">
         {STUDIO_TABS.map((tab) => {
           const isSelected = activeTab === tab.key;
           return (
@@ -2322,7 +2322,7 @@ export default function AdminStudioPage() {
                 playClick();
                 setActiveTab(tab.key);
               }}
-              className={`px-2.5 py-2 rounded-2xl border-2 border-b-4 text-left transition-all cursor-pointer flex flex-col justify-between ${
+              className={`flex-1 min-w-[138px] sm:min-w-[155px] px-2.5 py-2 rounded-2xl border-2 border-b-4 text-left transition-all cursor-pointer flex flex-col justify-between ${
                 isSelected
                   ? "bg-[#087F5B] border-[#065F46] text-white shadow-sm"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"

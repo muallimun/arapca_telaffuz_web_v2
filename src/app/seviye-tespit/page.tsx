@@ -804,7 +804,7 @@ function AssessmentPrintModal({
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Naskh+Arabic:wght@500;700&display=swap" />
   <style>
     @font-face {
-      font-family: "ArakomPrint";
+      font-family: "Arakom";
       src: url("/fonts/Arakom.ttf") format("truetype");
       font-weight: normal;
       font-style: normal;
@@ -843,7 +843,7 @@ function AssessmentPrintModal({
     }
     [lang="ar"],
     .ar-text {
-      font-family: "Noto Naskh Arabic", "ArakomPrint", "Amiri", serif;
+      font-family: "Noto Naskh Arabic", "Arakom", "Amiri", serif;
     }
     @media print {
       html, body, .print-root {

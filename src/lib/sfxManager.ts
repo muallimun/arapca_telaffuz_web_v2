@@ -705,6 +705,22 @@ class SoundEffectsManager {
       2200
     );
   }
+
+  /**
+   * 6. Geri Sayım Tık Sesi (3, 2, 1 saniye uyarıları)
+   */
+  playCountdownTick(isFinal: boolean = false) {
+    if (!this.canPlay()) return;
+    this.playNotes([
+      {
+        frequency: isFinal ? 1046.5 : 783.99,
+        startOffset: 0,
+        duration: isFinal ? 0.12 : 0.06,
+        waveform: "sine",
+        peakGain: isFinal ? 0.14 : 0.09,
+      },
+    ]);
+  }
 }
 
 // Singleton
@@ -729,3 +745,5 @@ export const playRecordStart = () => sfx.playRecordStart();
 export const playRecordStop = () => sfx.playRecordStop();
 export const playFanfare = (scorePercent?: number) =>
   sfx.playFanfare(scorePercent);
+export const playCountdownTick = (isFinal?: boolean) =>
+  sfx.playCountdownTick(isFinal);

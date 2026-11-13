@@ -13,6 +13,10 @@ import { unifiedDictionary } from "@/lib/dict";
 import { formatTurkishCategory } from "@/lib/arabicTextUtils";
 import { doesYoutubeItemMatchContentId } from "@/lib/youtubeUtils";
 import {
+  CONTENT_INVENTORY,
+  type ContentInventory,
+} from "@/lib/contentInventory";
+import {
   AnahtarCumle,
   AtasozuDeyim,
   Dialogue,
@@ -582,33 +586,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   };
 })();
 
-export interface ContentInventory {
-  dialoguesCount: number;
-  readingsCount: number;
-  sentencesCount: number;
-  proverbsCount: number;
-  visualWordsCount: number;
-  grammarNotesCount: number;
-  dictionaryWordsCount: number;
-  youtubeVideosCount: number;
-  synonymsAntonymsCount: number;
-  assessmentQuestionsCount: number;
-  exerciseModulesCount: number;
-}
-
-export const CONTENT_INVENTORY: ContentInventory = {
-  dialoguesCount: DYNAMIC_CONTENT_STATS.dialogueCount,
-  readingsCount: DYNAMIC_CONTENT_STATS.readingCount,
-  sentencesCount: DYNAMIC_CONTENT_STATS.sentenceCount,
-  proverbsCount: DYNAMIC_CONTENT_STATS.proverbCount,
-  visualWordsCount: DYNAMIC_CONTENT_STATS.visualWordCount,
-  grammarNotesCount: DYNAMIC_CONTENT_STATS.grammarNoteCount,
-  dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
-  youtubeVideosCount: DYNAMIC_CONTENT_STATS.youtubeCount,
-  synonymsAntonymsCount: DYNAMIC_CONTENT_STATS.synonymsAntonymsCount,
-  assessmentQuestionsCount: DYNAMIC_CONTENT_STATS.assessmentQuestionsCount,
-  exerciseModulesCount: 14,
-};
+export { CONTENT_INVENTORY, type ContentInventory };
 
 export function getDynamicContentStats(): DynamicContentStats {
   return DYNAMIC_CONTENT_STATS;

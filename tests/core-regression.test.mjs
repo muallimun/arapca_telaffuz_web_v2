@@ -1071,8 +1071,14 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
     path.join(ROOT_DIR, "src", "lib", "data.ts"),
     "utf8"
   );
+  const contentInvCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "contentInventory.ts"),
+    "utf8"
+  );
   assert.equal(
-    dataTsCode.includes("exerciseModulesCount: 14"),
+    (dataTsCode.includes("CONTENT_INVENTORY") &&
+      contentInvCode.includes("exerciseModulesCount: 14")) ||
+      dataTsCode.includes("exerciseModulesCount: 14"),
     true,
     "CONTENT_INVENTORY.exerciseModulesCount 14 olarak güncellenmelidir"
   );
@@ -3852,12 +3858,16 @@ test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Al
     path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
     "utf8"
   );
+  const settingsEffectsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "SettingsEffects.tsx"),
+    "utf8"
+  );
   assert.equal(
     headerCode.includes('{preset.label.split(" (")[0]}') &&
       !headerCode.includes('{preset.label.split(" ")[0]}') &&
-      headerCode.includes("applyGlobalTypographyCssVars({"),
+      settingsEffectsCode.includes("applyGlobalTypographyCssVars({"),
     true,
-    "Üst bar T menüsünde Çok Büyük etiketi 'Çok' olarak kesilmemeli ve applyGlobalTypographyCssVars ile tüm uygulamaya senkronize edilmelidir"
+    "Üst bar T menüsünde Çok Büyük etiketi 'Çok' olarak kesilmemeli ve applyGlobalTypographyCssVars SettingsEffects ile tüm uygulamaya senkronize edilmelidir"
   );
 
   const mcCode = fs.readFileSync(
@@ -4500,4 +4510,238 @@ test("40. Veri Envanteri (550 Soru, 14 Modül, 998 Görsel Kelime), Arapça Peda
     "GuideAndInfoModalBody 10/15/20 adaptif CAT ve 5 yeni ana modülü eksiksiz içermelidir"
   );
 });
+
+test("41. İstemci Paket Boyutu Küçültme, Ölü Kod/Paket/Font/SW Temizliği, Settings Göç Koruması ve Admin/AudioStopper Sertleştirmesi", async () => {
+  // 0. metadata.json kesinlikle korunmuş olmalıdır
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizindeki metadata.json dosyası kesinlikle silinmemelidir"
+  );
+
+  // 1. contentInventory.ts hafif modülü ve gerçek veri sayılarıyla birebir eşitlik
+  const contentInventoryPath = path.join(
+    ROOT_DIR,
+    "src",
+    "lib",
+    "contentInventory.ts"
+  );
+  assert.equal(
+    fs.existsSync(contentInventoryPath),
+    true,
+    "src/lib/contentInventory.ts hafif modülü mevcut olmalıdır"
+  );
+  const contentInventoryCode = fs.readFileSync(contentInventoryPath, "utf8");
+  assert.equal(
+    !contentInventoryCode.includes("@/data/") &&
+      !contentInventoryCode.includes(".json"),
+    true,
+    "contentInventory.ts hiçbir JSON veri dosyasını import etmemelidir"
+  );
+  const { CONTENT_INVENTORY: lightInventory } = await import(
+    pathToFileURL(contentInventoryPath).href
+  );
+  const {
+    CONTENT_INVENTORY: dataReExportInventory,
+    getDynamicContentStats,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
+  );
+  const dynStats = getDynamicContentStats();
+  assert.deepEqual(
+    lightInventory,
+    dataReExportInventory,
+    "data.ts içindeki CONTENT_INVENTORY re-export ile contentInventory.ts birebir aynı olmalıdır"
+  );
+  assert.equal(lightInventory.dialoguesCount, dynStats.dialogueCount);
+  assert.equal(lightInventory.readingsCount, dynStats.readingCount);
+  assert.equal(lightInventory.sentencesCount, dynStats.sentenceCount);
+  assert.equal(lightInventory.proverbsCount, dynStats.proverbCount);
+  assert.equal(lightInventory.visualWordsCount, dynStats.visualWordCount);
+  assert.equal(lightInventory.grammarNotesCount, dynStats.grammarNoteCount);
+  assert.equal(lightInventory.dictionaryWordsCount, dynStats.dictionaryWordCount);
+  assert.equal(lightInventory.youtubeVideosCount, dynStats.youtubeCount);
+  assert.equal(lightInventory.synonymsAntonymsCount, dynStats.synonymsAntonymsCount);
+  assert.equal(
+    lightInventory.assessmentQuestionsCount,
+    dynStats.assessmentQuestionsCount
+  );
+
+  // OnboardingTourModal, layout ve FeedbackModal dinamik yükleme kontrolü
+  const onboardingSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+  const layoutSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  const feedbackShellSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "FeedbackModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    onboardingSrc.includes('@/lib/contentInventory') &&
+      !onboardingSrc.includes('@/lib/data') &&
+      layoutSrc.includes('@/lib/contentInventory') &&
+      !layoutSrc.includes('@/lib/data'),
+    true,
+    "OnboardingTourModal.tsx ve layout.tsx doğrudan hafif @/lib/contentInventory modülünü kullanmalıdır"
+  );
+  assert.equal(
+    feedbackShellSrc.includes('from "next/dynamic"') &&
+      feedbackShellSrc.includes("ssr: false") &&
+      !feedbackShellSrc.includes('@/lib/data') &&
+      fs.existsSync(
+        path.join(ROOT_DIR, "src", "components", "ui", "FeedbackModalBody.tsx")
+      ),
+    true,
+    "FeedbackModal.tsx next/dynamic (ssr: false) ile yalnızca açıldığında FeedbackModalBody ve veriyi yüklemelidir"
+  );
+
+  // 2. Ölü dosya (sound.ts), kullanılmayan paketler, kanonik Arakom fontu, SW ve .gitignore temizliği
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "src", "lib", "sound.ts")),
+    false,
+    "Hiçbir yerde import edilmeyen ölü src/lib/sound.ts dosyası silinmiş olmalıdır"
+  );
+  const pkgJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8")
+  );
+  assert.equal(
+    !("framer-motion" in (pkgJson.dependencies || {})) &&
+      !("clsx" in (pkgJson.dependencies || {})) &&
+      !("tailwind-merge" in (pkgJson.dependencies || {})),
+    true,
+    "package.json dependencies içinden kullanılmayan framer-motion, clsx ve tailwind-merge kaldırılmış olmalıdır"
+  );
+
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  const arabicTextUtilsSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts"),
+    "utf8"
+  );
+  const teamBattleSrc = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      "ClassroomTeamBattle.tsx"
+    ),
+    "utf8"
+  );
+  const seviyeTespitSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    globalsCss.includes('font-family: "Arakom";') &&
+      !globalsCss.includes("ArakomFont") &&
+      !arabicTextUtilsSrc.includes("ArakomFont") &&
+      !teamBattleSrc.includes("ArakomFont") &&
+      !seviyeTespitSrc.includes("ArakomPrint"),
+    true,
+    "Arakom.ttf font ailesi tek bir kanonik 'Arakom' adında birleştirilmiş olmalıdır"
+  );
+
+  const swSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "public", "sw.js"),
+    "utf8"
+  );
+  const sozlukPageSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  const gitignoreSrc = fs.readFileSync(
+    path.join(ROOT_DIR, ".gitignore"),
+    "utf8"
+  );
+  assert.equal(
+    !swSrc.includes("/audio/manifest.json") &&
+      !sozlukPageSrc.includes("/audio/words/"),
+    true,
+    "public/sw.js içinden var olmayan /audio/manifest.json ve sozluk/page.tsx içinden ölü /audio/words/ kontrolü kaldırılmış olmalıdır"
+  );
+  assert.equal(
+    gitignoreSrc.includes("!.env.example"),
+    true,
+    ".gitignore dosyasına !.env.example istisnası eklenmiş olmalıdır"
+  );
+
+  // 3. settings.ts DEFAULT_SETTINGS göç koruması, tekil SettingsEffects ve ayarlar CEFR senkronizasyonu
+  const settingsSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "store", "settings.ts"),
+    "utf8"
+  );
+  const settingsEffectsSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "SettingsEffects.tsx"),
+    "utf8"
+  );
+  const headerSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const ayarlarSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    settingsSrc.includes("export const DEFAULT_SETTINGS") &&
+      settingsSrc.includes("...DEFAULT_SETTINGS"),
+    true,
+    "settings.ts DEFAULT_SETTINGS sabiti tanımlamalı ve migrate sonunda varsayılanlarla birleştirmelidir"
+  );
+  assert.equal(
+    settingsEffectsSrc.includes("applyGlobalTypographyCssVars") &&
+      layoutSrc.includes("<SettingsEffects />") &&
+      !headerSrc.includes("applyGlobalTypographyCssVars") &&
+      !ayarlarSrc.includes("applyGlobalTypographyCssVars"),
+    true,
+    "Tema ve global tipografi CSS değişkeni yan etkileri tekil SettingsEffects bileşeninde toplanmalıdır"
+  );
+  assert.equal(
+    ayarlarSrc.includes("effectiveCefrLevel") &&
+      ayarlarSrc.includes('preferredLevel === "İleri"') &&
+      ayarlarSrc.includes('preferredLevel === "Orta"') &&
+      ayarlarSrc.includes("setDetectedCefrLevel(lvl)") &&
+      ayarlarSrc.includes("setPreferredLevel("),
+    true,
+    "ayarlar/page.tsx içinde detectedCefrLevel ve preferredLevel tek kaynaklı olarak senkronize edilmelidir"
+  );
+
+  // 4. Admin Stüdyosu (.wav + ata_0001 + flex-wrap) ve AudioStopper 3 dk etkileşim koruması
+  const adminSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "admin", "page.tsx"),
+    "utf8"
+  );
+  const audioStopperSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "AudioStopper.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    adminSrc.includes("ses_erkek: `/sesler/kelimeler/erkek/${pad4}.wav`") &&
+      adminSrc.includes("ses_kadin: `/sesler/kelimeler/kadin/${pad4}.wav`") &&
+      adminSrc.includes("id: `ata_${pad4}`") &&
+      adminSrc.includes("gorsel: `/gorseller/atasozleri/ata_${pad4}.webp`") &&
+      adminSrc.includes("ses_erkek: `/sesler/atasozleri/erkek/ata_${pad4}.wav`") &&
+      adminSrc.includes("ses_kadin: `/sesler/atasozleri/kadin/ata_${pad4}.wav`") &&
+      adminSrc.includes('className="flex flex-wrap gap-1.5"') &&
+      !adminSrc.includes("xl:grid-cols-11"),
+    true,
+    "admin/page.tsx gorsel_kelimeler ve atasozleri_508 için .wav + 4 haneli ata_0001 üretmeli ve 13 sekmeyi flex-wrap ile dizmelidir"
+  );
+  assert.equal(
+    audioStopperSrc.includes("lastInteractionAt") &&
+      audioStopperSrc.includes("3 * 60 * 1000") &&
+      audioStopperSrc.includes("isAudioCurrentlyPlaying") &&
+      audioStopperSrc.includes("addStudyMinutes(1)"),
+    true,
+    "AudioStopper.tsx son 3 dakikada kullanıcı etkileşimi veya aktif ses çalma kontrolü yapmalıdır"
+  );
+});
+
 

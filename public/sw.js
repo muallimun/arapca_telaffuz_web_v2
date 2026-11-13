@@ -15,7 +15,6 @@ const PRECACHE_ASSETS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
   "/fonts/Arakom.ttf",
-  "/audio/manifest.json",
   "/icons/favicon.ico",
   "/icons/favicon-16x16.png",
   "/icons/favicon-32x32.png",
@@ -123,13 +122,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Next.js RSC (React Server Components) istekleri ve /audio/manifest.json:
+  // Next.js RSC (React Server Components) istekleri:
   // Yeni sürüm dağıtımlarında (deployment) eski önbelleğin kalmaması için Network First (çevrimdışıysa önbellekten dön)
   const isRscRequest =
     url.searchParams.has("_rsc") || request.headers.get("RSC") === "1";
-  const isAudioManifest = url.pathname === "/audio/manifest.json";
 
-  if (isRscRequest || isAudioManifest) {
+  if (isRscRequest) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {

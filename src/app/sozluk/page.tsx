@@ -52,7 +52,6 @@ import {
   findSynonymAntonymForWord,
 } from "@/lib/dict";
 import {
-  loadAudioManifest,
   playTTS,
   hasMp3,
   getMp3Path,
@@ -413,7 +412,6 @@ export default function DictionaryPage() {
   );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [speakingWordId, setSpeakingWordId] = useState<string | null>(null);
-  const [manifest, setManifest] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPageOption>(
     DEFAULT_ITEMS_PER_PAGE
@@ -452,7 +450,6 @@ export default function DictionaryPage() {
   const { playAudio } = useAudioStore();
 
   useEffect(() => {
-    loadAudioManifest().then((m) => setManifest(m || {}));
     const raf = requestAnimationFrame(() => {
       setMounted(true);
       if (typeof window !== "undefined") {
@@ -1091,12 +1088,6 @@ export default function DictionaryPage() {
           rate,
           gender: preferredVoiceGender,
         });
-      } else if (
-        manifest.words &&
-        manifest.words.includes(word.id) &&
-        !customArabic
-      ) {
-        await playAudio(`/audio/words/${word.id}.mp3`, 0, rate);
       } else {
         await playTTS(
           primaryArabic,

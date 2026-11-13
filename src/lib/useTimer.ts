@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { playTickSound } from "./sound";
+import { playCountdownTick } from "./sfxManager";
 
 export function useCountdown(timeLimit: number | null, onTimeout: () => void, isActive: boolean) {
   const [timeLeft, setTimeLeft] = useState<number | null>(timeLimit);
@@ -30,7 +30,7 @@ export function useCountdown(timeLimit: number | null, onTimeout: () => void, is
       
       // Son 3 saniyede (3, 2, 1) ses çal
       if (timeLeft <= 3 && timeLeft > 0) {
-        playTickSound(timeLeft === 1);
+        playCountdownTick(timeLeft === 1);
       }
     }, 1000);
 

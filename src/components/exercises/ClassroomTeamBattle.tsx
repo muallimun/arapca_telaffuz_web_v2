@@ -973,7 +973,7 @@ export default function ClassroomTeamBattle({
                 <td style="font-weight:800;color:#92400e;">#${item.roundNumber} (${escapePrintHtml(
                   item.categoryBadge
                 )})</td>
-                <td dir="rtl" style="text-align:right;font-family:'ArakomFont','Amiri',serif;font-size:21px;font-weight:700;color:#087f5b;line-height:1.85;">${escapePrintHtml(
+                <td dir="rtl" style="text-align:right;font-family:'Arakom','Amiri',serif;font-size:21px;font-weight:700;color:#087f5b;line-height:1.85;">${escapePrintHtml(
                   item.targetArabic
                 )}</td>
                 <td style="font-weight:700;color:#1e293b;">${escapePrintHtml(
@@ -1001,7 +1001,7 @@ export default function ClassroomTeamBattle({
           (item, idx) => `
           <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
             <td style="font-weight:800;">#${item.roundNumber}</td>
-            <td dir="rtl" style="text-align:right;font-family:'ArakomFont','Amiri',serif;font-size:19px;font-weight:700;color:#0f172a;line-height:1.8;">${escapePrintHtml(
+            <td dir="rtl" style="text-align:right;font-family:'Arakom','Amiri',serif;font-size:19px;font-weight:700;color:#0f172a;line-height:1.8;">${escapePrintHtml(
               item.targetArabic
             )}</td>
             <td style="font-weight:600;color:#1e293b;">${escapePrintHtml(
@@ -1032,7 +1032,7 @@ export default function ClassroomTeamBattle({
         <title>Sınıf Yarışması Özeti ve Tekrar Listesi | Muallimun</title>
         <style>
           @font-face {
-            font-family: "ArakomFont";
+            font-family: "Arakom";
             src: url("${originStr}/fonts/Arakom.ttf") format("truetype");
             font-weight: 100 900;
             font-style: normal;

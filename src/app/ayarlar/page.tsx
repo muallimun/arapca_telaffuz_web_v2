@@ -58,7 +58,6 @@ import {
   clearOfflineAudioCache,
 } from "@/lib/offlineManager";
 import {
-  applyGlobalTypographyCssVars,
   ARABIC_FONT_OPTIONS,
   ARABIC_FONT_SIZE_PRESETS,
   formatArabicByHarekeMode,
@@ -117,6 +116,7 @@ export default function SettingsPage() {
     setSttEngine,
     localSttOnly,
     setLocalSttOnly,
+    preferredLevel,
     setPreferredLevel,
   } = useSettings();
 
@@ -171,26 +171,23 @@ export default function SettingsPage() {
         setHasAutoBackup(false);
       }
     });
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
     void loadAudioManifest().then(() => {
       void getDownloadedDialogueIds().then((ids) =>
         setOfflineDownloadedIds(ids)
       );
     });
     return () => cancelAnimationFrame(raf);
-  }, [theme]);
-
-  useEffect(() => {
-    applyGlobalTypographyCssVars({
-      arabicFont,
-      arabicFontSize,
-      arabicFontSizePreset,
-      turkishFontSize,
-    });
-  }, [arabicFont, arabicFontSize, arabicFontSizePreset, turkishFontSize]);
+  }, []);
 
   if (!mounted) return null;
+
+  const effectiveCefrLevel: "A1" | "A2" | "B1" | "B2" =
+    detectedCefrLevel ??
+    (preferredLevel === "İleri"
+      ? "B2"
+      : preferredLevel === "Orta"
+      ? "B1"
+      : "A1");
 
   const handleExportBackup = () => {
     playClick();
@@ -1597,7 +1594,7 @@ export default function SettingsPage() {
                 />
                 <div>
                   <span className="block text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                    Aktif Kur Seviyesi ({detectedCefrLevel || "A1"}) &amp; Seviye Tespit Merkezi
+                    Aktif Kur Seviyesi ({effectiveCefrLevel}) &amp; Seviye Tespit Merkezi
                   </span>
                   <span className="block text-[11px] text-[var(--muted)]">
                     Kütüphane ve alıştırmalardaki varsayılan kur seviyenizi seçin veya adaptif CAT sınavıyla seviyenizi ölçün
@@ -1608,7 +1605,7 @@ export default function SettingsPage() {
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-4 gap-1">
                   {(["A1", "A2", "B1", "B2"] as const).map((lvl) => {
-                    const active = (detectedCefrLevel || "A1") === lvl;
+                    const active = effectiveCefrLevel === lvl;
                     return (
                       <button
                         key={lvl}

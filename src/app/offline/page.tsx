@@ -10,7 +10,7 @@ import {
   Home,
   Sparkles,
 } from "lucide-react";
-import { CONTENT_INVENTORY } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 export default function OfflinePage() {
   const {

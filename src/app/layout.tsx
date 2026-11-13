@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Header from "@/components/layout/Header";
+import SettingsEffects from "@/components/layout/SettingsEffects";
 import MobileNav from "@/components/layout/MobileNav";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import AudioStopper from "@/components/AudioStopper";
@@ -16,7 +17,7 @@ import FeedbackModal, {
 import VisitorCounterBadge from "@/components/ui/VisitorCounterBadge";
 import InAppBrowserBanner from "@/components/ui/InAppBrowserBanner";
 import SmartboardMount from "@/components/classroom/SmartboardMount";
-import { CONTENT_INVENTORY } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 import "./globals.css";
 
 const APP_SUBTITLE =
@@ -134,6 +135,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased flex flex-col min-h-screen bg-[var(--background)] text-[var(--foreground)] overflow-x-clip selection:bg-[#087F5B]/20">
+        <SettingsEffects />
         <AppIntroSplash />
         <ServiceWorkerRegister />
         <AudioStopper />

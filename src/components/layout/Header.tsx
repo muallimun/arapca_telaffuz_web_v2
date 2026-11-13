@@ -48,7 +48,6 @@ import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import {
-  applyGlobalTypographyCssVars,
   ARABIC_FONT_OPTIONS,
   ARABIC_FONT_SIZE_PRESETS,
 } from "@/lib/arabicTextUtils";
@@ -85,10 +84,8 @@ export default function Header() {
     setSpeechRate,
     arabicFont,
     setArabicFont,
-    arabicFontSize,
     arabicFontSizePreset,
     setArabicFontSizePreset,
-    turkishFontSize,
     showTooltips,
     toggleTooltips,
     micNoiseSuppression,
@@ -135,20 +132,6 @@ export default function Header() {
   const rafRef = useRef<number | null>(null);
   const micTestSessionIdRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
-
-  useEffect(() => {
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [theme]);
-
-  useEffect(() => {
-    applyGlobalTypographyCssVars({
-      arabicFont,
-      arabicFontSize,
-      arabicFontSizePreset,
-      turkishFontSize,
-    });
-  }, [arabicFont, arabicFontSize, arabicFontSizePreset, turkishFontSize]);
 
   const closeMicTestResourcesOnly = useCallback(() => {
     if (rafRef.current) {

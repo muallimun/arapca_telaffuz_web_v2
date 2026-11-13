@@ -20,7 +20,7 @@ export type GrammarDepthMode = "simple" | "academic";
 export type ReadingLayoutMode = "sentences" | "paragraph";
 export type { ArabicFontId, ArabicFontSizePreset, HarekeMode };
 
-interface SettingsState {
+export interface SettingsValues {
   theme: "light" | "dark";
   viewMode: ViewMode;
   readingLayoutMode: ReadingLayoutMode;
@@ -43,7 +43,9 @@ interface SettingsState {
   dialogueLoopCount: DialogueLoopCount;
   sentenceLoopCount: SentenceLoopCount;
   pauseBetweenLines: PauseBetweenLines;
+}
 
+interface SettingsState extends SettingsValues {
   toggleTheme: () => void;
   setTheme: (theme: "light" | "dark") => void;
   setViewMode: (mode: ViewMode) => void;
@@ -122,31 +124,36 @@ export function detectIsMobileOrLowMem(): boolean {
 
 const HAREKE_MODE_ORDER: HarekeMode[] = ["full", "irab-only", "none"];
 
+export const DEFAULT_SETTINGS: SettingsValues = {
+  theme: "light",
+  viewMode: "stacked",
+  readingLayoutMode: "sentences",
+  showHareke: true,
+  harekeMode: "full",
+  grammarDepthMode: "academic",
+  showTooltips: true,
+  showShadowing: true,
+  arabicFont: "arakom",
+  arabicFontSize: 34,
+  arabicFontSizePreset: "md",
+  turkishFontSize: 16,
+  speechRate: 1,
+  preferredLevel: "Başlangıç",
+  preferredVoiceGender: "erkek",
+  sttEngine: "whisper",
+  localSttOnly: false,
+  micNoiseSuppression: false,
+  wordTrackingStyle: "both",
+  dialogueLoopCount: 1,
+  sentenceLoopCount: 3,
+  pauseBetweenLines: 0,
+};
+
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      theme: "light",
-      viewMode: "stacked",
-      readingLayoutMode: "sentences",
-      showHareke: true,
-      harekeMode: "full",
-      grammarDepthMode: "academic",
-      showTooltips: true,
-      showShadowing: true,
-      arabicFont: "arakom",
-      arabicFontSize: 34,
-      arabicFontSizePreset: "md",
-      turkishFontSize: 16,
-      speechRate: 1,
-      preferredLevel: "Başlangıç",
-      preferredVoiceGender: "erkek",
+      ...DEFAULT_SETTINGS,
       sttEngine: detectIsMobileOrLowMem() ? "webspeech" : "whisper",
-      localSttOnly: false,
-      micNoiseSuppression: false,
-      wordTrackingStyle: "both",
-      dialogueLoopCount: 1,
-      sentenceLoopCount: 3,
-      pauseBetweenLines: 0,
 
       toggleTheme: () =>
         set((state) => ({ theme: state.theme === "light" ? "dark" : "light" })),
@@ -306,7 +313,16 @@ export const useSettings = create<SettingsState>()(
               ? "paragraph"
               : "sentences";
         }
-        return migrated as SettingsState;
+        const definedMigrated = Object.fromEntries(
+          Object.entries(migrated).filter(([, val]) => val !== undefined)
+        ) as Partial<SettingsState>;
+        return {
+          ...DEFAULT_SETTINGS,
+          sttEngine: (detectIsMobileOrLowMem()
+            ? "webspeech"
+            : "whisper") as SttEngine,
+          ...definedMigrated,
+        } as SettingsState;
       },
     }
   )

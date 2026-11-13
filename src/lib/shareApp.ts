@@ -1,4 +1,4 @@
-import { CONTENT_INVENTORY } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 export const SHARE_APP_TITLE =
   "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";

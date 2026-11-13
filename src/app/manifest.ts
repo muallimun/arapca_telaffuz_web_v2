@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { CONTENT_INVENTORY } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 export default function manifest(): MetadataRoute.Manifest {
   const {

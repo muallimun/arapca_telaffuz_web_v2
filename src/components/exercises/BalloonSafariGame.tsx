@@ -29,7 +29,7 @@ import {
 } from "@/types/data";
 import { gorselKelimeler, sozluk, resolveImageUrl } from "@/lib/data";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
-import { stripHarakat } from "@/lib/arabicTextUtils";
+import { removeArabicHarakat as stripHarakat } from "@/lib/arabicTextUtils";
 import { shuffleArray } from "@/lib/quiz";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -43,6 +43,7 @@ import {
   sfx,
 } from "@/lib/sfxManager";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import { saveLastExerciseSummary } from "@/lib/learningAnalytics";
 
 export type SafariDifficulty = "easy" | "medium" | "hard";
 export type SafariGameMode = "normal" | "time";
@@ -328,8 +329,24 @@ export default function BalloonSafariGame({
   const [gameMode, setGameMode] = useState<SafariGameMode>("normal");
   const [isMuted, setIsMuted] = useState(false);
 
-  const [hsNormal, setHsNormal] = useState(0);
-  const [hsTime, setHsTime] = useState(0);
+  const [hsNormal, setHsNormal] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = Number(window.localStorage.getItem(HS_NORMAL_KEY) || "0");
+      return Number.isFinite(saved) && saved > 0 ? saved : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [hsTime, setHsTime] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = Number(window.localStorage.getItem(HS_TIME_KEY) || "0");
+      return Number.isFinite(saved) && saved > 0 ? saved : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [isNewHighScore, setIsNewHighScore] = useState(false);
 
   // Oyun içi HUD durumları
@@ -371,6 +388,8 @@ export default function BalloonSafariGame({
   const sessionStartRef = useRef<number>(0);
   const roundLockRef = useRef<boolean>(false);
   const scoreRef = useRef<number>(0);
+  const correctPopsRef = useRef<number>(0);
+  const wrongPopsRef = useRef<number>(0);
   const isMutedRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -381,18 +400,13 @@ export default function BalloonSafariGame({
     scoreRef.current = score;
   }, [score]);
 
-  // localStorage rekorlarını yükle
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const savedN = Number(window.localStorage.getItem(HS_NORMAL_KEY) || "0");
-      const savedT = Number(window.localStorage.getItem(HS_TIME_KEY) || "0");
-      if (Number.isFinite(savedN) && savedN > 0) setHsNormal(savedN);
-      if (Number.isFinite(savedT) && savedT > 0) setHsTime(savedT);
-    } catch {
-      // ignore storage restrictions
-    }
-  }, []);
+    correctPopsRef.current = correctPops;
+  }, [correctPops]);
+
+  useEffect(() => {
+    wrongPopsRef.current = wrongPops;
+  }, [wrongPops]);
 
   // Unmount temizliği
   useEffect(() => {
@@ -440,6 +454,16 @@ export default function BalloonSafariGame({
         Math.round((Date.now() - sessionStartRef.current) / 60000)
       );
       addStudyMinutes(elapsedMin);
+
+      const solvedTotal = correctPopsRef.current + wrongPopsRef.current;
+      if (solvedTotal > 0) {
+        saveLastExerciseSummary({
+          moduleName: "🎈 Balon Safari",
+          solved: solvedTotal,
+          correct: correctPopsRef.current,
+          wrong: wrongPopsRef.current,
+        });
+      }
 
       let beatRecord = false;
       try {

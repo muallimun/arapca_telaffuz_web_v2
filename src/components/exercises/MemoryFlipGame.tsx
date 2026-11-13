@@ -25,7 +25,7 @@ import {
 } from "@/types/data";
 import { gorselKelimeler, sozluk, resolveImageUrl } from "@/lib/data";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
-import { stripHarakat } from "@/lib/arabicTextUtils";
+import { removeArabicHarakat as stripHarakat } from "@/lib/arabicTextUtils";
 import { shuffleArray } from "@/lib/quiz";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -40,6 +40,7 @@ import {
   sfx,
 } from "@/lib/sfxManager";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import { saveLastExerciseSummary } from "@/lib/learningAnalytics";
 
 export type MemoryGridDifficulty = "easy" | "medium" | "hard";
 
@@ -317,14 +318,59 @@ export default function MemoryFlipGame({
     visualLookup,
   ]);
 
+  const initialBoard = useMemo(() => {
+    const cfg = GRID_CONFIG.medium;
+    const chosenPairs = allPairSources.slice(
+      0,
+      Math.min(cfg.pairs, allPairSources.length)
+    );
+    const rawCards: MemoryDeckCard[] = [];
+    for (const pair of chosenPairs) {
+      rawCards.push({
+        uid: `cardA_${pair.pairId}`,
+        pairId: pair.pairId,
+        side: "A",
+        source: pair,
+      });
+      rawCards.push({
+        uid: `cardB_${pair.pairId}`,
+        pairId: pair.pairId,
+        side: "B",
+        source: pair,
+      });
+    }
+    // Deterministik başlangıç karıştırması (render sırasında saf fonksiyon)
+    const permuted = [...rawCards];
+    for (let i = permuted.length - 1; i > 0; i--) {
+      const j = (i * 7 + 3) % (i + 1);
+      const tmp = permuted[i];
+      permuted[i] = permuted[j];
+      permuted[j] = tmp;
+    }
+    return { chosenPairs, deck: permuted, peeksAllowed: cfg.peeksAllowed };
+  }, [allPairSources]);
+
   const [difficulty, setDifficulty] = useState<MemoryGridDifficulty>("medium");
-  const [deck, setDeck] = useState<MemoryDeckCard[]>([]);
-  const [activePairs, setActivePairs] = useState<MemoryPairSource[]>([]);
+  const [customDeckState, setCustomDeckState] = useState<{
+    poolRef: MemoryPairSource[];
+    activePairs: MemoryPairSource[];
+    deck: MemoryDeckCard[];
+  } | null>(null);
+
+  const activePairs =
+    customDeckState && customDeckState.poolRef === allPairSources
+      ? customDeckState.activePairs
+      : initialBoard.chosenPairs;
+  const deck =
+    customDeckState && customDeckState.poolRef === allPairSources
+      ? customDeckState.deck
+      : initialBoard.deck;
+
   const [flippedUids, setFlippedUids] = useState<string[]>([]);
   const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
   const [mismatchedUids, setMismatchedUids] = useState<string[]>([]);
   const [isPeeking, setIsPeeking] = useState(false);
-  const [peeksLeft, setPeeksLeft] = useState(2);
+  const [peeksLeft, setPeeksLeft] = useState(initialBoard.peeksAllowed);
 
   const [moves, setMoves] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -342,7 +388,7 @@ export default function MemoryFlipGame({
   const boardLockRef = useRef(false);
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const evalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sessionStartRef = useRef<number>(Date.now());
+  const sessionStartRef = useRef<number>(0);
   const isMutedRef = useRef(false);
 
   useEffect(() => {
@@ -415,8 +461,11 @@ export default function MemoryFlipGame({
         });
       }
 
-      setActivePairs(chosenPairs);
-      setDeck(shuffleArray(cards));
+      setCustomDeckState({
+        poolRef: allPairSources,
+        activePairs: chosenPairs,
+        deck: shuffleArray(cards),
+      });
       setFlippedUids([]);
       setMatchedPairIds([]);
       setMismatchedUids([]);
@@ -435,16 +484,16 @@ export default function MemoryFlipGame({
     [allPairSources]
   );
 
-  // İlk yüklemede tahtayı hazırla
+  // Oturum başlangıç zamanı ve unmount temizliği
   useEffect(() => {
-    buildBoard(difficulty, null);
+    sessionStartRef.current = Date.now();
     return () => {
       if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
       if (evalTimerRef.current) clearTimeout(evalTimerRef.current);
       stopAllAudio();
       sfx.stopAllSfx();
     };
-  }, [difficulty, buildBoard]);
+  }, []);
 
   // Süre sayacı (ve opsiyonel üst bar timeLimit geri sayımı)
   useEffect(() => {
@@ -553,6 +602,12 @@ export default function MemoryFlipGame({
             Math.round((Date.now() - sessionStartRef.current) / 60000)
           );
           addStudyMinutes(studyMin);
+          saveLastExerciseSummary({
+            moduleName: "3D Hafıza Kartları",
+            solved: Math.max(updatedMatched.length, nextMoves),
+            correct: updatedMatched.length,
+            wrong: Math.max(0, nextMoves - updatedMatched.length),
+          });
           setTimeout(() => {
             setIsFinished(true);
             if (!isMutedRef.current) {
@@ -673,6 +728,7 @@ export default function MemoryFlipGame({
                   onClick={() => {
                     playClick();
                     setDifficulty(d);
+                    buildBoard(d, null);
                   }}
                   className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                     active
@@ -1021,7 +1077,6 @@ export default function MemoryFlipGame({
                     ) : hasImage ? (
                       <div className="flex-1 flex flex-col items-center justify-center w-full gap-1 min-h-0">
                         <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={card.source.imageUrl}
                             alt={card.source.cardBTr}

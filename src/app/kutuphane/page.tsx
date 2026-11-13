@@ -121,6 +121,10 @@ const ShareContentCardModal = dynamic(
   () => import("@/components/ui/ShareContentCardModal"),
   { ssr: false }
 );
+const StatsAndBadgesModal = dynamic(
+  () => import("@/components/ui/StatsAndBadgesModal"),
+  { ssr: false }
+);
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
 import {
   formatArabicByHarekeMode,
@@ -243,6 +247,7 @@ export default function LibraryPage() {
     useState<boolean>(false);
   const [hwInspectedIds, setHwInspectedIds] = useState<string[]>([]);
   const [homeworkLinkCopied, setHomeworkLinkCopied] = useState<boolean>(false);
+  const [isStatsBadgesOpen, setIsStatsBadgesOpen] = useState<boolean>(false);
   const [libraryPdfConfig, setLibraryPdfConfig] = useState<{
     dialogue: Dialogue;
     vocabEntries: DialogueVocabularyEntry[];
@@ -1896,6 +1901,13 @@ export default function LibraryPage() {
           quizCompleted={true}
           dialogueId={`kutuphane_${activeSection}`}
           homeworkUrl={buildHomeworkShareUrl()}
+        />
+      )}
+
+      {isStatsBadgesOpen && (
+        <StatsAndBadgesModal
+          isOpen={isStatsBadgesOpen}
+          onClose={() => setIsStatsBadgesOpen(false)}
         />
       )}
 
@@ -6079,6 +6091,16 @@ export default function LibraryPage() {
                 >
                   <span>📖 Sözlüğe Git</span>
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsStatsBadgesOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold border-b-4 border-amber-800 cursor-pointer"
+                >
+                  <span>🏆 İstatistikler, Rozetler &amp; Öğretmen Raporu</span>
+                </button>
               </div>
             </div>
           ) : (
@@ -6105,6 +6127,17 @@ export default function LibraryPage() {
                       <Gamepad2 size={14} />
                       <span>Defterimdekilerle Alıştırma Yap</span>
                     </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsStatsBadgesOpen(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs border-b-3 border-amber-800 flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span>🏆 İstatistikler &amp; Rozetler</span>
+                    </button>
 
                     <button
                       type="button"

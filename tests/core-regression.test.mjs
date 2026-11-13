@@ -5176,7 +5176,7 @@ test("44. A4 Yazılı Sınav, Ders Notu (Okuma Metni) & Quiz Üretici Stüdyosu 
       packId: packs[0].id,
     });
     assert.ok(
-      bundle.dialogue.diyalog.length > 0 && bundle.vocabPool.length > 0,
+      bundle.dialogue.satirlar.length > 0 && bundle.vocabCandidates.length > 0,
       `${srcId} demeti hem satır hem kelime havuzu üretmelidir`
     );
   }
@@ -5190,29 +5190,28 @@ test("44. A4 Yazılı Sınav, Ders Notu (Okuma Metni) & Quiz Üretici Stüdyosu 
   const examData = buildSixSectionExamData({
     bundle: sampleBundle,
     counts: {
-      mcCount: 4,
-      matchingCount: 5,
-      fillBlankCount: 0, // 0 seçilen bölüm gizlenmeli!
-      tfCount: 3,
-      translateCount: 2,
-      unscrambleCount: 2,
+      sec1ArToTr: 4,
+      sec2TrToAr: 4,
+      sec3FillBlank: 0, // 0 seçilen bölüm gizlenmeli!
+      sec4MultipleChoice: 4,
+      sec5Matching: 5,
+      sec6Morphology: 3,
     },
-    bookletCode: "A",
-    seedSuffix: "studio_test_seed",
+    bookletGroup: "A",
   });
 
   assert.equal(
-    examData.fillBlankItems.length,
+    examData.sec3FillBlank.length,
     0,
     "Sayısı 0 yapılan bölüm (Boşluk Doldurma) üretilmemeli / gizlenmelidir"
   );
-  assert.equal(examData.mcQuestions.length, 4);
-  assert.equal(examData.matchingPairs.length, 5);
-  assert.equal(examData.tfItems.length, 3);
-  assert.equal(examData.translateItems.length, 2);
-  assert.equal(examData.unscrambleItems.length, 2);
+  assert.equal(examData.sec1ArToTr.length, 4);
+  assert.equal(examData.sec2TrToAr.length, 4);
+  assert.equal(examData.sec4MultipleChoice.length, 4);
+  assert.equal(examData.sec5Matching.length, 5);
+  assert.equal(examData.sec6Morphology.length, 3);
   assert.equal(
-    examData.points.grandTotal,
+    examData.pointsAllocation.grandTotal,
     100,
     "Aktif bölümlerin toplam sınav puanı tam 100 olmalıdır"
   );
@@ -5233,9 +5232,10 @@ test("44. A4 Yazılı Sınav, Ders Notu (Okuma Metni) & Quiz Üretici Stüdyosu 
   );
   assert.equal(
     pdfModalCode.includes("STUDIO_MATERIAL_SOURCES") &&
-      pdfModalCode.includes("showTopicSummaryBox") &&
-      pdfModalCode.includes("Yan Yana (Arapça | Türkçe)") &&
-      pdfModalCode.includes("Sadece Arapça (Okuma Kağıdı)") &&
+      pdfModalCode.includes("includeTopicSummary") &&
+      pdfModalCode.includes("Konu Özeti Kutusu") &&
+      pdfModalCode.includes("Yan Yana") &&
+      pdfModalCode.includes("Sadece Arapça") &&
       pdfModalCode.includes("Alt Alta Satır"),
     true,
     "DialoguePdfModal 6 kaynak seçici, Konu Özeti kutusu ve 3 Ders Notu mizanpajını içermelidir"
@@ -5298,9 +5298,9 @@ test("45. 2 Yeni İnteraktif Oyun Modülü — Balon Safari (BalloonSafariGame) 
       memoryCode.includes("[transform-style:preserve-3d]") &&
       memoryCode.includes("[backface-visibility:hidden]") &&
       memoryCode.includes("[transform:rotateY(180deg)]") &&
-      memoryCode.includes("3×4 (12 Kart)") &&
-      memoryCode.includes("4×4 (16 Kart)") &&
-      memoryCode.includes("4×5 (20 Kart)") &&
+      memoryCode.includes("3×4 (12 Kart • 6 Çift)") &&
+      memoryCode.includes("4×4 (16 Kart • 8 Çift)") &&
+      memoryCode.includes("4×5 (20 Kart • 10 Çift)") &&
       memoryCode.includes("Kartları 1.5 Saniye Göster") &&
       memoryCode.includes("recordItemAttempt") &&
       memoryCode.includes("addMistake"),
@@ -5315,3 +5315,183 @@ test("45. 2 Yeni İnteraktif Oyun Modülü — Balon Safari (BalloonSafariGame) 
     "MemoryFlipGame içinde window.open, window.alert veya satır içi style={{ bulunmamalıdır"
   );
 });
+
+test("46. Öğrenme İstatistikleri, Başarı Rozetleri ve A4 Öğretmen Raporu (StatsAndBadgesModal & learningAnalytics) — 4 Rütbe, 8 Rozet, CEFR/Modül Grafikleri ve 3 Tek Tıkla Erişim Noktası", async () => {
+  const {
+    computeLearnerRank,
+    computeLearningAnalyticsSnapshot,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "learningAnalytics.ts")).href
+  );
+  const { sozluk } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
+  );
+
+  // 1. 4 kademeli rütbe hesaplama motoru doğrulaması
+  assert.equal(computeLearnerRank(0).title, "Bronz Talebe (Seviye 1)");
+  assert.equal(computeLearnerRank(450).title, "Gümüş Hatip (Seviye 2)");
+  assert.equal(computeLearnerRank(1100).title, "Altın Edip (Seviye 3)");
+  assert.equal(computeLearnerRank(2200).title, "Fasih Üstad (Seviye 4)");
+
+  const realWordId = sozluk[0].id;
+  const realSentenceId = "sent_dlg_001_1";
+
+  // 2. Gerçek userStore verisiyle anlık analiz kesiti (8 rozet, 4 CEFR seviyesi, 6 ana modül, hata sıralaması)
+  const snapshot = computeLearningAnalyticsSnapshot({
+    completedDialogues: ["dlg_001", "dlg_002", "txt_001"],
+    learnedWords: sozluk.slice(0, 30).map((w) => w.id),
+    favoriteWords: [],
+    weakWords: [],
+    mistakeIds: [realWordId, realSentenceId],
+    srsRecords: {
+      [realWordId]: {
+        id: realWordId,
+        box: 1,
+        nextReviewAt: 0,
+        lastReviewedAt: 1000,
+        correctCount: 1,
+        wrongCount: 5,
+      },
+      [realSentenceId]: {
+        id: realSentenceId,
+        box: 1,
+        nextReviewAt: 0,
+        lastReviewedAt: 1000,
+        correctCount: 1,
+        wrongCount: 2,
+      },
+    },
+    pronunciationScores: [92, 85],
+    pronunciationHistory: [
+      { id: "p1", textAr: "مَرْحَبًا", score: 92, date: "2026-11-13" },
+    ],
+    totalPronunciationAttempts: 2,
+    studyMinutes: 20,
+    activityXp: 1100,
+    streakDays: 4,
+    lastStudyDate: "2026-11-13",
+    todayStr: "2026-11-13",
+    yesterdayStr: "2026-11-12",
+    dailyGoalMinutes: 15,
+    topicMastery: {},
+    skillStats: {
+      okuma: { correct: 10, total: 12 },
+      dinleme: { correct: 8, total: 10 },
+      konusma: { correct: 5, total: 6 },
+      kelime: { correct: 25, total: 30 },
+      gramer: { correct: 6, total: 8 },
+    },
+    completedLevelExams: ["A1"],
+    phonemeStats: {
+      ع: { attempts: 6, cleanHits: 2, confusions: 4, lastConfusedWith: "أ" },
+    },
+    watchedVideos: ["vid_1", "vid_2", "vid_3", "vid_4", "vid_5"],
+    storedLastExercise: {
+      hasData: true,
+      moduleName: "3D Hafıza Kartları",
+      solved: 16,
+      correct: 14,
+      wrong: 2,
+      accuracyPercent: 88,
+    },
+  });
+
+  assert.equal(snapshot.badges.length, 8, "Tam 8 adet rozet tanımlı olmalıdır");
+  const expectedBadgeTitles = [
+    "İlk Kıvılcım",
+    "Kelime Avcısı",
+    "Muhâdese Yıldızı",
+    "Cümle Üstadı",
+    "İstikrar Abidesi",
+    "Arapça Hatibi",
+    "Gramer Kaşifi",
+    "Dinleme Seyyahı",
+  ];
+  assert.deepEqual(
+    snapshot.badges.map((b) => b.title),
+    expectedBadgeTitles,
+    "8 rozet başlığı eksiksiz eşleşmelidir"
+  );
+  assert.equal(
+    snapshot.badges.find((b) => b.title === "İlk Kıvılcım")?.statusTag,
+    "[☑️ KAZANILDI]"
+  );
+  assert.equal(
+    snapshot.badges.find((b) => b.title === "Kelime Avcısı")?.statusTag,
+    "[☑️ KAZANILDI]"
+  );
+  assert.equal(
+    snapshot.badges.find((b) => b.title === "İstikrar Abidesi")?.statusTag,
+    "[☑️ KAZANILDI]"
+  );
+  assert.equal(
+    snapshot.badges.find((b) => b.title === "Dinleme Seyyahı")?.statusTag,
+    "[☑️ KAZANILDI]"
+  );
+  assert.equal(
+    snapshot.badges.find((b) => b.title === "Gramer Kaşifi")?.statusTag,
+    "[🔒 KİLİTLİ]"
+  );
+
+  assert.deepEqual(
+    snapshot.cefrProgress.map((c) => c.level),
+    ["A1", "A2", "B1", "B2"],
+    "CEFR başarı grafiği A1, A2, B1, B2 seviyelerini içermelidir"
+  );
+  assert.equal(
+    snapshot.moduleProgress.length,
+    6,
+    "6 temel modül (120 Diyalog, 60 Okuma Metni, 998 Görsel Kelime, 1111 Cümle, 508 Atasözü, 400 Eş-Zıt Anlamlı) yer almalıdır"
+  );
+  assert.ok(
+    snapshot.frequentMistakes.length >= 3 &&
+      snapshot.frequentMistakes[0].wrongCount >= snapshot.frequentMistakes[1].wrongCount,
+    "En çok hata yapılanlar listesi hata sıklığına göre azalan sırada dizilmeli ve 28 Harf Mahreç zayıflıklarını da içermelidir"
+  );
+
+  // 3. StatsAndBadgesModal.tsx yapısı ve 3 tek-tık giriş noktası (page.tsx, kutuphane/page.tsx, ayarlar/page.tsx)
+  const modalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "StatsAndBadgesModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    modalCode.includes("Öğrenme İstatistikleri, Başarı Rozetleri ve Öğretmen Raporu") &&
+      modalCode.includes("Rozetler & Kilometre Taşları") &&
+      modalCode.includes("Paket & Diyalog Başarı Grafikleri") &&
+      modalCode.includes("En Çok Hata Yapılanlar & Ses Dinleme") &&
+      modalCode.includes("Sesi Dinle") &&
+      modalCode.includes("Hemen Tekrar Et") &&
+      modalCode.includes("Öğretmen / Öğrenci Gelişim Raporunu Yazdır (A4)"),
+    true,
+    "StatsAndBadgesModal 3 sekmeyi, Sesi Dinle, Hemen Tekrar Et ve A4 Öğretmen Raporu butonlarını içermelidir"
+  );
+  assert.equal(
+    modalCode.includes("window.open") ||
+      modalCode.includes("window.alert") ||
+      modalCode.includes("style={{"),
+    false,
+    "StatsAndBadgesModal içinde window.open, window.alert veya satır içi style={{ kullanılmamalıdır"
+  );
+
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const ayarlarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    homeCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
+      kutuphaneCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
+      ayarlarCode.includes('import("@/components/ui/StatsAndBadgesModal")'),
+    true,
+    "StatsAndBadgesModal hem Ana Sayfa'dan hem Kütüphane (Defterim) hem de Ayarlar sayfasından tek tıkla açılabilmelidir"
+  );
+});
+

@@ -71,6 +71,10 @@ const PhonemeHeatmapModal = dynamic(
   () => import("@/components/ui/PhonemeHeatmapModal"),
   { ssr: false }
 );
+const StatsAndBadgesModal = dynamic(
+  () => import("@/components/ui/StatsAndBadgesModal"),
+  { ssr: false }
+);
 
 type SettingsCategory = "all" | "appearance" | "audio" | "data";
 
@@ -148,6 +152,7 @@ export default function SettingsPage() {
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [previewRevealed, setPreviewRevealed] = useState(false);
   const [phonemeHeatmapOpen, setPhonemeHeatmapOpen] = useState(false);
+  const [statsBadgesOpen, setStatsBadgesOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const totalOfflineLessons = diyaloglar.length + metinler.length;
@@ -413,6 +418,17 @@ export default function SettingsPage() {
           >
             <BookOpen size={14} />
             <span>Kılavuzu Aç</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStatsBadgesOpen(true);
+            }}
+            className="h-9 px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>🏆 İstatistikler &amp; Rozetler</span>
           </button>
 
           <button
@@ -1678,6 +1694,17 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStatsBadgesOpen(true);
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>🏆 Öğrenme İstatistikleri, Rozetler &amp; Öğretmen Raporunu Aç</span>
+              </button>
             </div>
 
             {/* 2. Cihaza Uygulama Olarak Kur (PWA) */}
@@ -2045,6 +2072,13 @@ export default function SettingsPage() {
         isOpen={phonemeHeatmapOpen}
         onClose={() => setPhonemeHeatmapOpen(false)}
       />
+
+      {statsBadgesOpen && (
+        <StatsAndBadgesModal
+          isOpen={statsBadgesOpen}
+          onClose={() => setStatsBadgesOpen(false)}
+        />
+      )}
     </div>
   );
 }

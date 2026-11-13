@@ -71,6 +71,11 @@ const PhonemeHeatmapModal = dynamic(
   () => import("@/components/ui/PhonemeHeatmapModal"),
   { ssr: false }
 );
+const StatsAndBadgesModal = dynamic(
+  () => import("@/components/ui/StatsAndBadgesModal"),
+  { ssr: false }
+);
+import type { StatsModalTab } from "@/components/ui/StatsAndBadgesModal";
 import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage, getLeechSrsItems } from "@/lib/mistakeUtils";
 import {
@@ -213,6 +218,9 @@ export default function HomePage() {
   const [shareCardTarget, setShareCardTarget] =
     useState<ShareCardPayload | null>(null);
   const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
+  const [statsModalTab, setStatsModalTab] = useState<StatsModalTab | null>(
+    null
+  );
   const [activeYoutubeModalItems, setActiveYoutubeModalItems] = useState<
     YoutubeRecommendationItem[] | null
   >(null);
@@ -1378,15 +1386,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BÖLÜM 3: 4 SÜTUNLU ÖĞRENCİ İLERLEME ÖZETİ (KOMPAKT) */}
-      <section aria-label="Öğrenci İlerleme Özeti">
+      {/* BÖLÜM 3: 4 SÜTUNLU ÖĞRENCİ İLERLEME ÖZETİ (TEK TIKLA İSTATİSTİK & ROZETLER MODALI) */}
+      <section aria-label="Öğrenci İlerleme Özeti" className="space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+            🏆 Öğrenme İstatistikleri, Rozetler &amp; Gelişim Özeti
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStatsModalTab("badges");
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer"
+          >
+            <Award size={14} />
+            <span>🏆 Rozetler &amp; Öğretmen Raporunu Aç</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* 1. Tamamlanan Diyalog & Okuma Metni */}
-          <Link
-            href="/kutuphane?durum=completed"
-            onClick={() => playClick()}
-            data-tooltip={`Tamamladığınız diyalogların (${contentStats.dialogueCount}) ve okuma metinlerinin (${contentStats.readingCount}) toplam ilerleme durumu`}
-            className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStatsModalTab("charts");
+            }}
+            data-tooltip={`Tamamladığınız diyalogların (${contentStats.dialogueCount}) ve okuma metinlerinin (${contentStats.readingCount}) detaylı grafiklerini açmak için tıklayın`}
+            className="text-left bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[#065F46] dark:text-emerald-400 shrink-0">
               <CheckCircle2 size={20} strokeWidth={2.4} />
@@ -1407,17 +1435,20 @@ export default function HomePage() {
                 </span>
               </div>
               <span className="block text-xs font-bold text-[var(--muted)] mt-0.5 line-clamp-2 leading-tight">
-                Tamamlanan Diyalog & Metin
+                Tamamlanan Diyalog &amp; Metin
               </span>
             </div>
-          </Link>
+          </button>
 
           {/* 2. Öğrenilen Kelime */}
-          <Link
-            href="/sozluk?durum=learned"
-            onClick={() => playClick()}
-            data-tooltip="Sözlükte 'Öğrendim' olarak işaretlediğiniz kelime sayısı"
-            className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStatsModalTab("badges");
+            }}
+            data-tooltip="Öğrendiğiniz kelimeleri ve başarı rozetlerinizi görüntülemek için tıklayın"
+            className="text-left bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 hover:border-[#087F5B] transition-colors cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[#6741D9] shrink-0">
               <Brain size={20} strokeWidth={2.4} />
@@ -1444,13 +1475,16 @@ export default function HomePage() {
                 Öğrenilen Kelime
               </span>
             </div>
-          </Link>
+          </button>
 
           {/* 3. Telaffuz Başarısı */}
           <button
             type="button"
-            onClick={handlePracticeFeatured}
-            data-tooltip="Gölgeleme ve Mahreç Koçu denemelerinizin ortalama başarı skoru"
+            onClick={() => {
+              playClick();
+              setStatsModalTab("mistakes");
+            }}
+            data-tooltip="Telaffuz skorlarınızı, zorlanılan harfleri ve hata analizini açmak için tıklayın"
             className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex items-center gap-3 text-left hover:border-[#087F5B] transition-colors cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-amber-600 shrink-0">
@@ -1478,12 +1512,15 @@ export default function HomePage() {
           </button>
 
           {/* 4. Günlük Hedef & Seri */}
-          <Link
-            href="/alistirmalar"
-            onClick={() => playClick()}
-            data-tooltip="Kesintisiz çalışma seriniz (Streak) ve bugünkü çalışma süreniz"
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStatsModalTab("badges");
+            }}
+            data-tooltip="Kesintisiz çalışma seriniz (Streak), rütbeniz ve kilometre taşlarınızı açmak için tıklayın"
             data-tooltip-align="right"
-            className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex flex-col justify-between gap-2 hover:border-[#087F5B] transition-colors"
+            className="text-left bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3.5 pb-3.5 pt-3.5 sm:pt-4 flex flex-col justify-between gap-2 hover:border-[#087F5B] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-orange-500 shrink-0">
@@ -1503,7 +1540,7 @@ export default function HomePage() {
                   </span>
                 </div>
                 <span className="block text-xs font-bold text-[var(--muted)] mt-0.5 line-clamp-2 leading-tight">
-                  Günlük Hedef
+                  Günlük Hedef &amp; Rütbe
                 </span>
               </div>
             </div>
@@ -1522,7 +1559,7 @@ export default function HomePage() {
                 }}
               />
             </div>
-          </Link>
+          </button>
         </div>
       </section>
 
@@ -1692,6 +1729,14 @@ export default function HomePage() {
         <PhonemeHeatmapModal
           isOpen={showPhonemeHeatmap}
           onClose={() => setShowPhonemeHeatmap(false)}
+        />
+      )}
+
+      {statsModalTab !== null && (
+        <StatsAndBadgesModal
+          isOpen={statsModalTab !== null}
+          initialTab={statsModalTab}
+          onClose={() => setStatsModalTab(null)}
         />
       )}
     </div>

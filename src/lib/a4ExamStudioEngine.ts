@@ -802,7 +802,7 @@ export function resolveStudioMaterialBundle(params: {
   sourceId: StudioSourceId;
   levelFilter: StudioLevelFilter;
   packId: string;
-  initialProps: {
+  initialProps?: {
     dialogue: Dialogue;
     vocabEntries: DialogueVocabularyEntry[];
     imagePath: string;
@@ -811,14 +811,15 @@ export function resolveStudioMaterialBundle(params: {
   };
 }): StudioMaterialBundle {
   const { sourceId, levelFilter, packId, initialProps } = params;
+  const fallbackDlg = diyaloglar[0];
   const targetLvl: Level = levelFilter === "all" ? "A1" : levelFilter;
   const lvlText =
     levelFilter === "all" ? "Tüm Kurlar (A1–B2)" : `Seviye ${levelFilter}`;
 
   // 0. Özel Defterim Modu
   if (sourceId === "defterim_custom") {
-    const dlg = initialProps.dialogue;
-    const vEntries = initialProps.vocabEntries;
+    const dlg = initialProps?.dialogue || fallbackDlg;
+    const vEntries = initialProps?.vocabEntries || [];
     const vCands: VocabPairCandidate[] = vEntries
       .map((v, i) => ({
         id: `def_v_${i}`,
@@ -848,8 +849,8 @@ export function resolveStudioMaterialBundle(params: {
       packId: "kutuphane_defterim",
       dialogue: dlg,
       vocabEntries: vEntries,
-      imagePath: initialProps.imagePath,
-      rawNum: initialProps.rawNum,
+      imagePath: initialProps?.imagePath || "",
+      rawNum: initialProps?.rawNum || 1,
       readingQuestions: [],
       sourceCodeBracket: "[defterim]",
       sourceTitleTr: dlg.baslik_tr,
@@ -880,9 +881,10 @@ export function resolveStudioMaterialBundle(params: {
         getDialogueById(packId) ||
         safePool[0];
       const useInitialVocab =
-        selectedDlg.id === initialProps.dialogue.id &&
-        initialProps.vocabEntries.length > 0;
-      const vEntries = useInitialVocab
+        Boolean(initialProps) &&
+        selectedDlg.id === initialProps?.dialogue.id &&
+        (initialProps?.vocabEntries.length || 0) > 0;
+      const vEntries = useInitialVocab && initialProps
         ? initialProps.vocabEntries
         : getDialogueVocabulary(selectedDlg.id);
       const rawNum =
@@ -890,7 +892,9 @@ export function resolveStudioMaterialBundle(params: {
         selectedDlg.sira ||
         1;
       const imgPath =
-        selectedDlg.id === initialProps.dialogue.id && initialProps.imagePath
+        initialProps &&
+        selectedDlg.id === initialProps.dialogue.id &&
+        initialProps.imagePath
           ? initialProps.imagePath
           : selectedDlg.gorsel || getDialogueCoverUrl(selectedDlg.id);
       const grammarNote = getDialogueGrammarNote(selectedDlg.id);
@@ -1049,14 +1053,17 @@ export function resolveStudioMaterialBundle(params: {
         selectedTxt.sira ||
         1;
       const useInitialVocab =
-        selectedTxt.id === initialProps.dialogue.id &&
-        initialProps.vocabEntries.length > 0;
-      const vEntries = useInitialVocab
+        Boolean(initialProps) &&
+        selectedTxt.id === initialProps?.dialogue.id &&
+        (initialProps?.vocabEntries.length || 0) > 0;
+      const vEntries = useInitialVocab && initialProps
         ? initialProps.vocabEntries
         : getReadingTextVocabulary(selectedTxt.id);
       const grammarNote = getReadingTextGrammarNote(selectedTxt.id);
       const imgPath =
-        selectedTxt.id === initialProps.dialogue.id && initialProps.imagePath
+        initialProps &&
+        selectedTxt.id === initialProps.dialogue.id &&
+        initialProps.imagePath
           ? initialProps.imagePath
           : selectedTxt.gorsel || getReadingTextCoverUrl(selectedTxt.id);
 

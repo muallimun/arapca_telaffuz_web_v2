@@ -122,7 +122,10 @@ const ShareContentCardModal = dynamic(
   { ssr: false }
 );
 import { GrammarQuickModal } from "@/components/ui/GrammarHapBilgiPanel";
-import { formatArabicText, getArabicFontConfig } from "@/lib/arabicTextUtils";
+import {
+  formatArabicByHarekeMode,
+  getArabicFontConfig,
+} from "@/lib/arabicTextUtils";
 import {
   DEFAULT_GRAMMAR_ORIGIN,
   GRAMMAR_DOMAINS,
@@ -177,7 +180,8 @@ export default function LibraryPage() {
 
   const {
     showHareke,
-    toggleHareke,
+    harekeMode,
+    cycleHarekeMode,
     speechRate,
     preferredVoiceGender,
     setPreferredVoiceGender,
@@ -534,10 +538,16 @@ export default function LibraryPage() {
     (mounted ? arabicFontSize : 34) * 0.78 * activeFontCfg.scale
   );
 
+  const activeHarekeMode = !mounted
+    ? "full"
+    : !showHareke
+      ? "none"
+      : harekeMode || "full";
+
   const getDisplayArabic = (text: string) =>
-    formatArabicText(
+    formatArabicByHarekeMode(
       text,
-      !mounted || showHareke,
+      activeHarekeMode,
       mounted ? arabicFont : "arakom"
     );
 
@@ -2101,18 +2111,31 @@ export default function LibraryPage() {
                           type="button"
                           onClick={() => {
                             playClick();
-                            toggleHareke();
+                            cycleHarekeMode();
                           }}
                           title={
-                            !mounted || showHareke ? "Hareke Açık" : "Hareke Kapalı"
+                            activeHarekeMode === "full"
+                              ? "Tam Harekeli"
+                              : activeHarekeMode === "irab-only"
+                                ? "Hareke Solması (Sadece İ'rab)"
+                                : "Harekesiz (İleri Okuma)"
                           }
                           className={`h-9 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                            !mounted || showHareke
+                            activeHarekeMode === "full"
                               ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
-                              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                              : activeHarekeMode === "irab-only"
+                                ? "bg-emerald-100 dark:bg-emerald-950/70 border-emerald-400 text-emerald-900 dark:text-emerald-200"
+                                : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                           }`}
                         >
-                          <span>✨ Hareke</span>
+                          <span>
+                            ✨{" "}
+                            {activeHarekeMode === "full"
+                              ? "Tam"
+                              : activeHarekeMode === "irab-only"
+                                ? "İ'rab"
+                                : "Yalın"}
+                          </span>
                         </button>
                       </div>
 
@@ -2204,15 +2227,24 @@ export default function LibraryPage() {
                       type="button"
                       onClick={() => {
                         playClick();
-                        toggleHareke();
+                        cycleHarekeMode();
                       }}
                       className={`flex-1 h-8 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap min-w-0 ${
-                        !mounted || showHareke
+                        activeHarekeMode === "full"
                           ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
-                          : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
+                          : activeHarekeMode === "irab-only"
+                            ? "bg-emerald-100 dark:bg-emerald-950/70 border-emerald-400 text-emerald-900 dark:text-emerald-200"
+                            : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)]"
                       }`}
                     >
-                      <span>✨ Hareke</span>
+                      <span>
+                        ✨{" "}
+                        {activeHarekeMode === "full"
+                          ? "Tam"
+                          : activeHarekeMode === "irab-only"
+                            ? "İ'rab"
+                            : "Yalın"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -4311,17 +4343,24 @@ export default function LibraryPage() {
                         type="button"
                         onClick={() => {
                           playClick();
-                          toggleHareke();
+                          cycleHarekeMode();
                         }}
                         className={`min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          !mounted || showHareke
+                          activeHarekeMode === "full"
                             ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 text-amber-900 dark:text-amber-200"
-                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                            : activeHarekeMode === "irab-only"
+                              ? "bg-emerald-100 dark:bg-emerald-950/70 border-emerald-400 text-emerald-900 dark:text-emerald-200"
+                              : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
                         }`}
                       >
                         <Sparkles size={13} />
                         <span>
-                          Hareke: {!mounted || showHareke ? "Açık" : "Kapalı"}
+                          Hareke:{" "}
+                          {activeHarekeMode === "full"
+                            ? "Tam"
+                            : activeHarekeMode === "irab-only"
+                              ? "İ'rab"
+                              : "Kapalı"}
                         </span>
                       </button>
                     </div>

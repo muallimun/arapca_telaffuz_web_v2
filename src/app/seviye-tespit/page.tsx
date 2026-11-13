@@ -111,8 +111,18 @@ const DIFFICULTY_LADDER: Array<{ seviye: Level; zorluk: 1 | 2 | 3 }> = [
   { seviye: "B2", zorluk: 3 }, // 11
 ];
 
-const CAT_TOTAL_QUESTIONS = 18; // 16 adaptif okuma/gramer/bağlam + 2 isteğe bağlı sesli dinleme
-const CAT_LISTENING_SLOTS = new Set<number>([4, 11]); // 5. ve 12. sorular
+const DEFAULT_CAT_TOTAL_QUESTIONS = 18; // Varsayılan: 16 adaptif okuma/gramer/bağlam + 2 isteğe bağlı sesli dinleme
+type CatQuestionCountOption = 10 | 15 | 18;
+
+function getCatListeningSlots(totalCatQuestions: number): Set<number> {
+  const safeTotal = Math.max(4, totalCatQuestions);
+  const firstSlot = Math.max(
+    1,
+    Math.min(safeTotal - 2, Math.floor(safeTotal * 0.4))
+  );
+  const secondSlot = Math.max(firstSlot + 1, safeTotal - 1);
+  return new Set<number>([firstSlot, secondSlot]);
+}
 
 function mapQuestionToSkillKey(q: RuntimeAssessmentQuestion): SkillKey {
   if (q.isListeningAudioItem) return "dinleme";
@@ -1760,6 +1770,8 @@ function SeviyeTespitContent() {
     const m = searchParams.get("mode");
     return m === "topic" || m === "exam" || m === "cat" ? m : "cat";
   });
+  const [catQuestionCount, setCatQuestionCount] =
+    useState<CatQuestionCountOption>(DEFAULT_CAT_TOTAL_QUESTIONS);
   const [topicQuizLength, setTopicQuizLength] = useState<"10" | "all">("10");
   const [topicLevelFilter, setTopicLevelFilter] = useState<"ALL" | Level>("ALL");
   const [topicSearchQuery, setTopicSearchQuery] = useState<string>("");
@@ -1780,6 +1792,23 @@ function SeviyeTespitContent() {
 
   // Soru Navigatörü yatay kaydırma referansları
   const navButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // 180ms otomatik ilerleme yarış durumu (double-advance race condition) kilidi ve zamanlayıcı referansı
+  const advanceLockRef = useRef<boolean>(false);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingAdvance = useCallback(() => {
+    if (advanceTimerRef.current !== null) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+    advanceLockRef.current = false;
+  }, []);
+
+  const catListeningSlots = useMemo(
+    () => getCatListeningSlots(catQuestionCount),
+    [catQuestionCount]
+  );
 
   // CAT Adaptif takip referansları
   const catStepRef = useRef<number>(3);
@@ -1829,9 +1858,10 @@ function SeviyeTespitContent() {
 
     return () => {
       cancelled = true;
+      clearPendingAdvance();
       stopAllAudio();
     };
-  }, []);
+  }, [clearPendingAdvance]);
 
   const pedagogicalDialogues = useMemo(
     () => getDialoguesSortedPedagogically(),
@@ -1908,6 +1938,7 @@ function SeviyeTespitContent() {
   const startCatSession = useCallback(
     (sourceBank: AssessmentQuestion[] = bank) => {
       if (sourceBank.length === 0) return;
+      clearPendingAdvance();
       stopAllAudio();
       playStart();
 
@@ -1941,7 +1972,7 @@ function SeviyeTespitContent() {
       setAppliedPlanFeedback(false);
       setSessionActive(true);
     },
-    [bank, makeSessionRecord]
+    [bank, clearPendingAdvance, makeSessionRecord]
   );
 
   // 2. MOD 2: Konu Tarama Testi (KTT) Başlat — ilgili üst konuya ait tüm sorular bölünmeden havuza dahil edilir
@@ -1953,6 +1984,7 @@ function SeviyeTespitContent() {
     ) => {
       const topicPool = sourceBank.filter((q) => q.ust_konu === topicName);
       if (topicPool.length === 0) return;
+      clearPendingAdvance();
       stopAllAudio();
       playStart();
       navButtonRefs.current = [];
@@ -1988,7 +2020,7 @@ function SeviyeTespitContent() {
       setAppliedPlanFeedback(false);
       setSessionActive(true);
     },
-    [bank, makeSessionRecord, topicQuizLength]
+    [bank, clearPendingAdvance, makeSessionRecord, topicQuizLength]
   );
 
   // 3. MOD 3: Kur Bitirme / Seviye Atlama Sınavı Başlat (20 Soru)
@@ -1996,6 +2028,7 @@ function SeviyeTespitContent() {
     (level: Level, sourceBank: AssessmentQuestion[] = bank) => {
       const levelPool = sourceBank.filter((q) => q.seviye === level);
       if (levelPool.length === 0) return;
+      clearPendingAdvance();
       stopAllAudio();
       playStart();
       navButtonRefs.current = [];
@@ -2020,7 +2053,7 @@ function SeviyeTespitContent() {
       setAppliedPlanFeedback(false);
       setSessionActive(true);
     },
-    [bank, makeSessionRecord]
+    [bank, clearPendingAdvance, makeSessionRecord]
   );
 
   // URL Parametreleri (?mode=cat|topic|exam & ?topic=... & ?level=A1)
@@ -2164,16 +2197,18 @@ function SeviyeTespitContent() {
   const jumpToQuestionIndex = useCallback(
     (targetIdx: number) => {
       if (targetIdx < 0 || targetIdx >= sessionItems.length) return;
+      clearPendingAdvance();
       stopAllAudio();
       playClick();
       setCurrentIndex(targetIdx);
       setNavGridOpen(false);
     },
-    [sessionItems.length]
+    [clearPendingAdvance, sessionItems.length]
   );
 
   const finalizeSession = useCallback(
     (rawRecords: SessionItemRecord[]) => {
+      clearPendingAdvance();
       stopAllAudio();
       setNavGridOpen(false);
 
@@ -2220,6 +2255,7 @@ function SeviyeTespitContent() {
     },
     [
       addStudyMinutes,
+      clearPendingAdvance,
       markLevelExamCompleted,
       recordSkillAttempt,
       recordTopicAttempt,
@@ -2230,6 +2266,7 @@ function SeviyeTespitContent() {
 
   const advanceToNextOrFinish = useCallback(
     (updatedRecords: SessionItemRecord[]) => {
+      clearPendingAdvance();
       stopAllAudio();
       if (sessionMode === "cat") {
         // Kullanıcı daha önce açılmış bir soruya geri dönmüşse yalnızca sonraki açılmış soruya ilerle
@@ -2239,13 +2276,13 @@ function SeviyeTespitContent() {
         }
 
         const nextSlot = updatedRecords.length;
-        if (nextSlot >= CAT_TOTAL_QUESTIONS) {
+        if (nextSlot >= catQuestionCount) {
           finalizeSession(updatedRecords);
           return;
         }
 
         let nextQuestion: RuntimeAssessmentQuestion | null = null;
-        if (CAT_LISTENING_SLOTS.has(nextSlot)) {
+        if (catListeningSlots.has(nextSlot)) {
           const listenQ = buildListeningQuestionForStep(
             catStepRef.current,
             catUsedAudioIdsRef.current
@@ -2304,6 +2341,9 @@ function SeviyeTespitContent() {
     },
     [
       bank,
+      catListeningSlots,
+      catQuestionCount,
+      clearPendingAdvance,
       currentIndex,
       finalizeSession,
       makeSessionRecord,
@@ -2315,7 +2355,7 @@ function SeviyeTespitContent() {
     chosenOption: PreparedAssessmentOption | null,
     isSkip: boolean
   ) => {
-    if (!currentRecord) return;
+    if (!currentRecord || advanceLockRef.current) return;
     // CAT ve Konu Taramada yanıtlanmış soru kilitlidir; Kur Bitirme Sınavında sınav bitene kadar boş/cevaplı soruya dönülüp yanıt güncellenebilir
     if (sessionMode !== "exam" && currentRecord.answered) return;
 
@@ -2349,7 +2389,13 @@ function SeviyeTespitContent() {
       );
       setSessionItems(nextExamItems);
       playClick();
-      setTimeout(() => {
+      advanceLockRef.current = true;
+      if (advanceTimerRef.current !== null) {
+        clearTimeout(advanceTimerRef.current);
+      }
+      advanceTimerRef.current = setTimeout(() => {
+        advanceTimerRef.current = null;
+        advanceLockRef.current = false;
         advanceToNextOrFinish(nextExamItems);
       }, 180);
       return;
@@ -2405,7 +2451,13 @@ function SeviyeTespitContent() {
 
     // CAT modunda sonraki adaptif soruyu üretip aç
     playClick();
-    setTimeout(() => {
+    advanceLockRef.current = true;
+    if (advanceTimerRef.current !== null) {
+      clearTimeout(advanceTimerRef.current);
+    }
+    advanceTimerRef.current = setTimeout(() => {
+      advanceTimerRef.current = null;
+      advanceLockRef.current = false;
       advanceToNextOrFinish(nextItems);
     }, 180);
   };
@@ -2496,7 +2548,7 @@ function SeviyeTespitContent() {
   // ============================================================================
   if (sessionActive) {
     const totalCount =
-      sessionMode === "cat" ? CAT_TOTAL_QUESTIONS : sessionItems.length;
+      sessionMode === "cat" ? catQuestionCount : sessionItems.length;
     const correctCount = sessionItems.filter((r) => r.isCorrect).length;
     const scorePct =
       sessionItems.length > 0
@@ -2516,6 +2568,7 @@ function SeviyeTespitContent() {
               type="button"
               onClick={() => {
                 playClick();
+                clearPendingAdvance();
                 stopAllAudio();
                 setSessionActive(false);
                 setSessionCompleted(false);
@@ -2943,13 +2996,13 @@ function SeviyeTespitContent() {
         ? currentIndex < maxReachedIndex ||
           (currentIndex === maxReachedIndex &&
             currentRecord.answered &&
-            currentIndex + 1 < CAT_TOTAL_QUESTIONS)
+            currentIndex + 1 < catQuestionCount)
         : currentIndex + 1 < totalCount;
 
     const canFinishSessionNow =
       sessionMode !== "cat" ||
       answeredCountSoFar >= 5 ||
-      (sessionItems.length >= CAT_TOTAL_QUESTIONS && currentRecord.answered);
+      (sessionItems.length >= catQuestionCount && currentRecord.answered);
 
     const getNavButtonStyle = (slotIdx: number) => {
       const isLockedCat =
@@ -3001,6 +3054,7 @@ function SeviyeTespitContent() {
             type="button"
             onClick={() => {
               playClick();
+              clearPendingAdvance();
               stopAllAudio();
               setNavGridOpen(false);
               setSessionActive(false);
@@ -3521,14 +3575,42 @@ function SeviyeTespitContent() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => startCatSession()}
-              className="min-h-[52px] px-6 py-3 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-4 border-emerald-900 text-sm font-black inline-flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm"
-            >
-              <Play size={18} fill="currentColor" />
-              <span>Adaptif Seviye Tespiti Başlat</span>
-            </button>
+            <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
+              <div className="flex items-center gap-1 bg-white dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
+                  Soru Sayısı:
+                </span>
+                {([10, 15, 18] as CatQuestionCountOption[]).map((cnt) => {
+                  const active = catQuestionCount === cnt;
+                  return (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setCatQuestionCount(cnt);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold tabular-nums transition-all cursor-pointer ${
+                        active
+                          ? "bg-[#087F5B] text-white shadow-2xs"
+                          : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {cnt}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => startCatSession()}
+                className="w-full sm:w-auto min-h-[52px] px-6 py-3 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-4 border-emerald-900 text-sm font-black inline-flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm"
+              >
+                <Play size={18} fill="currentColor" />
+                <span>Adaptif Seviye Tespiti Başlat</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">

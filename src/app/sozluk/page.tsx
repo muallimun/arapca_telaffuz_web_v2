@@ -78,7 +78,7 @@ const PhonemeHeatmapModal = dynamic(
   { ssr: false }
 );
 import {
-  formatArabicText,
+  formatArabicByHarekeMode,
   splitMixedBidiText,
   normalizeArabicText,
 } from "@/lib/arabicTextUtils";
@@ -444,6 +444,7 @@ export default function DictionaryPage() {
   const {
     speechRate,
     showHareke,
+    harekeMode,
     arabicFont,
     preferredVoiceGender,
     setPreferredVoiceGender,
@@ -494,8 +495,13 @@ export default function DictionaryPage() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const activeHarekeMode = !mounted
+    ? "full"
+    : !showHareke
+      ? "none"
+      : harekeMode || "full";
   const getDisplayArabic = (text: string) =>
-    formatArabicText(text, !mounted || showHareke, arabicFont);
+    formatArabicByHarekeMode(text, activeHarekeMode, arabicFont);
 
   // O(N) tekilleştirilmiş kelime + kalıp ifade kataloğu ve O(1) ön-indeksli arama/filtre haritası
   const {

@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useSfxStore } from "@/store/sfxStore";
 import { useSettings, ViewMode, SpeechRate } from "@/store/settings";
+import { useAudioStore } from "@/store/audioStore";
 import { useClassroomToolsStore } from "@/store/classroomToolsStore";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { usePwaInstall } from "@/lib/usePwaInstall";
@@ -96,6 +97,8 @@ export default function Header() {
     togglePreferredVoiceGender,
     grammarDepthMode,
     toggleGrammarDepthMode,
+    readingLayoutMode,
+    setReadingLayoutMode,
   } = useSettings();
   const {
     isOpen: smartboardOpen,
@@ -866,6 +869,7 @@ export default function Header() {
                             onClick={() => {
                               playClick();
                               setSpeechRate(rate);
+                              useAudioStore.getState().setPlaybackRate(rate);
                             }}
                             className={`py-1 rounded-lg text-[11px] font-extrabold tabular-nums border cursor-pointer transition-all ${
                               active
@@ -925,6 +929,54 @@ export default function Header() {
                         : "🎓 Akademik & İ'rab"}
                     </span>
                   </button>
+
+                  {/* 2d. Okuma Metni Düzeni (Cümle Cümle / Paragraf) */}
+                  <div className="px-3 py-2 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-[var(--foreground)]">
+                      <span className="flex items-center gap-2">
+                        <BookOpen
+                          size={15}
+                          className="text-[#6741D9] dark:text-purple-400 shrink-0"
+                        />
+                        <span>Okuma Metni Düzeni</span>
+                      </span>
+                      <span className="text-[11px] font-extrabold text-[#5230B5] dark:text-purple-300">
+                        {mounted && readingLayoutMode === "paragraph"
+                          ? "📄 Paragraf"
+                          : "📑 Cümle Cümle"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setReadingLayoutMode("sentences");
+                        }}
+                        className={`py-1 px-2 rounded-lg text-[11px] font-extrabold border cursor-pointer transition-all ${
+                          (!mounted || readingLayoutMode === "sentences")
+                            ? "bg-[#6741D9] border-[#5230B5] text-white"
+                            : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#6741D9]"
+                        }`}
+                      >
+                        📑 Cümle Cümle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setReadingLayoutMode("paragraph");
+                        }}
+                        className={`py-1 px-2 rounded-lg text-[11px] font-extrabold border cursor-pointer transition-all ${
+                          mounted && readingLayoutMode === "paragraph"
+                            ? "bg-[#6741D9] border-[#5230B5] text-white"
+                            : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-700 text-[var(--foreground)] hover:border-[#6741D9]"
+                        }`}
+                      >
+                        📄 Paragraf
+                      </button>
+                    </div>
+                  </div>
 
                   {/* 3. Arayüz Ses Efektleri */}
                   <button

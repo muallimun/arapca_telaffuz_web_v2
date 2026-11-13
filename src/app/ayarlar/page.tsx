@@ -47,6 +47,7 @@ import {
 } from "@/store/settings";
 import { useSfxStore } from "@/store/sfxStore";
 import { useUserStore } from "@/store/userStore";
+import { useAudioStore } from "@/store/audioStore";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { playTTS, loadAudioManifest } from "@/lib/audio";
@@ -1224,6 +1225,7 @@ export default function SettingsPage() {
                     onClick={() => {
                       playClick();
                       setSpeechRate(rate);
+                      useAudioStore.getState().setPlaybackRate(rate);
                     }}
                     className={`px-2 py-1.5 text-xs tabular-nums rounded-lg transition-all cursor-pointer ${
                       speechRate === rate

@@ -209,6 +209,12 @@ export default function DialogueDetailPage({
   const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(
     () => useSettings.getState().viewMode === "click-reveal"
   );
+  const [revealedTrLines, setRevealedTrLines] = useState<
+    Record<number, boolean>
+  >({});
+  const [revealedArLines, setRevealedArLines] = useState<
+    Record<number, boolean>
+  >({});
   useEffect(() => {
     const unsub = useSettings.subscribe((state, prevState) => {
       if (state.viewMode !== prevState.viewMode) {
@@ -217,16 +223,12 @@ export default function DialogueDetailPage({
         } else {
           setClickToRevealTr(false);
         }
+        setRevealedTrLines({});
+        setRevealedArLines({});
       }
     });
     return unsub;
   }, []);
-  const [revealedTrLines, setRevealedTrLines] = useState<
-    Record<number, boolean>
-  >({});
-  const [revealedArLines, setRevealedArLines] = useState<
-    Record<number, boolean>
-  >({});
   const [blurArabic, setBlurArabic] = useState<boolean>(false);
   const [revealedArabicLines, setRevealedArabicLines] = useState<
     Record<number, boolean>
@@ -247,7 +249,7 @@ export default function DialogueDetailPage({
   const [selectedClassroomLine, setSelectedClassroomLine] = useState<
     number | null
   >(1);
-  const [flowMode, setFlowMode] = useState<FlowMode>("single");
+  const [_flowMode, setFlowMode] = useState<FlowMode>("single");
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [, setDialogueLoopTurn] = useState<number>(1);
   const [loopingLineSira, setLoopingLineSira] = useState<number | null>(null);
@@ -540,19 +542,6 @@ export default function DialogueDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Telefon ekranlarında (< 768px) Sınıf / Tahta Modu açık kaldıysa otomatik kapat
-  useEffect(() => {
-    const checkViewportForClassroom = () => {
-      if (typeof window !== "undefined" && window.innerWidth < 768) {
-        setIsClassroomMode(false);
-      }
-    };
-    checkViewportForClassroom();
-    window.addEventListener("resize", checkViewportForClassroom);
-    return () =>
-      window.removeEventListener("resize", checkViewportForClassroom);
-  }, []);
-
   useEffect(() => {
     roleplaySpeechRef.current = new HybridSpeechManager();
     loadAudioManifest().then(() => {
@@ -800,7 +789,9 @@ export default function DialogueDetailPage({
         isTeacherHwModalOpen ||
         isHwReportModalOpen ||
         isHwQuizModalOpen ||
-        document.querySelector(".fixed.inset-0")
+        document.querySelector(
+          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+        )
       ) {
         return;
       }
@@ -1458,6 +1449,7 @@ export default function DialogueDetailPage({
           return;
         }
 
+        setFlowMode("single");
         setIsPlayingAll(false);
         setDialogueLoopTurn(1);
         setRoleplayActiveLine(null);
@@ -1478,21 +1470,15 @@ export default function DialogueDetailPage({
     playToken.current += 1;
     stop();
     cleanupRoleplayMic();
+    setFlowMode("single");
+    setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
     setRoleplayActiveLine(null);
     setRoleplaySpeakingLine(null);
     setRoleplayTransitionNotice(false);
     setIsRoleplayRunning(false);
-
-    if (flowMode === "sequential") {
-      setIsPlayingAll(true);
-      setDialogueLoopTurn(1);
-      playSentence(line, true, false, false, null, 1);
-    } else {
-      setIsPlayingAll(false);
-      playSentence(line, false, false, false, null, 1);
-    }
+    playSentence(line, false, false, false, null, 1);
   };
 
   const openShadowingCoach = (target: {
@@ -1505,6 +1491,7 @@ export default function DialogueDetailPage({
     playToken.current += 1;
     stop();
     cleanupRoleplayMic();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
@@ -1520,6 +1507,7 @@ export default function DialogueDetailPage({
     playToken.current += 1;
     stop();
     cleanupRoleplayMic();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setIsRoleplayRunning(false);
     setRoleplayActiveLine(null);
@@ -1552,6 +1540,7 @@ export default function DialogueDetailPage({
     if (isPlayingAll) {
       playToken.current += 1;
       stop();
+      setFlowMode("single");
       setIsPlayingAll(false);
       setDialogueLoopTurn(1);
     } else {
@@ -1578,6 +1567,7 @@ export default function DialogueDetailPage({
     playToken.current += 1;
     stop();
     cleanupRoleplayMic();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
@@ -1606,6 +1596,7 @@ export default function DialogueDetailPage({
     if (isPlayingAll) {
       playToken.current += 1;
       stop();
+      setFlowMode("single");
       setIsPlayingAll(false);
       setDialogueLoopTurn(1);
     } else {

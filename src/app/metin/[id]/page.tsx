@@ -222,6 +222,12 @@ export default function ReadingTextDetailPage({
   const [clickToRevealTr, setClickToRevealTr] = useState<boolean>(
     () => useSettings.getState().viewMode === "click-reveal"
   );
+  const [revealedTrLines, setRevealedTrLines] = useState<
+    Record<number, boolean>
+  >({});
+  const [revealedArLines, setRevealedArLines] = useState<
+    Record<number, boolean>
+  >({});
   useEffect(() => {
     const unsub = useSettings.subscribe((state, prevState) => {
       if (state.viewMode !== prevState.viewMode) {
@@ -230,16 +236,12 @@ export default function ReadingTextDetailPage({
         } else {
           setClickToRevealTr(false);
         }
+        setRevealedTrLines({});
+        setRevealedArLines({});
       }
     });
     return unsub;
   }, []);
-  const [revealedTrLines, setRevealedTrLines] = useState<
-    Record<number, boolean>
-  >({});
-  const [revealedArLines, setRevealedArLines] = useState<
-    Record<number, boolean>
-  >({});
   const [blurArabic, setBlurArabic] = useState<boolean>(false);
   const [revealedArabicLines, setRevealedArabicLines] = useState<
     Record<number, boolean>
@@ -268,7 +270,7 @@ export default function ReadingTextDetailPage({
   const [selectedClassroomLine, setSelectedClassroomLine] = useState<
     number | null
   >(1);
-  const [flowMode, setFlowMode] = useState<FlowMode>("single");
+  const [_flowMode, setFlowMode] = useState<FlowMode>("single");
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [, setDialogueLoopTurn] = useState<number>(1);
   const [loopingLineSira, setLoopingLineSira] = useState<number | null>(null);
@@ -654,7 +656,9 @@ export default function ReadingTextDetailPage({
         isTeacherHwModalOpen ||
         isHwReportModalOpen ||
         isHwQuizModalOpen ||
-        document.querySelector(".fixed.inset-0")
+        document.querySelector(
+          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+        )
       ) {
         return;
       }
@@ -777,7 +781,9 @@ export default function ReadingTextDetailPage({
     }
     const activeMode = !mounted
       ? "full"
-      : harekeMode || (showHareke ? "full" : "none");
+      : !showHareke
+        ? "none"
+        : harekeMode || "full";
     return formatArabicByHarekeMode(text, activeMode, arabicFont);
   };
 
@@ -943,6 +949,7 @@ export default function ReadingTextDetailPage({
           return;
         }
 
+        setFlowMode("single");
         setIsPlayingAll(false);
         setDialogueLoopTurn(1);
         stop();
@@ -954,18 +961,12 @@ export default function ReadingTextDetailPage({
     playClick();
     playToken.current += 1;
     stop();
+    setFlowMode("single");
+    setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
     setSelectedParagraphSira(line.sira);
-
-    if (flowMode === "sequential") {
-      setIsPlayingAll(true);
-      setDialogueLoopTurn(1);
-      playSentence(line, true, false, null, 1);
-    } else {
-      setIsPlayingAll(false);
-      playSentence(line, false, false, null, 1);
-    }
+    playSentence(line, false, false, null, 1);
   };
 
   const openShadowingCoach = (target: {
@@ -977,6 +978,7 @@ export default function ReadingTextDetailPage({
   }) => {
     playToken.current += 1;
     stop();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
@@ -987,6 +989,7 @@ export default function ReadingTextDetailPage({
     playClick();
     playToken.current += 1;
     stop();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setSelectedParagraphSira(line.sira);
 
@@ -1011,6 +1014,7 @@ export default function ReadingTextDetailPage({
     if (isPlayingAll) {
       playToken.current += 1;
       stop();
+      setFlowMode("single");
       setIsPlayingAll(false);
       setDialogueLoopTurn(1);
     } else {
@@ -1038,6 +1042,7 @@ export default function ReadingTextDetailPage({
     }
     playToken.current += 1;
     stop();
+    setFlowMode("single");
     setIsPlayingAll(false);
     setLoopingLineSira(null);
     setSentenceLoopRemaining(null);
@@ -1057,6 +1062,7 @@ export default function ReadingTextDetailPage({
     if (isPlayingAll) {
       playToken.current += 1;
       stop();
+      setFlowMode("single");
       setIsPlayingAll(false);
       setDialogueLoopTurn(1);
     } else {
@@ -4220,7 +4226,10 @@ export default function ReadingTextDetailPage({
                           dir="rtl"
                           className="arabic text-2xl font-bold text-[var(--muted)] blur-xs select-none"
                         >
-                          {getDisplayText(line.arapca, effectiveLineHareke)}
+                          {getDisplayText(
+                            line.arapca,
+                            lineHarekeOverrides[line.sira]
+                          )}
                         </span>
                         <button
                           type="button"

@@ -302,7 +302,9 @@ export default function MatchingGame({
     const sIds = synonymEntries.map((i) => i.id).join("|");
     const vIds = vocabulary.map((i) => i.id).join("|");
     const iIds = idioms.map((i) => i.id).join("|");
-    const dIds = dialogues.map((i) => i.id).join("|");
+    const dIds = dialogues
+      .map((i) => `${i.id}_${i.satirlar.length}_${i.satirlar[0]?.arapca || ""}`)
+      .join("|");
     return `${isSynonymsAntonymsMode ? "syn" : "std"}::${contentType}::${sIds}::${vIds}::${iIds}::${dIds}`;
   }, [isSynonymsAntonymsMode, synonymEntries, vocabulary, idioms, dialogues, contentType]);
 

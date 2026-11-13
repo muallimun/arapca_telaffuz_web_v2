@@ -122,7 +122,9 @@ export default function Flashcard({
     () =>
       `${vocabulary.map((v) => v.id).join("|")}::${idioms
         .map((i) => i.id)
-        .join("|")}::${dialogues.map((d) => d.id).join("|")}`,
+        .join("|")}::${dialogues
+        .map((d) => `${d.id}_${d.satirlar.length}_${d.satirlar[0]?.arapca || ""}`)
+        .join("|")}`,
     [vocabulary, idioms, dialogues]
   );
 
@@ -257,7 +259,13 @@ export default function Flashcard({
       ) {
         return;
       }
-      if (document.querySelector(".fixed.inset-0")) return;
+      if (
+        document.querySelector(
+          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+        )
+      ) {
+        return;
+      }
 
       if (e.code === "Space") {
         e.preventDefault();

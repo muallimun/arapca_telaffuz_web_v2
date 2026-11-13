@@ -295,7 +295,13 @@ export default function GenderSortingGame({
   useEffect(() => {
     if (isCompleted || !currentItem) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (document.querySelector(".fixed.inset-0")) return;
+      if (
+        document.querySelector(
+          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+        )
+      ) {
+        return;
+      }
       if (selectedBasket === null) {
         if (e.key === "ArrowLeft") {
           e.preventDefault();

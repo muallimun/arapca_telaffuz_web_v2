@@ -1385,12 +1385,13 @@ export default function SmartboardOverlay() {
       {isOpen && (
         <svg
           aria-label="Akıllı Tahta Çizim ve Şekil Katmanı"
+          data-smartboard-canvas="true"
           onPointerDown={handleSvgPointerDown}
           onPointerMove={handleSvgPointerMove}
           onPointerUp={handleSvgPointerUp}
           onPointerCancel={handleSvgPointerUp}
           onPointerLeave={() => setEraserCursor(null)}
-          className={`fixed inset-0 w-screen h-screen z-[80] select-none ${
+          className={`fixed top-0 left-0 w-screen h-screen z-[80] select-none ${
             isDrawingInteractive
               ? activeTool === "eraser"
                 ? "pointer-events-auto touch-none cursor-none"

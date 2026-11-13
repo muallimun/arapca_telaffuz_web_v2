@@ -128,7 +128,9 @@ export default function MultipleChoice({
         .map((s) => s.id)
         .join("|")}::${vocabulary.map((v) => v.id).join("|")}::${idioms
         .map((i) => i.id)
-        .join("|")}::${dialogues.map((d) => d.id).join("|")}`,
+        .join("|")}::${dialogues
+        .map((d) => `${d.id}_${d.satirlar.length}_${d.satirlar[0]?.arapca || ""}`)
+        .join("|")}`,
     [isSynonymsAntonymsMode, synonymEntries, vocabulary, idioms, dialogues]
   );
 

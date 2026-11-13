@@ -1690,7 +1690,7 @@ function ExercisesPageContent() {
     },
   ];
 
-  const quickPoolPills = poolOptions.slice(0, 9);
+  const quickPoolPills = poolOptions;
 
   const isSelfSourcedSpecialMode =
     selectedType === "error-hunter" ||
@@ -2346,7 +2346,7 @@ function ExercisesPageContent() {
                     idiomsPool.length < 1 &&
                     filteredVisualWordsPool.length < 4)
                 }
-                className="w-full sm:w-auto min-h-[40px] px-3.5 py-1.5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all inline-flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+                className="hidden lg:inline-flex min-h-[40px] px-3.5 py-1.5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
               >
                 <Play size={13} fill="currentColor" className="shrink-0" />
                 <span className="truncate">
@@ -2498,6 +2498,10 @@ function ExercisesPageContent() {
                       ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
                       : pill.id === "mistakes"
                       ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
+                      : pill.id === "favorites"
+                      ? "bg-rose-600 border-rose-700 text-white shadow-2xs"
+                      : pill.id === "weak-words"
+                      ? "bg-teal-700 border-teal-800 text-white shadow-2xs"
                       : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
 
                   const badgeStyle = isActive
@@ -2506,6 +2510,10 @@ function ExercisesPageContent() {
                     ? "bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-300 border-[#6741D9]/30"
                     : pill.id === "mistakes"
                     ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"
+                    : pill.id === "favorites"
+                    ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300"
+                    : pill.id === "weak-words"
+                    ? "bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border-teal-300"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-400 border-[#E6D7BE]";
 
                   return (
@@ -2515,7 +2523,7 @@ function ExercisesPageContent() {
                       title={incompatibilityHint}
                       data-tooltip={incompatibilityHint}
                       onClick={() => handlePoolSelectChange(pill.id)}
-                      className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-2 text-left transition-all ${
+                      className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all min-w-0 ${
                         !isCompatible
                           ? "opacity-45 bg-white/60 dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] cursor-not-allowed"
                           : isActive
@@ -2523,9 +2531,9 @@ function ExercisesPageContent() {
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B] cursor-pointer"
                       }`}
                     >
-                      <span className="leading-snug">{pill.title}</span>
+                      <span className="leading-snug truncate">{pill.title}</span>
                       <span
-                        className={`px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
+                        className={`px-1.5 sm:px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
                       >
                         {pill.countBadge}
                       </span>

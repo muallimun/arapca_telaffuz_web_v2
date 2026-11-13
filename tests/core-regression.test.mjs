@@ -3310,12 +3310,16 @@ test("32. Mobil UX, Arayüz Ferahlığı, Hata Defterim Standartlaştırması, S
     "FillInBlanks sentetik hareke yamama yapmadan doğrulanmış sahih kelime formlarından çeldirici seçmelidir"
   );
 
-  // 7. Açık modal varken klavye kısayolu kilidi
+  // 7. Açık modal varken klavye kısayolu kilidi (Akıllı Tahta SVG hariç)
   assert.equal(
-    blindDictationCode.includes('document.querySelector(".fixed.inset-0")') &&
-      genderSortingCode.includes('document.querySelector(".fixed.inset-0")'),
+    blindDictationCode.includes(
+      '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+    ) &&
+      genderSortingCode.includes(
+        '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+      ),
     true,
-    "BlindDictation ve GenderSortingGame açık modal (.fixed.inset-0) varken klavye kısayollarını kilitlemelidir"
+    "BlindDictation ve GenderSortingGame açık modal varken klavye kısayollarını kilitlemeli ancak Akıllı Tahta SVG katmanını hariç tutmalıdır"
   );
 });
 
@@ -4127,5 +4131,145 @@ test("38. 10 Ölü YouTube Link Temizliği (45 Sıralı Kayıt + Tek Aktif Ifram
       fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
     true,
     "Safe-area, md: breakpoint uyumu, Arapça başlık satır yüksekliği ve metadata.json eksiksiz korunmalıdır"
+  );
+});
+
+test("39. 6 Kritik Runtime Mantık, Klavye Kısayolu, CAT Yarış Koruması, FlowMode, 3 Aşamalı Hareke ve Alıştırma Havuzu Senkronizasyonu Doğrulaması", async () => {
+  // 1. Akıllı Tahta SVG katmanı klavye kısayollarını kilitlememeli
+  const smartboardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "classroom", "SmartboardOverlay.tsx"),
+    "utf8"
+  );
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const flashcardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "Flashcard.tsx"),
+    "utf8"
+  );
+  const blindDictationCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BlindDictation.tsx"),
+    "utf8"
+  );
+  const genderSortingCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "GenderSortingGame.tsx"),
+    "utf8"
+  );
+
+  const safeModalSelector =
+    '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])';
+
+  assert.equal(
+    smartboardCode.includes('data-smartboard-canvas="true"') &&
+      smartboardCode.includes("fixed top-0 left-0 w-screen h-screen z-[80]") &&
+      !smartboardCode.includes("fixed inset-0 w-screen h-screen z-[80]"),
+    true,
+    "SmartboardOverlay SVG katmanı inset-0 yerine top-0 left-0 w-screen h-screen ve data-smartboard-canvas kullanmalıdır"
+  );
+  assert.equal(
+    diyalogCode.includes(safeModalSelector) &&
+      metinCode.includes(safeModalSelector) &&
+      flashcardCode.includes(safeModalSelector) &&
+      blindDictationCode.includes(safeModalSelector) &&
+      genderSortingCode.includes(safeModalSelector),
+    true,
+    "Tüm klavye dinleyicileri açık modalları kontrol ederken Akıllı Tahta SVG katmanını hariç tutmalıdır"
+  );
+
+  // 2. Seviye Tespit 180ms yarış kilidi (advanceLockRef & advanceTimerRef) ve dinamik CAT dinleme slotları
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    seviyeCode.includes("advanceLockRef") &&
+      seviyeCode.includes("advanceTimerRef") &&
+      seviyeCode.includes("clearPendingAdvance") &&
+      seviyeCode.includes("function getCatListeningSlots(") &&
+      !seviyeCode.includes("CAT_LISTENING_SLOTS = new Set"),
+    true,
+    "Seviye Tespit sayfası 180ms çift ilerleme kilidine (advanceLockRef/advanceTimerRef) ve dinamik CAT dinleme slotu hesabına sahip olmalıdır"
+  );
+
+  // 3. Diyalog ve Metin sayfalarında flowMode = 'single' sıfırlaması ve mükerrer resize kancasının kaldırılması
+  const viewportHookMatches = diyalogCode.match(/const checkViewportForClassroom =/g) || [];
+  assert.equal(
+    viewportHookMatches.length,
+    1,
+    "diyalog/[id]/page.tsx içinde mükerrer checkViewportForClassroom resize kancası bulunmamalıdır"
+  );
+  assert.equal(
+    !diyalogCode.includes('if (flowMode === "sequential") {\n      setIsPlayingAll(true);') &&
+      !metinCode.includes('if (flowMode === "sequential") {\n      setIsPlayingAll(true);') &&
+      diyalogCode.includes('setFlowMode("single");') &&
+      metinCode.includes('setFlowMode("single");'),
+    true,
+    "Diyalog ve Metin sayfalarında Durdur ve tekil satır seslendirme (handlePlayLine) işlemleri flowMode değerini 'single' moduna döndürmelidir"
+  );
+
+  // 4. 3 Aşamalı Hareke Modu (full | irab-only | none) Metin, Kütüphane ve Sözlük senkronizasyonu
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !metinCode.includes("getDisplayText(line.arapca, effectiveLineHareke)") &&
+      metinCode.includes("lineHarekeOverrides[line.sira]") &&
+      kutuphaneCode.includes("formatArabicByHarekeMode") &&
+      sozlukCode.includes("formatArabicByHarekeMode"),
+    true,
+    "Metin, Kütüphane ve Sözlük sayfalarının tamamı 3 aşamalı hareke modunu (formatArabicByHarekeMode / irab-only) eksiksiz desteklemelidir"
+  );
+
+  // 5. Üst Bar & Ayarlar canlı speechRate senkronizasyonu, viewMode değişiminde reveal sıfırlama ve Okuma Metni Düzeni hızlı ayarı
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const ayarlarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    headerCode.includes("useAudioStore.getState().setPlaybackRate(rate)") &&
+      ayarlarCode.includes("useAudioStore.getState().setPlaybackRate(rate)") &&
+      headerCode.includes("Okuma Metni Düzeni") &&
+      headerCode.includes("setReadingLayoutMode") &&
+      diyalogCode.includes("setRevealedTrLines({});\n        setRevealedArLines({});") &&
+      metinCode.includes("setRevealedTrLines({});\n        setRevealedArLines({});"),
+    true,
+    "Header ve Ayarlar canlı ses hızı senkronizasyonunu, Okuma Metni Düzeni hızlı geçişini ve viewMode değişiminde reveal sıfırlamayı içermelidir"
+  );
+
+  // 6. Alıştırma Merkezi 11 havuzun tamamının görünürlüğü ve aktif filtre değişiminde itemsSignature yenilenmesi
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const mcCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  const fibCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "FillInBlanks.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    !alistirmalarCode.includes("poolOptions.slice(0, 9)") &&
+      alistirmalarCode.includes("const quickPoolPills = poolOptions;") &&
+      mcCode.includes("d.satirlar.length") &&
+      fibCode.includes("d.satirlar.length") &&
+      flashcardCode.includes("d.satirlar.length"),
+    true,
+    "Alıştırma Merkezinde 11 havuzun tamamı görünür olmalı ve alıştırma bileşenlerinde itemsSignature satır içeriğine duyarlı olmalıdır"
   );
 });

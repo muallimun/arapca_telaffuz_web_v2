@@ -187,7 +187,9 @@ export default function FillInBlanks({
     () =>
       `${isSynonymsAntonymsMode ? "syn" : "std"}::${synonymEntries
         .map((s) => s.id)
-        .join("|")}::${dialogues.map((d) => d.id).join("|")}::${vocabulary
+        .join("|")}::${dialogues
+        .map((d) => `${d.id}_${d.satirlar.length}_${d.satirlar[0]?.arapca || ""}`)
+        .join("|")}::${vocabulary
         .map((v) => v.id)
         .join("|")}::${idioms.map((i) => i.id).join("|")}`,
     [isSynonymsAntonymsMode, synonymEntries, dialogues, vocabulary, idioms]

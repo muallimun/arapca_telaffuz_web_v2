@@ -796,7 +796,13 @@ export default function BlindDictation({
   useEffect(() => {
     if (isCompleted || !currentEntry) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (document.querySelector(".fixed.inset-0")) return;
+      if (
+        document.querySelector(
+          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+        )
+      ) {
+        return;
+      }
       const targetEl = e.target as HTMLElement | null;
       const isTypingTarget =
         targetEl?.tagName === "INPUT" ||
@@ -1216,7 +1222,13 @@ export default function BlindDictation({
                     value={typedText}
                     onChange={(e) => setTypedText(e.target.value)}
                     onKeyDown={(e) => {
-                      if (document.querySelector(".fixed.inset-0")) return;
+                      if (
+                        document.querySelector(
+                          '[role="dialog"], .fixed.inset-0:not(svg):not([data-smartboard-canvas])'
+                        )
+                      ) {
+                        return;
+                      }
                       if (e.key === "Enter" && typedText.trim().length > 0) {
                         e.preventDefault();
                         void handleCheckDictation();

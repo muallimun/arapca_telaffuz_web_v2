@@ -1066,7 +1066,7 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Okuma"), true);
   assert.equal(alistirmalarCode.includes("Sınıf Yarışması"), true);
 
-  // CONTENT_INVENTORY.exerciseModulesCount === 14
+  // CONTENT_INVENTORY.exerciseModulesCount === 16
   const dataTsCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "lib", "data.ts"),
     "utf8"
@@ -1077,10 +1077,10 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   );
   assert.equal(
     (dataTsCode.includes("CONTENT_INVENTORY") &&
-      contentInvCode.includes("exerciseModulesCount: 14")) ||
-      dataTsCode.includes("exerciseModulesCount: 14"),
+      contentInvCode.includes("exerciseModulesCount: 16")) ||
+      dataTsCode.includes("exerciseModulesCount: 16"),
     true,
-    "CONTENT_INVENTORY.exerciseModulesCount 14 olarak güncellenmelidir"
+    "CONTENT_INVENTORY.exerciseModulesCount 16 olarak güncellenmelidir"
   );
 
   // GrammarHapBilgiPanel kısayol bağlantıları
@@ -1569,7 +1569,7 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
   assert.equal(CONTENT_INVENTORY.dialoguesCount, 120);
   assert.equal(CONTENT_INVENTORY.readingsCount, 60);
   assert.equal(CONTENT_INVENTORY.assessmentQuestionsCount, 550);
-  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 14);
+  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 16);
 
   const layoutSrc = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "layout.tsx"),
@@ -1608,18 +1608,18 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
     "Header.tsx 3 esnek bölgeye, Muallimun Arapça markasına ve kompakt Diğer Araçlar menüsüne sahip olmalıdır"
   );
 
-  // Ana sayfa 14 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
+  // Ana sayfa 16 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
   const homeCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "page.tsx"),
     "utf8"
   );
   assert.equal(
-    homeCode.includes("14 Farklı Modül • Görsel & Sesli"),
+    homeCode.includes("16 Farklı Modül • Görsel & Sesli"),
     true,
-    "Ana sayfa Kelime Alıştırmaları kartı '14 Farklı Modül • Görsel & Sesli' göstermelidir"
+    "Ana sayfa Kelime Alıştırmaları kartı '16 Farklı Modül • Görsel & Sesli' göstermelidir"
   );
   assert.equal(
-    homeCode.includes("6 Farklı Modül • Görsel & Sesli"),
+    /(?<![0-9])6 Farklı Modül • Görsel & Sesli/.test(homeCode),
     false,
     "Ana sayfada eski '6 Farklı Modül' metni kalmamalıdır"
   );
@@ -5133,6 +5133,185 @@ test("43. UTF-8 Bütünlüğü, API Güvenlik Sertleştirmesi, 195 Gramer İlmî
   );
 });
 
+test("44. A4 Yazılı Sınav, Ders Notu (Okuma Metni) & Quiz Üretici Stüdyosu — 6 Materyal Kaynağı, 6 Bölümlü 100 Puan Dağılımı, Konu Özeti ve 3 Ders Notu Mizanpajı", async () => {
+  const {
+    STUDIO_MATERIAL_SOURCES,
+    STUDIO_DEFAULT_PAPER_TITLE,
+    buildSixSectionExamData,
+    listStudioPackOptions,
+    resolveStudioMaterialBundle,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "a4ExamStudioEngine.ts")).href
+  );
+  const { allocateExam100PointsSixSections } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "pdfDeterministicUtils.ts")).href
+  );
 
+  // 1. 6 Materyal Kaynağı eksiksiz mevcut olmalı ve her biri için paket/demet üretilebilmeli
+  const expectedSourceIds = [
+    "diyaloglar",
+    "metinler",
+    "gorsel_kelimeler",
+    "cumleler_1111",
+    "atasozleri",
+    "es_zit_anlamlilar",
+  ];
+  assert.deepEqual(
+    STUDIO_MATERIAL_SOURCES.map((s) => s.id),
+    expectedSourceIds,
+    "6 materyal kaynağı eksiksiz tanımlı olmalıdır"
+  );
+  assert.equal(
+    STUDIO_DEFAULT_PAPER_TITLE.toLocaleUpperCase("tr-TR").includes("ARAPÇA DERSİ"),
+    true,
+    "Varsayılan sınav/çalışma kağıdı başlığı tanımlı olmalıdır"
+  );
 
+  for (const srcId of expectedSourceIds) {
+    const packs = listStudioPackOptions(srcId, "A1");
+    assert.ok(packs.length > 0, `${srcId} kaynağı için A1 paketleri üretilmelidir`);
+    const bundle = resolveStudioMaterialBundle({
+      sourceId: srcId,
+      levelFilter: "A1",
+      packId: packs[0].id,
+    });
+    assert.ok(
+      bundle.dialogue.diyalog.length > 0 && bundle.vocabPool.length > 0,
+      `${srcId} demeti hem satır hem kelime havuzu üretmelidir`
+    );
+  }
 
+  // 2. 6 Bölümlü Sınav üretimi: 0 seçilen bölüm gizlenmeli, aktif bölümlerin toplam puanı 100 olmalı
+  const sampleBundle = resolveStudioMaterialBundle({
+    sourceId: "diyaloglar",
+    levelFilter: "A1",
+    packId: "dlg_001",
+  });
+  const examData = buildSixSectionExamData({
+    bundle: sampleBundle,
+    counts: {
+      mcCount: 4,
+      matchingCount: 5,
+      fillBlankCount: 0, // 0 seçilen bölüm gizlenmeli!
+      tfCount: 3,
+      translateCount: 2,
+      unscrambleCount: 2,
+    },
+    bookletCode: "A",
+    seedSuffix: "studio_test_seed",
+  });
+
+  assert.equal(
+    examData.fillBlankItems.length,
+    0,
+    "Sayısı 0 yapılan bölüm (Boşluk Doldurma) üretilmemeli / gizlenmelidir"
+  );
+  assert.equal(examData.mcQuestions.length, 4);
+  assert.equal(examData.matchingPairs.length, 5);
+  assert.equal(examData.tfItems.length, 3);
+  assert.equal(examData.translateItems.length, 2);
+  assert.equal(examData.unscrambleItems.length, 2);
+  assert.equal(
+    examData.points.grandTotal,
+    100,
+    "Aktif bölümlerin toplam sınav puanı tam 100 olmalıdır"
+  );
+
+  const zeroAlloc = allocateExam100PointsSixSections([0, 0, 0, 0, 0, 0]);
+  assert.equal(zeroAlloc.grandTotal, 0);
+
+  // 3. DialoguePdfModal.tsx içinde 3 Ders Notu mizanpajı, Konu Özeti kutusu ve Stüdyo başlığı
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    pdfModalCode.includes("A4 Yazılı Sınav, Ders Notu &amp; Quiz Üretici") ||
+      pdfModalCode.includes("A4 Yazılı Sınav, Ders Notu & Quiz Üretici"),
+    true,
+    "DialoguePdfModal stüdyo başlığını içermelidir"
+  );
+  assert.equal(
+    pdfModalCode.includes("STUDIO_MATERIAL_SOURCES") &&
+      pdfModalCode.includes("showTopicSummaryBox") &&
+      pdfModalCode.includes("Yan Yana (Arapça | Türkçe)") &&
+      pdfModalCode.includes("Sadece Arapça (Okuma Kağıdı)") &&
+      pdfModalCode.includes("Alt Alta Satır"),
+    true,
+    "DialoguePdfModal 6 kaynak seçici, Konu Özeti kutusu ve 3 Ders Notu mizanpajını içermelidir"
+  );
+});
+
+test("45. 2 Yeni İnteraktif Oyun Modülü — Balon Safari (BalloonSafariGame) & 3D Hafıza Kartları (MemoryFlipGame) ve 16 Modül Envanter Doğrulaması", () => {
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const balloonCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+  const memoryCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+
+  // 1. Alıştırmalar sayfasında 16 modülün tamamı ssr: false ile lazy-load edilmeli ve yeni oyunlar vitrinde olmalı
+  assert.equal(
+    alistirmalarCode.includes('import("@/components/exercises/BalloonSafariGame")') &&
+      alistirmalarCode.includes('import("@/components/exercises/MemoryFlipGame")') &&
+      alistirmalarCode.includes('id: "balloon-safari"') &&
+      alistirmalarCode.includes('id: "memory-flip"'),
+    true,
+    "BalloonSafariGame ve MemoryFlipGame dinamik olarak yüklenmeli ve alıştırma kartlarında yer almalıdır"
+  );
+
+  // 2. Balon Safari: 60fps fizik, 4 seviye, güçlendirmeler, hata grafiği ve A4/PNG Başarı Sertifikası
+  assert.equal(
+    balloonCode.includes("سَفَارِي البَالُونَات") &&
+      balloonCode.includes("requestAnimationFrame") &&
+      balloonCode.includes("الوَضْعُ العادِيّ") &&
+      balloonCode.includes("تَحَدِّي الوَقْت") &&
+      balloonCode.includes("تَجْمِيد") &&
+      balloonCode.includes("تَلْمِيحَة") &&
+      balloonCode.includes("جَائِزَة 5x") &&
+      balloonCode.includes("إِعَادَة الصَّوْت") &&
+      balloonCode.includes("أَكْثَرُ الأَخْطَاء") &&
+      balloonCode.includes("تَدَرَّبْ عَلَى الأَخْطَاء") &&
+      balloonCode.includes("شَهَادَة نَجَاح") &&
+      balloonCode.includes("canvas.toBlob"),
+    true,
+    "BalloonSafariGame tüm fizik, seviye, güçlendirme, hata pratiği ve sertifika özelliklerini içermelidir"
+  );
+  assert.equal(
+    balloonCode.includes("window.open") ||
+      balloonCode.includes("window.alert") ||
+      balloonCode.includes("style={{"),
+    false,
+    "BalloonSafariGame içinde window.open, window.alert veya satır içi style={{ bulunmamalıdır"
+  );
+
+  // 3. 3D Hafıza Kartları: gerçek CSS 3D perspektif, 3x4 / 4x4 / 4x5 ızgaralar, 1.5s ipucu ve SRS entegrasyonu
+  assert.equal(
+    memoryCode.includes("لُعْبَةُ الذَّاكِرَةِ") &&
+      memoryCode.includes("[perspective:1000px]") &&
+      memoryCode.includes("[transform-style:preserve-3d]") &&
+      memoryCode.includes("[backface-visibility:hidden]") &&
+      memoryCode.includes("[transform:rotateY(180deg)]") &&
+      memoryCode.includes("3×4 (12 Kart)") &&
+      memoryCode.includes("4×4 (16 Kart)") &&
+      memoryCode.includes("4×5 (20 Kart)") &&
+      memoryCode.includes("Kartları 1.5 Saniye Göster") &&
+      memoryCode.includes("recordItemAttempt") &&
+      memoryCode.includes("addMistake"),
+    true,
+    "MemoryFlipGame gerçek CSS 3D dönüşüm, 3 zorluk ızgarası, 1.5 sn ipucu ve Hata Defteri/SRS entegrasyonunu içermelidir"
+  );
+  assert.equal(
+    memoryCode.includes("window.open") ||
+      memoryCode.includes("window.alert") ||
+      memoryCode.includes("style={{"),
+    false,
+    "MemoryFlipGame içinde window.open, window.alert veya satır içi style={{ bulunmamalıdır"
+  );
+});

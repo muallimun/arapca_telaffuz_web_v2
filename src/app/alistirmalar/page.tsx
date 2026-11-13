@@ -26,6 +26,8 @@ import {
   Scale,
   Search,
   Paintbrush,
+  Sparkles,
+  Layers,
   X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
@@ -203,6 +205,20 @@ const IrabColorPainter = dynamic(
     loading: () => <ExerciseModuleLoadingSkeleton />,
   }
 );
+const BalloonSafariGame = dynamic(
+  () => import("@/components/exercises/BalloonSafariGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
+const MemoryFlipGame = dynamic(
+  () => import("@/components/exercises/MemoryFlipGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
 const PhonemeHeatmapModal = dynamic(
   () => import("@/components/ui/PhonemeHeatmapModal"),
   { ssr: false }
@@ -222,7 +238,9 @@ type ExerciseType =
   | "cloze-roleplay"
   | "gender-sorting"
   | "evidence-hunter"
-  | "irab-painter";
+  | "irab-painter"
+  | "balloon-safari"
+  | "memory-flip";
 
 type ExerciseCategoryTab =
   | "all"
@@ -409,6 +427,22 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
     val === "irab"
   ) {
     return "irab-painter";
+  }
+  if (
+    val === "balloon-safari" ||
+    val === "balon-safari" ||
+    val === "balloon" ||
+    val === "safari"
+  ) {
+    return "balloon-safari";
+  }
+  if (
+    val === "memory-flip" ||
+    val === "hafiza-kartlari" ||
+    val === "memory" ||
+    val === "hafiza"
+  ) {
+    return "memory-flip";
   }
   return null;
 }
@@ -1503,6 +1537,24 @@ function ExercisesPageContent() {
       icon: ImageIcon,
     },
     {
+      id: "balloon-safari",
+      category: "vocab_visual",
+      title: "🎈 Balon Safari",
+      arabicBadge: "سَفَارِي البَالُونَات",
+      subtitle:
+        "Kelimeyi dinleyin, süzülen doğru görsel/anlam balonunu yakalayın ve sertifika kazanın",
+      icon: Sparkles,
+    },
+    {
+      id: "memory-flip",
+      category: "vocab_visual",
+      title: "🃏 3D Hafıza Kartları",
+      arabicBadge: "لُعْبَةُ الذَّاكِرَةِ",
+      subtitle:
+        "3×4, 4×4 ve 4×5 3B kartlarda Arapça kelime, görsel ve anlam eşleştirme",
+      icon: Layers,
+    },
+    {
       id: "gender-sorting",
       category: "vocab_visual",
       title: "Müzekker / Müennes Sepeti",
@@ -1734,6 +1786,9 @@ function ExercisesPageContent() {
         poolId === "reading_texts"
       );
     }
+    if (selectedType === "balloon-safari" || selectedType === "memory-flip") {
+      return poolId !== "sentences_1111";
+    }
     return true;
   };
 
@@ -1855,6 +1910,8 @@ function ExercisesPageContent() {
     !isSentencesOnlyMode &&
     !isSelfSourcedSpecialMode &&
     selectedType !== "visual-rosetta" &&
+    selectedType !== "balloon-safari" &&
+    selectedType !== "memory-flip" &&
     selectedType !== "morphology-context" &&
     selectedType !== "classroom-battle" &&
     (rangePreset === "all_dialogues" ||
@@ -2397,6 +2454,14 @@ function ExercisesPageContent() {
                         rangePreset !== "reading_texts"
                       ) {
                         setRangePreset("sentences_1111");
+                      } else if (
+                        card.id === "balloon-safari" ||
+                        card.id === "memory-flip"
+                      ) {
+                        if (rangePreset === "sentences_1111") {
+                          setRangePreset("visual_words");
+                        }
+                        setContentType("words");
                       }
                     }}
                     className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[58px] sm:min-h-[76px] text-left px-2.5 py-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
@@ -2928,6 +2993,8 @@ function ExercisesPageContent() {
               {!isSelfSourcedSpecialMode &&
                 selectedType !== "flashcard" &&
                 selectedType !== "visual-rosetta" &&
+                selectedType !== "balloon-safari" &&
+                selectedType !== "memory-flip" &&
                 selectedType !== "morphology-context" &&
                 selectedType !== "classroom-battle" && (
                 <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
@@ -3329,6 +3396,47 @@ function ExercisesPageContent() {
               grammarFilter={grammarFilter}
               questionCount={questionCount}
               timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "balloon-safari" && (
+            <BalloonSafariGame
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
+              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
+              idioms={frozenPools?.idioms ?? idiomsPool}
+              dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              synonymEntries={
+                frozenPools?.synonymEntries ?? activeSynonymEntries
+              }
+              isSynonymsAntonymsMode={
+                frozenPools?.isSynonymsAntonymsMode ??
+                rangePreset === "synonyms_antonyms"
+              }
+              cefrFilter={cefrFilter}
+              isMistakesMode={
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
+              }
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "memory-flip" && (
+            <MemoryFlipGame
+              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
+              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
+              idioms={frozenPools?.idioms ?? idiomsPool}
+              dialogues={frozenPools?.dialogues ?? selectedDialogues}
+              synonymEntries={
+                frozenPools?.synonymEntries ?? activeSynonymEntries
+              }
+              isSynonymsAntonymsMode={
+                frozenPools?.isSynonymsAntonymsMode ??
+                rangePreset === "synonyms_antonyms"
+              }
+              cefrFilter={cefrFilter}
+              timeLimit={timeLimit}
+              isMistakesMode={
+                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
+              }
               onClose={handleCloseExercise}
             />
           )}

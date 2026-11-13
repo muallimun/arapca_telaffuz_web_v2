@@ -272,10 +272,10 @@ export default function HomePage() {
         title: "Kelime Alıştırmaları",
         arabicBadge: "التَّدْرِيبَات",
         subtitle:
-          "Kartlar, test, i'rab boyama, hata avcısı, kör dikte ve görsel-sesli 14 interaktif oyun",
-        meta: "14 Farklı Modül • Görsel & Sesli",
+          "Kartlar, balon safari, 3B hafıza kartları, i'rab boyama, hata avcısı ve 16 interaktif oyun",
+        meta: "16 Farklı Modül • Görsel & Sesli",
         tooltip:
-          "14 farklı interaktif kelime, cümle, i'rab boyama, diyalog ve okuma oyunu",
+          "16 farklı interaktif kelime, balon safari, 3B hafıza kartları, cümle ve okuma oyunu",
         icon: Gamepad2,
         targetHref: "/alistirmalar",
         accentColor: "emerald",

@@ -31,6 +31,19 @@ import {
   buildInfoGapPairCards,
   PAIR_SPEAKING_RUBRIC_CRITERIA,
 } from "@/lib/infoGapBuilder";
+import {
+  STUDIO_DEFAULT_PAPER_TITLE,
+  STUDIO_MATERIAL_SOURCES,
+  StudioLevelFilter,
+  StudioSourceId,
+  SixSectionExamCounts,
+  buildSixSectionExamData,
+  clampExamCounts,
+  inferInitialStudioSelection,
+  listStudioPackOptions,
+  resolveStudioMaterialBundle,
+} from "@/lib/a4ExamStudioEngine";
+export { allocateExam100PointsSixSections } from "@/lib/pdfDeterministicUtils";
 
 interface DialoguePdfModalProps {
   dialogue: Dialogue;
@@ -282,16 +295,95 @@ function generateQrSvgMarkup(urlText: string, size = 64): string {
 }
 
 export default function DialoguePdfModal({
-  dialogue,
-  vocabEntries,
-  imagePath,
-  rawNum,
-  readingQuestions,
+  dialogue: initialDialogue,
+  vocabEntries: initialVocabEntries,
+  imagePath: initialImagePath,
+  rawNum: initialRawNum,
+  readingQuestions: initialReadingQuestions,
   initialDocMode,
   onClose,
 }: DialoguePdfModalProps) {
   const { arabicFont } = useSettings();
   const fontConfig = getArabicFontConfig(arabicFont);
+
+  // STÜDYO KAYNAK, SEVİYE, PAKET VE KAĞIT BAŞLIĞI DURUMLARI
+  const initialSelection = useMemo(
+    () => inferInitialStudioSelection(initialDialogue),
+    [initialDialogue]
+  );
+  const [studioSourceId, setStudioSourceId] = useState<StudioSourceId>(
+    initialSelection.sourceId
+  );
+  const [studioLevelFilter, setStudioLevelFilter] = useState<StudioLevelFilter>(
+    initialSelection.levelFilter
+  );
+  const [studioPackId, setStudioPackId] = useState<string>(
+    initialSelection.packId
+  );
+  const [customPaperTitle, setCustomPaperTitle] = useState<string>("");
+
+  // 6 ÖZELLEŞTİRİLEBİLİR YAZILI SINAV BÖLÜM SAYILARI (0 girilen bölüm otomatik gizlenir)
+  const [examCounts, setExamCounts] = useState<SixSectionExamCounts>({
+    sec1ArToTr: 5,
+    sec2TrToAr: 5,
+    sec3FillBlank: 5,
+    sec4MultipleChoice: 4,
+    sec5Matching: 5,
+    sec6Morphology: 4,
+  });
+  const [includeTopicSummary, setIncludeTopicSummary] = useState<boolean>(true);
+
+  const studioPackOptions = useMemo(
+    () =>
+      listStudioPackOptions(
+        studioSourceId,
+        studioLevelFilter,
+        initialDialogue
+      ),
+    [studioSourceId, studioLevelFilter, initialDialogue]
+  );
+
+  const effectiveStudioPackId = useMemo(() => {
+    if (studioPackOptions.some((o) => o.id === studioPackId)) {
+      return studioPackId;
+    }
+    return studioPackOptions[0]?.id || initialSelection.packId;
+  }, [studioPackOptions, studioPackId, initialSelection.packId]);
+
+  const studioBundle = useMemo(
+    () =>
+      resolveStudioMaterialBundle({
+        sourceId: studioSourceId,
+        levelFilter: studioLevelFilter,
+        packId: effectiveStudioPackId,
+        initialProps: {
+          dialogue: initialDialogue,
+          vocabEntries: initialVocabEntries,
+          imagePath: initialImagePath,
+          rawNum: initialRawNum,
+          readingQuestions: initialReadingQuestions,
+        },
+      }),
+    [
+      studioSourceId,
+      studioLevelFilter,
+      effectiveStudioPackId,
+      initialDialogue,
+      initialVocabEntries,
+      initialImagePath,
+      initialRawNum,
+      initialReadingQuestions,
+    ]
+  );
+
+  const dialogue = studioBundle.dialogue;
+  const vocabEntries = studioBundle.vocabEntries;
+  const imagePath = studioBundle.imagePath;
+  const rawNum = studioBundle.rawNum;
+  const readingQuestions =
+    studioBundle.readingQuestions.length > 0
+      ? studioBundle.readingQuestions
+      : initialReadingQuestions;
 
   // BÖLÜM 2: Seçim Çipleri / Segmented Controls State'leri
   // PDF-1: Görsel Modu ("Gizle" | "Kompakt Kart (Varsayılan)" | "Geniş Banner")
@@ -348,6 +440,25 @@ export default function DialoguePdfModal({
   const [flashcardGridSize, setFlashcardGridSize] = useState<
     "3x3" | "3x4" | "4x4"
   >("3x3");
+
+  const sixSectionExamData = useMemo(
+    () =>
+      buildSixSectionExamData({
+        bundle: studioBundle,
+        counts: examCounts,
+        bookletGroup,
+      }),
+    [studioBundle, examCounts, bookletGroup]
+  );
+
+  const effectivePaperTitleTr = useMemo(() => {
+    const trimmed = customPaperTitle.trim();
+    if (trimmed) return trimmed;
+    if (pdfDocMode === "quiz-sheet") {
+      return `${STUDIO_DEFAULT_PAPER_TITLE} — ${dialogue.baslik_tr}`;
+    }
+    return dialogue.baslik_tr;
+  }, [customPaperTitle, pdfDocMode, dialogue.baslik_tr]);
 
   const infoGapDeck = useMemo(
     () => buildInfoGapPairCards(dialogue, vocabEntries),
@@ -1737,94 +1848,129 @@ export default function DialoguePdfModal({
           ${
             pdfDocMode === "quiz-sheet"
               ? `
-              <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm A — Kelime Eşleştirme Doğru Cevapları (${a4QuizSheetData.pointsAllocation.totalA} Puan)</div>
-                <table class="two-col-table" style="font-size:11.5px;">
-                  <thead>
-                    <tr>
-                      <th style="width:14%;">Soru / Puan</th>
-                      <th style="width:36%;text-align:right;" dir="rtl">Arapça Kelime</th>
-                      <th style="width:18%;text-align:center;">Doğru Şık</th>
-                      <th style="width:32%;text-align:left;">Türkçe Karşılığı</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${a4QuizSheetData.sectionAMatching
-                      .map(
-                        (m, idx) => `
-                        <tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                          <td style="font-weight:800;">#${m.num} (${m.points}p)</td>
-                          <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:18px;font-weight:700;color:#087f5b;">${formatArHtml(
-                          m.arabic
-                        )}</td>
-                          <td style="text-align:center;"><span style="background:#ecfdf5;color:#065f46;border:1px solid #087f5b;padding:2px 8px;border-radius:6px;font-weight:800;">${
-                            m.num
-                          } → ${escapeHtml(m.correctLetter)}</span></td>
-                          <td style="font-weight:700;color:#1e293b;">${escapeHtml(m.correctTr)}</td>
-                        </tr>
-                      `
-                      )
-                      .join("")}
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm B — Boşluk Doldurma Tam Cümle Çözümleri (${a4QuizSheetData.pointsAllocation.totalB} Puan)</div>
-                <div style="border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;">
-                  ${a4QuizSheetData.sectionBFillBlanks
-                    .map((b, idx) => {
-                      const highlightedSentence = formatArHtml(
-                        b.blankSentence
-                      ).replace(
-                        /\.{6,}/g,
-                        `<u style="color:#dc2626;background:#fef2f2;padding:0 6px;border-radius:4px;font-weight:800;text-decoration:underline;">${formatArHtml(
-                          b.answer
-                        )}</u>`
-                      );
-                      return `
-                        <div style="padding:6px 12px;border-bottom:${
-                          idx < a4QuizSheetData.sectionBFillBlanks.length - 1
-                            ? "1px solid #e2e8f0"
-                            : "none"
-                        };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                          <div style="font-size:11px;color:#334155;">
-                            <strong>${idx + 1}. (${b.points}p) Doğru Kelime:</strong>
-                            <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:800;color:#dc2626;margin:0 6px;"><u>${formatArHtml(
-                              b.answer
-                            )}</u></span>
-                            <span>(${escapeHtml(b.turkce)})</span>
-                          </div>
-                          <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:18px;font-weight:700;color:#0f172a;text-align:right;">
-                            ${idx + 1}. ${highlightedSentence}
-                          </div>
-                        </div>
-                      `;
-                    })
-                    .join("")}
-                </div>
-              </div>
-
-              <div class="section-block" style="margin-bottom:10px;">
-                <div class="section-title">✅ Bölüm C — Kalıp İfadeler ve Metin Anlama Çözümleri (${a4QuizSheetData.pointsAllocation.totalC} Puan)</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                  ${a4QuizSheetData.sectionCMultipleChoice
-                    .map(
-                      (c) => `
-                      <div style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;background:#f8fafc;">
-                        <div style="font-size:11px;font-weight:800;color:#6741d9;">Soru ${c.num} • ${escapeHtml(c.typeLabel)} (${c.points}p)</div>
-                        <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:16px;font-weight:700;color:#087f5b;margin:2px 0;">${formatArHtml(
-                        c.arabicPrompt
-                      )}</div>
-                        <div style="font-size:11.5px;font-weight:800;color:#065f46;">✓ Doğru Şık: ${escapeHtml(
-                          c.correctLetter
-                        )}) ${escapeHtml(c.correctText)}</div>
+              ${
+                sixSectionExamData.sec1ArToTr.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 1. Bölüm — Arapça → Türkçe Anlam Yazma Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[0]} Puan)</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${sixSectionExamData.sec1ArToTr
+                          .map(
+                            (it) =>
+                              `<div style="border:1px solid #cbd5e1;border-radius:7px;padding:4px 8px;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+                                <span><strong>${it.num}. (${it.points}p):</strong> ${escapeHtml(it.correctTurkish)}</span>
+                                <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#087f5b;">${formatArHtml(it.arabic)}</span>
+                              </div>`
+                          )
+                          .join("")}
                       </div>
-                    `
-                    )
-                    .join("")}
-                </div>
-              </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                sixSectionExamData.sec2TrToAr.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 2. Bölüm — Türkçe → Arapça Yazma Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[1]} Puan)</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${sixSectionExamData.sec2TrToAr
+                          .map(
+                            (it) =>
+                              `<div style="border:1px solid #cbd5e1;border-radius:7px;padding:4px 8px;background:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+                                <span><strong>${it.num}. (${it.points}p):</strong> ${escapeHtml(it.turkish)}</span>
+                                <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#6741d9;"><u>${formatArHtml(it.correctArabic)}</u></span>
+                              </div>`
+                          )
+                          .join("")}
+                      </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                sixSectionExamData.sec3FillBlank.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 3. Bölüm — Boşluk Doldurma Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[2]} Puan)</div>
+                      <div style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;">
+                        ${sixSectionExamData.sec3FillBlank
+                          .map(
+                            (b, idx) =>
+                              `<div style="padding:5px 10px;border-bottom:${
+                                idx < sixSectionExamData.sec3FillBlank.length - 1
+                                  ? "1px solid #e2e8f0"
+                                  : "none"
+                              };display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;">
+                                <span><strong>${b.num}. (${b.points}p):</strong> <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:16px;font-weight:800;color:#dc2626;"><u>${formatArHtml(b.targetWordAr)}</u></span> (${escapeHtml(b.turkishMeaning)})</span>
+                                <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#0f172a;">${formatArHtml(b.fullSentenceAr)}</span>
+                              </div>`
+                          )
+                          .join("")}
+                      </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                sixSectionExamData.sec4MultipleChoice.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 4. Bölüm — Çoktan Seçmeli Test Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[3]} Puan)</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${sixSectionExamData.sec4MultipleChoice
+                          .map(
+                            (c) =>
+                              `<div style="border:1px solid #cbd5e1;border-radius:7px;padding:5px 9px;background:#f8fafc;font-size:11px;">
+                                <strong>Soru ${c.num} (${c.points}p) → Şık ${escapeHtml(c.correctLetter)}:</strong> ${escapeHtml(c.correctTurkish)}
+                              </div>`
+                          )
+                          .join("")}
+                      </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                sixSectionExamData.sec5Matching.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 5. Bölüm — Eşleştirme Alıştırması Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[4]} Puan)</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${sixSectionExamData.sec5Matching
+                          .map(
+                            (m) =>
+                              `<div style="border:1px solid #cbd5e1;border-radius:7px;padding:4px 8px;background:#ffffff;font-size:11px;display:flex;align-items:center;justify-content:space-between;">
+                                <span><strong>${m.rightNumber}. ${escapeHtml(m.rightShuffledTr)}</strong> → <strong>[${escapeHtml(m.rightCorrectLetter)}]</strong></span>
+                                <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:16px;font-weight:700;color:#087f5b;">${formatArHtml(m.rightMatchedArabic)}</span>
+                              </div>`
+                          )
+                          .join("")}
+                      </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                sixSectionExamData.sec6Morphology.length > 0
+                  ? `<div class="section-block" style="margin-bottom:8px;">
+                      <div class="section-title">✅ 6. Bölüm — Sarf (Kök &amp; Müfret–Cemî / Mâzî–Muzâri) Cevapları (${sixSectionExamData.pointsAllocation.sectionTotals[5]} Puan)</div>
+                      <table class="two-col-table" style="font-size:11px;">
+                        <thead>
+                          <tr>
+                            <th># / Türkçe</th>
+                            <th dir="rtl" style="text-align:right;">Kök (جذر)</th>
+                            <th dir="rtl" style="text-align:right;">1. Form</th>
+                            <th dir="rtl" style="text-align:right;">2. Form</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${sixSectionExamData.sec6Morphology
+                            .map(
+                              (r) =>
+                                `<tr>
+                                  <td><strong>${r.num}. (${r.points}p)</strong> ${escapeHtml(r.turkce)}</td>
+                                  <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:16px;font-weight:700;color:#6741d9;">${formatArHtml(r.kokSpaced)}</td>
+                                  <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#087f5b;">${formatArHtml(r.form1Ar)} (${escapeHtml(r.form1Label)})</td>
+                                  <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#087f5b;">${formatArHtml(r.form2Ar)} (${escapeHtml(r.form2Label)})</td>
+                                </tr>`
+                            )
+                            .join("")}
+                        </tbody>
+                      </table>
+                    </div>`
+                  : ""
+              }
             `
               : pdfDocMode === "unvocalized-rubric"
               ? `
@@ -2837,7 +2983,7 @@ export default function DialoguePdfModal({
               }
               <span class="badge-outline">${
                 pdfDocMode === "quiz-sheet"
-                  ? `YAZILI SINAV (${a4QuizSheetData.pointsAllocation.grandTotal} PUAN)`
+                  ? `YAZILI SINAV (${sixSectionExamData.pointsAllocation.grandTotal} PUAN)`
                   : pdfDocMode === "unvocalized-rubric"
                   ? "HAREKESİZ YOKLAMA & MAARİF RUBRİĞİ (100 PUAN)"
                   : pdfDocMode === "flashcards"
@@ -2849,7 +2995,7 @@ export default function DialoguePdfModal({
               }</span>
             </div>
             <div class="title-row">
-              <h1 class="title-tr">${escapeHtml(dialogue.baslik_tr)}</h1>
+              <h1 class="title-tr">${escapeHtml(effectivePaperTitleTr)}</h1>
               <span class="title-ar" dir="rtl">${formatArHtml(
                 dialogue.baslik_ar
               )}</span>
@@ -2878,141 +3024,243 @@ export default function DialoguePdfModal({
           <div class="student-header-strip">
             <span><strong>Adı Soyadı:</strong> .......................................</span>
             <span><strong>Sınıfı / No:</strong> ..................</span>
-            <span><strong>Kitapçık:</strong> ${a4QuizSheetData.bookletGroup} Grubu (#${escapeHtml(
-                a4QuizSheetData.formCode
+            <span><strong>Kitapçık:</strong> ${sixSectionExamData.bookletGroup} Grubu (#${escapeHtml(
+                sixSectionExamData.formCode
               )})</span>
             <span><strong>Puan:</strong> ........ / ${
-              a4QuizSheetData.pointsAllocation.grandTotal
+              sixSectionExamData.pointsAllocation.grandTotal
             }</span>
           </div>
 
-          <div class="section-block" style="margin-bottom:10px;">
-            <div class="section-title">
-              <span>BÖLÜM A — Kelime Eşleştirme (Toplam ${
-                a4QuizSheetData.pointsAllocation.totalA
-              } Puan)</span>
-              <span class="section-title-ar" dir="rtl">أ. تَوْصِيلُ الْمُفْرَدَاتِ</span>
-            </div>
-            <table class="vocab-table" style="width:100%;border-collapse:collapse;">
-              <thead>
-                <tr>
-                  <th style="width:45%;text-align:right;" dir="rtl">الْكَلِمَةُ الْعَرَبِيَّةُ (Arapça Kelime)</th>
-                  <th style="width:12%;text-align:center;">Eşleştirme</th>
-                  <th style="width:43%;text-align:left;">Türkçe Anlamı (Seçenekler)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${a4QuizSheetData.sectionAMatching
-                  .map(
-                    (row) => `
-                  <tr>
-                    <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:${Math.round(
-                      18 * fontConfig.scale
-                    )}px;font-weight:700;color:#087f5b;padding:4px 8px;">
-                      ${row.num}. ${formatArHtml(row.arabic)} <span dir="ltr" style="font-size:9.5px;color:#64748b;font-family:sans-serif;">(${row.points}p)</span>
-                    </td>
-                    <td style="text-align:center;font-weight:800;font-size:11px;color:#334155;padding:4px;">
-                      ( &nbsp;&nbsp;&nbsp; )
-                    </td>
-                    <td style="text-align:left;font-size:11px;font-weight:700;color:#1e293b;padding:4px 8px;">
-                      <strong>${escapeHtml(row.letter)})</strong> ${escapeHtml(
-                      row.shuffledTr
-                    )}
-                    </td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="section-block" style="margin-bottom:10px;">
-            <div class="section-title">
-              <span>BÖLÜM B — Boşluk Doldurma (Toplam ${
-                a4QuizSheetData.pointsAllocation.totalB
-              } Puan)</span>
-              <span class="section-title-ar" dir="rtl">ب. امْلَأِ الْفَرَاغَاتِ</span>
-            </div>
-            <div class="helper-words-box" style="margin-bottom:6px;padding:6px 10px;">
-              <div class="helper-words-header">
-                <span>📦 Kelime Havuzu (Uygun kelimeyi seçip boşluğa yazınız)</span>
-                <span class="helper-words-ar-title" dir="rtl">صُنْدُوقُ الْكَلِمَاتِ</span>
-              </div>
-              <div class="helper-words-items" dir="rtl">
-                ${a4QuizSheetData.wordBank
-                  .map(
-                    (w) =>
-                      `<span class="helper-word-chip">${formatArHtml(w)}</span>`
-                  )
-                  .join("")}
-              </div>
-            </div>
-            <div style="border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;">
-              ${a4QuizSheetData.sectionBFillBlanks
-                .map(
-                  (q, idx) => `
-                <div style="padding:5px 10px;border-bottom:${
-                  idx < a4QuizSheetData.sectionBFillBlanks.length - 1
-                    ? "1px solid #e2e8f0"
-                    : "none"
-                };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
-                  <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
-                    18 * fontConfig.scale
-                  )}px;font-weight:700;color:#0f172a;text-align:right;">
-                    ${idx + 1}. ${formatArHtml(q.blankSentence)} <span dir="ltr" style="font-size:9.5px;color:#6741d9;font-family:sans-serif;">(${q.points}p)</span>
-                  </div>
-                  <div style="font-size:10px;color:#475569;margin-top:1px;">
-                    <em>İpucu (${escapeHtml(q.turkce)})</em>
-                  </div>
-                </div>
-              `
-                )
-                .join("")}
-            </div>
-          </div>
-
-          <div class="section-block" style="margin-bottom:10px;">
-            <div class="section-title">
-              <span>BÖLÜM C — Kalıp İfadeler ve Diyalog Anlama (Toplam ${
-                a4QuizSheetData.pointsAllocation.totalC
-              } Puan)</span>
-              <span class="section-title-ar" dir="rtl">ج. التَّعْبِيرَاتُ وَالْفَهْمُ</span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              ${a4QuizSheetData.sectionCMultipleChoice
-                .map(
-                  (mc) => `
-                <div style="border:1px solid #cbd5e1;border-radius:10px;padding:6px 9px;background:#ffffff;break-inside:avoid;">
-                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:3px;">
-                    <span style="font-size:10px;font-weight:800;color:#6741d9;">Soru ${mc.num} (${escapeHtml(
-                    mc.typeLabel
-                  )} • ${mc.points}p)</span>
-                    <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
-                    17 * fontConfig.scale
-                  )}px;font-weight:700;color:#087f5b;">${formatArHtml(
-                    mc.arabicPrompt
-                  )}</span>
-                  </div>
-                  <div style="font-size:10px;font-weight:700;color:#334155;margin-bottom:4px;">${escapeHtml(
-                    mc.questionTr
+          ${
+            includeTopicSummary
+              ? `<div class="section-block" style="margin-bottom:10px;border:1.5px solid #087f5b;border-radius:10px;padding:8px 12px;background:#f0fdf4;">
+                  <div style="font-size:11.5px;font-weight:800;color:#065f46;margin-bottom:3px;">📚 Konu Özeti / Dilbilgisi ve Kelime Kutusu — ${escapeHtml(
+                    studioBundle.topicSummary.titleTr
                   )}</div>
-                  <div style="font-size:10.5px;color:#1e293b;display:flex;flex-direction:column;gap:2px;">
-                    ${mc.options
+                  <div style="font-size:10.5px;color:#1e293b;margin-bottom:5px;">${escapeHtml(
+                    studioBundle.topicSummary.ruleSummaryTr
+                  )}</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    ${studioBundle.topicSummary.rows
                       .map(
-                        (o) =>
-                          `<div><strong>${escapeHtml(o.letter)})</strong> ${escapeHtml(
-                            o.text
-                          )}</div>`
+                        (r) =>
+                          `<div style="background:#ffffff;border:1px solid #bbf7d0;border-radius:7px;padding:4px 8px;font-size:10px;">
+                            <strong style="color:#065f46;">${escapeHtml(r.headingTr)}:</strong> ${escapeHtml(r.detailTr)}
+                          </div>`
                       )
                       .join("")}
                   </div>
-                </div>
-              `
-                )
-                .join("")}
-            </div>
-          </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec1ArToTr.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>1. BÖLÜM — Arapça → Türkçe Anlam Yazma (${sixSectionExamData.pointsAllocation.sectionTotals[0]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">١. اُكْتُبْ مَعَانِيَ الْكَلِمَاتِ بِالتُّرْكِيَّةِ</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    ${sixSectionExamData.sec1ArToTr
+                      .map(
+                        (it) =>
+                          `<div style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;background:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <div style="flex:1;border-bottom:1.5px dotted #94a3b8;height:18px;"></div>
+                            <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
+                            18 * fontConfig.scale
+                          )}px;font-weight:700;color:#087f5b;">${it.num}. ${formatArHtml(it.arabic)} <span dir="ltr" style="font-size:9px;color:#64748b;font-family:sans-serif;">(${it.points}p)</span></div>
+                          </div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec2TrToAr.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>2. BÖLÜM — Türkçe → Arapça Yazma (${sixSectionExamData.pointsAllocation.sectionTotals[1]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">٢. اُكْتُبِ الْمُقَابِلَ الْعَرَبِيَّ</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    ${sixSectionExamData.sec2TrToAr
+                      .map(
+                        (it) =>
+                          `<div style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;background:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <div style="font-size:11px;font-weight:700;color:#1e293b;">${it.num}. ${escapeHtml(it.turkish)} <span style="font-size:9px;color:#6741d9;">(${it.points}p)</span></div>
+                            <div style="width:45%;border-bottom:1.5px dotted #94a3b8;height:18px;"></div>
+                          </div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec3FillBlank.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>3. BÖLÜM — Cümle Tamamlama / Boşluk Doldurma (${sixSectionExamData.pointsAllocation.sectionTotals[2]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">٣. اِمْلَأِ الْفَرَاغَاتِ بِالْكَلِمَةِ الْمُنَاسِبَةِ</span>
+                  </div>
+                  <div class="helper-words-box" style="margin-bottom:6px;padding:6px 10px;">
+                    <div class="helper-words-header">
+                      <span>📦 Kelime Kutusu (Uygun kelimeyi seçip boşluğa yazınız)</span>
+                      <span class="helper-words-ar-title" dir="rtl">صُنْدُوقُ الْكَلِمَاتِ</span>
+                    </div>
+                    <div class="helper-words-items" dir="rtl">
+                      ${sixSectionExamData.sec3WordBank
+                        .map(
+                          (w) =>
+                            `<span class="helper-word-chip">${formatArHtml(w)}</span>`
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                  <div style="border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;">
+                    ${sixSectionExamData.sec3FillBlank
+                      .map(
+                        (q, idx) =>
+                          `<div style="padding:5px 10px;border-bottom:${
+                            idx < sixSectionExamData.sec3FillBlank.length - 1
+                              ? "1px solid #e2e8f0"
+                              : "none"
+                          };background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};">
+                            <div dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
+                            18 * fontConfig.scale
+                          )}px;font-weight:700;color:#0f172a;text-align:right;">
+                              ${q.num}. ${formatArHtml(q.blankSentenceAr)} <span dir="ltr" style="font-size:9.5px;color:#6741d9;font-family:sans-serif;">(${q.points}p)</span>
+                            </div>
+                            <div style="font-size:10px;color:#475569;margin-top:1px;"><em>Anlam İpucu: ${escapeHtml(q.turkishMeaning)}</em></div>
+                          </div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec4MultipleChoice.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>4. BÖLÜM — Çoktan Seçmeli Test (${sixSectionExamData.pointsAllocation.sectionTotals[3]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">٤. اِخْتَرِ الْإِجَابَةَ الصَّحِيحَةَ</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    ${sixSectionExamData.sec4MultipleChoice
+                      .map(
+                        (mc) =>
+                          `<div style="border:1px solid #cbd5e1;border-radius:10px;padding:6px 9px;background:#ffffff;break-inside:avoid;">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:3px;">
+                              <span style="font-size:10px;font-weight:800;color:#6741d9;">Soru ${mc.num} (${mc.points}p)</span>
+                              <span dir="rtl" style="font-family:${fontConfig.cssFamily};font-size:${Math.round(
+                            17 * fontConfig.scale
+                          )}px;font-weight:700;color:#087f5b;">${formatArHtml(mc.arabicPrompt)}</span>
+                            </div>
+                            <div style="font-size:10px;font-weight:700;color:#334155;margin-bottom:4px;">${escapeHtml(mc.questionStemTr)}</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 6px;font-size:10px;color:#1e293b;">
+                              ${mc.options
+                                .map(
+                                  (o) =>
+                                    `<div><strong>${escapeHtml(o.letter)})</strong> ${escapeHtml(o.textTr)}</div>`
+                                )
+                                .join("")}
+                            </div>
+                          </div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec5Matching.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>5. BÖLÜM — Eşleştirme Alıştırması (${sixSectionExamData.pointsAllocation.sectionTotals[4]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">٥. صِلْ بَيْنَ الْمَجْمُوعَتَيْنِ</span>
+                  </div>
+                  <table class="vocab-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                      <tr>
+                        <th style="width:44%;text-align:right;" dir="rtl">Harfli Arapça İfade</th>
+                        <th style="width:14%;text-align:center;">Cevap Kutusu</th>
+                        <th style="width:42%;text-align:left;">Numaralı Karışık Türkçe Karşılığı</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${sixSectionExamData.sec5Matching
+                        .map(
+                          (row) =>
+                            `<tr>
+                              <td dir="rtl" style="text-align:right;font-family:${fontConfig.cssFamily};font-size:${Math.round(
+                              17.5 * fontConfig.scale
+                            )}px;font-weight:700;color:#087f5b;padding:4px 8px;">
+                                <strong>${escapeHtml(row.leftLetter)})</strong> ${formatArHtml(row.leftArabic)}
+                              </td>
+                              <td style="text-align:center;font-weight:800;font-size:11px;color:#334155;padding:4px;">
+                                [ &nbsp;&nbsp;&nbsp;&nbsp; ]
+                              </td>
+                              <td style="text-align:left;font-size:11px;font-weight:700;color:#1e293b;padding:4px 8px;">
+                                <strong>${row.rightNumber}.</strong> ${escapeHtml(row.rightShuffledTr)} <span style="font-size:9px;color:#64748b;">(${row.points}p)</span>
+                              </td>
+                            </tr>`
+                        )
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>`
+              : ""
+          }
+
+          ${
+            sixSectionExamData.sec6Morphology.length > 0
+              ? `<div class="section-block" style="margin-bottom:10px;">
+                  <div class="section-title">
+                    <span>6. BÖLÜM — Sarf: Kök &amp; Müfret–Cemî / Mâzî–Muzâri Tablosu (${sixSectionExamData.pointsAllocation.sectionTotals[5]} Puan)</span>
+                    <span class="section-title-ar" dir="rtl">٦. جَدْوَلُ الصَّرْفِ وَالْجُذُورِ</span>
+                  </div>
+                  <table class="two-col-table" style="font-size:11px;">
+                    <thead>
+                      <tr>
+                        <th style="width:28%;">Türkçe Anlamı</th>
+                        <th style="width:22%;text-align:center;">Üçlü Kök (جذر)</th>
+                        <th style="width:25%;text-align:center;">Müfret / Mâzî</th>
+                        <th style="width:25%;text-align:center;">Cemî / Muzâri</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${sixSectionExamData.sec6Morphology
+                        .map(
+                          (r) =>
+                            `<tr>
+                              <td style="font-weight:700;">${r.num}. ${escapeHtml(r.turkce)} <span style="font-size:9px;color:#6741d9;">(${r.points}p)</span></td>
+                              <td style="text-align:center;color:#94a3b8;">.................</td>
+                              <td dir="rtl" style="text-align:center;font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#087f5b;">${
+                                r.givenSlot === "form1"
+                                  ? formatArHtml(r.form1Ar)
+                                  : "................."
+                              }</td>
+                              <td dir="rtl" style="text-align:center;font-family:${fontConfig.cssFamily};font-size:17px;font-weight:700;color:#087f5b;">${
+                                r.givenSlot === "form2"
+                                  ? formatArHtml(r.form2Ar)
+                                  : "................."
+                              }</td>
+                            </tr>`
+                        )
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>`
+              : ""
+          }
         `
             : pdfDocMode === "unvocalized-rubric"
             ? unvocalizedRubricSectionHtml
@@ -3141,10 +3389,10 @@ export default function DialoguePdfModal({
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] truncate">
-                Akıllı PDF & Çalışma Kağıdı Üreticisi
+                🖨️ A4 Yazılı Sınav, Ders Notu &amp; Quiz Üretici
               </h2>
               <p className="text-[11px] font-semibold text-[var(--muted)] truncate">
-                #{String(rawNum).padStart(2, "0")} {dialogue.baslik_tr} •{" "}
+                {studioBundle.sourceCodeBracket} {dialogue.baslik_tr} •{" "}
                 <span className="text-[#065F46] dark:text-emerald-400 font-bold">
                   www.muallimun.net
                 </span>
@@ -3215,7 +3463,98 @@ export default function DialoguePdfModal({
               : "hidden md:block shrink-0"
           }`}
         >
-          {/* 0. Satır: 4 Tek Tık Öğretmen Şablonu + A/B Kitapçık Seçici + ⚙️ Gelişmiş Mizanpaj Ayarları */}
+          {/* KAYNAK, SEVİYE, İÇERİK PAKETİ VE ÖZEL BAŞLIK SEÇİM PANELİ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+            <div className="space-y-0.5">
+              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
+                1. Materyal Kaynağı
+              </label>
+              <select
+                value={studioSourceId}
+                onChange={(e) => {
+                  const nextSrc = e.target.value as StudioSourceId;
+                  setStudioSourceId(nextSrc);
+                  const nextOpts = listStudioPackOptions(
+                    nextSrc,
+                    studioLevelFilter,
+                    initialDialogue
+                  );
+                  if (nextOpts[0]) setStudioPackId(nextOpts[0].id);
+                }}
+                className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+              >
+                {initialSelection.sourceId === "defterim_custom" && (
+                  <option value="defterim_custom">
+                    📓 Çalışma Defterim Seçkisi
+                  </option>
+                )}
+                {STUDIO_MATERIAL_SOURCES.map((src) => (
+                  <option key={src.id} value={src.id}>
+                    {src.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
+                2. Seviye (CEFR)
+              </label>
+              <div className="grid grid-cols-5 gap-1 h-8 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                {(["all", "A1", "A2", "B1", "B2"] as StudioLevelFilter[]).map(
+                  (lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setStudioLevelFilter(lvl);
+                      }}
+                      className={`rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                        studioLevelFilter === lvl
+                          ? "bg-[#087F5B] text-white"
+                          : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {lvl === "all" ? "Tümü" : lvl}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
+                3. İçerik / Paket Seçimi
+              </label>
+              <select
+                value={effectiveStudioPackId}
+                onChange={(e) => setStudioPackId(e.target.value)}
+                className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+              >
+                {studioPackOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
+                4. Özel Sınav / Föy Başlığı
+              </label>
+              <input
+                type="text"
+                value={customPaperTitle}
+                onChange={(e) => setCustomPaperTitle(e.target.value)}
+                placeholder={dialogue.baslik_tr}
+                className="w-full h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+              />
+            </div>
+          </div>
+
+          {/* 0. Satır: 5 Tek Tık Öğretmen Şablonu + A/B Kitapçık Seçici + ⚙️ Gelişmiş Mizanpaj Ayarları */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
             <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
               <button
@@ -3238,7 +3577,7 @@ export default function DialoguePdfModal({
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                📝 Yazılı Sınav (A / B Kitapçık)
+                📝 6 Bölümlü Yazılı Sınav (A / B)
               </button>
               <button
                 type="button"
@@ -3276,6 +3615,61 @@ export default function DialoguePdfModal({
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
+              {/* Ders Notu (Handout) için 3 Hızlı Mizanpaj Seçicisi */}
+              {pdfDocMode === "handout" && (
+                <div className="flex flex-wrap items-center gap-1 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-xl border border-emerald-300 dark:border-emerald-700">
+                  <span className="text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200">
+                    Mizanpaj:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setTranslationMode("show");
+                      setTranslationLayout("side-by-side");
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                      translationMode !== "hide" &&
+                      translationLayout === "side-by-side"
+                        ? "bg-[#087F5B] text-white"
+                        : "text-emerald-900 dark:text-emerald-200"
+                    }`}
+                  >
+                    Yan Yana
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setTranslationMode("hide");
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                      translationMode === "hide"
+                        ? "bg-[#087F5B] text-white"
+                        : "text-emerald-900 dark:text-emerald-200"
+                    }`}
+                  >
+                    Sadece Arapça
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setTranslationMode("show");
+                      setTranslationLayout("stacked");
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                      translationMode !== "hide" &&
+                      translationLayout === "stacked"
+                        ? "bg-[#087F5B] text-white"
+                        : "text-emerald-900 dark:text-emerald-200"
+                    }`}
+                  >
+                    Alt Alta Satır
+                  </button>
+                </div>
+              )}
+
               {pdfDocMode === "quiz-sheet" && (
                 <div className="flex items-center gap-1 bg-violet-50 dark:bg-violet-950/50 px-2 py-1 rounded-xl border border-violet-300 dark:border-violet-700">
                   <span className="text-[11px] font-extrabold text-violet-900 dark:text-violet-200">
@@ -3299,7 +3693,7 @@ export default function DialoguePdfModal({
                     </button>
                   ))}
                   <span className="text-[10px] font-mono font-bold text-violet-700 dark:text-violet-300 pl-1">
-                    #{a4QuizSheetData.formCode}
+                    #{sixSectionExamData.formCode}
                   </span>
                 </div>
               )}
@@ -3354,6 +3748,85 @@ export default function DialoguePdfModal({
               </button>
             </div>
           </div>
+
+          {/* YAZILI SINAV MODUNDA 6 ÖZELLEŞTİRİLEBİLİR SORU BÖLÜMÜ SAYACI + KONU ÖZETİ KUTUSU */}
+          {pdfDocMode === "quiz-sheet" && (
+            <div className="bg-violet-50/70 dark:bg-violet-950/30 rounded-xl border border-violet-200 dark:border-violet-800/70 p-2 space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-extrabold text-[#4C28B5] dark:text-purple-300">
+                  📝 6 Özelleştirilebilir Sınav Bölümü (0 girilen bölüm gizlenir • Otomatik 100 Puan Dağılımı)
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIncludeTopicSummary((v) => !v);
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-extrabold border cursor-pointer ${
+                      includeTopicSummary
+                        ? "bg-[#087F5B] text-white border-[#065F46]"
+                        : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
+                    }`}
+                  >
+                    📚 Konu Özeti Kutusu: {includeTopicSummary ? "Açık" : "Gizli"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIncludeAnswerKey((v) => !v);
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-extrabold border cursor-pointer ${
+                      includeAnswerKey
+                        ? "bg-[#6741D9] text-white border-[#5230B5]"
+                        : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
+                    }`}
+                  >
+                    🔑 2. Sayfa Cevap Anahtarı: {includeAnswerKey ? "Açık" : "Gizli"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+                {(
+                  [
+                    { key: "sec1ArToTr", label: "1) AR → TR Anlam", max: 50 },
+                    { key: "sec2TrToAr", label: "2) TR → AR Yazma", max: 50 },
+                    { key: "sec3FillBlank", label: "3) Boşluk Doldur", max: 50 },
+                    { key: "sec4MultipleChoice", label: "4) Çoktan Seçmeli", max: 50 },
+                    { key: "sec5Matching", label: "5) Eşleştirme", max: 30 },
+                    { key: "sec6Morphology", label: "6) Sarf Tablosu", max: 30 },
+                  ] as const
+                ).map((sec) => (
+                  <div
+                    key={sec.key}
+                    className="bg-white dark:bg-slate-900 rounded-lg border border-violet-200 dark:border-slate-700 px-2 py-1 flex items-center justify-between gap-1"
+                  >
+                    <span className="text-[10px] font-bold text-[var(--foreground)] truncate">
+                      {sec.label}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={sec.max}
+                      value={examCounts[sec.key]}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value || "0", 10);
+                        setExamCounts((prev) =>
+                          clampExamCounts({
+                            ...prev,
+                            [sec.key]: Number.isNaN(val) ? 0 : val,
+                          })
+                        );
+                      }}
+                      className="w-11 h-6 rounded border border-violet-300 dark:border-slate-600 text-center text-xs font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/50 dark:bg-slate-800"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {showAdvancedSettings && (
             <div className="space-y-1.5 pt-1">
@@ -3934,13 +4407,13 @@ export default function DialoguePdfModal({
                   </span>
                   {pdfDocMode === "quiz-sheet" && (
                     <span className="px-2 py-0.5 rounded-md bg-violet-700 text-white text-[10px] font-extrabold">
-                      Kitapçık: {a4QuizSheetData.bookletGroup} Grubu (Form Kodu: #
-                      {a4QuizSheetData.formCode})
+                      Kitapçık: {sixSectionExamData.bookletGroup} Grubu (Form Kodu: #
+                      {sixSectionExamData.formCode})
                     </span>
                   )}
                   <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
                     {pdfDocMode === "quiz-sheet"
-                      ? `Yazılı Sınav • ${a4QuizSheetData.pointsAllocation.grandTotal} Puan`
+                      ? `Yazılı Sınav • ${sixSectionExamData.pointsAllocation.grandTotal} Puan`
                       : pdfDocMode === "unvocalized-rubric"
                       ? "Harekesiz Yoklama + Maarif Rubriği • 100 Puan"
                       : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`}
@@ -3965,7 +4438,7 @@ export default function DialoguePdfModal({
                         : "text-xl"
                     }`}
                   >
-                    {dialogue.baslik_tr}
+                    {effectivePaperTitleTr}
                   </h1>
                   <span
                     dir="rtl"
@@ -3984,7 +4457,7 @@ export default function DialoguePdfModal({
                 </div>
               </div>
 
-              {/* Sağ Köşe: Kompakt Görsel ve/veya QR Kod (Kademeye göre: w-24 h-24 | w-20 h-20 | w-16 h-16 | w-14 h-14) */}
+              {/* Sağ Köşe: Kompakt Görsel ve/veya QR Kod */}
               {(effectiveImageMode === "compact" || includeQrCode) && (
                 <div className="flex items-center gap-2.5 sm:border-l sm:border-dashed sm:border-slate-300 sm:pl-3 shrink-0">
                   {effectiveImageMode === "compact" && (
@@ -4043,7 +4516,7 @@ export default function DialoguePdfModal({
               )}
             </div>
 
-            {/* 👤 ÖĞRENCİ BİLGİ ŞERİDİ (Ad-Soyad / Sınıf / Kitapçık veya Tarih / Puan) */}
+            {/* 👤 ÖĞRENCİ BİLGİ ŞERİDİ */}
             {(includeStudentHeader ||
               pdfDocMode === "quiz-sheet" ||
               pdfDocMode === "unvocalized-rubric") && (
@@ -4072,8 +4545,8 @@ export default function DialoguePdfModal({
                   <span>
                     <strong>Kitapçık:</strong>{" "}
                     <span className="font-extrabold text-[#6741D9]">
-                      {a4QuizSheetData.bookletGroup} Grubu (#
-                      {a4QuizSheetData.formCode})
+                      {sixSectionExamData.bookletGroup} Grubu (#
+                      {sixSectionExamData.formCode})
                     </span>
                   </span>
                 ) : (
@@ -4087,7 +4560,7 @@ export default function DialoguePdfModal({
                   <span className="text-slate-600">
                     ....... /{" "}
                     {pdfDocMode === "quiz-sheet"
-                      ? a4QuizSheetData.pointsAllocation.grandTotal
+                      ? sixSectionExamData.pointsAllocation.grandTotal
                       : 100}
                   </span>
                 </span>
@@ -4096,186 +4569,367 @@ export default function DialoguePdfModal({
 
             {pdfDocMode === "quiz-sheet" ? (
               <div className="space-y-4">
-                {/* BÖLÜM A — KELİME EŞLEŞTİRME */}
-                <div className="space-y-1.5 break-inside-avoid">
-                  <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
-                    <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM A — Kelime Eşleştirme (
-                      {a4QuizSheetData.pointsAllocation.totalA} Puan)
-                    </span>
-                    <span
-                      dir="rtl"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400"
-                    >
-                      أ. تَوْصِيلُ الْمُفْرَدَاتِ
-                    </span>
-                  </div>
-                  <div className="border border-slate-300 rounded-xl overflow-hidden">
-                    <table className="w-full border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
-                          <th
-                            dir="rtl"
-                            className="py-1.5 px-3 text-right w-[44%]"
-                          >
-                            الْكَلِمَةُ الْعَرَبِيَّةُ (Arapça Kelime)
-                          </th>
-                          <th className="py-1.5 px-2 text-center w-[14%] border-x border-slate-200">
-                            Eşleştirme
-                          </th>
-                          <th className="py-1.5 px-3 text-left w-[42%]">
-                            Türkçe Anlamı (Seçenekler)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {a4QuizSheetData.sectionAMatching.map((row) => (
-                          <tr
-                            key={row.num}
-                            className="bg-white odd:bg-slate-50/70"
-                          >
-                            <td
-                              dir="rtl"
-                              className="py-1 px-3 text-right arabic text-xl font-bold text-[#065F46] dark:text-emerald-400"
-                            >
-                              {row.num}. {formatAr(row.arabic)}{" "}
-                              <span
-                                dir="ltr"
-                                className="text-[10px] font-sans text-slate-500"
-                              >
-                                ({row.points}p)
-                              </span>
-                            </td>
-                            <td className="py-1 px-2 text-center font-extrabold text-slate-700 border-x border-dashed border-slate-200">
-                              ( &nbsp;&nbsp;&nbsp; )
-                            </td>
-                            <td className="py-1 px-3 text-left font-bold text-slate-800">
-                              <span className="text-[#6741D9] font-extrabold mr-1">
-                                {row.letter})
-                              </span>
-                              {row.shuffledTr}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* BÖLÜM B — BOŞLUK DOLDURMA */}
-                <div className="space-y-2 break-inside-avoid">
-                  <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
-                    <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM B — Boşluk Doldurma (
-                      {a4QuizSheetData.pointsAllocation.totalB} Puan)
-                    </span>
-                    <span
-                      dir="rtl"
-                      className="arabic text-base font-bold text-[#6741D9]"
-                    >
-                      ب. امْلَأِ الْفَرَاغَاتِ بِالْكَلِمَةِ الْمُنَاسِبَةِ
-                    </span>
-                  </div>
-
-                  <div className="bg-[#F3F0FF] border-2 border-dashed border-[#6741D9] rounded-xl p-2.5 space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-extrabold text-[#4C28B5]">
-                      <span>
-                        📦 Kelime Havuzu (Boşlukları uygun kelimelerle doldurunuz)
+                {/* KONU ÖZETİ / DİLBİLGİSİ VE KELİME KUTUSU */}
+                {includeTopicSummary && (
+                  <div className="rounded-xl border-2 border-[#087F5B]/60 bg-emerald-50/60 p-3 space-y-2 break-inside-avoid">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-extrabold text-[#065F46]">
+                        📚 Konu Özeti &amp; Dilbilgisi Kutusu —{" "}
+                        {studioBundle.topicSummary.titleTr}
                       </span>
-                      <span dir="rtl" className="arabic text-base font-bold">
-                        صُنْدُوقُ الْكَلِمَاتِ
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#065F46]"
+                      >
+                        {formatAr(studioBundle.topicSummary.titleAr)}
                       </span>
                     </div>
-                    <div
-                      dir="rtl"
-                      className="flex flex-wrap items-center justify-center gap-2"
-                    >
-                      {a4QuizSheetData.wordBank.map((w, idx) => (
-                        <span
-                          key={`${w}-${idx}`}
-                          className="arabic text-lg font-bold px-3 py-0.5 rounded-lg bg-white border border-[#D0BFFF] text-[#3B1FA8]"
+                    <p className="text-[11px] font-semibold text-slate-700 leading-snug">
+                      {studioBundle.topicSummary.ruleSummaryTr}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {studioBundle.topicSummary.rows.map((r, rIdx) => (
+                        <div
+                          key={rIdx}
+                          className="rounded-lg bg-white border border-emerald-200 px-2.5 py-1.5 text-[11px]"
                         >
-                          {formatAr(w)}
-                        </span>
+                          <strong className="text-[#065F46]">
+                            {r.headingTr}:
+                          </strong>{" "}
+                          <span className="text-slate-700">{r.detailTr}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
+                )}
 
-                  <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
-                    {a4QuizSheetData.sectionBFillBlanks.map((q, idx) => (
-                      <div
-                        key={q.sira}
-                        className="py-1.5 px-3 bg-white odd:bg-slate-50/70 space-y-0.5"
+                {/* 1. BÖLÜM: ARAPÇA -> TÜRKÇE ANLAM YAZMA */}
+                {sixSectionExamData.sec1ArToTr.length > 0 && (
+                  <div className="space-y-1.5 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        1. BÖLÜM — Arapça → Türkçe Anlam Yazma (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[0]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#065F46]"
                       >
+                        ١. اُكْتُبْ مَعَانِيَ الْكَلِمَاتِ بِالتُّرْكِيَّةِ
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {sixSectionExamData.sec1ArToTr.map((it) => (
                         <div
-                          dir="rtl"
-                          className="arabic text-xl font-bold text-slate-900 text-right"
+                          key={it.num}
+                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2"
                         >
-                          {idx + 1}. {formatAr(q.blankSentence)}{" "}
-                          <span
-                            dir="ltr"
-                            className="text-[10px] font-sans text-[#6741D9]"
-                          >
-                            ({q.points}p)
-                          </span>
-                        </div>
-                        <div className="text-[11px] font-medium text-slate-600">
-                          İpucu: {q.turkce}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* BÖLÜM C — KALIP İFADELER VE ANLAMA */}
-                <div className="space-y-1.5 break-inside-avoid">
-                  <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
-                    <span className="text-xs font-extrabold text-slate-900">
-                      BÖLÜM C — Kalıp İfadeler ve Anlama (
-                      {a4QuizSheetData.pointsAllocation.totalC} Puan)
-                    </span>
-                    <span
-                      dir="rtl"
-                      className="arabic text-base font-bold text-[#065F46] dark:text-emerald-400"
-                    >
-                      ج. التَّعْبِيرَاتُ وَفَهْمُ الْحِوَارِ
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {a4QuizSheetData.sectionCMultipleChoice.map((mc) => (
-                      <div
-                        key={mc.num}
-                        className="rounded-xl border border-slate-300 bg-white p-2.5 space-y-1.5"
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-[10px] font-extrabold text-[#6741D9] bg-[#F3F0FF] px-2 py-0.5 rounded-md">
-                            Soru {mc.num} • {mc.typeLabel} ({mc.points}p)
-                          </span>
-                          <span
+                          <div className="flex-1 border-b border-dotted border-slate-400 h-5" />
+                          <div
                             dir="rtl"
-                            className="arabic text-lg font-bold text-[#065F46] dark:text-emerald-400 text-right"
+                            className="arabic text-xl font-bold text-[#065F46]"
                           >
-                            {formatAr(mc.arabicPrompt)}
-                          </span>
+                            {it.num}. {formatAr(it.arabic)}{" "}
+                            <span
+                              dir="ltr"
+                              className="text-[10px] font-sans text-slate-500"
+                            >
+                              ({it.points}p)
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-[11px] font-bold text-slate-700">
-                          {mc.questionTr}
-                        </p>
-                        <div className="space-y-1 text-[11px] text-slate-800">
-                          {mc.options.map((o) => (
-                            <div key={o.letter} className="leading-snug">
-                              <strong className="text-[#065F46] dark:text-emerald-400">
-                                {o.letter})
-                              </strong>{" "}
-                              {o.text}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* 2. BÖLÜM: TÜRKÇE -> ARAPÇA YAZMA */}
+                {sixSectionExamData.sec2TrToAr.length > 0 && (
+                  <div className="space-y-1.5 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        2. BÖLÜM — Türkçe → Arapça Yazma (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[1]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#6741D9]"
+                      >
+                        ٢. اُكْتُبِ الْمُقَابِلَ الْعَرَبِيَّ
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {sixSectionExamData.sec2TrToAr.map((it) => (
+                        <div
+                          key={it.num}
+                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2"
+                        >
+                          <span className="text-xs font-bold text-slate-800">
+                            {it.num}. {it.turkish}{" "}
+                            <span className="text-[10px] text-[#6741D9]">
+                              ({it.points}p)
+                            </span>
+                          </span>
+                          <div className="w-2/5 border-b border-dotted border-slate-400 h-5" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. BÖLÜM: CÜMLE TAMAMLAMA / BOŞLUK DOLDURMA */}
+                {sixSectionExamData.sec3FillBlank.length > 0 && (
+                  <div className="space-y-2 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        3. BÖLÜM — Cümle Tamamlama / Boşluk Doldurma (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[2]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#065F46]"
+                      >
+                        ٣. اِمْلَأِ الْفَرَاغَاتِ بِالْكَلِمَةِ الْمُنَاسِبَةِ
+                      </span>
+                    </div>
+                    <div className="bg-[#F3F0FF] border-2 border-dashed border-[#6741D9] rounded-xl p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold text-[#4C28B5]">
+                        <span>📦 Kelime Kutusu</span>
+                        <span dir="rtl" className="arabic text-base font-bold">
+                          صُنْدُوقُ الْكَلِمَاتِ
+                        </span>
+                      </div>
+                      <div
+                        dir="rtl"
+                        className="flex flex-wrap items-center justify-center gap-2"
+                      >
+                        {sixSectionExamData.sec3WordBank.map((w, idx) => (
+                          <span
+                            key={`${w}-${idx}`}
+                            className="arabic text-lg font-bold px-3 py-0.5 rounded-lg bg-white border border-[#D0BFFF] text-[#3B1FA8]"
+                          >
+                            {formatAr(w)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200">
+                      {sixSectionExamData.sec3FillBlank.map((q) => (
+                        <div
+                          key={q.num}
+                          className="py-1.5 px-3 bg-white odd:bg-slate-50/70 space-y-0.5"
+                        >
+                          <div
+                            dir="rtl"
+                            className="arabic text-xl font-bold text-slate-900 text-right"
+                          >
+                            {q.num}. {formatAr(q.blankSentenceAr)}{" "}
+                            <span
+                              dir="ltr"
+                              className="text-[10px] font-sans text-[#6741D9]"
+                            >
+                              ({q.points}p)
+                            </span>
+                          </div>
+                          <div className="text-[11px] font-medium text-slate-600">
+                            Anlam İpucu: {q.turkishMeaning}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. BÖLÜM: ÇOKTAN SEÇMELİ TEST (2x2 ŞIKLAR) */}
+                {sixSectionExamData.sec4MultipleChoice.length > 0 && (
+                  <div className="space-y-1.5 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        4. BÖLÜM — Çoktan Seçmeli Test (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[3]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#6741D9]"
+                      >
+                        ٤. اِخْتَرِ الْإِجَابَةَ الصَّحِيحَةَ
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {sixSectionExamData.sec4MultipleChoice.map((mc) => (
+                        <div
+                          key={mc.num}
+                          className="rounded-xl border border-slate-300 bg-white p-2.5 space-y-1.5"
+                        >
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-[10px] font-extrabold text-[#6741D9] bg-[#F3F0FF] px-2 py-0.5 rounded-md">
+                              Soru {mc.num} ({mc.points}p)
+                            </span>
+                            <span
+                              dir="rtl"
+                              className="arabic text-lg font-bold text-[#065F46] text-right"
+                            >
+                              {formatAr(mc.arabicPrompt)}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-bold text-slate-700">
+                            {mc.questionStemTr}
+                          </p>
+                          <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-800">
+                            {mc.options.map((o) => (
+                              <div key={o.letter} className="leading-snug">
+                                <strong className="text-[#065F46]">
+                                  {o.letter})
+                                </strong>{" "}
+                                {o.textTr}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. BÖLÜM: EŞLEŞTİRME ALIŞTIRMASI */}
+                {sixSectionExamData.sec5Matching.length > 0 && (
+                  <div className="space-y-1.5 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#087F5B] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        5. BÖLÜM — Eşleştirme Alıştırması (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[4]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#065F46]"
+                      >
+                        ٥. صِلْ بَيْنَ الْمَجْمُوعَتَيْنِ
+                      </span>
+                    </div>
+                    <div className="border border-slate-300 rounded-xl overflow-hidden">
+                      <table className="w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
+                            <th dir="rtl" className="py-1.5 px-3 text-right w-[44%]">
+                              Harfli Arapça İfade
+                            </th>
+                            <th className="py-1.5 px-2 text-center w-[14%] border-x border-slate-200">
+                              Cevap Kutusu
+                            </th>
+                            <th className="py-1.5 px-3 text-left w-[42%]">
+                              Numaralı Karışık Türkçe Karşılığı
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {sixSectionExamData.sec5Matching.map((row) => (
+                            <tr
+                              key={row.rowIndex}
+                              className="bg-white odd:bg-slate-50/70"
+                            >
+                              <td
+                                dir="rtl"
+                                className="py-1 px-3 text-right arabic text-xl font-bold text-[#065F46]"
+                              >
+                                {row.leftLetter}) {formatAr(row.leftArabic)}
+                              </td>
+                              <td className="py-1 px-2 text-center font-extrabold text-slate-700 border-x border-dashed border-slate-200">
+                                [ &nbsp;&nbsp;&nbsp; ]
+                              </td>
+                              <td className="py-1 px-3 text-left font-bold text-slate-800">
+                                <span className="text-[#6741D9] font-extrabold mr-1">
+                                  {row.rightNumber}.
+                                </span>
+                                {row.rightShuffledTr}{" "}
+                                <span className="text-[10px] text-slate-500">
+                                  ({row.points}p)
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. BÖLÜM: SARF (KÖK & MÜFRET-CEMÎ / FİİL) TABLOSU */}
+                {sixSectionExamData.sec6Morphology.length > 0 && (
+                  <div className="space-y-1.5 break-inside-avoid">
+                    <div className="flex items-center justify-between bg-[#F7EFE1] border border-[#E6D7BE] border-l-4 border-l-[#6741D9] px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-extrabold text-slate-900">
+                        6. BÖLÜM — Sarf: Kök &amp; Müfret–Cemî / Mâzî–Muzâri Tablosu (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[5]}{" "}
+                        Puan)
+                      </span>
+                      <span
+                        dir="rtl"
+                        className="arabic text-base font-bold text-[#6741D9]"
+                      >
+                        ٦. جَدْوَلُ الصَّرْفِ وَالْجُذُورِ
+                      </span>
+                    </div>
+                    <div className="border border-slate-300 rounded-xl overflow-hidden">
+                      <table className="w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
+                            <th className="py-1.5 px-3 text-left w-[28%]">
+                              Türkçe Anlamı
+                            </th>
+                            <th className="py-1.5 px-2 text-center w-[22%]">
+                              Üçlü Kök (جذر)
+                            </th>
+                            <th className="py-1.5 px-2 text-center w-[25%]">
+                              Müfret / Mâzî
+                            </th>
+                            <th className="py-1.5 px-2 text-center w-[25%]">
+                              Cemî / Muzâri
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {sixSectionExamData.sec6Morphology.map((r) => (
+                            <tr
+                              key={r.num}
+                              className="bg-white odd:bg-slate-50/70"
+                            >
+                              <td className="py-1.5 px-3 font-bold text-slate-800">
+                                {r.num}. {r.turkce}{" "}
+                                <span className="text-[10px] text-[#6741D9]">
+                                  ({r.points}p)
+                                </span>
+                              </td>
+                              <td className="py-1.5 px-2 text-center text-slate-400">
+                                .................
+                              </td>
+                              <td
+                                dir="rtl"
+                                className="py-1.5 px-2 text-center arabic text-lg font-bold text-[#065F46]"
+                              >
+                                {r.givenSlot === "form1"
+                                  ? formatAr(r.form1Ar)
+                                  : "................."}
+                              </td>
+                              <td
+                                dir="rtl"
+                                className="py-1.5 px-2 text-center arabic text-lg font-bold text-[#065F46]"
+                              >
+                                {r.givenSlot === "form2"
+                                  ? formatAr(r.form2Ar)
+                                  : "................."}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : pdfDocMode === "unvocalized-rubric" ? (
               <div className="space-y-4">
@@ -5265,12 +5919,9 @@ export default function DialoguePdfModal({
             </footer>
           </div>
 
-          {/* 🔑 2. SAYFA: ÖĞRETMEN CEVAP ANAHTARI (includeAnswerKey === true ise ayrı A4 sayfası olarak gösterilir) */}
+          {/* 🔑 2. SAYFA: ÖĞRETMEN CEVAP ANAHTARI */}
           {includeAnswerKey && (
-            <div
-              style={{ pageBreakBefore: "always", breakBefore: "page" }}
-              className="mt-6 max-w-[210mm] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#087F5B] shadow-lg p-4 sm:p-7 space-y-4 print:shadow-none print:border-0 print:p-0"
-            >
+            <div className="break-before-page mt-6 max-w-[210mm] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#087F5B] shadow-lg p-4 sm:p-7 space-y-4 print:shadow-none print:border-0 print:p-0">
               {/* Öğretmen Cevap Anahtarı Kurumsal Başlığı */}
               <div className="pb-3 border-b-2 border-[#087F5B] flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -5280,13 +5931,13 @@ export default function DialoguePdfModal({
                     </span>
                     {pdfDocMode === "quiz-sheet" && (
                       <span className="inline-block text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-violet-100 text-violet-900 border border-violet-300">
-                        Kitapçık: {a4QuizSheetData.bookletGroup} Grubu (#
-                        {a4QuizSheetData.formCode})
+                        Kitapçık: {sixSectionExamData.bookletGroup} Grubu (#
+                        {sixSectionExamData.formCode})
                       </span>
                     )}
                   </div>
                   <h3 className="text-base sm:text-lg font-extrabold text-[#065F46]">
-                    🔑 Öğretmen Cevap Anahtarı — {dialogue.baslik_tr}
+                    🔑 Öğretmen Cevap Anahtarı — {effectivePaperTitleTr}
                   </h3>
                 </div>
                 <div
@@ -5299,101 +5950,163 @@ export default function DialoguePdfModal({
 
               {pdfDocMode === "quiz-sheet" ? (
                 <div className="space-y-3 text-xs text-slate-800">
-                  <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 space-y-1.5">
-                    <div className="font-extrabold text-[#065F46] text-xs">
-                      A) Kelime Eşleştirme Cevapları (
-                      {a4QuizSheetData.pointsAllocation.totalA} Puan):
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                      {a4QuizSheetData.sectionAMatching.map((m) => (
-                        <div
-                          key={m.num}
-                          className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-white border border-emerald-200"
-                        >
-                          <span className="font-bold text-slate-800">
-                            {m.num} ({m.points}p) →{" "}
-                            <strong className="text-[#065F46]">
-                              {m.correctLetter}) {m.correctTr}
-                            </strong>
-                          </span>
-                          <span
-                            dir="rtl"
-                            className="arabic text-base font-bold text-[#065F46]"
-                          >
-                            {formatAr(m.arabic)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-violet-300 bg-violet-50/40 p-3 space-y-1.5">
-                    <div className="font-extrabold text-[#4C28B5] text-xs">
-                      B) Cümle Tamamlama / Boşluk Doldurma Cevapları (
-                      {a4QuizSheetData.pointsAllocation.totalB} Puan):
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      {a4QuizSheetData.sectionBFillBlanks.map((b, idx) => {
-                        const tWord = formatAr(b.answer);
-                        const fullAr = formatAr(
-                          b.blankSentence.replace(/\.{4,}/g, b.answer)
-                        );
-                        return (
+                  {sixSectionExamData.sec1ArToTr.length > 0 && (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 space-y-1.5">
+                      <div className="font-extrabold text-[#065F46] text-xs">
+                        1. Bölüm — Arapça → Türkçe Cevapları (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[0]} Puan):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {sixSectionExamData.sec1ArToTr.map((it) => (
                           <div
-                            key={b.sira}
-                            className="p-2 rounded-lg bg-white border border-violet-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
+                            key={it.num}
+                            className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-white border border-emerald-200"
                           >
-                            <div className="text-[11px] text-slate-700">
-                              <strong className="text-[#4C28B5]">
-                                {idx + 1}. ({b.points}p • Satır #{b.sira}):
-                              </strong>{" "}
-                              {b.turkce}
-                            </div>
-                            <div
+                            <span className="font-bold">
+                              {it.num}. ({it.points}p) → {it.correctTurkish}
+                            </span>
+                            <span
                               dir="rtl"
-                              className="arabic text-base font-bold text-slate-900"
+                              className="arabic text-base font-bold text-[#065F46]"
                             >
-                              {fullAr.includes(tWord) ? (
-                                <>
-                                  {fullAr.split(tWord)[0]}
-                                  <span className="underline decoration-2 decoration-emerald-600 bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded mx-0.5">
-                                    {tWord}
-                                  </span>
-                                  {fullAr.split(tWord).slice(1).join(tWord)}
-                                </>
-                              ) : (
-                                <span className="underline decoration-2 decoration-emerald-600 bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded">
-                                  {tWord}
-                                </span>
-                              )}
-                            </div>
+                              {formatAr(it.arabic)}
+                            </span>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-1.5">
-                    <div className="font-extrabold text-amber-900 text-xs">
-                      C) Çoktan Seçmeli Soruların Cevapları (
-                      {a4QuizSheetData.pointsAllocation.totalC} Puan):
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                      {a4QuizSheetData.sectionCMultipleChoice.map((c) => (
-                        <div
-                          key={c.num}
-                          className="p-2 rounded-lg bg-white border border-amber-200"
-                        >
-                          <div className="font-extrabold text-amber-900">
-                            Soru {c.num} ({c.points}p): Şık {c.correctLetter}
+                  {sixSectionExamData.sec2TrToAr.length > 0 && (
+                    <div className="rounded-xl border border-violet-300 bg-violet-50/40 p-3 space-y-1.5">
+                      <div className="font-extrabold text-[#4C28B5] text-xs">
+                        2. Bölüm — Türkçe → Arapça Cevapları (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[1]} Puan):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {sixSectionExamData.sec2TrToAr.map((it) => (
+                          <div
+                            key={it.num}
+                            className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-white border border-violet-200"
+                          >
+                            <span className="font-bold">
+                              {it.num}. ({it.points}p) {it.turkish}
+                            </span>
+                            <span
+                              dir="rtl"
+                              className="arabic text-base font-bold text-[#4C28B5]"
+                            >
+                              {formatAr(it.correctArabic)}
+                            </span>
                           </div>
-                          <div className="text-[11px] font-bold text-slate-700 mt-0.5">
-                            {c.correctText}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {sixSectionExamData.sec3FillBlank.length > 0 && (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50/40 p-3 space-y-1.5">
+                      <div className="font-extrabold text-[#065F46] text-xs">
+                        3. Bölüm — Boşluk Doldurma Cevapları (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[2]} Puan):
+                      </div>
+                      <div className="space-y-1">
+                        {sixSectionExamData.sec3FillBlank.map((b) => (
+                          <div
+                            key={b.num}
+                            className="p-2 rounded-lg bg-white border border-emerald-200 flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <span>
+                              <strong>
+                                {b.num}. ({b.points}p):
+                              </strong>{" "}
+                              {b.turkishMeaning}
+                            </span>
+                            <span
+                              dir="rtl"
+                              className="arabic text-base font-bold text-[#065F46]"
+                            >
+                              {formatAr(b.targetWordAr)} — {formatAr(b.fullSentenceAr)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sixSectionExamData.sec4MultipleChoice.length > 0 && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-1.5">
+                      <div className="font-extrabold text-amber-900 text-xs">
+                        4. Bölüm — Çoktan Seçmeli Test Cevapları (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[3]} Puan):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {sixSectionExamData.sec4MultipleChoice.map((c) => (
+                          <div
+                            key={c.num}
+                            className="p-2 rounded-lg bg-white border border-amber-200 font-bold"
+                          >
+                            Soru {c.num} ({c.points}p): Şık {c.correctLetter}) {c.correctTurkish}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sixSectionExamData.sec5Matching.length > 0 && (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50/40 p-3 space-y-1.5">
+                      <div className="font-extrabold text-[#065F46] text-xs">
+                        5. Bölüm — Eşleştirme Cevapları (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[4]} Puan):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {sixSectionExamData.sec5Matching.map((m) => (
+                          <div
+                            key={m.rowIndex}
+                            className="p-2 rounded-lg bg-white border border-emerald-200 flex items-center justify-between gap-2"
+                          >
+                            <span className="font-bold">
+                              {m.rightNumber}. {m.rightShuffledTr} → [{m.rightCorrectLetter}]
+                            </span>
+                            <span
+                              dir="rtl"
+                              className="arabic text-base font-bold text-[#065F46]"
+                            >
+                              {formatAr(m.rightMatchedArabic)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sixSectionExamData.sec6Morphology.length > 0 && (
+                    <div className="rounded-xl border border-violet-300 bg-violet-50/40 p-3 space-y-1.5">
+                      <div className="font-extrabold text-[#4C28B5] text-xs">
+                        6. Bölüm — Sarf Tablosu Tam Çözümleri (
+                        {sixSectionExamData.pointsAllocation.sectionTotals[5]} Puan):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {sixSectionExamData.sec6Morphology.map((r) => (
+                          <div
+                            key={r.num}
+                            className="p-2 rounded-lg bg-white border border-violet-200 flex items-center justify-between gap-2"
+                          >
+                            <span className="font-bold">
+                              {r.num}. {r.turkce}
+                            </span>
+                            <span
+                              dir="rtl"
+                              className="arabic text-base font-bold text-[#4C28B5]"
+                            >
+                              {formatAr(r.kokSpaced)} • {formatAr(r.form1Ar)} •{" "}
+                              {formatAr(r.form2Ar)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : pdfDocMode === "unvocalized-rubric" ? (
                 <div className="space-y-2">

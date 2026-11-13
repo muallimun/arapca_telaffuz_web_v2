@@ -23,5 +23,5 @@ export const CONTENT_INVENTORY: ContentInventory = {
   youtubeVideosCount: 60,
   synonymsAntonymsCount: 400,
   assessmentQuestionsCount: 550,
-  exerciseModulesCount: 14,
+  exerciseModulesCount: 16,
 };

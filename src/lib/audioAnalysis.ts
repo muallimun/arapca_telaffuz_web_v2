@@ -283,8 +283,7 @@ export function getActiveSpeechDuration(
 }
 
 /**
- * Referans ve kullanıcı süreleri arasındaki tempo uyumu.
- * Kısa cümlelerde (refDuration <= 3.0s) kullanıcının kaydı 0.8s ile 3.5s arasındaysa Süre Uyumu >= 85 olarak hesaplanır.
+ * Referans ve kullanıcı süreleri ile ritim zarfı arasındaki gerçekçi tempo uyumu.
  */
 export function calculateTempoScore(
   refDuration: number,
@@ -303,17 +302,26 @@ export function calculateTempoScore(
       : userDuration;
 
   const diff = Math.abs(effectiveRefDuration - effectiveUserDuration);
-  const ratio = diff / Math.max(effectiveRefDuration, 1);
-  const rawScore = Math.round(100 * Math.max(0, 1 - ratio));
+  const ratio = diff / Math.max(effectiveRefDuration, 0.8);
+  const durationScore = Math.round(100 * Math.max(0, 1 - ratio));
 
-  if (refDuration <= 3.0 && userDuration >= 0.8 && userDuration <= 3.5) {
-    const gentleScore = Math.round(
-      100 - Math.abs(effectiveRefDuration - effectiveUserDuration) * 8
+  const hasActiveBars =
+    Array.isArray(refBars) &&
+    refBars.length > 0 &&
+    refBars.some((b) => b >= 0.08) &&
+    Array.isArray(userBars) &&
+    userBars.length > 0 &&
+    userBars.some((b) => b >= 0.08);
+
+  if (hasActiveBars) {
+    const rhythmAlignment = calculateRhythmMatch(refBars, userBars);
+    const honestTempo = Math.round(
+      durationScore * 0.7 + rhythmAlignment * 0.3
     );
-    return Math.max(85, Math.min(100, Math.max(rawScore, gentleScore)));
+    return Math.max(0, Math.min(100, honestTempo));
   }
 
-  return Math.max(0, Math.min(100, rawScore));
+  return Math.max(0, Math.min(100, durationScore));
 }
 
 /**

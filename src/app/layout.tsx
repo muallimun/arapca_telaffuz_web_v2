@@ -22,7 +22,7 @@ import "./globals.css";
 const APP_SUBTITLE =
   "İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
 
-const APP_FULL_DESCRIPTION = `${APP_SUBTITLE} — ${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü interaktif alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
+const APP_FULL_DESCRIPTION = `${APP_SUBTITLE} — ${CONTENT_INVENTORY.dialoguesCount} CEFR Arapça diyalog, ${CONTENT_INVENTORY.readingsCount} okuma metni, ${CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü, ${CONTENT_INVENTORY.exerciseModulesCount} modüllü interaktif alıştırma merkezi ve A4 PDF çalışma kağıdı üreticisi.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.muallimun.net"),

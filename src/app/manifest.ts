@@ -8,6 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     sentencesCount,
     visualWordsCount,
     dictionaryWordsCount,
+    assessmentQuestionsCount,
     exerciseModulesCount,
   } = CONTENT_INVENTORY;
 
@@ -15,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu",
     short_name: "Muallimun Arapça",
-    description: `İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu — ${dialoguesCount} CEFR diyalog, ${readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Merkezi, ${sentencesCount} kalıp cümle, ${visualWordsCount} görsel kelime, morfolojik sözlük ve ${exerciseModulesCount} modüllü interaktif alıştırma merkezi.`,
+    description: `İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu — ${dialoguesCount} CEFR diyalog, ${readingsCount} okuma metni, ${assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi, ${sentencesCount} kalıp cümle, ${visualWordsCount} görsel kelime, morfolojik sözlük ve ${exerciseModulesCount} modüllü interaktif alıştırma merkezi.`,
     start_url: "/",
     scope: "/",
     display: "standalone",

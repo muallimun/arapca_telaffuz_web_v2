@@ -185,7 +185,7 @@ export default function GuideAndInfoModalBody({
               <div className="p-4 rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="text-xs sm:text-sm font-extrabold text-[#4C28B5] dark:text-[#d0bfff] block">
-                    🎯 6 Adımlı Görsel Tanıtım Turu
+                    🎯 7 Adımlı Görsel Tanıtım Turu
                   </span>
                   <p className="text-xs text-[var(--muted)]">
                     Uygulamanın tüm özelliklerini adım adım interaktif kartlarla
@@ -272,13 +272,13 @@ export default function GuideAndInfoModalBody({
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
                       <strong className="text-[var(--foreground)]">
-                        180 soruluk
+                        {CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi
                       </strong>{" "}
-                      akademik soru bankası, 12 soruluk adaptif{" "}
+                      akademik soru bankası,{" "}
                       <strong className="text-[var(--foreground)]">
-                        CAT Seviye Tespit Motoru
+                        10, 15 veya 20 soruluk adaptif CAT
                       </strong>{" "}
-                      ve CEFR kurlarına göre tasnif edilmiş{" "}
+                      Seviye Tespit Motoru ve CEFR kurlarına göre tasnif edilmiş{" "}
                       <strong className="text-[var(--foreground)]">
                         Konu Tarama Testi (KTT)
                       </strong>{" "}
@@ -292,21 +292,26 @@ export default function GuideAndInfoModalBody({
                     5. 📌 195 Kartlık Gramer Atlası &amp; KTT Köprüsü
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    4 temel dilbilimsel alanda 195 hap gramer kartı (120 diyalog
-                    + 60 metin + 15 temel/ileri müstakil gramer), Sade/Akademik
-                    anlatım geçişi ve kart içinden doğrudan konu tarama testi.
+                    4 temel dilbilimsel alanda{" "}
+                    {CONTENT_INVENTORY.grammarNotesCount} hap gramer kartı (120
+                    diyalog + 60 metin + 15 temel/ileri müstakil gramer),
+                    Sade/Akademik anlatım geçişi ve kart içinden doğrudan konu
+                    tarama testi.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-[#6741D9] dark:text-indigo-300">
-                    6. 🗣️ 28 Harf Mahreç, 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar &amp; 🌿 Köprüler
+                    6. 🗣️ 28 Harf Kişisel Mahreç Isı Haritası &amp; 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    28 Arapça harfte kişisel telaffuz ısı haritası; sözlükte kök
-                    ailesi (iştikak),{" "}
+                    28 Arapça harfte{" "}
                     <strong className="text-[var(--foreground)]">
-                      {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar (المرادفات والأضداد) ve الفروق nüans notları
+                      28 Harf Kişisel Mahreç Isı Haritası
+                    </strong>
+                    ; sözlükte kök ailesi (iştikak),{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar (المرادفات والأضداد) Sözlüğü/Havuzu
                     </strong>
                     ,{" "}
                     <strong className="text-[var(--foreground)]">
@@ -342,6 +347,21 @@ export default function GuideAndInfoModalBody({
                       👁️ Kör Dinleme
                     </strong>{" "}
                     ve 180 çevrimdışı ses paketi.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2 p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300">
+                    9. 🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
+                  </h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    CEFR (A1–B2) seviyelerine ve 6 tematik kategoriye ayrılmış{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
+                    </strong>
+                    ; tekil YouTube videoları ve oynatma listeleri, uygulama içi
+                    Sinema Modu, pedagojik izleme notları, tıklanabilir odak
+                    kelimeler ve doğrudan ilişkili diyalog/metin bağlantıları.
                   </p>
                 </div>
               </div>
@@ -561,8 +581,11 @@ export default function GuideAndInfoModalBody({
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     CEFR (A1–B2) standartlarına uyumlu 120 özgün diyalog, 60
-                    okuma metni, 195 kartlık Gramer Atlası, 180 soruluk CAT &amp;
-                    Konu Tarama soru bankası,{" "}
+                    okuma metni, 195 kartlık Gramer Atlası,{" "}
+                    {CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye
+                    Tespit ve Konu Tarama Merkezi,{" "}
+                    {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp;
+                    İzleme Rehberi,{" "}
                     {CONTENT_INVENTORY.synonymsAntonymsCount} maddelik Eş &amp; Zıt
                     Anlamlılar (المرادفات والأضداد) atlası ve{" "}
                     {sozluk.length.toLocaleString("tr-TR")} kayıtlı morfolojik

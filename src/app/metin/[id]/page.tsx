@@ -1243,22 +1243,45 @@ export default function ReadingTextDetailPage({
       options: string[];
     }[] = [];
 
+    const stripTokenPunct = (token: string) =>
+      token.replace(/^[.,!?؟،؛:"«»()[\]\-—…]+|[.,!?؟،؛:"«»()[\]\-—…]+$/g, "").trim();
+
     const linesForBlank = readingText.satirlar.slice(0, 2);
     linesForBlank.forEach((ln, idx) => {
       const words = ln.arapca.trim().split(/\s+/).filter(Boolean);
       const targetIdx = words.length > 2 ? 1 : 0;
-      const targetWord = words[targetIdx] || words[0] || "";
+      const targetWord = stripTokenPunct(words[targetIdx] || words[0] || "") || words[targetIdx] || words[0] || "";
       const blankedAr = words
         .map((w, i) => (i === targetIdx ? ".........." : w))
         .join(" ");
-      const distractors = textVocabEntries
+      const vocabDistractors = textVocabEntries
         .map((v) =>
-          (v.contextWord || v.item.mufret || v.item.mazi || "").trim()
+          stripTokenPunct(
+            (v.contextWord || v.item.mufret || v.item.mazi || "").trim()
+          )
         )
         .filter((w) => w && w !== targetWord)
         .slice(idx * 3, idx * 3 + 3);
+      const otherLineArabicWords = readingText.satirlar
+        .filter((otherLn) => otherLn.sira !== ln.sira)
+        .flatMap((otherLn) =>
+          otherLn.arapca
+            .trim()
+            .split(/\s+/)
+            .map(stripTokenPunct)
+            .filter((w) => w.length >= 2 && w !== targetWord)
+        );
+      const sameLineOtherWords = words
+        .filter((_, i) => i !== targetIdx)
+        .map(stripTokenPunct)
+        .filter((w) => w.length >= 2 && w !== targetWord);
       const opts = Array.from(
-        new Set([targetWord, ...distractors, "نَعَمْ", "شُكْراً", "هُنَا"])
+        new Set([
+          targetWord,
+          ...vocabDistractors,
+          ...otherLineArabicWords,
+          ...sameLineOtherWords,
+        ])
       ).slice(0, 4);
       const rotated = opts
         .slice()
@@ -1282,14 +1305,11 @@ export default function ReadingTextDetailPage({
         .map((o) => o.item.anlam_tr)
         .filter((t) => t && t !== correctTr)
         .slice(idx * 2, idx * 2 + 3);
+      const otherLineTrPhrases = readingText.satirlar
+        .map((otherLn) => otherLn.turkce.trim())
+        .filter((t) => t && t !== correctTr);
       const opts = Array.from(
-        new Set([
-          correctTr,
-          ...otherTrs,
-          "Merhaba / Hoş geldiniz",
-          "Teşekkür ederim",
-          "İyi günler",
-        ])
+        new Set([correctTr, ...otherTrs, ...otherLineTrPhrases])
       ).slice(0, 4);
       const rotated = opts.slice().sort((a, b) => a.localeCompare(b, "tr"));
       qs.push({

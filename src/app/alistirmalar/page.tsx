@@ -1508,7 +1508,7 @@ function ExercisesPageContent() {
       title: "Müzekker / Müennes Sepeti",
       arabicBadge: "هَذَا وَهَذِهِ",
       subtitle:
-        "640 görsel ismi tek dokunuşla هَذَا ve هَذِهِ sepetlerine ayırın, semâî ipuçlarını görün",
+        "998 görsel kelime havuzundan isimleri tek dokunuşla هَذَا ve هَذِهِ sepetlerine ayırın, semâî ipuçlarını görün",
       icon: Scale,
     },
     {
@@ -2483,7 +2483,7 @@ function ExercisesPageContent() {
                       : selectedType === "sentence-builder"
                       ? "Bu modül cümle içeren havuzlarla çalışır"
                       : selectedType === "gender-sorting"
-                      ? "Müzekker / Müennes Sepeti 640 Görsel İsim havuzuyla çalışır"
+                      ? "Müzekker / Müennes Sepeti 998 görsel kelime havuzuyla çalışır"
                       : selectedType === "cloze-roleplay"
                       ? "Diyalog Boş Replik Tamamlama 120 Diyalog havuzuyla çalışır"
                       : selectedType === "evidence-hunter"

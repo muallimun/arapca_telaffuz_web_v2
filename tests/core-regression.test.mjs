@@ -1562,6 +1562,7 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
   );
   assert.equal(CONTENT_INVENTORY.dialoguesCount, 120);
   assert.equal(CONTENT_INVENTORY.readingsCount, 60);
+  assert.equal(CONTENT_INVENTORY.assessmentQuestionsCount, 550);
   assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 14);
 
   const layoutSrc = fs.readFileSync(
@@ -1569,10 +1570,11 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
     "utf8"
   );
   assert.equal(
-    layoutSrc.includes("180 soruluk Seviye Tespit & Konu Tarama Merkezi") &&
-      layoutSrc.includes("modüllü interaktif alıştırma merkezi"),
+    layoutSrc.includes(
+      "${CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi"
+    ) && layoutSrc.includes("modüllü interaktif alıştırma merkezi"),
     true,
-    "layout.tsx APP_FULL_DESCRIPTION güncel 180 soruluk tarama ve 14 modüllü alıştırma bilgisini içermelidir"
+    "layout.tsx APP_FULL_DESCRIPTION güncel 550 soruluk Seviye Tespit ve Konu Tarama Merkezi ve 14 modüllü alıştırma bilgisini içermelidir"
   );
   assert.equal(
     layoutSrc.includes("60 CEFR") || layoutSrc.includes("5 modlu"),
@@ -4273,3 +4275,229 @@ test("39. 6 Kritik Runtime Mantık, Klavye Kısayolu, CAT Yarış Koruması, Flo
     "Alıştırma Merkezinde 11 havuzun tamamı görünür olmalı ve alıştırma bileşenlerinde itemsSignature satır içeriğine duyarlı olmalıdır"
   );
 });
+
+test("40. Veri Envanteri (550 Soru, 14 Modül, 998 Görsel Kelime), Arapça Pedagojik Motor (Muzâri/Zamir Tenvin Kalkanı, Eş Anlamlı Çeldirici Filtresi, Gramer Hata Çözümleme, Dürüst Tempo Puanı) ve Açılış Turu / Kılavuz Senkronizasyonu", async () => {
+  const { CONTENT_INVENTORY, esZitAnlamlilar } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "data.ts")).href
+  );
+  const { selectSmartWordDistractors } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "quiz.ts")).href
+  );
+  const { normalizeToCanonicalMistakeId, resolveMistakesPool } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "mistakeUtils.ts")).href
+  );
+  const { calculateTempoScore } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "audioAnalysis.ts")).href
+  );
+  const { buildRealisticArabicMutations } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "components", "exercises", "ErrorHunter.tsx")
+    ).href
+  );
+  const { SHARE_APP_TEXT } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "shareApp.ts")).href
+  );
+
+  // 1. Sayısal Envanter Eşitlemesi (550 soru, 14 modül, 998 görsel kelime, 10/15/20 adaptif CAT)
+  assert.equal(
+    CONTENT_INVENTORY.assessmentQuestionsCount,
+    550,
+    "CONTENT_INVENTORY.assessmentQuestionsCount 550 olmalıdır"
+  );
+  assert.equal(
+    SHARE_APP_TEXT.includes("550 soruluk Seviye Tespit ve Konu Tarama Merkezi"),
+    true,
+    "SHARE_APP_TEXT 550 soruluk Seviye Tespit ve Konu Tarama Merkezi içermelidir"
+  );
+
+  const filesToReject180 = [
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    path.join(ROOT_DIR, "src", "app", "manifest.ts"),
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    path.join(ROOT_DIR, "src", "lib", "shareApp.ts"),
+    path.join(ROOT_DIR, "README.md"),
+  ];
+  for (const fp of filesToReject180) {
+    const content = fs.readFileSync(fp, "utf8");
+    assert.equal(
+      /180\s+[sS]oruluk/.test(content),
+      false,
+      `${path.basename(fp)} içinde eski '180 soruluk' ifadesi kalmamalıdır`
+    );
+  }
+
+  const shareAchCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShareAchievementModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    shareAchCode.includes("14 Modül Alıştırma") &&
+      !shareAchCode.includes("8 Modül Alıştırma"),
+    true,
+    "ShareAchievementModal '14 Modül Alıştırma' göstermelidir"
+  );
+
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    alistirmalarCode.includes("998 görsel kelime") &&
+      !alistirmalarCode.includes("640 görsel ismi") &&
+      !alistirmalarCode.includes("640 Görsel İsim"),
+    true,
+    "alistirmalar/page.tsx içinde '640 görsel ismi' yerine '998 görsel kelime' yer almalıdır"
+  );
+
+  // 2a. ErrorHunter muzâri fiil ve muttasıl zamir tenvin kalkanı
+  const muzariAndPronounForms = [
+    "يَكْتُبُ",
+    "تَذْهَبُ",
+    "أَدْرُسُ",
+    "نَعْمَلُ",
+    "كِتَابُهُ",
+    "بَيْتُهَا",
+    "مُعَلِّمُهُمْ",
+    "قَلَمُكَ",
+    "مَدْرَسَتُنَا",
+  ];
+  for (const form of muzariAndPronounForms) {
+    const muts = buildRealisticArabicMutations(form, new Set([form]), []);
+    assert.ok(muts.length >= 2, `${form} için gerçekçi çeldiriciler üretilmelidir`);
+    for (const m of muts) {
+      assert.equal(
+        /[\u064B\u064C\u064D]|ًا$/u.test(m),
+        false,
+        `${form} kelimesinden üretilen '${m}' çeldiricisinde yapay tenvin bulunmamalıdır`
+      );
+    }
+  }
+
+  // 2b. selectSmartWordDistractors eş anlamlı (es_anlamlilar) dışlama koruması
+  const sampleSynEntry = esZitAnlamlilar.find(
+    (e) => e.es_anlamlilar.length >= 2 && e.tur === "isim"
+  );
+  assert.ok(sampleSynEntry, "Örnek eş anlamlı kaydı bulunmalıdır");
+  const targetDictWord = {
+    id: "test_target_syn",
+    tur: "isim",
+    kok: "-",
+    cefr: sampleSynEntry.cefr,
+    mufret: sampleSynEntry.kelime_ar,
+    anlam_tr: sampleSynEntry.anlam_tr,
+  };
+  const injectedSynonym = {
+    id: "test_injected_syn",
+    tur: "isim",
+    kok: "-",
+    cefr: sampleSynEntry.cefr,
+    mufret: sampleSynEntry.es_anlamlilar[0].ar,
+    anlam_tr: "Farklı Yazılmış Eş Anlam Etiketi",
+  };
+  const safeDistractors = [
+    { id: "d1", tur: "isim", kok: "كتب", cefr: sampleSynEntry.cefr, mufret: "مَكْتَبَةٌ", anlam_tr: "Kütüphane" },
+    { id: "d2", tur: "isim", kok: "ركب", cefr: sampleSynEntry.cefr, mufret: "سَفِينَةٌ", anlam_tr: "Gemi" },
+    { id: "d3", tur: "isim", kok: "فتح", cefr: sampleSynEntry.cefr, mufret: "مِفْتَاحٌ", anlam_tr: "Anahtar" },
+    { id: "d4", tur: "isim", kok: "شجر", cefr: sampleSynEntry.cefr, mufret: "شَجَرَةٌ", anlam_tr: "Ağaç" },
+  ];
+  const pickedDistractors = selectSmartWordDistractors(
+    targetDictWord,
+    [injectedSynonym, ...safeDistractors],
+    3
+  );
+  assert.equal(
+    pickedDistractors.some((d) => d.id === "test_injected_syn"),
+    false,
+    "Hedef kelimenin eş anlamlısı (es_anlamlilar) yanlış şık olarak seçilmemelidir"
+  );
+
+  // 2c. Diyalog ve Metin hwMiniQuizQuestions bağlamsal çeldirici kontrolü
+  const diyalogPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinPageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    diyalogPageCode.includes("otherLineArabicWords") &&
+      metinPageCode.includes("otherLineArabicWords") &&
+      !diyalogPageCode.includes('"نَعَمْ", "شُكْراً", "هُنَا"') &&
+      !metinPageCode.includes('"نَعَمْ", "شُكْراً", "هُنَا"'),
+    true,
+    "Diyalog ve Metin mini sınav yedek çeldiricileri diğer satırlardaki kelimelerden üretilmelidir"
+  );
+
+  // 2d. mistakeUtils.ts grm_XXX gramer kartı çözümlemesi
+  assert.equal(normalizeToCanonicalMistakeId("grm_001"), "grm_001");
+  assert.equal(normalizeToCanonicalMistakeId("errhunt_grm_001"), "grm_001");
+  assert.equal(normalizeToCanonicalMistakeId("grm_2"), "grm_002");
+  const resolvedGrm = resolveMistakesPool(["grm_001", "errhunt_grm_002"]);
+  assert.equal(
+    resolvedGrm.words.length,
+    2,
+    "grm_001 ve errhunt_grm_002 gramer kartları resolveMistakesPool tarafından eksiksiz çözümlenmelidir"
+  );
+  assert.ok(
+    resolvedGrm.words[0].mufret && resolvedGrm.words[0].anlam_tr,
+    "Çözümlenen gramer kartı geçerli Arapça örnek ve Türkçe anlam içermelidir"
+  );
+
+  // 2e. audioAnalysis.ts dürüst tempo puanı (yapay >= 85 tabanı kaldırılmış)
+  const slowShortTempo = calculateTempoScore(1.1, 3.3);
+  const exactTempo = calculateTempoScore(1.5, 1.5);
+  assert.ok(
+    slowShortTempo < 50,
+    `3 kat yavaş okunan kısa cümlede tempo puanı yapay 85 tabanına takılmamalıdır (hesaplanan: ${slowShortTempo})`
+  );
+  assert.equal(exactTempo, 100, "Eşit sürede tempo puanı 100 olmalıdır");
+
+  // 3. OnboardingTourModal ve GuideAndInfoModalBody senkronizasyonu
+  const tourSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+  const guideSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    tourSrc.includes("onClick={handleTemporaryClose}") &&
+      tourSrc.includes('if (e.key === "Escape") {\n        setIsOpen(false);') &&
+      tourSrc.includes("`ADIM ${safeStep + 1} / ${steps.length}") &&
+      !tourSrc.includes("step < 5") &&
+      tourSrc.includes("soruluk Seviye Tespit ve Konu Tarama Merkezi") &&
+      tourSrc.includes("Kartlık Gramer Atlası") &&
+      tourSrc.includes("28 Harf Kişisel Mahreç Isı Haritası") &&
+      tourSrc.includes("Eş &amp; Zıt Anlamlılar") &&
+      tourSrc.includes("Seçkin Video &amp; İzleme Rehberi"),
+    true,
+    "OnboardingTourModal geçici kapatma, dinamik adım rozeti ve 5 yeni ana modülü eksiksiz içermelidir"
+  );
+  const actualAssessmentBank = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "seviye_tespit_sorulari.json"),
+      "utf8"
+    )
+  );
+  assert.equal(
+    CONTENT_INVENTORY.assessmentQuestionsCount,
+    actualAssessmentBank.length,
+    "CONTENT_INVENTORY.assessmentQuestionsCount gerçek seviye_tespit_sorulari.json soru sayısıyla birebir aynı olmalıdır"
+  );
+  assert.equal(
+    guideSrc.includes("10, 15 veya 20 soruluk adaptif CAT") &&
+      !guideSrc.includes("12 soruluk adaptif") &&
+      guideSrc.includes("soruluk Seviye Tespit ve Konu Tarama Merkezi") &&
+      guideSrc.includes("195 Kartlık Gramer Atlası") &&
+      guideSrc.includes("28 Harf Kişisel Mahreç Isı Haritası") &&
+      guideSrc.includes("Eş &amp; Zıt Anlamlılar") &&
+      guideSrc.includes("Seçkin Video &amp; İzleme Rehberi"),
+    true,
+    "GuideAndInfoModalBody 10/15/20 adaptif CAT ve 5 yeni ana modülü eksiksiz içermelidir"
+  );
+});
+

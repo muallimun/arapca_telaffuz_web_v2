@@ -17,6 +17,8 @@ import {
   getMainVisualCategory,
 } from "@/lib/data";
 import {
+  cleanArabicText,
+  findSynonymAntonymForWord,
   getDialogueVocabulary,
   getReadingTextVocabulary,
   isProperNounItem,
@@ -644,19 +646,81 @@ export function selectSmartWordDistractors(
       .toLocaleLowerCase("tr-TR");
 
   const uniqueCandidates: DictionaryItem[] = [];
+  const primaryCorrectAr = getWordPrimaryArabic(correctItem);
+  const cleanCorrectAr = cleanArabicText(primaryCorrectAr);
+
   const seenMeanings = new Set<string>([
     (correctItem.anlam_tr || "").trim().toLowerCase(),
     normalizeMeaningKey(correctItem.anlam_tr),
   ]);
-  const seenArabic = new Set<string>([
-    getWordPrimaryArabic(correctItem).toLowerCase(),
-  ]);
+  const seenArabic = new Set<string>([primaryCorrectAr.toLowerCase()]);
+  const excludedSynonymCleanAr = new Set<string>(
+    cleanCorrectAr ? [cleanCorrectAr] : []
+  );
+
+  // Eş & Zıt Anlamlılar Sözlüğü kontrolü: Hedef kelimenin eş anlamlılarını (es_anlamlilar) çeldirici havuzundan çıkar
+  const registerSynonymEntryExclusions = (entry?: SynonymAntonymEntry | null) => {
+    if (!entry) return;
+    const headClean = cleanArabicText(entry.kelime_ar);
+    const isCorrectHead = Boolean(cleanCorrectAr && headClean === cleanCorrectAr);
+    const isCorrectInSynList = entry.es_anlamlilar.some(
+      (sub) =>
+        Boolean(cleanCorrectAr) &&
+        (cleanArabicText(sub.ar) === cleanCorrectAr ||
+          cleanArabicText(sub.harekesiz) === cleanCorrectAr)
+    );
+    // Yalnızca hedef kelime ana madde veya eş anlamlılar listesindeyse eş anlamlı grubunu dışla
+    // (Hedef kelime zıt anlamlılar listesindeyse ana madde onun zıt anlamlısıdır, çeldirici olabilir)
+    if (!isCorrectHead && !isCorrectInSynList) return;
+
+    if (headClean) excludedSynonymCleanAr.add(headClean);
+    if (entry.kelime_ar) seenArabic.add(entry.kelime_ar.trim().toLowerCase());
+    if (entry.kelime_harekesiz) {
+      seenArabic.add(entry.kelime_harekesiz.trim().toLowerCase());
+    }
+    if (entry.anlam_tr) {
+      seenMeanings.add(entry.anlam_tr.trim().toLowerCase());
+      seenMeanings.add(normalizeMeaningKey(entry.anlam_tr));
+    }
+
+    for (const syn of entry.es_anlamlilar) {
+      const synClean = cleanArabicText(syn.ar || syn.harekesiz);
+      if (synClean) excludedSynonymCleanAr.add(synClean);
+      if (syn.ar) seenArabic.add(syn.ar.trim().toLowerCase());
+      if (syn.harekesiz) seenArabic.add(syn.harekesiz.trim().toLowerCase());
+      if (syn.tr) {
+        seenMeanings.add(syn.tr.trim().toLowerCase());
+        seenMeanings.add(normalizeMeaningKey(syn.tr));
+      }
+    }
+  };
+
+  registerSynonymEntryExclusions(
+    findSynonymAntonymForWord(primaryCorrectAr) ||
+      findSynonymAntonymForWord(correctItem.mufret || correctItem.mazi || "")
+  );
+  if (cleanCorrectAr) {
+    for (const entry of esZitAnlamlilar) {
+      if (
+        cleanArabicText(entry.kelime_ar) === cleanCorrectAr ||
+        entry.es_anlamlilar.some(
+          (sub) =>
+            cleanArabicText(sub.ar) === cleanCorrectAr ||
+            cleanArabicText(sub.harekesiz) === cleanCorrectAr
+        )
+      ) {
+        registerSynonymEntryExclusions(entry);
+      }
+    }
+  }
 
   for (const item of allVocabulary) {
     if (!item || item.id === correctItem.id) continue;
     const rawMeaningKey = (item.anlam_tr || "").trim().toLowerCase();
     const strippedMeaningKey = normalizeMeaningKey(item.anlam_tr);
-    const arKey = getWordPrimaryArabic(item).toLowerCase();
+    const candPrimaryAr = getWordPrimaryArabic(item);
+    const arKey = candPrimaryAr.toLowerCase();
+    const candCleanAr = cleanArabicText(candPrimaryAr);
     if (
       !rawMeaningKey ||
       !strippedMeaningKey ||
@@ -666,9 +730,11 @@ export function selectSmartWordDistractors(
       continue;
     }
     if (arKey && seenArabic.has(arKey)) continue;
+    if (candCleanAr && excludedSynonymCleanAr.has(candCleanAr)) continue;
     seenMeanings.add(rawMeaningKey);
     seenMeanings.add(strippedMeaningKey);
     if (arKey) seenArabic.add(arKey);
+    if (candCleanAr) excludedSynonymCleanAr.add(candCleanAr);
     uniqueCandidates.push(item);
   }
 

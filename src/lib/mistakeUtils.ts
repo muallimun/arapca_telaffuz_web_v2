@@ -2,11 +2,13 @@ import {
   sozluk,
   diyaloglar,
   esZitAnlamlilar,
+  tumGramerHapBilgiler,
   getDialoguesSortedPedagogically,
 } from "@/lib/data";
 import {
   DictionaryItem,
   Dialogue,
+  GramerHapBilgi,
   Level,
   SynonymAntonymEntry,
 } from "@/types/data";
@@ -44,6 +46,12 @@ export function normalizeToCanonicalMistakeId(
     );
     if (ezMatch) {
       return ezMatch[1].toLowerCase();
+    }
+
+    // 0.5. Gramer Atlası kimlikleri: grm_001, errhunt_grm_001, irab_grm_001, ek_grm_001, errhunt_dlg_001, irab_metin_01 vb.
+    const foundGrammar = findGrammarNoteByMistakeId(trimmed);
+    if (foundGrammar) {
+      return foundGrammar.bagli_id;
     }
 
     // 1. Kelime önekleri: w-12, w_12, mc_w_12, mg_w_12, word_12
@@ -149,6 +157,98 @@ export function normalizeToCanonicalMistakeId(
   return rawId ? rawId.trim() : null;
 }
 
+export function findGrammarNoteByMistakeId(
+  rawId?: string
+): GramerHapBilgi | undefined {
+  if (!rawId) return undefined;
+  const trimmed = rawId.trim();
+  if (!trimmed) return undefined;
+
+  // Satır numaralı diyalog cümle kimliklerini (dlg_01_2, sent_dlg_01_2 vb.) gramer kartıyla karıştırma
+  if (/^(?:s-|s_|sent_|fill_|sb_|mc_sent_|mg_s_|fb_)?dlg_\d+[-_]\d+$/i.test(trimmed)) {
+    return undefined;
+  }
+
+  const stripped = trimmed
+    .replace(
+      /^(?:mc_w_|mg_w_|mc_|mg_|fill_|sb_|word_|w-|w_|errhunt_|irab_|grammar_|gramer_|ek_)/i,
+      ""
+    )
+    .trim();
+
+  // grm_1 / grm_01 / grm_001 esnek eşleştirme
+  const grmMatch = stripped.match(/^grm_(\d+)$/i);
+  if (grmMatch) {
+    const padded3 = `grm_${grmMatch[1].padStart(3, "0")}`;
+    return tumGramerHapBilgiler.find(
+      (g) =>
+        g.bagli_id.toLowerCase() === stripped.toLowerCase() ||
+        g.bagli_id.toLowerCase() === padded3.toLowerCase()
+    );
+  }
+
+  // Sadece dlg_XXX veya metin_XX formundaki gramer/kaynak kimlikleri
+  if (/^(?:dlg_\d+|metin_\d+)$/i.test(stripped)) {
+    const direct = tumGramerHapBilgiler.find(
+      (g) => g.bagli_id.toLowerCase() === stripped.toLowerCase()
+    );
+    if (direct) return direct;
+    const dlgNum = stripped.match(/^dlg_(\d+)$/i);
+    if (dlgNum) {
+      const paddedDlg = `dlg_${dlgNum[1].padStart(3, "0")}`;
+      return tumGramerHapBilgiler.find(
+        (g) => g.bagli_id.toLowerCase() === paddedDlg.toLowerCase()
+      );
+    }
+    const metinNum = stripped.match(/^metin_(\d+)$/i);
+    if (metinNum) {
+      const paddedMetin = `metin_${metinNum[1].padStart(2, "0")}`;
+      return tumGramerHapBilgiler.find(
+        (g) => g.bagli_id.toLowerCase() === paddedMetin.toLowerCase()
+      );
+    }
+  }
+
+  return undefined;
+}
+
+export function grammarNoteToDictionaryItem(
+  note: GramerHapBilgi
+): DictionaryItem {
+  const cleanExampleAr = (
+    note.metinden_ornek?.arapca ||
+    note.ek_ornekler?.[0]?.arapca ||
+    note.ayrintili_anlatim?.dikkat_sik_hata?.dogru?.split("/")[0] ||
+    ""
+  )
+    .replace(/\s*\([^()]*[a-zA-ZçğıöşüÇĞİÖŞÜ][^()]*\)\s*$/g, "")
+    .trim();
+
+  const cleanExampleTr = (
+    note.metinden_ornek?.turkce ||
+    note.ek_ornekler?.[0]?.turkce ||
+    note.hap_kural ||
+    note.konu_basligi
+  ).trim();
+
+  const focalIrabWord =
+    note.ayrintili_anlatim?.irab_tahlili?.[0]?.kelime?.trim() || "";
+  const primaryArabic = cleanExampleAr || focalIrabWord || note.konu_basligi;
+  const isSingleToken = primaryArabic.split(/\s+/).filter(Boolean).length <= 1;
+
+  return {
+    id: note.bagli_id,
+    tur: isSingleToken ? "isim" : "ifade",
+    kok: "-",
+    cefr: note.seviye || "A1",
+    anlam_tr: cleanExampleTr,
+    mufret: primaryArabic,
+    ornek_ar: cleanExampleAr || primaryArabic,
+    ornek_tr: cleanExampleTr,
+    kategori_tr: note.konu_basligi || "Gramer Atlası",
+  };
+}
+
 export function synonymEntryToDictionaryItem(
   entry: SynonymAntonymEntry
 ): DictionaryItem {
@@ -232,6 +332,27 @@ export function resolveMistakesPool(mistakeIds: string[]): ResolvedMistakesPool 
         wordsMap.set(foundEz.id, synonymEntryToDictionaryItem(foundEz));
         continue;
       }
+    }
+
+    // 2.75. Gramer Atlası kartı mı? (grm_001 .. grm_015, dlg_001 .. dlg_120, metin_01 .. metin_60)
+    const foundGrammar = findGrammarNoteByMistakeId(id) || findGrammarNoteByMistakeId(rawId);
+    if (foundGrammar) {
+      const grmDictItem = grammarNoteToDictionaryItem(foundGrammar);
+      wordsMap.set(grmDictItem.id, grmDictItem);
+      if (grmDictItem.tur === "ifade" && grmDictItem.mufret) {
+        idiomsMap.set(grmDictItem.id, {
+          id: grmDictItem.id,
+          arabic: grmDictItem.mufret,
+          meaningTr: grmDictItem.anlam_tr,
+          literalTr: grmDictItem.anlam_tr,
+          usageNote: foundGrammar.hap_kural || foundGrammar.konu_basligi,
+          level:
+            foundGrammar.seviye === "B1" || foundGrammar.seviye === "B2"
+              ? "B1-B2"
+              : "A1-A2",
+        });
+      }
+      continue;
     }
 
     // 3. Sözlük kelimesi mi?

@@ -1043,7 +1043,7 @@ export default function ShareAchievementModal({
       ctx.fillStyle = "#D3F9D8";
       ctx.font = "700 21px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        "120 Sesli Diyalog • 60 Okuma Metni • 1111 Kalıp Cümle • 8 Modül Alıştırma",
+        "120 Sesli Diyalog • 60 Okuma Metni • 1111 Kalıp Cümle • 14 Modül Alıştırma",
         W / 2,
         962
       );

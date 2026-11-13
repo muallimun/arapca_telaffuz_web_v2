@@ -501,6 +501,7 @@ export interface DynamicContentStats {
   totalGrammarAtlasCount: number;
   youtubeCount: number;
   synonymsAntonymsCount: number;
+  assessmentQuestionsCount: number;
 }
 
 export function getMainVisualCategory(rawCatTr?: string): string {
@@ -556,6 +557,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
   const totalGrammarAtlasCount = grammarNoteCount + sentenceGrammarCount;
   const youtubeCount = youtubeTavsiyeleri.length;
   const synonymsAntonymsCount = esZitAnlamlilar.length;
+  const assessmentQuestionsCount = 550;
 
   return {
     dialogueCount,
@@ -576,6 +578,7 @@ const DYNAMIC_CONTENT_STATS: DynamicContentStats = (() => {
     totalGrammarAtlasCount,
     youtubeCount,
     synonymsAntonymsCount,
+    assessmentQuestionsCount,
   };
 })();
 
@@ -589,6 +592,7 @@ export interface ContentInventory {
   dictionaryWordsCount: number;
   youtubeVideosCount: number;
   synonymsAntonymsCount: number;
+  assessmentQuestionsCount: number;
   exerciseModulesCount: number;
 }
 
@@ -602,6 +606,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   dictionaryWordsCount: DYNAMIC_CONTENT_STATS.dictionaryWordCount,
   youtubeVideosCount: DYNAMIC_CONTENT_STATS.youtubeCount,
   synonymsAntonymsCount: DYNAMIC_CONTENT_STATS.synonymsAntonymsCount,
+  assessmentQuestionsCount: DYNAMIC_CONTENT_STATS.assessmentQuestionsCount,
   exerciseModulesCount: 14,
 };
 

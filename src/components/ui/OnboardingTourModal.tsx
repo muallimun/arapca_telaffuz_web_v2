@@ -19,6 +19,8 @@ import {
   Trophy,
   Type,
   MoreHorizontal,
+  PlayCircle,
+  GraduationCap,
 } from "lucide-react";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { formatArabicText } from "@/lib/arabicTextUtils";
@@ -39,6 +41,11 @@ export default function OnboardingTourModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(0);
 
+  const handleTemporaryClose = () => {
+    playClick();
+    setIsOpen(false);
+  };
+
   const handleComplete = () => {
     playClick();
     try {
@@ -49,50 +56,11 @@ export default function OnboardingTourModal() {
     setIsOpen(false);
   };
 
-  useEffect(() => {
-    let raf: number | null = null;
-    try {
-      const done = localStorage.getItem(ONBOARDING_STORAGE_KEY);
-      if (!done) {
-        raf = requestAnimationFrame(() => {
-          setIsOpen(true);
-          setStep(0);
-        });
-      }
-    } catch {
-      // ignore storage errors
-    }
-
-    const handleOpenEvent = () => {
-      setStep(0);
-      setIsOpen(true);
-    };
-
-    window.addEventListener("open-onboarding-tour", handleOpenEvent);
-    return () => {
-      if (raf !== null) cancelAnimationFrame(raf);
-      window.removeEventListener("open-onboarding-tour", handleOpenEvent);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleComplete();
-      if (e.key === "ArrowRight" && step < 5) setStep((s) => s + 1);
-      if (e.key === "ArrowLeft" && step > 0) setStep((s) => s - 1);
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, step]);
-
-  if (!isOpen) return null;
-
   const formatAr = (t: string) => formatArabicText(t, showHareke, arabicFont);
 
   const steps = [
     {
-      badge: "ADIM 1 / 6 — HOŞ GELDİNİZ",
+      badgeTopic: "HOŞ GELDİNİZ",
       title: "Arapça Konuşma, Mahreç ve Diyalog Stüdyosu",
       subtitle:
         "Modern, dokunsal ve yapay zeka destekli Arapça öğrenim platformuna hoş geldiniz!",
@@ -114,18 +82,22 @@ export default function OnboardingTourModal() {
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-base sm:text-lg font-black text-[#6741D9] dark:text-[#d0bfff] leading-tight block">
-              {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük &amp; {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
+              {(Math.floor(sozluk.length / 100) * 100).toLocaleString("tr-TR")}+ Sözlük &amp;{" "}
+              {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
-              5 kademeli morfolojik çözümleyici, kök analizi ve المرادفات والأضداد nüans rehberi
+              5 kademeli morfolojik çözümleyici, kök analizi ve{" "}
+              {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
+              Sözlüğü
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-base sm:text-lg font-black text-amber-600 leading-tight block">
-              16kHz DSP Analiz
+              28 Harf Isı Haritası
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
-              Gerçek zamanlı ses dalga formu, ritim ve tempo uyumu karşılaştırması
+              16kHz DSP analiz ve 28 Harf Kişisel Mahreç Isı Haritası ile
+              gerçekçi tempo/ritim takibi
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
@@ -172,7 +144,7 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badge: "ADIM 2 / 6 — HIZLI KONTROLLER",
+      badgeTopic: "HIZLI KONTROLLER",
       title: "Üst Bar Hızlı Ayar ve Sınıf İkonları",
       subtitle:
         "Sayfadan ayrılmadan üst bardaki hızlı araçlarla okuma, ses ve tahta deneyiminizi yönetin:",
@@ -231,15 +203,15 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badge: "ADIM 3 / 6 — DİYALOG & METİN STÜDYOSU",
-      title: "5 Çalışma Modu, Yan Yana Gramer & Canlı Ok Takibi",
+      badgeTopic: "DİYALOG & METİN STÜDYOSU",
+      title: "5 Çalışma Modu, 28 Harf Mahreç & Canlı Ok Takibi",
       subtitle:
-        "Diyalog ve okuma metni sayfalarında 5 pedagojik çalışma modu ve bölünmüş ekran gramer paneli yer alır:",
+        "Diyalog ve okuma metni sayfalarında 5 pedagojik çalışma modu, kişisel mahreç ısı haritası ve bölünmüş ekran gramer paneli yer alır:",
       visual: (
         <div className="space-y-3">
           {/* Canlı Kelime & Ok Takibi Önizlemesi */}
           <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
               <span>🎯 Canlı Karaoke Kelime &amp; Ok Takibi (RTL)</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#6741D9] text-white">
                 <Repeat size={11} /> Döngü: 1x / 2x / 3x / 5x / ∞
@@ -275,7 +247,7 @@ export default function OnboardingTourModal() {
                 🎙️ 2. Telaffuz Stüdyosu
               </strong>
               <span className="text-[11px] text-[var(--muted)]">
-                Ses kaydı, 28 harf ve 38 mahreç çifti koçluğu
+                28 Harf Kişisel Mahreç Isı Haritası ve 38 çift koçluğu
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE]">
@@ -310,10 +282,10 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badge: "ADIM 4 / 6 — MORFOLOJİK SÖZLÜK",
-      title: "Tıklanabilir Kök Analizi & Kelime Renk Kodları",
+      badgeTopic: "MORFOLOJİK SÖZLÜK",
+      title: "Tıklanabilir Kök Analizi & 400 Eş/Zıt Anlamlılar",
       subtitle:
-        "Cümle içindeki herhangi bir Arapça kelimeye tıkladığınızda morfolojik ayrıştırma ve tür rengi açılır:",
+        "Cümle içindeki herhangi bir Arapça kelimeye tıkladığınızda morfolojik ayrıştırma, tür rengi ve nüans rehberi açılır:",
       visual: (
         <div className="space-y-2.5">
           <div className="p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border-2 border-amber-300 border-l-4 border-l-amber-500 flex items-center justify-between gap-3">
@@ -369,18 +341,25 @@ export default function OnboardingTourModal() {
 
           <div className="p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-400 text-[11px] space-y-0.5">
             <span className="font-extrabold text-[#065F46] dark:text-emerald-300 block">
-              🌿 Kök Ailesi (İştikak) &amp; 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş / Zıt Anlamlılar (الفروق):
+              🌿 Kök Ailesi (İştikak) &amp; 🔄{" "}
+              {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
+              Sözlüğü:
             </span>
             <p className="text-[var(--muted)] leading-snug">
-              Kelimelerin kök kardeşlerini, eş ve zıt anlamlılarını, ince anlam
-              farklarını (الفروق اللغوية) ve karşılaştırmalı örnek cümlelerini tek tıkla inceleyin.
+              Kelimelerin kök kardeşlerini,{" "}
+              <strong>
+                {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
+                (المرادفات والأضداد)
+              </strong>{" "}
+              kayıtlarını, ince anlam farklarını (الفروق اللغوية) ve örnek
+              cümlelerini tek tıkla inceleyin.
             </p>
           </div>
         </div>
       ),
     },
     {
-      badge: "ADIM 5 / 6 — ALIŞTIRMA MERKEZİ & SRS HAFIZA SİSTEMİ",
+      badgeTopic: "ALIŞTIRMA MERKEZİ & SRS HAFIZA SİSTEMİ",
       title: `${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi & Aralıklı Tekrar (SRS)`,
       subtitle:
         "🎯 'Bugün Ne Çalışmalıyım?' günlük 12 dk kişisel çalışma paketi ve 5 aşamalı (1, 3, 7, 14, 30 gün) akıllı hafıza sistemi:",
@@ -392,7 +371,7 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                3B Kelime & Kısa Cümle Kartları
+                3B Kelime &amp; Kısa Cümle Kartları
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
                 Sesli ön/arka yüz çevirmeli kelime ve kalıp cümle kartları
@@ -409,7 +388,7 @@ export default function OnboardingTourModal() {
                 Çoktan Seçmeli Test
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Kelime, cümle veya karışık havuzdan süreli/süresiz testler
+                Eş anlamlı çakışmasını önleyen akıllı çeldiricili testler
               </span>
             </div>
           </div>
@@ -420,7 +399,7 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Sürükle-Bırak & Dinle-Yaz İmla
+                Sürükle-Bırak &amp; Dinle-Yaz İmla
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
                 Kelimeyi boşluğa sürükleyin veya sanal Arapça klavyeyle yazın
@@ -448,13 +427,14 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
-                🧩 14 Etkileşimli Modül + 🔄 Eş &amp; Zıt Havuzu + 🎯 SRS
+                🧩 14 Etkileşimli Modül + 🔄{" "}
+                {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Havuzu + 🎯 SRS
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                🔄 Eş &amp; Zıt Anlamlılar (المرادفات والأضداد) özel soru havuzu,
-                Dinle-Sırala, Görsel Eşleştirme, Hata Avcısı, Kör Dikte, Diyalog
-                Tamamlama, Müzekker/Müennes Tasnifi, İ&apos;rab Boyama ve 5 aşamalı SRS
-                tekrar sistemi.
+                🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
+                özel soru havuzu, {CONTENT_INVENTORY.visualWordsCount} görsel kelime
+                Müzekker/Müennes Tasnifi, Hata Avcısı, Kör Dikte, İ&apos;rab Boyama
+                ve 5 aşamalı SRS tekrar sistemi.
               </span>
             </div>
           </div>
@@ -462,7 +442,64 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badge: "ADIM 6 / 6 — ÖDEV SİSTEMİ, A4 QUİZ, ÇEVRİMDIŞI & TAHTA MODU",
+      badgeTopic: "SINAV, GRAMER ATLASI & VİDEO REHBERİ",
+      title: "Seviye Tespit (CAT/KTT), Gramer Atlası & Video Rehberi",
+      subtitle:
+        "Seviyenizi bilimsel olarak ölçün, kuralları haritalandırın ve özgün Arapça videolarla dinleme pratiği yapın:",
+      visual: (
+        <div className="space-y-2.5">
+          <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9] flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#6741D9] text-white flex items-center justify-center shrink-0">
+              <Compass size={18} />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <span className="block text-xs font-extrabold text-[var(--foreground)]">
+                🧭 {CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi
+              </span>
+              <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                <strong>10, 15 veya 20 soruluk adaptif CAT</strong> Seviye Tespit
+                Motoru, gerekçeli çözümlü Konu Tarama Testleri (KTT), A1–B2 Kur
+                Bitirme Sınavları ve A/B kitapçıklı yaprak test basımı.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-[#087F5B] flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#087F5B] text-white flex items-center justify-center shrink-0">
+              <GraduationCap size={18} />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <span className="block text-xs font-extrabold text-[#065F46] dark:text-emerald-300">
+                📌 {CONTENT_INVENTORY.grammarNotesCount} Kartlık Gramer Atlası &amp; KTT Köprüsü
+              </span>
+              <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                120 diyalog, 60 metin ve 15 müstakil gramer kartından oluşan
+                bütüncül atlas; Sade/Akademik anlatım, i&apos;rab tahlili ve tek
+                tıkla konu tarama testi bağlantısı.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-rose-50/90 dark:bg-rose-950/30 border-2 border-rose-400 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
+              <PlayCircle size={18} />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <span className="block text-xs font-extrabold text-rose-900 dark:text-rose-200">
+                🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
+              </span>
+              <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
+                CEFR A1–B2 seviyelerine ve 6 kategoriye ayrılmış tekil videolar
+                ve oynatma listeleri; uygulama içi Sinema Modu, pedagojik notlar
+                ve tıklanabilir odak kelimeler.
+              </p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      badgeTopic: "ÖDEV SİSTEMİ, A4 QUİZ, ÇEVRİMDIŞI & TAHTA MODU",
       title: "QR Ödev Sistemi, A4 Quiz, Çevrimdışı & Akıllı Tahta",
       subtitle:
         "Sınıf içi ve bireysel çalışmalarda öğretmen ve öğrenciler için tam donanımlı araçlar:",
@@ -503,7 +540,7 @@ export default function OnboardingTourModal() {
 
           <div className="p-2.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1.5">
             <span className="block text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
-              🔤 5 Seçkin Arapça Font & Lafzatullah Tipografi Motoru:
+              🔤 5 Seçkin Arapça Font &amp; Lafzatullah Tipografi Motoru:
             </span>
             <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
               {[
@@ -527,29 +564,79 @@ export default function OnboardingTourModal() {
     },
   ];
 
-  const current = steps[step];
+  const totalSteps = steps.length;
+
+  useEffect(() => {
+    let raf: number | null = null;
+    try {
+      const done = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      if (!done) {
+        raf = requestAnimationFrame(() => {
+          setIsOpen(true);
+          setStep(0);
+        });
+      }
+    } catch {
+      // ignore storage errors
+    }
+
+    const handleOpenEvent = () => {
+      setStep(0);
+      setIsOpen(true);
+    };
+
+    window.addEventListener("open-onboarding-tour", handleOpenEvent);
+    return () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      window.removeEventListener("open-onboarding-tour", handleOpenEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        return;
+      }
+      if (e.key === "ArrowRight" && step < totalSteps - 1) {
+        setStep((s) => s + 1);
+      }
+      if (e.key === "ArrowLeft" && step > 0) {
+        setStep((s) => s - 1);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isOpen, step, totalSteps]);
+
+  if (!isOpen) return null;
+
+  const safeStep = Math.min(Math.max(0, step), steps.length - 1);
+  const current = steps[safeStep];
+  const dynamicBadge = `ADIM ${safeStep + 1} / ${steps.length} — ${current.badgeTopic}`;
 
   return (
     <div
       className="fixed inset-0 z-[60] print:hidden bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
-      onClick={handleComplete}
+      onClick={handleTemporaryClose}
     >
       <div
         className="w-full max-w-lg bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ÜST BAR */}
-        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-3 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 shrink-0">
-          <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold tracking-wider uppercase truncate">
-            {current.badge}
+        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-3.5 sm:px-5 py-3 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 shrink-0">
+          <span className="px-2.5 py-1 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold tracking-wider uppercase truncate min-w-0">
+            {dynamicBadge}
           </span>
 
           <button
             type="button"
             onClick={handleComplete}
-            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] flex items-center gap-1 cursor-pointer shrink-0"
+            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] text-[11px] sm:text-xs font-extrabold text-[var(--muted)] hover:text-[var(--foreground)] flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
           >
-            <span>Turu Atla</span>
+            <span>Turu Tamamla / Geç</span>
             <X size={13} />
           </button>
         </div>
@@ -569,7 +656,7 @@ export default function OnboardingTourModal() {
         </div>
 
         {/* ALT NAVİGASYON VE İLERLEME NOKTALARI */}
-        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-5 py-3.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3 shrink-0">
+        <div className="bg-[#F7EFE1] dark:bg-[var(--background)] px-4 sm:px-5 py-3.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           {/* İlerleme Noktaları */}
           <div className="flex items-center gap-1.5">
             {steps.map((_, idx) => (
@@ -582,7 +669,7 @@ export default function OnboardingTourModal() {
                 }}
                 aria-label={`Adım ${idx + 1}`}
                 className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                  idx === step
+                  idx === safeStep
                     ? "w-6 bg-[#087F5B]"
                     : "w-2.5 bg-[#cbb692] dark:bg-slate-600"
                 }`}
@@ -591,27 +678,27 @@ export default function OnboardingTourModal() {
           </div>
 
           {/* Geri / İleri / Başla Butonları */}
-          <div className="flex items-center gap-2">
-            {step > 0 && (
+          <div className="flex flex-wrap items-center justify-end gap-2 ml-auto">
+            {safeStep > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   playClick();
-                  setStep((s) => s - 1);
+                  setStep((s) => Math.max(0, s - 1));
                 }}
-                className="h-9 px-3.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+                className="h-9 px-3 sm:px-3.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
               >
                 <ChevronLeft size={14} />
                 <span>Geri</span>
               </button>
             )}
 
-            {step < steps.length - 1 ? (
+            {safeStep < steps.length - 1 ? (
               <button
                 type="button"
                 onClick={() => {
                   playClick();
-                  setStep((s) => s + 1);
+                  setStep((s) => Math.min(steps.length - 1, s + 1));
                 }}
                 className="h-9 px-4 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#087F5B] flex items-center gap-1 cursor-pointer"
               >
@@ -627,7 +714,7 @@ export default function OnboardingTourModal() {
                     handleComplete();
                     router.push("/seviye-tespit");
                   }}
-                  className="h-9 px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-emerald-900 flex items-center gap-1.5 cursor-pointer"
+                  className="h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-emerald-900 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
                   <Compass size={14} />
                   <span>🧭 Seviyemi Belirle</span>
@@ -638,7 +725,7 @@ export default function OnboardingTourModal() {
                     playSuccess();
                     handleComplete();
                   }}
-                  className="h-9 px-4 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3b1f8c] flex items-center gap-1.5 cursor-pointer"
+                  className="h-9 px-3.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3b1f8c] flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
                   <Rocket size={14} />
                   <span>🚀 Uygulamaya Başla</span>

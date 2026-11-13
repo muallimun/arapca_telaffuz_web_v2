@@ -3,7 +3,7 @@ import { CONTENT_INVENTORY } from "@/lib/data";
 export const SHARE_APP_TITLE =
   "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
 
-export const SHARE_APP_TEXT = `🎙️ Muallimun Arapça (İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu): ${CONTENT_INVENTORY.dialoguesCount} günlük konuşma diyaloğu, ${CONTENT_INVENTORY.readingsCount} okuma metni, 180 soruluk Seviye Tespit & Konu Tarama Sınavı, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime ve ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkeziyle ücretsiz Arapça çalışın!`;
+export const SHARE_APP_TEXT = `🎙️ Muallimun Arapça (İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu): ${CONTENT_INVENTORY.dialoguesCount} günlük konuşma diyaloğu, ${CONTENT_INVENTORY.readingsCount} okuma metni, ${CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye Tespit ve Konu Tarama Merkezi, ${CONTENT_INVENTORY.sentencesCount} kalıp cümle, ${CONTENT_INVENTORY.visualWordsCount} görsel kelime ve ${CONTENT_INVENTORY.exerciseModulesCount} modüllü alıştırma merkeziyle ücretsiz Arapça çalışın!`;
 
 export const SHARE_APP_URL = "https://app.muallimun.net/";
 

@@ -197,7 +197,7 @@ function computeSpanDiff(
 /**
  * Doğru onarım formundan türetilmiş gerçekçi hareke / sarf çeldiricileri üretir.
  */
-function buildRealisticArabicMutations(
+export function buildRealisticArabicMutations(
   correctForm: string,
   forbiddenSet: Set<string>,
   peerForms: string[]
@@ -220,53 +220,119 @@ function buildRealisticArabicMutations(
     const { leading, core, trailing } = stripPunctuationEdge(tokens[lastIdx]);
 
     if (core.length >= 2) {
-      // 1. Son hareke / tenvin varyasyonları
+      // 1. Son hareke / tenvin varyasyonları (muzâri fiil ve muttasıl zamir korumalı)
       const stemNoFinalMark = core
         .replace(/ًا$/u, "")
         .replace(/[\u064B-\u0650\u0652]+$/u, "");
 
-      const endings = [
-        "\u064F", // damme
-        "\u064E", // fetha
-        "\u0650", // kesra
-        "\u0652", // sükun
-        "\u064C", // tenvin damme
-        "\u064D", // tenvin kesra
-        "ًا", // tenvin fetha
-      ];
+      const bareWord = stemNoFinalMark.replace(
+        /[\u064B-\u065F\u0670\u0640]/gu,
+        ""
+      );
+      const hasOriginalTanwin = /[\u064B\u064C\u064D]|ًا$/u.test(core);
+      const hasDefiniteArticle =
+        /^(?:[وفبكل][\u064E\u0650\u064F]?)?(?:ال|اَل)/u.test(stemNoFinalMark);
 
-      for (const ending of endings) {
-        if (
-          ending === "ًا" &&
-          (stemNoFinalMark.endsWith("ة") ||
-            stemNoFinalMark.endsWith("ى") ||
-            stemNoFinalMark.startsWith("ال") ||
-            stemNoFinalMark.startsWith("اَل"))
-        ) {
-          const femTanwin = `${stemNoFinalMark}\u064B`;
-          const rebuiltFem = [
-            ...tokens.slice(0, lastIdx),
-            `${leading}${femTanwin}${trailing}`,
-          ].join(" ");
-          pushUnique(rebuiltFem);
-          continue;
+      // Muzâri fiil tespiti (ي / ت / أ / ن öneki ile başlayan, harf-i tarifsiz, tenvinsiz ve ة'siz fiil kalıpları)
+      const isMuzariVerb =
+        !hasOriginalTanwin &&
+        !hasDefiniteArticle &&
+        !bareWord.endsWith("ة") &&
+        bareWord.length >= 2 &&
+        (/^(?:[وف]\u064E?)?(?:س\u064E?)?[يتأن][\u064E\u064F]/u.test(core) ||
+          (/^(?:[وف]?(?:س)?)?[يتأن]/u.test(bareWord) && bareWord.length >= 3));
+
+      // Muttasıl zamir tespiti (ـهُ / ـهَا / ـهُمْ / ـكَ / ـنَا ve kardeş zamir ekleri)
+      const hasLongOrPluralPronoun =
+        !hasOriginalTanwin &&
+        bareWord.length >= 3 &&
+        /(?:ها|هم|هما|هن|كم|كما|كن|نا|ني)$/u.test(bareWord);
+      const hasSingleConsonantPronoun =
+        !hasOriginalTanwin &&
+        !hasDefiniteArticle &&
+        ((bareWord.length >= 2 &&
+          /[\u064E\u064F\u0650\u0652اويى](?:ه[\u064F\u0650]?|ك[\u064E\u0650]?)$/u.test(
+            core
+          )) ||
+          (bareWord.length >= 4 && /[هك]$/u.test(bareWord)));
+      const hasAttachedPronoun =
+        hasLongOrPluralPronoun || hasSingleConsonantPronoun;
+
+      const forbidTanwin =
+        hasDefiniteArticle || isMuzariVerb || hasAttachedPronoun;
+
+      // Uzun ünlülü muttasıl zamirle (ـهَا / ـنَا) biten kelimelerde elif üzerine hareke koymak yerine zamirden önceki i'rab harekesini değiştir
+      const longPronounMatch = stemNoFinalMark.match(
+        /^(.+?)([\u064E\u064F\u0650\u0652]?)(ه\u064E?ا|ن\u064E?ا)$/u
+      );
+      if (hasAttachedPronoun && longPronounMatch) {
+        const hostBase = longPronounMatch[1];
+        const pronSuffix = longPronounMatch[3];
+        for (const hostMark of ["\u064F", "\u064E", "\u0650", "\u0652"]) {
+          const mutatedHostWord = `${leading}${hostBase}${hostMark}${pronSuffix}${trailing}`;
+          pushUnique([...tokens.slice(0, lastIdx), mutatedHostWord].join(" "));
         }
-        if (
-          (ending === "\u064C" || ending === "\u064D") &&
-          (stemNoFinalMark.startsWith("ال") || stemNoFinalMark.startsWith("اَل"))
-        ) {
-          continue;
+      } else {
+        // Çoğul zamirlerde (ـهُمْ / ـكُمْ) zamirden önceki i'rab harekesini de gerçekçi çeldirici olarak üret
+        const pluralPronounMatch = hasAttachedPronoun
+          ? stemNoFinalMark.match(
+              /^(.+?)([\u064E\u064F\u0650\u0652]?)((?:ه[\u064F\u0650]?|ك\u064F?)م)$/u
+            )
+          : null;
+        if (pluralPronounMatch) {
+          const hostBase = pluralPronounMatch[1];
+          const pronSuffix = pluralPronounMatch[3];
+          for (const hostMark of ["\u064F", "\u064E", "\u0650"]) {
+            const mutatedHostWord = `${leading}${hostBase}${hostMark}${pronSuffix}\u0652${trailing}`;
+            pushUnique(
+              [...tokens.slice(0, lastIdx), mutatedHostWord].join(" ")
+            );
+          }
         }
-        const mutatedWord = `${leading}${stemNoFinalMark}${ending}${trailing}`;
-        const rebuilt = [...tokens.slice(0, lastIdx), mutatedWord].join(" ");
-        pushUnique(rebuilt);
+
+        const endings = forbidTanwin
+          ? [
+              "\u064F", // damme
+              "\u064E", // fetha
+              "\u0650", // kesra
+              "\u0652", // sükun
+            ]
+          : [
+              "\u064F", // damme
+              "\u064E", // fetha
+              "\u0650", // kesra
+              "\u0652", // sükun
+              "\u064C", // tenvin damme
+              "\u064D", // tenvin kesra
+              "ًا", // tenvin fetha
+            ];
+
+        for (const ending of endings) {
+          if (
+            ending === "ًا" &&
+            (stemNoFinalMark.endsWith("ة") ||
+              stemNoFinalMark.endsWith("ى") ||
+              stemNoFinalMark.endsWith("ء"))
+          ) {
+            const femTanwin = `${stemNoFinalMark}\u064B`;
+            const rebuiltFem = [
+              ...tokens.slice(0, lastIdx),
+              `${leading}${femTanwin}${trailing}`,
+            ].join(" ");
+            pushUnique(rebuiltFem);
+            continue;
+          }
+          const mutatedWord = `${leading}${stemNoFinalMark}${ending}${trailing}`;
+          const rebuilt = [...tokens.slice(0, lastIdx), mutatedWord].join(" ");
+          pushUnique(rebuilt);
+        }
       }
 
       // 2. Müenneslik tâ'sı veya muzâri önek varyasyonu
-      if (stemNoFinalMark.endsWith("ة")) {
+      if (!forbidTanwin && stemNoFinalMark.endsWith("ة")) {
         const droppedTa = `${leading}${stemNoFinalMark.slice(0, -1)}\u064C${trailing}`;
         pushUnique([...tokens.slice(0, lastIdx), droppedTa].join(" "));
-      } else if (/^[يتأن][\u064E\u064F\u0650]/.test(core)) {
+      } else if (/^[يتأن][\u064E\u064F\u0650]?/u.test(core) && isMuzariVerb) {
         const swappedPrefix = core.startsWith("ي")
           ? `ت${core.slice(1)}`
           : core.startsWith("ت")

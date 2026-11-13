@@ -111,8 +111,8 @@ const DIFFICULTY_LADDER: Array<{ seviye: Level; zorluk: 1 | 2 | 3 }> = [
   { seviye: "B2", zorluk: 3 }, // 11
 ];
 
-const DEFAULT_CAT_TOTAL_QUESTIONS = 18; // Varsayılan: 16 adaptif okuma/gramer/bağlam + 2 isteğe bağlı sesli dinleme
-type CatQuestionCountOption = 10 | 15 | 18;
+const DEFAULT_CAT_TOTAL_QUESTIONS = 20; // Varsayılan: 10, 15 veya 20 soruluk adaptif CAT (+2 isteğe bağlı sesli dinleme)
+type CatQuestionCountOption = 10 | 15 | 20;
 
 function getCatListeningSlots(totalCatQuestions: number): Set<number> {
   const safeTotal = Math.max(4, totalCatQuestions);
@@ -3512,7 +3512,7 @@ function SeviyeTespitContent() {
           {
             id: "cat" as const,
             title: "🧭 1. Adaptif Seviye Tespit",
-            sub: "16+2 Soru • ~3-4 Dk Akıllı CAT",
+            sub: "10, 15 veya 20 Soru • ~3-4 Dk Akıllı CAT",
             icon: Compass,
           },
           {
@@ -3580,7 +3580,7 @@ function SeviyeTespitContent() {
                 <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
                   Soru Sayısı:
                 </span>
-                {([10, 15, 18] as CatQuestionCountOption[]).map((cnt) => {
+                {([10, 15, 20] as CatQuestionCountOption[]).map((cnt) => {
                   const active = catQuestionCount === cnt;
                   return (
                     <button

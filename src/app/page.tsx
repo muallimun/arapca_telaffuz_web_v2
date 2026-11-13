@@ -659,8 +659,8 @@ export default function HomePage() {
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">
               {mounted && detectedCefrLevel
-                ? "180 soruluk doğrulanmış havuzdan konu tarama testleri çözün veya kur bitirme sınavıyla seviye atlayın."
-                : "Henüz seviye tespiti yapmadınız. 16+2 soruluk adaptif testle A1–B2 seviyenizi belirleyip günlük çalışma planınızı kişiselleştirin."}
+                ? "550 soruluk Seviye Tespit ve Konu Tarama Merkezi havuzundan konu tarama testleri çözün veya kur bitirme sınavıyla seviye atlayın."
+                : "Henüz seviye tespiti yapmadınız. 10, 15 veya 20 soruluk adaptif CAT testiyle A1–B2 seviyenizi belirleyip günlük çalışma planınızı kişiselleştirin."}
             </p>
           </div>
 

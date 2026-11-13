@@ -720,7 +720,15 @@ export default function ReadingTextDetailPage({
     grammarSplitSide,
     setGrammarSplitOpen,
     toggleGrammarSplitSide,
+    setClassroomPresentationMode,
   } = useClassroomToolsStore();
+
+  useEffect(() => {
+    setClassroomPresentationMode(isClassroomMode);
+    return () => {
+      setClassroomPresentationMode(false);
+    };
+  }, [isClassroomMode, setClassroomPresentationMode]);
 
   const activeTabId: StudyMode =
     isGrammarSplitOpen && grammarNote && studyMode === "gramer"

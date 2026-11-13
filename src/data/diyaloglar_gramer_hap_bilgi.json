@@ -24,7 +24,8 @@
       "adim_adim_anlatim": [
         "1. İsim Cümlesinin İki Temel Direği: İsim cümlesi 'Mübteda' (özne) ve 'Haber' (yüklem) olmak üzere iki ana ögeden oluşur.",
         "2. Zamirlerin Özneliği: 'أَنَا، أَنْتَ، أَنْتِ، هُوَ، هِيَ' gibi ayrık zamirler cümle başında geldiğinde doğrudan Mübteda olur ve zamir oldukları için son harekeleri değişmez (mahallen merfûdur).",
-        "3. Uyum Kuralı: Haber (yüklem), özneye cinsiyet (müzekker/müennes) ve sayı (tekil/ikil/çoğul) bakımından tam uyar."
+        "3. Uyum Kuralı: Haber (yüklem), özneye cinsiyet (müzekker/müennes) ve sayı (tekil/ikil/çoğul) bakımından tam uyar.",
+        "4. Haberin Çeşitleri (İlerleyen Seviyeler İçin): İsim cümlesinde haber yalnızca tek bir kelimeden (müfred haber: طَالِبٌ) ibaret olmak zorunda değildir; ilerleyen seviyelerde isim cümlesi, fiil cümlesi veya örnekteki 'مِنْ إِسْطَنْبُولَ' ifadesinde olduğu gibi şibh-i cümle (harf-i cerli câr-mecrûr ya da zarf öbeği) olarak da gelebilir."
       ],
       "ozet_tablo": {
         "tablo_basligi": "Tekil Ayrık Şahıs Zamirleri ve İsim Cümlesi Uyumu",
@@ -152,7 +153,7 @@
         {
           "kelime": "أَدْرُسُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "Muzari fiil olup herhangi bir nasp/cezm edatı almadığı için damma (ötre) ile merfûdur."
+          "hareke_nedeni": "Muzâri fiil olup herhangi bir nasp/cezm edatı almadığı için damma (ötre) ile merfûdur."
         },
         {
           "kelime": "اللُّغَةَ",
@@ -193,7 +194,7 @@
     ],
     "ipucu": "Arapçada şehir isimleri genellikle gayri munsariftir; 'فِي' harf-i cerinden sonra esre yerine fetha (üstün) ile mecrûr olurlar.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أَسْكُنُ)] + [Harf-i Cer (فِي)] + [Mecrûr İsim (Şehir/Yer Name)]",
+      "formul_sema": "[Muzâri Fiil (أَسْكُنُ)] + [Harf-i Cer (فِي)] + [Mecrûr İsim (Şehir/Yer Name)]",
       "adim_adim_anlatim": [
         "1. Bulunma Bildiren Harf-i Cer: 'فِي' harf-i ceri bir yerde bulunmayı (-de / -da / içinde) ifade eder ve sonrasındaki ismi mecrûr yaparlar.",
         "2. Soru Edatı أَيْنَ: Konum ve yer öğrenmek için kullanılır; cevabında genellikle 'فِي', 'عِنْدَ' veya mekân zarfları yer alır.",
@@ -232,7 +233,7 @@
         {
           "kelime": "أَسْكُنُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "Muzari fiil olup damma (ötre) ile merfûdur."
+          "hareke_nedeni": "Muzâri fiil olup damma (ötre) ile merfûdur."
         },
         {
           "kelime": "فِي",
@@ -273,9 +274,9 @@
     ],
     "ipucu": "'يُوجَدُ' eril nesneler için, 'تُوجَدُ' dişil nesneler için kullanılır; var olduğu sorulan isim ötreli (merfû) okunur.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Soru Edatı (هَلْ)] + [Muzari Meçhul Fiil (يُوجَدُ / تُوجَدُ)] + [Gecikmiş Özne / Mübteda (Nekre - Merfû ◌ٌ)]",
+      "formul_sema": "[Soru Edatı (هَلْ)] + [Muzâri Meçhul Fiil (يُوجَدُ / تُوجَدُ)] + [Gecikmiş Özne / Mübteda (Nekre - Merfû ◌ٌ)]",
       "adim_adim_anlatim": [
-        "1. Varlık Bildiren Fiil (يُوجَدُ / تُوجَدُ): Arapçada 'var / bulunur' anlamı vermek için 'وَجَدَ' fiilinin meçhul muzarisi kullanılır.",
+        "1. Varlık Bildiren Fiil (يُوجَدُ / تُوجَدُ): Arapçada 'var / bulunur' anlamı vermek için 'وَجَدَ' fiilinin meçhul muzârisi kullanılır.",
         "2. Cinsiyet Uyum Kuralı: Var olduğu sorulan nesne eril ise 'يُوجَدُ', dişil ise (sonunda ة olan) 'تُوجَدُ' kalıbı tercih edilir.",
         "3. Nâib-i Fâil / Özne İrabı: Fiilden sonra gelen varlığı sorulan isim merfû (ötreli) okunur."
       ],
@@ -283,7 +284,7 @@
         "tablo_basligi": "يُوجَدُ / تُوجَدُ Varlık Kalıbı Cinsiyet Uyumu",
         "sutunlar": [
           "Cinsiyet",
-          "Muzari Meçhul Fiil",
+          "Muzâri Meçhul Fiil",
           "Örnek İsim",
           "Cümle Örneği"
         ],
@@ -311,8 +312,8 @@
       "irab_tahlili": [
         {
           "kelime": "تُوجَدُ",
-          "gorevi": "Meçhul Muzari Fiil",
-          "hareke_nedeni": "İlk harfi damma, sondan önceki harfi fetha ile meçhul yapılmış muzari fiildir; merfûdur."
+          "gorevi": "Meçhul Muzâri Fiil",
+          "hareke_nedeni": "İlk harfi damma, sondan önceki harfi fetha ile meçhul yapılmış muzâri fiildir; merfûdur."
         },
         {
           "kelime": "غُرْفَةٌ",
@@ -445,9 +446,9 @@
     ],
     "ipucu": "'أُرِيدُ' fiilinden sonra gelen nesnelerin son harekesi üstünlü (mansûb) okunur.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أُرِيدُ)] + [Mef'ûlün Bih (Nesne - Mansûb ◌ً / ◌َ)]",
+      "formul_sema": "[Muzâri Fiil (أُرِيدُ)] + [Mef'ûlün Bih (Nesne - Mansûb ◌ً / ◌َ)]",
       "adim_adim_anlatim": [
-        "1. İstek Bildiren Fiil (أُرِيدُ): 'İstiyorum' eylemini ifade eden 1. tekil şahıs muzari fiildir.",
+        "1. İstek Bildiren Fiil (أُرِيدُ): 'İstiyorum' eylemini ifade eden 1. tekil şahıs muzâri fiildir.",
         "2. Nesnenin İrabı: 'أُرِيدُ' fiilinden sonra gelen ve istenen nesne (mef'ûlün bih) daima mansûb olur; belirliyse tek fetha ('◌َ'), belirsizse fetha tenvini ('◌ً') alır.",
         "3. Nezaket Soru Kalıbı: 'هَلْ يُوجَدُ...؟' yapısı bir şeyin varlığını nazikçe sormak için sıkça kullanılır."
       ],
@@ -484,7 +485,7 @@
         {
           "kelime": "أُرِيدُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "İf'âl babından 1. tekil şahıs muzari fiil olup damma ile merfûdur."
+          "hareke_nedeni": "İf'âl babından 1. tekil şahıs muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "شَايًا",
@@ -895,7 +896,7 @@
         {
           "kelime": "أُرِيدُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma ile merfûdur."
+          "hareke_nedeni": "1. tekil şahıs muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "كِيلُوغِرَامَيْنِ",
@@ -918,11 +919,11 @@
   {
     "bagli_id": "dlg_012",
     "konu_basligi": "Market Eşyaları ve Karşılaştırma",
-    "hap_kural": "Gelecek zamanda yapılacak bir eylemi ifade etmek için muzari fiilin başına 'سَ' (se-) eki veya 'سَوْفَ' kelimesi getirilir.",
+    "hap_kural": "Gelecek zamanda yapılacak bir eylemi ifade etmek için muzâri fiilin başına 'سَ' (se-) eki veya 'سَوْفَ' kelimesi getirilir.",
     "metinden_ornek": {
       "arapca": "سَأَشْتَرِي الْحَلِيبَ وَالْجُبْنَ الْيَوْمَ.",
       "turkce": "Bugün süt ve peynir alacağım.",
-      "aciklama": "'أَشْتَرِي' (alıyorum) muzari fiilinin başına gelen 'سَ' takısı eylemi gelecek zamana ('alacağım') taşımıştır."
+      "aciklama": "'أَشْتَرِي' (alıyorum) muzâri fiilinin başına gelen 'سَ' takısı eylemi gelecek zamana ('alacağım') taşımıştır."
     },
     "ek_ornekler": [
       {
@@ -934,16 +935,16 @@
         "turkce": "Öğrenci başarılı olacak."
       }
     ],
-    "ipucu": "Muzari fiile bitişen 'سَ' yakın geleceği, ayrı yazılan 'سَوْفَ' ise daha uzak geleceği ifade eder.",
+    "ipucu": "Muzâri fiile bitişen 'سَ' yakın geleceği, ayrı yazılan 'سَوْفَ' ise daha uzak geleceği ifade eder.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Gelecek Zaman Eki (سَ / سَوْفَ)] + [Muzari Fiil (أَشْتَرِي)] + [Mef'ûlün Bih (Mansûb ◌َ)]",
+      "formul_sema": "[Gelecek Zaman Eki (سَ / سَوْفَ)] + [Muzâri Fiil (أَشْتَرِي)] + [Mef'ûlün Bih (Mansûb ◌َ)]",
       "adim_adim_anlatim": [
-        "1. Gelecek Zaman Yapısı: Muzari fiilin başına bitişen 'سَ' (se-) yakın geleceği, ayrı yazılan 'سَوْفَ' ise uzak geleceği bildirir.",
-        "2. Fiil Harekesi: 'سَ' eki muzari fiilin son irab harekesine etki etmez; fiil merfû kalmaya devam eder.",
+        "1. Gelecek Zaman Yapısı: Muzâri fiilin başına bitişen 'سَ' (se-) yakın geleceği, ayrı yazılan 'سَوْفَ' ise uzak geleceği bildirir.",
+        "2. Fiil Harekesi: 'سَ' eki muzâri fiilin son irab harekesine etki etmez; fiil merfû kalmaya devam eder.",
         "3. Nesne Bağlacı: Birden fazla nesne istendiğinde araya 'وَ' atıf harfi konur ve takip eden nesne de fethalanır ('الحَلِيبَ وَالْجُبْنَ')."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Gelecek Zaman Eki 'سَ' ve Muzari Fiil Çekimi",
+        "tablo_basligi": "Gelecek Zaman Eki 'سَ' ve Muzâri Fiil Çekimi",
         "sutunlar": [
           "Şimdiki Zaman",
           "Gelecek Zaman",
@@ -979,7 +980,7 @@
         },
         {
           "kelime": "أَشْتَرِي",
-          "gorevi": "Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
+          "gorevi": "Muzâri Fiil (Fâil: Gizli Zamir أَنَا)",
           "hareke_nedeni": "Sonu illetli harf ile bittiği için damma mukadder olarak merfûdur."
         },
         {
@@ -1681,7 +1682,7 @@
     ],
     "ipucu": "'شَعَرَ / يَشْعُرُ' fiili hissetmek anlamında dâima 'بِ' (bi) harf-i ceri ile kullanılır.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أَشْعُرُ)] + [Harf-i Cer (بِ)] + [Mecrûr İsim (أَلَمٍ - ◌ٍ)] + [Sıfat (شَدِيدٍ - ◌ٍ)]",
+      "formul_sema": "[Muzâri Fiil (أَشْعُرُ)] + [Harf-i Cer (بِ)] + [Mecrûr İsim (أَلَمٍ - ◌ٍ)] + [Sıfat (شَدِيدٍ - ◌ٍ)]",
       "adim_adim_anlatim": [
         "1. Fiil Cümlesinin Ögeleri: Fiil cümlesi Fiil, Fâil (özne) ve Mef'ûl (nesne) veya Harf-i Cerli ögelerden oluşur.",
         "2. 'شَعَرَ / يَشْعُرُ' Fiilinin Kullanımı: Hissetmek eylemi Arapçada doğrudan nesne almaz, dâima 'بِ' harf-i ceri ile kullanılır.",
@@ -1690,7 +1691,7 @@
       "ozet_tablo": {
         "tablo_basligi": "شَعَرَ / يَشْعُرُ Fiili ve Harf-i Cerli Şikayet Cümleleri",
         "sutunlar": [
-          "Muzari Fiil",
+          "Muzâri Fiil",
           "Harf-i Cer",
           "Şikayet İsmi (Mecrûr)",
           "Türkçe Anlamı"
@@ -1720,7 +1721,7 @@
         {
           "kelime": "أَشْعُرُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma (ötre) ile merfûdur."
+          "hareke_nedeni": "1. tekil şahıs muzâri fiil olup damma (ötre) ile merfûdur."
         },
         {
           "kelime": "بِأَلَمٍ",
@@ -1759,9 +1760,9 @@
         "turkce": "Kitap okumak istiyorum."
       }
     ],
-    "ipucu": "'أُرِيدُ' (istiyorum) fiilinden sonra doğrudan mansub masdar veya 'أَنْ' ile başlayan muzari fiil getirilebilir.",
+    "ipucu": "'أُرِيدُ' (istiyorum) fiilinden sonra doğrudan mansub masdar veya 'أَنْ' ile başlayan muzâri fiil getirilebilir.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أُرِيدُ)] + [Mansûb Masdar Muzaf (قَصَّ - ◌َ)] + [Muzafun İleyh (الشَّعْرِ - ◌ِ)]",
+      "formul_sema": "[Muzâri Fiil (أُرِيدُ)] + [Mansûb Masdar Muzaf (قَصَّ - ◌َ)] + [Muzafun İleyh (الشَّعْرِ - ◌ِ)]",
       "adim_adim_anlatim": [
         "1. Masdarın Tanımı: Masdar, zaman kalıbı taşımayan eylem adıdır ('قَصَّ' = kesmek, 'شُرْبَ' = içmek).",
         "2. Masdarın Nesne Olması: 'أُرِيدُ' fiilinden sonra eylemin adını getirdiğimizde masdar mef'ûlün bih olur ve fethalanır.",
@@ -1800,7 +1801,7 @@
         {
           "kelime": "أُرِيدُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma ile merfûdur."
+          "hareke_nedeni": "1. tekil şahıs muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "قَصَّ",
@@ -1880,7 +1881,7 @@
         {
           "kelime": "أُرِيدُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "1. tekil şahıs muzari fiil olup damma ile merfûdur."
+          "hareke_nedeni": "1. tekil şahıs muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "عَصِيرَ",
@@ -2468,7 +2469,7 @@
   {
     "bagli_id": "dlg_031",
     "konu_basligi": "Gelecek Zaman (س / سَوْفَ) ve Tebrik İfadeleri",
-    "hap_kural": "Yakın gelecek zaman için muzari fiilin başına 'سَ' takısı, daha uzak veya vurgulu gelecek zaman için 'سَوْفَ' edatı getirilir.",
+    "hap_kural": "Yakın gelecek zaman için muzâri fiilin başına 'سَ' takısı, daha uzak veya vurgulu gelecek zaman için 'سَوْفَ' edatı getirilir.",
     "metinden_ornek": {
       "arapca": "أَنَا سَأَتَزَوَّجُ فِي الشَّهْرِ الْقَادِمِ!",
       "turkce": "Ben gelecek ay evleniyorum!",
@@ -2484,12 +2485,12 @@
         "turkce": "Akşam mektubu yazacağım."
       }
     ],
-    "ipucu": "'سَ' takısı muzari fiile bitişik yazılır, 'سَوْفَ' ise ayrı yazılır; her ikisi de fiilin son harekesini değiştirmez.",
+    "ipucu": "'سَ' takısı muzâri fiile bitişik yazılır, 'سَوْفَ' ise ayrı yazılır; her ikisi de fiilin son harekesini değiştirmez.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Gelecek Zaman Eki (سَ / سَوْفَ)] + [Muzari Fiil (أَحْضُرُ - Merfû ◌ُ)] + [Mef'ûlün Bih (حَفْلَ - ◌َ)]",
+      "formul_sema": "[Gelecek Zaman Eki (سَ / سَوْفَ)] + [Muzâri Fiil (أَحْضُرُ - Merfû ◌ُ)] + [Mef'ûlün Bih (حَفْلَ - ◌َ)]",
       "adim_adim_anlatim": [
         "1. 'سَ' ve 'سَوْفَ' Arasındaki Fark: 'سَ' (se-) yakında yapılacak eylemler ('yarın, bugün'), 'سَوْفَ' (sevfe) ise geniş zamanlı uzak gelecek için kullanılır.",
-        "2. Muzari Fiilin İrabı: Gelecek zaman ekleri edat olduğu için muzari fiilin merfûluk (ötre) harekesini bozmaz.",
+        "2. Muzâri Fiilin İrabı: Gelecek zaman ekleri edat olduğu için muzâri fiilin merfûluk (ötre) harekesini bozmaz.",
         "3. Zaman Zarfı Uyumu: Cümledeki 'غَدًا' (yarın), 'مَسَاءً' (akşamleyin) gibi mef'ûlün fih zarfları gelecek zaman kipini pekiştirir."
       ],
       "ozet_tablo": {
@@ -2541,7 +2542,7 @@
       "dikkat_sik_hata": {
         "yanlis": "سَوْفَ أَنْ أَحْضُرَ / سَأَحْضُرَ (Fiil fethalanırsa).",
         "dogru": "سَأَحْضُرُ / سَوْفَ أَحْضُرُ.",
-        "neden": "'سَ' ve 'سَوْفَ' nasb edatı değildir; muzari fiili fethalamaz, fiil ötreli (merfû) kalır."
+        "neden": "'سَ' ve 'سَوْفَ' nasb edatı değildir; muzâri fiili fethalamaz, fiil ötreli (merfû) kalır."
       }
     }
   },
@@ -2896,7 +2897,7 @@
     ],
     "ipucu": "'Düşünmek' (يُفَكِّرُ فِي) ve 'İstemek' (يُرِيدُ) gibi eylem fiilleri kendilerinden sonra gelen fiili masdar biçiminde alırlar.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أُفَكِّرُ)] + [Harf-i Cer (فِي)] + [Mecrûr Masdar (السَّفَرِ - ◌ِ)]",
+      "formul_sema": "[Muzâri Fiil (أُفَكِّرُ)] + [Harf-i Cer (فِي)] + [Mecrûr Masdar (السَّفَرِ - ◌ِ)]",
       "adim_adim_anlatim": [
         "1. Sabit Harf-i Cerli Fiil: 'فَكَّرَ / يُفَكِّرُ' (düşünmek) fiili nesnesini dolaylı olarak dâima 'فِي' (-de/-da/hakkında) harf-i ceri ile alır.",
         "2. Masdarın Mecrurluğu: 'فِي' edatından sonra gelen eylem ismi (masdar) esre ('◌ِ') alarak mecrûr okunur ('فِي السَّفَرِ').",
@@ -2905,7 +2906,7 @@
       "ozet_tablo": {
         "tablo_basligi": "فَكَّرَ / يُفَكِّرُ Fiilinin فِي Harf-i Ceri ile Kullanımı",
         "sutunlar": [
-          "Muzari Fiil",
+          "Muzâri Fiil",
           "Harf-i Cer",
           "Mecrûr Masdar",
           "Türkçe Anlamı"
@@ -2935,7 +2936,7 @@
         {
           "kelime": "أُفَكِّرُ",
           "gorevi": "Fiil + Fâil (Gizli Zamir أَنَا)",
-          "hareke_nedeni": "Tef'îl babından 1. tekil şahıs muzari fiil olup damma ile merfûdur."
+          "hareke_nedeni": "Tef'îl babından 1. tekil şahıs muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "فِي",
@@ -3609,7 +3610,7 @@
     ],
     "ipucu": "İstek fiillerinden ('نُرِيدُ', 'نُحِبُّ') sonra gelen eylem isimleri (masdarlar) üstünlü (fethalı) okunur.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (نُرِيدُ)] + [Mansûb Masdar Nesne Muzaf (رُؤْيَةَ - ◌َ)] + [Muzafun İleyh (كُلِّ مَكَانٍ - ◌ِ)]",
+      "formul_sema": "[Muzâri Fiil (نُرِيدُ)] + [Mansûb Masdar Nesne Muzaf (رُؤْيَةَ - ◌َ)] + [Muzafun İleyh (كُلِّ مَكَانٍ - ◌ِ)]",
       "adim_adim_anlatim": [
         "1. Masdarın Nesne Olması: Fiilden türetilen masdarlar cümlede eylemin nesnesi (mef'ûlün bih) olarak görev aldıklarında mansûb (fethalı) olurlar.",
         "2. Masdar İzafeti: Masdar bir nesneye bağlandığında muzaf olur; Elif-Lâm ve tenvin almaz ('رُؤْيَةَ كُلِّ').",
@@ -3647,8 +3648,8 @@
       "irab_tahlili": [
         {
           "kelime": "نُرِيدُ",
-          "gorevi": "Muzari Fiil (Fâil: Gizli Zamir نَحْنُ)",
-          "hareke_nedeni": "1. çoğul şahıs muzari fiil olup damma (ötre) ile merfûdur."
+          "gorevi": "Muzâri Fiil (Fâil: Gizli Zamir نَحْنُ)",
+          "hareke_nedeni": "1. çoğul şahıs muzâri fiil olup damma (ötre) ile merfûdur."
         },
         {
           "kelime": "رُؤْيَةَ",
@@ -3835,7 +3836,7 @@
   {
     "bagli_id": "dlg_048",
     "konu_basligi": "Etkinlik ve Kültür İfadeleri (Nehiy / Olumsuz Emir Yapısı)",
-    "hap_kural": "Arapçada muhatabı bir eylemden caydırmak/yasaklamak için nehiy 'لَا' sı (لَا النَّاهِيَة) kullanılır. Nehiy edatı muzari fiili mezcum (cezmli) yapar.",
+    "hap_kural": "Arapçada muhatabı bir eylemden caydırmak/yasaklamak için nehiy 'لَا' sı (لَا النَّاهِيَة) kullanılır. Nehiy edatı muzâri fiili mezcum (cezmli) yapar.",
     "metinden_ornek": {
       "arapca": "لاَ تَتَأَخَّرِي كَيْ نَجِدَ مَقَاعِدَ.",
       "turkce": "Koltuk bulabilmemiz için geç kalma.",
@@ -3853,16 +3854,16 @@
     ],
     "ipucu": "Nehiy 'لَا' sı sonu sahih fiilleri sükunla (cezmli), sonu illetli fiilleri ise son harfini düşürerek cezmeder ('تَنْسَى' -> 'لَا تَنْسَ').",
     "ayrintili_anlatim": {
-      "formul_sema": "[Nehiy Edatı (لَا)] + [Mezcum Muzari Fiil (تَنْسَ - İllet Harfi Düşmüş)] + [Mef'ûlün Bih (زِيَارَةَ - ◌َ)]",
+      "formul_sema": "[Nehiy Edatı (لَا)] + [Mezcum Muzâri Fiil (تَنْسَ - İllet Harfi Düşmüş)] + [Mef'ûlün Bih (زِيَارَةَ - ◌َ)]",
       "adim_adim_anlatim": [
-        "1. Olumsuz Emir (Nehiy): Muhatabı bir eylemden vazgeçirmek/yasaklamak için muzari fiilin başına nehiy 'لَا' sı (لَا النَّاهِيَة) getirilir.",
-        "2. Muzari Fiilin Cezmi: Nehiy 'لَا' sı muzari fiili mezcum (cezmli) yapar; sonu illetli (elif/yâ/waw) fiillerde illet harfi düşer ('تَنْسَى' -> 'تَنْسَ').",
+        "1. Olumsuz Emir (Nehiy): Muhatabı bir eylemden vazgeçirmek/yasaklamak için muzâri fiilin başına nehiy 'لَا' sı (لَا النَّاهِيَة) getirilir.",
+        "2. Muzâri Fiilin Cezmi: Nehiy 'لَا' sı muzâri fiili mezcum (cezmli) yapar; sonu illetli (elif/yâ/waw) fiillerde illet harfi düşer ('تَنْسَى' -> 'تَنْسَ').",
         "3. Nesne İrabı: Nehiy fiilinden sonra gelen nesne (mef'ûlün bih) mansûb (fethalı) okunmaya devam eder."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Nehiy (Olumsuz Emir) 'لَا' sı ve Muzari Fiilin Cezmi",
+        "tablo_basligi": "Nehiy (Olumsuz Emir) 'لَا' sı ve Muzâri Fiilin Cezmi",
         "sutunlar": [
-          "Yalın Muzari",
+          "Yalın Muzâri",
           "Nehiy Edatı + Mezcum Fiil",
           "Cezm Alameti",
           "Türkçe Anlamı"
@@ -4559,12 +4560,12 @@
   },
   {
     "bagli_id": "dlg_057",
-    "konu_basligi": "Amaç Edatları (كَيْ / Muzari Fiili Nasb Eden Edatlar)",
-    "hap_kural": "Muzari fiili nasb eden (fethalayan) edatlardan biri olan 'كَيْ' (tâ ki / -sın diye / için) eylemin amacını belirtir ve fiilin sonunu fetha yapar.",
+    "konu_basligi": "Amaç Edatları (كَيْ / Muzâri Fiili Nasb Eden Edatlar)",
+    "hap_kural": "Muzâri fiili nasb eden (fethalayan) edatlardan biri olan 'كَيْ' (tâ ki / -sın diye / için) eylemin amacını belirtir ve fiilin sonunu fetha yapar.",
     "metinden_ornek": {
       "arapca": "كَيْ نُسَخِّنَ الطَّعَامَ لِلضَّيْفِ سَرِيعاً.",
       "turkce": "Misafir için yemeği çabucak ısıtmak için.",
-      "aciklama": "'كَيْ' nasb edatı 'نُسَخِّنَ' muzari fiilinin sonunu fetha ile mansub yapmıştır."
+      "aciklama": "'كَيْ' nasb edatı 'نُسَخِّنَ' muzâri fiilinin sonunu fetha ile mansub yapmıştır."
     },
     "ek_ornekler": [
       {
@@ -4576,19 +4577,19 @@
         "turkce": "Zinde uyansın diye erken uyudu."
       }
     ],
-    "ipucu": "'أنْ, لَنْ, كَيْ, إِذَنْ' edatları muzari fiilin başına gelerek son harekesini fetha (üstün) yapırlar.",
+    "ipucu": "'أنْ, لَنْ, كَيْ, إِذَنْ' edatları muzâri fiilin başına gelerek son harekesini fetha (üstün) yapırlar.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Amaç Nasb Edatı (كَيْ)] + [Mansûb Muzari Fiil (نُسَخِّنَ - ◌َ)] + [Mef'ûlün Bih (الطَّعَامَ - ◌َ)]",
+      "formul_sema": "[Amaç Nasb Edatı (كَيْ)] + [Mansûb Muzâri Fiil (نُسَخِّنَ - ◌َ)] + [Mef'ûlün Bih (الطَّعَامَ - ◌َ)]",
       "adim_adim_anlatim": [
-        "1. Muzari Fiili Nasb Eden Edat (كَيْ): 'Tâ ki / -sın diye / için' anlamına gelen 'كَيْ' edatı muzari fiilin başına gelerek eylemin amacını açıklar.",
-        "2. Fetha ile Nasb: 'كَيْ' edatı muzari fiilin son irab harekesini ötreden fethaya (üstüne) çevirir ('نُسَخِّنُ' -> 'نُسَخِّنَ').",
+        "1. Muzâri Fiili Nasb Eden Edat (كَيْ): 'Tâ ki / -sın diye / için' anlamına gelen 'كَيْ' edatı muzâri fiilin başına gelerek eylemin amacını açıklar.",
+        "2. Fetha ile Nasb: 'كَيْ' edatı muzâri fiilin son irab harekesini ötreden fethaya (üstüne) çevirir ('نُسَخِّنُ' -> 'نُسَخِّنَ').",
         "3. Nesne Uyumu: Amaç fiilinden sonra gelen nesne (mef'ûlün bih) mansûb (fethalı) kalmaya devam eder ('الطَّعَامَ')."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Nasb Edatı كَيْ ve Muzari Fiilin Fethalanması",
+        "tablo_basligi": "Nasb Edatı كَيْ ve Muzâri Fiilin Fethalanması",
         "sutunlar": [
           "Nasb Edatı",
-          "Muzari Fiil (Mansûb ◌َ)",
+          "Muzâri Fiil (Mansûb ◌َ)",
           "Nesne",
           "Türkçe Anlamı"
         ],
@@ -4616,12 +4617,12 @@
       "irab_tahlili": [
         {
           "kelime": "كَيْ",
-          "gorevi": "Muzari Fiili Nasb Eden Amaç Edatı",
+          "gorevi": "Muzâri Fiili Nasb Eden Amaç Edatı",
           "hareke_nedeni": "Sükûn üzere mebnidir."
         },
         {
           "kelime": "نُسَخِّنَ",
-          "gorevi": "Mansûb Muzari Fiil (Fâil: Gizli Zamir نَحْنُ)",
+          "gorevi": "Mansûb Muzâri Fiil (Fâil: Gizli Zamir نَحْنُ)",
           "hareke_nedeni": "'كَيْ' nasb edatından sonra geldiği için fetha (üstün) ile mansûbdur."
         },
         {
@@ -4633,7 +4634,7 @@
       "dikkat_sik_hata": {
         "yanlis": "كَيْ نُسَخِّنُ (Fiil ötreli bırakılırsa).",
         "dogru": "كَيْ نُسَخِّنَ.",
-        "neden": "'كَيْ' edatı muzari fiilin son harekesini mutlaka fetha (üstün) yapmak zorundadır."
+        "neden": "'كَيْ' edatı muzâri fiilin son harekesini mutlaka fetha (üstün) yapmak zorundadır."
       }
     }
   },
@@ -4644,7 +4645,7 @@
     "metinden_ornek": {
       "arapca": "تَعَالَيْ إِلَيَّ بَعْدَ الظُّهْرِ لِنَشْرَبَ الشَّايَ.",
       "turkce": "Öğleden sonra çay içmeye bana gel.",
-      "aciklama": "'تَعَالَيْ' dişil emir fiili olup 'بَعْدَ الظُّهْرِ' zaman zarfıyla ve 'لِنَشْرَبَ' amaç muzarisiyle bağlanmıştır."
+      "aciklama": "'تَعَالَيْ' dişil emir fiili olup 'بَعْدَ الظُّهْرِ' zaman zarfıyla ve 'لِنَشْرَبَ' amaç muzârisiyle bağlanmıştır."
     },
     "ek_ornekler": [
       {
@@ -4662,7 +4663,7 @@
       "adim_adim_anlatim": [
         "1. Dişil Emir Yapısı: Kadın muhataba emrederken fiilin sonuna muhataba yâ'sı ('ي') eklenir ('تَعَالَ' [eril] -> 'تَعَالَيْ' [dişil]).",
         "2. Zaman Zarfı İzafeti: 'بَعْدَ الظُّهْرِ' (öğleden sonra) tamlamasında 'بَعْدَ' zarfı fethalı muzaf, 'الظُّهْرِ' ise esreli muzafun ileyhtir.",
-        "3. Amaç Muzarisi (لِ): 'لِنَشْرَبَ' kelimesindeki 'لِ' harfi muzari fiili fethalayarak 'çay içelim diye / içmek için' amacı katar."
+        "3. Amaç Muzârisi (لِ): 'لِنَشْرَبَ' kelimesindeki 'لِ' harfi muzâri fiili fethalayarak 'çay içelim diye / içmek için' amacı katar."
       ],
       "ozet_tablo": {
         "tablo_basligi": "Eril ve Dişil Emir Kalıpları Karşılaştırması",
@@ -4738,7 +4739,7 @@
     ],
     "ipucu": "İnsan dışındaki bütün çoğullar gramer açısından 'Tek bir kadın' gibi işlem görür!",
     "ayrintili_anlatim": {
-      "formul_sema": "[Akılsız Çoğul Özne (الْقِرَدَةُ - Merfû ◌ُ)] + [Dişil Tekil Muzari Fiil (تُحِبُّ - Merfû ◌ُ)] + [Masdar Nesne (أَكْلَ - ◌َ)]",
+      "formul_sema": "[Akılsız Çoğul Özne (الْقِرَدَةُ - Merfû ◌ُ)] + [Dişil Tekil Muzâri Fiil (تُحِبُّ - Merfû ◌ُ)] + [Masdar Nesne (أَكْلَ - ◌َ)]",
       "adim_adim_anlatim": [
         "1. Akılsız Çoğul Kuralı: Arapçada insan dışındaki tüm varlıkların çoğulları (hayvanlar, eşyalar, bitkiler) gramer açısından TEKİL DİŞİL (müfred müennes) sayılır.",
         "2. Fiil Uyumu: Akılsız çoğul özneye bağlanan fiil, özne çoğul olsa bile DİŞİL VE TEKİL çekimlenir ('الْقِرَدَةُ تُحِبُّ').",
@@ -4781,8 +4782,8 @@
         },
         {
           "kelime": "تُحِبُّ",
-          "gorevi": "Muzari Fiil Haber (Fâil: Gizli Zamir هِيَ)",
-          "hareke_nedeni": "Akılsız çoğul özneye uyan dişil tekil muzari fiil olup damma ile merfûdur."
+          "gorevi": "Muzâri Fiil Haber (Fâil: Gizli Zamir هِيَ)",
+          "hareke_nedeni": "Akılsız çoğul özneye uyan dişil tekil muzâri fiil olup damma ile merfûdur."
         },
         {
           "kelime": "أَكْلَ",
@@ -5450,8 +5451,8 @@
   },
   {
     "bagli_id": "dlg_068",
-    "konu_basligi": "Muzari Fiil ile Sevgi ve Tercih İfadeleri (أُحِبُّ / أُفَضِّلُ)",
-    "hap_kural": "Sevgi ve tercih bildiren 'أُحِبُّ' (seviyorum) ve 'أُفَضِّلُ' (tercih ediyorum) muzari fiillerinden sonra gelen nesne (mef'ûlün bih) dâima fethalı (mansub) okunur.",
+    "konu_basligi": "Muzâri Fiil ile Sevgi ve Tercih İfadeleri (أُحِبُّ / أُفَضِّلُ)",
+    "hap_kural": "Sevgi ve tercih bildiren 'أُحِبُّ' (seviyorum) ve 'أُفَضِّلُ' (tercih ediyorum) muzâri fiillerinden sonra gelen nesne (mef'ûlün bih) dâima fethalı (mansub) okunur.",
     "metinden_ornek": {
       "arapca": "لَا أُحِبُّ الْحَلِيبَ، أُفَضِّلُ الْعَصِيرَ.",
       "turkce": "Sütü sevmem, meyve suyunu tercih ederim.",
@@ -5469,9 +5470,9 @@
     ],
     "ipucu": "'أُفَضِّلُ ... عَلَى ...' kalıbı 'bir şeyi başka bir şeye tercih etmek' anlamına gelir; ilk nesne fethalanır.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Muzari Fiil (أُحِبُّ / أُفَضِّلُ)] + [Mef'ûlün Bih Nesne (قِرَاءَةَ / الشَّايَ - Mansûb ◌َ)]",
+      "formul_sema": "[Muzâri Fiil (أُحِبُّ / أُفَضِّلُ)] + [Mef'ûlün Bih Nesne (قِرَاءَةَ / الشَّايَ - Mansûb ◌َ)]",
       "adim_adim_anlatim": [
-        "1. Sevgi ve Tercih Fiilleri: 'أُحِبُّ' (seviyorum) ve 'أُفَضِّلُ' (tercih ediyorum) 1. tekil şahıs muzari fiilleridir.",
+        "1. Sevgi ve Tercih Fiilleri: 'أُحِبُّ' (seviyorum) ve 'أُفَضِّلُ' (tercih ediyorum) 1. tekil şahıs muzâri fiilleridir.",
         "2. Nesne (Mef'ûlün Bih) İrabı: Bu fiillerden sonra gelen sevilen/tercih edilen nesne veya masdar dâima fethalı (mansûb) okunur.",
         "3. Karşılaştırma Edatı 'عَلَى': Tercih edilen şey belirtilirken iki nesne arasında 'عَلَى' (-e/a tercih ederim) harf-i ceri kullanılır."
       ],
@@ -5610,7 +5611,7 @@
       "dikkat_sik_hata": {
         "yanlis": "لَا كَتَبْتُ (Mâzî fiil olumsuzluğunda لَا kullanımı).",
         "dogru": "مَا كَتَبْتُ. / لَمْ أَكْتُبْ.",
-        "neden": "Mâzî fiilin olumsuzu doğrudan 'مَا' ile veya muzari fiilin başına 'لَمْ' getirilerek yapılır; 'لَا' genellikle muzari fiili olumsuz yapar."
+        "neden": "Mâzî fiilin olumsuzu doğrudan 'مَا' ile veya muzâri fiilin başına 'لَمْ' getirilerek yapılır; 'لَا' genellikle muzâri fiili olumsuz yapar."
       }
     }
   },
@@ -5708,7 +5709,7 @@
   {
     "bagli_id": "dlg_071",
     "konu_basligi": "Yakın Gelecek Zaman (سَ) ve Sülâsi Emir Fiili",
-    "hap_kural": "Yakın gelecekte yapılacak eylemler için muzari fiilin başına 'سَ' takısı getirilir. Sülasi fiilden emr-i hazır yapmak için 'إِفْعَلْ' (veya اُفْعُلْ) kalıbı kullanılır ve son harf sükunlanır.",
+    "hap_kural": "Yakın gelecekte yapılacak eylemler için muzâri fiilin başına 'سَ' takısı getirilir. Sülasi fiilden emr-i hazır yapmak için 'إِفْعَلْ' (veya اُفْعُلْ) kalıbı kullanılır ve son harf sükunlanır.",
     "metinden_ornek": {
       "arapca": "اِشْرَبِ القَهْوَةَ مَعِي فِي الْمَقْهَى.",
       "turkce": "Kafede benimle kahve iç.",
@@ -5726,10 +5727,10 @@
     ],
     "ipucu": "Emir fiili muhatab erkeğe verirken sonu sükunlanır ('اِفْتَحْ'); dişil muhataba verirken sonuna 'ي' eklenir ('اِفْتَحِي').",
     "ayrintili_anlatim": {
-      "formul_sema": "[Gelecek Zaman Eki (سَ)] + [Muzari Fiil (أَسْتَقْبِلُ)] / [Emir Fiil (إِفْعَلْ - Sükûnlı)]",
+      "formul_sema": "[Gelecek Zaman Eki (سَ)] + [Muzâri Fiil (أَسْتَقْبِلُ)] / [Emir Fiil (إِفْعَلْ - Sükûnlı)]",
       "adim_adim_anlatim": [
-        "1. Yakın Gelecek 'سَ': Muzari fiilin başına bitişerek yakın gelecekte yapılacak eylemi bildirir ('سَأَسْتَقْبِلُ' = karşılayacağım).",
-        "2. Sülâsi Emir Yapılışı: Muzari fiilin başındaki harf atılır, yerine vasıl hemzesi (إِ / أُ) getirilir ve son harf sükûnlu (cezmli) yapılır ('اِفْتَحْ').",
+        "1. Yakın Gelecek 'سَ': Muzâri fiilin başına bitişerek yakın gelecekte yapılacak eylemi bildirir ('سَأَسْتَقْبِلُ' = karşılayacağım).",
+        "2. Sülâsi Emir Yapılışı: Muzâri fiilin başındaki harf atılır, yerine vasıl hemzesi (إِ / أُ) getirilir ve son harf sükûnlu (cezmli) yapılır ('اِفْتَحْ').",
         "3. Emir Fiil İrabı: Sahih emir fiilleri muhatab erkeğe emrederken dâima sükûn üzere mebni olur."
       ],
       "ozet_tablo": {
@@ -5743,7 +5744,7 @@
         "satirlar": [
           [
             "Gelecek Zaman",
-            "سَ + Muzari",
+            "سَ + Muzâri",
             "سَأَسْتَقْبِلُ",
             "Karşılayacağım"
           ],
@@ -5781,7 +5782,7 @@
       "dikkat_sik_hata": {
         "yanlis": "سَأَسْتَقْبِلَ (Fiil fethalanırsa).",
         "dogru": "سَأَسْتَقْبِلُ.",
-        "neden": "'سَ' takısı nasb edatı değildir; muzari fiili fethalamaz, fiil ötreli (merfû) kalır."
+        "neden": "'سَ' takısı nasb edatı değildir; muzâri fiili fethalamaz, fiil ötreli (merfû) kalır."
       }
     }
   },
@@ -6283,12 +6284,12 @@
   },
   {
     "bagli_id": "dlg_078",
-    "konu_basligi": "Mazi ve Muzari Fiillerin Tesniye (İkil) ve Cemi (Çoğul) Çekimleri",
+    "konu_basligi": "Mâzî ve Muzâri Fiillerin Tesniye (İkil) ve Cemi (Çoğul) Çekimleri",
     "hap_kural": "Arapçada iki kişiyi gösteren özne için fiile ikil elifi (أَلِفُ الاِثْنَيْنِ) eklenir ('حَضَرَا' / 'يَلْعَبَانِ'); çoğul erkek özne için ise cemaat vaw'ı (وَاوُ الْجَمَاعَةِ) getirilir ('تَدَرَّبُوا' / 'يَسْتَعِدُّونَ').",
     "metinden_ornek": {
       "arapca": "هُمَا يَلْعَبَانِ كُرَةَ السَّلَّةِ بِنَشَاطٍ كَبِيرٍ.",
       "turkce": "O ikisi büyük bir canlılıkla basketbol oynuyorlar.",
-      "aciklama": "'يَلْعَبَانِ' muzari fiili iki kişiyi gösteren ikil elifi ve nun harfi ile çekimlenmiştir."
+      "aciklama": "'يَلْعَبَانِ' muzâri fiili iki kişiyi gösteren ikil elifi ve nun harfi ile çekimlenmiştir."
     },
     "ek_ornekler": [
       {
@@ -6304,16 +6305,16 @@
     "ayrintili_anlatim": {
       "formul_sema": "[İkil Fiil (كَتَبَا / يَلْعَبَانِ - Alif)] / [Çoğul Fiil (كَتَبُوا / يَلْعَبُونَ - Waw)]",
       "adim_adim_anlatim": [
-        "1. İkil (Tesniye) Fiil Ekleri: İki kişiyi gösteren özne için mâzîde Elif ('كَتَبَا'), muzaride Elif-Nûn ('يَلْعَبَانِ') eklenir.",
-        "2. Çoğul (Cemi) Fiil Ekleri: Erkek çoğul için mâzîde Cemaat Waw'ı ('كَتَبُوا'), muzaride Waw-Nûn ('يَلْعَبُونَ') eklenir.",
+        "1. İkil (Tesniye) Fiil Ekleri: İki kişiyi gösteren özne için mâzîde Elif ('كَتَبَا'), muzâride Elif-Nûn ('يَلْعَبَانِ') eklenir.",
+        "2. Çoğul (Cemi) Fiil Ekleri: Erkek çoğul için mâzîde Cemaat Waw'ı ('كَتَبُوا'), muzâride Waw-Nûn ('يَلْعَبُونَ') eklenir.",
         "3. Cümle İçi Uyum: İsim cümlesinde özne başa geldiğinde, haber olan fiil öznenin ikil ve çoğulluğuna tam uymak zorundadır."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Mâzî ve Muzari Fiillerde İkil ve Çoğul Çekim Ekleri",
+        "tablo_basligi": "Mâzî ve Muzâri Fiillerde İkil ve Çoğul Çekim Ekleri",
         "sutunlar": [
           "Zamiri / Özne",
           "Mâzî Fiil Çekimi",
-          "Muzari Fiil Çekimi",
+          "Muzâri Fiil Çekimi",
           "Eklene Harf",
           "Türkçe Anlamı"
         ],
@@ -6351,7 +6352,7 @@
       "irab_tahlili": [
         {
           "kelime": "يَلْعَبَانِ",
-          "gorevi": "Muzari Fiil Haber (Beş Fiilden)",
+          "gorevi": "Muzâri Fiil Haber (Beş Fiilden)",
           "hareke_nedeni": "Ef'âl-i Hamse'den (Beş Fiil) olduğu için Nûn ('ن') harfinin sübûtu ile merfûdur; Elif fâildir."
         },
         {
@@ -6386,12 +6387,12 @@
         "turkce": "Dersi yaz ve sınıfta oynama."
       }
     ],
-    "ipucu": "Nehiy 'لَا'sı muzari fiili mezcum yapar; son harfi illetli ise o harf düşer ('تَنْسَى' -> 'لَا تَنْسَ').",
+    "ipucu": "Nehiy 'لَا'sı muzâri fiili mezcum yapar; son harfi illetli ise o harf düşer ('تَنْسَى' -> 'لَا تَنْسَ').",
     "ayrintili_anlatim": {
       "formul_sema": "[Emir Fiil (إِعْدَدْ / اُكْتُبْ - Sükûn)] / [Nehiy Fiil (لَا تَنْسَ / لَا تَلْعَبْ - Mezcum)]",
       "adim_adim_anlatim": [
-        "1. Sülâsi Emir Yapılışı: Muzari fiilin başındaki harf kaldırılır, vasıl hemzesi eklenir ve sonu sükûnlu yapılır ('إِعْدَدْ').",
-        "2. Nehiy (Olumsuz Emir): Muzarinin başında 'لَا' nehiy edatı getirilir ve fiil mezcum yapılır ('لَا تَلْعَبْ').",
+        "1. Sülâsi Emir Yapılışı: Muzâri fiilin başındaki harf kaldırılır, vasıl hemzesi eklenir ve sonu sükûnlu yapılır ('إِعْدَدْ').",
+        "2. Nehiy (Olumsuz Emir): Muzârinin başında 'لَا' nehiy edatı getirilir ve fiil mezcum yapılır ('لَا تَلْعَبْ').",
         "3. İllet Harfi Düşmesi: Sonu illetli olan fiillerde nehiy edatı geldiğinde sondaki uzatma harfi düşer ('تَنْسَى' -> 'لَا تَنْسَ')."
       ],
       "ozet_tablo": {
@@ -6444,12 +6445,12 @@
   },
   {
     "bagli_id": "dlg_080",
-    "konu_basligi": "Muzari Fiilin Cezmi (لَمْ ve Nehiy لَا'sı)",
-    "hap_kural": "Muzari fiili mezcum (sükunlu) yapan edatlardan 'لَمْ' geçmişte eylemin yapılmadığını (olumsuz mazi), nehiy 'لَا'sı ise yapılmamasını (yasaklama) bildirir.",
+    "konu_basligi": "Muzâri Fiilin Cezmi (لَمْ ve Nehiy لَا'sı)",
+    "hap_kural": "Muzâri fiili mezcum (sükunlu) yapan edatlardan 'لَمْ' geçmişte eylemin yapılmadığını (olumsuz mâzî), nehiy 'لَا'sı ise yapılmamasını (yasaklama) bildirir.",
     "metinden_ornek": {
       "arapca": "عَفْواً، لَمْ أَرَ إِشَارَةَ الْمُرُورِ الصَّغِيرَةَ هُنَا.",
       "turkce": "Affedersin, buradaki küçük trafik ışığını görmedim.",
-      "aciklama": "'لَمْ' edatı 'أَرَى' muzari fiilinin başına gelerek sonundaki illet harfini düşürmüş ve olumsuz geçmiş zaman anlamı katmıştır."
+      "aciklama": "'لَمْ' edatı 'أَرَى' muzâri fiilinin başına gelerek sonundaki illet harfini düşürmüş ve olumsuz geçmiş zaman anlamı katmıştır."
     },
     "ek_ornekler": [
       {
@@ -6461,16 +6462,16 @@
         "turkce": "Masanın üzerine yazma."
       }
     ],
-    "ipucu": "'لَمْ' edatı muzari fiili anlamca olumsuz geçmiş zamana (mâzîye) çevirir ve sonunu mezcum yapar.",
+    "ipucu": "'لَمْ' edatı muzâri fiili anlamca olumsuz geçmiş zamana (mâzîye) çevirir ve sonunu mezcum yapar.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Cezm Edatı (لَمْ / لَا)] + [Mezcum Muzari Fiil (أَرَ - İllet Düşmüş / تَكْتُبْ - Sükûn)]",
+      "formul_sema": "[Cezm Edatı (لَمْ / لَا)] + [Mezcum Muzâri Fiil (أَرَ - İllet Düşmüş / تَكْتُبْ - Sükûn)]",
       "adim_adim_anlatim": [
-        "1. 'لَمْ' Edatının Anlamı ve Görevi: Muzari fiilin başına gelerek anlamını olumsuz geçmiş zamana (mâzîye) çevirir ve fiili mezcum yaparlar.",
+        "1. 'لَمْ' Edatının Anlamı ve Görevi: Muzâri fiilin başına gelerek anlamını olumsuz geçmiş zamana (mâzîye) çevirir ve fiili mezcum yaparlar.",
         "2. Cezm Alametleri: Sahih fiiller sükûn ('◌ْ') ile, sonu illetli fiiller illet harfinin düşmesiyle, beş fiil (Ef'âl-i Hamse) ise nûn harfinin düşmesiyle mezcum olur.",
         "3. Nehiy 'لَا' sı ile Farkı: 'لَمْ' eylemin yapılmadığını haber verir ('görmedim'); nehiy 'لَا' sı ise yapılmamasını emreder ('görme')."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Muzari Fiilin Cezm Edatları ve Alametleri",
+        "tablo_basligi": "Muzâri Fiilin Cezm Edatları ve Alametleri",
         "sutunlar": [
           "Cezm Edatı",
           "Fiil Türü",
@@ -6505,12 +6506,12 @@
       "irab_tahlili": [
         {
           "kelime": "لَمْ",
-          "gorevi": "Muzari Fiili Cezmeden Olumsuzluk Edatı",
-          "hareke_nedeni": "Sükûn üzere mebnidir, fiili maziye çevirip cezmeder."
+          "gorevi": "Muzâri Fiili Cezmeden Olumsuzluk Edatı",
+          "hareke_nedeni": "Sükûn üzere mebnidir, fiili mâzîye çevirip cezmeder."
         },
         {
           "kelime": "أَرَ",
-          "gorevi": "Mezcum Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
+          "gorevi": "Mezcum Muzâri Fiil (Fâil: Gizli Zamir أَنَا)",
           "hareke_nedeni": "'لَمْ' edatından sonra geldiği için sondaki illet harfi (Elif-i Maksûra) düşerek mezcum olmuştur."
         }
       ],
@@ -6523,12 +6524,12 @@
   },
   {
     "bagli_id": "dlg_081",
-    "konu_basligi": "Muzari Fiilin Nasbı (أَنْ / لَنْ / كَيْ / لِ Edatları)",
-    "hap_kural": "Muzari fiilin başına 'أَنْ' (mek/mak), 'لَنْ' (asla -meyecek), 'كَيْ' ve 'لِ' (için) edatları geldiğinde fiilin son harekesini fetha (üstün) ile mansub yaparlar.",
+    "konu_basligi": "Muzâri Fiilin Nasbı (أَنْ / لَنْ / كَيْ / لِ Edatları)",
+    "hap_kural": "Muzâri fiilin başına 'أَنْ' (-mek/-mak), 'لَنْ' (asla -meyecek), 'كَيْ' ve 'لِ' (için) edatları geldiğinde fiil mansûb olur. Nasb alâmeti sahih fiillerde açık fetha, illetli fiillerde takdirî fetha, ef'âl-i hamse'de ise nûn harfinin düşmesidir (hazfü'n-nûn).",
     "metinden_ornek": {
       "arapca": "مَرْحَباً، أُرِيدُ أَنْ أَشْتَرِيَ تَذْكِرَةَ الْقِطَارِ.",
       "turkce": "Merhaba, tren bileti satın almak istiyorum.",
-      "aciklama": "'أَنْ' nasb edatı kendinden sonra gelen 'أَشْتَرِيَ' muzari fiilinin sonunu fetha yapmıştır."
+      "aciklama": "'أَنْ' nasb edatı kendinden sonra gelen 'أَشْتَرِيَ' muzâri fiilinin sonunu fetha yapmıştır."
     },
     "ek_ornekler": [
       {
@@ -6540,16 +6541,16 @@
         "turkce": "Sınavda başarılı olmak için iyi çalışıyorum."
       }
     ],
-    "ipucu": "'أنْ, لَنْ, كَيْ, لِ' edatları muzari fiilin anlamını değiştirir ve son harfini fethalayarak mansub yapar.",
+    "ipucu": "'أَنْ، لَنْ، كَيْ، لِ' edatları muzâri fiili mansûb yapar; tekil sahih fiiller açık fetha alırken ef'âl-i hamse kalıplarında sondaki nûn harfi düşer (hazfü'n-nûn).",
     "ayrintili_anlatim": {
-      "formul_sema": "[Nasb Edatı (أَنْ / لَنْ / كَيْ / لِ)] + [Mansûb Muzari Fiil (أَشْتَرِيَ / أَكْذِبَ - ◌َ)] + [Tamlama / Bütünleyici]",
+      "formul_sema": "[Nasb Edatı (أَنْ / لَنْ / كَيْ / لِ)] + [Mansûb Muzâri Fiil (أَشْتَرِيَ / أَكْذِبَ - ◌َ)] + [Tamlama / Bütünleyici]",
       "adim_adim_anlatim": [
-        "1. Nasb Edatlarının Görevi: Muzari fiilin başına gelerek fiilin anlamını (istek, amaç, kesin olumsuzluk) değiştirir ve son harfi fethalanır.",
-        "2. Fetha ile Nasb Alameti: Sonu sahih veya illetli olan fiiller fetha ('◌َ') ile mansûb olurlar ('أَشْتَرِيَ', 'أَكْذِبَ').",
+        "1. Nasb Edatlarının Görevi: Muzâri fiilin başına gelerek fiilin anlamını (masdar, amaç, kesin olumsuzluk) değiştirir ve fiili mansûb konuma geçirir.",
+        "2. Nasb Alâmetleri: Nasb alâmeti sahih fiillerde (ve sonu vâv/yâ olanlarda) açık fetha, elif-i maksûre ile biten illetli fiillerde takdirî fetha, ef'âl-i hamse'de ise nûn harfinin düşmesidir (hazfü'n-nûn).",
         "3. Anlam Değişimleri: 'أَنْ' fiili masdarlaştırır (-mak/-mek), 'لَنْ' gelecekte kesin olumsuzluk (-meyecek) sağlar, 'كَيْ' ve 'لِ' ise amaç bildirir."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "Muzari Fiili Nasb Eden Temel Edatlar",
+        "tablo_basligi": "Muzâri Fiili Nasb Eden Temel Edatlar",
         "sutunlar": [
           "Nasb Edatı",
           "İşlevi",
@@ -6581,11 +6582,11 @@
         {
           "kelime": "أَنْ",
           "gorevi": "Nasb ve Masdar Edatı",
-          "hareke_nedeni": "Sükûn üzere mebnidir, muzari fiili mansûb yapar."
+          "hareke_nedeni": "Sükûn üzere mebnidir, muzâri fiili mansûb yapar."
         },
         {
           "kelime": "أَشْتَرِيَ",
-          "gorevi": "Mansûb Muzari Fiil (Fâil: Gizli Zamir أَنَا)",
+          "gorevi": "Mansûb Muzâri Fiil (Fâil: Gizli Zamir أَنَا)",
           "hareke_nedeni": "'أَنْ' edatından sonra geldiği için açık fetha (üstün) ile mansûbdur."
         },
         {
@@ -6597,7 +6598,7 @@
       "dikkat_sik_hata": {
         "yanlis": "أُرِيدُ أَنْ أَشْتَرِيُ تَذْكِرَةَ (Fiil ötreli bırakılırsa).",
         "dogru": "أُرِيدُ أَنْ أَشْتَرِيَ تَذْكِرَةَ.",
-        "neden": "'أَنْ' nasb edatı muzari fiilin son irab harekesini mutlaka fethaya dönüştürmelidir."
+        "neden": "أَنْ edatı muzâri fiili mansûb yapar. Nasb alâmeti sahih fiillerde açık fetha, illetli fiillerde takdirî fetha, ef'âl-i hamse'de ise nûn harfinin düşmesidir (hazfü'n-nûn)."
       }
     }
   },
@@ -6940,7 +6941,7 @@
         "turkce": "Mektubu yazmış bulunmaktayım."
       }
     ],
-    "ipucu": "'قَدْ + Mâzî' eylemin tamamlandığını vurgular; 'قَدْ + Muzari' ise ihtimal (-ebilir) bildirir.",
+    "ipucu": "'قَدْ + Mâzî' eylemin tamamlandığını vurgular; 'قَدْ + Muzâri' ise ihtimal (-ebilir) bildirir.",
     "ayrintili_anlatim": {
       "formul_sema": "[Vurgu Edatı (قَدْ / لَقَدْ)] + [Mâzî Fiil (وَصَلَتِ / نَجَحْتُ)] + [Fâil / Bütünleyici]",
       "adim_adim_anlatim": [
@@ -6949,7 +6950,7 @@
         "3. Türkçeye Çeviri: Türkçeye '-miş bulunuyor', 'şüphesiz ki ... -di', 'tam olarak ...' kalıplarıyla aktarılır."
       ],
       "ozet_tablo": {
-        "tablo_basligi": "قَدْ Edatının Mâzî ve Muzari Fiilde Anlam Farkı",
+        "tablo_basligi": "قَدْ Edatının Mâzî ve Muzâri Fiilde Anlam Farkı",
         "sutunlar": [
           "Fiil Zamanı",
           "Kullanılan Edat",
@@ -6964,7 +6965,7 @@
             "قَدْ وَصَلَتِ الطَّائِرَةُ (Uçak varmış bulunuyor)"
           ],
           [
-            "Muzari Fiil",
+            "Muzâri Fiil",
             "قَدْ",
             "Taklîl (İhtimal / Bazen)",
             "قَدْ يَصِلُ الطَّالِبُ (Öğrenci belki varabilir)"
@@ -7271,7 +7272,7 @@
       "adim_adim_anlatim": [
         "1. Sahih Fiil Tanımı: Kök harflerinde 'و، ا، ي' (uzatma/illet harfleri) bulunmayan fiillere Sahih Fiil denir.",
         "2. Sahih Fiilin Türleri: (a) Sâlim: Hemze ve şedde içermeyen ('كَتَبَ'), (b) Mehmûz: Kökünde hemze olan ('أَكَلَ', 'سَأَلَ'), (c) Mudâaf: Şeddeli iki aynı harfi olan ('مَدَّ').",
-        "3. İrab Kolaylığı: Sahih fiiller mazi ve muzaride tüm hareke ve cezm durumlarını açıkça gösterirler."
+        "3. İrab Kolaylığı: Sahih fiiller mâzî ve muzâride tüm hareke ve cezm durumlarını açıkça gösterirler."
       ],
       "ozet_tablo": {
         "tablo_basligi": "Sahih Fiil Türleri ve Örnek Cümleler",
@@ -7349,7 +7350,7 @@
         "turkce": "Tüccar malı sattı (Ecvef Fiil)."
       }
     ],
-    "ipucu": "İlletli fiiller muzari veya cezm halinde kök harflerinden birini düşürebilirler ('قَالَ' -> 'يَقُولُ' -> 'لَمْ يَقُلْ').",
+    "ipucu": "İlletli fiiller muzâri veya cezm halinde kök harflerinden birini düşürebilirler ('قَالَ' -> 'يَقُولُ' -> 'لَمْ يَقُلْ').",
     "ayrintili_anlatim": {
       "formul_sema": "[İlletli Fiil (Misal / Ecvef / Nakıs)] + [Fâil (Merfû)] + [Mef'ûlün Bih (Mansûb ◌َ)]",
       "adim_adim_anlatim": [
@@ -7363,7 +7364,7 @@
           "İllet Türü",
           "İlletli Harf Yeri",
           "Mâzî Fiil",
-          "Muzari Fiil",
+          "Muzâri Fiil",
           "Mezcum Hali (لَمْ)",
           "Türkçe Anlamı"
         ],
@@ -7421,7 +7422,7 @@
   {
     "bagli_id": "dlg_092",
     "konu_basligi": "Cezmeden Şart Edatları (إِنْ / مَنْ / مَا / مَتَى) ve Şart Cümlesi",
-    "hap_kural": "Cezmeden şart edatları ('إِنْ' = eğer, 'مَنْ' = kim, 'مَا' = ne, 'مَتَى' = ne zaman) iki muzari fiili birden mezcum (cezmli) yapar: Birinci fiil Şart Fiili, ikinci fiil Cevap Fiili olur.",
+    "hap_kural": "Cezmeden şart edatları ('إِنْ' = eğer, 'مَنْ' = kim, 'مَا' = ne, 'مَتَى' = ne zaman) iki muzâri fiili birden mezcum (cezmli) yapar: Birinci fiil Şart Fiili, ikinci fiil Cevap Fiili olur.",
     "metinden_ornek": {
       "arapca": "إِنْ تَتَعَاوَنْ مَعِي فِي العَمَلِ نَنْجَحْ سَرِيعاً فِي المَشْرُوعِ.",
       "turkce": "İşte benimle yardımlaşırsan projede hızlıca başarılı oluruz.",
@@ -7501,7 +7502,7 @@
   {
     "bagli_id": "dlg_093",
     "konu_basligi": "Ef'âl-i Hamse (Beş Fiil) Nasp ve Cezm Durumları",
-    "hap_kural": "Sonuna ikil elifi (انِ), cemaat waw'ı (ونَ) veya muhataba yâ'sı (ينَ) bitişen beş muzari fiil kalıbına Ef'âl-i Hamse denir. Bunlar nasp ve cezm halinde sondaki Nûn ('ن') harfini düşürürler.",
+    "hap_kural": "Sonuna ikil elifi (انِ), cemaat waw'ı (ونَ) veya muhataba yâ'sı (ينَ) bitişen beş muzâri fiil kalıbına Ef'âl-i Hamse denir. Bunlar nasp ve cezm halinde sondaki Nûn ('ن') harfini düşürürler.",
     "metinden_ornek": {
       "arapca": "يَجِبُ عَلَيْهِمْ أَنْ يَلْتَزِمُوا لِكَيْ يُحَافِظُوا عَلَى السَّلَامَةِ.",
       "turkce": "Güvenliği korumaları için uymaları gerekir.",
@@ -7521,7 +7522,7 @@
     "ayrintili_anlatim": {
       "formul_sema": "[Nasb/Cezm Edatı (لَنْ / لَمْ)] + [Ef'âl-i Hamse (يَكْتُبُوا - Nûn Harfi Düşmüş)]",
       "adim_adim_anlatim": [
-        "1. Beş Fiil (Ef'âl-i Hamse) Tanımı: Muzari fiilin sonuna ikil elifi ('يَفْعَلَانِ', 'تَفْعَلَانِ'), çoğul waw'ı ('يَفْعَلُونَ', 'تَفْعَلُونَ') veya dişil yâ'sı ('تَفْعَلِينَ') eklenmiş 5 kalıbıdır.",
+        "1. Beş Fiil (Ef'âl-i Hamse) Tanımı: Muzâri fiilin sonuna ikil elifi ('يَفْعَلَانِ', 'تَفْعَلَانِ'), çoğul waw'ı ('يَفْعَلُونَ', 'تَفْعَلُونَ') veya dişil yâ'sı ('تَفْعَلِينَ') eklenmiş 5 kalıbıdır.",
         "2. Merfûluk Hali: Başlarında edat yokken sondaki Nûn harfi sabit kalır ('يَكْتُبُونَ').",
         "3. Nasb ve Cezm Hali: Başına nasb ('لَنْ', 'أَنْ') veya cezm ('لَمْ') edatı geldiğinde sondaki Nûn harfi DÜŞER ('لَنْ يَكْتُبُوا', 'لَمْ يَكْتُبُوا')."
       ],
@@ -7695,7 +7696,7 @@
         "sutunlar": [
           "Bab Adı",
           "Mâzî Vezni",
-          "Muzari Vezni",
+          "Muzâri Vezni",
           "Masdar Vezni",
           "Temel Anlam Katkısı",
           "Örnek ve Çevirisi"
@@ -8242,7 +8243,7 @@
     "metinden_ornek": {
       "arapca": "نَعَمْ، يُهْتَمُّ بِتَرْمِيمِ المَبَانِي القَدِيمَةِ لِلْحِفَاظِ عَلَى التُّرَاثِ.",
       "turkce": "Evet, mirası korumak için eski binaların restorasyonuna özen gösterilir.",
-      "aciklama": "'يُهْتَمُّ' meçhul muzari fiilinin nâib-i fâili 'بِتَرْمِيمِ' harf-i cerli şibh-i cümlesidir."
+      "aciklama": "'يُهْتَمُّ' meçhul muzâri fiilinin nâib-i fâili 'بِتَرْمِيمِ' harf-i cerli şibh-i cümlesidir."
     },
     "ek_ornekler": [
       {
@@ -8258,7 +8259,7 @@
     "ayrintili_anlatim": {
       "formul_sema": "[Meçhul Fiil (يُهْتَمُّ / كُتِبَ)] + [Şibh-i Cümle Nâib-i Fâil (بِتَرْمِيمِ / عَلَى الطَّالِبِ - Mahallen Merfû)]",
       "adim_adim_anlatim": [
-        "1. Meçhul Fiil Yapılışı: Mâzî fiilde ilk harf ötreli son harften önceki esreli ('كُتِبَ'); muzaride ilk harf ötreli son harften önceki fethalı yapılır ('يُهْتَمُّ').",
+        "1. Meçhul Fiil Yapılışı: Mâzî fiilde ilk harf ötreli son harften önceki esreli ('كُتِبَ'); muzâride ilk harf ötreli son harften önceki fethalı yapılır ('يُهْتَمُّ').",
         "2. Fâilin Düşmesi ve Nâib-i Fâil: Etken özne (fâil) cümleden çıkarılır; varsa sarih mef'ûl merfû yapılarak nâib-i fâil olur.",
         "3. Şibh-i Cümle Nâib-i Fâil: Eğer cümlede açık nesne yoksa, harf-i cerli tamlama veya zarf fiilin nâib-i fâili olur ve mahallen merfû sayılır."
       ],
@@ -8298,8 +8299,8 @@
       "irab_tahlili": [
         {
           "kelime": "يُهْتَمُّ",
-          "gorevi": "Meçhul Muzari Fiil",
-          "hareke_nedeni": "İlk harfi damma, sondan bir önceki fetha ile meçhul yapılmış muzari fiildir."
+          "gorevi": "Meçhul Muzâri Fiil",
+          "hareke_nedeni": "İlk harfi damma, sondan bir önceki fetha ile meçhul yapılmış muzâri fiildir."
         },
         {
           "kelime": "بِتَرْمِيمِ",
@@ -8310,18 +8311,18 @@
       "dikkat_sik_hata": {
         "yanlis": "يُهْتَمَّ بِتَرْمِيمِ (Meçhul fiili mansûb okumak).",
         "dogru": "يُهْتَمُّ بِتَرْمِيمِ.",
-        "neden": "Başına edat gelmediği sürece meçhul muzari fiil merfûdur (ötreli biter)."
+        "neden": "Başına edat gelmediği sürece meçhul muzâri fiil merfûdur (ötreli biter)."
       }
     }
   },
   {
     "bagli_id": "dlg_103",
     "konu_basligi": "Mukârebe, Recâ ve Şurû' Fiilleri (كَادَ / عَسَى / أَخَذَ)",
-    "hap_kural": "Yaklaşma (Mukârebe: كَادَ), umut (Recâ: عَسَى) ve başlama (Şurû': أَخَذَ / بَدَأَ) fiilleri Kâne gibi isimlerini merfu yaparlar; haberleri dâima muzari fiil cümlesidir.",
+    "hap_kural": "Yaklaşma (Mukârebe: كَادَ), umut (Recâ: عَسَى) ve başlama (Şurû': أَخَذَ / بَدَأَ) fiilleri Kâne gibi isimlerini merfu yaparlar; haberleri dâima muzâri fiil cümlesidir.",
     "metinden_ornek": {
       "arapca": "كَاَدَتْ دَرَجَاتُ الحَرَارَةِ تَرْتَفِعُ إِلَى مُسْتَوَيَاتٍ خَطِيرَةٍ صَيْفاً.",
       "turkce": "Yazın sıcaklık dereceleri neredeyse tehlikeli seviyelere yükseliyordu.",
-      "aciklama": "'كَاَدَتْ' yaklaşma fiilinin ismi 'دَرَجَاتُ' (merfu), haberi ise 'تَرْتَفِعُ' muzari fiil cümlesidir."
+      "aciklama": "'كَاَدَتْ' yaklaşma fiilinin ismi 'دَرَجَاتُ' (merfu), haberi ise 'تَرْتَفِعُ' muzâri fiil cümlesidir."
     },
     "ek_ornekler": [
       {
@@ -8333,13 +8334,13 @@
         "turkce": "Öğrenci dersi yazmaya başladı."
       }
     ],
-    "ipucu": "Başlama fiillerinin (أَخَذَ, بَدَأَ, شَرَعَ) haberi olan muzari fiilin başına 'أَنْ' edatı gelmez.",
+    "ipucu": "Başlama fiillerinin (أَخَذَ, بَدَأَ, شَرَعَ) haberi olan muzâri fiilin başına 'أَنْ' edatı gelmez.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Mukârebe/Recâ/Şurû' Fiili (كَادَتْ / عَسَى / أَخَذَ)] + [İsmi (دَرَجَاتُ / اللَّهُ - Merfû ◌ُ)] + [(أَنْ) + Muzari Fiil Cümlesi Haber (Mahallen Mansûb)]",
+      "formul_sema": "[Mukârebe/Recâ/Şurû' Fiili (كَادَتْ / عَسَى / أَخَذَ)] + [İsmi (دَرَجَاتُ / اللَّهُ - Merfû ◌ُ)] + [(أَنْ) + Muzâri Fiil Cümlesi Haber (Mahallen Mansûb)]",
       "adim_adim_anlatim": [
         "1. Fiil Grupları: (a) Mukârebe (Yaklaşma): 'كَادَ / أَوْشَكَ' (neredeyse ... oluyordu), (b) Recâ (Umut): 'عَسَى' (umulur ki), (c) Şurû' (Başlama): 'أَخَذَ / بَدَأَ / شَرَعَ' (başladı).",
         "2. Kâne Gibi Amel Etme: Bu fiiller Kâne'nin kardeşleri gibi isim cümlesine girer; özneyi (ismini) merfû (ötreli) yaparlar.",
-        "3. Haberin Muzari Olması: Haberleri mutlaka bir Muzari Fiil cümlesidir ve mahallen mansûbdur. Şurû' fiillerinin haberinde 'أَنْ' kullanılmaz!"
+        "3. Haberin Muzâri Olması: Haberleri mutlaka bir Muzâri Fiil cümlesidir ve mahallen mansûbdur. Şurû' fiillerinin haberinde 'أَنْ' kullanılmaz!"
       ],
       "ozet_tablo": {
         "tablo_basligi": "Mukârebe, Recâ ve Şurû' Fiilleri Grubu",
@@ -8347,7 +8348,7 @@
           "Grup",
           "Fiil",
           "Fiilin İsmi (Merfû)",
-          "Haber (Muzari Cümle)",
+          "Haber (Muzâri Cümle)",
           "Türkçe Anlamı"
         ],
         "satirlar": [
@@ -8378,7 +8379,7 @@
         {
           "kelime": "كَاَدَتْ",
           "gorevi": "Mukârebe (Yaklaşma) Fiili + Dişil Tâ'sı",
-          "hareke_nedeni": "Fetha üzere mebni nakıs mazi fiildir."
+          "hareke_nedeni": "Fetha üzere mebni nakıs mâzî fiildir."
         },
         {
           "kelime": "دَرَجَاتُ",
@@ -8387,8 +8388,8 @@
         },
         {
           "kelime": "تَرْتَفِعُ",
-          "gorevi": "Kâde'nin Haberi (Muzari Fiil Cümlesi)",
-          "hareke_nedeni": "Muzari fiil cümlesi olup Kâde'nin yüklemi olarak mahallen mansûbdur."
+          "gorevi": "Kâde'nin Haberi (Muzâri Fiil Cümlesi)",
+          "hareke_nedeni": "Muzâri fiil cümlesi olup Kâde'nin yüklemi olarak mahallen mansûbdur."
         }
       ],
       "dikkat_sik_hata": {
@@ -8987,7 +8988,7 @@
       "dikkat_sik_hata": {
         "yanlis": "أَحْمَدُ أَكْثَرُ نَشَاطٌ (Temyizi ötreli okumak).",
         "dogru": "أَحْمَدُ أَكْثَرُ نَشَاطاً.",
-        "neden": "Temyiz olan isimler cümlede kapalılık giderici nesne gibi mansûb (fethalı) olmak zorundadır."
+        "neden": "Temyiz, kendisinden önceki kapalılığı gideren mansûb bir isimdir (mef'ûlün bih ile karıştırılmamalıdır)."
       }
     }
   },
@@ -9010,13 +9011,13 @@
         "turkce": "Öğrenci koşarak geldi (Fiil Cümlesi Hâl)."
       }
     ],
-    "ipucu": "Hâlin nitelediği durum sahibi (Sâhibu'l-Hâl) mutlaka belirli (marife) olmalıdır ('الْمُسَافِرُ').",
+    "ipucu": "Sâhibu'l-Hâl'in belirli (marife) olması temel ve yaygın kuraldır ('الْمُسَافِرُ'); ancak tahsis veya umum (nefy/istifham) gibi belirli dilbilgisel şartlarda nekra isim de sâhibu'l-hâl olabilir.",
     "ayrintili_anlatim": {
       "formul_sema": "[Marife Sâhibu'l-Hâl (الْمُسَافِرُ)] + [Müfred Hâl (مَسْرُوراً - ◌ً) / Waw-ı Haliyye + İsim Cümlesi Hâl (وَهُوَ مَسْرُورٌ)]",
       "adim_adim_anlatim": [
         "1. Müfred Hâl: Durumu açıklayan tek bir nekre mansûb isimdir ('عَادَ مَسْرُورًا').",
         "2. Cümle Hâl ve Vâv-ı Hâliye: Durumu açıklayan cümle isim cümlesi ise genellikle başına 'و' (Vâv-ı Hâliye) getirilir ('وَهُوَ مَسْرُورٌ') ve mahallen mansûbdur.",
-        "3. Marife Şartı: Durumu açıklanan kişi veya nesne (Sâhibu'l-Hâl) dâima Elif-Lâm takılı (marife) olmak zorundadır."
+        "3. Sâhibu'l-Hâl'de Marifelik Esası: Sâhibu'l-Hâl'in belirli (marife) olması temel ve yaygın kuraldır; ancak tahsis veya umum (nefy/istifham) gibi belirli dilbilgisel şartlarda nekra isim de sâhibu'l-hâl olabilir."
       ],
       "ozet_tablo": {
         "tablo_basligi": "Müfred ve Cümle Hâl Türleri",
@@ -9071,7 +9072,7 @@
       "dikkat_sik_hata": {
         "yanlis": "عَادَ مُسَافِرٌ وَهُوَ مَسْرُورٌ (Sâhibu'l-Hâli nekre yapmak).",
         "dogru": "عَادَ الْمُسَافِرُ وَهُوَ مَسْرُورٌ.",
-        "neden": "Hâl ögesinin bağlandığı özne (Sâhibu'l-Hâl) mutlaka belirli (marife) olmak zorundadır."
+        "neden": "Sâhibu'l-Hâl'in belirli (marife) olması temel ve yaygın kuraldır; ancak tahsis veya umum (nefy/istifham) gibi belirli dilbilgisel şartlarda nekra isim de sâhibu'l-hâl olabilir."
       }
     }
   },
@@ -9342,7 +9343,7 @@
         "turkce": "Doğruluk ne de güzeldir! (Medih Fiili)."
       }
     ],
-    "ipucu": "'نِعْمَ' ve 'بِئْسَ' mazi kalıplı camid (türeneyen) övgü ve yergi fiilleridir.",
+    "ipucu": "'نِعْمَ' ve 'بِئْسَ' mâzî kalıplı camid (türeneyen) övgü ve yergi fiilleridir.",
     "ayrintili_anlatim": {
       "formul_sema": "[Medih/Zem Fiili (نِعْمَ / بِئْسَ)] + [Fâil (الصَّدِيقُ - Merfû ◌ُ)] + [Mahsûs (الوَفِيُّ / الْكِذْبُ - Mübteda-i Muahhar Merfû ◌ُ)]",
       "adim_adim_anlatim": [
@@ -9661,7 +9662,7 @@
   },
   {
     "bagli_id": "dlg_119",
-    "konu_basligi": "İki ve Üç Mef'ul Alan Fiiller (جَعَلَ / مَنَحَ / اِعْتَبَرَ / أَعْلَمَ)",
+    "konu_basligi": "İki ve Üç Mef'ûl Alan Fiiller (جَعَلَ / مَنَحَ / اِعْتَبَرَ / أَعْلَمَ)",
     "hap_kural": "Arapçada bazı fiiller tek nesne ile yetinmeyip iki nesne (örneğin 'جَعَلَ', 'مَنَحَ') veya üç nesne (örneğin 'أَعْلَمَ', 'أَخْبَرَ') alırlar. Bütün nesneler mansub (fethalı) olur.",
     "metinden_ornek": {
       "arapca": "نَعَمْ، جَعَلَ ابْنُ سِينَا الطِّبَّ عِلْماً مُنَظَّماً يَعْتَمِدُ عَلَى التَّجْرِبَةِ.",
@@ -9723,7 +9724,7 @@
         {
           "kelime": "جَعَلَ",
           "gorevi": "İki Mef'ûl Alan Mâzî Fiil",
-          "hareke_nedeni": "Fetha üzere mebni mazi fiildir."
+          "hareke_nedeni": "Fetha üzere mebni mâzî fiildir."
         },
         {
           "kelime": "الطِّبَّ",
@@ -9809,7 +9810,7 @@
         {
           "kelime": "مَا كَادَ",
           "gorevi": "Tezlik ve Yaklaşma Bağlaç Yapısı",
-          "hareke_nedeni": "'مَا' olumsuzluk harfi, 'كَادَ' mazi fiildir."
+          "hareke_nedeni": "'مَا' olumsuzluk harfi, 'كَادَ' mâzî fiildir."
         },
         {
           "kelime": "المَشْرُوعُ",

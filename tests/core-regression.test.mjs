@@ -4886,5 +4886,253 @@ test("42. Metin/Diyalog Üst Bar Tekrar Temizliği, Seslendirici Tercihi Kapsam 
   );
 });
 
+test("43. UTF-8 Bütünlüğü, API Güvenlik Sertleştirmesi, 195 Gramer İlmî/Terminolojik Doğruluğu, 60 Metin odak_gramer & 120 Diyalog CEFR Sıralaması ve board-mode Katmanı", () => {
+  // 1. UTF-8 geçerliliği, CESU-8 vekil çifti yokluğu, bun.lock silinmesi ve metadata.json korunması
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "bun.lock")),
+    false,
+    "Kök dizindeki kullanılmayan bun.lock dosyası silinmiş olmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizindeki metadata.json dosyası korunmalıdır"
+  );
+
+  const strictUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
+  const walkSourceFiles = (dirPath, acc = []) => {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      if (
+        entry.name === "node_modules" ||
+        entry.name === ".next" ||
+        entry.name === ".git"
+      ) {
+        continue;
+      }
+      const full = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        walkSourceFiles(full, acc);
+      } else if (/\.(ts|tsx|json)$/.test(entry.name)) {
+        acc.push(full);
+      }
+    }
+    return acc;
+  };
+
+  const allCheckedFiles = walkSourceFiles(path.join(ROOT_DIR, "src"));
+  assert.ok(
+    allCheckedFiles.length >= 60,
+    "src/ altında en az 60 adet .ts/.tsx/.json dosyası taranmalıdır"
+  );
+
+  for (const filePath of allCheckedFiles) {
+    const rawBuf = fs.readFileSync(filePath);
+    let decoded = "";
+    assert.doesNotThrow(() => {
+      decoded = strictUtf8Decoder.decode(rawBuf);
+    }, `${filePath} %100 geçerli UTF-8 olmalıdır`);
+
+    for (let i = 0; i < rawBuf.length - 2; i++) {
+      if (rawBuf[i] === 0xed && rawBuf[i + 1] >= 0xa0 && rawBuf[i + 1] <= 0xbf) {
+        assert.fail(
+          `${filePath} içinde CESU-8 vekil çifti (surrogate byte sequence) bulundu (byte ${i})`
+        );
+      }
+    }
+    assert.equal(
+      decoded.isWellFormed(),
+      true,
+      `${filePath} içinde bozuk/tekil UTF-16 surrogate karakteri bulunmamalıdır`
+    );
+  }
+
+  const assessmentTypesCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "types", "assessment.ts"),
+    "utf8"
+  );
+  assert.equal(
+    assessmentTypesCode.includes('icon: known?.icon || "📘"') ||
+      assessmentTypesCode.includes('icon: known?.icon || "🏛️"'),
+    true,
+    "src/types/assessment.ts içindeki varsayılan ikon standart UTF-8 emoji olmalıdır"
+  );
+
+  // 2. API Güvenlik Sertleştirmeleri (/api/stt, /api/admin, /api/stats, /api/feedback) ve MultipleChoice senkron tıklama kilidi
+  const sttCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "stt", "route.ts"),
+    "utf8"
+  );
+  assert.equal(
+    sttCode.includes("!Number.isFinite(v)") &&
+      sttCode.includes("status: 400") &&
+      sttCode.includes("Math.max(-1, Math.min(1, v))"),
+    true,
+    "/api/stt samples elemanlarının sonlu sayı olduğunu doğrulamalı (400) ve [-1, 1] aralığına sıkıştırmalıdır"
+  );
+
+  const adminCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  assert.equal(
+    adminCode.includes('process.env.NODE_ENV === "production" && !configuredSecret') &&
+      adminCode.includes("status: 503"),
+    true,
+    "/api/admin üretim ortamında ADMIN_SECRET eksikse 503 Service Unavailable döndürmelidir"
+  );
+
+  const statsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "stats", "route.ts"),
+    "utf8"
+  );
+  const feedbackCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "feedback", "route.ts"),
+    "utf8"
+  );
+  assert.equal(
+    statsCode.includes("60_000") &&
+      statsCode.includes("isStatsRateLimited") &&
+      statsCode.includes("status: 429") &&
+      feedbackCode.includes("60_000") &&
+      feedbackCode.includes("isRateLimited") &&
+      feedbackCode.includes("status: 429"),
+    true,
+    "/api/stats ve /api/feedback uçlarında dakika bazlı IP rate-limiting (HTTP 429) aktif olmalıdır"
+  );
+
+  const mcCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    mcCode.includes("answerLockedRef") &&
+      mcCode.includes("selected || answerLockedRef.current") &&
+      mcCode.includes("answerLockedRef.current = true"),
+    true,
+    "MultipleChoice.tsx içinde ardışık çift tıklamayı engelleyen senkron answerLockedRef kilidi bulunmalıdır"
+  );
+
+  // 3. Gramer Notlarında İlmî Düzeltmeler ve Terminoloji Standardizasyonu (195 Not)
+  const { parsed: dlgGramer } = readDataJson("diyaloglar_gramer_hap_bilgi.json");
+  const { parsed: metinGramer } = readDataJson("metinler_gramer_hap_bilgi.json");
+  const { parsed: ekGramer } = readDataJson("ek_gramer_hap_bilgi.json");
+
+  const g111 = dlgGramer.find((g) => g.bagli_id === "dlg_111");
+  assert.equal(
+    g111?.ayrintili_anlatim?.dikkat_sik_hata?.neden,
+    "Sâhibu'l-Hâl'in belirli (marife) olması temel ve yaygın kuraldır; ancak tahsis veya umum (nefy/istifham) gibi belirli dilbilgisel şartlarda nekra isim de sâhibu'l-hâl olabilir.",
+    "dlg_111 Sâhibu'l-Hâl ilmî açıklaması güncellenmiş olmalıdır"
+  );
+
+  const g081 = dlgGramer.find((g) => g.bagli_id === "dlg_081");
+  assert.equal(
+    g081?.ayrintili_anlatim?.dikkat_sik_hata?.neden,
+    "أَنْ edatı muzâri fiili mansûb yapar. Nasb alâmeti sahih fiillerde açık fetha, illetli fiillerde takdirî fetha, ef'âl-i hamse'de ise nûn harfinin düşmesidir (hazfü'n-nûn).",
+    "dlg_081 Muzâri nasb alâmetleri ilmî açıklaması güncellenmiş olmalıdır"
+  );
+
+  const g110 = dlgGramer.find((g) => g.bagli_id === "dlg_110");
+  assert.equal(
+    g110?.ayrintili_anlatim?.dikkat_sik_hata?.neden,
+    "Temyiz, kendisinden önceki kapalılığı gideren mansûb bir isimdir (mef'ûlün bih ile karıştırılmamalıdır).",
+    "dlg_110 Temyiz açıklaması 'nesne gibi' ifadesinden arındırılmış olmalıdır"
+  );
+
+  const g001 = dlgGramer.find((g) => g.bagli_id === "dlg_001");
+  const g001Steps = (g001?.ayrintili_anlatim?.adim_adim_anlatim || []).join(" ");
+  assert.equal(
+    g001Steps.includes("şibh-i cümle") &&
+      g001Steps.includes("isim cümlesi") &&
+      g001Steps.includes("fiil cümlesi"),
+    true,
+    "dlg_001 İsim Cümlesi anlatımında haberin cümle ve şibh-i cümle olarak da gelebileceği belirtilmelidir"
+  );
+
+  const unstandardizedRegex =
+    /(?<![A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû])(?:mazi|muzari|mef['\u2019]ul|mevsul)[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]*/gi;
+  for (const [fileName, parsedData] of [
+    ["diyaloglar_gramer_hap_bilgi.json", dlgGramer],
+    ["metinler_gramer_hap_bilgi.json", metinGramer],
+    ["ek_gramer_hap_bilgi.json", ekGramer],
+  ]) {
+    const leftover = JSON.stringify(parsedData).match(unstandardizedRegex) || [];
+    assert.deepEqual(
+      leftover,
+      [],
+      `${fileName} içinde şapkasız mazi/muzari/mef'ul/mevsul terimi kalmamalıdır`
+    );
+  }
+
+  // 4. 60 Okuma Metninde odak_gramer ve 120 Diyalogda CEFR sira (A1:1-30, A2:31-60, B1:61-90, B2:91-120)
+  const { parsed: metinler } = readDataJson("tum_metinler_60.json");
+  assert.equal(metinler.length, 60);
+  const metinGramerMap = new Map(
+    metinGramer.map((g) => [g.bagli_id, g.konu_basligi])
+  );
+  for (const m of metinler) {
+    assert.equal(
+      typeof m.odak_gramer === "string" && m.odak_gramer.trim().length > 0,
+      true,
+      `${m.id} okuma metninde odak_gramer alanı dolu olmalıdır`
+    );
+    assert.equal(
+      m.odak_gramer,
+      metinGramerMap.get(m.id),
+      `${m.id} odak_gramer değeri metinler_gramer_hap_bilgi.json konu_basligi ile eşleşmelidir`
+    );
+  }
+
+  const { parsed: diyaloglar } = readDataJson("tum_diyaloglar_120.json");
+  assert.equal(diyaloglar.length, 120);
+  const seenDlgIds = new Set();
+  for (let i = 0; i < diyaloglar.length; i++) {
+    const d = diyaloglar[i];
+    seenDlgIds.add(d.id);
+    assert.equal(d.sira, i + 1, `Diyalog sira değeri ${i + 1} olmalıdır`);
+    const expectedLevel =
+      i < 30 ? "A1" : i < 60 ? "A2" : i < 90 ? "B1" : "B2";
+    assert.equal(
+      d.seviye,
+      expectedLevel,
+      `sira=${d.sira} (${d.id}) diyaloğunun seviyesi ${expectedLevel} olmalıdır`
+    );
+  }
+  assert.equal(seenDlgIds.size, 120, "120 benzersiz dlg_XXX kimliği korunmalıdır");
+  for (let n = 1; n <= 120; n++) {
+    const expectedId = `dlg_${String(n).padStart(3, "0")}`;
+    assert.equal(
+      seenDlgIds.has(expectedId),
+      true,
+      `${expectedId} kimliği korunmuş olmalıdır`
+    );
+  }
+
+  // 5. Akıllı Tahta (board-mode) Ölçeklendirme Katmanı
+  const settingsEffectsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "SettingsEffects.tsx"),
+    "utf8"
+  );
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  assert.equal(
+    settingsEffectsCode.includes('classList.toggle("board-mode"') &&
+      settingsEffectsCode.includes('classList.remove("board-mode")'),
+    true,
+    "SettingsEffects.tsx html.board-mode sınıfını açılışta eklemeli ve kapanışta kaldırmalıdır"
+  );
+  assert.equal(
+    globalsCss.includes("@media (min-width: 1366px)") &&
+      globalsCss.includes("html.board-mode") &&
+      globalsCss.includes("html.board-mode .arabic") &&
+      globalsCss.includes("line-height: 2.1;") &&
+      globalsCss.includes("min-height: 52px;"),
+    true,
+    "globals.css yalnızca >= 1366px ve html.board-mode altında ölçeklendirme, line-height: 2.1 ve min-height: 52px kurallarını tanımlamalıdır"
+  );
+});
+
+
 
 

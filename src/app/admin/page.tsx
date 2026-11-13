@@ -716,6 +716,9 @@ export default function AdminStudioPage() {
         if (!active) return;
         if (res.ok && json?.ok && json?.authorized === true) {
           setGithubToken(savedToken.trim());
+          if (savedSecret.trim()) {
+            setAdminSecret(savedSecret.trim());
+          }
           setIsAdminUnlocked(true);
         } else {
           window.sessionStorage.removeItem("muallimun_admin_gh_token");
@@ -786,6 +789,9 @@ export default function AdminStudioPage() {
         if (githubToken.trim()) {
           reqHeaders.Authorization = `Bearer ${githubToken.trim()}`;
         }
+        if (adminSecret.trim()) {
+          reqHeaders["x-admin-secret"] = adminSecret.trim();
+        }
         const res = await fetch(`/api/admin?dataset=${tabKey}`, {
           headers: reqHeaders,
           cache: "no-store",
@@ -809,7 +815,7 @@ export default function AdminStudioPage() {
         setLoading(false);
       }
     },
-    [githubToken]
+    [githubToken, adminSecret]
   );
 
   useEffect(() => {
@@ -1229,7 +1235,12 @@ export default function AdminStudioPage() {
     let sentenceList = records;
     if (activeTab !== "cumleler_1111" || sentenceList.length === 0) {
       try {
+        const getHeaders: Record<string, string> = {};
+        if (adminSecret.trim()) {
+          getHeaders["x-admin-secret"] = adminSecret.trim();
+        }
         const res = await fetch("/api/admin?dataset=cumleler_1111", {
+          headers: getHeaders,
           cache: "no-store",
         });
         const json = await res.json();

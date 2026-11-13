@@ -590,7 +590,9 @@ export default function LibraryPage() {
             cleanArabicText(dlg.baslik_ar).includes(cleanQ)) ||
           (normQ.length > 0 &&
             normalizeArabicText(dlg.baslik_ar).includes(normQ));
-        const matchId = dlg.id.replace("dlg_", "").includes(q);
+        const matchId =
+          dlg.id.replace("dlg_", "").includes(q) ||
+          String(dlg.sira || "").includes(q);
         const matchLines = dlg.satirlar.some(
           (s) =>
             s.turkce.toLowerCase().includes(q) ||
@@ -4451,7 +4453,9 @@ export default function LibraryPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDialogues.map((dlg) => {
-                const dlgNo = dlg.id.replace("dlg_", "");
+                const dlgNo = String(
+                  dlg.sira || parseInt(dlg.id.replace("dlg_", ""), 10) || 1
+                ).padStart(2, "0");
                 const imagePath = dlg.gorsel || getDialogueCoverUrl(dlg.id);
                 const wordCount = extractDialogueVocabulary(
                   dlg.satirlar.map((s) => s.arapca)

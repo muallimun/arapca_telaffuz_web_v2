@@ -113,7 +113,7 @@
       "formul_sema": "[Hemze-i Kat' (أَ / أُ / إِ)] -> Dâima Yazılır ve Okunur | [Hemze-i Vasıl (اِ / اُ)] + [Önceki Kelime] -> Düşer ve Bağlar | [مِنْ + ال] -> [مِنَ الْ] | [-تْ + ال] -> [-تِ الْ] | [هُمْ + ال] -> [هُمُ الْ]",
       "adim_adim_anlatim": [
         "1. Hemze-i Kat' ve Vasıl Ayrımı: Hemze-i kat' kök harfi veya bağlayıcı ek olup 'أَ', 'أُ', 'إِ' şeklinde elifin üstünde/altında hemze işaretiyle gösterilir ve asla düşmez ('أَكَلَ', 'إِكْرَامٌ', 'أَحْمَدُ'). Hemze-i vasıl ise yalnızca söze başlarken telaffuz edilen, ara geçişte düşen hemzedir ('اِبْنٌ', 'اِسْمٌ', 'اِفْتَحْ', 'اِسْتَغْفَرَ' ve 'الْ' takısı).",
-        "2. İltikâ-i Sâkineyn ve Geçiş Harekeleri: Arapçada iki sâkin (harekesiz/cezimli) harf yan yana gelemez. Karşılaşıldığında: (a) 'مِنْ' harf-i ceri fetha ile ('مِنَ الْمَدْرَسَةِ'), (b) Mazi dişil '-تْ', emir ve genel cezimli kelimeler kesra ile ('قَالَتِ الْبِنْتُ', 'عَنِ الْعِلْمِ', 'اِشْرَبِ الْمَاءَ'), (c) Çoğul mîmi ve cemaat vâvı damma ile ('هُمُ الْمُفْلِحُونَ', 'عَصَوُا الرَّسُولَ') harekelenerek geçiş yapılır.",
+        "2. İltikâ-i Sâkineyn ve Geçiş Harekeleri: Arapçada iki sâkin (harekesiz/cezimli) harf yan yana gelemez. Karşılaşıldığında: (a) 'مِنْ' harf-i ceri fetha ile ('مِنَ الْمَدْرَسَةِ'), (b) Mâzî dişil '-تْ', emir ve genel cezimli kelimeler kesra ile ('قَالَتِ الْبِنْتُ', 'عَنِ الْعِلْمِ', 'اِشْرَبِ الْمَاءَ'), (c) Çoğul mîmi ve cemaat vâvı damma ile ('هُمُ الْمُفْلِحُونَ', 'عَصَوُا الرَّسُولَ') harekelenerek geçiş yapılır.",
         "3. Lâm Harf-i Ceri İle 'الْ' Birleşimi: 'لِ' harf-i ceri 'الْ' takılı bir ismin başına geldiğinde elif harfi hem yazıdan hem okunuştan tamamen silinir ('لِ' + 'الْمَدْرَسَةِ' -> 'لِلْمَدْرَسَةِ'; 'لِ' + 'الطَّالِبِ' -> 'لِلطَّالِبِ')."
       ],
       "ozet_tablo": {
@@ -1078,7 +1078,7 @@
         "turkce": "Allah aşkına söyle, dâima hakkı söyler misin?"
       }
     ],
-    "ipucu": "Kasemden sonra olumlu mazi fiil gelirse 'لَقَدْ' ile pekiştirilir; olumlu muzâri fiil gelirse başında 'لَ' ve sonunda şeddeli 'نَّ' ile pekiştirilerek fethalanır: 'وَاللَّهِ لَأَفْعَلَنَّ'.",
+    "ipucu": "Kasemden sonra olumlu mâzî fiil gelirse 'لَقَدْ' ile pekiştirilir; olumlu muzâri fiil gelirse başında 'لَ' ve sonunda şeddeli 'نَّ' ile pekiştirilerek fethalanır: 'وَاللَّهِ لَأَفْعَلَنَّ'.",
     "ayrintili_anlatim": {
       "formul_sema": "[Kasem Harfi (وَ / بِ / تَ)] + [Muksemün Bih (اللَّهِ - Mecrûr ِ)] + [Cevap Cümlesi] | Olumlu Mâzî -> [لَقَدْ + Mâzî] | Olumlu Muzâri -> [لَ + Muzâri + نَّ (Fetha Mebnî)] | Olumsuz -> [مَا / لَا / لَنْ]",
       "adim_adim_anlatim": [
@@ -1260,7 +1260,7 @@
     "metinden_ornek": {
       "arapca": "هَيْهَاتَ النَّجَاحُ بِغَيْرِ اجْتِهَادٍ، فَعَلَيْكَ بِالصَّبْرِ، وَقُلْ عِنْدَ الدُّعَاءِ: آمِينَ!",
       "turkce": "Çalışma olmaksızın başarı ne kadar da uzaktır! Öyleyse sabra sarıl, ve dua vaktinde 'Amin' (duamı kabul et) de!",
-      "aciklama": "'هَيْهَاتَ' mazi anlamlı ism-i fiildir ve 'بَعُدَ' anlamında olup 'النَّجَاحُ' ismini fâil olarak ref etmiştir; 'عَلَيْكَ بِ' emir anlamlı ism-i fiildir ve 'اِلْزَمْ' anlamındadır; 'آمِينَ' ise 'اسْتَجِبْ' anlamında emir ism-i fiilidir."
+      "aciklama": "'هَيْهَاتَ' mâzî anlamlı ism-i fiildir ve 'بَعُدَ' anlamında olup 'النَّجَاحُ' ismini fâil olarak ref etmiştir; 'عَلَيْكَ بِ' emir anlamlı ism-i fiildir ve 'اِلْزَمْ' anlamındadır; 'آمِينَ' ise 'اسْتَجِبْ' anlamında emir ism-i fiilidir."
     },
     "ek_ornekler": [
       {
@@ -1272,7 +1272,7 @@
         "turkce": "Onlara 'öf' bile deme ve onları azarlama."
       }
     ],
-    "ipucu": "Fiil ismi gibi görünen ama çekilmeyen kelimeler tekildir ve mebnîdir; arkasından gelen fâil veya mef'ûlü fiil gibi idare ederler ('هَيْهَاتَ' mazi, 'أُفٍّ' şimdiki zaman, 'صَهْ' emirdir).",
+    "ipucu": "Fiil ismi gibi görünen ama çekilmeyen kelimeler tekildir ve mebnîdir; arkasından gelen fâil veya mef'ûlü fiil gibi idare ederler ('هَيْهَاتَ' mâzî, 'أُفٍّ' şimdiki zaman, 'صَهْ' emirdir).",
     "ayrintili_anlatim": {
       "formul_sema": "[İsm-i Fiil-i Mâzî (هَيْهَاتَ / شَتَّانَ)] -> Mâzî Anlamı + Merfû Fâil | [İsm-i Fiil-i Muzâri (أُفٍّ / آهٍ / وَيْ)] -> Şimdiki Zaman Anlamı | [İsm-i Fiil-i Emir (صَهْ / حَيَّ / عَلَيْكَ بِ)] -> Emir Anlamı + Mef'ûl",
       "adim_adim_anlatim": [

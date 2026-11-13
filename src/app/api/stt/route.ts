@@ -342,7 +342,23 @@ export async function POST(req: NextRequest) {
             { status: 413 }
           );
         }
-        pcm16k = Float32Array.from(body.samples);
+        if (
+          body.samples.some(
+            (v: unknown) => typeof v !== "number" || !Number.isFinite(v)
+          )
+        ) {
+          return NextResponse.json(
+            {
+              ok: false,
+              text: "",
+              error: "Geçersiz ses verisi: Tüm ses örnekleri sonlu sayı (finite number) olmalıdır.",
+            },
+            { status: 400 }
+          );
+        }
+        pcm16k = Float32Array.from(body.samples, (v: number) =>
+          Math.max(-1, Math.min(1, v))
+        );
       } else if (typeof body?.audioBase64 === "string" && body.audioBase64.trim()) {
         const binary = Buffer.from(body.audioBase64, "base64");
         if (binary.byteLength > MAX_BODY_BYTES) {

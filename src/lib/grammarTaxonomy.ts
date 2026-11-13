@@ -165,9 +165,13 @@ export function classifyGrammarCardDomain(
     raw.includes("ef'âl-i hamse") ||
     raw.includes("meçhul") ||
     raw.includes("muzari fiilin cezm") ||
+    raw.includes("muzâri fiilin cezm") ||
     raw.includes("muzari fiilin nasb") ||
+    raw.includes("muzâri fiilin nasb") ||
     raw.includes("muzari fiili nasb") ||
+    raw.includes("muzâri fiili nasb") ||
     raw.includes("muzari fiil nasb") ||
+    raw.includes("muzâri fiil nasb") ||
     raw.includes("amaç edatları (كَيْ") ||
     raw.includes("nehiy") ||
     raw.includes("emir fiil") ||
@@ -209,6 +213,7 @@ export function classifyGrammarCardDomain(
     raw.includes("ism-i mef'ûl") ||
     raw.includes("ism-i maf'ûl") ||
     raw.includes("ismi mef'ul") ||
+    raw.includes("ismi mef'ûl") ||
     raw.includes("ism-i tafdil") ||
     raw.includes("ism-i tafdîl") ||
     raw.includes("ism-i zaman") ||
@@ -338,7 +343,9 @@ export function buildUnifiedGrammarAtlasCatalog(sources: {
 
   for (const note of diyalogGramerNotlari) {
     const dlg = dlgMap.get(note.bagli_id);
-    const dlgNo = note.bagli_id.replace("dlg_", "");
+    const dlgNo = dlg?.sira
+      ? String(dlg.sira).padStart(2, "0")
+      : note.bagli_id.replace("dlg_", "");
     const level: Level = note.seviye || dlg?.seviye || "A1";
     const domainId = classifyGrammarCardDomain(note);
     items.push({

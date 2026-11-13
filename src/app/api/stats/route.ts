@@ -444,11 +444,80 @@ function buildStatsJsonResponse(store: PersistentStatsStore) {
   );
 }
 
+const STATS_RATE_LIMIT_WINDOW_MS = 60_000;
+const STATS_RATE_LIMIT_MAX_POST_REQUESTS = 30;
+const STATS_RATE_LIMIT_MAX_GET_REQUESTS = 120;
+const STATS_MAX_IP_MAP_SIZE = 2000;
+const statsIpPostTimestamps = new Map<string, number[]>();
+const statsIpGetTimestamps = new Map<string, number[]>();
+
+function getStatsClientIp(req: NextRequest): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0]?.trim();
+    if (firstIp) return firstIp;
+  }
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  return "unknown";
+}
+
+function isStatsRateLimited(
+  bucketMap: Map<string, number[]>,
+  ip: string,
+  maxRequests: number
+): boolean {
+  const now = Date.now();
+  const timestamps = bucketMap.get(ip) ?? [];
+  const recent = timestamps.filter(
+    (ts) => now - ts < STATS_RATE_LIMIT_WINDOW_MS
+  );
+
+  if (recent.length >= maxRequests) {
+    bucketMap.set(ip, recent);
+    return true;
+  }
+
+  recent.push(now);
+  bucketMap.set(ip, recent);
+
+  if (bucketMap.size > STATS_MAX_IP_MAP_SIZE) {
+    for (const [key, list] of bucketMap.entries()) {
+      if (list.every((ts) => now - ts >= STATS_RATE_LIMIT_WINDOW_MS)) {
+        bucketMap.delete(key);
+      }
+    }
+    if (bucketMap.size > STATS_MAX_IP_MAP_SIZE) {
+      const oldestKey = bucketMap.keys().next().value;
+      if (oldestKey) bucketMap.delete(oldestKey);
+    }
+  }
+
+  return false;
+}
+
 /**
  * GET /api/stats — Salt okunur (Read-Only): Sayaçları artırmadan anında yerel depodan yanıt döner,
  * harici senkronizasyonu bloklamadan arka planda tetikler.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const clientIp = getStatsClientIp(req);
+  if (
+    isStatsRateLimited(
+      statsIpGetTimestamps,
+      clientIp,
+      STATS_RATE_LIMIT_MAX_GET_REQUESTS
+    )
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Çok fazla istek gönderildi. Lütfen bir dakika sonra tekrar deneyin.",
+      },
+      { status: 429 }
+    );
+  }
+
   const store = loadMergedPersistentStore();
   triggerBackgroundExternalSync(false, false, false);
   return buildStatsJsonResponse(store);
@@ -460,6 +529,23 @@ export async function GET() {
  * değerlerine kesinlikle güvenilmez (sayaç şişirme koruması).
  */
 export async function POST(req: NextRequest) {
+  const clientIp = getStatsClientIp(req);
+  if (
+    isStatsRateLimited(
+      statsIpPostTimestamps,
+      clientIp,
+      STATS_RATE_LIMIT_MAX_POST_REQUESTS
+    )
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Çok fazla istek gönderildi. Lütfen bir dakika sonra tekrar deneyin.",
+      },
+      { status: 429 }
+    );
+  }
+
   const store = loadMergedPersistentStore();
   const todayKey = getIstanbulDateKey();
   const now = Date.now();

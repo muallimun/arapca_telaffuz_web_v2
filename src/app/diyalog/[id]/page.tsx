@@ -839,7 +839,8 @@ export default function DialogueDetailPage({
   };
 
   // Kapak görseli ve Odak Gramer Notu (V2)
-  const rawNum = parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
+  const rawNum =
+    dialogue.sira || parseInt(dialogue.id.replace("dlg_", ""), 10) || 1;
   const imagePath = dialogue.gorsel || getDialogueCoverUrl(dialogue.id);
   const grammarNote = getDialogueGrammarNote(dialogue.id);
   const {
@@ -847,7 +848,15 @@ export default function DialogueDetailPage({
     grammarSplitSide,
     setGrammarSplitOpen,
     toggleGrammarSplitSide,
+    setClassroomPresentationMode,
   } = useClassroomToolsStore();
+
+  useEffect(() => {
+    setClassroomPresentationMode(isClassroomMode);
+    return () => {
+      setClassroomPresentationMode(false);
+    };
+  }, [isClassroomMode, setClassroomPresentationMode]);
 
   const activeTabId: StudyMode =
     isGrammarSplitOpen && grammarNote && studyMode === "gramer"

@@ -60,6 +60,7 @@ interface ClassroomToolsState {
   timerOpen: boolean;
   isGrammarSplitOpen: boolean;
   grammarSplitSide: GrammarSplitSide;
+  isClassroomPresentationMode: boolean;
 
   openToolbar: (initialTool?: SmartboardTool) => void;
   closeToolbar: () => void;
@@ -82,6 +83,7 @@ interface ClassroomToolsState {
   toggleGrammarSplit: () => void;
   setGrammarSplitSide: (side: GrammarSplitSide) => void;
   toggleGrammarSplitSide: () => void;
+  setClassroomPresentationMode: (active: boolean) => void;
 }
 
 export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
@@ -99,6 +101,7 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
   timerOpen: false,
   isGrammarSplitOpen: false,
   grammarSplitSide: readInitialGrammarSplitSide(),
+  isClassroomPresentationMode: false,
 
   openToolbar: (initialTool) =>
     set((state) => ({
@@ -159,4 +162,6 @@ export const useClassroomToolsStore = create<ClassroomToolsState>((set) => ({
       persistGrammarSplitSide(next);
       return { grammarSplitSide: next };
     }),
+  setClassroomPresentationMode: (active) =>
+    set({ isClassroomPresentationMode: active }),
 }));

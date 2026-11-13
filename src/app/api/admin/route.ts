@@ -94,6 +94,14 @@ async function verifyAdminWriteAccess(params: {
   const { req, action, githubToken } = params;
 
   const configuredSecret = (process.env.ADMIN_SECRET || "").trim();
+  if (process.env.NODE_ENV === "production" && !configuredSecret) {
+    return {
+      authorized: false,
+      status: 503,
+      error:
+        "Hizmet kullanılamıyor (503 Service Unavailable): Üretim ortamında ADMIN_SECRET yapılandırılmamıştır.",
+    };
+  }
   if (configuredSecret.length > 0) {
     const headerSecret = (req.headers.get("x-admin-secret") || "").trim();
     if (!headerSecret || !timingSafeEqualSecret(configuredSecret, headerSecret)) {
@@ -496,6 +504,30 @@ async function githubPutFile(params: {
 
 export async function GET(req: NextRequest) {
   try {
+    const configuredSecret = (process.env.ADMIN_SECRET || "").trim();
+    if (process.env.NODE_ENV === "production" && !configuredSecret) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Hizmet kullanılamıyor (503 Service Unavailable): Üretim ortamında ADMIN_SECRET yapılandırılmamıştır.",
+        },
+        { status: 503 }
+      );
+    }
+    if (configuredSecret.length > 0) {
+      const headerSecret = (req.headers.get("x-admin-secret") || "").trim();
+      if (!headerSecret || !timingSafeEqualSecret(configuredSecret, headerSecret)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Yetkisiz erişim: Geçersiz veya eksik x-admin-secret başlığı.",
+          },
+          { status: 401 }
+        );
+      }
+    }
+
     const { searchParams } = new URL(req.url);
     const dataset = searchParams.get("dataset") as AdminDatasetKey | null;
 

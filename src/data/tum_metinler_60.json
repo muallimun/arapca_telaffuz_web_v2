@@ -1,8 +1,10 @@
 [
   {
     "id": "metin_01",
+    "sira": 1,
     "seviye": "A1",
     "tema": "Aile_ve_Sosyal",
+    "odak_gramer": "İsim Cümlesi, Şahıs ve İyelik Zamirleri",
     "baslik_ar": "عَائِلَتِي وَأَنَا",
     "baslik_tr": "Kendimi ve Ailemi Tanıtıyorum",
     "satirlar": [
@@ -60,8 +62,10 @@
   },
   {
     "id": "metin_02",
+    "sira": 2,
     "seviye": "A1",
     "tema": "Gunluk_Hayat",
+    "odak_gramer": "Öne Geçmiş Şibh-i Cümle Haber ve Varlık Kalıpları",
     "baslik_ar": "بَيْتِي وَغُرْفَتِي",
     "baslik_tr": "Evimin Bölümleri ve Odam",
     "satirlar": [
@@ -119,8 +123,10 @@
   },
   {
     "id": "metin_03",
+    "sira": 3,
     "seviye": "A1",
     "tema": "Gunluk_Hayat",
+    "odak_gramer": "Muzâri Fiil Tekil Çekimi ve Günlük Rutin İfadeleri",
     "baslik_ar": "يَوْمِيَّاتِي الصَّبَاحِيَّةُ",
     "baslik_tr": "Sabah Rutinim",
     "satirlar": [
@@ -178,8 +184,10 @@
   },
   {
     "id": "metin_04",
+    "sira": 4,
     "seviye": "A1",
     "tema": "Okul_ve_Egitim",
+    "odak_gramer": "Mekân Zarfları (أَمَامَ / عِنْدَ) ve Konum İfadeleri",
     "baslik_ar": "مَدْرَسَتِي وَفَصْلِي",
     "baslik_tr": "Okulum ve Sınıfım",
     "satirlar": [
@@ -237,8 +245,10 @@
   },
   {
     "id": "metin_05",
+    "sira": 5,
     "seviye": "A1",
     "tema": "Alisveris_ve_Yemek",
+    "odak_gramer": "Mâzî Fiil (Ben / 1. Tekil Şahıs 'تُ') ve Mef'ûlün Bih",
     "baslik_ar": "شِرَاءُ الأَدَوَاتِ المَدْرَسِيَّةِ",
     "baslik_tr": "Kırtasiye Alışverişi",
     "satirlar": [
@@ -296,8 +306,10 @@
   },
   {
     "id": "metin_06",
+    "sira": 6,
     "seviye": "A1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Mâzî Fiil Çoğul Çekimi (Biz / 1. Çoğul Şahıs 'نَا')",
     "baslik_ar": "نُزْهَةُ نِهَايَةِ الأُسْبُوعِ",
     "baslik_tr": "Hafta Sonu Pikniği",
     "satirlar": [
@@ -355,8 +367,10 @@
   },
   {
     "id": "metin_07",
+    "sira": 7,
     "seviye": "A1",
     "tema": "Alisveris_ve_Yemek",
+    "odak_gramer": "Muzâri Fiilde Nesne (Mef'ûlün Bih) İrabı",
     "baslik_ar": "طَعَامِي المُفَضَّلُ وَالفُطُورُ",
     "baslik_tr": "Sevdiğim Yemekler ve Kahvaltı",
     "satirlar": [
@@ -414,8 +428,10 @@
   },
   {
     "id": "metin_08",
+    "sira": 8,
     "seviye": "A1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Akılsız Çoğul İsimler ve Sıfat Uyumu",
     "baslik_ar": "قَرْيَةُ جَدِّي الجَمِيلَةُ",
     "baslik_tr": "Dedemin Köyü",
     "satirlar": [
@@ -473,8 +489,10 @@
   },
   {
     "id": "metin_09",
+    "sira": 9,
     "seviye": "A1",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "İzafet Tamlamasında Masdar ve Harf-i Cer Kullanımı",
     "baslik_ar": "الْمَوَاصَلاَتُ فِي الْمَدِينَةِ",
     "baslik_tr": "Şehirde Ulaşım",
     "satirlar": [
@@ -532,8 +550,10 @@
   },
   {
     "id": "metin_10",
+    "sira": 10,
     "seviye": "A1",
     "tema": "Gunluk_Hayat",
+    "odak_gramer": "Renk Sıfatları (أَفْعَلُ Kalıbı ve Gayri Munsariflik)",
     "baslik_ar": "مَلَابِسِي الْجَدِيدَةُ",
     "baslik_tr": "Yeni Kıyafetlerim",
     "satirlar": [
@@ -591,8 +611,10 @@
   },
   {
     "id": "metin_11",
+    "sira": 11,
     "seviye": "A1",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Fiile Bitişen Bitişik Nesne Zamiri (Muttasıl Mansub Zamir 'نِي')",
     "baslik_ar": "الْمَرَضُ وَالصِّحَّةُ",
     "baslik_tr": "Hastalık ve Sağlık",
     "satirlar": [
@@ -650,8 +672,10 @@
   },
   {
     "id": "metin_12",
+    "sira": 12,
     "seviye": "A1",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Mülkiyet/Varlık Kalıbı (عِنْدِي) ve Mekân Zarfları",
     "baslik_ar": "التِّكْنُولُوجِيَا وَحَاسُوبِي",
     "baslik_tr": "Teknoloji ve Bilgisayarım",
     "satirlar": [
@@ -709,8 +733,10 @@
   },
   {
     "id": "metin_13",
+    "sira": 13,
     "seviye": "A1",
     "tema": "Is_ve_Meslekler",
+    "odak_gramer": "İsmi Fâil (Meslek İsimleri) ve Sıfat Tamlaması",
     "baslik_ar": "أَقَارِبِي وَمِهَنُهُمْ",
     "baslik_tr": "Akrabalarım ve Meslekleri",
     "satirlar": [
@@ -768,8 +794,10 @@
   },
   {
     "id": "metin_14",
+    "sira": 14,
     "seviye": "A1",
     "tema": "Alisveris_ve_Yemek",
+    "odak_gramer": "Mâzî Fiil Çekimi ve Mansub Sıfat Tamlaması",
     "baslik_ar": "شِرَاءُ الْفَوَاكِهِ مِنَ الدُّكَّانِ",
     "baslik_tr": "Manavda Meyve Alışverişi",
     "satirlar": [
@@ -827,8 +855,10 @@
   },
   {
     "id": "metin_15",
+    "sira": 15,
     "seviye": "A1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Akılsız Çoğullarda Fiil ve Yüklem Uyumu",
     "baslik_ar": "فَصْلُ الرَّبِيعِ وَالطَّبِيعَةُ",
     "baslik_tr": "İlkbahar Mevsimi ve Doğa",
     "satirlar": [
@@ -886,8 +916,10 @@
   },
   {
     "id": "metin_16",
+    "sira": 16,
     "seviye": "A1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Akılsız Çoğul Uyumu ve Hâl (Durum) Ögesi",
     "baslik_ar": "زِيَارَةُ حَدِيقَةِ الْحَيَوَانَاتِ",
     "baslik_tr": "Hayvanat Bahçesi Gezisi",
     "satirlar": [
@@ -945,8 +977,10 @@
   },
   {
     "id": "metin_17",
+    "sira": 17,
     "seviye": "A1",
     "tema": "Gunluk_Hayat",
+    "odak_gramer": "Renk Sıfatlarında Gayri Munsariflik ve Dişil Kalıp (فَعْلَاءُ)",
     "baslik_ar": "الْأَحْوَالُ الْجَوِّيَّةُ وَمِظَلَّتِي",
     "baslik_tr": "Hava Durumu ve Şemsiyem",
     "satirlar": [
@@ -1004,8 +1038,10 @@
   },
   {
     "id": "metin_18",
+    "sira": 18,
     "seviye": "A1",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Bitişik Öznel Mâzî Fiil Çekimi (1. Çoğul Şahıs 'نَا')",
     "baslik_ar": "فِي مَحَطَّةِ الْقِطَارِ",
     "baslik_tr": "Tren İstasyonunda",
     "satirlar": [
@@ -1063,8 +1099,10 @@
   },
   {
     "id": "metin_19",
+    "sira": 19,
     "seviye": "A1",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Akılsız Çoğul ve Şibh-i Cümle Haber (عِنْدِي)",
     "baslik_ar": "هِوَايَاتِي وَالرِّيَاضَةُ",
     "baslik_tr": "Hobilerim ve Spor",
     "satirlar": [
@@ -1122,8 +1160,10 @@
   },
   {
     "id": "metin_20",
+    "sira": 20,
     "seviye": "A1",
     "tema": "Okul_ve_Egitim",
+    "odak_gramer": "Muzâri Fiil Tekil Çekimi ve Mef'ûlün Bih İrabı",
     "baslik_ar": "أَتَعَلَّمُ اللُّغَةَ الْعَرَبِيَّةَ",
     "baslik_tr": "Arapça Öğreniyorum",
     "satirlar": [
@@ -1181,8 +1221,10 @@
   },
   {
     "id": "metin_21",
+    "sira": 21,
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Çoklu Sıfat Tamlaması ve İrab Uyumu",
     "baslik_ar": "ذِكْرَى الْعُطْلَةِ الصَّيْفِيَّةِ",
     "baslik_tr": "Yaz Tatili Anım",
     "satirlar": [
@@ -1246,8 +1288,10 @@
   },
   {
     "id": "metin_22",
+    "sira": 22,
     "seviye": "A2",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Mekân Zarfları (بَيْنَ / فَوْقَ) ve Muzafun İleyh",
     "baslik_ar": "جَوْلَةٌ فِي الْمَدِينَةِ",
     "baslik_tr": "Şehirde Bir Tur",
     "satirlar": [
@@ -1311,8 +1355,10 @@
   },
   {
     "id": "metin_23",
+    "sira": 23,
     "seviye": "A2",
     "tema": "Duygu_ve_Dusunce",
+    "odak_gramer": "Zaman Zarfları (صَبَاحًا, بَعْدَ) ve Mef'ûlün Fih",
     "baslik_ar": "جُحَا وَحِمَارُهُ",
     "baslik_tr": "Nasreddin Hoca ve Eşeği",
     "konusmacilar": [
@@ -1383,8 +1429,10 @@
   },
   {
     "id": "metin_24",
+    "sira": 24,
     "seviye": "A2",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Fiile Bitişen Bitişik Nesne Zamirleri (-نِي) ve Mef'ûlün Bih",
     "baslik_ar": "الْحَيَاةُ الصِّحِّيَّةُ وَالتَّمَارِينُ",
     "baslik_tr": "Sağlıklı Yaşam ve Egzersiz",
     "satirlar": [
@@ -1448,8 +1496,10 @@
   },
   {
     "id": "metin_25",
+    "sira": 25,
     "seviye": "A2",
     "tema": "Okul_ve_Egitim",
+    "odak_gramer": "Sayılarda Temyiz (3-10 Arası Zıtlık ve İrab)",
     "baslik_ar": "يَوْمٌ فِي مَكْتَبَةِ الْمَدْرَسَةِ",
     "baslik_tr": "Okul Kütüphanesinde Bir Gün",
     "satirlar": [
@@ -1513,8 +1563,10 @@
   },
   {
     "id": "metin_26",
+    "sira": 26,
     "seviye": "A2",
     "tema": "Is_ve_Meslekler",
+    "odak_gramer": "İsm-i Tafdil (أَكْبَرُ / أَجْمَلُ) ve Üstünlük Kıyaslaması",
     "baslik_ar": "خُطَّتِي لِلْمُسْتَقْبَلِ",
     "baslik_tr": "Gelecek Planım",
     "satirlar": [
@@ -1578,8 +1630,10 @@
   },
   {
     "id": "metin_27",
+    "sira": 27,
     "seviye": "A2",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Amaç Bildiren Masdarlar (Harf-i Cer لِ / Mef'ûlün Lieclih)",
     "baslik_ar": "الوَعْيُ البِيئِيُّ وَغَرْسُ الأَشْجَارِ",
     "baslik_tr": "Çevre Bilinci ve Ağaç Dikimi",
     "satirlar": [
@@ -1643,8 +1697,10 @@
   },
   {
     "id": "metin_28",
+    "sira": 28,
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Meçhul Fiil Kalıbı (تُعْتَبَرُ) ve Zorunluluk Yapısı (يَجِبُ أَنْ)",
     "baslik_ar": "قَوَاعِدُ المُرُورِ وَمَمَرُّ المَشَاةِ",
     "baslik_tr": "Trafik Kuralları ve Yaya Geçidi",
     "satirlar": [
@@ -1708,8 +1764,10 @@
   },
   {
     "id": "metin_29",
+    "sira": 29,
     "seviye": "A2",
     "tema": "Alisveris_ve_Yemek",
+    "odak_gramer": "İsmi Mef'ûl ve Edilgen Sıfat Kalıpları (المَشْوِيَّ / المَحْشُوَّةَ)",
     "baslik_ar": "الأَطْعِمَةُ التُّرْكِيَّةُ التَّقْلِيدِيَّةُ",
     "baslik_tr": "Geleneksel Türk Yemekleri",
     "satirlar": [
@@ -1773,8 +1831,10 @@
   },
   {
     "id": "metin_30",
+    "sira": 30,
     "seviye": "A2",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Mef'ûlün Li-Eclih (لِزِيَارَةِ) ve Amaca Yönelik Masdarlar",
     "baslik_ar": "زِيَارَةُ المُسْتَشْفَى وَالعِيَادَةِ",
     "baslik_tr": "Hastane Ziyareti ve Geçmiş Olsun",
     "satirlar": [
@@ -1838,8 +1898,10 @@
   },
   {
     "id": "metin_31",
+    "sira": 31,
     "seviye": "A2",
     "tema": "Gunluk_Hayat",
+    "odak_gramer": "Mâzî Fiil 'Biz' Çekimi ve Sıfat Tamlaması Uyumları",
     "baslik_ar": "الانْتِقَالُ إِلَى بَيْتِنَا الْجَدِيدِ",
     "baslik_tr": "Yeni Evimize Taşınıyoruz",
     "satirlar": [
@@ -1903,8 +1965,10 @@
   },
   {
     "id": "metin_32",
+    "sira": 32,
     "seviye": "A2",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Fiil Cümlesi, Mef'ûlün Bih ve Durum/Tarz Bildiren Yapılar",
     "baslik_ar": "مُبَارَاةُ كُرَةِ السَّلَّةِ فِي النَّادِي",
     "baslik_tr": "Spor Kulübünde Basketbol Maçı",
     "satirlar": [
@@ -1968,8 +2032,10 @@
   },
   {
     "id": "metin_33",
+    "sira": 33,
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Gelecek Zaman (سَ) ve İzafet Tamlaması (Muzaf - Muzafun İleyh)",
     "baslik_ar": "حَجْزُ الفُنْدُقِ وَخُطَّةُ العُطْلَةِ",
     "baslik_tr": "Otel Rezervasyonu ve Tatil Planı",
     "satirlar": [
@@ -2033,8 +2099,10 @@
   },
   {
     "id": "metin_34",
+    "sira": 34,
     "seviye": "A2",
     "tema": "Alisveris_ve_Yemek",
+    "odak_gramer": "Mâzî Fiil Dişil Çekimi (-تْ) ve 3-10 Arası Sayı Kuralları",
     "baslik_ar": "قَائِمَةُ التَّسَوُّقِ فِي المَارْكِيتِ",
     "baslik_tr": "Market Alışverişi Listemiz",
     "satirlar": [
@@ -2098,8 +2166,10 @@
   },
   {
     "id": "metin_35",
+    "sira": 35,
     "seviye": "A2",
     "tema": "Okul_ve_Egitim",
+    "odak_gramer": "Muzâri Fiil 1. Çoğul Şahıs (Biz - نَ) Çekimi ve Geniş Zaman",
     "baslik_ar": "الشُّعُورُ قَبْلَ الاِمْتِحَانِ",
     "baslik_tr": "Sınav Öncesi Heyecan",
     "satirlar": [
@@ -2163,8 +2233,10 @@
   },
   {
     "id": "metin_36",
+    "sira": 36,
     "seviye": "A2",
     "tema": "Aile_ve_Sosyal",
+    "odak_gramer": "Akılsız Çoğullarda Sıfat Uyumu ve Mâzî 'Biz' Çekimi",
     "baslik_ar": "التَّعَاوُنُ بَيْنَ الصَّدِيقَيْنِ",
     "baslik_tr": "İki Arkadaşın Yardımlaşması",
     "satirlar": [
@@ -2228,8 +2300,10 @@
   },
   {
     "id": "metin_37",
+    "sira": 37,
     "seviye": "A2",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Muzâri Fiilde Özne (Fâil) ve Fiil Cinsiyet Uyum Kuralları",
     "baslik_ar": "البَحْثُ عَنِ الصَّيْدَلِيَّةِ المُنَوَّبَةِ",
     "baslik_tr": "Nöbetçi Eczane Ararken",
     "satirlar": [
@@ -2293,8 +2367,10 @@
   },
   {
     "id": "metin_38",
+    "sira": 38,
     "seviye": "A2",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Sıfat Tamlaması ve Akılsız Çoğullarda Dişil Tekil Sıfat",
     "baslik_ar": "الْمَشْيُ فِي الغَابَةِ",
     "baslik_tr": "Ormanda Doğa Yürüyüşü",
     "satirlar": [
@@ -2358,8 +2434,10 @@
   },
   {
     "id": "metin_39",
+    "sira": 39,
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Fiile Bitişen Nesne Zamiri (-نِي) ve Zorunluluk Yapısı (يَجِبُ أَنْ)",
     "baslik_ar": "الاِنْتِظَارُ فِي المَطَارِ",
     "baslik_tr": "Havalimanında Beklerken",
     "satirlar": [
@@ -2423,8 +2501,10 @@
   },
   {
     "id": "metin_40",
+    "sira": 40,
     "seviye": "A2",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Mâzî Fiilde Şahıs Ekleri ve Nesne (Mef'ûlün Bih) İrabı",
     "baslik_ar": "مَدِينَةُ بُورْصَةَ التَّارِيخِيَّةُ",
     "baslik_tr": "Tarihi Bursa Şehrini Tanıtıyorum",
     "satirlar": [
@@ -2488,8 +2568,10 @@
   },
   {
     "id": "metin_41",
+    "sira": 41,
     "seviye": "B1",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Amaç Bildiren 'لِ' Harf-i Ceri (Mef'ûlün Li-eclih) ve İzafet",
     "baslik_ar": "آثَارُ الحَضَارَةِ الإِسْلَامِيَّةِ فِي الأَنْدَلُسِ",
     "baslik_tr": "İslam Medeniyetinin İzleri: Endülüs",
     "satirlar": [
@@ -2559,8 +2641,10 @@
   },
   {
     "id": "metin_42",
+    "sira": 42,
     "seviye": "B1",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Meçhul (Edilgen) Fiil Kalıbı ve Nâib-i Fâil (Sözde Özne)",
     "baslik_ar": "فَوَائِدُ العَالَمِ الرَّقْمِيِّ وَأَضْرَارُهُ",
     "baslik_tr": "Dijital Dünyanın Faydaları ve Zararları",
     "satirlar": [
@@ -2630,8 +2714,10 @@
   },
   {
     "id": "metin_43",
+    "sira": 43,
     "seviye": "B1",
     "tema": "Aile_ve_Sosyal",
+    "odak_gramer": "Şart Edatı 'مَنْ' (Kim ... yaparsa) ve Şart Cümlesi",
     "baslik_ar": "شَهْرُ رَمَضَانَ وَالتَّقَالِيدُ الثَّقَافِيَّةُ",
     "baslik_tr": "Ramazan Ayı ve Kültürel Geleneklerimiz",
     "satirlar": [
@@ -2701,8 +2787,10 @@
   },
   {
     "id": "metin_44",
+    "sira": 44,
     "seviye": "B1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Cezmeden/Cezmetmeyen Şart Edatları ('إِذَا', 'مَنْ') ve Şart Cümlesi",
     "baslik_ar": "أَهَمِّيَّةُ إِعَادَةِ التَّدْوِيرِ لِلْبِيئَةِ",
     "baslik_tr": "Geri Dönüşümün Doğaya Katkısı",
     "satirlar": [
@@ -2772,8 +2860,10 @@
   },
   {
     "id": "metin_45",
+    "sira": 45,
     "seviye": "B1",
     "tema": "Duygu_ve_Dusunce",
+    "odak_gramer": "Meçhul Fiiller (Müfred Müennes Yapısı) ve Şart Cümlesi",
     "baslik_ar": "ذِكْرَيَاتُ الحَجِّ وَالعُمْرَةِ الإِيمَانِيَّةُ",
     "baslik_tr": "Hac ve Umre Hatıraları",
     "satirlar": [
@@ -2843,8 +2933,10 @@
   },
   {
     "id": "metin_46",
+    "sira": 46,
     "seviye": "B1",
     "tema": "Is_ve_Meslekler",
+    "odak_gramer": "Cezmeden Şart Edatı (مَنْ) ve Şart Cümlesi Yapısı",
     "baslik_ar": "اخْتِيَارُ المِهْنَةِ وَأَخْلاَقِيَّاتُ العَمَلِ",
     "baslik_tr": "Meslek Seçimi ve İş Ahlakı",
     "satirlar": [
@@ -2914,8 +3006,10 @@
   },
   {
     "id": "metin_47",
+    "sira": 47,
     "seviye": "B1",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Manevî Te'kid ve İkil İfadeler (كِلَاهُمَا / Her İkisi)",
     "baslik_ar": "الإِسْعَافَاتُ الأَوَّلِيَّةُ وَالسَّلاَمَةُ المُرُورِيَّةُ",
     "baslik_tr": "İlk Yardım ve Trafik Güvenliği",
     "satirlar": [
@@ -2985,8 +3079,10 @@
   },
   {
     "id": "metin_48",
+    "sira": 48,
     "seviye": "B1",
     "tema": "Seyahat_ve_Ulasim",
+    "odak_gramer": "Muzâri Fiili Nasb Eden Amaç Edatları (لِكَيْ / -sın diye / için)",
     "baslik_ar": "الرِّيَاضَاتُ الشَّتَوِيَّةُ وَالسِّيَاحَةُ الجَبَلِيَّةُ",
     "baslik_tr": "Kış Sporları ve Dağ Turizmi",
     "satirlar": [
@@ -3056,8 +3152,10 @@
   },
   {
     "id": "metin_49",
+    "sira": 49,
     "seviye": "B1",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "İsm-i Mevsûl (الَّتِي / الَّذِي) ve Sıla Cümlesi Yapısı",
     "baslik_ar": "الدِّفَاعُ المَدَنِيُّ وَالاسْتِعْدَادُ لِلْكَوَارِثِ",
     "baslik_tr": "Sivil Savunma ve Doğal Afetlere Hazırlık",
     "satirlar": [
@@ -3127,8 +3225,10 @@
   },
   {
     "id": "metin_50",
+    "sira": 50,
     "seviye": "B1",
     "tema": "Okul_ve_Egitim",
+    "odak_gramer": "Taaccüb (Hayranlık / Şaşırma) Üslubu (مَا أَفْعَلَ...)",
     "baslik_ar": "أَهَمِّيَّةُ اسْتِخْدَامِ الْمُعْجَمِ الْعَرَبِيِّ",
     "baslik_tr": "Arapça Sözlük Kullanmanın Önemi",
     "satirlar": [
@@ -3198,8 +3298,10 @@
   },
   {
     "id": "metin_51",
+    "sira": 51,
     "seviye": "B2",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "İsm-i Mef'ûl Kalıbı (مَفْعُولٌ) ve Edilgen Sıfat Türetme",
     "baslik_ar": "الاحْتِبَاسُ الحَرَارِيُّ وَأَزْمَةُ المَنَاخِ العَالَمِيَّةُ",
     "baslik_tr": "Küresel Isınma ve İklim Krizi",
     "satirlar": [
@@ -3281,8 +3383,10 @@
   },
   {
     "id": "metin_52",
+    "sira": 52,
     "seviye": "B2",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Zorunluluk Yapısı (يَجِبُ أَنْ) ve Muzâri Fiil Nasbı",
     "baslik_ar": "الذَّكَاءُ الاصْطِنَاعِيُّ وَمِهَنُ الْمُسْتَقْبَلِ",
     "baslik_tr": "Yapay Zeka ve Geleceğin Meslekleri",
     "satirlar": [
@@ -3364,8 +3468,10 @@
   },
   {
     "id": "metin_53",
+    "sira": 53,
     "seviye": "B2",
     "tema": "Saglik_ve_Spor",
+    "odak_gramer": "Cezmetmeyen Şart Edatı 'إِذَا' ve Cevap Cümlesinde 'فَ' Harfi",
     "baslik_ar": "ابْنُ سِينَا وَتَطَوُّرُ الطِّبِّ الإِسْلَامِيِّ",
     "baslik_tr": "İbn-i Sina ve İslam Tıbbının Gelişimi",
     "satirlar": [
@@ -3447,8 +3553,10 @@
   },
   {
     "id": "metin_54",
+    "sira": 54,
     "seviye": "B2",
     "tema": "Duygu_ve_Dusunce",
+    "odak_gramer": "Cemi Müennes Salim (اتٌ / اتٍ) İrabı ve Esre Tenvini",
     "baslik_ar": "حُقُوقُ الإِنْسَانِ وَالْعَدَالَةُ الاِجْتِمَاعِيَّةُ",
     "baslik_tr": "İnsan Hakları ve Sosyal Adalet",
     "satirlar": [
@@ -3530,8 +3638,10 @@
   },
   {
     "id": "metin_55",
+    "sira": 55,
     "seviye": "B2",
     "tema": "Doga_ve_Cevre",
+    "odak_gramer": "Gayri Munsarif İsimler ve Kırık Çoğul Kalıpları (مَنَاطِقُ)",
     "baslik_ar": "مَصَادِرُ الطَّاقَةِ الْمُتَجَدِّدَةِ وَالمُسْتَدَامَةِ",
     "baslik_tr": "Yenilenebilir Enerji Kaynakları",
     "satirlar": [
@@ -3613,8 +3723,10 @@
   },
   {
     "id": "metin_56",
+    "sira": 56,
     "seviye": "B2",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "Mef'ûlün Li-Eclih (Amaç / Gerekçe Mansubu)",
     "baslik_ar": "أَبْحَاثُ الفَضَاءِ وَتِكْنُولُوجِيَا الأَقْمَارِ الاصْطِنَاعِيَّةِ",
     "baslik_tr": "Uzay Araştırmaları ve Uydu Teknolojisi",
     "satirlar": [
@@ -3696,8 +3808,10 @@
   },
   {
     "id": "metin_57",
+    "sira": 57,
     "seviye": "B2",
     "tema": "Aile_ve_Sosyal",
+    "odak_gramer": "Nekra İsimden Sonra Gelen Sıfat Cümlesi",
     "baslik_ar": "ثَقَافَةُ الوَقْفِ وَالتَّكَافُلُ الاِجْتِمَاعِيُّ",
     "baslik_tr": "Vakıf Kültürü ve Sosyal Dayanışma",
     "satirlar": [
@@ -3779,8 +3893,10 @@
   },
   {
     "id": "metin_58",
+    "sira": 58,
     "seviye": "B2",
     "tema": "Kultur_ve_Teknoloji",
+    "odak_gramer": "İsm-i Tafdil (أَكْثَرُ) ve Nisbet Temyizi İrabı",
     "baslik_ar": "مَبَادِئُ الصِّحَافَةِ وَأَخْلاَقِيَّاتُ الإِعْلاَمِ",
     "baslik_tr": "Basın Meslek İlkeleri ve Medya Etiği",
     "satirlar": [
@@ -3862,8 +3978,10 @@
   },
   {
     "id": "metin_59",
+    "sira": 59,
     "seviye": "B2",
     "tema": "Is_ve_Meslekler",
+    "odak_gramer": "Taaccüb (Hayranlık/Şaşırma) Üslubu (مَا أَعْجَبَ...)",
     "baslik_ar": "التَّنْمِيَةُ الاِقْتِصَادِيَّةُ وَرِيَادَةُ الأَعْمَالِ الشَّبَابِيَّةُ",
     "baslik_tr": "Ekonomik Kalkınma ve Genç Girişimcilik",
     "satirlar": [
@@ -3945,8 +4063,10 @@
   },
   {
     "id": "metin_60",
+    "sira": 60,
     "seviye": "B2",
     "tema": "Duygu_ve_Dusunce",
+    "odak_gramer": "İleri Karşıtlık Bağlaçları (رَغْمَ / بَيْدَ أَنَّ)",
     "baslik_ar": "السَّلاَمُ وَالدِّبْلُومَاسِيَّةُ العَالَمِيَّةُ",
     "baslik_tr": "Barış ve Küresel Diplomasi",
     "satirlar": [

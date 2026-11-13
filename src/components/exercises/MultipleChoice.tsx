@@ -427,7 +427,10 @@ export default function MultipleChoice({
     !isFinished && !isTimeUp
   );
 
+  const answerLockedRef = useRef<boolean>(false);
+
   useEffect(() => {
+    answerLockedRef.current = Boolean(userAnswers[currentIndex]?.chosen);
     const raf = requestAnimationFrame(() => {
       setSelected(userAnswers[currentIndex]?.chosen ?? null);
     });
@@ -499,7 +502,12 @@ export default function MultipleChoice({
 
   const handleSelect = (text: string, isCorrect: boolean) => {
     if (isTimeUp) return;
-    if (feedbackMode === "instant" && selected) return;
+    if (feedbackMode === "instant" && (selected || answerLockedRef.current)) {
+      return;
+    }
+    if (feedbackMode === "instant") {
+      answerLockedRef.current = true;
+    }
 
     const hadPreviousAttempt =
       wrongAttemptedQuestionsRef.current.has(currentQuestion.id) ||
@@ -573,6 +581,7 @@ export default function MultipleChoice({
   // 1) Tekrar Yap (Aynı soruları karıştırarak baştan başlat)
   const handleRepeatSameSet = () => {
     clearAutoAdvanceTimer();
+    answerLockedRef.current = false;
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -595,6 +604,7 @@ export default function MultipleChoice({
   // 2) Devam Et (Yeni Set)
   const handleStartNewSet = () => {
     clearAutoAdvanceTimer();
+    answerLockedRef.current = false;
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -617,6 +627,7 @@ export default function MultipleChoice({
   const handleRetryWrongOnly = () => {
     if (wrongQuestions.length === 0) return;
     clearAutoAdvanceTimer();
+    answerLockedRef.current = false;
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;

@@ -118,15 +118,18 @@ export const tumGramerHapBilgiler: GramerHapBilgi[] = [
   ...metinGramerNotlari,
 ];
 
-// 1. 120 Diyalog (tum_diyaloglar_120.json)
-export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
-  (d): Dialogue => {
+// 1. 120 Diyalog (tum_diyaloglar_120.json — A1:1-30, A2:31-60, B1:61-90, B2:91-120)
+export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[])
+  .slice()
+  .sort((a, b) => (a.sira || 0) - (b.sira || 0))
+  .map((d, idx): Dialogue => {
     const lvl: Level = d.seviye || "A1";
     const num3 = String(
       parseInt((d.id || "").replace(/\D+/g, ""), 10) || 1
     ).padStart(3, "0");
     return {
       ...d,
+      sira: d.sira || idx + 1,
       tema: d.tema ? formatTurkishCategory(d.tema) : d.tema,
       gorsel: resolveImageUrl(
         d.gorsel || `/gorseller/diyaloglar/dlg_${num3}.webp`
@@ -145,8 +148,7 @@ export const diyaloglar: Dialogue[] = (diyaloglarJson as Dialogue[]).map(
           }))
         : [],
     };
-  }
-);
+  });
 
 // 2. 60 Okuma Metni (tum_metinler_60.json)
 export const metinler: ReadingText[] = (metinlerJson as ReadingText[]).map(

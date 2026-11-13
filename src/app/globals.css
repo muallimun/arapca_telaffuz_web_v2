@@ -390,3 +390,20 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Akıllı Tahta (board-mode) Ölçeklendirme Katmanı — Yalnızca >= 1366px ve html.board-mode aktifken (Mobil ve standart masaüstüne sıfır etki) */
+@media (min-width: 1366px) {
+  html.board-mode {
+    font-size: 19px;
+  }
+
+  html.board-mode .arabic,
+  html.board-mode .font-arabic {
+    line-height: 2.1;
+  }
+
+  html.board-mode button:not(.rounded-full),
+  html.board-mode [role="button"]:not(.rounded-full) {
+    min-height: 52px;
+  }
+}

@@ -114,7 +114,7 @@ export interface ReadingText extends PedagogicalMeta {
 
 export interface DictionaryItem extends PedagogicalMeta {
   id: string;
-  tur: string; // "isim", "fiil", "sifat", "edat", "ozel-isim" vb.
+  tur: string;
   kok: string;
   anlam_tr: string;
   mufret?: string;
@@ -158,6 +158,11 @@ export interface ResimliKelime extends PedagogicalMeta {
   ornek_ses_kadin?: string;
   ses_erkek: string;
   ses_kadin: string;
+  // learningAnalytics.ts geriye dönük uyumluluk alanları
+  kelime_ar?: string;
+  anlam_tr?: string;
+  mufret?: string;
+  cemi?: string;
 }
 
 export interface AnahtarCumle extends PedagogicalMeta {
@@ -190,6 +195,9 @@ export interface AtasozuDeyim extends PedagogicalMeta {
   gorsel?: string;
   gercek_anlam?: string;
   mecaz_anlam?: string;
+  // learningAnalytics.ts geriye dönük uyumluluk alanları
+  kelime_ar?: string;
+  anlam_tr?: string;
 }
 
 export interface GramerKonu extends PedagogicalMeta {

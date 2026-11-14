@@ -19,6 +19,7 @@ import {
   Search,
   Award,
   CheckCircle2,
+  Home,
 } from "lucide-react";
 import {
   ResimliKelime,
@@ -109,18 +110,37 @@ export interface BalloonSafariGameProps {
   onClose?: () => void;
 }
 
-const STAGE_W = 1000;
-const STAGE_H = 540;
+const STAGE_W = 1120;
+const STAGE_H = 620;
 const HS_NORMAL_KEY = "muallimun_balloon_safari_hs_normal";
 const HS_TIME_KEY = "muallimun_balloon_safari_hs_time";
 
-const BALLOON_PALETTES = [
-  { fill: "#EF4444", highlight: "#FCA5A5", dark: "#B91C1C", tagBg: "#991B1B" },
-  { fill: "#10B981", highlight: "#6EE7B7", dark: "#047857", tagBg: "#065F46" },
-  { fill: "#3B82F6", highlight: "#93C5FD", dark: "#1D4ED8", tagBg: "#1E40AF" },
-  { fill: "#8B5CF6", highlight: "#C4B5FD", dark: "#6D28D9", tagBg: "#5B21B6" },
-  { fill: "#F97316", highlight: "#FDBA74", dark: "#C2410C", tagBg: "#9A3412" },
-  { fill: "#EC4899", highlight: "#F9A8D4", dark: "#BE185D", tagBg: "#9D174D" },
+// Sıcak hava balonu dikey şerit ve alt etiket renk paletleri (#2196F3 mavi / #FF9800 turuncu etiketler)
+const HOT_AIR_PALETTES = [
+  {
+    outerStripe: "#4D7C63",
+    midStripe: "#8A9B98",
+    tagBg: "#2196F3",
+    burst: "#2196F3",
+  },
+  {
+    outerStripe: "#52796F",
+    midStripe: "#94A3B8",
+    tagBg: "#FF9800",
+    burst: "#FF9800",
+  },
+  {
+    outerStripe: "#3D7058",
+    midStripe: "#7E8F8C",
+    tagBg: "#2196F3",
+    burst: "#10B981",
+  },
+  {
+    outerStripe: "#5F856B",
+    midStripe: "#8D99AE",
+    tagBg: "#FF9800",
+    burst: "#F97316",
+  },
 ] as const;
 
 function cleanMeaningTr(raw: string): string {
@@ -146,7 +166,7 @@ function getBalloonCountForLevel(level: 1 | 2 | 3 | 4): number {
 
 function getSpeedBase(difficulty: SafariDifficulty, level: 1 | 2 | 3 | 4): number {
   const diffBase =
-    difficulty === "easy" ? 56 : difficulty === "medium" ? 78 : 104;
+    difficulty === "easy" ? 58 : difficulty === "medium" ? 80 : 106;
   const levelBoost = (level - 1) * 11;
   return diffBase + levelBoost;
 }
@@ -164,7 +184,7 @@ export default function BalloonSafariGame({
   const { preferredVoiceGender, speechRate } = useSettings();
   const { addMistake, recordItemAttempt, addStudyMinutes } = useUserStore();
 
-  // Görsel kelime hızlı eşleme dizini (ID ve harekesiz Arapça üzerinden)
+  // Görsel kelime hızlı eşleme dizini
   const visualLookup = useMemo(() => {
     const byId = new Map<string, ResimliKelime>();
     const byBareAr = new Map<string, ResimliKelime>();
@@ -290,7 +310,6 @@ export default function BalloonSafariGame({
       }
     }
 
-    // Güvenli alt sınır: en az 8 öğe garantisi
     if (items.length < 8) {
       const fallbackPool =
         cefrFilter === "all"
@@ -329,6 +348,10 @@ export default function BalloonSafariGame({
   const [gameMode, setGameMode] = useState<SafariGameMode>("normal");
   const [isMuted, setIsMuted] = useState(false);
 
+  // Opsiyonel yerel public/images/background.png ve public/images/balon.png algılama (kırık görsel üretmeden)
+  const [hasCustomBg, setHasCustomBg] = useState(false);
+  const [hasCustomBalloon, setHasCustomBalloon] = useState(false);
+
   const [hsNormal, setHsNormal] = useState<number>(() => {
     if (typeof window === "undefined") return 0;
     try {
@@ -363,9 +386,9 @@ export default function BalloonSafariGame({
   const [freezeRemainingMs, setFreezeRemainingMs] = useState(0);
   const [hintActive, setHintActive] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
-  const [comboMilestoneBanner, setComboMilestoneBanner] = useState<string | null>(
-    null
-  );
+  const [comboMilestoneBanner, setComboMilestoneBanner] = useState<
+    string | null
+  >(null);
 
   // İstatistik ve Hata Analizi
   const [correctPops, setCorrectPops] = useState(0);
@@ -408,6 +431,32 @@ export default function BalloonSafariGame({
     wrongPopsRef.current = wrongPops;
   }, [wrongPops]);
 
+  // Eğer public/images/background.png veya public/images/balon.png dizinde mevcutsa sessizce algıla
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let cancelled = false;
+
+    const bgProbe = new window.Image();
+    bgProbe.onload = () => {
+      if (!cancelled && bgProbe.naturalWidth > 0) {
+        setHasCustomBg(true);
+      }
+    };
+    bgProbe.src = "/images/background.png";
+
+    const balloonProbe = new window.Image();
+    balloonProbe.onload = () => {
+      if (!cancelled && balloonProbe.naturalWidth > 0) {
+        setHasCustomBalloon(true);
+      }
+    };
+    balloonProbe.src = "/images/balon.png";
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Unmount temizliği
   useEffect(() => {
     return () => {
@@ -436,11 +485,22 @@ export default function BalloonSafariGame({
         gender: preferredVoiceGender,
         rate: speechRate || 1,
       }).catch(() => {
-        // sessizce yut
+        // ignore
       });
     },
     [preferredVoiceGender, speechRate]
   );
+
+  const returnToSafariHome = useCallback(() => {
+    playClick();
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    stopAllAudio();
+    sfx.stopAllSfx();
+    setPhase("menu");
+  }, []);
 
   const finishGame = useCallback(
     (finalScoreValue: number, modeUsed: SafariGameMode) => {
@@ -517,7 +577,6 @@ export default function BalloonSafariGame({
       const count = getBalloonCountForLevel(lvl);
       const baseSpeed = getSpeedBase(diff, lvl);
 
-      // Çeldiricileri tam havuzdan seç (aynı Arapça/anlam olmasın)
       const distractorCandidates = shuffleArray(
         fullSafariPool.filter(
           (item) =>
@@ -529,9 +588,9 @@ export default function BalloonSafariGame({
       const distractors = distractorCandidates.slice(0, Math.max(1, count - 1));
       const waveWords = shuffleArray([pickedTarget, ...distractors]);
 
-      // Dikey şeritlere dengeli dağıt (balonlar üst üste binmesin)
-      const minY = 112;
-      const maxY = STAGE_H - 138;
+      // Sıcak hava balonları (kubbe + hasır sepet + alt Arapça etiket) taşmayacak şekilde şeritlere dağıtılır
+      const minY = 175;
+      const maxY = STAGE_H - 185;
       const laneStep =
         waveWords.length > 1 ? (maxY - minY) / (waveWords.length - 1) : 0;
       const shuffledLanes = shuffleArray(
@@ -541,8 +600,8 @@ export default function BalloonSafariGame({
       );
 
       const created: ActiveBalloon[] = waveWords.map((w, idx) => {
-        const startX = STAGE_W + 85 + idx * 145 + (idx % 2) * 30;
-        const baseY = shuffledLanes[idx] ?? 240;
+        const startX = STAGE_W + 95 + idx * 195 + (idx % 2) * 32;
+        const baseY = shuffledLanes[idx] ?? 290;
         return {
           uid: `b_${nextRoundNum}_${idx}_${w.id}`,
           kind: "word",
@@ -553,14 +612,14 @@ export default function BalloonSafariGame({
           baseY,
           speedX: baseSpeed * (0.92 + (idx % 3) * 0.09),
           wobblePhase: idx * 1.35,
-          wobbleSpeed: 2.1 + (idx % 3) * 0.35,
-          wobbleAmp: 16 + (idx % 2) * 8,
-          paletteIndex: (nextRoundNum + idx) % BALLOON_PALETTES.length,
+          wobbleSpeed: 2.0 + (idx % 3) * 0.32,
+          wobbleAmp: 12 + (idx % 2) * 6,
+          paletteIndex: (nextRoundNum + idx) % HOT_AIR_PALETTES.length,
           popped: false,
         };
       });
 
-      // Her birkaç turda güçlendirici veya 5x Altın Balon ekle
+      // Her birkaç turda güçlendirici veya 5x Altın Sıcak Hava Balonu ekle
       if (nextRoundNum % 3 === 0) {
         const powerKind: BalloonKind =
           nextRoundNum % 6 === 0 ? "freeze" : "hint";
@@ -568,13 +627,13 @@ export default function BalloonSafariGame({
           uid: `pwr_${nextRoundNum}_${powerKind}`,
           kind: powerKind,
           isTarget: false,
-          x: STAGE_W + 210,
-          y: 135,
-          baseY: 135,
+          x: STAGE_W + 250,
+          y: 195,
+          baseY: 195,
           speedX: baseSpeed * 1.12,
           wobblePhase: 0.7,
-          wobbleSpeed: 2.8,
-          wobbleAmp: 20,
+          wobbleSpeed: 2.6,
+          wobbleAmp: 14,
           paletteIndex: 2,
           popped: false,
         });
@@ -585,14 +644,14 @@ export default function BalloonSafariGame({
           uid: `gold_${nextRoundNum}`,
           kind: "golden",
           isTarget: false,
-          x: STAGE_W + 320,
-          y: STAGE_H - 155,
-          baseY: STAGE_H - 155,
-          speedX: baseSpeed * 1.5,
+          x: STAGE_W + 390,
+          y: STAGE_H - 195,
+          baseY: STAGE_H - 195,
+          speedX: baseSpeed * 1.45,
           wobblePhase: 1.9,
-          wobbleSpeed: 3.3,
-          wobbleAmp: 22,
-          paletteIndex: 4,
+          wobbleSpeed: 3.1,
+          wobbleAmp: 16,
+          paletteIndex: 1,
           popped: false,
         });
       }
@@ -600,7 +659,6 @@ export default function BalloonSafariGame({
       balloonsRef.current = created;
       setBalloons(created);
 
-      // Yeni turun hedef kelimesini seslendir
       setTimeout(() => {
         speakSafariWord(pickedTarget);
       }, 140);
@@ -626,7 +684,7 @@ export default function BalloonSafariGame({
     return () => clearInterval(interval);
   }, [phase, gameMode, finishGame]);
 
-  // requestAnimationFrame balon fiziği ve parçacık döngüsü
+  // requestAnimationFrame sıcak hava balonu fiziği ve parçacık döngüsü
   useEffect(() => {
     if (phase !== "playing") {
       if (rafRef.current !== null) {
@@ -639,27 +697,28 @@ export default function BalloonSafariGame({
     lastFrameTimeRef.current = performance.now();
 
     const step = (now: number) => {
-      const dt = Math.min(0.05, Math.max(0.001, (now - lastFrameTimeRef.current) / 1000));
+      const dt = Math.min(
+        0.05,
+        Math.max(0.001, (now - lastFrameTimeRef.current) / 1000)
+      );
       lastFrameTimeRef.current = now;
 
       const frozenLeft = Math.max(0, freezeUntilRef.current - now);
       setFreezeRemainingMs(frozenLeft > 50 ? frozenLeft : 0);
       const isFrozen = frozenLeft > 0;
 
-      // Balonları sağdan sola sinüs dalgasıyla kaydır
       const nextBalloons: ActiveBalloon[] = [];
       for (const b of balloonsRef.current) {
         if (b.popped) continue;
-        const nextPhase = b.wobblePhase + (isFrozen ? dt * 0.6 : dt * b.wobbleSpeed);
+        const nextPhase =
+          b.wobblePhase + (isFrozen ? dt * 0.55 : dt * b.wobbleSpeed);
         let nextX = isFrozen ? b.x : b.x - b.speedX * dt;
         const nextY = b.baseY + Math.sin(nextPhase) * b.wobbleAmp;
 
-        if (nextX < -105) {
+        if (nextX < -125) {
           if (b.kind === "word") {
-            // Kelime balonları sol kenardan çıkınca sağdan tekrar süzülür
-            nextX = STAGE_W + 95;
+            nextX = STAGE_W + 115;
           } else {
-            // Güçlendirici / altın balon kaçarsa sahneden ayrılır
             continue;
           }
         }
@@ -674,7 +733,6 @@ export default function BalloonSafariGame({
       balloonsRef.current = nextBalloons;
       setBalloons(nextBalloons);
 
-      // Patlama parçacıkları
       if (particlesRef.current.length > 0) {
         const updatedParticles = particlesRef.current
           .map((p) => ({
@@ -689,7 +747,6 @@ export default function BalloonSafariGame({
         setParticles(updatedParticles);
       }
 
-      // Uçan puan / süre rozetleri
       if (badgesRef.current.length > 0) {
         const updatedBadges = badgesRef.current
           .map((fb) => ({
@@ -715,9 +772,9 @@ export default function BalloonSafariGame({
   }, [phase]);
 
   const spawnBurst = useCallback((x: number, y: number, color: string) => {
-    const burst: PopParticle[] = Array.from({ length: 12 }, (_, idx) => {
-      const angle = (Math.PI * 2 * idx) / 12;
-      const speed = 75 + (idx % 3) * 45;
+    const burst: PopParticle[] = Array.from({ length: 14 }, (_, idx) => {
+      const angle = (Math.PI * 2 * idx) / 14;
+      const speed = 80 + (idx % 3) * 48;
       return {
         id: `pt_${Date.now()}_${idx}_${Math.random()}`,
         x,
@@ -737,8 +794,8 @@ export default function BalloonSafariGame({
     (x: number, y: number, text: string, tone: FloatingBadge["tone"]) => {
       const badge: FloatingBadge = {
         id: `fb_${Date.now()}_${Math.random()}`,
-        x: Math.max(95, Math.min(STAGE_W - 95, x)),
-        y: Math.max(70, y),
+        x: Math.max(105, Math.min(STAGE_W - 105, x)),
+        y: Math.max(92, y),
         text,
         tone,
         life: 1,
@@ -798,8 +855,8 @@ export default function BalloonSafariGame({
         setBalloons(balloonsRef.current);
         freezeUntilRef.current = performance.now() + 4000;
         setFreezeRemainingMs(4000);
-        spawnBurst(balloon.x, balloon.y, "#38BDF8");
-        pushFloatingBadge(balloon.x, balloon.y - 25, "🧊 تَجْمِيد 4s!", "cyan");
+        spawnBurst(balloon.x, balloon.y - 20, "#38BDF8");
+        pushFloatingBadge(balloon.x, balloon.y - 45, "🧊 تَجْمِيد 4s!", "cyan");
         if (!isMutedRef.current) playClick();
         return;
       }
@@ -811,8 +868,13 @@ export default function BalloonSafariGame({
         );
         setBalloons(balloonsRef.current);
         setHintActive(true);
-        spawnBurst(balloon.x, balloon.y, "#A855F7");
-        pushFloatingBadge(balloon.x, balloon.y - 25, "🔍 تَلْمِيحَة!", "emerald");
+        spawnBurst(balloon.x, balloon.y - 20, "#A855F7");
+        pushFloatingBadge(
+          balloon.x,
+          balloon.y - 45,
+          "🔍 تَلْمِيحَة!",
+          "emerald"
+        );
         if (!isMutedRef.current) playClick();
         return;
       }
@@ -827,10 +889,10 @@ export default function BalloonSafariGame({
         const updatedScore = scoreRef.current + bonusPts;
         scoreRef.current = updatedScore;
         setScore(updatedScore);
-        spawnBurst(balloon.x, balloon.y, "#FACC15");
+        spawnBurst(balloon.x, balloon.y - 20, "#FACC15");
         pushFloatingBadge(
           balloon.x,
-          balloon.y - 30,
+          balloon.y - 50,
           `🌟 جَائِزَة 5x (+${bonusPts})`,
           "gold"
         );
@@ -840,18 +902,18 @@ export default function BalloonSafariGame({
         return;
       }
 
-      // 4. Kelime Balonları
+      // 4. Sıcak Hava Kelime Balonları
       if (roundLockRef.current) return;
 
       if (balloon.isTarget && targetWord) {
         roundLockRef.current = true;
         const pal =
-          BALLOON_PALETTES[balloon.paletteIndex % BALLOON_PALETTES.length];
+          HOT_AIR_PALETTES[balloon.paletteIndex % HOT_AIR_PALETTES.length];
         balloonsRef.current = balloonsRef.current.filter(
           (b) => b.uid !== balloon.uid
         );
         setBalloons(balloonsRef.current);
-        spawnBurst(balloon.x, balloon.y, pal.fill);
+        spawnBurst(balloon.x, balloon.y - 24, pal.burst);
 
         const nextCombo = combo + 1;
         setCombo(nextCombo);
@@ -877,15 +939,19 @@ export default function BalloonSafariGame({
           setTimeLeft((prev) => prev + 2);
           pushFloatingBadge(
             balloon.x,
-            balloon.y - 25,
+            balloon.y - 45,
             `+${gained} • +2s ⏳`,
             "emerald"
           );
         } else {
-          pushFloatingBadge(balloon.x, balloon.y - 25, `+${gained}`, "emerald");
+          pushFloatingBadge(
+            balloon.x,
+            balloon.y - 45,
+            `+${gained}`,
+            "emerald"
+          );
         }
 
-        // Her 10'lu komboda kutlama + ekstra can (💚) veya +5 sn
         if (nextCombo > 0 && nextCombo % 10 === 0) {
           if (gameMode === "normal") {
             setLives((prev) => Math.min(6, prev + 1));
@@ -915,7 +981,7 @@ export default function BalloonSafariGame({
           (b) => b.uid !== balloon.uid
         );
         setBalloons(balloonsRef.current);
-        spawnBurst(balloon.x, balloon.y, "#64748B");
+        spawnBurst(balloon.x, balloon.y - 24, "#64748B");
 
         setCombo(0);
         setWrongPops((prev) => prev + 1);
@@ -952,7 +1018,7 @@ export default function BalloonSafariGame({
         }
 
         if (gameMode === "normal") {
-          pushFloatingBadge(balloon.x, balloon.y - 25, "خَطَأ! -1 ❤️", "rose");
+          pushFloatingBadge(balloon.x, balloon.y - 45, "خَطَأ! -1 ❤️", "rose");
           const remaining = lives - 1;
           setLives(remaining);
           if (remaining <= 0) {
@@ -962,7 +1028,12 @@ export default function BalloonSafariGame({
             }, 420);
           }
         } else {
-          pushFloatingBadge(balloon.x, balloon.y - 25, "خَطَأ! -3s ⏳", "rose");
+          pushFloatingBadge(
+            balloon.x,
+            balloon.y - 45,
+            "خَطَأ! -3s ⏳",
+            "rose"
+          );
           setTimeLeft((prev) => {
             const nextT = Math.max(0, prev - 3);
             if (nextT <= 0) {
@@ -1032,7 +1103,6 @@ export default function BalloonSafariGame({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Arka plan parşömen krem + zümrüt çerçeve
     const grad = ctx.createLinearGradient(0, 0, 1600, 1130);
     grad.addColorStop(0, "#FFFDF7");
     grad.addColorStop(1, "#F3EAD6");
@@ -1047,7 +1117,6 @@ export default function BalloonSafariGame({
     ctx.lineWidth = 5;
     ctx.strokeRect(62, 62, 1476, 1006);
 
-    // Üst Zümrüt Başlık Şeridi
     ctx.fillStyle = "#065F46";
     ctx.fillRect(92, 95, 1416, 150);
 
@@ -1064,7 +1133,6 @@ export default function BalloonSafariGame({
       222
     );
 
-    // Öğrenci Adı
     const displayStudent =
       studentName.trim() || "Muallimun Arapça Öğrencisi";
     ctx.fillStyle = "#1E293B";
@@ -1079,7 +1147,6 @@ export default function BalloonSafariGame({
       388
     );
 
-    // 3 Rozet Kutusu: Puan, Doğruluk Oranı, Seviye & Kombo
     const cards = [
       {
         titleAr: "النِّقَاط",
@@ -1127,7 +1194,6 @@ export default function BalloonSafariGame({
       ctx.fillText(c.val, bx + 210, by + 168);
     });
 
-    // Tekrar Edilecek Kelimeler Bölümü
     ctx.fillStyle = "#0F172A";
     ctx.font = "bold 28px sans-serif";
     ctx.fillText(
@@ -1157,13 +1223,14 @@ export default function BalloonSafariGame({
       });
     }
 
-    // Alt bilgi ve tarih
     const dateStr = new Date().toLocaleDateString("tr-TR");
     ctx.fillStyle = "#64748B";
     ctx.font = "bold 22px sans-serif";
     ctx.fillText(
       `Tarih: ${dateStr}  •  Mod: ${
-        gameMode === "normal" ? "Normal Mod (الوَضْعُ العادِيّ)" : "Zamana Karşı (تَحَدِّي الوَقْت)"
+        gameMode === "normal"
+          ? "Normal Mod (الوَضْعُ العادِيّ)"
+          : "Zamana Karşı (تَحَدِّي الوَقْت)"
       }  •  Muallimun Arapça Öğrenme Stüdyosu`,
       800,
       1020
@@ -1195,11 +1262,12 @@ export default function BalloonSafariGame({
     if (typeof document === "undefined") return;
     playClick();
 
-    const displayStudent =
-      (studentName.trim() || "Muallimun Arapça Öğrencisi")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+    const displayStudent = (
+      studentName.trim() || "Muallimun Arapça Öğrencisi"
+    )
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
 
     const reviewRowsHtml =
       missedWordsAnalytics.top3.length === 0
@@ -1255,7 +1323,8 @@ export default function BalloonSafariGame({
 
     const iframe = document.createElement("iframe");
     iframe.setAttribute("aria-hidden", "true");
-    iframe.className = "fixed -left-[9999px] top-0 w-0 h-0 border-0 opacity-0 pointer-events-none";
+    iframe.className =
+      "fixed -left-[9999px] top-0 w-0 h-0 border-0 opacity-0 pointer-events-none";
     document.body.appendChild(iframe);
     const doc = iframe.contentWindow?.document;
     if (doc) {
@@ -1282,11 +1351,11 @@ export default function BalloonSafariGame({
   // ---------------- 1. BAŞLANGIÇ / MOD VE ZORLUK SEÇİM EKRANI ----------------
   if (phase === "menu") {
     return (
-      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5">
+      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5 select-none">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-[var(--border)] pb-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
-              🎈
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Sparkles size={24} />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -1301,7 +1370,8 @@ export default function BalloonSafariGame({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[var(--muted)] font-semibold">
-                Arapça kelimeyi dinle, süzülen doğru görsel/anlam balonunu yakala! ({fullSafariPool.length} kelime hazır)
+                Sıcak hava balonlarında süzülen doğru görseli ve Arapça kelimeyi
+                sesinden yakala! ({fullSafariPool.length} kelime hazır)
               </p>
             </div>
           </div>
@@ -1314,7 +1384,7 @@ export default function BalloonSafariGame({
                 stopAllAudio();
                 onClose();
               }}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] hover:border-rose-400 flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] hover:border-rose-400 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <X size={15} />
               <span>Listeye Dön</span>
@@ -1363,7 +1433,7 @@ export default function BalloonSafariGame({
 
         {/* Oyun Modu Seçimi */}
         <div className="space-y-2">
-          <label className="block text-xs font-extrabold uppercase tracking-wide text-[var(--muted)]">
+          <label className="block text-xs font-extrabold text-[var(--muted)]">
             1. Oyun Modunu Seçin
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1421,7 +1491,8 @@ export default function BalloonSafariGame({
                 </span>
               </div>
               <p className="text-xs text-[var(--muted)] mt-1 font-medium">
-                Doğru balon +2 sn kazandırır, yanlış balon -3 sn düşürür!
+                Doğru sıcak hava balonu +2 sn kazandırır, yanlış balon -3 sn
+                düşürür!
               </p>
             </button>
           </div>
@@ -1429,14 +1500,19 @@ export default function BalloonSafariGame({
 
         {/* Zorluk Seçimi */}
         <div className="space-y-2">
-          <label className="block text-xs font-extrabold uppercase tracking-wide text-[var(--muted)]">
-            2. Uçuş Hızı & Zorluk (سَهْل / مُتَوَسِّط / صَعْب)
+          <label className="block text-xs font-extrabold text-[var(--muted)]">
+            2. Uçuş Hızı &amp; Zorluk (سَهْل / مُتَوَسِّط / صَعْب)
           </label>
           <div className="grid grid-cols-3 gap-2.5">
             {(
               [
                 { id: "easy", tr: "Kolay", ar: "سَهْل", desc: "Sakin Rüzgâr" },
-                { id: "medium", tr: "Orta", ar: "مُتَوَسِّط", desc: "Dengeli Safari" },
+                {
+                  id: "medium",
+                  tr: "Orta",
+                  ar: "مُتَوَسِّط",
+                  desc: "Dengeli Safari",
+                },
                 { id: "hard", tr: "Zor", ar: "صَعْب", desc: "Hızlı Fırtına" },
               ] as const
             ).map((d) => {
@@ -1455,7 +1531,10 @@ export default function BalloonSafariGame({
                       : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
                   }`}
                 >
-                  <span dir="rtl" className="arabic text-base sm:text-lg font-bold leading-none">
+                  <span
+                    dir="rtl"
+                    className="arabic text-base sm:text-lg font-bold leading-none"
+                  >
                     {d.ar}
                   </span>
                   <span className="text-xs font-extrabold mt-1">{d.tr}</span>
@@ -1476,17 +1555,13 @@ export default function BalloonSafariGame({
         <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3 text-xs text-[var(--muted)] space-y-1">
           <div className="font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
             <Sparkles size={14} className="text-amber-500" />
-            <span>Kademeli İşitsel Ustalaşma & Güçlendiriciler:</span>
+            <span>Sıcak Hava Balonu Kademeleri &amp; Güçlendiriciler:</span>
           </div>
           <p>
-            • <strong>Seviye 1:</strong> 2 balon, tam boy Arapça etiket •{" "}
-            <strong>Seviye 2:</strong> 3 balon, %70 küçültülmüş etiket •{" "}
-            <strong>Seviye 3 &amp; 4 (اِحْتِرَاف):</strong> 4-5 balon, Arapça yazı gizlenir ve yalnızca sesten doğru görsel/anlam avlanır!
-          </p>
-          <p>
-            • Sürpriz <strong>🧊 تَجْمِيد</strong> (4 sn dondurma),{" "}
-            <strong>🔍 تَلْمِيحَة</strong> (yanlışları soldurma) ve{" "}
-            <strong>🌟 جَائِزَة 5x</strong> (altın balon) güçlendiricilerini kaçırma!
+            <strong>Seviye 1:</strong> Hasır sepetin altında tam boy harekeli
+            Arapça etiket · <strong>Seviye 2:</strong> Küçültülmüş etiket ·{" "}
+            <strong>Seviye 3 &amp; 4 (اِحْتِرَاف):</strong> Etiket gizlenir,
+            yalnızca sesi dinleyerek doğru görselli sıcak hava balonu seçilir!
           </p>
         </div>
 
@@ -1513,8 +1588,7 @@ export default function BalloonSafariGame({
     );
 
     return (
-      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5">
-        {/* Üst Başlık */}
+      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5 select-none">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-[var(--border)] pb-3.5">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
@@ -1532,13 +1606,13 @@ export default function BalloonSafariGame({
                   شَهَادَة نَجَاح
                 </span>
                 {isNewHighScore && (
-                  <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-white text-xs font-black">
-                    🏆 YENİ REKOR!
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                    · YENİ REKOR!
                   </span>
                 )}
               </div>
               <p className="text-xs text-[var(--muted)] font-semibold">
-                Toplam {correctPops} doğru balon yakalandı • En yüksek seri:{" "}
+                Toplam {correctPops} doğru balon yakalandı · En yüksek seri:{" "}
                 {maxCombo}🔥
               </p>
             </div>
@@ -1547,13 +1621,11 @@ export default function BalloonSafariGame({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                setPhase("menu");
-              }}
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] cursor-pointer"
+              onClick={returnToSafariHome}
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
-              Mod Seçimi
+              <Home size={14} />
+              <span>Mod Seçimi</span>
             </button>
             {onClose && (
               <button
@@ -1563,7 +1635,7 @@ export default function BalloonSafariGame({
                   stopAllAudio();
                   onClose();
                 }}
-                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
+                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <X size={14} />
                 <span>Çıkış</span>
@@ -1575,40 +1647,60 @@ export default function BalloonSafariGame({
         {/* Özet Skor ve Doğruluk Kartları */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-amber-300 dark:border-amber-700/70 p-3 text-center">
-            <div dir="rtl" className="arabic text-sm font-bold text-amber-700 dark:text-amber-300">
+            <div
+              dir="rtl"
+              className="arabic text-sm font-bold text-amber-700 dark:text-amber-300"
+            >
               النِّقَاط
             </div>
-            <div className="text-[11px] font-bold text-[var(--muted)]">Toplam Puan</div>
+            <div className="text-[11px] font-bold text-[var(--muted)]">
+              Toplam Puan
+            </div>
             <div className="text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums mt-0.5">
               {score}
             </div>
           </div>
 
           <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-emerald-300 dark:border-emerald-700/70 p-3 text-center">
-            <div dir="rtl" className="arabic text-sm font-bold text-emerald-700 dark:text-emerald-300">
+            <div
+              dir="rtl"
+              className="arabic text-sm font-bold text-emerald-700 dark:text-emerald-300"
+            >
               مُعَدَّل الدِّقَّة
             </div>
-            <div className="text-[11px] font-bold text-[var(--muted)]">Doğruluk Oranı</div>
+            <div className="text-[11px] font-bold text-[var(--muted)]">
+              Doğruluk Oranı
+            </div>
             <div className="text-2xl font-black text-[#087F5B] dark:text-emerald-400 tabular-nums mt-0.5">
               %{accuracyPercent}
             </div>
           </div>
 
           <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-purple-300 dark:border-purple-700/70 p-3 text-center">
-            <div dir="rtl" className="arabic text-sm font-bold text-purple-700 dark:text-purple-300">
+            <div
+              dir="rtl"
+              className="arabic text-sm font-bold text-purple-700 dark:text-purple-300"
+            >
               المُسْتَوَى
             </div>
-            <div className="text-[11px] font-bold text-[var(--muted)]">Ulaşılan Seviye</div>
+            <div className="text-[11px] font-bold text-[var(--muted)]">
+              Ulaşılan Seviye
+            </div>
             <div className="text-2xl font-black text-[#6741D9] dark:text-purple-300 tabular-nums mt-0.5">
               {currentLevel} / 4
             </div>
           </div>
 
           <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-rose-300 dark:border-rose-700/70 p-3 text-center">
-            <div dir="rtl" className="arabic text-sm font-bold text-rose-700 dark:text-rose-300">
+            <div
+              dir="rtl"
+              className="arabic text-sm font-bold text-rose-700 dark:text-rose-300"
+            >
               سِلْسِلَة
             </div>
-            <div className="text-[11px] font-bold text-[var(--muted)]">En Yüksek Kombo</div>
+            <div className="text-[11px] font-bold text-[var(--muted)]">
+              En Yüksek Kombo
+            </div>
             <div className="text-2xl font-black text-rose-600 dark:text-rose-400 tabular-nums mt-0.5">
               {maxCombo} 🔥
             </div>
@@ -1620,7 +1712,7 @@ export default function BalloonSafariGame({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-[var(--foreground)]">
-                📊 En Çok Hata Yapılan 3 Kelime
+                En Çok Hata Yapılan 3 Kelime
               </span>
               <span
                 dir="rtl"
@@ -1640,12 +1732,12 @@ export default function BalloonSafariGame({
             <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 p-3.5 flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs sm:text-sm">
               <CheckCircle2 size={20} className="shrink-0" />
               <span>
-                Kusursuz Safari! Bu oturumda hiç yanlış balon patlatmadınız (صِفْر أَخْطَاء).
+                Kusursuz Safari! Bu oturumda hiç yanlış balon patlatmadınız
+                (صِفْر أَخْطَاء).
               </span>
             </div>
           ) : (
             <div className="space-y-3">
-              {/* SVG Sütun Grafiği (Sıfır inline style) */}
               <svg
                 viewBox="0 0 480 155"
                 className="w-full h-36 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800"
@@ -1699,7 +1791,6 @@ export default function BalloonSafariGame({
                 })}
               </svg>
 
-              {/* Tıklanabilir Sesli Hata Kartları */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {missedWordsAnalytics.top3.map((entry) => (
                   <button
@@ -1730,13 +1821,13 @@ export default function BalloonSafariGame({
           )}
         </div>
 
-        {/* Arapça Başarı Sertifikası (شَهَادَة نَجَاح) Önizleme & İndirme/Yazdırma */}
+        {/* Arapça Başarı Sertifikası (شَهَادَة نَجَاح) */}
         <div className="rounded-2xl border-2 border-[#087F5B]/60 bg-gradient-to-br from-[#FFFDF7] to-[#F4EBDC] dark:from-slate-900 dark:to-slate-800 p-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-black text-[#065F46] dark:text-emerald-400">
-                  📄 Başarı Sertifikası Hazır
+                  Başarı Sertifikası Hazır
                 </span>
                 <span
                   dir="rtl"
@@ -1746,7 +1837,8 @@ export default function BalloonSafariGame({
                 </span>
               </div>
               <p className="text-xs text-[var(--muted)] font-medium">
-                Sertifika üzerine yazılacak öğrenci adını girebilir, PNG indirebilir veya A4 yazdırabilirsiniz.
+                Sertifika üzerine yazılacak öğrenci adını girebilir, PNG
+                indirebilir veya A4 yazdırabilirsiniz.
               </p>
             </div>
             <input
@@ -1765,7 +1857,7 @@ export default function BalloonSafariGame({
               className="min-h-[46px] px-4 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <Download size={16} />
-              <span>📄 Başarı Sertifikası İndir (PNG)</span>
+              <span>Başarı Sertifikası İndir (PNG)</span>
               <span dir="rtl" className="arabic text-sm font-bold">
                 تَحْمِيل الشَّهَادَة
               </span>
@@ -1782,7 +1874,7 @@ export default function BalloonSafariGame({
           </div>
         </div>
 
-        {/* Alt Aksiyon Butonları: Hatalarımla Pratik Yap & Yeniden Oyna */}
+        {/* Alt Aksiyon Butonları */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {missedWordsAnalytics.allMissed.length > 0 && (
             <button
@@ -1792,7 +1884,7 @@ export default function BalloonSafariGame({
             >
               <Target size={17} />
               <span>
-                🎯 Hatalarımla Pratik Yap ({missedWordsAnalytics.allMissed.length})
+                Hatalarımla Pratik Yap ({missedWordsAnalytics.allMissed.length})
               </span>
               <span dir="rtl" className="arabic text-base font-bold">
                 تَدَرَّبْ عَلَى الأَخْطَاء
@@ -1815,283 +1907,549 @@ export default function BalloonSafariGame({
     );
   }
 
-  // ---------------- 3. AKTİF BALON SAFARİ OYUN SAHNESİ ----------------
+  // ---------------- 3. AKTİF PANORAMİK DOĞA & SICAK HAVA BALONU SAHNESİ ----------------
   return (
     <div
-      className={`rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-2.5 sm:p-4 shadow-md space-y-2.5 select-none transition-transform ${
+      className={`rounded-3xl border-2 border-sky-300 dark:border-sky-800 shadow-lg overflow-hidden select-none transition-transform bg-gradient-to-b from-[#4AA8EE] via-[#8CD0FA] to-[#52B788] ${
         isShaking ? "translate-x-1.5 border-rose-500" : ""
       }`}
     >
-      {/* ÜST GÖSTERGE PANELİ (HUD) - %100 Mobil Uyumlu */}
-      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 bg-white/95 dark:bg-[var(--background)] rounded-xl p-2 border border-[#E6D7BE] dark:border-[var(--border)]">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {/* Puan (النِّقَاط) */}
-          <div className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 flex items-center gap-1.5">
-            <Trophy size={14} className="text-amber-600 shrink-0" />
-            <span dir="rtl" className="arabic text-xs font-bold text-amber-800 dark:text-amber-300 hidden sm:inline">
-              النِّقَاط:
-            </span>
-            <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 tabular-nums">
-              {score}
-            </span>
-          </div>
-
-          {/* Seviye (المُسْتَوَى: 1..4) */}
-          <div className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-700 flex items-center gap-1">
-            <span dir="rtl" className="arabic text-xs font-bold text-purple-800 dark:text-purple-300">
-              المُسْتَوَى: {currentLevel}
-            </span>
-            {currentLevel >= 3 && (
-              <span
-                dir="rtl"
-                className="arabic px-1.5 py-0.2 rounded bg-[#6741D9] text-white text-[11px] font-bold"
-              >
-                اِحْتِرَاف
-              </span>
-            )}
-          </div>
-
-          {/* Kombo Sayacı (سِلْسِلَة: X 🔥) */}
-          <div className="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/50 border border-orange-300 dark:border-orange-700 flex items-center gap-1">
-            <Flame size={14} className="text-orange-500 shrink-0" />
-            <span dir="rtl" className="arabic text-xs font-bold text-orange-800 dark:text-orange-300 hidden sm:inline">
-              سِلْسِلَة:
-            </span>
-            <span className="text-xs sm:text-sm font-black text-orange-600 dark:text-orange-300 tabular-nums">
-              {combo} 🔥
-            </span>
-          </div>
-
-          {/* Can Hakları (المُحَاوَلَات: ❤️❤️❤️) veya Süre (الوَقْت: 60 ⏳) */}
-          {gameMode === "normal" ? (
-            <div className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
-              <span dir="rtl" className="arabic text-xs font-bold text-rose-800 dark:text-rose-300 hidden md:inline">
-                المُحَاوَلَات:
-              </span>
-              <span className="text-xs sm:text-sm tracking-tight" aria-label={`${lives} can`}>
-                {"❤️".repeat(Math.min(3, lives))}
-                {lives > 3 ? "💚".repeat(lives - 3) : ""}
-              </span>
-            </div>
-          ) : (
-            <div
-              className={`px-2.5 py-1 rounded-lg border flex items-center gap-1 ${
-                timeLeft <= 10
-                  ? "bg-rose-600 text-white border-rose-700 animate-pulse"
-                  : "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300"
-              }`}
-            >
-              <span dir="rtl" className="arabic text-xs font-bold">
-                الوَقْت:
-              </span>
-              <span className="text-xs sm:text-sm font-black tabular-nums">
-                {timeLeft} ⏳
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Sağ Aksiyonlar: Sesi Tekrar Dinle (إِعَادَة الصَّوْت), Sessize Al, Bitir */}
-        <div className="flex items-center gap-1.5 ml-auto">
-          <button
-            type="button"
-            onClick={() => {
-              if (isMuted) {
-                setIsMuted(false);
-                isMutedRef.current = false;
-              }
-              speakSafariWord(targetWord);
-            }}
-            className="min-h-[38px] px-2.5 sm:px-3 py-1 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer"
-            title="Hedef Kelime Sesini Tekrar Dinle"
-          >
-            <Volume2 size={15} className="shrink-0" />
-            <span dir="rtl" className="arabic text-sm font-bold">
-              إِعَادَة الصَّوْت
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const next = !isMuted;
-              setIsMuted(next);
-              isMutedRef.current = next;
-              if (next) {
-                stopAllAudio();
-                sfx.stopAllSfx();
-              }
-            }}
-            className="min-h-[38px] min-w-[38px] p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-[var(--foreground)] flex items-center justify-center cursor-pointer"
-            aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
-            title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
-          >
-            {isMuted ? <VolumeX size={16} className="text-rose-500" /> : <Volume2 size={16} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => finishGame(scoreRef.current, gameMode)}
-            className="min-h-[38px] px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-400 text-amber-900 dark:text-amber-200 text-xs font-extrabold cursor-pointer"
-            title="Oyunu Tamamla ve Sertifika Ekranını Aç"
-          >
-            Karne
-          </button>
-
-          {onClose && (
+      <div className="relative w-full">
+        {/* C) ÜST YÜZER HAP (PILL) HUD TASARIMI — Arka planı kapatmayan beyaz & sarı hap kutular + sağda kırmızı Yuva */}
+        <div className="relative sm:absolute sm:top-3 sm:inset-x-3 z-20 px-2.5 pt-2.5 pb-1 sm:p-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
+          {/* EN SOLDA: Sarı renkli 🔊 ve 🔊 إِعَادَة الصَّوْت (Sesi Tekrar Dinle) hap butonları */}
+          <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
               type="button"
               onClick={() => {
                 playClick();
-                stopAllAudio();
-                sfx.stopAllSfx();
-                onClose();
+                const next = !isMuted;
+                setIsMuted(next);
+                isMutedRef.current = next;
+                if (next) {
+                  stopAllAudio();
+                  sfx.stopAllSfx();
+                }
               }}
-              className="min-h-[38px] min-w-[38px] p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 flex items-center justify-center cursor-pointer"
-              aria-label="Oyundan Çık"
+              className="min-h-[38px] min-w-[38px] px-2.5 rounded-full bg-[#FACC15] hover:bg-[#EAB308] text-slate-900 border-2 border-white shadow-md flex items-center justify-center cursor-pointer transition-transform active:scale-95"
+              aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
+              title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
             >
-              <X size={16} />
+              {isMuted ? (
+                <VolumeX size={17} className="text-rose-700" />
+              ) : (
+                <Volume2 size={17} />
+              )}
             </button>
-          )}
-        </div>
-      </div>
 
-      {/* Aktif Efekt / Kombo Bildirim Şeridi */}
-      {(freezeRemainingMs > 0 || hintActive || comboMilestoneBanner || practiceSubset) && (
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold">
-          {practiceSubset && (
-            <span className="px-2.5 py-0.5 rounded-lg bg-purple-600 text-white">
-              🎯 Hatalarımla Pratik Modu ({practiceSubset.length} kelime)
-            </span>
-          )}
-          {freezeRemainingMs > 0 && (
-            <span className="px-2.5 py-0.5 rounded-lg bg-sky-500 text-white flex items-center gap-1">
-              <Snowflake size={13} />
-              <span>🧊 تَجْمِيد Aktif ({(freezeRemainingMs / 1000).toFixed(1)}s)</span>
-            </span>
-          )}
-          {hintActive && (
-            <span className="px-2.5 py-0.5 rounded-lg bg-purple-600 text-white flex items-center gap-1">
-              <Search size={13} />
-              <span>🔍 تَلْمِيحَة: Yanlış balonlar solduruldu!</span>
-            </span>
-          )}
-          {comboMilestoneBanner && (
-            <span
-              dir="rtl"
-              className="arabic px-3 py-0.5 rounded-lg bg-amber-500 text-white text-sm font-bold animate-bounce"
+            <button
+              type="button"
+              onClick={() => {
+                if (isMuted) {
+                  setIsMuted(false);
+                  isMutedRef.current = false;
+                }
+                speakSafariWord(targetWord);
+              }}
+              className="min-h-[38px] px-3 sm:px-4 py-1 rounded-full bg-[#FACC15] hover:bg-[#EAB308] text-slate-900 border-2 border-white shadow-md flex items-center gap-1.5 font-black cursor-pointer transition-transform active:scale-95 whitespace-nowrap shrink-0"
+              title="Hedef Kelime Sesini Tekrar Dinle"
             >
-              {comboMilestoneBanner}
-            </span>
-          )}
-        </div>
-      )}
+              <Volume2 size={16} className="shrink-0" />
+              <span dir="rtl" className="arabic text-sm sm:text-base font-bold">
+                إِعَادَة الصَّوْت
+              </span>
+            </button>
+          </div>
 
-      {/* SAFARİ GÖKYÜZÜ OYUN SAHNESİ (SVG 60FPS + Dokunmatik Uyumlu) */}
-      <div className="relative w-full overflow-hidden rounded-2xl border-2 border-sky-300 dark:border-sky-800 shadow-inner bg-gradient-to-b from-sky-300 via-sky-100 to-amber-100 dark:from-slate-900 dark:via-sky-950 dark:to-emerald-950">
+          {/* ORTA / SAĞ: Beyaz yuvarlatılmış hap kutular + En Sağda Kırmızı Yuva (🏠) butonu */}
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 ml-auto pointer-events-auto">
+            {/* النِّقَاط: 0 */}
+            <div className="min-h-[36px] px-3 py-1 rounded-full bg-white/95 text-slate-900 border border-white shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <span dir="rtl" className="arabic text-xs sm:text-sm font-bold">
+                النِّقَاط:
+              </span>
+              <span className="text-xs sm:text-sm font-black text-amber-600 tabular-nums">
+                {score}
+              </span>
+            </div>
+
+            {/* المُسْتَوَى: 1 */}
+            <div className="min-h-[36px] px-3 py-1 rounded-full bg-white/95 text-slate-900 border border-white shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <span dir="rtl" className="arabic text-xs sm:text-sm font-bold">
+                المُسْتَوَى: {currentLevel}
+              </span>
+              {currentLevel >= 3 && (
+                <span
+                  dir="rtl"
+                  className="arabic text-[11px] font-bold text-[#6741D9]"
+                >
+                  · اِحْتِرَاف
+                </span>
+              )}
+              {combo > 1 && (
+                <span className="text-xs font-black text-orange-600 flex items-center gap-0.5 tabular-nums">
+                  <Flame size={12} className="text-orange-500" />
+                  {combo}
+                </span>
+              )}
+            </div>
+
+            {/* المُحَاوَلَات: ❤️❤️❤️ (veya Süre) */}
+            {gameMode === "normal" ? (
+              <div className="min-h-[36px] px-3 py-1 rounded-full bg-white/95 text-slate-900 border border-white shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <span
+                  dir="rtl"
+                  className="arabic text-xs sm:text-sm font-bold hidden md:inline"
+                >
+                  المُحَاوَلَات:
+                </span>
+                <span
+                  className="text-xs sm:text-sm tracking-tight"
+                  aria-label={`${lives} can`}
+                >
+                  {"❤️".repeat(Math.min(3, lives))}
+                  {lives > 3 ? "💚".repeat(lives - 3) : ""}
+                </span>
+              </div>
+            ) : (
+              <div
+                className={`min-h-[36px] px-3 py-1 rounded-full border shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                  timeLeft <= 10
+                    ? "bg-rose-600 text-white border-white"
+                    : "bg-white/95 text-slate-900 border-white"
+                }`}
+              >
+                <span dir="rtl" className="arabic text-xs sm:text-sm font-bold">
+                  الوَقْت:
+                </span>
+                <span className="text-xs sm:text-sm font-black tabular-nums">
+                  {timeLeft} ⏳
+                </span>
+              </div>
+            )}
+
+            {/* Sertifika / Karne Hap Butonu */}
+            <button
+              type="button"
+              onClick={() => finishGame(scoreRef.current, gameMode)}
+              className="min-h-[36px] px-2.5 sm:px-3 py-1 rounded-full bg-white/95 hover:bg-amber-50 text-amber-800 border border-white shadow-md text-xs font-extrabold cursor-pointer whitespace-nowrap shrink-0"
+              title="Oyunu Tamamla ve Sertifika Ekranını Aç"
+            >
+              Karne
+            </button>
+
+            {/* SAĞDA KIRMIZI YUVA (🏠) BUTONU */}
+            <button
+              type="button"
+              onClick={returnToSafariHome}
+              className="min-h-[38px] min-w-[38px] px-2.5 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-white shadow-md flex items-center justify-center gap-1 cursor-pointer transition-transform active:scale-95 shrink-0"
+              aria-label="Safari Ana Menüsü (Yuva)"
+              title="Safari Ana Menüsü (Yuva)"
+            >
+              <Home size={17} />
+            </button>
+          </div>
+        </div>
+
+        {/* Aktif Güçlendirici / Kombo Yüzer Bildirimi */}
+        {(freezeRemainingMs > 0 ||
+          hintActive ||
+          comboMilestoneBanner ||
+          practiceSubset) && (
+          <div className="relative sm:absolute sm:top-14 sm:inset-x-4 z-20 px-2 pb-1 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold pointer-events-none">
+            {practiceSubset && (
+              <span className="px-3 py-0.5 rounded-full bg-white/95 text-purple-800 shadow-sm">
+                Hatalarımla Pratik ({practiceSubset.length} kelime)
+              </span>
+            )}
+            {freezeRemainingMs > 0 && (
+              <span className="px-3 py-0.5 rounded-full bg-sky-500 text-white shadow-sm flex items-center gap-1">
+                <Snowflake size={13} />
+                <span>
+                  🧊 تَجْمِيد ({(freezeRemainingMs / 1000).toFixed(1)}s)
+                </span>
+              </span>
+            )}
+            {hintActive && (
+              <span className="px-3 py-0.5 rounded-full bg-purple-600 text-white shadow-sm flex items-center gap-1">
+                <Search size={13} />
+                <span>🔍 تَلْمِيحَة Aktif</span>
+              </span>
+            )}
+            {comboMilestoneBanner && (
+              <span
+                dir="rtl"
+                className="arabic px-3.5 py-0.5 rounded-full bg-amber-500 text-white text-sm font-bold shadow-sm"
+              >
+                {comboMilestoneBanner}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* A) PANORAMİK DOĞA & SAFARİ MANZARASI + B) GERÇEK SICAK HAVA BALONLARI (60FPS SVG) */}
         <svg
           viewBox={`0 0 ${STAGE_W} ${STAGE_H}`}
-          className="w-full h-[310px] sm:h-[430px] lg:h-[480px] block touch-manipulation"
+          className="w-full h-[330px] sm:h-[470px] lg:h-[550px] block touch-manipulation"
           role="application"
           aria-label="Balon Safari Oyun Alanı"
         >
           <defs>
-            <linearGradient id="safariGoldGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#FEF08A" />
-              <stop offset="50%" stopColor="#F59E0B" />
-              <stop offset="100%" stopColor="#B45309" />
+            <linearGradient id="safariSkyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#46A5ED" />
+              <stop offset="52%" stopColor="#8ED1FC" />
+              <stop offset="82%" stopColor="#D7F3E3" />
+              <stop offset="100%" stopColor="#B7E4C7" />
             </linearGradient>
-            <linearGradient id="safariIceGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#E0F2FE" />
+
+            <linearGradient id="safariRiverGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#67D4FA" />
+              <stop offset="45%" stopColor="#29B6F6" />
               <stop offset="100%" stopColor="#0284C7" />
             </linearGradient>
-            <linearGradient id="safariHintGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F3E8FF" />
-              <stop offset="100%" stopColor="#7C3AED" />
+
+            <linearGradient id="safariSandPathGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#F8E2B0" />
+              <stop offset="100%" stopColor="#E3BA73" />
             </linearGradient>
-            <clipPath id="balloonImgCircle">
-              <circle cx="0" cy="-6" r="46" />
+
+            {/* Sıcak Hava Balonu Kubbe Kırpma Maskesi */}
+            <clipPath id="hotAirDomeClip">
+              <path d="M 0 -98 C 60 -98, 84 -52, 73 2 C 64 40, 35 58, 24 72 L -24 72 C -35 58, -64 40, -73 2 C -84 -52, -60 -98, 0 -98 Z" />
+            </clipPath>
+
+            {/* Kubbe Ortasındaki Kelime Görseli Yuvarlatılmış Kare Maskesi */}
+            <clipPath id="hotAirWordImgClip">
+              <rect x="-42" y="-68" width="84" height="84" rx="18" />
             </clipPath>
           </defs>
 
-          {/* Arka Plan Safari Bulutları & Tepeler */}
-          <g opacity="0.55">
-            <ellipse cx="180" cy="78" rx="68" ry="24" fill="#FFFFFF" />
-            <ellipse cx="220" cy="72" rx="48" ry="20" fill="#FFFFFF" />
-            <ellipse cx="740" cy="96" rx="76" ry="25" fill="#FFFFFF" />
-            <ellipse cx="788" cy="88" rx="52" ry="20" fill="#FFFFFF" />
-          </g>
-
-          {/* Alt Safari Savan Tepeleri */}
-          <path
-            d={`M0 ${STAGE_H} Q 260 ${STAGE_H - 64} 540 ${STAGE_H - 26} T ${STAGE_W} ${STAGE_H - 42} L ${STAGE_W} ${STAGE_H} Z`}
-            fill="#D97706"
-            opacity="0.22"
-          />
-          <path
-            d={`M0 ${STAGE_H} Q 320 ${STAGE_H - 36} 690 ${STAGE_H - 52} T ${STAGE_W} ${STAGE_H - 18} L ${STAGE_W} ${STAGE_H} Z`}
-            fill="#15803D"
-            opacity="0.25"
+          {/* 1. Gökyüzü Katmanı */}
+          <rect
+            x="0"
+            y="0"
+            width={STAGE_W}
+            height={STAGE_H}
+            fill="url(#safariSkyGrad)"
           />
 
-          {/* Sol Üst Dinleme İpucu Kutusu */}
-          <g
-            transform="translate(18, 16)"
-            onClick={() => speakSafariWord(targetWord)}
-            className="cursor-pointer"
-          >
-            <rect
+          {/* Eğer public/images/background.png mevcutsa en arka plana çiz */}
+          {hasCustomBg && (
+            <image
+              href="/images/background.png"
               x="0"
               y="0"
-              width="290"
-              height="44"
-              rx="14"
-              fill="#065F46"
-              opacity="0.92"
+              width={STAGE_W}
+              height={STAGE_H}
+              preserveAspectRatio="xMidYMid slice"
             />
-            <text
-              x="145"
-              y="28"
-              textAnchor="middle"
-              fill="#ECFDF5"
-              fontSize="15"
-              fontWeight="800"
-            >
-              🎧 Tur #{roundNumber} • Sesi Dinle ve Doğru Balonu Patlat!
-            </text>
-          </g>
+          )}
 
-          {/* Süzülen Balonlar */}
+          {!hasCustomBg && (
+            <g aria-hidden="true">
+              {/* Yumuşak Bulut Kümeleri */}
+              <g opacity="0.88" fill="#FFFFFF">
+                <ellipse cx="185" cy="96" rx="58" ry="20" />
+                <ellipse cx="222" cy="88" rx="44" ry="22" />
+                <ellipse cx="148" cy="100" rx="36" ry="15" />
+
+                <ellipse cx="520" cy="78" rx="64" ry="19" />
+                <ellipse cx="562" cy="72" rx="44" ry="18" />
+
+                <ellipse cx="890" cy="105" rx="68" ry="21" />
+                <ellipse cx="938" cy="96" rx="48" ry="19" />
+                <ellipse cx="845" cy="108" rx="38" ry="15" />
+              </g>
+
+              {/* Uzak Sisli Sıradağlar */}
+              <path
+                d="M 0 365 L 130 278 L 255 335 L 395 248 L 515 318 L 690 232 L 835 322 L 980 258 L 1120 332 L 1120 420 L 0 420 Z"
+                fill="#93B7D6"
+                opacity="0.65"
+              />
+
+              {/* Arka Planda Karlı Dağ Zirveleri (Sol Işıklı Yamacı + Sağ Gölgeli Yamacı + Beyaz Kar Örtüsü) */}
+              <g>
+                {/* Ana Merkez Karlı Dağ */}
+                <polygon
+                  points="350,375 565,142 565,375"
+                  fill="#647D96"
+                />
+                <polygon
+                  points="565,142 785,375 565,375"
+                  fill="#496178"
+                />
+                {/* Karlı Zirve Başlığı */}
+                <polygon
+                  points="565,142 496,217 522,208 544,228 565,205 565,142"
+                  fill="#FFFFFF"
+                />
+                <polygon
+                  points="565,142 565,205 588,226 610,209 636,219"
+                  fill="#E2E8F0"
+                />
+
+                {/* Sağ Yan Karlı Zirve */}
+                <polygon
+                  points="645,380 805,195 805,380"
+                  fill="#5C758E"
+                />
+                <polygon
+                  points="805,195 965,380 805,380"
+                  fill="#41586E"
+                />
+                <polygon
+                  points="805,195 754,250 778,244 805,260"
+                  fill="#F8FAFC"
+                />
+                <polygon
+                  points="805,195 805,260 828,246 856,252"
+                  fill="#CBD5E1"
+                />
+              </g>
+
+              {/* Orta Plan Yeşil Tepeler */}
+              <path
+                d="M 0 392 Q 210 326 455 372 T 890 356 Q 1020 346 1120 374 L 1120 510 L 0 510 Z"
+                fill="#74C69D"
+              />
+              <path
+                d="M 0 426 Q 260 374 548 408 T 1120 398 L 1120 560 L 0 560 Z"
+                fill="#52B788"
+              />
+
+              {/* Vadi Sırtındaki Çam Ağaçları (Pine Trees) */}
+              {[
+                { x: 245, y: 366, s: 0.9 },
+                { x: 278, y: 372, s: 1.08 },
+                { x: 312, y: 378, s: 0.85 },
+                { x: 668, y: 378, s: 0.92 },
+                { x: 702, y: 384, s: 0.8 },
+              ].map((pt, idx) => (
+                <g
+                  key={`pine_${idx}`}
+                  transform={`translate(${pt.x}, ${pt.y}) scale(${pt.s})`}
+                >
+                  <rect x="-4" y="14" width="8" height="16" fill="#5D4037" />
+                  <polygon points="0,-34 -20,-4 20,-4" fill="#1B4332" />
+                  <polygon points="0,-20 -24,10 24,10" fill="#2D6A4F" />
+                  <polygon points="0,-6 -28,20 28,20" fill="#1B4332" />
+                </g>
+              ))}
+
+              {/* Ön Plan Zengin Yeşil Çayır Zemini */}
+              <path
+                d={`M 0 468 Q 290 438 560 462 T 1120 452 L 1120 ${STAGE_H} L 0 ${STAGE_H} Z`}
+                fill="#40916C"
+              />
+              <path
+                d={`M 0 522 Q 280 492 580 524 T 1120 508 L 1120 ${STAGE_H} L 0 ${STAGE_H} Z`}
+                fill="#2D6A4F"
+              />
+
+              {/* Kumsal Patika (Nehrin Yanında Kıvrılan Altın Kumsal Yol) */}
+              <path
+                d={`M 518 392 C 472 426, 404 456, 434 504 C 458 544, 392 582, 345 ${STAGE_H} L 468 ${STAGE_H} C 504 580, 548 542, 520 500 C 494 460, 526 426, 556 392 Z`}
+                fill="url(#safariSandPathGrad)"
+              />
+
+              {/* Ortada Kıvrılan Mavi Nehir */}
+              <path
+                d={`M 562 390 C 594 424, 650 452, 608 500 C 570 544, 622 582, 668 ${STAGE_H} L 502 ${STAGE_H} C 476 580, 444 544, 488 498 C 528 456, 538 424, 542 390 Z`}
+                fill="url(#safariRiverGrad)"
+              />
+              {/* Nehir Su Parıltıları */}
+              <path
+                d="M 552 426 Q 576 432 562 444 M 536 488 Q 566 496 544 512 M 554 556 Q 594 566 572 584"
+                stroke="#E0F7FA"
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.78"
+              />
+
+              {/* Sağda Safari Akasya Ağaçları (Flat-Topped Acacia Trees) */}
+              <g transform="translate(955, 442)">
+                {/* Gövde ve Çatallı Dallar */}
+                <path
+                  d="M -6 38 L -3 -18 L -48 -54 M 0 38 L 3 -20 L 46 -56 M 0 -18 L -12 -60 M 2 -18 L 18 -60"
+                  stroke="#5D4037"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                {/* Düz Tepeli Akasya Taç Katmanları */}
+                <ellipse cx="-42" cy="-58" rx="46" ry="12" fill="#1B4332" />
+                <ellipse cx="42" cy="-60" rx="48" ry="12" fill="#1B4332" />
+                <ellipse cx="0" cy="-68" rx="74" ry="16" fill="#2D6A4F" />
+                <ellipse cx="-6" cy="-72" rx="60" ry="12" fill="#52B788" />
+              </g>
+
+              <g transform="translate(832, 434) scale(0.72)">
+                <path
+                  d="M -4 34 L -2 -16 L -38 -46 M 2 34 L 3 -16 L 38 -48 M 0 -16 L 0 -52"
+                  stroke="#5D4037"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <ellipse cx="-34" cy="-50" rx="38" ry="10" fill="#1B4332" />
+                <ellipse cx="34" cy="-52" rx="38" ry="10" fill="#1B4332" />
+                <ellipse cx="0" cy="-58" rx="58" ry="14" fill="#2D6A4F" />
+                <ellipse cx="0" cy="-62" rx="44" ry="10" fill="#52B788" />
+              </g>
+
+              {/* Solda Büyük Gövdeli Ağaç */}
+              <g transform="translate(88, 468)">
+                {/* Kökler ve Kalın Gövde */}
+                <path
+                  d="M -28 74 Q -16 42 -16 -22 L 18 -22 Q 18 42 32 74 Z"
+                  fill="#5D4037"
+                />
+                <path
+                  d="M -6 66 Q -4 22 -6 -20"
+                  stroke="#795548"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M -10 -18 L -42 -58 M 10 -18 L 44 -54 M 0 -22 L 0 -68"
+                  stroke="#5D4037"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                />
+                {/* Gür Yaprak Kümeleri */}
+                <circle cx="-46" cy="-68" r="38" fill="#1B4332" />
+                <circle cx="46" cy="-64" r="38" fill="#1B4332" />
+                <circle cx="0" cy="-94" r="48" fill="#2D6A4F" />
+                <circle cx="-22" cy="-84" r="36" fill="#40916C" />
+                <circle cx="24" cy="-82" r="34" fill="#52B788" />
+              </g>
+
+              {/* Ahşap Çiftlik Çiti (Sol Çayır ve Sağ Çayır Kenarı) */}
+              <g>
+                {/* Sol Ahşap Çit */}
+                <rect
+                  x="164"
+                  y="492"
+                  width="196"
+                  height="7"
+                  rx="2"
+                  fill="#8D6E63"
+                />
+                <rect
+                  x="164"
+                  y="508"
+                  width="196"
+                  height="7"
+                  rx="2"
+                  fill="#795548"
+                />
+                {[172, 216, 260, 304, 348].map((fx) => (
+                  <polygon
+                    key={`fence_l_${fx}`}
+                    points={`${fx},480 ${fx + 10},480 ${fx + 10},526 ${fx},526`}
+                    fill="#6D4C41"
+                  />
+                ))}
+
+                {/* Sağ Ahşap Çit */}
+                <rect
+                  x="706"
+                  y="494"
+                  width="174"
+                  height="7"
+                  rx="2"
+                  fill="#8D6E63"
+                />
+                <rect
+                  x="706"
+                  y="510"
+                  width="174"
+                  height="7"
+                  rx="2"
+                  fill="#795548"
+                />
+                {[714, 756, 798, 840, 870].map((fx) => (
+                  <polygon
+                    key={`fence_r_${fx}`}
+                    points={`${fx},482 ${fx + 10},482 ${fx + 10},528 ${fx},528`}
+                    fill="#6D4C41"
+                  />
+                ))}
+              </g>
+
+              {/* Ön Planda Çimen Kümeleri ve Renkli Papatyalar / Çiçekler */}
+              {[
+                { x: 64, y: 576, petal: "#FFFFFF", center: "#FACC15" },
+                { x: 136, y: 590, petal: "#FB7185", center: "#FEF08A" },
+                { x: 218, y: 568, petal: "#FFFFFF", center: "#FACC15" },
+                { x: 292, y: 592, petal: "#FDE047", center: "#D97706" },
+                { x: 734, y: 574, petal: "#FFFFFF", center: "#FACC15" },
+                { x: 818, y: 592, petal: "#C084FC", center: "#FEF08A" },
+                { x: 912, y: 568, petal: "#FFFFFF", center: "#FACC15" },
+                { x: 1004, y: 586, petal: "#FB7185", center: "#FACC15" },
+                { x: 1062, y: 564, petal: "#FFFFFF", center: "#FACC15" },
+              ].map((fl, idx) => (
+                <g
+                  key={`flower_${idx}`}
+                  transform={`translate(${fl.x}, ${fl.y})`}
+                >
+                  {/* Çimen Kümesi */}
+                  <path
+                    d="M -12 14 Q -16 -2 -22 -6 M -6 14 Q -6 -6 -10 -12 M 2 14 Q 6 -4 12 -10 M 10 14 Q 16 0 22 -4"
+                    stroke="#1B4332"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Çiçek / Papatya Taç Yaprakları */}
+                  <circle cx="-6" cy="-8" r="5" fill={fl.petal} />
+                  <circle cx="6" cy="-8" r="5" fill={fl.petal} />
+                  <circle cx="0" cy="-14" r="5" fill={fl.petal} />
+                  <circle cx="0" cy="-2" r="5" fill={fl.petal} />
+                  <circle cx="0" cy="-8" r="4.2" fill={fl.center} />
+                </g>
+              ))}
+            </g>
+          )}
+
+          {/* B) GERÇEK SICAK HAVA BALONLARI (Kubbe + Merkez Görsel + Çapraz Halatlar + Hasır Sepet + Alt Mavi/Turuncu Etiket) */}
           {balloons.map((b) => {
             const pal =
-              BALLOON_PALETTES[b.paletteIndex % BALLOON_PALETTES.length];
+              HOT_AIR_PALETTES[b.paletteIndex % HOT_AIR_PALETTES.length];
             const isDimmedByHint =
               hintActive && b.kind === "word" && !b.isTarget;
             const hasValidImage =
-              Boolean(b.word?.imageUrl) &&
-              !failedImages[b.word?.id || ""];
+              Boolean(b.word?.imageUrl) && !failedImages[b.word?.id || ""];
 
-            const fillStyle =
-              b.kind === "golden"
-                ? "url(#safariGoldGrad)"
-                : b.kind === "freeze"
-                ? "url(#safariIceGrad)"
+            const stripeOuterColor =
+              b.kind === "freeze"
+                ? "#0284C7"
                 : b.kind === "hint"
-                ? "url(#safariHintGrad)"
-                : pal.fill;
+                ? "#7C3AED"
+                : b.kind === "golden"
+                ? "#D97706"
+                : pal.outerStripe;
 
-            // Pedagojik Kademe Kuralı:
-            // Seviye 1: %100 Arapça etiket
-            // Seviye 2: %70 küçültülmüş Arapça etiket
-            // Seviye 3 ve 4 (اِحْتِرَاف): Arapça yazı tamamen gizlenir!
+            const stripeMidColor =
+              b.kind === "freeze"
+                ? "#7DD3FC"
+                : b.kind === "hint"
+                ? "#C4B5FD"
+                : b.kind === "golden"
+                ? "#FDE047"
+                : pal.midStripe;
+
+            // Pedagojik Kademe: Seviye 1 tam boy, Seviye 2 biraz küçük, Seviye 3 ve 4 etiket gizli!
             const showArabicLabel = b.kind === "word" && currentLevel <= 2;
-            const labelScale = currentLevel === 2 ? 0.7 : 1;
+            const labelScale = currentLevel === 2 ? 0.8 : 1;
 
             return (
               <g
                 key={b.uid}
                 transform={`translate(${b.x.toFixed(1)}, ${b.y.toFixed(1)})`}
-                opacity={isDimmedByHint ? 0.24 : 1}
+                opacity={isDimmedByHint ? 0.25 : 1}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -2099,23 +2457,22 @@ export default function BalloonSafariGame({
                 }}
                 className="cursor-pointer"
               >
-                {/* Geniş Dokunmatik Yakalama Alanı (Mobil 360px+ ergonomisi) */}
-                <circle cx="0" cy="0" r="82" fill="transparent" />
-
-                {/* Balon İpi */}
-                <path
-                  d="M 0 74 Q -8 96 4 116 Q 10 128 0 140"
-                  stroke="#475569"
-                  strokeWidth="2.5"
-                  fill="none"
+                {/* Geniş Dokunmatik Yakalama Alanı (Mobil ergonomisi) */}
+                <rect
+                  x="-86"
+                  y="-106"
+                  width="172"
+                  height="274"
+                  rx="40"
+                  fill="transparent"
                 />
 
-                {/* Altın Balon Halesi */}
+                {/* Altın Sıcak Hava Balonu Parıltı Halesi */}
                 {b.kind === "golden" && (
                   <circle
                     cx="0"
-                    cy="-4"
-                    r="78"
+                    cy="-22"
+                    r="88"
                     fill="none"
                     stroke="#FDE047"
                     strokeWidth="4"
@@ -2123,44 +2480,143 @@ export default function BalloonSafariGame({
                   />
                 )}
 
-                {/* Balon Gövdesi */}
-                <ellipse
-                  cx="0"
-                  cy="-4"
-                  rx="66"
-                  ry="74"
-                  fill={fillStyle}
-                  stroke="#FFFFFF"
-                  strokeWidth="3"
-                />
+                {hasCustomBalloon && b.kind === "word" ? (
+                  <image
+                    href="/images/balon.png"
+                    x="-82"
+                    y="-102"
+                    width="164"
+                    height="224"
+                    preserveAspectRatio="xMidYMid contain"
+                  />
+                ) : (
+                  <g>
+                    {/* 1. SICAK HAVA BALONU KUBBESİ (#F4F6F0 Krem/Fildişi + Dikey Yeşil/Gri Şeritler) */}
+                    <g clipPath="url(#hotAirDomeClip)">
+                      {/* Fildişi Zemin */}
+                      <rect
+                        x="-90"
+                        y="-105"
+                        width="180"
+                        height="185"
+                        fill="#F4F6F0"
+                      />
+                      {/* Dış Sol ve Dış Sağ Yeşil Dikey Şeritler */}
+                      <path
+                        d="M -90 -105 L -46 -105 C -62 -46, -54 24, -22 76 L -90 76 Z"
+                        fill={stripeOuterColor}
+                      />
+                      <path
+                        d="M 90 -105 L 46 -105 C 62 -46, 54 24, 22 76 L 90 76 Z"
+                        fill={stripeOuterColor}
+                      />
+                      {/* İç Sol ve İç Sağ Gri/Yeşil İnce Şeritler */}
+                      <path
+                        d="M -46 -105 L -28 -105 C -38 -46, -32 24, -13 76 L -22 76 C -54 24, -62 -46, -46 -105 Z"
+                        fill={stripeMidColor}
+                      />
+                      <path
+                        d="M 46 -105 L 28 -105 C 38 -46, 32 24, 13 76 L 22 76 C 54 24, 62 -46, 46 -105 Z"
+                        fill={stripeMidColor}
+                      />
+                      {/* Yatay Kubbe Dikiş Kuşakları */}
+                      <path
+                        d="M -84 -42 Q 0 -30 84 -42 M -76 16 Q 0 26 76 16"
+                        stroke="#CBD5CE"
+                        strokeWidth="1.6"
+                        fill="none"
+                        opacity="0.75"
+                      />
+                      {/* Üst Kubbe Tepesi */}
+                      <ellipse
+                        cx="0"
+                        cy="-96"
+                        rx="26"
+                        ry="7"
+                        fill={stripeOuterColor}
+                      />
+                    </g>
 
-                {/* Parlama Efekti */}
-                <ellipse
-                  cx="-24"
-                  cy="-34"
-                  rx="13"
-                  ry="22"
-                  fill="#FFFFFF"
-                  opacity="0.32"
-                  transform="rotate(-22 -24 -34)"
-                />
+                    {/* Kubbe Dış Konturu */}
+                    <path
+                      d="M 0 -98 C 60 -98, 84 -52, 73 2 C 64 40, 35 58, 24 72 L -24 72 C -35 58, -64 40, -73 2 C -84 -52, -60 -98, 0 -98 Z"
+                      fill="none"
+                      stroke="#FFFFFF"
+                      strokeWidth="3"
+                    />
 
-                {/* Balon Düğümü */}
-                <polygon points="-8,70 8,70 12,79 -12,79" fill={pal.dark} />
+                    {/* Kubbe Boğaz Bileziği & Brülör Alevi */}
+                    <rect
+                      x="-25"
+                      y="69"
+                      width="50"
+                      height="7"
+                      rx="3"
+                      fill="#475569"
+                    />
+                    <ellipse cx="0" cy="81" rx="5" ry="6" fill="#F59E0B" />
+                    <ellipse cx="0" cy="82" rx="2.5" ry="3.5" fill="#FEF08A" />
 
-                {/* Balon Merkezi: Görsel (veya Türkçe Anlam / Güçlendirici İkonu) */}
+                    {/* 3. ÇAPRAZ HALATLAR & DOKULU HASIR SEPET (#F3E5AB) */}
+                    <g stroke="#5D4037" strokeWidth="1.9" strokeLinecap="round">
+                      <line x1="-21" y1="76" x2="-18" y2="92" />
+                      <line x1="21" y1="76" x2="18" y2="92" />
+                      {/* Çapraz Halatlar */}
+                      <line x1="-18" y1="76" x2="14" y2="92" />
+                      <line x1="18" y1="76" x2="-14" y2="92" />
+                    </g>
+
+                    {/* Dokulu Hasır Sepet (#F3E5AB) */}
+                    <rect
+                      x="-22"
+                      y="92"
+                      width="44"
+                      height="27"
+                      rx="5"
+                      fill="#F3E5AB"
+                      stroke="#B4863E"
+                      strokeWidth="2.2"
+                    />
+                    {/* Sepet Hasır Örgü Çizgileri */}
+                    <path
+                      d="M -20 101 L 20 101 M -20 110 L 20 110 M -10 93 L -10 118 M 0 93 L 0 118 M 10 93 L 10 118"
+                      stroke="#CCA15A"
+                      strokeWidth="1.4"
+                    />
+                    {/* Sepet Üst Deri/Ahşap Kenarlığı */}
+                    <rect
+                      x="-24"
+                      y="90"
+                      width="48"
+                      height="6"
+                      rx="3"
+                      fill="#BC8A42"
+                    />
+                  </g>
+                )}
+
+                {/* 2. KUBBENİN TAM ORTASINDA BÜYÜK VE NET KELİME GÖRSELİ */}
                 {b.kind === "word" && b.word ? (
                   hasValidImage ? (
                     <g>
-                      <circle cx="0" cy="-6" r="48" fill="#FFFFFF" />
+                      <rect
+                        x="-45"
+                        y="-71"
+                        width="90"
+                        height="90"
+                        rx="20"
+                        fill="#FFFFFF"
+                        stroke="#E2E8F0"
+                        strokeWidth="2.5"
+                      />
                       <image
                         href={b.word.imageUrl}
-                        x="-46"
-                        y="-52"
-                        width="92"
-                        height="92"
+                        x="-42"
+                        y="-68"
+                        width="84"
+                        height="84"
                         preserveAspectRatio="xMidYMid slice"
-                        clipPath="url(#balloonImgCircle)"
+                        clipPath="url(#hotAirWordImgClip)"
                         onError={() => {
                           if (b.word?.id) {
                             setFailedImages((prev) => ({
@@ -2170,62 +2626,64 @@ export default function BalloonSafariGame({
                           }
                         }}
                       />
-                      <circle
-                        cx="0"
-                        cy="-6"
-                        r="47"
-                        fill="none"
-                        stroke="#FFFFFF"
-                        strokeWidth="3"
-                      />
                     </g>
                   ) : (
                     <g>
                       <rect
-                        x="-52"
-                        y="-38"
-                        width="104"
-                        height="64"
-                        rx="14"
+                        x="-48"
+                        y="-60"
+                        width="96"
+                        height="68"
+                        rx="16"
                         fill="#FFFFFF"
-                        opacity="0.96"
+                        stroke="#CBD5E1"
+                        strokeWidth="2"
                       />
                       <text
                         x="0"
-                        y="-2"
+                        y="-28"
                         textAnchor="middle"
                         fill="#0F172A"
                         fontSize="14"
                         fontWeight="800"
                       >
-                        {b.word.meaningTr.slice(0, 16)}
+                        {b.word.meaningTr.slice(0, 15)}
                       </text>
-                      {b.word.meaningTr.length > 16 && (
+                      {b.word.meaningTr.length > 15 && (
                         <text
                           x="0"
-                          y="16"
+                          y="-10"
                           textAnchor="middle"
                           fill="#334155"
                           fontSize="12"
                           fontWeight="700"
                         >
-                          {b.word.meaningTr.slice(16, 32)}
+                          {b.word.meaningTr.slice(15, 30)}
                         </text>
                       )}
                     </g>
                   )
                 ) : b.kind === "freeze" ? (
                   <g>
-                    <text x="0" y="-8" textAnchor="middle" fontSize="36">
+                    <rect
+                      x="-42"
+                      y="-64"
+                      width="84"
+                      height="76"
+                      rx="18"
+                      fill="#FFFFFF"
+                      opacity="0.95"
+                    />
+                    <text x="0" y="-26" textAnchor="middle" fontSize="32">
                       🧊
                     </text>
                     <text
                       x="0"
-                      y="26"
+                      y="2"
                       textAnchor="middle"
                       direction="rtl"
-                      fill="#0F172A"
-                      fontSize="19"
+                      fill="#0369A1"
+                      fontSize="18"
                       fontWeight="900"
                       className="arabic"
                     >
@@ -2234,16 +2692,25 @@ export default function BalloonSafariGame({
                   </g>
                 ) : b.kind === "hint" ? (
                   <g>
-                    <text x="0" y="-8" textAnchor="middle" fontSize="36">
+                    <rect
+                      x="-42"
+                      y="-64"
+                      width="84"
+                      height="76"
+                      rx="18"
+                      fill="#FFFFFF"
+                      opacity="0.95"
+                    />
+                    <text x="0" y="-26" textAnchor="middle" fontSize="32">
                       🔍
                     </text>
                     <text
                       x="0"
-                      y="26"
+                      y="2"
                       textAnchor="middle"
                       direction="rtl"
-                      fill="#FFFFFF"
-                      fontSize="19"
+                      fill="#6D28D9"
+                      fontSize="18"
                       fontWeight="900"
                       className="arabic"
                     >
@@ -2252,16 +2719,26 @@ export default function BalloonSafariGame({
                   </g>
                 ) : (
                   <g>
-                    <text x="0" y="-10" textAnchor="middle" fontSize="34">
+                    <rect
+                      x="-44"
+                      y="-64"
+                      width="88"
+                      height="76"
+                      rx="18"
+                      fill="#FFFBEB"
+                      stroke="#F59E0B"
+                      strokeWidth="2"
+                    />
+                    <text x="0" y="-26" textAnchor="middle" fontSize="30">
                       🌟
                     </text>
                     <text
                       x="0"
-                      y="24"
+                      y="2"
                       textAnchor="middle"
                       direction="rtl"
-                      fill="#78350F"
-                      fontSize="19"
+                      fill="#B45309"
+                      fontSize="17"
                       fontWeight="900"
                       className="arabic"
                     >
@@ -2270,30 +2747,32 @@ export default function BalloonSafariGame({
                   </g>
                 )}
 
-                {/* Balonun Altındaki Renkli Kutu İçinde Arapça Metin (Seviye 1: %100, Seviye 2: %70, Seviye 3-4: Gizli) */}
+                {/* 4. SEPETİN HEMEN ALTINDA BEYAZ ÇERÇEVELİ MAVİ (#2196F3) / TURUNCU (#FF9800) ARAPÇA KELİME KUTUSU */}
                 {showArabicLabel && b.word && (
-                  <g transform={`translate(0, 96) scale(${labelScale})`}>
+                  <g transform={`translate(0, 144) scale(${labelScale})`}>
                     <rect
-                      x="-68"
-                      y="-20"
-                      width="136"
-                      height="38"
-                      rx="11"
+                      x="-76"
+                      y="-21"
+                      width="152"
+                      height="42"
+                      rx="12"
                       fill={pal.tagBg}
                       stroke="#FFFFFF"
-                      strokeWidth="2"
+                      strokeWidth="3.5"
                     />
                     <text
                       x="0"
-                      y="6"
+                      y="8"
                       textAnchor="middle"
                       direction="rtl"
                       fill="#FFFFFF"
-                      fontSize="22"
-                      fontWeight="700"
+                      fontSize="24"
+                      fontWeight="800"
                       className="arabic"
                     >
-                      {b.word.nameAr}
+                      {b.word.nameAr.length > 16
+                        ? `${b.word.nameAr.slice(0, 15)}…`
+                        : b.word.nameAr}
                     </text>
                   </g>
                 )}
@@ -2313,11 +2792,11 @@ export default function BalloonSafariGame({
             />
           ))}
 
-          {/* Uçan Puan / Süre Rozetleri */}
+          {/* Uçan Puan / Süre / Hata Geri Bildirim Rozetleri */}
           {floatingBadges.map((fb) => {
-            const fillCol =
+            const bgFill =
               fb.tone === "gold"
-                ? "#D97706"
+                ? "#F59E0B"
                 : fb.tone === "cyan"
                 ? "#0284C7"
                 : fb.tone === "rose"
@@ -2328,18 +2807,21 @@ export default function BalloonSafariGame({
                 key={fb.id}
                 transform={`translate(${fb.x.toFixed(1)}, ${fb.y.toFixed(1)})`}
                 opacity={Math.max(0, fb.life)}
+                className="pointer-events-none"
               >
                 <rect
-                  x="-78"
+                  x="-76"
                   y="-18"
-                  width="156"
-                  height="32"
-                  rx="10"
-                  fill={fillCol}
+                  width="152"
+                  height="34"
+                  rx="17"
+                  fill={bgFill}
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
                 />
                 <text
                   x="0"
-                  y="4"
+                  y="5"
                   textAnchor="middle"
                   fill="#FFFFFF"
                   fontSize="15"

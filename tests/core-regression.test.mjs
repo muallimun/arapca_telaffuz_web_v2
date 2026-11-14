@@ -5291,21 +5291,21 @@ test("45. 2 Yeni İnteraktif Oyun Modülü — Balon Safari (BalloonSafariGame) 
     "BalloonSafariGame içinde window.open, window.alert veya satır içi style={{ bulunmamalıdır"
   );
 
-  // 3. 3D Hafıza Kartları: gerçek CSS 3D perspektif, 3x4 / 4x4 / 4x5 ızgaralar, 1.5s ipucu ve SRS entegrasyonu
+  // 3. Hafızanı Yokla (3D Hafıza Kartları): gerçek CSS 3D perspektif, 4/6/8 çift seviyeleri, 1.5s ipucu ve SRS entegrasyonu
   assert.equal(
     memoryCode.includes("لُعْبَةُ الذَّاكِرَةِ") &&
       memoryCode.includes("[perspective:1000px]") &&
       memoryCode.includes("[transform-style:preserve-3d]") &&
       memoryCode.includes("[backface-visibility:hidden]") &&
       memoryCode.includes("[transform:rotateY(180deg)]") &&
-      memoryCode.includes("3×4 (12 Kart • 6 Çift)") &&
-      memoryCode.includes("4×4 (16 Kart • 8 Çift)") &&
-      memoryCode.includes("4×5 (20 Kart • 10 Çift)") &&
+      memoryCode.includes("4 çift • 20 sn") &&
+      memoryCode.includes("6 çift • 15 sn") &&
+      memoryCode.includes("8 çift • 10 sn") &&
       memoryCode.includes("Kartları 1.5 Saniye Göster") &&
       memoryCode.includes("recordItemAttempt") &&
       memoryCode.includes("addMistake"),
     true,
-    "MemoryFlipGame gerçek CSS 3D dönüşüm, 3 zorluk ızgarası, 1.5 sn ipucu ve Hata Defteri/SRS entegrasyonunu içermelidir"
+    "MemoryFlipGame gerçek CSS 3D dönüşüm, 3 zorluk seviyesi (4/6/8 çift), 1.5 sn ipucu ve Hata Defteri/SRS entegrasyonunu içermelidir"
   );
   assert.equal(
     memoryCode.includes("window.open") ||
@@ -5562,3 +5562,63 @@ test("47. WordTooltip Taşma/Kaydırma Onarımı, Vercel Standalone Kotası Koru
     "Hem Ana Sayfa hem Kütüphane üzerinden İstatistik/Rozetler ve 6 Bölümlü A4 Sınav/Ders Notu Üretici modalları açılabilmelidir"
   );
 });
+
+test("48. Hafızanı Yokla (MemoryFlipGame) & Balon Safari (BalloonSafariGame) Tam Görsel ve Mekanik Yenileme Doğrulaması", () => {
+  const memoryCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+  const balloonCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+
+  // 1. Hafızanı Yokla: 2 sütunlu başlangıç ekranı, 3 mod (YZ / İki kişilik / Antrenman), deniz kabuğu kartlar, büyük tipografi ve Bilgi Notu
+  assert.equal(
+    memoryCode.includes("Hafızanı Yokla") &&
+      memoryCode.includes("Yapay zekâya karşı") &&
+      memoryCode.includes("1 • Sırayla oyna; rakibin bazen unutur.") &&
+      memoryCode.includes("İki kişilik") &&
+      memoryCode.includes("2 • Aynı ekranda arkadaşınla yarış.") &&
+      memoryCode.includes("Antrenman") &&
+      memoryCode.includes("3 • Tek başına çalış, hafızanı ısıt.") &&
+      memoryCode.includes("Nasıl oynanır?") &&
+      memoryCode.includes("1200") &&
+      memoryCode.includes("aiMemoryRef") &&
+      memoryCode.includes("#EFE3C8") &&
+      memoryCode.includes("#E05A47") &&
+      memoryCode.includes("#1F6E50") &&
+      memoryCode.includes("text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed") &&
+      memoryCode.includes("text-sm sm:text-base md:text-lg font-extrabold") &&
+      memoryCode.includes("Sıra sende: iki kart çevir.") &&
+      memoryCode.includes("Yapay zekâ düşünüyor...") &&
+      memoryCode.includes("strokeDashoffset") &&
+      memoryCode.includes("Bilgi Notu"),
+    true,
+    "MemoryFlipGame 2 sütunlu mod ekranı, 1.2 sn düşünen YZ rakibi, #EFE3C8 deniz kabuğu kartları, #1F6E50 eşleşme zemini, büyük tipografi, dairesel tur sayacı ve canlı Bilgi Notu kutusunu içermelidir"
+  );
+
+  // 2. Balon Safari: Panoramik doğa manzarası, gerçek sıcak hava balonu (#F4F6F0 kubbe, #F3E5AB hasır sepet, #2196F3/#FF9800 etiket) ve yüzer hap HUD
+  assert.equal(
+    balloonCode.includes("safariSkyGrad") &&
+      balloonCode.includes("safariRiverGrad") &&
+      balloonCode.includes("safariSandPathGrad") &&
+      balloonCode.includes("/images/background.png") &&
+      balloonCode.includes("/images/balon.png") &&
+      balloonCode.includes("hotAirDomeClip") &&
+      balloonCode.includes("hotAirWordImgClip") &&
+      balloonCode.includes("#F4F6F0") &&
+      balloonCode.includes("#F3E5AB") &&
+      balloonCode.includes("#2196F3") &&
+      balloonCode.includes("#FF9800") &&
+      balloonCode.includes("#FACC15") &&
+      balloonCode.includes("rounded-full") &&
+      balloonCode.includes("النِّقَاط:") &&
+      balloonCode.includes("المُسْتَوَى:") &&
+      balloonCode.includes("المُحَاوَلَات:") &&
+      balloonCode.includes("إِعَادَة الصَّوْت"),
+    true,
+    "BalloonSafariGame panoramik doğa manzarası, gerçek sıcak hava balonu katmanları (#F4F6F0 kubbe, #F3E5AB hasır sepet, #2196F3/#FF9800 etiket) ve yüzer hap HUD tasarımını içermelidir"
+  );
+});
+

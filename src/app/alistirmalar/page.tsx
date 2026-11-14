@@ -1542,16 +1542,16 @@ function ExercisesPageContent() {
       title: "🎈 Balon Safari",
       arabicBadge: "سَفَارِي البَالُونَات",
       subtitle:
-        "Kelimeyi dinleyin, süzülen doğru görsel/anlam balonunu yakalayın ve sertifika kazanın",
+        "Canlı safari manzarasında süzülen sıcak hava balonlarındaki görsel ve Arapça kelimeleri sesinden yakalayın",
       icon: Sparkles,
     },
     {
       id: "memory-flip",
       category: "vocab_visual",
-      title: "🃏 3D Hafıza Kartları",
+      title: "🃏 Hafızanı Yokla",
       arabicBadge: "لُعْبَةُ الذَّاكِرَةِ",
       subtitle:
-        "3×4, 4×4 ve 4×5 3B kartlarda Arapça kelime, görsel ve anlam eşleştirme",
+        "Yapay zekâya karşı, iki kişilik veya antrenman modunda deniz kabuğu kartlarla büyük görsel ve Arapça eşleştirme",
       icon: Layers,
     },
     {

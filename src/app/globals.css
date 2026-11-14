@@ -391,19 +391,10 @@ body {
   }
 }
 
-/* Akıllı Tahta (board-mode) Ölçeklendirme Katmanı — Yalnızca >= 1366px ve html.board-mode aktifken (Mobil ve standart masaüstüne sıfır etki) */
+/* Akıllı Tahta (board-mode) Okuma Desteği — Yalnızca >= 1366px ana okuma alanındaki Arapça satırları destekler; modal veya kompakt sekme yüksekliklerini ezmez */
 @media (min-width: 1366px) {
-  html.board-mode {
-    font-size: 19px;
-  }
-
-  html.board-mode .arabic,
-  html.board-mode .font-arabic {
+  html.board-mode main .arabic,
+  html.board-mode main .font-arabic {
     line-height: 2.1;
-  }
-
-  html.board-mode button:not(.rounded-full),
-  html.board-mode [role="button"]:not(.rounded-full) {
-    min-height: 52px;
   }
 }

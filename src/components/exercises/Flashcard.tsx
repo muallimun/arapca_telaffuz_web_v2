@@ -204,7 +204,9 @@ export default function Flashcard({
           arabic: primaryAr,
           turkish: w.anlam_tr,
           badgeText:
-            w.kok && w.kok !== "-"
+            w.es_anlam_ar || w.zit_anlam_ar
+              ? `${formatCatLabel(w.tur)} · Eş & Zıt Anlamlılar`
+              : w.kok && w.kok !== "-"
               ? `${formatCatLabel(w.tur)} · Kök: ${w.kok}`
               : formatCatLabel(w.tur),
           imageUrl: resolvedGorsel,
@@ -547,6 +549,30 @@ export default function Flashcard({
   const prepareWordForms = (word?: DictionaryItem) => {
     if (!word) return undefined;
     const forms: { label: string; arabic: string }[] = [];
+    if (word.es_anlam_ar || word.zit_anlam_ar) {
+      const headAr = (word.mufret || word.mazi || "").split("/")[0].trim();
+      if (headAr) {
+        forms.push({
+          label: "Ana Kelime",
+          arabic: headAr,
+        });
+      }
+      const firstSyn = word.es_anlam_ar?.split("،")[0]?.trim();
+      if (firstSyn) {
+        forms.push({
+          label: "Eş Anlam (المُرَادِف)",
+          arabic: firstSyn,
+        });
+      }
+      const firstAnt = word.zit_anlam_ar?.split("،")[0]?.trim();
+      if (firstAnt) {
+        forms.push({
+          label: "Zıt Anlam (الضِّدّ)",
+          arabic: firstAnt,
+        });
+      }
+      return forms.length > 0 ? forms : undefined;
+    }
     if (word.tur === "isim") {
       if (word.mufret)
         forms.push({
@@ -579,6 +605,9 @@ export default function Flashcard({
   };
 
   const wordForms = prepareWordForms(currentWord);
+  const isSynAntCard = Boolean(
+    currentWord && (currentWord.es_anlam_ar || currentWord.zit_anlam_ar)
+  );
   const sentenceAudioUrl =
     currentCard.kind === "sentence" &&
     currentCard.dialogueId &&
@@ -645,7 +674,11 @@ export default function Flashcard({
       {/* 3B DÖNEN KART ALANI */}
       <div
         className={`relative w-full cursor-pointer [perspective:1000px] ${
-          showCardImage ? "h-[440px] sm:h-[488px]" : "h-76 sm:h-82"
+          showCardImage
+            ? "h-[440px] sm:h-[488px]"
+            : isSynAntCard
+            ? "h-[388px] sm:h-[428px]"
+            : "h-76 sm:h-82"
         }`}
         onClick={() => {
           setIsFlipped(!isFlipped);
@@ -841,15 +874,46 @@ export default function Flashcard({
               >
                 {displayArabic}
               </span>
-              {currentWord && currentWord.cemi && currentWord.cemi !== "-" && (
-                <span className="text-xs sm:text-sm font-bold text-[var(--muted)] block">
-                  Çoğul:{" "}
-                  <strong className="arabic text-xl sm:text-2xl text-[var(--foreground)]">
-                    {formatAr(currentWord.cemi)}
-                  </strong>
-                </span>
+              {isSynAntCard ? (
+                <div className="flex flex-col items-center gap-1.5 pt-1 w-full max-w-md">
+                  {currentWord?.es_anlam_ar && (
+                    <span className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-300/80 dark:border-emerald-700/70 text-xs sm:text-sm font-bold text-[#065F46] dark:text-emerald-300">
+                      <span>Eş Anlam (المُرَادِف):</span>
+                      <strong
+                        dir="rtl"
+                        lang="ar"
+                        className="arabic text-lg sm:text-xl font-bold text-[var(--foreground)] leading-relaxed"
+                      >
+                        {formatAr(currentWord.es_anlam_ar)}
+                      </strong>
+                    </span>
+                  )}
+                  {currentWord?.zit_anlam_ar && (
+                    <span className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50/90 dark:bg-rose-950/50 border border-rose-300/80 dark:border-rose-700/70 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300">
+                      <span>Zıt Anlam (الضِّدّ):</span>
+                      <strong
+                        dir="rtl"
+                        lang="ar"
+                        className="arabic text-lg sm:text-xl font-bold text-[var(--foreground)] leading-relaxed"
+                      >
+                        {formatAr(currentWord.zit_anlam_ar)}
+                      </strong>
+                    </span>
+                  )}
+                </div>
+              ) : (
+                currentWord &&
+                currentWord.cemi &&
+                currentWord.cemi !== "-" && (
+                  <span className="text-xs sm:text-sm font-bold text-[var(--muted)] block">
+                    Çoğul:{" "}
+                    <strong className="arabic text-xl sm:text-2xl text-[var(--foreground)]">
+                      {formatAr(currentWord.cemi)}
+                    </strong>
+                  </span>
+                )
               )}
-              {currentWord && currentWord.muzari && (
+              {!isSynAntCard && currentWord && currentWord.muzari && (
                 <span className="text-xs sm:text-sm font-bold text-[var(--muted)] block">
                   Muzâri:{" "}
                   <strong className="arabic text-xl sm:text-2xl text-[var(--foreground)]">
@@ -875,7 +939,7 @@ export default function Flashcard({
               </span>
             </div>
 
-            <div className="my-auto space-y-2.5 w-full flex flex-col items-center justify-center min-h-0">
+            <div className="my-auto space-y-2 w-full flex flex-col items-center justify-center min-h-0 overflow-y-auto py-1">
               {showCardImage && (
                 <div className="w-full max-w-[210px] sm:max-w-[250px] rounded-2xl bg-white dark:bg-slate-900/85 border border-[#6741D9]/30 p-2 flex items-center justify-center shadow-2xs shrink-0 mx-auto">
                   <img
@@ -900,6 +964,48 @@ export default function Flashcard({
               >
                 <MixedText text={currentCard.turkish} />
               </p>
+
+              {isSynAntCard &&
+                (currentWord?.es_anlam_tr ||
+                  currentWord?.zit_anlam_tr ||
+                  currentWord?.nuans_tr) && (
+                  <div className="rounded-xl bg-white/95 dark:bg-[var(--background)] border border-[#6741D9]/30 px-3 py-2 text-left text-xs space-y-1 max-w-md w-full">
+                    {currentWord?.es_anlam_tr && (
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[var(--foreground)] font-semibold leading-snug"
+                      >
+                        <span className="font-extrabold text-[#065F46] dark:text-emerald-400">
+                          Eş Anlam (المُرَادِف):
+                        </span>{" "}
+                        <MixedText text={currentWord.es_anlam_tr} />
+                      </p>
+                    )}
+                    {currentWord?.zit_anlam_tr && (
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[var(--foreground)] font-semibold leading-snug"
+                      >
+                        <span className="font-extrabold text-rose-600 dark:text-rose-400">
+                          Zıt Anlam (الضِّدّ):
+                        </span>{" "}
+                        <MixedText text={currentWord.zit_anlam_tr} />
+                      </p>
+                    )}
+                    {currentWord?.nuans_tr && (
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[11px] sm:text-xs text-[#4C28B5] dark:text-[#d0bfff] font-semibold leading-snug pt-0.5 border-t border-dashed border-[#6741D9]/20"
+                      >
+                        <span className="font-extrabold">💡 Nüans:</span>{" "}
+                        <MixedText text={currentWord.nuans_tr} />
+                      </p>
+                    )}
+                  </div>
+                )}
 
               {currentCard.kind === "word" &&
                 currentWord?.ornek_ar &&

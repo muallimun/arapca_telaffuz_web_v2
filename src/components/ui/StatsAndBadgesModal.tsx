@@ -720,8 +720,63 @@ export default function StatsAndBadgesModal({
             </div>
           </div>
 
+          {/* SABİT (PINNED) 4 SEKMELİ DETAYLI ANALİZ ÇUBUĞU — Aşağı kaydırıldığında daima görünür */}
+          <div className="px-3 sm:px-5 py-2 bg-[#F7EFE1]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+            <div
+              role="tablist"
+              aria-label="Öğrenme Analiz Sekmeleri"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 bg-[#EFE5D2] dark:bg-[var(--background)] p-1 rounded-2xl border border-[#E6D7BE] dark:border-[var(--border)]"
+            >
+              {(
+                [
+                  {
+                    id: "badges",
+                    label: `🎖️ Rozetler & Kilometre Taşları (${snapshot.unlockedBadgesCount}/8)`,
+                    icon: Award,
+                  },
+                  {
+                    id: "charts",
+                    label: "📊 Paket & Diyalog Başarı Grafikleri",
+                    icon: BarChart3,
+                  },
+                  {
+                    id: "mistakes",
+                    label: `⚠️ En Çok Hata Yapılanlar & Ses Dinleme (${snapshot.frequentMistakes.length})`,
+                    icon: AlertTriangle,
+                  },
+                  {
+                    id: "cefr_map",
+                    label: "🧭 CEFR & Beceri Haritası",
+                    icon: Compass,
+                  },
+                ] as const
+              ).map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      playClick();
+                      setTabOverride({ forInitial: initialTab, tab: tab.id });
+                    }}
+                    className={`h-9 sm:h-10 min-h-0! px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-colors flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                      active
+                        ? "bg-[#087F5B] text-white shadow-xs"
+                        : "bg-white/75 dark:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* KAYDIRILABİLİR ANA İÇERİK GÖVDESİ */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-4">
             {/* 1. ÜST ÖZET VE RÜTBE ŞERİDİ */}
             <section
               aria-label="Üst Özet ve Rütbe Şeridi"
@@ -870,59 +925,6 @@ export default function StatsAndBadgesModal({
                 </Link>
               </div>
             </section>
-
-            {/* 2. 4 SEKMELİ DETAYLI ANALİZ ÇUBUĞU */}
-            <div
-              role="tablist"
-              aria-label="Öğrenme Analiz Sekmeleri"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 bg-[#EFE5D2] dark:bg-[var(--background)] p-1.5 rounded-2xl border border-[#E6D7BE] dark:border-[var(--border)]"
-            >
-              {(
-                [
-                  {
-                    id: "badges",
-                    label: `🎖️ Rozetler & Kilometre Taşları (${snapshot.unlockedBadgesCount}/8)`,
-                    icon: Award,
-                  },
-                  {
-                    id: "charts",
-                    label: "📊 Paket & Diyalog Başarı Grafikleri",
-                    icon: BarChart3,
-                  },
-                  {
-                    id: "mistakes",
-                    label: `⚠️ En Çok Hata Yapılanlar & Ses Dinleme (${snapshot.frequentMistakes.length})`,
-                    icon: AlertTriangle,
-                  },
-                  {
-                    id: "cefr_map",
-                    label: "🧭 CEFR & Beceri Haritası",
-                    icon: Compass,
-                  },
-                ] as const
-              ).map((tab) => {
-                const active = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      playClick();
-                      setTabOverride({ forInitial: initialTab, tab: tab.id });
-                    }}
-                    className={`min-h-[42px] px-3 py-2 rounded-xl text-xs sm:text-[13px] font-extrabold transition-colors flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                      active
-                        ? "bg-[#087F5B] text-white shadow-xs"
-                        : "bg-white/70 dark:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    <span className="truncate">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
 
             {/* SEKME 1: 🎖️ ROZETLER & KİLOMETRE TAŞLARI */}
             {activeTab === "badges" && (
@@ -1523,8 +1525,8 @@ export default function StatsAndBadgesModal({
 
                 {/* ALT BÖLÜM: A1, A2, B1, B2 GRAMER KAZANIM MATRİSİ (ISI HARİTASI) */}
                 <div className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                    <div className="min-w-0">
                       <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
                         📐 A1 – B2 Gramer Kazanım Matrisi (Isı Haritası)
                       </h3>
@@ -1533,8 +1535,8 @@ export default function StatsAndBadgesModal({
                       </p>
                     </div>
 
-                    {/* Renk Anahtarı / Durum Filtresi */}
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    {/* Renk Anahtarı / Durum Filtresi — Tek Satır Kompakt Hizalama */}
+                    <div className="inline-flex flex-nowrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] overflow-x-auto max-w-full shrink-0">
                       {(
                         [
                           { id: "all", label: "Tüm Durumlar" },
@@ -1552,13 +1554,13 @@ export default function StatsAndBadgesModal({
                               playClick();
                               setCefrStatusFilter(st.id);
                             }}
-                            className={`min-h-[34px] px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
+                            className={`h-8 min-h-0! px-3 py-1 rounded-lg text-xs font-extrabold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                               active
-                                ? "bg-[#087F5B] text-white"
-                                : "bg-[#FAF4E8] dark:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)]"
+                                ? "bg-[#087F5B] text-white shadow-2xs"
+                                : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/70 dark:hover:bg-[var(--surface)]"
                             }`}
                           >
-                            {st.label}
+                            <span>{st.label}</span>
                           </button>
                         );
                       })}

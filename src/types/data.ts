@@ -131,6 +131,11 @@ export interface DictionaryItem extends PedagogicalMeta {
   kategori_tr?: string;
   ses_erkek?: string;
   ses_kadin?: string;
+  es_anlam_ar?: string;
+  zit_anlam_ar?: string;
+  es_anlam_tr?: string;
+  zit_anlam_tr?: string;
+  nuans_tr?: string;
 }
 
 export interface ResimliKelime extends PedagogicalMeta {

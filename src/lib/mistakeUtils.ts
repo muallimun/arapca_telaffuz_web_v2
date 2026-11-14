@@ -252,7 +252,26 @@ export function grammarNoteToDictionaryItem(
 export function synonymEntryToDictionaryItem(
   entry: SynonymAntonymEntry
 ): DictionaryItem {
-  const synSummary = entry.es_anlamlilar[0]?.ar;
+  const esAnlamAr = entry.es_anlamlilar
+    .map((s) => s.ar?.trim())
+    .filter(Boolean)
+    .join(" ، ");
+  const zitAnlamAr = entry.zit_anlamlilar
+    .map((z) => z.ar?.trim())
+    .filter(Boolean)
+    .join(" ، ");
+  const esAnlamTr = entry.es_anlamlilar
+    .map((s) => s.tr?.trim())
+    .filter(Boolean)
+    .join(" · ");
+  const zitAnlamTr = entry.zit_anlamlilar
+    .map((z) => z.tr?.trim())
+    .filter(Boolean)
+    .join(" · ");
+  const primaryNuans =
+    entry.es_anlamlilar.find((s) => s.nuans_tr?.trim())?.nuans_tr?.trim() ||
+    entry.zit_anlamlilar.find((z) => z.nuans_tr?.trim())?.nuans_tr?.trim();
+
   return {
     id: entry.id,
     tur: entry.tur,
@@ -261,7 +280,12 @@ export function synonymEntryToDictionaryItem(
     anlam_tr: entry.anlam_tr,
     mufret: entry.tur !== "fiil" ? entry.kelime_ar : undefined,
     mazi: entry.tur === "fiil" ? entry.kelime_ar : undefined,
-    cemi: synSummary || undefined,
+    cemi: undefined,
+    es_anlam_ar: esAnlamAr || undefined,
+    zit_anlam_ar: zitAnlamAr || undefined,
+    es_anlam_tr: esAnlamTr || undefined,
+    zit_anlam_tr: zitAnlamTr || undefined,
+    nuans_tr: primaryNuans || undefined,
     ornek_ar: entry.ornek_cumle_ar,
     ornek_tr: entry.ornek_cumle_tr,
     kategori_tr: "Eş & Zıt Anlamlılar",

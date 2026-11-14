@@ -5129,12 +5129,13 @@ test("43. UTF-8 Bütünlüğü, API Güvenlik Sertleştirmesi, 195 Gramer İlmî
   );
   assert.equal(
     globalsCss.includes("@media (min-width: 1366px)") &&
-      globalsCss.includes("html.board-mode") &&
-      globalsCss.includes("html.board-mode .arabic") &&
+      globalsCss.includes("html.board-mode main .arabic") &&
+      globalsCss.includes("html.board-mode main .font-arabic") &&
       globalsCss.includes("line-height: 2.1;") &&
-      globalsCss.includes("min-height: 52px;"),
+      !globalsCss.includes("min-height: 52px") &&
+      !globalsCss.includes("font-size: 19px"),
     true,
-    "globals.css yalnızca >= 1366px ve html.board-mode altında ölçeklendirme, line-height: 2.1 ve min-height: 52px kurallarını tanımlamalıdır"
+    "globals.css yalnızca >= 1366px altında html.board-mode main .arabic satır aralığını (line-height: 2.1) desteklemeli, modal veya sekme buton yüksekliklerini ezmemelidir"
   );
 });
 
@@ -5706,14 +5707,16 @@ test("49. Tam Ekran (100dvh) Oyunlar, Saf Görsel Kelime Havuzu, Kaydırmasız H
     "A4 Sınav Stüdyosu Başlangıç–Bitiş sıralı Karma Aralık Seçimi (Range) motoruna ve kontrollerine sahip olmalıdır"
   );
 
-  // 5. Sadeleştirilmiş PDF Önizleme (%60+ alan + kapalı varsayılan akordiyon) ve WordTooltip max-h-[80dvh] overflow-y-auto koruması
+  // 5. Sadeleştirilmiş PDF Önizleme (flex-1 min-h-0 + max-h-[22dvh] kapalı varsayılan akordiyon) ve WordTooltip max-h-[80dvh] overflow-y-auto koruması
   assert.equal(
     pdfModalCode.includes("useState<boolean>(false)") &&
       pdfModalCode.includes("⚙️ Gelişmiş Mizanpaj Ayarları") &&
-      pdfModalCode.includes("md:min-h-[60dvh]") &&
+      pdfModalCode.includes("max-h-[22dvh]") &&
+      pdfModalCode.includes("flex-1 min-h-0 overflow-y-auto") &&
+      !pdfModalCode.includes("md:min-h-[60dvh]") &&
       tooltipCode.includes("max-h-[80dvh] overflow-y-auto"),
     true,
-    "DialoguePdfModal ikincil ayarları kapalı akordiyon altında toplamalı, %60+ A4 önizleme alanı ayırmalı ve WordTooltip max-h-[80dvh] overflow-y-auto içermelidir"
+    "DialoguePdfModal ikincil ayarları max-h-[22dvh] kapalı akordiyon altında toplamalı, önizleme flex-1 min-h-0 overflow-y-auto ile alt barı kesmemeli ve WordTooltip max-h-[80dvh] overflow-y-auto içermelidir"
   );
 });
 
@@ -6476,3 +6479,108 @@ test("53. Merkezi Modal/Escape Yığını (modalStack), Mobil safe-area-inset-bo
   assert.equal(rangeExam.sec5Matching.length, 5);
   assert.equal(rangeExam.sec6Morphology.length, 2);
 });
+
+test("54. board-mode Modal Koruması, A4 Stüdyo Milimetrik Hizalama & Ders Föyü / Alt Bar Koruması, StatsAndBadgesModal Sabit Sekmeler & Tek Satır Filtre ve Eş-Zıt Anlam Flashcard Etiketlemesi", async () => {
+  // 1. globals.css: html.board-mode kuralı modal ve küçük sekmeleri bozmamalı
+  const globalsCss = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "globals.css"),
+    "utf8"
+  );
+  assert.equal(
+    globalsCss.includes("html.board-mode main .arabic") &&
+      globalsCss.includes("html.board-mode main .font-arabic") &&
+      !globalsCss.includes("font-size: 19px") &&
+      !globalsCss.includes("min-height: 52px"),
+    true,
+    "globals.css içinde genel font-size: 19px ve min-height: 52px kuralları kaldırılmış olmalıdır"
+  );
+
+  // 2. DialoguePdfModal.tsx: 4 sütun h-5 + h-9 milimetrik hiza, Ders Föyü modunda 6 bölüm gizleme, alt bar koruması
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const h5LabelRows =
+    pdfModalCode.match(/h-5 flex items-center justify-between/g) || [];
+  assert.equal(
+    h5LabelRows.length >= 4 &&
+      pdfModalCode.includes("grid grid-cols-5 gap-0.5 h-9") &&
+      pdfModalCode.includes("h-full min-h-0! py-0 px-0.5 rounded-lg") &&
+      pdfModalCode.includes("h-5 p-0.5 rounded-md inline-flex items-center") &&
+      pdfModalCode.includes('pdfDocMode === "quiz-sheet" && (\n              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">') &&
+      pdfModalCode.includes("max-h-[22dvh] overflow-y-auto") &&
+      !pdfModalCode.includes("md:min-h-[60dvh]") &&
+      pdfModalCode.includes("print:hidden shrink-0 z-10 bg-[#F7EFE1]"),
+    true,
+    "DialoguePdfModal 1. satır h-5 + h-9 hizasını, quiz-sheet koşullu 6 bölüm ızgarasını, max-h-[22dvh] sınırı ve kesilmeyen shrink-0 z-10 alt aksiyon çubuğunu içermelidir"
+  );
+
+  // 3. StatsAndBadgesModal.tsx: Sabit (pinned) 4 ana sekme ve tek satır durum filtreleri
+  const statsModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "StatsAndBadgesModal.tsx"),
+    "utf8"
+  );
+  const tablistIdx = statsModalCode.indexOf('role="tablist"');
+  const scrollBodyIdx = statsModalCode.indexOf(
+    "flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-4"
+  );
+  assert.equal(
+    tablistIdx > 0 &&
+      scrollBodyIdx > tablistIdx &&
+      statsModalCode.includes(
+        "inline-flex flex-nowrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] overflow-x-auto max-w-full shrink-0"
+      ) &&
+      statsModalCode.includes(
+        "h-8 min-h-0! px-3 py-1 rounded-lg text-xs font-extrabold whitespace-nowrap flex items-center gap-1.5"
+      ) &&
+      !statsModalCode.includes("style={{"),
+    true,
+    "StatsAndBadgesModal 4 ana sekmeyi kaydırılabilir gövdenin üstünde sabit tutmalı ve matris durum filtrelerini tek satırda hizalamalıdır"
+  );
+
+  // 4. Eş & Zıt Anlamlılar -> DictionaryItem & Flashcard: 'Çoğul:' yerine Eş Anlam / Zıt Anlam / 💡 Nüans
+  const { synonymEntryToDictionaryItem } = await import(
+    "../src/lib/mistakeUtils.ts"
+  );
+  const { parsed: synAnt400 } = readDataJson("es_zit_anlamlilar.json");
+  assert.equal(synAnt400.length, 400);
+
+  for (const entry of synAnt400) {
+    const mapped = synonymEntryToDictionaryItem(entry);
+    assert.equal(
+      mapped.cemi,
+      undefined,
+      `${entry.id} için synonymEntryToDictionaryItem cemi alanına eş anlamlı yazmamalıdır`
+    );
+    assert.equal(
+      typeof mapped.es_anlam_ar === "string" && mapped.es_anlam_ar.length > 0,
+      true,
+      `${entry.id} için es_anlam_ar alanı dolu olmalıdır`
+    );
+  }
+
+  const sampleMapped = synonymEntryToDictionaryItem(synAnt400[0]);
+  assert.ok(
+    sampleMapped.es_anlam_ar?.includes("عَظِيمٌ") &&
+      sampleMapped.zit_anlam_ar?.includes("صَغِيرٌ") &&
+      sampleMapped.es_anlam_tr?.includes("büyük") &&
+      sampleMapped.zit_anlam_tr?.includes("küçük") &&
+      typeof sampleMapped.nuans_tr === "string" &&
+      sampleMapped.nuans_tr.length > 0,
+    "ez_001 (كَبِيرٌ) kaydı es_anlam_ar, zit_anlam_ar, es_anlam_tr, zit_anlam_tr ve nuans_tr alanlarını eksiksiz taşımalıdır"
+  );
+
+  const flashcardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "Flashcard.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    flashcardCode.includes("isSynAntCard") &&
+      flashcardCode.includes("Eş Anlam (المُرَادِف):") &&
+      flashcardCode.includes("Zıt Anlam (الضِّدّ):") &&
+      flashcardCode.includes("💡 Nüans:"),
+    true,
+    "Flashcard.tsx Eş & Zıt Anlamlılar kartlarında ön yüzde Eş Anlam / Zıt Anlam, arka yüzde Türkçe anlamları ve 💡 Nüans bilgisini göstermelidir"
+  );
+});
+

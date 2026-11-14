@@ -3504,17 +3504,19 @@ export default function DialoguePdfModal({
         <div
           className={`print:hidden bg-[#FDFBF7] dark:bg-[var(--surface)] px-3 sm:px-4 py-2 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5 overflow-y-auto md:overflow-visible ${
             mobileTab === "settings"
-              ? "flex-1 md:flex-none block"
+              ? "flex-1 min-h-0 md:flex-none md:shrink-0 block"
               : "hidden md:block shrink-0"
           }`}
         >
           {/* 1. SATIR: Kaynak | Seviye | Tekil & 🎛️ Karma Aralık Seçimi (Range) | Sınav Başlığı */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-end">
             {/* 1. Materyal Kaynağı */}
-            <div className="lg:col-span-3 space-y-0.5">
-              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                1. Kaynak
-              </label>
+            <div className="lg:col-span-3 space-y-1">
+              <div className="h-5 flex items-center justify-between">
+                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase leading-none">
+                  1. Kaynak
+                </label>
+              </div>
               <select
                 value={studioSourceId}
                 onChange={(e) => {
@@ -3537,7 +3539,7 @@ export default function DialoguePdfModal({
                   );
                   if (nextOpts[0]) setStudioPackId(nextOpts[0].id);
                 }}
-                className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+                className="w-full h-9 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
               >
                 {initialSelection.sourceId === "defterim_custom" && (
                   <option value="defterim_custom">
@@ -3553,11 +3555,13 @@ export default function DialoguePdfModal({
             </div>
 
             {/* 2. Seviye (CEFR) */}
-            <div className="lg:col-span-2 space-y-0.5">
-              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                2. Seviye
-              </label>
-              <div className="grid grid-cols-5 gap-0.5 h-8 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            <div className="lg:col-span-2 space-y-1">
+              <div className="h-5 flex items-center justify-between">
+                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase leading-none">
+                  2. Seviye
+                </label>
+              </div>
+              <div className="grid grid-cols-5 gap-0.5 h-9 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] items-center">
                 {(["all", "A1", "A2", "B1", "B2"] as StudioLevelFilter[]).map(
                   (lvl) => (
                     <button
@@ -3575,7 +3579,7 @@ export default function DialoguePdfModal({
                           Math.min(10, Math.max(1, nextItems.length))
                         );
                       }}
-                      className={`rounded-lg text-[10.5px] font-extrabold cursor-pointer ${
+                      className={`h-full min-h-0! py-0 px-0.5 rounded-lg flex items-center justify-center text-[11px] font-extrabold whitespace-nowrap cursor-pointer transition-colors ${
                         studioLevelFilter === lvl
                           ? "bg-[#087F5B] text-white"
                           : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -3589,20 +3593,20 @@ export default function DialoguePdfModal({
             </div>
 
             {/* 3. İçerik / 🎛️ Karma Aralık Seçimi (Range) */}
-            <div className="lg:col-span-4 space-y-0.5">
-              <div className="flex items-center justify-between gap-1">
-                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase truncate">
+            <div className="lg:col-span-4 space-y-1">
+              <div className="h-5 flex items-center justify-between gap-1">
+                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase truncate leading-none">
                   3. Aralık / İçerik
                 </label>
                 {studioSourceId !== "defterim_custom" && (
-                  <div className="inline-flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-lg border border-[#E6D7BE] dark:border-[var(--border)]">
+                  <div className="h-5 p-0.5 rounded-md inline-flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
                         setStudioSelectionMode("single");
                       }}
-                      className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold cursor-pointer ${
+                      className={`h-full min-h-0! px-2 py-0 rounded text-[10px] font-extrabold leading-none whitespace-nowrap flex items-center justify-center cursor-pointer transition-colors ${
                         studioSelectionMode === "single"
                           ? "bg-[#087F5B] text-white"
                           : "text-[var(--muted)]"
@@ -3621,7 +3625,7 @@ export default function DialoguePdfModal({
                           setIncludeAnswerKey(true);
                         }
                       }}
-                      className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold cursor-pointer ${
+                      className={`h-full min-h-0! px-2 py-0 rounded text-[10px] font-extrabold leading-none whitespace-nowrap flex items-center justify-center cursor-pointer transition-colors ${
                         studioSelectionMode === "range"
                           ? "bg-[#6741D9] text-white"
                           : "text-[var(--muted)]"
@@ -3635,7 +3639,7 @@ export default function DialoguePdfModal({
 
               {studioSelectionMode === "range" &&
               studioRangeItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5 h-9">
                   <select
                     aria-label="Başlangıç Sırası"
                     value={effectiveRangeBounds.start}
@@ -3646,7 +3650,7 @@ export default function DialoguePdfModal({
                         setRangeEnd(nextStart);
                       }
                     }}
-                    className="w-full h-8 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
+                    className="w-full h-9 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
                   >
                     {studioRangeItems.map((item) => (
                       <option key={`start_${item.id}`} value={item.index}>
@@ -3664,7 +3668,7 @@ export default function DialoguePdfModal({
                         setRangeStart(nextEnd);
                       }
                     }}
-                    className="w-full h-8 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
+                    className="w-full h-9 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
                   >
                     {studioRangeItems.map((item) => (
                       <option key={`end_${item.id}`} value={item.index}>
@@ -3677,7 +3681,7 @@ export default function DialoguePdfModal({
                 <select
                   value={effectiveStudioPackId}
                   onChange={(e) => setStudioPackId(e.target.value)}
-                  className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+                  className="w-full h-9 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
                 >
                   {studioPackOptions.map((opt) => (
                     <option key={opt.id} value={opt.id}>
@@ -3689,16 +3693,18 @@ export default function DialoguePdfModal({
             </div>
 
             {/* 4. Sınav Başlığı */}
-            <div className="lg:col-span-3 space-y-0.5">
-              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                4. Sınav Başlığı
-              </label>
+            <div className="lg:col-span-3 space-y-1">
+              <div className="h-5 flex items-center justify-between">
+                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase leading-none">
+                  4. Sınav Başlığı
+                </label>
+              </div>
               <input
                 type="text"
                 value={customPaperTitle}
                 onChange={(e) => setCustomPaperTitle(e.target.value)}
                 placeholder={dialogue.baslik_tr}
-                className="w-full h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+                className="w-full h-9 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
               />
             </div>
           </div>
@@ -3768,79 +3774,81 @@ export default function DialoguePdfModal({
               </button>
             </div>
 
-            {/* 6 Bölümlü Soru Sayısı Tam Etiketli Ferah Izgara (Mobil 2x3, Tablet 3x2, Masaüstü 6x1) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
-              {(
-                [
-                  {
-                    key: "sec1ArToTr",
-                    label: "1) Arapça → Türkçe",
-                    max: 50,
-                  },
-                  {
-                    key: "sec2TrToAr",
-                    label: "2) Türkçe → Arapça",
-                    max: 50,
-                  },
-                  {
-                    key: "sec3FillBlank",
-                    label: "3) Boşluk Doldurma",
-                    max: 50,
-                  },
-                  {
-                    key: "sec4MultipleChoice",
-                    label: "4) Çoktan Seçmeli",
-                    max: 50,
-                  },
-                  {
-                    key: "sec5Matching",
-                    label: "5) Eşleştirme",
-                    max: 30,
-                  },
-                  {
-                    key: "sec6Morphology",
-                    label: "6) Sarf Tablosu",
-                    max: 30,
-                  },
-                ] as const
-              ).map((sec) => (
-                <label
-                  key={sec.key}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-violet-200 dark:border-slate-700 px-2 py-1 flex items-center justify-between gap-1.5 min-w-0 cursor-pointer hover:border-violet-400 transition-colors"
-                >
-                  <span className="text-[10.5px] sm:text-[11px] font-extrabold text-[var(--foreground)] leading-tight whitespace-nowrap">
-                    {sec.label}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={sec.max}
-                    aria-label={sec.label}
-                    value={examCounts[sec.key]}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value || "0", 10);
-                      if (pdfDocMode !== "quiz-sheet") {
-                        setPdfDocMode("quiz-sheet");
-                        setIncludeStudentHeader(true);
-                        setIncludeAnswerKey(true);
-                      }
-                      setExamCounts((prev) =>
-                        clampExamCounts({
-                          ...prev,
-                          [sec.key]: Number.isNaN(val) ? 0 : val,
-                        })
-                      );
-                    }}
-                    className="w-10 h-6 rounded-lg border border-violet-300 dark:border-slate-600 text-center text-xs font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/60 dark:bg-slate-800 shrink-0 tabular-nums"
-                  />
-                </label>
-              ))}
-            </div>
+            {/* 6 Bölümlü Soru Sayısı Tam Etiketli Ferah Izgara (Yalnızca 6 Bölümlü Sınav modunda gösterilir; Ders Föyü modunda gizlenir) */}
+            {pdfDocMode === "quiz-sheet" && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
+                {(
+                  [
+                    {
+                      key: "sec1ArToTr",
+                      label: "1) Arapça → Türkçe",
+                      max: 50,
+                    },
+                    {
+                      key: "sec2TrToAr",
+                      label: "2) Türkçe → Arapça",
+                      max: 50,
+                    },
+                    {
+                      key: "sec3FillBlank",
+                      label: "3) Boşluk Doldurma",
+                      max: 50,
+                    },
+                    {
+                      key: "sec4MultipleChoice",
+                      label: "4) Çoktan Seçmeli",
+                      max: 50,
+                    },
+                    {
+                      key: "sec5Matching",
+                      label: "5) Eşleştirme",
+                      max: 30,
+                    },
+                    {
+                      key: "sec6Morphology",
+                      label: "6) Sarf Tablosu",
+                      max: 30,
+                    },
+                  ] as const
+                ).map((sec) => (
+                  <label
+                    key={sec.key}
+                    className="bg-white dark:bg-slate-900 rounded-xl border border-violet-200 dark:border-slate-700 px-2 py-1 flex items-center justify-between gap-1.5 min-w-0 cursor-pointer hover:border-violet-400 transition-colors"
+                  >
+                    <span className="text-[10.5px] sm:text-[11px] font-extrabold text-[var(--foreground)] leading-tight whitespace-nowrap">
+                      {sec.label}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={sec.max}
+                      aria-label={sec.label}
+                      value={examCounts[sec.key]}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value || "0", 10);
+                        if (pdfDocMode !== "quiz-sheet") {
+                          setPdfDocMode("quiz-sheet");
+                          setIncludeStudentHeader(true);
+                          setIncludeAnswerKey(true);
+                        }
+                        setExamCounts((prev) =>
+                          clampExamCounts({
+                            ...prev,
+                            [sec.key]: Number.isNaN(val) ? 0 : val,
+                          })
+                        );
+                      }}
+                      className="w-10 h-6 rounded-lg border border-violet-300 dark:border-slate-600 text-center text-xs font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/60 dark:bg-slate-800 shrink-0 tabular-nums"
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* KATLANABİLİR (ACCORDION) GELİŞMİŞ MİZANPAJ VE İKİNCİL ŞABLON AYARLARI */}
           {showAdvancedSettings && (
-            <div className="space-y-1.5 pt-2 mt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] max-h-[26dvh] overflow-y-auto overscroll-contain pr-1">
+            <div className="space-y-1.5 pt-2 mt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] max-h-[22dvh] overflow-y-auto overscroll-contain pr-1">
               {/* İkincil Öğretmen Şablonları + A/B Kitapçık + Konu Özeti Kutusu + Föy Mizanpajı */}
               <div className="flex flex-wrap items-center justify-between gap-1.5">
                 <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
@@ -4536,9 +4544,9 @@ export default function DialoguePdfModal({
           )}
         </div>
 
-        {/* CANLI A4 ÇALIŞMA KAĞIDI ÖNİZLEME ALANI (Ekranın en az %60+'ı) */}
+        {/* CANLI A4 ÇALIŞMA KAĞIDI ÖNİZLEME ALANI */}
         <div
-          className={`flex-1 min-h-0 md:min-h-[60dvh] overflow-y-auto p-2.5 sm:p-5 bg-[#EFE6D5]/70 dark:bg-black/40 print:block! ${
+          className={`flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 bg-[#EFE6D5]/70 dark:bg-black/40 print:block! ${
             mobileTab === "preview" ? "block" : "hidden md:block"
           }`}
         >
@@ -6518,7 +6526,7 @@ export default function DialoguePdfModal({
         </div>
 
         {/* MODAL ALT AKSİYON ÇUBUĞU: Öğrenci Nüshası ve Öğretmen Cevap Anahtarı Ayrı Basım Seçenekleri */}
-        <div className="print:hidden bg-[#F7EFE1] dark:bg-[var(--background)] px-3 sm:px-5 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="print:hidden shrink-0 z-10 bg-[#F7EFE1] dark:bg-[var(--background)] px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => {

@@ -82,12 +82,16 @@ function sanitizeDictionaryItems(arr: unknown): DictionaryItem[] {
       (typeof item.mazi === "string" && item.mazi.trim().length > 0);
     if (!id || !hasWordField || seenIds.has(id)) continue;
     seenIds.add(id);
+    const isLegacySynAnt = id.startsWith("ez_");
     validItems.push({
       id,
       kok: typeof item.kok === "string" ? item.kok : "-",
       tur: typeof item.tur === "string" ? item.tur : "isim",
       mufret: typeof item.mufret === "string" ? item.mufret : undefined,
-      cemi: typeof item.cemi === "string" ? item.cemi : undefined,
+      cemi:
+        !isLegacySynAnt && typeof item.cemi === "string"
+          ? item.cemi
+          : undefined,
       mazi: typeof item.mazi === "string" ? item.mazi : undefined,
       muzari: typeof item.muzari === "string" ? item.muzari : undefined,
       masdar: typeof item.masdar === "string" ? item.masdar : undefined,
@@ -101,6 +105,15 @@ function sanitizeDictionaryItems(arr: unknown): DictionaryItem[] {
         typeof item.ses_kadin === "string" ? item.ses_kadin : undefined,
       kategori_tr:
         typeof item.kategori_tr === "string" ? item.kategori_tr : undefined,
+      es_anlam_ar:
+        typeof item.es_anlam_ar === "string" ? item.es_anlam_ar : undefined,
+      zit_anlam_ar:
+        typeof item.zit_anlam_ar === "string" ? item.zit_anlam_ar : undefined,
+      es_anlam_tr:
+        typeof item.es_anlam_tr === "string" ? item.es_anlam_tr : undefined,
+      zit_anlam_tr:
+        typeof item.zit_anlam_tr === "string" ? item.zit_anlam_tr : undefined,
+      nuans_tr: typeof item.nuans_tr === "string" ? item.nuans_tr : undefined,
       cefr:
         typeof item.cefr === "string" &&
         ["A1", "A2", "B1", "B2"].includes(item.cefr)

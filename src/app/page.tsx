@@ -25,6 +25,7 @@ import {
   ListChecks,
   GraduationCap,
   Film,
+  Printer,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -73,6 +74,10 @@ const PhonemeHeatmapModal = dynamic(
 );
 const StatsAndBadgesModal = dynamic(
   () => import("@/components/ui/StatsAndBadgesModal"),
+  { ssr: false }
+);
+const DialoguePdfModal = dynamic(
+  () => import("@/components/ui/DialoguePdfModal"),
   { ssr: false }
 );
 import type { StatsModalTab } from "@/components/ui/StatsAndBadgesModal";
@@ -221,6 +226,7 @@ export default function HomePage() {
   const [statsModalTab, setStatsModalTab] = useState<StatsModalTab | null>(
     null
   );
+  const [showExamStudioModal, setShowExamStudioModal] = useState(false);
   const [activeYoutubeModalItems, setActiveYoutubeModalItems] = useState<
     YoutubeRecommendationItem[] | null
   >(null);
@@ -1392,17 +1398,30 @@ export default function HomePage() {
           <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
             🏆 Öğrenme İstatistikleri, Rozetler &amp; Gelişim Özeti
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setStatsModalTab("badges");
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer"
-          >
-            <Award size={14} />
-            <span>🏆 Rozetler &amp; Öğretmen Raporunu Aç</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowExamStudioModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer"
+            >
+              <Printer size={14} />
+              <span>🖨️ A4 Sınav &amp; Ders Notu Üretici</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStatsModalTab("badges");
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer"
+            >
+              <Award size={14} />
+              <span>🏆 Rozetler &amp; Öğretmen Raporunu Aç</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1737,6 +1756,16 @@ export default function HomePage() {
           isOpen={statsModalTab !== null}
           initialTab={statsModalTab}
           onClose={() => setStatsModalTab(null)}
+        />
+      )}
+
+      {showExamStudioModal && (
+        <DialoguePdfModal
+          dialogue={recommendedDialogue}
+          vocabEntries={[]}
+          imagePath={recommendedCoverSrc}
+          rawNum={parseInt(recommendedDialogue.id.replace("dlg_", ""), 10) || 1}
+          onClose={() => setShowExamStudioModal(false)}
         />
       )}
     </div>

@@ -1,21 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Uygulamayı kendi sunucunda çalıştırmak için gerekli olan "standalone" modu
-  output: "standalone",
+  // Vercel ortamında mükerrer standalone kopyası birikip kotayı doldurmaması için koşullu standalone
+  output: process.env.VERCEL ? undefined : "standalone",
 
   typescript: {
-    // Vercel build sırasında TS tip uyarılarının dağıtımı durdurmasını engeller
     ignoreBuildErrors: true,
   },
 
   experimental: {
     agentFeedback: false,
   },
-
+  
   // Transformers paketini sunucu tarafında paketleme
   serverExternalPackages: ["@huggingface/transformers"],
-
+  
   turbopack: {
     rules: {
       "*.css": {
@@ -24,7 +23,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
-
+  
   async rewrites() {
     const rawBase = (
       process.env.NEXT_PUBLIC_MEDIA_CDN_BASE ||
@@ -58,6 +57,7 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
+          // Güvenlik Başlıkları (COEP/COOP YouTube iframe'lerini ERR_BLOCKED_BY_RESPONSE ile engellediği için kaldırıldı)
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           {

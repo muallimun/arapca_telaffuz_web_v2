@@ -41,6 +41,7 @@ import {
   Compass,
   Film,
   ListVideo,
+  Trophy,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -1694,6 +1695,59 @@ export default function LibraryPage() {
         imagePath: firstWithImg?.gorsel || "/gorseller/diyaloglar/001.webp",
         rawNum: 1,
       });
+      return;
+    }
+
+    if (sec === "es-zit") {
+      const firstDlg = diyaloglar[0];
+      setLibraryPdfConfig({
+        dialogue: {
+          ...firstDlg,
+          id: "kutuphane_es_zit",
+          seviye: safeLevel,
+        },
+        vocabEntries: [],
+        imagePath: "/gorseller/diyaloglar/001.webp",
+        rawNum: 1,
+      });
+      return;
+    }
+
+    if (sec === "metinler") {
+      const firstTxt = metinler[0];
+      if (firstTxt) {
+        setLibraryPdfConfig({
+          dialogue: {
+            id: firstTxt.id,
+            seviye: firstTxt.seviye,
+            baslik_tr: firstTxt.baslik_tr,
+            baslik_ar: firstTxt.baslik_ar,
+            odak_gramer: firstTxt.odak_gramer,
+            satirlar: firstTxt.satirlar.map((l) => ({
+              sira: l.sira,
+              konusmaci: `Paragraf #${l.sira}`,
+              konusmaci_ar: firstTxt.seviye,
+              cinsiyet: "E" as const,
+              arapca: l.arapca,
+              turkce: l.turkce,
+            })),
+          },
+          vocabEntries: [],
+          imagePath: getReadingTextCoverUrl(firstTxt.id),
+          rawNum: 1,
+        });
+        return;
+      }
+    }
+
+    const defaultDlg = diyaloglar[0];
+    if (defaultDlg) {
+      setLibraryPdfConfig({
+        dialogue: defaultDlg,
+        vocabEntries: [],
+        imagePath: defaultDlg.gorsel || getDialogueCoverUrl(defaultDlg.id),
+        rawNum: 1,
+      });
     }
   };
 
@@ -2874,40 +2928,64 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          {/* Çift Cinsiyetli Seslendirici Seçici (Günlük Cümle, Atasözü ve Görsel Kelimeler için) */}
-          {isDualGenderSection && (
-            <div className="flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] px-2.5 py-1.5 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] self-start sm:self-auto">
-              <UserCheck size={14} className="text-[#087F5B] shrink-0" />
-              <span className="text-[11px] font-extrabold text-[var(--foreground)]">
-                Seslendirici:
-              </span>
-              {(
-                [
-                  { id: "erkek", label: "👨 Erkek" },
-                  { id: "kadin", label: "👩 Kadın" },
-                ] as { id: VoiceGender; label: string }[]
-              ).map((g) => {
-                const active = (mounted ? preferredVoiceGender : "erkek") === g.id;
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setPreferredVoiceGender(g.id);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      active
-                        ? "bg-[#087F5B] text-white shadow-2xs"
-                        : "bg-white dark:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Çift Cinsiyetli Seslendirici Seçici (Günlük Cümle, Atasözü ve Görsel Kelimeler için) */}
+            {isDualGenderSection && (
+              <div className="flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] px-2.5 py-1.5 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+                <UserCheck size={14} className="text-[#087F5B] shrink-0" />
+                <span className="text-[11px] font-extrabold text-[var(--foreground)]">
+                  Seslendirici:
+                </span>
+                {(
+                  [
+                    { id: "erkek", label: "👨 Erkek" },
+                    { id: "kadin", label: "👩 Kadın" },
+                  ] as { id: VoiceGender; label: string }[]
+                ).map((g) => {
+                  const active =
+                    (mounted ? preferredVoiceGender : "erkek") === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setPreferredVoiceGender(g.id);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        active
+                          ? "bg-[#087F5B] text-white shadow-2xs"
+                          : "bg-white dark:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => handleOpenLibraryPdfModal()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer"
+            >
+              <Printer size={14} />
+              <span>🖨️ A4 Sınav &amp; Ders Notu</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsStatsBadgesOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer"
+            >
+              <Trophy size={14} />
+              <span>🏆 İstatistik &amp; Rozetler</span>
+            </button>
+          </div>
         </div>
 
         {/* Modül Sekmeleri (Mobilde Yatay Kaydırılabilir + Sağ Görsel İpucu, Masaüstünde Dengeli Flex-Wrap) */}

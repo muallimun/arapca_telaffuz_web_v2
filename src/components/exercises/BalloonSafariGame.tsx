@@ -267,11 +267,10 @@ export default function BalloonSafariGame({
 
     if (items.length < 6 && idioms.length > 0) {
       for (const idm of idioms) {
-        const raw = idm as unknown as Record<string, string>;
         pushUnique({
           id: `idiom_${idm.id}`,
-          nameAr: raw.arapca || raw.deyim_ar || raw.ifade_ar || raw.ar || "",
-          meaningTr: cleanMeaningTr(raw.turkce || raw.anlam_tr || raw.tr || ""),
+          nameAr: idm.arabic,
+          meaningTr: cleanMeaningTr(idm.meaningTr),
         });
       }
     }

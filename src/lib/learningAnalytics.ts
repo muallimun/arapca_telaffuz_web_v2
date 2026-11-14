@@ -674,7 +674,9 @@ export function computeLearningAnalyticsSnapshot(
   for (const gk of gorselKelimeler) {
     const lvl: Level = gk.cefr || "A1";
     visualTotalByLevel[lvl] += 1;
-    const arClean = cleanArabicText(gk.kelime_ar || gk.mufret || "");
+    const arClean = cleanArabicText(
+      gk.arapca || gk.kelime_ar || gk.mufret || ""
+    );
     if (
       learnedSet.has(gk.id) ||
       srsPositiveIdsSet.has(gk.id) ||
@@ -970,8 +972,8 @@ export function computeLearningAnalyticsSnapshot(
         uid: canonId,
         kind: "sentence",
         kindLabel: `Atasözü (${foundProv.cefr || "B1"})`,
-        arabicText: foundProv.arapca,
-        turkishText: foundProv.anlam_tr,
+        arabicText: foundProv.arapca || foundProv.kelime_ar || "",
+        turkishText: foundProv.turkce || foundProv.anlam_tr || "",
         wrongCount: counts.wrongCount,
         correctCount: counts.correctCount,
         accuracyPercent: acc,
@@ -1067,8 +1069,8 @@ export function computeLearningAnalyticsSnapshot(
         uid: canonId,
         kind: "word",
         kindLabel: `Görsel Kelime (${foundGk.cefr || "A1"})`,
-        arabicText: foundGk.kelime_ar || foundGk.mufret || "",
-        turkishText: foundGk.anlam_tr,
+        arabicText: foundGk.arapca || foundGk.kelime_ar || foundGk.mufret || "",
+        turkishText: foundGk.turkce || foundGk.anlam_tr || "",
         detailNote: foundGk.kategori_tr,
         wrongCount: counts.wrongCount,
         correctCount: counts.correctCount,
@@ -1078,7 +1080,8 @@ export function computeLearningAnalyticsSnapshot(
         audioItemId: foundGk.id,
         audioCategory: "kelime",
         practiceHref: "/alistirmalar?pool=mistakes",
-        shadowingSampleAr: foundGk.kelime_ar || foundGk.mufret || "",
+        shadowingSampleAr:
+          foundGk.arapca || foundGk.kelime_ar || foundGk.mufret || "",
       });
       continue;
     }

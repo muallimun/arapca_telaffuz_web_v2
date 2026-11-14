@@ -261,12 +261,11 @@ export default function MemoryFlipGame({
 
     if (list.length < 10 && idioms.length > 0) {
       for (const idm of idioms) {
-        const raw = idm as unknown as Record<string, string>;
         pushSource({
           pairId: `idiom_${idm.id}`,
           canonicalWordId: `idiom_${idm.id}`,
-          cardAAr: raw.arapca || raw.deyim_ar || raw.ifade_ar || raw.ar || "",
-          cardBTr: shortenMeaning(raw.turkce || raw.anlam_tr || raw.tr || ""),
+          cardAAr: idm.arabic,
+          cardBTr: shortenMeaning(idm.meaningTr),
         });
       }
     }

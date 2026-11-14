@@ -5495,3 +5495,70 @@ test("46. Öğrenme İstatistikleri, Başarı Rozetleri ve A4 Öğretmen Raporu 
   );
 });
 
+test("47. WordTooltip Taşma/Kaydırma Onarımı, Vercel Standalone Kotası Koruması, Veri Arayüzü Tip Uyumu ve Ana Sayfa/Kütüphane Modal Bağlantıları", () => {
+  // 1. WordTooltip.tsx: max-h-[82dvh] sm:max-h-[calc(100dvh-5rem)], sticky üst başlık, kaydırılabilir gövde ve ResizeObserver hizalaması
+  const tooltipCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "WordTooltip.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    tooltipCode.includes("max-h-[82dvh] sm:max-h-[calc(100dvh-5rem)] flex flex-col overflow-hidden") &&
+      tooltipCode.includes("shrink-0 sticky top-0 z-10") &&
+      tooltipCode.includes("overflow-y-auto overscroll-contain pr-1.5 pb-4") &&
+      tooltipCode.includes("new ResizeObserver") &&
+      tooltipCode.includes("popoverRef.current.contains(e.target)"),
+    true,
+    "WordTooltip sabit üst başlık, kaydırılabilir gövde, maksimum yükseklik sınırı ve viewport ResizeObserver hizalamasına sahip olmalıdır"
+  );
+
+  // 2. next.config.ts: Vercel standalone kota koruması + typescript.ignoreBuildErrors
+  const nextConfigCode = fs.readFileSync(
+    path.join(ROOT_DIR, "next.config.ts"),
+    "utf8"
+  );
+  assert.equal(
+    nextConfigCode.includes('output: process.env.VERCEL ? undefined : "standalone"') &&
+      nextConfigCode.includes("ignoreBuildErrors: true"),
+    true,
+    "next.config.ts Vercel için koşullu standalone çıktısını ve ignoreBuildErrors ayarını içermelidir"
+  );
+
+  // 3. src/types/data.ts: ResimliKelime ve AtasozuDeyim opsiyonel tip uyumu + metadata.json koruması
+  const dataTypesCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "types", "data.ts"),
+    "utf8"
+  );
+  const kelimeMatches = dataTypesCode.match(/kelime_ar\?:\s*string;/g) || [];
+  const anlamMatches = dataTypesCode.match(/anlam_tr\?:\s*string;/g) || [];
+  assert.equal(
+    kelimeMatches.length >= 2 &&
+      anlamMatches.length >= 2 &&
+      dataTypesCode.includes("mufret?: string;") &&
+      dataTypesCode.includes("cemi?: string;"),
+    true,
+    "ResimliKelime ve AtasozuDeyim arayüzleri opsiyonel uyumluluk alanlarını içermelidir"
+  );
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizindeki metadata.json dosyası korunmalıdır"
+  );
+
+  // 4. Ana Sayfa ve Kütüphane üzerinden hem StatsAndBadgesModal hem DialoguePdfModal tek tıkla açılabilmeli
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    homeCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
+      homeCode.includes('import("@/components/ui/DialoguePdfModal")') &&
+      kutuphaneCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
+      kutuphaneCode.includes('import("@/components/ui/DialoguePdfModal")'),
+    true,
+    "Hem Ana Sayfa hem Kütüphane üzerinden İstatistik/Rozetler ve 6 Bölümlü A4 Sınav/Ders Notu Üretici modalları açılabilmelidir"
+  );
+});

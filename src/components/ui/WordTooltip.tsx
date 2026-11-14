@@ -192,17 +192,22 @@ export default function WordTooltip({
     const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
     const vh = typeof window !== "undefined" ? window.innerHeight : 768;
     const safeMargin = 12;
+    const maxAllowedHeight =
+      vw < 640 ? Math.floor(vh * 0.82) : Math.max(260, vh - 80);
     const actualPopoverWidth = popoverRef.current?.offsetWidth;
-    const defaultWidth = isClassroomMode ? 440 : 336;
+    const defaultWidth = isClassroomMode ? 440 : 348;
     const tooltipWidth = actualPopoverWidth
       ? Math.min(actualPopoverWidth, vw - safeMargin * 2)
       : Math.min(defaultWidth, vw - safeMargin * 2);
-    const estimatedHeight = popoverRef.current?.offsetHeight || (isClassroomMode ? 310 : 255);
+    const measuredHeight =
+      popoverRef.current?.offsetHeight || (isClassroomMode ? 360 : 320);
+    const effectiveHeight = Math.min(measuredHeight, maxAllowedHeight);
 
-    const spaceBelow = vh - rect.bottom - 72;
-    const spaceAbove = rect.top - 56;
-    // Varsayılan olarak kelimenin hemen altında aç, alt kenara sığmıyorsa üstünde aç
-    const placeAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const spaceBelow = vh - rect.bottom - safeMargin;
+    const spaceAbove = rect.top - safeMargin;
+    // Alt kenara yakın bir kelimeye tıklandığında ekran dışına taşmaması için üstte (bottom ile) hizala
+    const placeAbove =
+      spaceBelow < effectiveHeight && spaceAbove > spaceBelow;
 
     const rawLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
     const clampedLeft = Math.max(
@@ -212,22 +217,26 @@ export default function WordTooltip({
 
     if (placeAbove) {
       const rawBottom = vh - rect.top + 8;
+      const maxBottom = Math.max(safeMargin, vh - effectiveHeight - safeMargin);
       const clampedBottom = Math.max(
         safeMargin,
-        Math.min(rawBottom, vh - estimatedHeight - safeMargin)
+        Math.min(rawBottom, maxBottom)
       );
       setTooltipPos({
+        top: undefined,
         bottom: clampedBottom,
         left: clampedLeft,
         width: tooltipWidth,
       });
     } else {
+      const maxTop = Math.max(safeMargin, vh - effectiveHeight - safeMargin);
       const clampedTop = Math.max(
-        52,
-        Math.min(rect.bottom + 8, vh - estimatedHeight - safeMargin)
+        safeMargin,
+        Math.min(rect.bottom + 8, maxTop)
       );
       setTooltipPos({
         top: clampedTop,
+        bottom: undefined,
         left: clampedLeft,
         width: tooltipWidth,
       });
@@ -253,10 +262,32 @@ export default function WordTooltip({
       });
       return () => cancelAnimationFrame(raf);
     }
-  }, [showDesktopRootFamily, activeIndex, computePosition]);
+  }, [
+    showDesktopRootFamily,
+    expandedBridgeIndex,
+    expandedSynExIndex,
+    activeSynNuanceKey,
+    activeIndex,
+    computePosition,
+  ]);
 
   useEffect(() => {
     if (activeIndex === null) return;
+
+    let observer: ResizeObserver | null = null;
+    const raf = requestAnimationFrame(() => {
+      if (activeWordElRef.current) {
+        computePosition(activeWordElRef.current);
+      }
+      if (typeof ResizeObserver !== "undefined" && popoverRef.current) {
+        observer = new ResizeObserver(() => {
+          if (activeWordElRef.current) {
+            computePosition(activeWordElRef.current);
+          }
+        });
+        observer.observe(popoverRef.current);
+      }
+    });
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -269,7 +300,16 @@ export default function WordTooltip({
       }
     };
 
-    const handleScrollOrResize = () => {
+    const handleScrollOrResize = (e?: Event) => {
+      // Kelime detay kartının kendi iç kaydırması (overflow-y-auto) kartı kapatmamalı veya titretmemeli
+      if (
+        e &&
+        e.target instanceof Node &&
+        popoverRef.current &&
+        popoverRef.current.contains(e.target)
+      ) {
+        return;
+      }
       if (activeWordElRef.current) {
         const rect = activeWordElRef.current.getBoundingClientRect();
         if (rect.bottom < 0 || rect.top > window.innerHeight) {
@@ -289,6 +329,8 @@ export default function WordTooltip({
     });
     window.addEventListener("resize", handleScrollOrResize);
     return () => {
+      cancelAnimationFrame(raf);
+      if (observer) observer.disconnect();
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("scroll", handleScrollOrResize, true);
       window.removeEventListener("resize", handleScrollOrResize);
@@ -620,193 +662,198 @@ export default function WordTooltip({
                       left: `${tooltipPos.left}px`,
                       width: `${tooltipPos.width}px`,
                     }}
-                    className={`fixed ${
-                      isClassroomMode ? "p-4.5 space-y-2.5" : "p-3.5 space-y-2"
-                    } bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 ${catStyle.popoverLeftBorder} rounded-2xl shadow-2xl text-left font-sans z-[9999] block`}
+                     className={`fixed ${
+                      isClassroomMode ? "p-4" : "p-3.5"
+                    } max-h-[82dvh] sm:max-h-[calc(100dvh-5rem)] flex flex-col overflow-hidden bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 ${catStyle.popoverLeftBorder} rounded-2xl shadow-2xl text-left font-sans z-[9999]`}
                   >
-                    {/* 0. Çok Kelimeli Kalıp İfade / Deyim Bütünü Kartı (Kehribar / Altın Kutu) */}
-                    {matchedIdiomSpan && (
-                      <div
-                        dir="ltr"
-                        className="rounded-xl border-2 border-amber-300 dark:border-amber-600/70 bg-gradient-to-r from-amber-50 via-yellow-50/90 to-amber-100/70 dark:from-amber-950/65 dark:via-amber-900/40 dark:to-yellow-950/50 px-3 py-2 mb-2 shadow-xs"
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-[10px] font-sans font-extrabold tracking-wide uppercase text-amber-800 dark:text-amber-300">
-                            ✨ Kalıp İfade / Deyim Bütünü
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) =>
-                              handlePlayWord(
-                                e,
-                                matchedIdiomSpan.matchedPhrase
-                              )
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-sans font-bold cursor-pointer"
+                    {/* SABİT ÜST BAŞLIK BLOĞU: Kelime Türü + KÖK + ✕ Kapat ve Ana Arapça Kelime / Türkçe Karşılık */}
+                    <div className="shrink-0 sticky top-0 z-10 bg-[#F7EFE1] dark:bg-[var(--surface)] pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                      {/* 1. Üst Satır: Sol tarafta Kelime Türü Rozeti + KÖK Rozeti, Sağ köşede × Kapat Butonu */}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                          <span
+                            className={`whitespace-nowrap shrink-0 px-2 py-0.5 rounded-md border ${
+                              isClassroomMode ? "text-xs" : "text-[10px]"
+                            } font-sans font-extrabold ${catStyle.badgeClass}`}
                           >
-                            <Volume2 size={10} />
-                            <span>İfadeyi Dinle</span>
-                          </button>
+                            {catStyle.badgeText}
+                          </span>
+                          {dictItem.kok && dictItem.kok !== "-" && (
+                            <span
+                              dir="ltr"
+                              className={`whitespace-nowrap shrink-0 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 inline-flex items-center gap-1 ${
+                                isClassroomMode ? "text-sm" : "text-xs"
+                              } font-sans font-semibold text-[var(--muted)]`}
+                            >
+                              <span>KÖK:</span>
+                              <bdi
+                                dir="rtl"
+                                className={`arabic font-arabic ${
+                                  isClassroomMode ? "text-base" : "text-xs"
+                                } font-bold text-[var(--foreground)] inline-block whitespace-nowrap`}
+                              >
+                                {dictItem.kok}
+                              </bdi>
+                            </span>
+                          )}
                         </div>
-                        <div
-                          dir="rtl"
-                          className="arabic font-arabic text-lg sm:text-xl font-bold text-amber-950 dark:text-amber-200 text-right leading-relaxed"
+
+                        <button
+                          type="button"
+                          aria-label="Kapat"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveIndex(null);
+                          }}
+                          className="shrink-0 w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
                         >
-                          {formatAr(matchedIdiomSpan.matchedPhrase)}
-                        </div>
+                          <X size={13} />
+                        </button>
+                      </div>
+
+                      {/* 2. İkinci Satır: Solda Türkçe Anlam (flex-1), Sağda Büyük Arapça Ana Kelime */}
+                      <div className="flex items-start justify-between gap-3">
                         <div
                           dir="ltr"
-                          className="text-xs font-sans font-extrabold text-amber-900 dark:text-amber-100 mt-0.5 text-left leading-snug"
+                          className={`${
+                            isClassroomMode
+                              ? "text-base sm:text-lg"
+                              : "text-sm sm:text-base"
+                          } font-sans font-bold text-[var(--foreground)] leading-snug text-left flex-1 min-w-0`}
                         >
-                          {matchedIdiomSpan.idiom.meaningTr}
+                          {splitMixedBidiText(dictItem.anlam_tr).map(
+                            (seg, sIdx) =>
+                              seg.isArabic ? (
+                                <bdi
+                                  key={sIdx}
+                                  dir="rtl"
+                                  className="arabic font-arabic font-bold inline-block mx-0.5"
+                                >
+                                  {formatAr(seg.text)}
+                                </bdi>
+                              ) : (
+                                <span key={sIdx}>{seg.text}</span>
+                              )
+                          )}
+                          {alternativeMeanings &&
+                            alternativeMeanings.length > 0 && (
+                              <div
+                                dir="ltr"
+                                className="mt-1 pt-1 border-t border-dotted border-[#D8C8AC] dark:border-slate-700 text-[11px] font-sans font-semibold text-stone-600 dark:text-slate-300 leading-snug"
+                              >
+                                <span className="font-extrabold text-amber-700 dark:text-amber-300">
+                                  Diğer olası anlam:{" "}
+                                </span>
+                                {alternativeMeanings.map((alt, aIdx) => {
+                                  const altAr = (
+                                    alt.mufret ||
+                                    alt.mazi ||
+                                    alt.muzari ||
+                                    ""
+                                  )
+                                    .split("/")[0]
+                                    .trim();
+                                  const altTr = alt.anlam_tr
+                                    .split(/[,;]/)[0]
+                                    .trim();
+                                  return (
+                                    <span key={alt.id}>
+                                      {aIdx > 0 ? " · " : ""}
+                                      <bdi
+                                        dir="rtl"
+                                        className="arabic font-arabic text-xs font-bold mx-0.5 text-[var(--foreground)]"
+                                      >
+                                        {formatAr(altAr)}
+                                      </bdi>
+                                      <span>({altTr})</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                         </div>
-                        {matchedIdiomSpan.idiom.usageNote && (
+
+                        <div className="flex flex-col items-end shrink-0 text-right">
+                          <span
+                            dir="rtl"
+                            className={`arabic font-arabic ${
+                              isClassroomMode
+                                ? "text-3xl sm:text-4xl"
+                                : "text-2xl sm:text-3xl"
+                            } font-bold block leading-normal text-right ${catStyle.arabicAccent}`}
+                          >
+                            {formatAr(primaryAr)}
+                          </span>
+                          {coreWord !== primaryAr && (
+                            <span
+                              dir="ltr"
+                              className={`inline-flex items-center justify-end gap-1 ${
+                                isClassroomMode ? "text-sm" : "text-xs"
+                              } font-sans font-medium text-[#6741D9] mt-0.5 whitespace-nowrap`}
+                            >
+                              <span>Metinde:</span>
+                              <bdi
+                                dir="rtl"
+                                className={`arabic font-arabic ${
+                                  isClassroomMode ? "text-lg" : "text-base"
+                                } font-bold inline-block`}
+                              >
+                                {formatAr(coreWord)}
+                              </bdi>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* KAYDIRILABİLİR GÖVDE İÇERİĞİ: Kalıp İfade, Morfoloji, Sarf, Kök Ailesi, Ortak Kelime, Eş/Zıt Anlam & Örnek Cümle */}
+                    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1.5 pb-4 pt-2.5 space-y-3">
+                      {/* 0. Çok Kelimeli Kalıp İfade / Deyim Bütünü Kartı (Kehribar / Altın Kutu) */}
+                      {matchedIdiomSpan && (
+                        <div
+                          dir="ltr"
+                          className="rounded-xl border-2 border-amber-300 dark:border-amber-600/70 bg-gradient-to-r from-amber-50 via-yellow-50/90 to-amber-100/70 dark:from-amber-950/65 dark:via-amber-900/40 dark:to-yellow-950/50 px-3 py-2 shadow-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-[10px] font-sans font-extrabold tracking-wide uppercase text-amber-800 dark:text-amber-300">
+                              ✨ Kalıp İfade / Deyim Bütünü
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) =>
+                                handlePlayWord(
+                                  e,
+                                  matchedIdiomSpan.matchedPhrase
+                                )
+                              }
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-sans font-bold cursor-pointer"
+                            >
+                              <Volume2 size={10} />
+                              <span>İfadeyi Dinle</span>
+                            </button>
+                          </div>
+                          <div
+                            dir="rtl"
+                            className="arabic font-arabic text-lg sm:text-xl font-bold text-amber-950 dark:text-amber-200 text-right leading-relaxed"
+                          >
+                            {formatAr(matchedIdiomSpan.matchedPhrase)}
+                          </div>
                           <div
                             dir="ltr"
-                            className="text-[10px] font-sans font-medium text-amber-800/85 dark:text-amber-200/80 mt-0.5 text-left leading-snug line-clamp-2"
+                            className="text-xs font-sans font-extrabold text-amber-900 dark:text-amber-100 mt-0.5 text-left leading-snug"
                           >
-                            {matchedIdiomSpan.idiom.usageNote}
+                            {matchedIdiomSpan.idiom.meaningTr}
                           </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 1. Üst Satır: Sol tarafta Kelime Türü Rozeti + KÖK Rozeti (tek satırda/whitespace-nowrap), Sağ köşede × Kapat Butonu */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                        <span
-                          className={`whitespace-nowrap shrink-0 px-2 py-0.5 rounded-md border ${
-                            isClassroomMode ? "text-xs" : "text-[10px]"
-                          } font-sans font-extrabold ${catStyle.badgeClass}`}
-                        >
-                          {catStyle.badgeText}
-                        </span>
-                        {dictItem.kok && dictItem.kok !== "-" && (
-                          <span
-                            dir="ltr"
-                            className={`whitespace-nowrap shrink-0 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 inline-flex items-center gap-1 ${
-                              isClassroomMode ? "text-sm" : "text-xs"
-                            } font-sans font-semibold text-[var(--muted)]`}
-                          >
-                            <span>KÖK:</span>
-                            <bdi
-                              dir="rtl"
-                              className={`arabic font-arabic ${
-                                isClassroomMode ? "text-base" : "text-xs"
-                              } font-bold text-[var(--foreground)] inline-block whitespace-nowrap`}
-                            >
-                              {dictItem.kok}
-                            </bdi>
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        aria-label="Kapat"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveIndex(null);
-                        }}
-                        className="shrink-0 w-6 h-6 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-
-                    {/* 2. İkinci Satır: Solda Türkçe Anlam (flex-1), Sağda Büyük Arapça Ana Kelime */}
-                    <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2">
-                      <div
-                        dir="ltr"
-                        className={`${
-                          isClassroomMode
-                            ? "text-base sm:text-lg"
-                            : "text-sm sm:text-base"
-                        } font-sans font-bold text-[var(--foreground)] leading-snug text-left flex-1 min-w-0`}
-                      >
-                        {splitMixedBidiText(dictItem.anlam_tr).map(
-                          (seg, sIdx) =>
-                            seg.isArabic ? (
-                              <bdi
-                                key={sIdx}
-                                dir="rtl"
-                                className="arabic font-arabic font-bold inline-block mx-0.5"
-                              >
-                                {formatAr(seg.text)}
-                              </bdi>
-                            ) : (
-                              <span key={sIdx}>{seg.text}</span>
-                            )
-                        )}
-                        {alternativeMeanings &&
-                          alternativeMeanings.length > 0 && (
+                          {matchedIdiomSpan.idiom.usageNote && (
                             <div
                               dir="ltr"
-                              className="mt-1.5 pt-1 border-t border-dotted border-[#D8C8AC] dark:border-slate-700 text-[11px] font-sans font-semibold text-stone-600 dark:text-slate-300 leading-snug"
+                              className="text-[10px] font-sans font-medium text-amber-800/85 dark:text-amber-200/80 mt-0.5 text-left leading-snug"
                             >
-                              <span className="font-extrabold text-amber-700 dark:text-amber-300">
-                                Diğer olası anlam:{" "}
-                              </span>
-                              {alternativeMeanings.map((alt, aIdx) => {
-                                const altAr = (
-                                  alt.mufret ||
-                                  alt.mazi ||
-                                  alt.muzari ||
-                                  ""
-                                )
-                                  .split("/")[0]
-                                  .trim();
-                                const altTr = alt.anlam_tr
-                                  .split(/[,;]/)[0]
-                                  .trim();
-                                return (
-                                  <span key={alt.id}>
-                                    {aIdx > 0 ? " · " : ""}
-                                    <bdi
-                                      dir="rtl"
-                                      className="arabic font-arabic text-xs font-bold mx-0.5 text-[var(--foreground)]"
-                                    >
-                                      {formatAr(altAr)}
-                                    </bdi>
-                                    <span>({altTr})</span>
-                                  </span>
-                                );
-                              })}
+                              {matchedIdiomSpan.idiom.usageNote}
                             </div>
                           )}
-                      </div>
-
-                      <div className="flex flex-col items-end shrink-0 text-right">
-                        <span
-                          dir="rtl"
-                          className={`arabic font-arabic ${
-                            isClassroomMode
-                              ? "text-3xl sm:text-4xl"
-                              : "text-2xl sm:text-3xl"
-                          } font-bold block leading-normal text-right ${catStyle.arabicAccent}`}
-                        >
-                          {formatAr(primaryAr)}
-                        </span>
-                        {coreWord !== primaryAr && (
-                          <span
-                            dir="ltr"
-                            className={`inline-flex items-center justify-end gap-1 ${
-                              isClassroomMode ? "text-sm" : "text-xs"
-                            } font-sans font-medium text-[#6741D9] mt-0.5 whitespace-nowrap`}
-                          >
-                            <span>Metinde:</span>
-                            <bdi
-                              dir="rtl"
-                              className={`arabic font-arabic ${
-                                isClassroomMode ? "text-lg" : "text-base"
-                              } font-bold inline-block`}
-                            >
-                              {formatAr(coreWord)}
-                            </bdi>
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      )}
 
                     {/* Morfolojik Çözümleme Notu — LTR / RTL İzoleli */}
                     {morphologyNote && (
@@ -925,7 +972,7 @@ export default function WordTooltip({
                       </div>
                     )}
 
-                    {/* SADECE MASAÜSTÜ (hidden md:block): Başlangıçta kapalı "🌿 Kök Ailesi" çekmecesi (Mobil kompakt boyutu %100 korur) */}
+                    {/* Başlangıçta kapalı "🌿 Kök Ailesi" çekmecesi (Kaydırılabilir gövde içinde hem mobil hem masaüstünde erişilebilir) */}
                     {dictItem.kok &&
                       dictItem.kok !== "-" &&
                       (() => {
@@ -937,7 +984,7 @@ export default function WordTooltip({
                         return (
                           <div
                             dir="ltr"
-                            className="hidden md:block py-0.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] font-sans"
+                            className="block py-0.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] font-sans"
                           >
                             <button
                               type="button"
@@ -1280,8 +1327,44 @@ export default function WordTooltip({
                       );
                     })()}
 
-                    {/* Alt Aksiyon Butonları (Dinle | Telaffuz | Kartlar | Öğrendim) */}
-                    <div className="pt-1 flex items-center gap-1.5 w-full font-sans">
+                      {/* Sözlük Örnek Cümlesi (Eğer sözlük kaydında ornek_ar varsa) */}
+                      {dictItem.ornek_ar && (
+                        <div
+                          dir="ltr"
+                          className="rounded-lg bg-white/95 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2 space-y-1 font-sans"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#087F5B] dark:text-emerald-300">
+                              📖 Örnek Cümle
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) =>
+                                handlePlayWord(e, dictItem.ornek_ar)
+                              }
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold cursor-pointer"
+                            >
+                              <Volume2 size={9} />
+                              <span>Dinle</span>
+                            </button>
+                          </div>
+                          <p
+                            dir="rtl"
+                            className="arabic font-arabic text-sm font-bold text-[var(--foreground)] text-right leading-relaxed"
+                          >
+                            {formatAr(dictItem.ornek_ar)}
+                          </p>
+                          {dictItem.ornek_tr && (
+                            <p className="text-[10px] font-semibold text-[var(--muted)] leading-snug">
+                              {dictItem.ornek_tr}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sabit Alt Aksiyon Butonları (Dinle | Telaffuz | Kartlar | Öğrendim) */}
+                    <div className="shrink-0 pt-2 border-t border-[#E6D7BE]/85 dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] flex items-center gap-1.5 w-full font-sans">
                       <button
                         type="button"
                         onClick={(e) => handlePlayWord(e)}

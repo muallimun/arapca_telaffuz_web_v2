@@ -418,8 +418,8 @@ function buildPrintStylesheet(): string {
   return `
     @font-face {
       font-family: "Arakom";
-      src: url("${origin}/fonts/Arakom.ttf") format("truetype");
-      font-weight: normal;
+      src: local("Arakom"), url("${origin}/fonts/Arakom.ttf") format("truetype"), url("/fonts/Arakom.ttf") format("truetype");
+      font-weight: 100 900;
       font-style: normal;
       font-display: swap;
     }
@@ -446,11 +446,17 @@ function buildPrintStylesheet(): string {
       line-height: 1.48;
     }
 
+    .arabic, [dir="rtl"] {
+      line-height: 2.05 !important;
+      overflow: visible !important;
+      padding-block: 0.08em;
+    }
+
     .ar-inline,
     .ar-sentence,
     .ar-sentence-sm,
     .ar-cell {
-      font-family: "Amiri", "Scheherazade New", "Arakom", "Traditional Arabic", "Noto Naskh Arabic", serif !important;
+      font-family: "Arakom", "Amiri", "Scheherazade New", "Traditional Arabic", "Noto Naskh Arabic", serif !important;
       font-feature-settings: "liga" 1, "calt" 1, "mark" 1, "mkmk" 1;
       letter-spacing: 0;
     }
@@ -459,9 +465,10 @@ function buildPrintStylesheet(): string {
       display: inline-block;
       font-size: 1.24em;
       font-weight: 700;
-      line-height: 1.65;
+      line-height: 2.05;
       color: #065f46;
-      padding: 0 2px;
+      padding: 0.08em 2px;
+      overflow: visible !important;
       vertical-align: baseline;
     }
 
@@ -495,12 +502,13 @@ function buildPrintStylesheet(): string {
     }
 
     .cover-ar-kicker {
-      font-family: "Amiri", "Scheherazade New", "Arakom", serif;
+      font-family: "Arakom", "Amiri", "Scheherazade New", serif;
       font-size: 24pt;
       font-weight: 700;
       color: #065f46;
       margin-top: 12px;
-      line-height: 1.8;
+      line-height: 2.05;
+      overflow: visible;
     }
 
     .cover-main-title {
@@ -1040,14 +1048,21 @@ function buildPrintStylesheet(): string {
 function printHtmlViaHiddenIframe(documentTitle: string, bodyHtml: string): void {
   if (typeof document === "undefined") return;
 
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const isOnlineForOptionalGoogleFonts =
+    typeof navigator === "undefined" ? true : navigator.onLine !== false;
+  const nonBlockingGoogleFontsHtml = isOnlineForOptionalGoogleFonts
+    ? `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" media="print" onload="this.media='all'" />`
+    : "";
+
   const fullHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <title>${escapeHtml(documentTitle)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" href="${origin}/fonts/Arakom.ttf" as="font" type="font/ttf" crossorigin />
+  ${nonBlockingGoogleFontsHtml}
   <style>${buildPrintStylesheet()}</style>
 </head>
 <body>
@@ -1081,8 +1096,14 @@ function printHtmlViaHiddenIframe(documentTitle: string, bodyHtml: string): void
   doc.write(fullHtml);
   doc.close();
 
-  const fontsReady =
-    doc.fonts && typeof doc.fonts.ready?.then === "function"
+  // Çevrimdışı / MEB Fatih okul ağlarında harici Google Fonts beklenmez; yalnızca yerel /fonts/Arakom.ttf yüklenir
+  const localArakomReady =
+    doc.fonts && typeof doc.fonts.load === "function"
+      ? doc.fonts
+          .load('700 18px "Arakom"')
+          .then(() => undefined)
+          .catch(() => undefined)
+      : doc.fonts && typeof doc.fonts.ready?.then === "function"
       ? doc.fonts.ready.then(() => undefined).catch(() => undefined)
       : Promise.resolve();
 
@@ -1093,12 +1114,12 @@ function printHtmlViaHiddenIframe(documentTitle: string, bodyHtml: string): void
     setTimeout(() => {
       iframe?.contentWindow?.focus();
       iframe?.contentWindow?.print();
-    }, 120);
+    }, 60);
   };
 
   Promise.race([
-    fontsReady,
-    new Promise<void>((resolve) => setTimeout(resolve, 1400)),
+    localArakomReady,
+    new Promise<void>((resolve) => setTimeout(resolve, 160)),
   ]).then(runPrint);
 }
 

@@ -29,6 +29,7 @@ import {
   getCognateInfoForArabicWord,
   getCognateInfoForDictionaryItem,
 } from "@/lib/classicalBridgeData";
+import { useEscapeKey } from "@/lib/modalStack";
 
 interface Props {
   text: string;
@@ -269,6 +270,13 @@ export default function WordTooltip({
     activeIndex,
     computePosition,
   ]);
+
+  const closeActiveTooltip = useCallback(() => {
+    setActiveIndex(null);
+    activeWordElRef.current = null;
+  }, []);
+
+  useEscapeKey(closeActiveTooltip, activeIndex !== null);
 
   useEffect(() => {
     if (activeIndex === null) return;

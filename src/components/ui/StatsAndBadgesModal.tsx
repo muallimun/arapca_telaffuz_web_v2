@@ -43,6 +43,7 @@ import {
 } from "@/lib/audio";
 import { playClick } from "@/lib/sfxManager";
 import { formatArabicByHarekeMode } from "@/lib/arabicTextUtils";
+import { useEscapeKey } from "@/lib/modalStack";
 
 const ShadowingModal = dynamic(
   () => import("@/components/ui/ShadowingModal"),
@@ -169,23 +170,18 @@ export default function StatsAndBadgesModal({
     preferredVoiceGender,
   } = useSettings();
 
+  useEscapeKey(handleCloseModal, isOpen);
+
   useEffect(() => {
     if (!isOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !shadowingTargetAr) {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
       stopAllAudio();
     };
-  }, [isOpen, handleCloseModal, shadowingTargetAr]);
+  }, [isOpen]);
 
   const storedLastExercise = useMemo(() => {
     if (!isOpen) return null;

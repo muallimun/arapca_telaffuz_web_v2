@@ -38,6 +38,7 @@ import { shuffleArray } from "@/lib/quiz";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
 import { playDualGenderAudio, stopAllAudio } from "@/lib/audio";
+import { useEscapeKey } from "@/lib/modalStack";
 import {
   playClick,
   playFlip,
@@ -376,19 +377,8 @@ export default function MemoryFlipGame({
     };
   }, [clearAllTimers]);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (showHowToModal) {
-          setShowHowToModal(false);
-        } else if (onClose) {
-          handleExitToList();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showHowToModal, onClose, handleExitToList]);
+  useEscapeKey(handleExitToList, Boolean(onClose));
+  useEscapeKey(() => setShowHowToModal(false), showHowToModal);
 
   const speakArabicItem = useCallback(
     (textAr: string, src?: MemoryPairSource) => {

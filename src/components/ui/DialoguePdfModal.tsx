@@ -46,6 +46,7 @@ import {
   listStudioRangeItems,
   resolveStudioMaterialBundle,
 } from "@/lib/a4ExamStudioEngine";
+import { useEscapeKey } from "@/lib/modalStack";
 export { allocateExam100PointsSixSections } from "@/lib/pdfDeterministicUtils";
 
 interface DialoguePdfModalProps {
@@ -683,13 +684,7 @@ export default function DialoguePdfModal({
 
   const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  useEscapeKey(onClose, true);
 
   const formatAr = (text: string) =>
     formatArabicText(text, includeHarakat, arabicFont);
@@ -2253,6 +2248,12 @@ export default function DialoguePdfModal({
     const hasHeaderRight =
       effectiveImageMode === "compact" || includeQrCode;
 
+    const isOnlineForOptionalGoogleFonts =
+      typeof navigator === "undefined" ? true : navigator.onLine !== false;
+    const nonBlockingGoogleFontsHtml = isOnlineForOptionalGoogleFonts
+      ? `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Lateef:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" media="print" onload="this.media='all'">`
+      : "";
+
     const htmlDocument = `
       <!DOCTYPE html>
       <html lang="tr">
@@ -2261,13 +2262,12 @@ export default function DialoguePdfModal({
         <title>Diyalog #${String(rawNum).padStart(2, "0")} - ${escapeHtml(
       dialogue.baslik_tr
     )} | www.muallimun.net</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Lateef:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+        <link rel="preload" href="${originStr}/fonts/Arakom.ttf" as="font" type="font/ttf" crossorigin>
+        ${nonBlockingGoogleFontsHtml}
         <style>
           @font-face {
             font-family: "Arakom";
-            src: url("${originStr}/fonts/Arakom.ttf") format("truetype");
+            src: local("Arakom"), url("${originStr}/fonts/Arakom.ttf") format("truetype"), url("/fonts/Arakom.ttf") format("truetype");
             font-weight: 100 900;
             font-style: normal;
             font-display: swap;
@@ -2295,6 +2295,12 @@ export default function DialoguePdfModal({
             padding: 0;
             font-size: 12px;
             line-height: 1.5;
+          }
+          .arabic, [dir="rtl"] {
+            font-family: "Arakom", ${fontConfig.cssFamily};
+            line-height: 2.05 !important;
+            overflow: visible !important;
+            padding-block: 0.08em;
           }
           .header-card {
             display: flex;
@@ -2466,7 +2472,7 @@ export default function DialoguePdfModal({
             border-collapse: collapse;
             border: 1.5px solid #cbd5e1;
             border-radius: 10px;
-            overflow: hidden;
+            overflow: visible;
           }
           .two-col-table th {
             background: #f1f5f9;
@@ -3364,8 +3370,14 @@ export default function DialoguePdfModal({
                 });
               });
 
-        const fontsReadyPromise =
-          doc.fonts && typeof doc.fonts.ready?.then === "function"
+        // Çevrimdışı / MEB Fatih okul ağlarında harici Google Fonts bağlantısını BEKLEMEDEN yalnızca yerel /fonts/Arakom.ttf fontunu yükle
+        const localArakomReadyPromise =
+          doc.fonts && typeof doc.fonts.load === "function"
+            ? doc.fonts
+                .load('700 18px "Arakom"')
+                .then(() => undefined)
+                .catch(() => undefined)
+            : doc.fonts && typeof doc.fonts.ready?.then === "function"
             ? doc.fonts.ready.then(() => undefined).catch(() => undefined)
             : Promise.resolve();
 
@@ -3373,12 +3385,21 @@ export default function DialoguePdfModal({
         const finalizePrint = () => {
           if (printed) return;
           printed = true;
-          setTimeout(triggerPrint, 120);
+          setTimeout(triggerPrint, 60);
         };
 
         Promise.race([
-          Promise.all([imagesReadyPromise, fontsReadyPromise]),
-          new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+          Promise.all([
+            Promise.race([
+              imagesReadyPromise,
+              new Promise<void>((resolve) => setTimeout(resolve, 350)),
+            ]),
+            Promise.race([
+              localArakomReadyPromise,
+              new Promise<void>((resolve) => setTimeout(resolve, 160)),
+            ]),
+          ]),
+          new Promise<void>((resolve) => setTimeout(resolve, 400)),
         ]).then(finalizePrint);
       }
     }
@@ -6497,7 +6518,7 @@ export default function DialoguePdfModal({
         </div>
 
         {/* MODAL ALT AKSİYON ÇUBUĞU: Öğrenci Nüshası ve Öğretmen Cevap Anahtarı Ayrı Basım Seçenekleri */}
-        <div className="print:hidden bg-[#F7EFE1] dark:bg-[var(--background)] px-3 sm:px-5 py-2.5 border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="print:hidden bg-[#F7EFE1] dark:bg-[var(--background)] px-3 sm:px-5 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={() => {

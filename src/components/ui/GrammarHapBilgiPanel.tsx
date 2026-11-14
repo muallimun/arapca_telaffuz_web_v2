@@ -70,6 +70,7 @@ import {
   classifyGrammarCardDomain,
 } from "@/lib/grammarTaxonomy";
 import { printSingleGrammarSheetPdf } from "@/lib/grammarPdfGenerator";
+import { useEscapeKey } from "@/lib/modalStack";
 
 function extractArabicKeyTokens(text: string): string[] {
   const matches = text.match(/[\u0600-\u06FF]+/g) || [];
@@ -1223,19 +1224,10 @@ export function GrammarDeepDiveModal({
   const formatByDepth = (str: string) =>
     isSimpleMode ? simplifyGrammarTerminology(str) : str;
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        stopAllAudio();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [isOpen, onClose]);
+  useEscapeKey(() => {
+    stopAllAudio();
+    onClose();
+  }, isOpen);
 
   const detailLayer = useMemo(
     () => buildSmartGrammarDetailLayer(grammarNote, matchingSentences),
@@ -3183,23 +3175,11 @@ export function LessonGrammarSplitPanel({
     scrollBodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [grammarNote.bagli_id]);
 
-  // ESC ile yan paneli kapat (Eğer 2. katman Ayrıntılı Anlatım modalı açıksa önce o kapanır)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (
-        typeof document !== "undefined" &&
-        document.querySelector("[data-grammar-deep-dive-modal='true']")
-      ) {
-        return;
-      }
-      e.stopPropagation();
-      stopAllAudio();
-      onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  // ESC ile yan paneli kapat (merkezi modalStack ile 2. katman açıksa yalnızca en üstteki kapanır)
+  useEscapeKey(() => {
+    stopAllAudio();
+    onClose();
+  }, true);
 
   const activeNote = resolvedNote || grammarNote;
 
@@ -3361,22 +3341,10 @@ export function GrammarHapBilgiModal({
     useState<GrammarWindowViewMode>(initialViewMode);
   const [drawerSide, setDrawerSide] = useState<"left" | "right">("right");
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (
-        typeof document !== "undefined" &&
-        document.querySelector("[data-grammar-deep-dive-modal='true']")
-      ) {
-        return;
-      }
-      stopAllAudio();
-      onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  useEscapeKey(() => {
+    stopAllAudio();
+    onClose();
+  }, isOpen);
 
   const { resolvedNote, linkedLevel } = useMemo(
     () =>

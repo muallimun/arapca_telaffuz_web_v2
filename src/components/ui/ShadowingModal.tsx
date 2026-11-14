@@ -76,6 +76,7 @@ import {
   playWrong,
   playClick,
 } from "@/lib/sfxManager";
+import { useEscapeKey } from "@/lib/modalStack";
 
 export interface TargetForm {
   label: string;
@@ -429,6 +430,8 @@ export default function ShadowingModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEscapeKey(handleClose, true);
+
   // Unmount sırasında veya sekme gizlendiğinde açık kalan MediaStream, AudioContext, RAF ve Web Speech kaydını KESİNLİKLE kapat
   useEffect(() => {
     isMountedRef.current = true;
@@ -446,10 +449,6 @@ export default function ShadowingModal({
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleClose();
-        return;
-      }
       if (e.key === "Tab" && modalRef.current) {
         const focusables = Array.from(
           modalRef.current.querySelectorAll<HTMLElement>(
@@ -2725,7 +2724,7 @@ export default function ShadowingModal({
         </div>
 
         {/* ALT KONTROL VE DİNLEME BUTONLARI BARI (12 SÜTUNLU TAŞMASIZ MOBİL GRID) */}
-        <div className="w-full px-3 py-2.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-col gap-2 shrink-0">
+        <div className="w-full px-3 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#F7EFE1] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] flex flex-col gap-2 shrink-0">
           {/* GÖRÜNÜR HATA KALKANI: Mikrofon izni reddedilirse veya hata oluşursa butonun hemen üstünde göster */}
           {micError && (
             <div className="w-full rounded-xl bg-red-50 dark:bg-red-950/60 border-2 border-red-500 px-3.5 py-2 text-xs font-extrabold text-red-800 dark:text-red-200 flex items-center gap-2">

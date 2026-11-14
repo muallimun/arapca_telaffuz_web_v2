@@ -43,6 +43,7 @@ import {
 } from "@/lib/sfxManager";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
 import { saveLastExerciseSummary } from "@/lib/learningAnalytics";
+import { useEscapeKey } from "@/lib/modalStack";
 
 export type SafariDifficulty = "easy" | "medium" | "hard";
 export type SafariGameMode = "normal" | "time";
@@ -418,15 +419,7 @@ export default function BalloonSafariGame({
     }
   }, [onClose]);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && onClose) {
-        handleExitToList();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, handleExitToList]);
+  useEscapeKey(handleExitToList, Boolean(onClose));
 
   const finishGame = useCallback(
     (finalScoreValue: number, modeUsed: SafariGameMode) => {

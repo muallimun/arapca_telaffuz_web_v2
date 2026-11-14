@@ -33,18 +33,20 @@ export default function ScrollToTopButton() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={scrollToTop}
-      title="Yukarı Çık"
-      aria-label="Sayfanın En Üstüne Kaydır"
-      className={`fixed right-3 bottom-20 md:bottom-6 md:right-6 z-30 print:hidden w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-2 border-[#087F5B] border-b-4 shadow-lg flex items-center justify-center cursor-pointer active:border-b-2 active:translate-y-0.5 transition-all duration-300 ${
-        visible
-          ? "opacity-100 translate-y-0 pointer-events-auto"
-          : "opacity-0 pointer-events-none translate-y-2"
-      }`}
-    >
-      <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.75} />
-    </button>
+    <div className="fixed right-3 bottom-20 md:bottom-6 md:right-6 z-30 print:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-0 pointer-events-none">
+      <button
+        type="button"
+        onClick={scrollToTop}
+        title="Yukarı Çık"
+        aria-label="Sayfanın En Üstüne Kaydır"
+        className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-2 border-[#087F5B] border-b-4 shadow-lg flex items-center justify-center cursor-pointer active:border-b-2 active:translate-y-0.5 transition-all duration-300 ${
+          visible
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 pointer-events-none translate-y-2"
+        }`}
+      >
+        <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.75} />
+      </button>
+    </div>
   );
 }

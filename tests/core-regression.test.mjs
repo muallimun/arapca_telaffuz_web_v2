@@ -6219,3 +6219,260 @@ test("52. CEFR Kazanım & 5 Temel Beceri Haritası, Çift Yönlü Gramer-Alışt
     "Ana sayfada 4 adımlı 'Bugünkü 30 Dakikalık Arapça Çalışma Rotam' canlı rehberi yer almalıdır"
   );
 });
+
+test("53. Merkezi Modal/Escape Yığını (modalStack), Mobil safe-area-inset-bottom Koruması, Çevrimdışı Arakom PDF/Hareke Garantisi ve Tam UTF-8 / Veri / 17 Modül Bütünlüğü", async () => {
+  // 1. Merkezi Modal / Escape Yığını (src/lib/modalStack.ts) LIFO davranışı + 7 bileşen entegrasyonu
+  const {
+    registerModal,
+    unregisterModal,
+    isTopModal,
+    getModalStackIds,
+    dispatchEscapeToTopModal,
+    clearModalStackForTests,
+  } = await import("../src/lib/modalStack.ts");
+
+  clearModalStackForTests();
+  let closedLayers = [];
+  const unregisterGame = registerModal("balloon_safari", () => {
+    closedLayers.push("balloon_safari");
+  });
+  const _unregisterTooltip = registerModal("word_tooltip", () => {
+    closedLayers.push("word_tooltip");
+    unregisterModal("word_tooltip");
+  });
+  const _unregisterShadowing = registerModal("shadowing_modal", () => {
+    closedLayers.push("shadowing_modal");
+    unregisterModal("shadowing_modal");
+  });
+
+  assert.deepEqual(
+    getModalStackIds(),
+    ["balloon_safari", "word_tooltip", "shadowing_modal"],
+    "Modal yığını açılış sırasına göre LIFO dizilmelidir"
+  );
+  assert.equal(isTopModal("shadowing_modal"), true);
+  assert.equal(isTopModal("word_tooltip"), false);
+  assert.equal(isTopModal("balloon_safari"), false);
+
+  let propagationStopped = 0;
+  let immediateStopped = 0;
+  const mockEscEvent = {
+    key: "Escape",
+    preventDefault() {},
+    stopPropagation() {
+      propagationStopped += 1;
+    },
+    stopImmediatePropagation() {
+      immediateStopped += 1;
+    },
+  };
+
+  // 1. Escape basışı: YALNIZCA en üstteki shadowing_modal kapanmalı, oyun ve tooltip açık kalmalı
+  assert.equal(dispatchEscapeToTopModal(mockEscEvent), true);
+  assert.deepEqual(closedLayers, ["shadowing_modal"]);
+  assert.equal(propagationStopped, 1);
+  assert.equal(immediateStopped, 1);
+  assert.equal(isTopModal("word_tooltip"), true);
+
+  // 2. Escape basışı: YALNIZCA word_tooltip kapanmalı, alttaki balloon_safari açık kalmalı
+  assert.equal(dispatchEscapeToTopModal(mockEscEvent), true);
+  assert.deepEqual(closedLayers, ["shadowing_modal", "word_tooltip"]);
+  assert.equal(isTopModal("balloon_safari"), true);
+
+  unregisterGame();
+  clearModalStackForTests();
+
+  const escapeStackTargetFiles = [
+    ["src", "components", "ui", "WordTooltip.tsx"],
+    ["src", "components", "ui", "DialoguePdfModal.tsx"],
+    ["src", "components", "ui", "StatsAndBadgesModal.tsx"],
+    ["src", "components", "ui", "GrammarHapBilgiPanel.tsx"],
+    ["src", "components", "ui", "ShadowingModal.tsx"],
+    ["src", "components", "exercises", "BalloonSafariGame.tsx"],
+    ["src", "components", "exercises", "MemoryFlipGame.tsx"],
+  ];
+  for (const relParts of escapeStackTargetFiles) {
+    const fileCode = fs.readFileSync(path.join(ROOT_DIR, ...relParts), "utf8");
+    assert.equal(
+      fileCode.includes("@/lib/modalStack") && fileCode.includes("useEscapeKey("),
+      true,
+      `${relParts.join("/")} merkezi modalStack / useEscapeKey kancasını kullanmalıdır`
+    );
+  }
+
+  // 2. Mobil safe-area-inset-bottom koruması: ScrollToTopButton, ShadowingModal, DialoguePdfModal
+  for (const relParts of [
+    ["src", "components", "ui", "ScrollToTopButton.tsx"],
+    ["src", "components", "ui", "ShadowingModal.tsx"],
+    ["src", "components", "ui", "DialoguePdfModal.tsx"],
+  ]) {
+    const fileCode = fs.readFileSync(path.join(ROOT_DIR, ...relParts), "utf8");
+    assert.equal(
+      fileCode.includes("pb-[max(0.75rem,env(safe-area-inset-bottom))]"),
+      true,
+      `${relParts.join("/")} alt kontrol/buton alanında pb-[max(0.75rem,env(safe-area-inset-bottom))] güvenli alan boşluğu bulunmalıdır`
+    );
+  }
+
+  // 3. PDF ve A4 Sınav Üreticide Çevrimdışı / Okul Ağı Font (Arakom) ve Hareke Kırpılma Koruması
+  const dialoguePdfCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const grammarPdfCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "grammarPdfGenerator.ts"),
+    "utf8"
+  );
+  for (const [label, code] of [
+    ["DialoguePdfModal.tsx", dialoguePdfCode],
+    ["grammarPdfGenerator.ts", grammarPdfCode],
+  ]) {
+    assert.equal(
+      code.includes("/fonts/Arakom.ttf") &&
+        code.includes('doc.fonts') &&
+        code.includes('.load(\'700 18px "Arakom"\')') &&
+        code.includes('media="print"') &&
+        code.includes('.arabic, [dir="rtl"]') &&
+        code.includes("line-height: 2.05 !important;") &&
+        code.includes("overflow: visible !important;") &&
+        code.includes("padding-block: 0.08em;"),
+      true,
+      `${label} çevrimdışı Arakom birincil fontunu, bloklamayan Google Fonts yapısını ve hareke kırpılma korumasını (.arabic, [dir="rtl"]) içermelidir`
+    );
+  }
+
+  // 4A. Tüm src/ dosyalarının %100 geçerli UTF-8 olması ve sıfır CESU-8 surrogate baytı kontrolü
+  const strictUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
+  function collectAllSrcFiles(dirPath, out = []) {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      const full = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        collectAllSrcFiles(full, out);
+      } else if (entry.isFile()) {
+        out.push(full);
+      }
+    }
+    return out;
+  }
+  const allSrcFiles = collectAllSrcFiles(path.join(ROOT_DIR, "src"));
+  assert.ok(allSrcFiles.length > 50, "src/ altında tüm kaynak dosyalar taranmalıdır");
+
+  for (const fullFilePath of allSrcFiles) {
+    const rawBuf = fs.readFileSync(fullFilePath);
+    // Fatal UTF-8 decode kontrolü
+    assert.doesNotThrow(
+      () => strictUtf8Decoder.decode(rawBuf),
+      `${path.relative(ROOT_DIR, fullFilePath)} geçerli UTF-8 olmalıdır`
+    );
+    // CESU-8 UTF-16 surrogate bayt dizisi kontrolü (0xED 0xA0..0xBF 0x80..0xBF)
+    let hasCesu8Surrogate = false;
+    for (let i = 0; i + 2 < rawBuf.length; i++) {
+      if (
+        rawBuf[i] === 0xed &&
+        rawBuf[i + 1] >= 0xa0 &&
+        rawBuf[i + 1] <= 0xbf &&
+        rawBuf[i + 2] >= 0x80 &&
+        rawBuf[i + 2] <= 0xbf
+      ) {
+        hasCesu8Surrogate = true;
+        break;
+      }
+    }
+    assert.equal(
+      hasCesu8Surrogate,
+      false,
+      `${path.relative(ROOT_DIR, fullFilePath)} içinde bozuk CESU-8 surrogate baytı bulunmamalıdır`
+    );
+  }
+
+  // 4B. Veri Bütünlüğü: 120 Diyalog (A1->B2 monotonik sira), 60 Metin (odak_gramer), 998 Görsel Kelime, 1111 Cümle, 508 Atasözü, 400 Eş-Zıt, 60 YouTube
+  const { parsed: dialogues120 } = readDataJson("tum_diyaloglar_120.json");
+  const { parsed: readings60 } = readDataJson("tum_metinler_60.json");
+  const { parsed: visualWords998 } = readDataJson("gorselKelimeler_guncel.json");
+  const { parsed: sentences1111 } = readDataJson("1111_cumle.json");
+  const { parsed: proverbs508 } = readDataJson("atasozleri.json");
+  const { parsed: synAnt400 } = readDataJson("es_zit_anlamlilar.json");
+  const { parsed: youtube60 } = readDataJson("youtube_tavsiyeleri.json");
+
+  assert.equal(dialogues120.length, 120, "120 diyalog kaydı bulunmalıdır");
+  const cefrRank = { A1: 1, A2: 2, B1: 3, B2: 4 };
+  for (let i = 0; i < dialogues120.length; i++) {
+    const d = dialogues120[i];
+    assert.equal(d.sira, i + 1, `Diyalog sira alanı monotonik 1..120 olmalıdır (beklenen ${i + 1}, gelen ${d.sira})`);
+    if (i > 0) {
+      const prevRank = cefrRank[dialogues120[i - 1].seviye];
+      const currRank = cefrRank[d.seviye];
+      assert.ok(
+        currRank >= prevRank,
+        `120 diyalog CEFR kurları A1->B2 monotonik sırada ilerlemelidir (${dialogues120[i - 1].id} -> ${d.id})`
+      );
+    }
+  }
+
+  assert.equal(readings60.length, 60, "60 okuma metni kaydı bulunmalıdır");
+  for (const m of readings60) {
+    assert.equal(
+      typeof m.odak_gramer === "string" && m.odak_gramer.trim().length > 0,
+      true,
+      `${m.id} okuma metninde odak_gramer alanı dolu olmalıdır`
+    );
+  }
+
+  assert.equal(visualWords998.length, 998, "998 görsel kelime kaydı bulunmalıdır");
+  assert.equal(sentences1111.length, 1111, "1111 günlük cümle kaydı bulunmalıdır");
+  assert.equal(proverbs508.length, 508, "508 atasözü kaydı bulunmalıdır");
+  assert.equal(synAnt400.length, 400, "400 eş ve zıt anlamlı kaydı bulunmalıdır");
+  assert.equal(youtube60.length, 60, "60 YouTube tavsiyesi kaydı bulunmalıdır");
+
+  // 4C. 17 Alıştırma Modülü + 6 Bölümlü A4 Sınav & Karma Aralık (Range) Motoru Doğrulaması
+  const { CONTENT_INVENTORY } = await import("../src/lib/contentInventory.ts");
+  assert.equal(
+    CONTENT_INVENTORY.exerciseModulesCount,
+    17,
+    "CONTENT_INVENTORY.exerciseModulesCount 17 olmalıdır"
+  );
+
+  const {
+    resolveStudioMaterialBundle,
+    buildSixSectionExamData,
+    clampStudioRangeBounds,
+  } = await import("../src/lib/a4ExamStudioEngine.ts");
+
+  const clampedRange = clampStudioRangeBounds(30, 1, 6);
+  assert.equal(clampedRange.start, 1);
+  assert.equal(clampedRange.end, 6);
+
+  const rangeBundle = resolveStudioMaterialBundle({
+    sourceId: "diyaloglar",
+    levelFilter: "A1",
+    packId: "range::1::6",
+    selectionMode: "range",
+    rangeStart: 1,
+    rangeEnd: 6,
+  });
+  assert.ok(
+    rangeBundle.dialogue.baslik_tr.includes("Karma Sınavı") &&
+      rangeBundle.vocabCandidates.length >= 10,
+    "Karma Aralık (Range) modu birden fazla diyalogdan zengin kelime ve cümle havuzu birleştirmelidir"
+  );
+
+  const rangeExam = buildSixSectionExamData({
+    bundle: rangeBundle,
+    counts: {
+      sec1ArToTr: 5,
+      sec2TrToAr: 5,
+      sec3FillBlank: 4,
+      sec4MultipleChoice: 4,
+      sec5Matching: 5,
+      sec6Morphology: 2,
+    },
+    bookletGroup: "B",
+  });
+  assert.equal(rangeExam.pointsAllocation.grandTotal, 100);
+  assert.equal(rangeExam.sec1ArToTr.length, 5);
+  assert.equal(rangeExam.sec2TrToAr.length, 5);
+  assert.equal(rangeExam.sec3FillBlank.length, 4);
+  assert.equal(rangeExam.sec4MultipleChoice.length, 4);
+  assert.equal(rangeExam.sec5Matching.length, 5);
+  assert.equal(rangeExam.sec6Morphology.length, 2);
+});

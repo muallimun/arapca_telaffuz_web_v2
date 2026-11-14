@@ -5707,16 +5707,15 @@ test("49. Tam Ekran (100dvh) Oyunlar, Saf Görsel Kelime Havuzu, Kaydırmasız H
     "A4 Sınav Stüdyosu Başlangıç–Bitiş sıralı Karma Aralık Seçimi (Range) motoruna ve kontrollerine sahip olmalıdır"
   );
 
-  // 5. Sadeleştirilmiş PDF Önizleme (flex-1 min-h-0 + max-h-[22dvh] kapalı varsayılan akordiyon) ve WordTooltip max-h-[80dvh] overflow-y-auto koruması
+  // 5. Masaüstü 2 Sütunlu Split-Studio PDF Mimarisi (Sol Ayar Paneli + Sağ Tam Boy A4 Önizleme) ve WordTooltip max-h-[80dvh] overflow-y-auto koruması
   assert.equal(
-    pdfModalCode.includes("useState<boolean>(false)") &&
-      pdfModalCode.includes("⚙️ Gelişmiş Mizanpaj Ayarları") &&
-      pdfModalCode.includes("max-h-[22dvh]") &&
-      pdfModalCode.includes("flex-1 min-h-0 overflow-y-auto") &&
+    pdfModalCode.includes("md:grid md:grid-cols-[350px_1fr] lg:grid-cols-[380px_1fr]") &&
+      pdfModalCode.includes("flex-1 min-h-0 overflow-hidden") &&
+      !pdfModalCode.includes("⚙️ Gelişmiş Mizanpaj Ayarları") &&
       !pdfModalCode.includes("md:min-h-[60dvh]") &&
       tooltipCode.includes("max-h-[80dvh] overflow-y-auto"),
     true,
-    "DialoguePdfModal ikincil ayarları max-h-[22dvh] kapalı akordiyon altında toplamalı, önizleme flex-1 min-h-0 overflow-y-auto ile alt barı kesmemeli ve WordTooltip max-h-[80dvh] overflow-y-auto içermelidir"
+    "DialoguePdfModal masaüstünde 2 sütunlu Split-Studio mimarisi kullanmalı, gizli akordiyon içermemeli ve WordTooltip max-h-[80dvh] overflow-y-auto korumasına sahip olmalıdır"
   );
 });
 
@@ -6495,24 +6494,18 @@ test("54. board-mode Modal Koruması, A4 Stüdyo Milimetrik Hizalama & Ders Föy
     "globals.css içinde genel font-size: 19px ve min-height: 52px kuralları kaldırılmış olmalıdır"
   );
 
-  // 2. DialoguePdfModal.tsx: 4 sütun h-5 + h-9 milimetrik hiza, Ders Föyü modunda 6 bölüm gizleme, alt bar koruması
+  // 2. DialoguePdfModal.tsx: Ferah "Tümü" seviye butonu (px-2.5), yalnızca sınav modunda 6 bölüm soru sayısı ve kesilmeyen alt bar koruması
   const pdfModalCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
     "utf8"
   );
-  const h5LabelRows =
-    pdfModalCode.match(/h-5 flex items-center justify-between/g) || [];
   assert.equal(
-    h5LabelRows.length >= 4 &&
-      pdfModalCode.includes("grid grid-cols-5 gap-0.5 h-9") &&
-      pdfModalCode.includes("h-full min-h-0! py-0 px-0.5 rounded-lg") &&
-      pdfModalCode.includes("h-5 p-0.5 rounded-md inline-flex items-center") &&
-      pdfModalCode.includes('pdfDocMode === "quiz-sheet" && (\n              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">') &&
-      pdfModalCode.includes("max-h-[22dvh] overflow-y-auto") &&
+    pdfModalCode.includes('lvl === "all" ? "px-2.5 shrink-0" : "flex-1 min-w-0 px-1.5"') &&
+      pdfModalCode.includes('effectivePdfDocMode === "quiz-sheet" && (') &&
       !pdfModalCode.includes("md:min-h-[60dvh]") &&
       pdfModalCode.includes("print:hidden shrink-0 z-10 bg-[#F7EFE1]"),
     true,
-    "DialoguePdfModal 1. satır h-5 + h-9 hizasını, quiz-sheet koşullu 6 bölüm ızgarasını, max-h-[22dvh] sınırı ve kesilmeyen shrink-0 z-10 alt aksiyon çubuğunu içermelidir"
+    "DialoguePdfModal ferah Tümü buton dolgusu (px-2.5), quiz-sheet koşullu 6 bölüm soru sayısı ve shrink-0 z-10 alt aksiyon çubuğunu içermelidir"
   );
 
   // 3. StatsAndBadgesModal.tsx: Sabit (pinned) 4 ana sekme ve tek satır durum filtreleri
@@ -6583,4 +6576,109 @@ test("54. board-mode Modal Koruması, A4 Stüdyo Milimetrik Hizalama & Ders Föy
     "Flashcard.tsx Eş & Zıt Anlamlılar kartlarında ön yüzde Eş Anlam / Zıt Anlam, arka yüzde Türkçe anlamları ve 💡 Nüans bilgisini göstermelidir"
   );
 });
+
+test("55. A4 PDF Split-Studio Mimarisi, Mobil Hızlı PDF Kartı, Pedagojik pair-infogap Kısıtı, Sıfır Ölü Buton, Ortak Geniş Banner & Akıllı Alt Yazdırma Çubuğu", async () => {
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const assessmentCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "types", "assessment.ts"),
+    "utf8"
+  );
+  const { isPairInfoGapSupported, STUDIO_POOL_PACK_ID } = await import(
+    "../src/lib/a4ExamStudioEngine.ts"
+  );
+
+  // 1. Masaüstü 2 Sütunlu Split-Studio + Üst Başlıktan Tekrarlı Yazdır Butonunun Kaldırılması + Mobil Ultra Sade Hızlı PDF Kartı
+  assert.equal(
+    pdfModalCode.includes("md:grid md:grid-cols-[350px_1fr] lg:grid-cols-[380px_1fr]") &&
+      pdfModalCode.includes("📄 Hızlı A4 PDF &amp; Sınav Üretici") &&
+      !pdfModalCode.includes("<span>🖨️ Öğrenci Kağıdını Yazdır</span>"),
+    true,
+    "DialoguePdfModal masaüstünde 2 sütunlu Split-Studio ve mobilde Hızlı A4 PDF kartı sunmalı, üst başlıktaki tekrarlı yazdır butonunu kaldırmalıdır"
+  );
+
+  // 2. 5 Belge Şablonunun Tek Listede Birleştirilmesi ve pair-infogap Pedagojik Kaynak Kısıtı
+  assert.equal(
+    pdfModalCode.includes("2. Belge Türü / Şablon Seçin") &&
+      pdfModalCode.includes("📝 6 Bölümlü Yazılı Sınav (A/B)") &&
+      pdfModalCode.includes("📄 Temiz Ders Föyü / Çalışma Yaprağı") &&
+      pdfModalCode.includes("✍️ Harekesiz Yoklama + Maarif Rubriği") &&
+      pdfModalCode.includes("✂️ Kes-Katla Kelime Kartları") &&
+      pdfModalCode.includes("🗣️ Eşli Konuşma Kartı (Öğrenci A &amp; B)") &&
+      pdfModalCode.includes("{canUsePairInfoGap && ("),
+    true,
+    "5 belge şablonu tek listede birleştirilmeli ve pair-infogap canUsePairInfoGap koşuluna bağlanmalıdır"
+  );
+
+  assert.equal(isPairInfoGapSupported("diyaloglar", "single", "dlg_001"), true);
+  assert.equal(isPairInfoGapSupported("dialogues", "single", "dlg_001"), true);
+  assert.equal(isPairInfoGapSupported("diyaloglar", "range", "dlg_001"), false);
+  assert.equal(
+    isPairInfoGapSupported("diyaloglar", "single", STUDIO_POOL_PACK_ID),
+    false
+  );
+  assert.equal(isPairInfoGapSupported("metinler", "single", "metin_01"), false);
+  assert.equal(
+    isPairInfoGapSupported("gorsel_kelimeler", "single", STUDIO_POOL_PACK_ID),
+    false
+  );
+  assert.equal(
+    isPairInfoGapSupported("cumleler_1111", "single", STUDIO_POOL_PACK_ID),
+    false
+  );
+  assert.equal(
+    isPairInfoGapSupported("atasozleri", "single", STUDIO_POOL_PACK_ID),
+    false
+  );
+  assert.equal(
+    isPairInfoGapSupported("es_zit_anlamlilar", "single", STUDIO_POOL_PACK_ID),
+    false
+  );
+  assert.equal(
+    isPairInfoGapSupported("defterim_custom", "single", "kutuphane_defterim"),
+    false
+  );
+
+  // 3. Sıfır İşlevsiz Buton: Şablona Özgü Kontroller ve pair-infogap Türkçe İpucu Bağlantısı
+  assert.equal(
+    pdfModalCode.includes('effectivePdfDocMode === "quiz-sheet" && (') &&
+      pdfModalCode.includes('effectivePdfDocMode === "handout" && (') &&
+      pdfModalCode.includes('effectivePdfDocMode === "unvocalized-rubric" && (') &&
+      pdfModalCode.includes('effectivePdfDocMode === "flashcards" && (') &&
+      pdfModalCode.includes('effectivePdfDocMode === "pair-infogap" && (') &&
+      pdfModalCode.includes("showPairTurkishCue") &&
+      pdfModalCode.includes("Gizle (Sadece Arapça)") &&
+      pdfModalCode.includes('{translationMode !== "hide" && ('),
+    true,
+    "Her şablon yalnızca kendi çalışan ayarlarını göstermeli, Sadece Arapça modunda tercüme yerleşimi gizlenmeli ve pair-infogap Türkçe İpucu anahtarı aktif olmalıdır"
+  );
+
+  // 4. Ortak Geniş Banner Görseli (Tüm Şablonlar) ve CDN / http URL Koruması
+  const bannerPreviewMatches =
+    pdfModalCode.match(/effectiveImageMode === "banner"/g) || [];
+  assert.equal(
+    bannerPreviewMatches.length >= 2 &&
+      pdfModalCode.includes("function resolvePrintAssetUrl(") &&
+      pdfModalCode.includes('if (resolved.startsWith("http")) return resolved;') &&
+      pdfModalCode.includes("max-h-[160px] w-auto object-contain rounded-lg mx-auto block") &&
+      pdfModalCode.includes("</div>\n\n        ${bannerImageHtml}\n\n        ${\n          effectivePdfDocMode === \"quiz-sheet\""),
+    true,
+    "Geniş Banner hem canlı önizlemede hem yazdırma HTML çıktısında tüm şablonların üst başlık kartı altında ortak çalışmalı ve resolvePrintAssetUrl http kontrolü içermelidir"
+  );
+
+  // 5. Akıllı Alt Yazdırma Çubuğu (1 Buton vs 3 Buton) ve assessment.ts Satır 539 UTF-8 Koruması
+  assert.equal(
+    pdfModalCode.includes("🖨️ Çalışma Kağıdını / Kartları Yazdır (A4 PDF)") &&
+      pdfModalCode.includes("🖨️ Öğrenci Kağıdı (Cevapsız)") &&
+      pdfModalCode.includes("🔑 Sadece Cevap Anahtarı") &&
+      pdfModalCode.includes("📚 İkisini Birlikte Yazdır") &&
+      assessmentCode.includes('icon: known?.icon || "🏛️",') &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Alt yazdırma çubuğu soru/boşluk durumuna göre 1 veya 3 buton göstermeli, assessment.ts geçerli UTF-8 içermeli ve metadata.json korunmalıdır"
+  );
+});
+
 

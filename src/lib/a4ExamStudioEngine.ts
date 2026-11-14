@@ -97,6 +97,23 @@ export const STUDIO_MATERIAL_SOURCES: readonly StudioSourceMeta[] = [
 
 export type StudioSelectionMode = "single" | "range";
 
+/**
+ * Pedagojik kısıt: Eşli Konuşma Kartı (Öğrenci A & B - pair-infogap) şablonu
+ * yalnızca karşılıklı konuşmacı içeren "Günlük Diyaloglar" kaynağında ve "Tekil"
+ * diyalog seçiminde anlamlıdır.
+ */
+export function isPairInfoGapSupported(
+  sourceId: StudioSourceId | "dialogues",
+  selectionMode: StudioSelectionMode,
+  packId?: string
+): boolean {
+  return (
+    (sourceId === "diyaloglar" || sourceId === "dialogues") &&
+    selectionMode === "single" &&
+    packId !== STUDIO_POOL_PACK_ID
+  );
+}
+
 export interface StudioRangeOptionItem {
   index: number;
   id: string;

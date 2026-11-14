@@ -51,8 +51,7 @@ export type StudioSourceId =
 
 export type StudioLevelFilter = "all" | Level;
 
-export const STUDIO_DEFAULT_PAPER_TITLE =
-  "Arapça Dersi Kelime, Sarf ve Anlama Yazılı Sınavı / Çalışma Yaprağı";
+export const STUDIO_DEFAULT_PAPER_TITLE = "Arapça Dersi Yazılı Sınavı";
 
 export const STUDIO_POOL_PACK_ID = "__POOL__";
 
@@ -869,14 +868,12 @@ function buildTopicSummaryFromGrammarNote(
   if (grammarNote) {
     const rows: TopicSummaryRow[] = [
       {
-        headingTr: "Odak Dilbilgisi Konusu",
-        detailTr: grammarNote.konu_basligi,
+        headingTr: "Metinden Örnek",
+        detailTr: grammarNote.metinden_ornek
+          ? `${grammarNote.metinden_ornek.arapca} — ${grammarNote.metinden_ornek.turkce}`
+          : grammarNote.konu_basligi,
         exampleAr: grammarNote.metinden_ornek?.arapca,
         exampleTr: grammarNote.metinden_ornek?.turkce,
-      },
-      {
-        headingTr: "Temel Kaide Özeti",
-        detailTr: grammarNote.hap_kural,
       },
     ];
     if (grammarNote.ayrintili_anlatim?.formul_sema) {

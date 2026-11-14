@@ -6655,17 +6655,16 @@ test("55. A4 PDF Split-Studio Mimarisi, Mobil Hızlı PDF Kartı, Pedagojik pair
     "Her şablon yalnızca kendi çalışan ayarlarını göstermeli, Sadece Arapça modunda tercüme yerleşimi gizlenmeli ve pair-infogap Türkçe İpucu anahtarı aktif olmalıdır"
   );
 
-  // 4. Ortak Geniş Banner Görseli (Tüm Şablonlar) ve CDN / http URL Koruması
-  const bannerPreviewMatches =
-    pdfModalCode.match(/effectiveImageMode === "banner"/g) || [];
+  // 4. Antette Küçük Görsel Kontrolü (Gizle / Göster) ve CDN / http URL Koruması
+  const compactOptionMatches =
+    pdfModalCode.match(/Göster \(Antette Küçük\)/g) || [];
   assert.equal(
-    bannerPreviewMatches.length >= 2 &&
+    compactOptionMatches.length >= 4 &&
       pdfModalCode.includes("function resolvePrintAssetUrl(") &&
       pdfModalCode.includes('if (resolved.startsWith("http")) return resolved;') &&
-      pdfModalCode.includes("max-h-[160px] w-auto object-contain rounded-lg mx-auto block") &&
-      pdfModalCode.includes("</div>\n\n        ${bannerImageHtml}\n\n        ${\n          effectivePdfDocMode === \"quiz-sheet\""),
+      !pdfModalCode.includes("Geniş Banner"),
     true,
-    "Geniş Banner hem canlı önizlemede hem yazdırma HTML çıktısında tüm şablonların üst başlık kartı altında ortak çalışmalı ve resolvePrintAssetUrl http kontrolü içermelidir"
+    "Tüm şablonlarda Görsel Görünümü 2 seçenekli (Gizle / Göster (Antette Küçük)) olmalı, Geniş Banner kaldırılmalı ve resolvePrintAssetUrl http kontrolü içermelidir"
   );
 
   // 5. Akıllı Alt Yazdırma Çubuğu (1 Buton vs 3 Buton) ve assessment.ts Satır 539 UTF-8 Koruması
@@ -6680,5 +6679,78 @@ test("55. A4 PDF Split-Studio Mimarisi, Mobil Hızlı PDF Kartı, Pedagojik pair
     "Alt yazdırma çubuğu soru/boşluk durumuna göre 1 veya 3 buton göstermeli, assessment.ts geçerli UTF-8 içermeli ve metadata.json korunmalıdır"
   );
 });
+
+test("56. Resmi A4 Sınav ve Ders Föyü Anteti (Maks. 3-3.5 cm, Sıfır Renkli Rozet, Dış Önizleme Çubuğu, Sınav Varsayılanları ve Tekrarsız Konu Özeti)", async () => {
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src/components/ui/DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const { resolveStudioMaterialBundle, STUDIO_DEFAULT_PAPER_TITLE } =
+    await import("../src/lib/a4ExamStudioEngine.ts");
+
+  // 1. A4 kağıdı üzerinde renkli/çerçeveli buton rozetlerinin tamamen kaldırılması
+  assert.equal(
+    !pdfModalCode.includes("badge-row") &&
+      !pdfModalCode.includes("OKUMA METNİ #") &&
+      !pdfModalCode.includes("KÜTÜPHANE ÇALIŞMA FÖYÜ") &&
+      !pdfModalCode.includes("Dinlemek için okutun") &&
+      pdfModalCode.includes("mastheadSourceLineTr") &&
+      pdfModalCode.includes("Kaynak: [${dialogue.id}] ${dialogue.baslik_tr}  •  Seviye: ${dialogue.seviye}  •  Muallimun.Net"),
+    true,
+    "A4 kağıdı ve cevap anahtarında tüm renkli hap rozetler kaldırılmalı, üstte resmi düz metin kaynak satırı kullanılmalıdır"
+  );
+
+  // 2. Canlı önizleme durum çubuğunun beyaz A4 kağıdının (a4PageRef) DIŞINA taşınması
+  const previewBannerIdx = pdfModalCode.indexOf("Canlı A4 Çalışma Kağıdı Önizlemesi");
+  const a4PageRefIdx = pdfModalCode.indexOf("ref={a4PageRef}");
+  assert.equal(
+    previewBannerIdx > 0 && a4PageRefIdx > previewBannerIdx,
+    true,
+    "Canlı A4 Çalışma Kağıdı Önizlemesi bilgi çubuğu beyaz A4 kağıdının (a4PageRef) dışına ve üstüne taşınmalıdır"
+  );
+
+  // 3. Tek parça resmi antet (.official-masthead), 44x44px görsel/QR + 'Dinle' ve bitişik 4 hücreli öğrenci tablosu
+  const officialMastheadMatches =
+    pdfModalCode.match(/official-masthead/g) || [];
+  assert.equal(
+    officialMastheadMatches.length >= 4 &&
+      pdfModalCode.includes("border: 1.5px solid #334155;") &&
+      pdfModalCode.includes("grid-template-columns: 1.5fr 1fr 1.1fr 0.8fr;") &&
+      pdfModalCode.includes("sm:grid-cols-[1.5fr_1fr_1.1fr_0.8fr]") &&
+      pdfModalCode.includes("w-[44px] h-[44px]") &&
+      pdfModalCode.includes('<span class="qr-caption">Dinle</span>'),
+    true,
+    "Hem canlı önizleme hem yazdırma HTML çıktısı hem de Cevap Anahtarı 1.5px #334155 çerçeveli tek parça resmi antet, 44x44px QR/görsel ve 4 hücreli bitişik öğrenci şeridi kullanmalıdır"
+  );
+
+  // 4. Yazılı sınav ciddiyeti varsayılanları ve Konu Özeti kutusunda sıfır tekrar
+  assert.equal(
+    STUDIO_DEFAULT_PAPER_TITLE === "Arapça Dersi Yazılı Sınavı" &&
+      pdfModalCode.includes(
+        "const [includeTopicSummary, setIncludeTopicSummary] = useState<boolean>(false);"
+      ) &&
+      pdfModalCode.includes(
+        'initialDocMode === "quiz-sheet" || initialDocMode === "unvocalized-rubric"\n      ? "hide"\n      : "compact"'
+      ),
+    true,
+    "Yazılı sınavlarda varsayılan görsel modu Gizle ve Konu Özeti kutusu kapalı (false) olmalı, varsayılan başlık öz ve resmi olmalıdır"
+  );
+
+  const bundle = resolveStudioMaterialBundle({
+    sourceId: "metinler",
+    levelFilter: "A1",
+    packId: "metin_04",
+    selectionMode: "single",
+  });
+  const duplicateRuleRow = bundle.topicSummary.rows.some(
+    (r) => r.detailTr.trim() === bundle.topicSummary.ruleSummaryTr.trim()
+  );
+  assert.equal(
+    duplicateRuleRow,
+    false,
+    "Konu Özeti kutusu açıldığında temel kaide özeti (hap_kural) hem üst paragrafta hem alt satırda iki kez tekrarlanmamalıdır"
+  );
+});
+
 
 

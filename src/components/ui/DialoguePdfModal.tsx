@@ -71,7 +71,7 @@ interface DialoguePdfModalProps {
   onClose: () => void;
 }
 
-type ImagePrintMode = "hide" | "compact" | "banner";
+type ImagePrintMode = "hide" | "compact";
 type TranslationPrintMode = "show" | "hide" | "dotted" | "ar-dotted";
 type TranslationLayout = "side-by-side" | "stacked" | "grouped-end";
 type SideBySideOrder = "ar-right" | "ar-left";
@@ -351,7 +351,7 @@ export default function DialoguePdfModal({
     sec5Matching: 5,
     sec6Morphology: 4,
   });
-  const [includeTopicSummary, setIncludeTopicSummary] = useState<boolean>(true);
+  const [includeTopicSummary, setIncludeTopicSummary] = useState<boolean>(false);
 
   const studioPackOptions = useMemo(
     () =>
@@ -423,8 +423,12 @@ export default function DialoguePdfModal({
       : initialReadingQuestions;
 
   // BÖLÜM 2: Seçim Çipleri / Segmented Controls State'leri
-  // PDF-1: Görsel Modu ("Gizle" | "Kompakt Kart (Varsayılan)" | "Geniş Banner")
-  const [imageMode, setImageMode] = useState<ImagePrintMode>("compact");
+  // PDF-1: Görsel Modu ("Gizle" | "Göster (Antette Küçük)") — Yazılı sınavlarda varsayılan Gizle
+  const [imageMode, setImageMode] = useState<ImagePrintMode>(
+    initialDocMode === "quiz-sheet" || initialDocMode === "unvocalized-rubric"
+      ? "hide"
+      : "compact"
+  );
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const resolvedMainImageUrl = useMemo(
     () => resolveImageUrl(imagePath),
@@ -458,7 +462,7 @@ export default function DialoguePdfModal({
   const [idiomsBlankMode, setIdiomsBlankMode] = useState<boolean>(false);
   const [includeWorksheet, setIncludeWorksheet] = useState<boolean>(false);
   const [includeStudentHeader, setIncludeStudentHeader] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [includeAnswerKey, setIncludeAnswerKey] = useState<boolean>(true);
   const [mobileTab, setMobileTab] = useState<"settings" | "preview">("settings");
   const [vocabPlacement, setVocabPlacement] =
@@ -535,6 +539,7 @@ export default function DialoguePdfModal({
     playClick();
     if (preset === "student-handout") {
       setPdfDocMode("handout");
+      setImageMode("compact");
       setIncludeHarakat(true);
       setTranslationMode("show");
       setClozeMode(false);
@@ -543,15 +548,19 @@ export default function DialoguePdfModal({
       setIdiomsBlankMode(false);
       setIncludeWorksheet(false);
       setIncludeQrCode(true);
-      setIncludeStudentHeader(false);
+      setIncludeStudentHeader(true);
       setIncludeAnswerKey(false);
     } else if (preset === "exam-ab") {
       setPdfDocMode("quiz-sheet");
+      setImageMode("hide");
+      setIncludeTopicSummary(false);
       setIncludeHarakat(true);
       setIncludeStudentHeader(true);
       setIncludeAnswerKey(true);
     } else if (preset === "unvocalized-rubric") {
       setPdfDocMode("unvocalized-rubric");
+      setImageMode("hide");
+      setIncludeTopicSummary(false);
       setIncludeHarakat(false);
       setIncludeStudentHeader(true);
       setIncludeAnswerKey(true);
@@ -573,6 +582,23 @@ export default function DialoguePdfModal({
       setIncludeAnswerKey(true);
     }
   };
+
+  const mastheadSourceLineTr = useMemo(() => {
+    if (studioSelectionMode === "range") {
+      const lvlLabel =
+        studioLevelFilter === "all" ? "A1–B2" : studioLevelFilter;
+      return `Kaynak: ${studioBundle.sourceCodeBracket} ${studioBundle.sourceTitleTr}  •  Seviye: ${lvlLabel}  •  Muallimun.Net`;
+    }
+    return `Kaynak: [${dialogue.id}] ${dialogue.baslik_tr}  •  Seviye: ${dialogue.seviye}  •  Muallimun.Net`;
+  }, [
+    studioSelectionMode,
+    studioLevelFilter,
+    studioBundle.sourceCodeBracket,
+    studioBundle.sourceTitleTr,
+    dialogue.id,
+    dialogue.baslik_tr,
+    dialogue.seviye,
+  ]);
 
   // Otomatik Sığdırma (Auto-Fit) Motoru State'leri
   const [fitMode, setFitMode] = useState<FitMode>("auto");
@@ -1152,19 +1178,12 @@ export default function DialoguePdfModal({
     }));
   }, [dialogue.satirlar]);
 
-  const { dialogueUrl, shortDisplayUrl } = useMemo(
+  const { dialogueUrl } = useMemo(
     () => buildDialogueQrUrl(dialogue.id, rawNum),
     [dialogue.id, rawNum]
   );
 
-  const qrBoxPixelSize =
-    activeDensity === "ultra"
-      ? 56
-      : activeDensity === "tight"
-      ? 64
-      : activeDensity === "compact"
-      ? 80
-      : 96;
+  const qrBoxPixelSize = activeDensity === "ultra" ? 38 : 44;
 
   const qrSvgMarkup = useMemo(
     () => generateQrSvgMarkup(dialogueUrl, qrBoxPixelSize),
@@ -1191,14 +1210,6 @@ export default function DialoguePdfModal({
     const formatArHtml = (text: string) => escapeHtml(formatAr(text));
     const formatVocalizedArHtml = (text: string) =>
       escapeHtml(formatArabicText(text, true, arabicFont));
-
-    const formattedDate = escapeHtml(
-      new Date().toLocaleDateString("tr-TR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
-    );
 
     const originStr =
       typeof window !== "undefined" ? window.location.origin : "";
@@ -1596,27 +1607,8 @@ export default function DialoguePdfModal({
       `;
     }
 
-    // Öğrenci Bilgi Şeridi
-    const studentHeaderHtml = includeStudentHeader
-      ? `
-        <div class="student-info-strip">
-          <span><strong>Adı Soyadı:</strong> ....................................</span>
-          <span><strong>Sınıf / No:</strong> ....................</span>
-          <span><strong>Tarih:</strong> .... / .... / 2026</span>
-          <span><strong>Puan:</strong> ......... / 100</span>
-        </div>
-      `
-      : "";
-
     // ✍️ Harekesiz Yazılı Yoklama + Maarif 4 Beceri Değerlendirme Rubriği HTML Üretimi
     const unvocalizedRubricSectionHtml = `
-      <div class="student-header-strip">
-        <span><strong>Adı Soyadı:</strong> .......................................</span>
-        <span><strong>Sınıfı / No:</strong> ..................</span>
-        <span><strong>Tarih:</strong> .... / .... / 2026</span>
-        <span><strong>Toplam Puan:</strong> ........ / 100</span>
-      </div>
-
       <div class="section-block" style="margin-bottom:10px;">
         <div class="section-title">
           <span>BÖLÜM 1 — Harekesiz Metni Harekeleme, Tercüme ve İ'rab Yoklaması</span>
@@ -1889,27 +1881,26 @@ export default function DialoguePdfModal({
     const secondPageAnswerKeyHtml = shouldRenderAnswerKey
       ? `
         <div class="teacher-answer-key-page" style="${answerKeyPageBreakStyle}">
-          <div class="header-card" style="border-color:#087f5b;background:#ecfdf5;margin-bottom:12px;">
-            <div class="header-left">
-              <div class="badge-row">
-                <span class="badge" style="background:#087f5b;">🔑 ÖĞRETMEN CEVAP ANAHTARI</span>
-                <span class="badge-cefr">CEFR ${escapeHtml(dialogue.seviye)}</span>
-                ${
-                  effectivePdfDocMode === "quiz-sheet"
-                    ? `<span class="badge" style="background:#6741d9;">KİTAPÇIK: ${a4QuizSheetData.bookletGroup} GRUBU (FORM #${escapeHtml(
-                        a4QuizSheetData.formCode
-                      )})</span>`
-                    : ""
-                }
-                <span class="badge-outline">مِفْتَاحُ الْإِجَابَاتِ لِلْمُعَلِّمِ</span>
-              </div>
-              <div class="title-row">
-                <h2 class="title-tr" style="font-size:16px;">🔑 Öğretmen Cevap Anahtarı — ${escapeHtml(
-                  dialogue.baslik_tr
-                )}</h2>
-                <span class="title-ar" dir="rtl" style="font-size:22px;">${formatArHtml(
-                  dialogue.baslik_ar
-                )}</span>
+          <div class="official-masthead" style="margin-bottom:10px;">
+            <div class="masthead-top">
+              <div class="masthead-left">
+                <div class="masthead-meta">
+                  Öğretmen Cevap Anahtarı  •  ${escapeHtml(mastheadSourceLineTr)}${
+                    effectivePdfDocMode === "quiz-sheet"
+                      ? `  •  Kitapçık: ${sixSectionExamData.bookletGroup} Grubu (#${escapeHtml(
+                          sixSectionExamData.formCode
+                        )})`
+                      : ""
+                  }
+                </div>
+                <div class="masthead-title-row">
+                  <h2 class="title-tr">Cevap Anahtarı — ${escapeHtml(
+                    effectivePaperTitleTr
+                  )}</h2>
+                  <span class="title-ar" dir="rtl">${formatArHtml(
+                    dialogue.baslik_ar
+                  )}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2274,23 +2265,17 @@ export default function DialoguePdfModal({
       `
       : "";
 
-    // Görsel & QR Kod HTML blokları
+    // Görsel & QR Kod HTML blokları (Antette 44x44px / ~12mm resmi boyut)
     const compactImageHtml =
       effectiveImageMode === "compact" && absoluteImgUrl
         ? `<img src="${absoluteImgUrl}" alt="${escapeHtml(dialogue.baslik_tr)}" loading="eager" class="cover-img-compact" onerror="this.style.display='none'" />`
-        : "";
-
-    const bannerImageHtml =
-      effectiveImageMode === "banner" && absoluteImgUrl
-        ? `<div class="banner-img-wrap"><img src="${absoluteImgUrl}" alt="${escapeHtml(dialogue.baslik_tr)}" loading="eager" class="cover-img-banner" onerror="this.parentElement.style.display='none'" /></div>`
         : "";
 
     const qrBlockHtml = effectiveHeaderQr
       ? `
         <a href="${escapeHtml(dialogueUrl)}" target="_blank" rel="noopener noreferrer" class="qr-code-container" title="${escapeHtml(dialogueUrl)}">
           ${qrSvgMarkup}
-          <span class="qr-caption">Dinlemek için okutun</span>
-          <span class="qr-short-url">${escapeHtml(shortDisplayUrl)}</span>
+          <span class="qr-caption">Dinle</span>
         </a>
       `
       : "";
@@ -2353,134 +2338,111 @@ export default function DialoguePdfModal({
             overflow: visible !important;
             padding-block: 0.08em;
           }
-          .header-card {
+          .official-masthead {
+            border: 1.5px solid #334155;
+            border-radius: 8px;
+            background: #ffffff;
+            margin-bottom: 10px;
+            overflow: hidden;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .masthead-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 14px;
-            border: 2px solid #087F5B;
-            border-bottom-width: 4px;
-            border-radius: 14px;
-            padding: 12px 16px;
-            background: #fdfbf7;
-            margin-bottom: 12px;
+            gap: 10px;
+            padding: 7px 12px;
           }
-          .header-left {
+          .masthead-left {
             flex: 1;
             min-width: 0;
           }
-          .header-right {
+          .masthead-meta {
+            font-size: 10px;
+            font-weight: 500;
+            color: #475569;
+            line-height: 1.25;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .masthead-title-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+          }
+          .title-tr {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.25;
+          }
+          .title-ar {
+            font-family: "Arakom", ${fontConfig.cssFamily};
+            font-size: 19px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.3 !important;
+            padding-block: 0 !important;
+            flex-shrink: 0;
+          }
+          .masthead-right {
             display: flex;
             align-items: center;
-            gap: 12px;
-            border-left: 1px dashed #cbd5e1;
-            padding-left: 12px;
+            gap: 8px;
+            border-left: 1px solid #e2e8f0;
+            padding-left: 9px;
             flex-shrink: 0;
           }
           .cover-img-compact {
-            width: 88px;
-            height: 88px;
+            width: 44px;
+            height: 44px;
             aspect-ratio: 1 / 1;
             object-fit: contain;
-            background: #fff;
-            border-radius: 10px;
-            border: 1.5px solid #cbd5e1;
-            display: block;
-          }
-          .banner-img-wrap {
-            width: 100%;
-            margin-bottom: 12px;
-            padding: 8px;
-            border-radius: 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-          }
-          .cover-img-banner {
-            max-height: 160px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            border-radius: 8px;
-            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 5px;
+            border: 1px solid #cbd5e1;
             display: block;
           }
           .qr-code-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 1px;
             text-decoration: none;
             color: inherit;
           }
+          .qr-code-container svg {
+            width: 44px;
+            height: 44px;
+            display: block;
+          }
           .qr-caption {
-            font-size: 8.5px;
-            font-weight: 800;
-            color: #087f5b;
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #475569;
+            line-height: 1;
             white-space: nowrap;
           }
-          .qr-short-url {
-            font-size: 8px;
-            color: #64748b;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            white-space: nowrap;
-          }
-          .badge-row {
-            display: flex;
+          .masthead-student-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1.1fr 0.8fr;
+            gap: 8px;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 5px;
-            flex-wrap: wrap;
+            border-top: 1px solid #cbd5e1;
+            background: rgba(248, 250, 252, 0.75);
+            padding: 5px 12px;
+            font-size: 11px;
+            color: #1e293b;
           }
-          .badge {
-            background: #087F5B;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 6px;
-          }
-          .badge-cefr {
-            background: #6741d9;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 6px;
-          }
-          .badge-outline {
-            border: 1px solid #cbb692;
-            color: #5c5042;
-            font-weight: 700;
-            font-size: 9.5px;
-            padding: 2px 7px;
-            border-radius: 6px;
-          }
-          .title-row {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-          }
-          .title-tr {
-            font-size: 18px;
-            font-weight: 800;
-            color: #1f1a14;
-            margin: 0;
-          }
-          .title-ar {
-            font-family: ${fontConfig.cssFamily};
-            font-size: 26px;
-            font-weight: 700;
-            color: #087f5b;
-            line-height: 1.25;
-          }
-          .header-submeta {
-            margin-top: 4px;
-            font-size: 10px;
-            color: #64748b;
-            font-weight: 600;
+          .masthead-student-grid span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .helper-words-box {
             background: #f3f0ff;
@@ -2883,19 +2845,8 @@ export default function DialoguePdfModal({
             letter-spacing: 0.03em;
           }
           /* 4 Kademeli Otomatik Sığdırma (Auto-Fit) Sınıfları (normal | compact | tight | ultra) */
-          body.density-compact .header-card {
-            padding: 10px 12px;
-            margin-bottom: 10px;
-          }
-          body.density-compact .cover-img-compact {
-            width: 80px;
-            height: 80px;
-          }
-          body.density-compact .title-tr {
-            font-size: 16.5px;
-          }
-          body.density-compact .title-ar {
-            font-size: 23px;
+          body.density-compact .official-masthead {
+            margin-bottom: 8px;
           }
           body.density-compact .two-col-table td,
           body.density-compact .stacked-card,
@@ -2928,19 +2879,8 @@ export default function DialoguePdfModal({
           body.density-tight {
             zoom: 0.96;
           }
-          body.density-tight .header-card {
-            padding: 8px 10px;
-            margin-bottom: 8px;
-          }
-          body.density-tight .cover-img-compact {
-            width: 64px;
-            height: 64px;
-          }
-          body.density-tight .title-tr {
-            font-size: 15.5px;
-          }
-          body.density-tight .title-ar {
-            font-size: 21px;
+          body.density-tight .official-masthead {
+            margin-bottom: 7px;
           }
           body.density-tight .two-col-table td,
           body.density-tight .stacked-card,
@@ -2977,28 +2917,19 @@ export default function DialoguePdfModal({
           body.density-ultra {
             zoom: 0.92;
           }
-          body.density-ultra .header-card {
-            padding: 6px 8px;
+          body.density-ultra .official-masthead {
             margin-bottom: 6px;
           }
-          body.density-ultra .cover-img-compact {
-            width: 56px;
-            height: 56px;
+          body.density-ultra .masthead-top {
+            padding: 5px 10px;
           }
-          body.density-ultra .title-tr {
-            font-size: 15px;
+          body.density-ultra .cover-img-compact,
+          body.density-ultra .qr-code-container svg {
+            width: 38px;
+            height: 38px;
           }
-          body.density-ultra .title-ar {
-            font-size: 19.5px;
-          }
-          body.density-ultra .header-submeta,
-          body.density-ultra .qr-caption,
-          body.density-ultra .qr-short-url {
-            font-size: 9px;
-          }
-          body.density-ultra .student-info-bar {
-            padding: 4px 8px;
-            margin-bottom: 6px;
+          body.density-ultra .masthead-student-grid {
+            padding: 4px 10px;
             font-size: 10.5px;
           }
           body.density-ultra .two-col-table td,
@@ -3046,95 +2977,69 @@ export default function DialoguePdfModal({
         ${
           printScope !== "answer-key"
             ? `
-        <div class="header-card">
-          <div class="header-left">
-            <div class="badge-row">
-              <span class="badge">${
-                dialogue.id.startsWith("kutuphane_")
-                  ? "KÜTÜPHANE ÇALIŞMA FÖYÜ"
-                  : dialogue.id.startsWith("metin_")
-                  ? `OKUMA METNİ #${String(rawNum).padStart(2, "0")}`
-                  : `DİYALOG #${String(rawNum).padStart(2, "0")}`
-              }</span>
-              <span class="badge-cefr">CEFR ${escapeHtml(dialogue.seviye)}</span>
-              ${
-                effectivePdfDocMode === "quiz-sheet"
-                  ? `<span class="badge" style="background:#6741d9;">Kitapçık: ${a4QuizSheetData.bookletGroup} Grubu (Form Kodu: #${escapeHtml(
-                      a4QuizSheetData.formCode
-                    )})</span>`
-                  : ""
-              }
-              <span class="badge-outline">${
-                effectivePdfDocMode === "quiz-sheet"
-                  ? `YAZILI SINAV (${sixSectionExamData.pointsAllocation.grandTotal} PUAN)`
-                  : effectivePdfDocMode === "unvocalized-rubric"
-                  ? "HAREKESİZ YOKLAMA & MAARİF RUBRİĞİ (100 PUAN)"
-                  : effectivePdfDocMode === "flashcards"
-                  ? `✂️ KES-KATLA KELİME KARTLARI (${flashcardGridSize})`
-                  : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`
-              }</span>
-              <span class="badge-outline">${
-                (effectivePdfDocMode === "unvocalized-rubric"
-                  ? false
-                  : includeHarakat)
-                  ? "Harekeli"
-                  : "Harekesiz"
-              }</span>
+        <div class="official-masthead">
+          <div class="masthead-top">
+            <div class="masthead-left">
+              <div class="masthead-meta">${escapeHtml(mastheadSourceLineTr)}</div>
+              <div class="masthead-title-row">
+                <h1 class="title-tr">${escapeHtml(effectivePaperTitleTr)}</h1>
+                <span class="title-ar" dir="rtl">${formatArHtml(
+                  dialogue.baslik_ar
+                )}</span>
+              </div>
             </div>
-            <div class="title-row">
-              <h1 class="title-tr">${escapeHtml(effectivePaperTitleTr)}</h1>
-              <span class="title-ar" dir="rtl">${formatArHtml(
-                dialogue.baslik_ar
-              )}</span>
-            </div>
-            <div class="header-submeta">
-              Tarih: ${formattedDate} • Font: ${escapeHtml(
-                fontConfig.name.split(" (")[0]
-              )} • www.muallimun.net
-            </div>
+            ${
+              hasHeaderRight
+                ? `
+              <div class="masthead-right">
+                ${compactImageHtml}
+                ${qrBlockHtml}
+              </div>
+            `
+                : ""
+            }
           </div>
           ${
-            hasHeaderRight
+            effectiveShowStudentHeader
               ? `
-            <div class="header-right">
-              ${compactImageHtml}
-              ${qrBlockHtml}
+            <div class="masthead-student-grid">
+              <span><strong>Adı Soyadı:</strong> ........................</span>
+              <span><strong>Sınıfı / No:</strong> ............</span>
+              <span>${
+                effectivePdfDocMode === "quiz-sheet"
+                  ? `<strong>Kitapçık:</strong> ${sixSectionExamData.bookletGroup} Grubu (#${escapeHtml(
+                      sixSectionExamData.formCode
+                    )})`
+                  : `<strong>Tarih:</strong> .../.../2026`
+              }</span>
+              <span style="text-align:right;"><strong>Puan:</strong> .... / ${
+                effectivePdfDocMode === "quiz-sheet"
+                  ? sixSectionExamData.pointsAllocation.grandTotal
+                  : 100
+              }</span>
             </div>
           `
               : ""
           }
         </div>
 
-        ${bannerImageHtml}
-
         ${
           effectivePdfDocMode === "quiz-sheet"
             ? `
-          <div class="student-header-strip">
-            <span><strong>Adı Soyadı:</strong> .......................................</span>
-            <span><strong>Sınıfı / No:</strong> ..................</span>
-            <span><strong>Kitapçık:</strong> ${sixSectionExamData.bookletGroup} Grubu (#${escapeHtml(
-                sixSectionExamData.formCode
-              )})</span>
-            <span><strong>Puan:</strong> ........ / ${
-              sixSectionExamData.pointsAllocation.grandTotal
-            }</span>
-          </div>
-
           ${
             includeTopicSummary
-              ? `<div class="section-block" style="margin-bottom:10px;border:1.5px solid #087f5b;border-radius:10px;padding:8px 12px;background:#f0fdf4;">
-                  <div style="font-size:11.5px;font-weight:800;color:#065f46;margin-bottom:3px;">📚 Konu Özeti / Dilbilgisi ve Kelime Kutusu — ${escapeHtml(
+              ? `<div class="section-block" style="margin-bottom:9px;border:1px solid #cbd5e1;border-left:3.5px solid #087f5b;border-radius:8px;padding:6px 10px;background:#f8fafc;">
+                  <div style="font-size:11px;font-weight:800;color:#0f172a;margin-bottom:2px;">📚 Konu Özeti — ${escapeHtml(
                     studioBundle.topicSummary.titleTr
                   )}</div>
-                  <div style="font-size:10.5px;color:#1e293b;margin-bottom:5px;">${escapeHtml(
+                  <div style="font-size:10.5px;color:#334155;margin-bottom:4px;">${escapeHtml(
                     studioBundle.topicSummary.ruleSummaryTr
                   )}</div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
                     ${studioBundle.topicSummary.rows
                       .map(
                         (r) =>
-                          `<div style="background:#ffffff;border:1px solid #bbf7d0;border-radius:7px;padding:4px 8px;font-size:10px;">
+                          `<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:3px 7px;font-size:10px;color:#1e293b;">
                             <strong style="color:#065f46;">${escapeHtml(r.headingTr)}:</strong> ${escapeHtml(r.detailTr)}
                           </div>`
                       )
@@ -3360,7 +3265,6 @@ export default function DialoguePdfModal({
             : effectivePdfDocMode === "pair-infogap"
             ? pairInfoGapSectionHtml
             : `
-          ${studentHeaderHtml}
           ${helperWordsBoxHtml}
           ${dialogueBodyHtml}
           ${vocabSectionHtml}
@@ -3691,6 +3595,8 @@ export default function DialoguePdfModal({
                             effectivePdfDocMode === "pair-infogap"
                           ) {
                             setPdfDocMode("quiz-sheet");
+                            setImageMode("hide");
+                            setIncludeTopicSummary(false);
                             setIncludeStudentHeader(true);
                             setIncludeAnswerKey(true);
                           }
@@ -4060,12 +3966,11 @@ export default function DialoguePdfModal({
                         <ImageIcon size={12} className="text-[#065F46] dark:text-emerald-400" />
                         <span>Görsel Görünümü</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                      <div className="grid grid-cols-2 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
                         {(
                           [
                             { id: "hide", label: "Gizle" },
-                            { id: "compact", label: "Kompakt" },
-                            { id: "banner", label: "Geniş Banner" },
+                            { id: "compact", label: "Göster (Antette Küçük)" },
                           ] as { id: ImagePrintMode; label: string }[]
                         ).map((opt) => (
                           <button
@@ -4514,12 +4419,11 @@ export default function DialoguePdfModal({
                         <ImageIcon size={12} className="text-[#065F46] dark:text-emerald-400" />
                         <span>Görsel Görünümü</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                      <div className="grid grid-cols-2 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
                         {(
                           [
                             { id: "hide", label: "Gizle" },
-                            { id: "compact", label: "Kompakt" },
-                            { id: "banner", label: "Geniş Banner" },
+                            { id: "compact", label: "Göster (Antette Küçük)" },
                           ] as { id: ImagePrintMode; label: string }[]
                         ).map((opt) => (
                           <button
@@ -4603,12 +4507,11 @@ export default function DialoguePdfModal({
                       <ImageIcon size={12} className="text-[#065F46] dark:text-emerald-400" />
                       <span>Görsel Görünümü</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                    <div className="grid grid-cols-2 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
                       {(
                         [
                           { id: "hide", label: "Gizle" },
-                          { id: "compact", label: "Kompakt" },
-                          { id: "banner", label: "Geniş Banner" },
+                          { id: "compact", label: "Göster (Antette Küçük)" },
                         ] as { id: ImagePrintMode; label: string }[]
                       ).map((opt) => (
                         <button
@@ -4911,12 +4814,11 @@ export default function DialoguePdfModal({
                       <ImageIcon size={12} className="text-[#065F46] dark:text-emerald-400" />
                       <span>Görsel Görünümü</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                    <div className="grid grid-cols-2 gap-1 bg-white dark:bg-[var(--surface)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
                       {(
                         [
                           { id: "hide", label: "Gizle" },
-                          { id: "compact", label: "Kompakt" },
-                          { id: "banner", label: "Geniş Banner" },
+                          { id: "compact", label: "Göster (Antette Küçük)" },
                         ] as { id: ImagePrintMode; label: string }[]
                       ).map((opt) => (
                         <button
@@ -4966,6 +4868,22 @@ export default function DialoguePdfModal({
                 : "hidden md:block"
             }`}
           >
+            {/* Önizleme Durum Çubuğu — Beyaz A4 Kağıdının (a4PageRef) DIŞINDA ve üstünde */}
+            <div className="print:hidden max-w-[780px] w-full mx-auto mb-2 px-1 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-[#065F46] dark:text-emerald-400">
+                  <Eye size={14} />
+                  <span>Canlı A4 Çalışma Kağıdı Önizlemesi</span>
+                </span>
+                {activeDensity !== "normal" && (
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold">
+                    ✨ Otomatik sayfaya sığdırıldı
+                  </span>
+                )}
+              </div>
+              <span>Vektörel A4 Çıktı • {fontConfig.name.split(" (")[0]}</span>
+            </div>
+
             <div
               ref={a4PageRef}
               style={
@@ -4982,239 +4900,116 @@ export default function DialoguePdfModal({
                   ? "p-4 space-y-2"
                   : activeDensity === "compact"
                   ? "p-5 space-y-2.5"
-                  : "p-7 sm:p-8 space-y-4"
+                  : "p-6 sm:p-7 space-y-3.5"
               }`}
             >
-              {/* Önizleme Rozeti (print:hidden) */}
-              <div className="print:hidden flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-500 border-b border-slate-200 pb-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex items-center gap-1.5 text-[#065F46] dark:text-emerald-400">
-                    <Eye size={14} />
-                    <span>Canlı A4 Çalışma Kağıdı Önizlemesi</span>
-                  </span>
-                  {activeDensity !== "normal" && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold">
-                      ✨ Sarkan satırlar otomatik daraltılarak sayfaya sığdırıldı
-                    </span>
+              {/* TEK PARÇA RESMİ SINAV / DERS FÖYÜ ANTETİ (Maksimum 3 - 3.5 cm) */}
+              <div className="official-masthead border-[1.5px] border-[#334155] rounded-lg bg-white mb-3 overflow-hidden">
+                <div className="py-2 px-3 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-medium text-slate-600 leading-tight truncate">
+                      {mastheadSourceLineTr}
+                    </div>
+                    <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                      <h1 className="text-[14px] sm:text-[15px] font-extrabold text-slate-900 leading-snug line-clamp-2">
+                        {effectivePaperTitleTr}
+                      </h1>
+                      <span
+                        dir="rtl"
+                        className="arabic text-[18px] sm:text-[20px] font-bold text-slate-900 leading-[1.3] shrink-0"
+                      >
+                        {formatAr(dialogue.baslik_ar)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sağ Köşe: 44x44px (12mm) Küçük Görsel ve/veya QR Kod */}
+                  {((effectiveImageMode === "compact" &&
+                    Boolean(resolvedMainImageUrl)) ||
+                    effectiveHeaderQr) && (
+                    <div className="flex items-center gap-2 border-l border-slate-200 pl-2.5 shrink-0">
+                      {effectiveImageMode === "compact" &&
+                        resolvedMainImageUrl && (
+                          <img
+                            src={resolvedMainImageUrl}
+                            alt={dialogue.baslik_tr}
+                            loading="eager"
+                            referrerPolicy="no-referrer"
+                            onError={() =>
+                              setFailedImageUrl(resolvedMainImageUrl)
+                            }
+                            className="w-[44px] h-[44px] aspect-square object-contain bg-white rounded border border-slate-300 shrink-0"
+                          />
+                        )}
+                      {effectiveHeaderQr && (
+                        <a
+                          href={dialogueUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`${dialogueUrl} adresini aç`}
+                          className="flex flex-col items-center gap-0.5 shrink-0 group hover:opacity-90 transition-opacity"
+                        >
+                          <div
+                            className="w-[44px] h-[44px] flex items-center justify-center [&>svg]:w-[44px] [&>svg]:h-[44px]"
+                            dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
+                          />
+                          <span className="text-[7.5px] font-bold text-slate-600 leading-none whitespace-nowrap group-hover:underline">
+                            Dinle
+                          </span>
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
-                <span>Vektörel A4 Çıktı • {fontConfig.name.split(" (")[0]}</span>
-              </div>
 
-              {/* A4 ÜST BAŞLIK KARTI */}
-              <div
-                className={`border-2 border-[#087F5B] border-b-4 rounded-2xl bg-[#FDFBF7] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                  activeDensity === "ultra"
-                    ? "p-2 mb-2"
-                    : activeDensity === "tight"
-                    ? "p-2.5 mb-2.5"
-                    : activeDensity === "compact"
-                    ? "p-3 mb-3"
-                    : "p-4 mb-4"
-                }`}
-              >
-                <div className="flex-1 min-w-0 space-y-1 w-full">
-                  <div
-                    className={`flex items-center gap-1.5 flex-wrap ${
-                      activeDensity === "ultra" ? "text-[10px]" : ""
-                    }`}
-                  >
-                    <span className="px-2 py-0.5 rounded-md bg-[#087F5B] text-white text-[10px] font-extrabold">
-                      {dialogue.id.startsWith("kutuphane_")
-                        ? "KÜTÜPHANE ÇALIŞMA FÖYÜ"
-                        : `${dialogue.id.startsWith("metin_") ? "OKUMA METNİ" : "DİYALOG"} #${String(rawNum).padStart(2, "0")}`}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[10px] font-extrabold">
-                      CEFR {dialogue.seviye}
-                    </span>
-                    {effectivePdfDocMode === "quiz-sheet" && (
-                      <span className="px-2 py-0.5 rounded-md bg-violet-700 text-white text-[10px] font-extrabold">
-                        Kitapçık: {sixSectionExamData.bookletGroup} Grubu (Form Kodu: #
-                        {sixSectionExamData.formCode})
+                {/* Bitişik 4 Hücreli Resmi Öğrenci Bilgi Şeridi */}
+                {effectiveShowStudentHeader && (
+                  <div className="border-t border-slate-300 bg-slate-50/60 py-1.5 px-3 text-[11px] text-slate-800 grid grid-cols-2 sm:grid-cols-[1.5fr_1fr_1.1fr_0.8fr] gap-x-3 gap-y-1 items-center">
+                    <span className="truncate">
+                      <strong>Adı Soyadı:</strong>{" "}
+                      <span className="text-slate-600">
+                        ........................
                       </span>
-                    )}
-                    <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
-                      {effectivePdfDocMode === "quiz-sheet"
-                        ? `Yazılı Sınav • ${sixSectionExamData.pointsAllocation.grandTotal} Puan`
-                        : effectivePdfDocMode === "unvocalized-rubric"
-                        ? "Harekesiz Yoklama + Maarif Rubriği • 100 Puan"
-                        : `${dialogue.satirlar.length} Cümle • ${vocabEntries.length} Kelime`}
                     </span>
-                    <span className="px-2 py-0.5 rounded-md border border-[#CBB692] text-[#5C5042] text-[10px] font-bold">
-                      {(effectivePdfDocMode === "unvocalized-rubric"
-                        ? false
-                        : includeHarakat)
-                        ? "Harekeli"
-                        : "Harekesiz"}
+                    <span className="truncate">
+                      <strong>Sınıfı / No:</strong>{" "}
+                      <span className="text-slate-600">............</span>
                     </span>
-                    {dialogue.odak_gramer && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
-                        📌 {dialogue.odak_gramer}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                    <h1
-                      className={`font-extrabold text-[#1f1a14] ${
-                        activeDensity === "ultra" || activeDensity === "tight"
-                          ? "text-base"
-                          : activeDensity === "compact"
-                          ? "text-lg"
-                          : "text-xl"
-                      }`}
-                    >
-                      {effectivePaperTitleTr}
-                    </h1>
-                    <span
-                      dir="rtl"
-                      className={`arabic font-bold text-[#065F46] dark:text-emerald-400 ${
-                        activeDensity === "ultra"
-                          ? "text-xl"
-                          : activeDensity === "tight"
-                          ? "text-2xl"
-                          : activeDensity === "compact"
-                          ? "text-2xl sm:text-3xl"
-                          : "text-2xl sm:text-3xl"
-                      }`}
-                    >
-                      {formatAr(dialogue.baslik_ar)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sağ Köşe: Kompakt Görsel ve/veya QR Kod */}
-                {((effectiveImageMode === "compact" && Boolean(resolvedMainImageUrl)) ||
-                  effectiveHeaderQr) && (
-                  <div className="flex items-center gap-2.5 sm:border-l sm:border-dashed sm:border-slate-300 sm:pl-3 shrink-0">
-                    {effectiveImageMode === "compact" && resolvedMainImageUrl && (
-                      <img
-                        src={resolvedMainImageUrl}
-                        alt={dialogue.baslik_tr}
-                        loading="eager"
-                        referrerPolicy="no-referrer"
-                        onError={() => setFailedImageUrl(resolvedMainImageUrl)}
-                        className={`aspect-square object-contain bg-white rounded-xl border border-slate-300 shrink-0 ${
-                          activeDensity === "ultra"
-                            ? "w-14 h-14"
-                            : activeDensity === "tight"
-                            ? "w-16 h-16"
-                            : activeDensity === "compact"
-                            ? "w-20 h-20"
-                            : "w-24 h-24"
-                        }`}
-                      />
-                    )}
-                    {effectiveHeaderQr && (
-                      <a
-                        href={dialogueUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`${dialogueUrl} adresini aç`}
-                        className="flex flex-col items-center gap-0.5 shrink-0 group hover:opacity-90 transition-opacity"
-                      >
-                        <div
-                          className={`flex items-center justify-center ${
-                            activeDensity === "ultra"
-                              ? "w-14 h-14"
-                              : activeDensity === "tight"
-                              ? "w-16 h-16"
-                              : activeDensity === "compact"
-                              ? "w-20 h-20"
-                              : "w-24 h-24"
-                          }`}
-                          dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
-                        />
-                        <span
-                          className={`${
-                            activeDensity === "ultra" ? "text-[8px]" : "text-[9px]"
-                          } font-extrabold text-[#065F46] dark:text-emerald-400 whitespace-nowrap group-hover:underline`}
-                        >
-                          Dinlemek için okutun
+                    {effectivePdfDocMode === "quiz-sheet" ? (
+                      <span className="truncate">
+                        <strong>Kitapçık:</strong>{" "}
+                        <span className="font-bold text-slate-900">
+                          {sixSectionExamData.bookletGroup} Grubu (#
+                          {sixSectionExamData.formCode})
                         </span>
-                        {activeDensity !== "ultra" && (
-                          <span className="text-[9px] text-slate-500 font-mono whitespace-nowrap">
-                            {shortDisplayUrl}
-                          </span>
-                        )}
-                      </a>
+                      </span>
+                    ) : (
+                      <span className="truncate">
+                        <strong>Tarih:</strong>{" "}
+                        <span className="text-slate-600">.../.../2026</span>
+                      </span>
                     )}
+                    <span className="truncate sm:text-right">
+                      <strong>Puan:</strong>{" "}
+                      <span className="text-slate-600">
+                        .... /{" "}
+                        {effectivePdfDocMode === "quiz-sheet"
+                          ? sixSectionExamData.pointsAllocation.grandTotal
+                          : 100}
+                      </span>
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* ORTAK GENİŞ BANNER GÖRSEL MODU (Tüm Şablonlarda Başlık Kartının Hemen Altında) */}
-              {effectiveImageMode === "banner" && Boolean(resolvedMainImageUrl) && (
-                <div className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2 flex items-center justify-center">
-                  <img
-                    src={resolvedMainImageUrl}
-                    alt={dialogue.baslik_tr}
-                    loading="eager"
-                    referrerPolicy="no-referrer"
-                    onError={() => setFailedImageUrl(resolvedMainImageUrl)}
-                    className="max-h-[160px] w-auto object-contain rounded-lg mx-auto block"
-                  />
-                </div>
-              )}
-
-              {/* 👤 ÖĞRENCİ BİLGİ ŞERİDİ */}
-              {effectiveShowStudentHeader && (
-                <div
-                  className={`border border-slate-300 rounded-xl bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-slate-800 ${
-                    activeDensity === "ultra"
-                      ? "px-2.5 py-1 text-[10.5px]"
-                      : activeDensity === "tight"
-                      ? "px-3 py-1.5 text-[11px]"
-                      : activeDensity === "compact"
-                      ? "px-3 py-1.5 text-[11.5px]"
-                      : "px-3.5 py-2 text-xs"
-                  }`}
-                >
-                  <span>
-                    <strong>Adı Soyadı:</strong>{" "}
-                    <span className="text-slate-600">
-                      ..................................
-                    </span>
-                  </span>
-                  <span>
-                    <strong>Sınıfı / No:</strong>{" "}
-                    <span className="text-slate-600">.................</span>
-                  </span>
-                  {effectivePdfDocMode === "quiz-sheet" ? (
-                    <span>
-                      <strong>Kitapçık:</strong>{" "}
-                      <span className="font-extrabold text-[#6741D9]">
-                        {sixSectionExamData.bookletGroup} Grubu (#
-                        {sixSectionExamData.formCode})
-                      </span>
-                    </span>
-                  ) : (
-                    <span>
-                      <strong>Tarih:</strong>{" "}
-                      <span className="text-slate-600">.... / .... / 2026</span>
-                    </span>
-                  )}
-                  <span>
-                    <strong>Puan:</strong>{" "}
-                    <span className="text-slate-600">
-                      ....... /{" "}
-                      {effectivePdfDocMode === "quiz-sheet"
-                        ? sixSectionExamData.pointsAllocation.grandTotal
-                        : 100}
-                    </span>
-                  </span>
-                </div>
-              )}
-
             {effectivePdfDocMode === "quiz-sheet" ? (
               <div className="space-y-4">
-                {/* KONU ÖZETİ / DİLBİLGİSİ VE KELİME KUTUSU */}
+                {/* KONU ÖZETİ / DİLBİLGİSİ VE KELİME KUTUSU (İsteğe Bağlı, Tekrarsız & Kompakt) */}
                 {includeTopicSummary && (
-                  <div className="rounded-xl border-2 border-[#087F5B]/60 bg-emerald-50/60 p-3 space-y-2 break-inside-avoid">
+                  <div className="rounded-lg border border-slate-300 border-l-4 border-l-[#087F5B] bg-slate-50/80 px-3 py-2 space-y-1.5 break-inside-avoid">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-extrabold text-[#065F46]">
-                        📚 Konu Özeti &amp; Dilbilgisi Kutusu —{" "}
-                        {studioBundle.topicSummary.titleTr}
+                      <span className="text-[11.5px] font-extrabold text-slate-900">
+                        📚 Konu Özeti — {studioBundle.topicSummary.titleTr}
                       </span>
                       <span
                         dir="rtl"
@@ -5223,14 +5018,14 @@ export default function DialoguePdfModal({
                         {formatAr(studioBundle.topicSummary.titleAr)}
                       </span>
                     </div>
-                    <p className="text-[11px] font-semibold text-slate-700 leading-snug">
+                    <p className="text-[11px] font-medium text-slate-700 leading-snug">
                       {studioBundle.topicSummary.ruleSummaryTr}
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {studioBundle.topicSummary.rows.map((r, rIdx) => (
                         <div
                           key={rIdx}
-                          className="rounded-lg bg-white border border-emerald-200 px-2.5 py-1.5 text-[11px]"
+                          className="rounded-md bg-white border border-slate-200 px-2.5 py-1 text-[10.5px]"
                         >
                           <strong className="text-[#065F46]">
                             {r.headingTr}:
@@ -6549,30 +6344,25 @@ export default function DialoguePdfModal({
 
           {/* 🔑 2. SAYFA: ÖĞRETMEN CEVAP ANAHTARI */}
           {hasAnyBlankActivity && includeAnswerKey && (
-            <div className="break-before-page mt-6 max-w-[780px] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#087F5B] shadow-lg p-4 sm:p-7 space-y-4 print:shadow-none print:border-0 print:p-0">
-              {/* Öğretmen Cevap Anahtarı Kurumsal Başlığı */}
-              <div className="pb-3 border-b-2 border-[#087F5B] flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                    <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                      ÖĞRETMEN CEVAP ANAHTARI (مفتاح الإجابات للمعلم)
-                    </span>
-                    {effectivePdfDocMode === "quiz-sheet" && (
-                      <span className="inline-block text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-violet-100 text-violet-900 border border-violet-300">
-                        Kitapçık: {sixSectionExamData.bookletGroup} Grubu (#
-                        {sixSectionExamData.formCode})
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-base sm:text-lg font-extrabold text-[#065F46]">
-                    🔑 Öğretmen Cevap Anahtarı — {effectivePaperTitleTr}
-                  </h3>
+            <div className="break-before-page mt-6 max-w-[780px] mx-auto bg-white text-slate-900 rounded-2xl border-2 border-[#CBD5E1] shadow-lg p-5 sm:p-6 space-y-4 print:shadow-none print:border-0 print:p-0">
+              {/* Öğretmen Cevap Anahtarı İnce Resmi Anteti (Maksimum 2 cm, Sıfır Renkli Rozet) */}
+              <div className="official-masthead border-[1.5px] border-[#334155] rounded-lg bg-white py-2 px-3 mb-2">
+                <div className="text-[10px] font-medium text-slate-600 leading-tight truncate">
+                  Öğretmen Cevap Anahtarı  •  {mastheadSourceLineTr}
+                  {effectivePdfDocMode === "quiz-sheet"
+                    ? `  •  Kitapçık: ${sixSectionExamData.bookletGroup} Grubu (#${sixSectionExamData.formCode})`
+                    : ""}
                 </div>
-                <div
-                  dir="rtl"
-                  className="arabic text-xl font-bold text-[#065F46]"
-                >
-                  {formatAr(dialogue.baslik_ar)}
+                <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                  <h3 className="text-[14px] sm:text-[15px] font-extrabold text-slate-900 leading-snug">
+                    Cevap Anahtarı — {effectivePaperTitleTr}
+                  </h3>
+                  <span
+                    dir="rtl"
+                    className="arabic text-[18px] sm:text-[20px] font-bold text-slate-900 leading-[1.3] shrink-0"
+                  >
+                    {formatAr(dialogue.baslik_ar)}
+                  </span>
                 </div>
               </div>
 

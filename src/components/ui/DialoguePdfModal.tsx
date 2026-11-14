@@ -35,12 +35,15 @@ import {
   STUDIO_DEFAULT_PAPER_TITLE,
   STUDIO_MATERIAL_SOURCES,
   StudioLevelFilter,
+  StudioSelectionMode,
   StudioSourceId,
   SixSectionExamCounts,
   buildSixSectionExamData,
   clampExamCounts,
+  clampStudioRangeBounds,
   inferInitialStudioSelection,
   listStudioPackOptions,
+  listStudioRangeItems,
   resolveStudioMaterialBundle,
 } from "@/lib/a4ExamStudioEngine";
 export { allocateExam100PointsSixSections } from "@/lib/pdfDeterministicUtils";
@@ -320,6 +323,10 @@ export default function DialoguePdfModal({
   const [studioPackId, setStudioPackId] = useState<string>(
     initialSelection.packId
   );
+  const [studioSelectionMode, setStudioSelectionMode] =
+    useState<StudioSelectionMode>("single");
+  const [rangeStart, setRangeStart] = useState<number>(1);
+  const [rangeEnd, setRangeEnd] = useState<number>(10);
   const [customPaperTitle, setCustomPaperTitle] = useState<string>("");
 
   // 6 ÖZELLEŞTİRİLEBİLİR YAZILI SINAV BÖLÜM SAYILARI (0 girilen bölüm otomatik gizlenir)
@@ -343,6 +350,17 @@ export default function DialoguePdfModal({
     [studioSourceId, studioLevelFilter, initialDialogue]
   );
 
+  const studioRangeItems = useMemo(
+    () => listStudioRangeItems(studioSourceId, studioLevelFilter),
+    [studioSourceId, studioLevelFilter]
+  );
+
+  const effectiveRangeBounds = useMemo(
+    () =>
+      clampStudioRangeBounds(studioRangeItems.length, rangeStart, rangeEnd),
+    [studioRangeItems.length, rangeStart, rangeEnd]
+  );
+
   const effectiveStudioPackId = useMemo(() => {
     if (studioPackOptions.some((o) => o.id === studioPackId)) {
       return studioPackId;
@@ -356,6 +374,9 @@ export default function DialoguePdfModal({
         sourceId: studioSourceId,
         levelFilter: studioLevelFilter,
         packId: effectiveStudioPackId,
+        selectionMode: studioSelectionMode,
+        rangeStart: effectiveRangeBounds.start,
+        rangeEnd: effectiveRangeBounds.end,
         initialProps: {
           dialogue: initialDialogue,
           vocabEntries: initialVocabEntries,
@@ -368,6 +389,9 @@ export default function DialoguePdfModal({
       studioSourceId,
       studioLevelFilter,
       effectiveStudioPackId,
+      studioSelectionMode,
+      effectiveRangeBounds.start,
+      effectiveRangeBounds.end,
       initialDialogue,
       initialVocabEntries,
       initialImagePath,
@@ -3378,7 +3402,7 @@ export default function DialoguePdfModal({
       />
 
       <div
-        className="w-full max-w-4xl max-h-[94vh] bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-5xl h-[94dvh] max-h-[94dvh] bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* MODAL ÜST BAŞLIK (print:hidden) */}
@@ -3455,7 +3479,7 @@ export default function DialoguePdfModal({
           </button>
         </div>
 
-        {/* KOMPAKT SEÇİM ÇİPLERİ / SEGMENTED CONTROLS BARI (print:hidden) */}
+        {/* KOMPAKT ÜST KONTROL PANELİ (Varsayılan: Kaynak, Seviye, Aralık, Sınav Başlığı ve 6 Bölümlü Soru Sayısı) */}
         <div
           className={`print:hidden bg-[#FDFBF7] dark:bg-[var(--surface)] px-3 sm:px-4 py-2 border-b-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1.5 overflow-y-auto md:overflow-visible ${
             mobileTab === "settings"
@@ -3463,17 +3487,28 @@ export default function DialoguePdfModal({
               : "hidden md:block shrink-0"
           }`}
         >
-          {/* KAYNAK, SEVİYE, İÇERİK PAKETİ VE ÖZEL BAŞLIK SEÇİM PANELİ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-            <div className="space-y-0.5">
+          {/* 1. SATIR: Kaynak | Seviye | Tekil & 🎛️ Karma Aralık Seçimi (Range) | Sınav Başlığı */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2">
+            {/* 1. Materyal Kaynağı */}
+            <div className="lg:col-span-3 space-y-0.5">
               <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                1. Materyal Kaynağı
+                1. Kaynak
               </label>
               <select
                 value={studioSourceId}
                 onChange={(e) => {
                   const nextSrc = e.target.value as StudioSourceId;
                   setStudioSourceId(nextSrc);
+                  if (nextSrc === "defterim_custom") {
+                    setStudioSelectionMode("single");
+                  } else {
+                    const nextItems = listStudioRangeItems(
+                      nextSrc,
+                      studioLevelFilter
+                    );
+                    setRangeStart(1);
+                    setRangeEnd(Math.min(10, Math.max(1, nextItems.length)));
+                  }
                   const nextOpts = listStudioPackOptions(
                     nextSrc,
                     studioLevelFilter,
@@ -3496,11 +3531,12 @@ export default function DialoguePdfModal({
               </select>
             </div>
 
-            <div className="space-y-0.5">
+            {/* 2. Seviye (CEFR) */}
+            <div className="lg:col-span-2 space-y-0.5">
               <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                2. Seviye (CEFR)
+                2. Seviye
               </label>
-              <div className="grid grid-cols-5 gap-1 h-8 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+              <div className="grid grid-cols-5 gap-0.5 h-8 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
                 {(["all", "A1", "A2", "B1", "B2"] as StudioLevelFilter[]).map(
                   (lvl) => (
                     <button
@@ -3509,8 +3545,16 @@ export default function DialoguePdfModal({
                       onClick={() => {
                         playClick();
                         setStudioLevelFilter(lvl);
+                        const nextItems = listStudioRangeItems(
+                          studioSourceId,
+                          lvl
+                        );
+                        setRangeStart(1);
+                        setRangeEnd(
+                          Math.min(10, Math.max(1, nextItems.length))
+                        );
                       }}
-                      className={`rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                      className={`rounded-lg text-[10.5px] font-extrabold cursor-pointer ${
                         studioLevelFilter === lvl
                           ? "bg-[#087F5B] text-white"
                           : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -3523,26 +3567,110 @@ export default function DialoguePdfModal({
               </div>
             </div>
 
-            <div className="space-y-0.5">
-              <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                3. İçerik / Paket Seçimi
-              </label>
-              <select
-                value={effectiveStudioPackId}
-                onChange={(e) => setStudioPackId(e.target.value)}
-                className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
-              >
-                {studioPackOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            {/* 3. İçerik / 🎛️ Karma Aralık Seçimi (Range) */}
+            <div className="lg:col-span-4 space-y-0.5">
+              <div className="flex items-center justify-between gap-1">
+                <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase truncate">
+                  3. Aralık / İçerik
+                </label>
+                {studioSourceId !== "defterim_custom" && (
+                  <div className="inline-flex items-center gap-0.5 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-lg border border-[#E6D7BE] dark:border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setStudioSelectionMode("single");
+                      }}
+                      className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold cursor-pointer ${
+                        studioSelectionMode === "single"
+                          ? "bg-[#087F5B] text-white"
+                          : "text-[var(--muted)]"
+                      }`}
+                    >
+                      Tekil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setStudioSelectionMode("range");
+                        if (pdfDocMode === "handout") {
+                          setPdfDocMode("quiz-sheet");
+                          setIncludeStudentHeader(true);
+                          setIncludeAnswerKey(true);
+                        }
+                      }}
+                      className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold cursor-pointer ${
+                        studioSelectionMode === "range"
+                          ? "bg-[#6741D9] text-white"
+                          : "text-[var(--muted)]"
+                      }`}
+                    >
+                      🎛️ Karma Aralık Seçimi
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {studioSelectionMode === "range" &&
+              studioRangeItems.length > 0 ? (
+                <div className="grid grid-cols-2 gap-1.5">
+                  <select
+                    aria-label="Başlangıç Sırası"
+                    value={effectiveRangeBounds.start}
+                    onChange={(e) => {
+                      const nextStart = parseInt(e.target.value, 10) || 1;
+                      setRangeStart(nextStart);
+                      if (nextStart > effectiveRangeBounds.end) {
+                        setRangeEnd(nextStart);
+                      }
+                    }}
+                    className="w-full h-8 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
+                  >
+                    {studioRangeItems.map((item) => (
+                      <option key={`start_${item.id}`} value={item.index}>
+                        Başlangıç: {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="Bitiş Sırası"
+                    value={effectiveRangeBounds.end}
+                    onChange={(e) => {
+                      const nextEnd = parseInt(e.target.value, 10) || 1;
+                      setRangeEnd(nextEnd);
+                      if (nextEnd < effectiveRangeBounds.start) {
+                        setRangeStart(nextEnd);
+                      }
+                    }}
+                    className="w-full h-8 px-2 rounded-xl bg-violet-50/70 dark:bg-[var(--background)] border border-violet-300 dark:border-violet-700 text-[11px] font-bold text-[var(--foreground)]"
+                  >
+                    {studioRangeItems.map((item) => (
+                      <option key={`end_${item.id}`} value={item.index}>
+                        Bitiş: {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <select
+                  value={effectiveStudioPackId}
+                  onChange={(e) => setStudioPackId(e.target.value)}
+                  className="w-full h-8 px-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+                >
+                  {studioPackOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            <div className="space-y-0.5">
+            {/* 4. Sınav Başlığı */}
+            <div className="lg:col-span-3 space-y-0.5">
               <label className="block text-[10px] font-extrabold text-[var(--muted)] uppercase">
-                4. Özel Sınav / Föy Başlığı
+                4. Sınav Başlığı
               </label>
               <input
                 type="text"
@@ -3554,256 +3682,51 @@ export default function DialoguePdfModal({
             </div>
           </div>
 
-          {/* 0. Satır: 5 Tek Tık Öğretmen Şablonu + A/B Kitapçık Seçici + ⚙️ Gelişmiş Mizanpaj Ayarları */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-            <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-              <button
-                type="button"
-                onClick={() => applyTeacherPreset("student-handout")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  pdfDocMode === "handout"
-                    ? "bg-[#087F5B] text-white shadow-xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                📄 Öğrenci Ders Föyü
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTeacherPreset("exam-ab")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  pdfDocMode === "quiz-sheet"
-                    ? "bg-[#6741D9] text-white shadow-xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                📝 6 Bölümlü Yazılı Sınav (A / B)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTeacherPreset("unvocalized-rubric")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  pdfDocMode === "unvocalized-rubric"
-                    ? "bg-teal-700 text-white shadow-xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                ✍️ Harekesiz Yazılı Yoklama + Maarif Rubriği
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTeacherPreset("cut-fold-cards")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  pdfDocMode === "flashcards"
-                    ? "bg-amber-600 text-white shadow-xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                ✂️ Kes-Katla Kelime Kartları
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTeacherPreset("pair-infogap")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  pdfDocMode === "pair-infogap"
-                    ? "bg-rose-600 text-white shadow-xs"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                🗣️ Eşli Konuşma Kartı (Öğrenci A &amp; B)
-              </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              {/* Ders Notu (Handout) için 3 Hızlı Mizanpaj Seçicisi */}
-              {pdfDocMode === "handout" && (
-                <div className="flex flex-wrap items-center gap-1 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-xl border border-emerald-300 dark:border-emerald-700">
-                  <span className="text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200">
-                    Mizanpaj:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setTranslationMode("show");
-                      setTranslationLayout("side-by-side");
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
-                      translationMode !== "hide" &&
-                      translationLayout === "side-by-side"
-                        ? "bg-[#087F5B] text-white"
-                        : "text-emerald-900 dark:text-emerald-200"
-                    }`}
-                  >
-                    Yan Yana
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setTranslationMode("hide");
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
-                      translationMode === "hide"
-                        ? "bg-[#087F5B] text-white"
-                        : "text-emerald-900 dark:text-emerald-200"
-                    }`}
-                  >
-                    Sadece Arapça
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setTranslationMode("show");
-                      setTranslationLayout("stacked");
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
-                      translationMode !== "hide" &&
-                      translationLayout === "stacked"
-                        ? "bg-[#087F5B] text-white"
-                        : "text-emerald-900 dark:text-emerald-200"
-                    }`}
-                  >
-                    Alt Alta Satır
-                  </button>
-                </div>
-              )}
-
-              {pdfDocMode === "quiz-sheet" && (
-                <div className="flex items-center gap-1 bg-violet-50 dark:bg-violet-950/50 px-2 py-1 rounded-xl border border-violet-300 dark:border-violet-700">
-                  <span className="text-[11px] font-extrabold text-violet-900 dark:text-violet-200">
-                    Kitapçık:
-                  </span>
-                  {(["A", "B"] as const).map((grp) => (
-                    <button
-                      key={grp}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setBookletGroup(grp);
-                      }}
-                      className={`px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                        bookletGroup === grp
-                          ? "bg-[#6741D9] text-white shadow-2xs"
-                          : "text-violet-900 dark:text-violet-200 hover:bg-violet-100"
-                      }`}
-                    >
-                      {grp} Grubu
-                    </button>
-                  ))}
-                  <span className="text-[10px] font-mono font-bold text-violet-700 dark:text-violet-300 pl-1">
-                    #{sixSectionExamData.formCode}
-                  </span>
-                </div>
-              )}
-
-              {pdfDocMode === "flashcards" && (
-                <div className="flex flex-wrap items-center gap-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-xl border border-amber-300 dark:border-amber-700">
-                  <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
-                    ✂️ Izgara:
-                  </span>
-                  {(
-                    [
-                      { id: "3x3", label: "3x3 (9 Kart)" },
-                      { id: "3x4", label: "3x4 (12 Kart)" },
-                      { id: "4x4", label: "4x4 (16 Kart)" },
-                    ] as const
-                  ).map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setFlashcardGridSize(g.id);
-                      }}
-                      className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                        flashcardGridSize === g.id
-                          ? "bg-amber-600 text-white shadow-2xs"
-                          : "text-amber-900 dark:text-amber-200 hover:bg-amber-100/70"
-                      }`}
-                    >
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setShowAdvancedSettings((v) => !v);
-                }}
-                className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
-                  showAdvancedSettings
-                    ? "bg-[#6741D9] text-white border-[#5230B5]"
-                    : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
-                }`}
-              >
-                <span>
-                  ⚙️ Gelişmiş Mizanpaj Ayarları{" "}
-                  {showAdvancedSettings ? "▲" : "▼"}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* YAZILI SINAV MODUNDA 6 ÖZELLEŞTİRİLEBİLİR SORU BÖLÜMÜ SAYACI + KONU ÖZETİ KUTUSU */}
-          {pdfDocMode === "quiz-sheet" && (
-            <div className="bg-violet-50/70 dark:bg-violet-950/30 rounded-xl border border-violet-200 dark:border-violet-800/70 p-2 space-y-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                <span className="font-extrabold text-[#4C28B5] dark:text-purple-300">
-                  📝 6 Özelleştirilebilir Sınav Bölümü (0 girilen bölüm gizlenir • Otomatik 100 Puan Dağılımı)
-                </span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setIncludeTopicSummary((v) => !v);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-extrabold border cursor-pointer ${
-                      includeTopicSummary
-                        ? "bg-[#087F5B] text-white border-[#065F46]"
-                        : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
-                    }`}
-                  >
-                    📚 Konu Özeti Kutusu: {includeTopicSummary ? "Açık" : "Gizli"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setIncludeAnswerKey((v) => !v);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-extrabold border cursor-pointer ${
-                      includeAnswerKey
-                        ? "bg-[#6741D9] text-white border-[#5230B5]"
-                        : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
-                    }`}
-                  >
-                    🔑 2. Sayfa Cevap Anahtarı: {includeAnswerKey ? "Açık" : "Gizli"}
-                  </button>
-                </div>
+          {/* 2. SATIR: Temel Kağıt Türü + 6 Bölümlü Soru Sayısı + ⚙️ Gelişmiş Mizanpaj Ayarları Akordiyonu */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+            <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+              <div className="inline-flex items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => applyTeacherPreset("exam-ab")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    pdfDocMode === "quiz-sheet"
+                      ? "bg-[#6741D9] text-white shadow-xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  📝 6 Bölümlü Sınav
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTeacherPreset("student-handout")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    pdfDocMode === "handout"
+                      ? "bg-[#087F5B] text-white shadow-xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  📄 Ders Föyü
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+              {/* 6 Bölümlü Soru Sayısı Kompakt Şeridi */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 flex-1 min-w-[260px]">
                 {(
                   [
-                    { key: "sec1ArToTr", label: "1) AR → TR Anlam", max: 50 },
-                    { key: "sec2TrToAr", label: "2) TR → AR Yazma", max: 50 },
-                    { key: "sec3FillBlank", label: "3) Boşluk Doldur", max: 50 },
-                    { key: "sec4MultipleChoice", label: "4) Çoktan Seçmeli", max: 50 },
-                    { key: "sec5Matching", label: "5) Eşleştirme", max: 30 },
-                    { key: "sec6Morphology", label: "6) Sarf Tablosu", max: 30 },
+                    { key: "sec1ArToTr", label: "1) AR→TR", max: 50 },
+                    { key: "sec2TrToAr", label: "2) TR→AR", max: 50 },
+                    { key: "sec3FillBlank", label: "3) Boşluk", max: 50 },
+                    { key: "sec4MultipleChoice", label: "4) Test", max: 50 },
+                    { key: "sec5Matching", label: "5) Eşleş.", max: 30 },
+                    { key: "sec6Morphology", label: "6) Sarf", max: 30 },
                   ] as const
                 ).map((sec) => (
                   <div
                     key={sec.key}
-                    className="bg-white dark:bg-slate-900 rounded-lg border border-violet-200 dark:border-slate-700 px-2 py-1 flex items-center justify-between gap-1"
+                    className="bg-white dark:bg-slate-900 rounded-lg border border-violet-200 dark:border-slate-700 px-1.5 py-0.5 flex items-center justify-between gap-1"
                   >
-                    <span className="text-[10px] font-bold text-[var(--foreground)] truncate">
+                    <span className="text-[9.5px] font-extrabold text-[var(--foreground)] truncate">
                       {sec.label}
                     </span>
                     <input
@@ -3813,6 +3736,11 @@ export default function DialoguePdfModal({
                       value={examCounts[sec.key]}
                       onChange={(e) => {
                         const val = parseInt(e.target.value || "0", 10);
+                        if (pdfDocMode !== "quiz-sheet") {
+                          setPdfDocMode("quiz-sheet");
+                          setIncludeStudentHeader(true);
+                          setIncludeAnswerKey(true);
+                        }
                         setExamCounts((prev) =>
                           clampExamCounts({
                             ...prev,
@@ -3820,16 +3748,222 @@ export default function DialoguePdfModal({
                           })
                         );
                       }}
-                      className="w-11 h-6 rounded border border-violet-300 dark:border-slate-600 text-center text-xs font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/50 dark:bg-slate-800"
+                      className="w-9 h-5 rounded border border-violet-300 dark:border-slate-600 text-center text-[11px] font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/50 dark:bg-slate-800"
                     />
                   </div>
                 ))}
               </div>
             </div>
-          )}
 
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowAdvancedSettings((v) => !v);
+              }}
+              className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
+                showAdvancedSettings
+                  ? "bg-[#6741D9] text-white border-[#5230B5]"
+                  : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
+              }`}
+            >
+              <span>
+                ⚙️ Gelişmiş Mizanpaj Ayarları{" "}
+                {showAdvancedSettings ? "▲" : "▼"}
+              </span>
+            </button>
+          </div>
+
+          {/* KATLANABİLİR (ACCORDION) GELİŞMİŞ MİZANPAJ VE İKİNCİL ŞABLON AYARLARI */}
           {showAdvancedSettings && (
-            <div className="space-y-1.5 pt-1">
+            <div className="space-y-1.5 pt-2 mt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] max-h-[26dvh] overflow-y-auto overscroll-contain pr-1">
+              {/* İkincil Öğretmen Şablonları + A/B Kitapçık + Konu Özeti Kutusu + Föy Mizanpajı */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <div className="flex flex-wrap items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+                  <button
+                    type="button"
+                    onClick={() => applyTeacherPreset("unvocalized-rubric")}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      pdfDocMode === "unvocalized-rubric"
+                        ? "bg-teal-700 text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    ✍️ Harekesiz Yazılı Yoklama + Maarif Rubriği
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTeacherPreset("cut-fold-cards")}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      pdfDocMode === "flashcards"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    ✂️ Kes-Katla Kelime Kartları
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTeacherPreset("pair-infogap")}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      pdfDocMode === "pair-infogap"
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    🗣️ Eşli Konuşma Kartı (Öğrenci A &amp; B)
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {pdfDocMode === "handout" && (
+                    <div className="flex flex-wrap items-center gap-1 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-xl border border-emerald-300 dark:border-emerald-700">
+                      <span className="text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200">
+                        Mizanpaj:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setTranslationMode("show");
+                          setTranslationLayout("side-by-side");
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                          translationMode !== "hide" &&
+                          translationLayout === "side-by-side"
+                            ? "bg-[#087F5B] text-white"
+                            : "text-emerald-900 dark:text-emerald-200"
+                        }`}
+                      >
+                        Yan Yana
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setTranslationMode("hide");
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                          translationMode === "hide"
+                            ? "bg-[#087F5B] text-white"
+                            : "text-emerald-900 dark:text-emerald-200"
+                        }`}
+                      >
+                        Sadece Arapça
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setTranslationMode("show");
+                          setTranslationLayout("stacked");
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                          translationMode !== "hide" &&
+                          translationLayout === "stacked"
+                            ? "bg-[#087F5B] text-white"
+                            : "text-emerald-900 dark:text-emerald-200"
+                        }`}
+                      >
+                        Alt Alta Satır
+                      </button>
+                    </div>
+                  )}
+
+                  {pdfDocMode === "quiz-sheet" && (
+                    <>
+                      <div className="flex items-center gap-1 bg-violet-50 dark:bg-violet-950/50 px-2 py-1 rounded-xl border border-violet-300 dark:border-violet-700">
+                        <span className="text-[11px] font-extrabold text-violet-900 dark:text-violet-200">
+                          Kitapçık:
+                        </span>
+                        {(["A", "B"] as const).map((grp) => (
+                          <button
+                            key={grp}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setBookletGroup(grp);
+                            }}
+                            className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                              bookletGroup === grp
+                                ? "bg-[#6741D9] text-white shadow-2xs"
+                                : "text-violet-900 dark:text-violet-200 hover:bg-violet-100"
+                            }`}
+                          >
+                            {grp} Grubu
+                          </button>
+                        ))}
+                        <span className="text-[10px] font-mono font-bold text-violet-700 dark:text-violet-300 pl-1">
+                          #{sixSectionExamData.formCode}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIncludeTopicSummary((v) => !v);
+                        }}
+                        className={`px-2 py-1 rounded-xl text-[10.5px] font-extrabold border cursor-pointer ${
+                          includeTopicSummary
+                            ? "bg-[#087F5B] text-white border-[#065F46]"
+                            : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
+                        }`}
+                      >
+                        📚 Konu Özeti Kutusu:{" "}
+                        {includeTopicSummary ? "Açık" : "Gizli"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIncludeAnswerKey((v) => !v);
+                        }}
+                        className={`px-2 py-1 rounded-xl text-[10.5px] font-extrabold border cursor-pointer ${
+                          includeAnswerKey
+                            ? "bg-[#6741D9] text-white border-[#5230B5]"
+                            : "bg-white dark:bg-slate-900 text-[var(--muted)] border-slate-300"
+                        }`}
+                      >
+                        🔑 2. Sayfa Cevap Anahtarı:{" "}
+                        {includeAnswerKey ? "Açık" : "Gizli"}
+                      </button>
+                    </>
+                  )}
+
+                  {pdfDocMode === "flashcards" && (
+                    <div className="flex flex-wrap items-center gap-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-xl border border-amber-300 dark:border-amber-700">
+                      <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
+                        ✂️ Izgara:
+                      </span>
+                      {(
+                        [
+                          { id: "3x3", label: "3x3 (9 Kart)" },
+                          { id: "3x4", label: "3x4 (12 Kart)" },
+                          { id: "4x4", label: "4x4 (16 Kart)" },
+                        ] as const
+                      ).map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setFlashcardGridSize(g.id);
+                          }}
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                            flashcardGridSize === g.id
+                              ? "bg-amber-600 text-white shadow-2xs"
+                              : "text-amber-900 dark:text-amber-200 hover:bg-amber-100/70"
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
           {/* 1. Satır: Görsel Modu + Çeviri Modu + Sayfaya Sığdır */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* PDF-1: Görsel Seçici */}
@@ -4338,9 +4472,9 @@ export default function DialoguePdfModal({
           )}
         </div>
 
-        {/* CANLI A4 ÇALIŞMA KAĞIDI ÖNİZLEME ALANI */}
+        {/* CANLI A4 ÇALIŞMA KAĞIDI ÖNİZLEME ALANI (Ekranın en az %60+'ı) */}
         <div
-          className={`flex-1 overflow-y-auto p-2.5 sm:p-6 bg-[#EFE6D5]/70 dark:bg-black/40 print:block! ${
+          className={`flex-1 min-h-0 md:min-h-[60dvh] overflow-y-auto p-2.5 sm:p-5 bg-[#EFE6D5]/70 dark:bg-black/40 print:block! ${
             mobileTab === "preview" ? "block" : "hidden md:block"
           }`}
         >

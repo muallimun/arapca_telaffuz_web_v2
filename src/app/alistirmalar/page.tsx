@@ -745,10 +745,12 @@ function ExercisesPageContent() {
           if (!resolvedPool) {
             setRangePreset("reading_texts");
           }
-        } else if (resolvedMode === "gender-sorting") {
-          if (!resolvedPool) {
-            setRangePreset("visual_words");
-          }
+        } else if (
+          resolvedMode === "gender-sorting" ||
+          resolvedMode === "balloon-safari" ||
+          resolvedMode === "memory-flip"
+        ) {
+          setRangePreset("visual_words");
         }
         if (autostartParam === "1") {
           setIsPlaying(true);
@@ -933,6 +935,33 @@ function ExercisesPageContent() {
     activeDialoguesWordItems,
     activeReadingsWordItems,
   ]);
+
+  // Balon Safari ve Hafızanı Yokla için YALNIZCA gorselKelimeler_guncel.json kaynaklı saf görsel kelime havuzu ve kategorileri
+  const visualWordsOnlyCategories = useMemo(
+    () => getModuleCategoryList("visual_words", cefrFilter),
+    [cefrFilter]
+  );
+
+  const strictVisualWordsOnlyPool: ResimliKelime[] = useMemo(() => {
+    const visualItems = generatePoolFromVisualWords({
+      category: categoryFilter,
+      level: cefrFilter,
+    });
+    const allowedIds = new Set(visualItems.map((w) => w.id));
+    const matched = gorselKelimeler.filter(
+      (gk) => Boolean(gk.gorsel) && allowedIds.has(gk.id)
+    );
+    if (matched.length >= 4) return matched;
+    const byLevelOnly =
+      cefrFilter === "all"
+        ? gorselKelimeler.filter((gk) => Boolean(gk.gorsel))
+        : gorselKelimeler.filter(
+            (gk) => Boolean(gk.gorsel) && gk.cefr === cefrFilter
+          );
+    return byLevelOnly.length >= 4
+      ? byLevelOnly
+      : gorselKelimeler.filter((gk) => Boolean(gk.gorsel));
+  }, [categoryFilter, cefrFilter]);
 
   // Seçili Havuza Göre Cümle / Diyalog Yapısı (Flashcard, MultipleChoice, FillInBlanks, MatchingGame, SentenceBuilder için)
   const selectedDialogues: Dialogue[] = useMemo(() => {
@@ -1787,7 +1816,7 @@ function ExercisesPageContent() {
       );
     }
     if (selectedType === "balloon-safari" || selectedType === "memory-flip") {
-      return poolId !== "sentences_1111";
+      return poolId === "visual_words";
     }
     return true;
   };
@@ -2040,6 +2069,14 @@ function ExercisesPageContent() {
       };
     }
 
+    if (selectedType === "balloon-safari" || selectedType === "memory-flip") {
+      const cnt = strictVisualWordsOnlyPool.length;
+      return {
+        activeItemCount: cnt,
+        activePoolCountLabel: `${cnt} Görsel Kelime`,
+      };
+    }
+
     if (selectedType === "visual-rosetta") {
       const cnt = filteredVisualWordsPool.length || gorselKelimeler.length;
       const labelSuffix =
@@ -2208,6 +2245,7 @@ function ExercisesPageContent() {
     sentenceCountInPool,
     combinedVocabulary.length,
     idiomsPool.length,
+    strictVisualWordsOnlyPool.length,
   ]);
 
   return (
@@ -2458,9 +2496,8 @@ function ExercisesPageContent() {
                         card.id === "balloon-safari" ||
                         card.id === "memory-flip"
                       ) {
-                        if (rangePreset === "sentences_1111") {
-                          setRangePreset("visual_words");
-                        }
+                        setRangePreset("visual_words");
+                        setCategoryFilter("all");
                         setContentType("words");
                       }
                     }}
@@ -2534,6 +2571,62 @@ function ExercisesPageContent() {
                 <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black tabular-nums">
                   {activePoolCountLabel}
                 </span>
+              </div>
+            ) : selectedType === "balloon-safari" ||
+              selectedType === "memory-flip" ? (
+              <div className="space-y-2 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-300">
+                  <span>
+                    🖼️ Sadece Görsel Kelimeler ({gorselKelimeler.length} Resimli
+                    Kelime) — Kategori Seçin:
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black tabular-nums">
+                    {strictVisualWordsOnlyPool.length} Görsel Kelime Hazır
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setRangePreset("visual_words");
+                      setCategoryFilter("all");
+                    }}
+                    className={`min-h-[34px] px-2.5 py-1 rounded-xl border-2 text-xs font-extrabold transition-all cursor-pointer ${
+                      categoryFilter === "all"
+                        ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                    }`}
+                  >
+                    Tümü (
+                    {cefrFilter === "all"
+                      ? gorselKelimeler.length
+                      : gorselKelimeler.filter((w) => w.cefr === cefrFilter)
+                          .length}
+                    )
+                  </button>
+                  {visualWordsOnlyCategories.map((cat) => {
+                    const activeCat = categoryFilter === cat.category;
+                    return (
+                      <button
+                        key={cat.category}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setRangePreset("visual_words");
+                          setCategoryFilter(cat.category);
+                        }}
+                        className={`min-h-[34px] px-2.5 py-1 rounded-xl border-2 text-xs font-extrabold transition-all cursor-pointer ${
+                          activeCat
+                            ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                        }`}
+                      >
+                        {cat.label} ({cat.count})
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
@@ -3401,42 +3494,16 @@ function ExercisesPageContent() {
           )}
           {selectedType === "balloon-safari" && (
             <BalloonSafariGame
-              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
-              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
-              idioms={frozenPools?.idioms ?? idiomsPool}
-              dialogues={frozenPools?.dialogues ?? selectedDialogues}
-              synonymEntries={
-                frozenPools?.synonymEntries ?? activeSynonymEntries
-              }
-              isSynonymsAntonymsMode={
-                frozenPools?.isSynonymsAntonymsMode ??
-                rangePreset === "synonyms_antonyms"
-              }
+              visualPool={strictVisualWordsOnlyPool}
               cefrFilter={cefrFilter}
-              isMistakesMode={
-                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
-              }
               onClose={handleCloseExercise}
             />
           )}
           {selectedType === "memory-flip" && (
             <MemoryFlipGame
-              visualPool={frozenPools?.visualPool ?? filteredVisualWordsPool}
-              vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
-              idioms={frozenPools?.idioms ?? idiomsPool}
-              dialogues={frozenPools?.dialogues ?? selectedDialogues}
-              synonymEntries={
-                frozenPools?.synonymEntries ?? activeSynonymEntries
-              }
-              isSynonymsAntonymsMode={
-                frozenPools?.isSynonymsAntonymsMode ??
-                rangePreset === "synonyms_antonyms"
-              }
+              visualPool={strictVisualWordsOnlyPool}
               cefrFilter={cefrFilter}
               timeLimit={timeLimit}
-              isMistakesMode={
-                frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
-              }
               onClose={handleCloseExercise}
             />
           )}

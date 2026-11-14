@@ -192,8 +192,7 @@ export default function WordTooltip({
     const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
     const vh = typeof window !== "undefined" ? window.innerHeight : 768;
     const safeMargin = 12;
-    const maxAllowedHeight =
-      vw < 640 ? Math.floor(vh * 0.82) : Math.max(260, vh - 80);
+    const maxAllowedHeight = Math.floor(vh * 0.8);
     const actualPopoverWidth = popoverRef.current?.offsetWidth;
     const defaultWidth = isClassroomMode ? 440 : 348;
     const tooltipWidth = actualPopoverWidth
@@ -664,7 +663,7 @@ export default function WordTooltip({
                     }}
                      className={`fixed ${
                       isClassroomMode ? "p-4" : "p-3.5"
-                    } max-h-[82dvh] sm:max-h-[calc(100dvh-5rem)] flex flex-col overflow-hidden bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 ${catStyle.popoverLeftBorder} rounded-2xl shadow-2xl text-left font-sans z-[9999]`}
+                    } max-h-[80dvh] overflow-y-auto flex flex-col bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 ${catStyle.popoverLeftBorder} rounded-2xl shadow-2xl text-left font-sans z-[9999]`}
                   >
                     {/* SABİT ÜST BAŞLIK BLOĞU: Kelime Türü + KÖK + ✕ Kapat ve Ana Arapça Kelime / Türkçe Karşılık */}
                     <div className="shrink-0 sticky top-0 z-10 bg-[#F7EFE1] dark:bg-[var(--surface)] pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">

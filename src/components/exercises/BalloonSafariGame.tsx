@@ -14,7 +14,6 @@ import {
   Printer,
   Target,
   Play,
-  X,
   Snowflake,
   Search,
   Award,
@@ -28,9 +27,8 @@ import {
   SynonymAntonymEntry,
   Level,
 } from "@/types/data";
-import { gorselKelimeler, sozluk, resolveImageUrl } from "@/lib/data";
+import { gorselKelimeler, resolveImageUrl } from "@/lib/data";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
-import { removeArabicHarakat as stripHarakat } from "@/lib/arabicTextUtils";
 import { shuffleArray } from "@/lib/quiz";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -173,174 +171,77 @@ function getSpeedBase(difficulty: SafariDifficulty, level: 1 | 2 | 3 | 4): numbe
 
 export default function BalloonSafariGame({
   visualPool = [],
-  vocabulary = [],
-  idioms = [],
-  dialogues = [],
-  synonymEntries = [],
-  isSynonymsAntonymsMode = false,
   cefrFilter = "all",
   onClose,
 }: BalloonSafariGameProps) {
   const { preferredVoiceGender, speechRate } = useSettings();
   const { addMistake, recordItemAttempt, addStudyMinutes } = useUserStore();
 
-  // Görsel kelime hızlı eşleme dizini
-  const visualLookup = useMemo(() => {
-    const byId = new Map<string, ResimliKelime>();
-    const byBareAr = new Map<string, ResimliKelime>();
+  // Sadece gerçek Görsel Kelimeler (gorselKelimeler_guncel.json) doğrulama dizini
+  const canonicalVisualById = useMemo(() => {
+    const map = new Map<string, ResimliKelime>();
     for (const vk of gorselKelimeler) {
-      byId.set(vk.id, vk);
-      const bare = stripHarakat(vk.arapca || "").trim();
-      if (bare && !byBareAr.has(bare)) {
-        byBareAr.set(bare, vk);
+      if (vk.gorsel && vk.arapca && vk.turkce) {
+        map.set(vk.id, vk);
       }
     }
-    return { byId, byBareAr };
+    return map;
   }, []);
 
-  // Seçili havuzdan birleşik Safari kelime havuzu üretimi
+  // YALNIZCA Görsel Kelimeler (gorselKelimeler_guncel.json) veri setinden beslenen öğrenci dostu Safari kelime havuzu
   const fullSafariPool = useMemo<SafariWordItem[]>(() => {
     const items: SafariWordItem[] = [];
     const seenIds = new Set<string>();
 
-    const pushUnique = (item: SafariWordItem) => {
-      if (!item.nameAr || !item.meaningTr) return;
-      if (seenIds.has(item.id)) return;
-      seenIds.add(item.id);
-      items.push(item);
+    const pushVisualWord = (candidate: ResimliKelime) => {
+      const vk = canonicalVisualById.get(candidate.id);
+      if (!vk) return;
+      if (seenIds.has(vk.id)) return;
+      seenIds.add(vk.id);
+      items.push({
+        id: vk.id,
+        audioId: vk.id,
+        nameAr: vk.arapca,
+        meaningTr: cleanMeaningTr(vk.turkce),
+        imageUrl: resolveImageUrl(vk.gorsel),
+        ses_erkek: vk.ses_erkek,
+        ses_kadin: vk.ses_kadin,
+        cefr: vk.cefr,
+      });
     };
 
-    if (isSynonymsAntonymsMode && synonymEntries.length > 0) {
-      for (const ez of synonymEntries) {
-        const bare = stripHarakat(ez.kelime_ar || "").trim();
-        const matchedVk = visualLookup.byBareAr.get(bare);
-        const matchedDict = sozluk.find(
-          (w) => stripHarakat(w.mufret || w.mazi || "").trim() === bare
-        );
-        pushUnique({
-          id: ez.id,
-          audioId: matchedVk?.id || matchedDict?.id,
-          nameAr: ez.kelime_ar,
-          meaningTr: cleanMeaningTr(ez.anlam_tr),
-          imageUrl: matchedVk?.gorsel
-            ? resolveImageUrl(matchedVk.gorsel)
-            : matchedDict?.gorsel
-            ? resolveImageUrl(matchedDict.gorsel)
-            : undefined,
-          ses_erkek: matchedVk?.ses_erkek || matchedDict?.ses_erkek,
-          ses_kadin: matchedVk?.ses_kadin || matchedDict?.ses_kadin,
-          cefr: ez.cefr,
-        });
+    // 1. Seçili görsel kelime alt kümesi (yalnızca gorselKelimeler_guncel.json kayıtları)
+    for (const candidate of visualPool) {
+      if (
+        cefrFilter === "all" ||
+        !candidate.cefr ||
+        candidate.cefr === cefrFilter
+      ) {
+        pushVisualWord(candidate);
       }
     }
 
-    if (items.length === 0 && visualPool.length > 0 && vocabulary.length === 0) {
-      for (const vk of visualPool) {
-        pushUnique({
-          id: vk.id,
-          audioId: vk.id,
-          nameAr: vk.arapca,
-          meaningTr: cleanMeaningTr(vk.turkce),
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-          cefr: vk.cefr,
-        });
-      }
-    }
-
-    if (items.length === 0 && vocabulary.length > 0) {
-      for (const word of vocabulary) {
-        const ar = (word.mufret || word.mazi || "").trim();
-        if (!ar) continue;
-        const bare = stripHarakat(ar).trim();
-        const matchedVk =
-          visualLookup.byId.get(word.id) || visualLookup.byBareAr.get(bare);
-        const imgRaw = word.gorsel || matchedVk?.gorsel;
-        pushUnique({
-          id: word.id,
-          audioId: word.id,
-          nameAr: ar,
-          meaningTr: cleanMeaningTr(word.anlam_tr),
-          imageUrl: imgRaw ? resolveImageUrl(imgRaw) : undefined,
-          ses_erkek: word.ses_erkek || matchedVk?.ses_erkek,
-          ses_kadin: word.ses_kadin || matchedVk?.ses_kadin,
-          cefr: (word.cefr as Level | undefined) || matchedVk?.cefr,
-        });
-      }
-    }
-
-    if (items.length === 0 && visualPool.length > 0) {
-      for (const vk of visualPool) {
-        pushUnique({
-          id: vk.id,
-          audioId: vk.id,
-          nameAr: vk.arapca,
-          meaningTr: cleanMeaningTr(vk.turkce),
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-          cefr: vk.cefr,
-        });
-      }
-    }
-
-    if (items.length < 6 && idioms.length > 0) {
-      for (const idm of idioms) {
-        pushUnique({
-          id: `idiom_${idm.id}`,
-          nameAr: idm.arabic,
-          meaningTr: cleanMeaningTr(idm.meaningTr),
-        });
-      }
-    }
-
-    if (items.length < 6 && dialogues.length > 0) {
-      for (const dlg of dialogues) {
-        for (const line of dlg.satirlar.slice(0, 4)) {
-          if (line.arapca.split(/\s+/).length <= 5) {
-            pushUnique({
-              id: `sent_${dlg.id}_${line.sira}`,
-              nameAr: line.arapca,
-              meaningTr: cleanMeaningTr(line.turkce),
-              cefr: dlg.seviye,
-            });
-          }
-        }
-      }
-    }
-
+    // 2. En az 8 resimli kelime garantisi (aynı CEFR seviyesindeki gorselKelimeler)
     if (items.length < 8) {
-      const fallbackPool =
+      const levelPool =
         cefrFilter === "all"
           ? gorselKelimeler
           : gorselKelimeler.filter((w) => w.cefr === cefrFilter);
-      for (const vk of fallbackPool.slice(0, 30)) {
-        pushUnique({
-          id: vk.id,
-          audioId: vk.id,
-          nameAr: vk.arapca,
-          meaningTr: cleanMeaningTr(vk.turkce),
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-          cefr: vk.cefr,
-        });
+      for (const vk of levelPool) {
+        pushVisualWord(vk);
+      }
+    }
+
+    // 3. Nihai emniyet: tüm gorselKelimeler (asla düz sözlük, metin veya atasözü eklenmez)
+    if (items.length < 8) {
+      for (const vk of gorselKelimeler) {
+        pushVisualWord(vk);
         if (items.length >= 24) break;
       }
     }
 
     return items;
-  }, [
-    isSynonymsAntonymsMode,
-    synonymEntries,
-    visualPool,
-    vocabulary,
-    idioms,
-    dialogues,
-    cefrFilter,
-    visualLookup,
-  ]);
+  }, [visualPool, cefrFilter, canonicalVisualById]);
 
   // Ekran ve oyun durumları
   const [phase, setPhase] = useState<"menu" | "playing" | "gameover">("menu");
@@ -501,6 +402,31 @@ export default function BalloonSafariGame({
     sfx.stopAllSfx();
     setPhase("menu");
   }, []);
+
+  const handleExitToList = useCallback(() => {
+    playClick();
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    stopAllAudio();
+    sfx.stopAllSfx();
+    if (onClose) {
+      onClose();
+    } else {
+      setPhase("menu");
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && onClose) {
+        handleExitToList();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, handleExitToList]);
 
   const finishGame = useCallback(
     (finalScoreValue: number, modeUsed: SafariGameMode) => {
@@ -1348,49 +1274,45 @@ export default function BalloonSafariGame({
     missedWordsAnalytics.top3,
   ]);
 
-  // ---------------- 1. BAŞLANGIÇ / MOD VE ZORLUK SEÇİM EKRANI ----------------
+  // ---------------- 1. BAŞLANGIÇ / MOD VE ZORLUK SEÇİM EKRANI (TAM EKRAN 100dvh) ----------------
   if (phase === "menu") {
     return (
-      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5 select-none">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-[var(--border)] pb-3.5">
+      <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center shadow-sm shrink-0">
-              <Sparkles size={24} />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Sparkles size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-[var(--foreground)]">
+                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)]">
                   Balon Safari
                 </h2>
                 <span
                   dir="rtl"
-                  className="arabic text-lg sm:text-xl font-bold text-[#087F5B] dark:text-emerald-400"
+                  className="arabic text-base sm:text-lg font-bold text-[#087F5B] dark:text-emerald-400"
                 >
                   سَفَارِي البَالُونَات
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-[var(--muted)] font-semibold">
-                Sıcak hava balonlarında süzülen doğru görseli ve Arapça kelimeyi
-                sesinden yakala! ({fullSafariPool.length} kelime hazır)
+              <p className="text-[11px] sm:text-xs text-[var(--muted)] font-semibold truncate">
+                🖼️ Görsel Kelimeler Havuzu ({fullSafariPool.length} resimli
+                kelime hazır)
               </p>
             </div>
           </div>
 
-          {onClose && (
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                stopAllAudio();
-                onClose();
-              }}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] hover:border-rose-400 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              <X size={15} />
-              <span>Listeye Dön</span>
-            </button>
-          )}
-        </div>
+          <button
+            type="button"
+            onClick={handleExitToList}
+            className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs sm:text-sm font-extrabold text-[var(--foreground)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+          >
+            <span>✕ Çıkış / Listeye Dön</span>
+          </button>
+        </header>
+
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-3 sm:p-6">
+          <div className="w-full max-w-3xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xl space-y-5">
 
         {/* Yüksek Skor Rekor Kartları */}
         <div className="grid grid-cols-2 gap-3">
@@ -1576,11 +1498,13 @@ export default function BalloonSafariGame({
             اِبْدَأ اللَّعِب
           </span>
         </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // ---------------- 2. OYUN SONU & BAŞARI SERTİFİKASI EKRANI ----------------
+  // ---------------- 2. OYUN SONU & BAŞARI SERTİFİKASI EKRANI (TAM EKRAN 100dvh) ----------------
   if (phase === "gameover") {
     const maxWrongVal = Math.max(
       1,
@@ -1588,20 +1512,20 @@ export default function BalloonSafariGame({
     );
 
     return (
-      <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FAF4E8] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-md space-y-5 select-none">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-[var(--border)] pb-3.5">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
-              <Award size={26} />
+      <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Award size={22} />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-[var(--foreground)]">
+                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)]">
                   Safari Tamamlandı!
                 </h2>
                 <span
                   dir="rtl"
-                  className="arabic text-xl font-bold text-[#087F5B] dark:text-emerald-400"
+                  className="arabic text-lg font-bold text-[#087F5B] dark:text-emerald-400"
                 >
                   شَهَادَة نَجَاح
                 </span>
@@ -1611,38 +1535,34 @@ export default function BalloonSafariGame({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[var(--muted)] font-semibold">
+              <p className="text-xs text-[var(--muted)] font-semibold truncate">
                 Toplam {correctPops} doğru balon yakalandı · En yüksek seri:{" "}
                 {maxCombo}🔥
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={returnToSafariHome}
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Home size={14} />
               <span>Mod Seçimi</span>
             </button>
-            {onClose && (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  stopAllAudio();
-                  onClose();
-                }}
-                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <X size={14} />
-                <span>Çıkış</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleExitToList}
+              className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-500 text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <span>✕ Çıkış / Listeye Dön</span>
+            </button>
           </div>
-        </div>
+        </header>
+
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
+          <div className="w-full max-w-4xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xl space-y-5">
 
         {/* Özet Skor ve Doğruluk Kartları */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -1903,20 +1823,22 @@ export default function BalloonSafariGame({
             <span>Yeni Safari Başlat</span>
           </button>
         </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // ---------------- 3. AKTİF PANORAMİK DOĞA & SICAK HAVA BALONU SAHNESİ ----------------
+  // ---------------- 3. AKTİF PANORAMİK DOĞA & SICAK HAVA BALONU SAHNESİ (TAM EKRAN 100dvh) ----------------
   return (
     <div
-      className={`rounded-3xl border-2 border-sky-300 dark:border-sky-800 shadow-lg overflow-hidden select-none transition-transform bg-gradient-to-b from-[#4AA8EE] via-[#8CD0FA] to-[#52B788] ${
-        isShaking ? "translate-x-1.5 border-rose-500" : ""
+      className={`fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none transition-transform ${
+        isShaking ? "translate-x-1.5" : ""
       }`}
     >
-      <div className="relative w-full">
-        {/* C) ÜST YÜZER HAP (PILL) HUD TASARIMI — Arka planı kapatmayan beyaz & sarı hap kutular + sağda kırmızı Yuva */}
-        <div className="relative sm:absolute sm:top-3 sm:inset-x-3 z-20 px-2.5 pt-2.5 pb-1 sm:p-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
+      <div className="relative flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-b from-[#46A5ED] via-[#8ED1FC] to-[#2D6A4F]">
+        {/* C) ÜST YÜZER HAP (PILL) HUD TASARIMI + NET "✕ Çıkış / Listeye Dön" BUTONU */}
+        <div className="relative sm:absolute sm:top-3 sm:inset-x-4 z-20 px-2.5 pt-2.5 pb-1 sm:p-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none shrink-0">
           {/* EN SOLDA: Sarı renkli 🔊 ve 🔊 إِعَادَة الصَّوْت (Sesi Tekrar Dinle) hap butonları */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
@@ -2038,7 +1960,7 @@ export default function BalloonSafariGame({
               Karne
             </button>
 
-            {/* SAĞDA KIRMIZI YUVA (🏠) BUTONU */}
+            {/* SAĞDA KIRMIZI YUVA (🏠) + NET "✕ Çıkış / Listeye Dön" BUTONU */}
             <button
               type="button"
               onClick={returnToSafariHome}
@@ -2048,6 +1970,15 @@ export default function BalloonSafariGame({
             >
               <Home size={17} />
             </button>
+
+            <button
+              type="button"
+              onClick={handleExitToList}
+              className="min-h-[38px] px-3 py-1 rounded-full bg-slate-900/90 hover:bg-rose-600 text-white border-2 border-white shadow-md text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-transform active:scale-95 whitespace-nowrap shrink-0"
+              title="✕ Çıkış / Listeye Dön"
+            >
+              <span>✕ Çıkış / Listeye Dön</span>
+            </button>
           </div>
         </div>
 
@@ -2056,7 +1987,7 @@ export default function BalloonSafariGame({
           hintActive ||
           comboMilestoneBanner ||
           practiceSubset) && (
-          <div className="relative sm:absolute sm:top-14 sm:inset-x-4 z-20 px-2 pb-1 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold pointer-events-none">
+          <div className="relative sm:absolute sm:top-14 sm:inset-x-4 z-20 px-2 pb-1 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold pointer-events-none shrink-0">
             {practiceSubset && (
               <span className="px-3 py-0.5 rounded-full bg-white/95 text-purple-800 shadow-sm">
                 Hatalarımla Pratik ({practiceSubset.length} kelime)
@@ -2087,10 +2018,11 @@ export default function BalloonSafariGame({
           </div>
         )}
 
-        {/* A) PANORAMİK DOĞA & SAFARİ MANZARASI + B) GERÇEK SICAK HAVA BALONLARI (60FPS SVG) */}
+        {/* A) PANORAMİK DOĞA & SAFARİ MANZARASI + B) GERÇEK SICAK HAVA BALONLARI (60FPS TAM EKRAN SVG) */}
         <svg
           viewBox={`0 0 ${STAGE_W} ${STAGE_H}`}
-          className="w-full h-[330px] sm:h-[470px] lg:h-[550px] block touch-manipulation"
+          preserveAspectRatio="xMidYMid meet"
+          className="flex-1 min-h-0 w-full h-full block touch-manipulation"
           role="application"
           aria-label="Balon Safari Oyun Alanı"
         >

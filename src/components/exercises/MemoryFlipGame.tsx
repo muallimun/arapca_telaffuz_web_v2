@@ -32,14 +32,8 @@ import {
   SynonymAntonymEntry,
   Level,
 } from "@/types/data";
-import {
-  gorselKelimeler,
-  sozluk,
-  esZitAnlamlilar,
-  resolveImageUrl,
-} from "@/lib/data";
+import { gorselKelimeler, resolveImageUrl } from "@/lib/data";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
-import { removeArabicHarakat as stripHarakat } from "@/lib/arabicTextUtils";
 import { shuffleArray } from "@/lib/quiz";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -68,12 +62,12 @@ interface MemoryPairSource {
   cardAAr: string;
   cardBTr: string;
   cardBAr?: string;
-  relationBadge?: "= Eş Anlam" | "≠ Zıt Anlam";
   fullMeaningTr: string;
   ornekAr?: string;
   ornekTr?: string;
   nuanceNote?: string;
   kok?: string;
+  kategoriTr?: string;
   imageUrl?: string;
   ses_erkek?: string;
   ses_kadin?: string;
@@ -148,7 +142,7 @@ function shortenMeaning(raw: string): string {
   const clean = (raw || "").trim();
   if (!clean) return "Anlam";
   const first = clean.split(/[;/]/)[0]?.trim() || clean;
-  return first.length > 36 ? `${first.slice(0, 34)}…` : first;
+  return first.length > 32 ? `${first.slice(0, 30)}…` : first;
 }
 
 function formatSeconds(sec: number): string {
@@ -157,31 +151,21 @@ function formatSeconds(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function buildNuanceSummary(ez?: SynonymAntonymEntry): string | undefined {
-  if (!ez) return undefined;
+function buildVisualMorphologySummary(vk: ResimliKelime): string | undefined {
   const parts: string[] = [];
-  const syn = ez.es_anlamlilar?.[0];
-  const ant = ez.zit_anlamlilar?.[0];
-  if (syn) {
-    parts.push(
-      `Eş anlam: ${syn.ar} (${syn.tr})${syn.nuans_tr ? ` — ${syn.nuans_tr}` : ""}`
-    );
-  }
-  if (ant) {
-    parts.push(
-      `Zıt anlam: ${ant.ar} (${ant.tr})${ant.nuans_tr ? ` — ${ant.nuans_tr}` : ""}`
-    );
+  const sec = (vk.ikincil_form || "").trim();
+  const third = (vk.ucuncul_form || "").trim();
+  if (vk.tur === "fiil") {
+    if (sec && sec !== "-") parts.push(`Muzâri: ${sec}`);
+    if (third && third !== "-") parts.push(`Masdar: ${third}`);
+  } else {
+    if (sec && sec !== "-") parts.push(`Çoğul (Cemî): ${sec}`);
   }
   return parts.length > 0 ? parts.join(" • ") : undefined;
 }
 
 export default function MemoryFlipGame({
   visualPool = [],
-  vocabulary = [],
-  idioms = [],
-  dialogues = [],
-  synonymEntries = [],
-  isSynonymsAntonymsMode = false,
   cefrFilter = "all",
   timeLimit = null,
   onClose,
@@ -189,261 +173,80 @@ export default function MemoryFlipGame({
   const { theme, toggleTheme, preferredVoiceGender, speechRate } = useSettings();
   const { addMistake, recordItemAttempt, addStudyMinutes } = useUserStore();
 
-  // Hızlı görsel, sözlük ve eş/zıt anlam dizinleri (Bilgi Notu kutusu & görsel eşleme için)
-  const enrichmentLookups = useMemo(() => {
-    const visualById = new Map<string, ResimliKelime>();
-    const visualByBare = new Map<string, ResimliKelime>();
+  // Sadece gerçek Görsel Kelimeler (gorselKelimeler_guncel.json) doğrulama dizini
+  const canonicalVisualById = useMemo(() => {
+    const map = new Map<string, ResimliKelime>();
     for (const vk of gorselKelimeler) {
-      visualById.set(vk.id, vk);
-      const bare = stripHarakat(vk.arapca || "").trim();
-      if (bare && !visualByBare.has(bare)) {
-        visualByBare.set(bare, vk);
+      if (vk.gorsel && vk.arapca && vk.turkce) {
+        map.set(vk.id, vk);
       }
     }
-
-    const dictById = new Map<string, DictionaryItem>();
-    const dictByBare = new Map<string, DictionaryItem>();
-    for (const d of sozluk) {
-      dictById.set(d.id, d);
-      const bare = stripHarakat(d.mufret || d.mazi || "").trim();
-      if (bare && !dictByBare.has(bare)) {
-        dictByBare.set(bare, d);
-      }
-    }
-
-    const synById = new Map<string, SynonymAntonymEntry>();
-    const synByBare = new Map<string, SynonymAntonymEntry>();
-    for (const ez of esZitAnlamlilar) {
-      synById.set(ez.id, ez);
-      const bare = (ez.kelime_harekesiz || stripHarakat(ez.kelime_ar || "")).trim();
-      if (bare && !synByBare.has(bare)) {
-        synByBare.set(bare, ez);
-      }
-    }
-
-    return {
-      visualById,
-      visualByBare,
-      dictById,
-      dictByBare,
-      synById,
-      synByBare,
-    };
+    return map;
   }, []);
 
-  // Seçili havuzdan zenginleştirilmiş eşleştirme çiftleri
+  // YALNIZCA Görsel Kelimeler (gorselKelimeler_guncel.json) veri setinden beslenen öğrenci dostu resimli çiftler
   const allPairSources = useMemo<MemoryPairSource[]>(() => {
     const list: MemoryPairSource[] = [];
     const seen = new Set<string>();
 
-    const pushSource = (src: MemoryPairSource) => {
-      if (!src.cardAAr || !src.cardBTr) return;
-      if (seen.has(src.pairId)) return;
-      seen.add(src.pairId);
-      list.push(src);
+    const pushVisualWord = (vk: ResimliKelime) => {
+      const canonicalVk = canonicalVisualById.get(vk.id);
+      if (!canonicalVk) return;
+      if (seen.has(canonicalVk.id)) return;
+      seen.add(canonicalVk.id);
+
+      const rawKok = (canonicalVk.kok || "").trim();
+
+      list.push({
+        pairId: canonicalVk.id,
+        canonicalWordId: canonicalVk.id,
+        audioId: canonicalVk.id,
+        cardAAr: canonicalVk.arapca,
+        cardBTr: shortenMeaning(canonicalVk.turkce),
+        fullMeaningTr: canonicalVk.turkce,
+        ornekAr: canonicalVk.ornek_ar,
+        ornekTr: canonicalVk.ornek_tr,
+        nuanceNote: buildVisualMorphologySummary(canonicalVk),
+        kok: rawKok && rawKok !== "-" ? rawKok : undefined,
+        kategoriTr: canonicalVk.kategori_tr,
+        imageUrl: resolveImageUrl(canonicalVk.gorsel),
+        ses_erkek: canonicalVk.ses_erkek,
+        ses_kadin: canonicalVk.ses_kadin,
+      });
     };
 
-    // 1. Eş ve Zıt Anlamlılar Modu
-    if (isSynonymsAntonymsMode && synonymEntries.length > 0) {
-      for (const ez of synonymEntries) {
-        const syn = ez.es_anlamlilar?.[0];
-        const ant = ez.zit_anlamlilar?.[0];
-        const chosen = syn || ant;
-        const bare = stripHarakat(ez.kelime_ar || "").trim();
-        const vk = enrichmentLookups.visualByBare.get(bare);
-        const dict = enrichmentLookups.dictByBare.get(bare);
-
-        if (chosen) {
-          pushSource({
-            pairId: ez.id,
-            canonicalWordId: ez.id,
-            audioId: vk?.id || dict?.id,
-            cardAAr: ez.kelime_ar,
-            cardBAr: chosen.ar,
-            cardBTr: shortenMeaning(chosen.tr || ez.anlam_tr),
-            relationBadge: syn ? "= Eş Anlam" : "≠ Zıt Anlam",
-            fullMeaningTr: ez.anlam_tr,
-            ornekAr: ez.ornek_cumle_ar || vk?.ornek_ar || dict?.ornek_ar,
-            ornekTr: ez.ornek_cumle_tr || vk?.ornek_tr || dict?.ornek_tr,
-            nuanceNote: buildNuanceSummary(ez),
-            kok: vk?.kok || dict?.kok,
-            imageUrl: vk?.gorsel
-              ? resolveImageUrl(vk.gorsel)
-              : dict?.gorsel
-              ? resolveImageUrl(dict.gorsel)
-              : undefined,
-            ses_erkek: vk?.ses_erkek || dict?.ses_erkek,
-            ses_kadin: vk?.ses_kadin || dict?.ses_kadin,
-          });
-        } else {
-          pushSource({
-            pairId: ez.id,
-            canonicalWordId: ez.id,
-            audioId: vk?.id || dict?.id,
-            cardAAr: ez.kelime_ar,
-            cardBTr: shortenMeaning(ez.anlam_tr),
-            fullMeaningTr: ez.anlam_tr,
-            ornekAr: ez.ornek_cumle_ar || vk?.ornek_ar || dict?.ornek_ar,
-            ornekTr: ez.ornek_cumle_tr || vk?.ornek_tr || dict?.ornek_tr,
-            nuanceNote: buildNuanceSummary(ez),
-            kok: vk?.kok || dict?.kok,
-            imageUrl: vk?.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-            ses_erkek: vk?.ses_erkek || dict?.ses_erkek,
-            ses_kadin: vk?.ses_kadin || dict?.ses_kadin,
-          });
-        }
+    // 1. Seçili görsel kelime alt kümesi (yalnızca gorselKelimeler_guncel.json içindeki gerçek kayıtlar)
+    for (const candidate of visualPool) {
+      if (
+        cefrFilter === "all" ||
+        !candidate.cefr ||
+        candidate.cefr === cefrFilter
+      ) {
+        pushVisualWord(candidate);
       }
     }
 
-    // 2. Doğrudan Görsel Kelime Havuzu
-    if (list.length === 0 && visualPool.length > 0 && vocabulary.length === 0) {
-      for (const vk of visualPool) {
-        const bare = stripHarakat(vk.arapca || "").trim();
-        const ez = enrichmentLookups.synByBare.get(bare);
-        const dict =
-          enrichmentLookups.dictById.get(vk.id) ||
-          enrichmentLookups.dictByBare.get(bare);
-        pushSource({
-          pairId: vk.id,
-          canonicalWordId: vk.id,
-          audioId: vk.id,
-          cardAAr: vk.arapca,
-          cardBTr: shortenMeaning(vk.turkce),
-          fullMeaningTr: vk.turkce,
-          ornekAr: vk.ornek_ar || dict?.ornek_ar || ez?.ornek_cumle_ar,
-          ornekTr: vk.ornek_tr || dict?.ornek_tr || ez?.ornek_cumle_tr,
-          nuanceNote: buildNuanceSummary(ez),
-          kok: vk.kok || dict?.kok,
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-        });
-      }
-    }
-
-    // 3. Sözlük / Diyalog Kelimeleri / Hata Defteri / Favoriler
-    if (list.length === 0 && vocabulary.length > 0) {
-      for (const w of vocabulary) {
-        const ar = (w.mufret || w.mazi || "").trim();
-        if (!ar) continue;
-        const bare = stripHarakat(ar).trim();
-        const vk =
-          enrichmentLookups.visualById.get(w.id) ||
-          enrichmentLookups.visualByBare.get(bare);
-        const ez =
-          enrichmentLookups.synById.get(w.id) ||
-          enrichmentLookups.synByBare.get(bare);
-        const imgRaw = w.gorsel || vk?.gorsel;
-        pushSource({
-          pairId: w.id,
-          canonicalWordId: w.id,
-          audioId: w.id,
-          cardAAr: ar,
-          cardBTr: shortenMeaning(w.anlam_tr),
-          fullMeaningTr: w.anlam_tr,
-          ornekAr: w.ornek_ar || vk?.ornek_ar || ez?.ornek_cumle_ar,
-          ornekTr: w.ornek_tr || vk?.ornek_tr || ez?.ornek_cumle_tr,
-          nuanceNote: buildNuanceSummary(ez),
-          kok: w.kok || vk?.kok,
-          imageUrl: imgRaw ? resolveImageUrl(imgRaw) : undefined,
-          ses_erkek: w.ses_erkek || vk?.ses_erkek,
-          ses_kadin: w.ses_kadin || vk?.ses_kadin,
-        });
-      }
-    }
-
-    // 4. Yedek Görsel Havuz / Deyim / Diyalog Satırları
-    if (list.length === 0 && visualPool.length > 0) {
-      for (const vk of visualPool) {
-        const bare = stripHarakat(vk.arapca || "").trim();
-        const ez = enrichmentLookups.synByBare.get(bare);
-        pushSource({
-          pairId: vk.id,
-          canonicalWordId: vk.id,
-          audioId: vk.id,
-          cardAAr: vk.arapca,
-          cardBTr: shortenMeaning(vk.turkce),
-          fullMeaningTr: vk.turkce,
-          ornekAr: vk.ornek_ar || ez?.ornek_cumle_ar,
-          ornekTr: vk.ornek_tr || ez?.ornek_cumle_tr,
-          nuanceNote: buildNuanceSummary(ez),
-          kok: vk.kok,
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-        });
-      }
-    }
-
-    if (list.length < 8 && idioms.length > 0) {
-      for (const idm of idioms) {
-        pushSource({
-          pairId: `idiom_${idm.id}`,
-          canonicalWordId: `idiom_${idm.id}`,
-          cardAAr: idm.arabic,
-          cardBTr: shortenMeaning(idm.meaningTr),
-          fullMeaningTr: idm.meaningTr,
-          nuanceNote: idm.literalTr ? `Lafzî çeviri: ${idm.literalTr}` : undefined,
-        });
-      }
-    }
-
-    if (list.length < 8 && dialogues.length > 0) {
-      for (const dlg of dialogues) {
-        for (const line of dlg.satirlar.slice(0, 5)) {
-          if (line.arapca.split(/\s+/).length <= 6) {
-            pushSource({
-              pairId: `sent_${dlg.id}_${line.sira}`,
-              canonicalWordId: `sent_${dlg.id}_${line.sira}`,
-              cardAAr: line.arapca,
-              cardBTr: shortenMeaning(line.turkce),
-              fullMeaningTr: line.turkce,
-              nuanceNote: dlg.baslik_tr ? `Diyalog: ${dlg.baslik_tr}` : undefined,
-            });
-          }
-        }
-      }
-    }
-
-    // En az 8 çift garantisi (Zor seviye 8 çift için)
+    // 2. Filtrelenen alt küme 8 çiftten azsa aynı seviyedeki gorselKelimeler ile tamamla
     if (list.length < 8) {
-      const fallback =
+      const levelVisuals =
         cefrFilter === "all"
           ? gorselKelimeler
           : gorselKelimeler.filter((vk) => vk.cefr === cefrFilter);
-      for (const vk of fallback) {
-        const bare = stripHarakat(vk.arapca || "").trim();
-        const ez = enrichmentLookups.synByBare.get(bare);
-        pushSource({
-          pairId: vk.id,
-          canonicalWordId: vk.id,
-          audioId: vk.id,
-          cardAAr: vk.arapca,
-          cardBTr: shortenMeaning(vk.turkce),
-          fullMeaningTr: vk.turkce,
-          ornekAr: vk.ornek_ar || ez?.ornek_cumle_ar,
-          ornekTr: vk.ornek_tr || ez?.ornek_cumle_tr,
-          nuanceNote: buildNuanceSummary(ez),
-          kok: vk.kok,
-          imageUrl: vk.gorsel ? resolveImageUrl(vk.gorsel) : undefined,
-          ses_erkek: vk.ses_erkek,
-          ses_kadin: vk.ses_kadin,
-        });
-        if (list.length >= 16) break;
+      for (const vk of levelVisuals) {
+        pushVisualWord(vk);
+      }
+    }
+
+    // 3. Nihai emniyet: tüm gorselKelimeler (asla düz sözlük, metin veya atasözü eklenmez)
+    if (list.length < 8) {
+      for (const vk of gorselKelimeler) {
+        pushVisualWord(vk);
+        if (list.length >= 24) break;
       }
     }
 
     return list;
-  }, [
-    isSynonymsAntonymsMode,
-    synonymEntries,
-    visualPool,
-    vocabulary,
-    idioms,
-    dialogues,
-    cefrFilter,
-    enrichmentLookups,
-  ]);
+  }, [visualPool, cefrFilter, canonicalVisualById]);
 
   // Ekran aşaması ve temel ayarlar
   const [phase, setPhase] = useState<"menu" | "playing" | "finished">("menu");
@@ -552,6 +355,18 @@ export default function MemoryFlipGame({
     aiSecondPickTimerRef.current = null;
   }, []);
 
+  const handleExitToList = useCallback(() => {
+    playClick();
+    clearAllTimers();
+    stopAllAudio();
+    sfx.stopAllSfx();
+    if (onClose) {
+      onClose();
+    } else {
+      setPhase("menu");
+    }
+  }, [clearAllTimers, onClose]);
+
   useEffect(() => {
     sessionStartRef.current = Date.now();
     return () => {
@@ -561,32 +376,45 @@ export default function MemoryFlipGame({
     };
   }, [clearAllTimers]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showHowToModal) {
+          setShowHowToModal(false);
+        } else if (onClose) {
+          handleExitToList();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showHowToModal, onClose, handleExitToList]);
+
   const speakArabicItem = useCallback(
     (textAr: string, src?: MemoryPairSource) => {
       if (!textAr || isMutedRef.current) return;
       stopAllAudio();
-      const matchedDict = src?.audioId
-        ? sozluk.find((w) => w.id === src.audioId)
+      const matchedVk = src?.audioId
+        ? canonicalVisualById.get(src.audioId)
         : undefined;
       void playDualGenderAudio({
         text: textAr,
         id: src?.audioId,
-        ses_erkek: src?.ses_erkek || matchedDict?.ses_erkek,
-        ses_kadin: src?.ses_kadin || matchedDict?.ses_kadin,
+        ses_erkek: src?.ses_erkek || matchedVk?.ses_erkek,
+        ses_kadin: src?.ses_kadin || matchedVk?.ses_kadin,
         gender: preferredVoiceGender,
         rate: speechRate || 1,
       }).catch(() => {
         // ignore
       });
     },
-    [preferredVoiceGender, speechRate]
+    [preferredVoiceGender, speechRate, canonicalVisualById]
   );
 
   // Yapay zekâ hafızasına açılan kartı kaydet ("rakibin bazen unutur" davranışı ile)
   const rememberCardForAi = useCallback((card: MemoryDeckCard) => {
     const mem = aiMemoryRef.current;
     mem.set(card.uid, card.pairId);
-    // Hafıza büyüdüğünde zaman zaman eski bir kartı unutarak insani rakip davranışı sergile
     const diff = difficultyRef.current;
     const maxCap = diff === "easy" ? 4 : diff === "medium" ? 7 : 12;
     if (mem.size > maxCap) {
@@ -737,11 +565,9 @@ export default function MemoryFlipGame({
         setFlippedUids([]);
         flippedUidsRef.current = [];
 
-        // Eşleşen çifti YZ hafızasından temizle
         aiMemoryRef.current.delete(firstCard.uid);
         aiMemoryRef.current.delete(secondCard.uid);
 
-        // Oyuncu eşleştirdiyse SRS olumlu kayıt
         if (actor === "P1" || actor === "P2") {
           const canonical = normalizeToCanonicalMistakeId(
             firstCard.source.canonicalWordId,
@@ -782,12 +608,10 @@ export default function MemoryFlipGame({
           void playCorrect({ streak: 2 });
         }
 
-        // Sıra aynı oyuncuda kalır, tur süresi yenilenir
         setTurnSecLeft(cfg.turnSeconds);
         boardLockRef.current = false;
 
         if (mode === "ai" && actor === "AI") {
-          // Yapay zekâ doğru bildiği için sırasını sürdürür
           setAiTurnTrigger((prev) => prev + 1);
         }
       } else {
@@ -829,7 +653,6 @@ export default function MemoryFlipGame({
           boardLockRef.current = false;
           setTurnSecLeft(cfg.turnSeconds);
 
-          // Sıra değişimi
           if (mode === "ai") {
             const nextActor: TurnActor = actor === "P1" ? "AI" : "P1";
             currentTurnRef.current = nextActor;
@@ -863,13 +686,11 @@ export default function MemoryFlipGame({
         return next;
       });
 
-      // Değerlendirme animasyonu veya ipucu esnasında tur geri sayımını beklet
       if (boardLockRef.current || isPeeking) return;
 
       setTurnSecLeft((prev) => {
         if (prev > 1) return prev - 1;
 
-        // Tur süresi doldu -> açık tek kart varsa kapat ve sırayı devret
         const cfg = GRID_CONFIG[difficultyRef.current];
         const mode = playModeRef.current;
         const actor = currentTurnRef.current;
@@ -923,7 +744,6 @@ export default function MemoryFlipGame({
       const cfg = GRID_CONFIG[difficultyRef.current];
       const mem = aiMemoryRef.current;
 
-      // 1) Hafızada aynı çifte ait iki kart biliniyor mu?
       const knownByPair = new Map<string, string[]>();
       for (const [uid, pid] of mem.entries()) {
         if (matchedSet.has(pid)) continue;
@@ -947,7 +767,6 @@ export default function MemoryFlipGame({
         }
       }
 
-      // 2) Bilinen tam çift yoksa, önce henüz açılmamış kartlardan rastgele birini dene
       if (!firstPick) {
         const unseen = available.filter((c) => !mem.has(c.uid));
         const poolForFirst = unseen.length > 0 ? unseen : available;
@@ -971,7 +790,6 @@ export default function MemoryFlipGame({
       setFlippedUids([firstPick.uid]);
       flippedUidsRef.current = [firstPick.uid];
 
-      // Kısa bir bekleme ardından 2. kartı çevir
       aiSecondPickTimerRef.current = setTimeout(() => {
         const stillAvailable = deckRef.current.filter(
           (c) =>
@@ -985,7 +803,6 @@ export default function MemoryFlipGame({
 
         let secondPick = plannedSecondPick;
 
-        // İlk açılan kartın eşi hafızada var mı kontrol et
         if (!secondPick) {
           const matchingPartnerInMem = stillAvailable.find(
             (c) =>
@@ -1068,7 +885,6 @@ export default function MemoryFlipGame({
   // Oyuncu kart seçimi
   const handleCardSelect = useCallback(
     (card: MemoryDeckCard) => {
-      // Eşleşmiş bir karta tıklandığında Bilgi Notu kutusunu güncelle ve sesini çal
       if (matchedPairIds.includes(card.pairId)) {
         setLastMatchedSource(card.source);
         speakArabicItem(card.source.cardAAr, card.source);
@@ -1089,14 +905,12 @@ export default function MemoryFlipGame({
         playFlip();
       }
 
-      // Arapça yüz açıldığında sesi otomatik çal
       if (card.side === "A") {
         speakArabicItem(card.source.cardAAr, card.source);
       } else if (card.source.cardBAr) {
         speakArabicItem(card.source.cardBAr, card.source);
       }
 
-      // Açılan kartı Yapay Zekâ da görür (kısmi hafızasına kaydeder)
       rememberCardForAi(card);
 
       const nextFlipped = [...flippedUids, card.uid];
@@ -1135,16 +949,8 @@ export default function MemoryFlipGame({
   }, [activePairs, pairMismatches]);
 
   const poolSummaryText = useMemo(() => {
-    const withImageCount = allPairSources.filter((p) => Boolean(p.imageUrl))
-      .length;
-    if (isSynonymsAntonymsMode) {
-      return `Eş & Zıt Anlamlılar Havuzu • ${allPairSources.length} çift hazır`;
-    }
-    if (withImageCount > 0) {
-      return `Görselli & Sesli Kelime Havuzu • ${allPairSources.length} kelime hazır`;
-    }
-    return `Seçili Çalışma Havuzu • ${allPairSources.length} eşleştirme çifti hazır`;
-  }, [allPairSources, isSynonymsAntonymsMode]);
+    return `🖼️ Görsel Kelimeler Havuzu • ${allPairSources.length} resimli kelime hazır`;
+  }, [allPairSources.length]);
 
   const handleToggleMute = useCallback(() => {
     playClick();
@@ -1163,7 +969,7 @@ export default function MemoryFlipGame({
       role="dialog"
       aria-modal="true"
       aria-label="Hafızanı Yokla Nasıl Oynanır"
-      className="fixed inset-0 z-50 bg-black/55 backdrop-blur-xs flex items-center justify-center p-4"
+      className="fixed inset-0 z-[10010] bg-black/55 backdrop-blur-xs flex items-center justify-center p-4"
       onClick={() => setShowHowToModal(false)}
     >
       <div
@@ -1180,7 +986,7 @@ export default function MemoryFlipGame({
                 Hafızanı Yokla — Nasıl Oynanır?
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Görsel, sesli telaffuz ve anlam eşleştirme kuralları
+                Görsel kelimeler, sesli telaffuz ve anlam eşleştirme kuralları
               </p>
             </div>
           </div>
@@ -1201,7 +1007,7 @@ export default function MemoryFlipGame({
             telaffuzu otomatik seslendirilir.
           </p>
           <p>
-            <strong>2. Eşleştir ve Sıranı Koru:</strong> Aynı kelimenin{" "}
+            <strong>2. Eşleştir ve Sıranı Koru:</strong> Aynı görsel kelimenin{" "}
             <em>Türkçe + Görsel</em> kartı ile <em>Arapça + Görsel</em> kartını
             bulduğunda <strong>+10 puan</strong> kazanırsın ve hamle sırası sende
             kalır!
@@ -1215,8 +1021,8 @@ export default function MemoryFlipGame({
             çalışırsın.
           </p>
           <p>
-            <strong>4. Canlı Bilgi Notu:</strong> Eşleştirilen her kelimenin tam
-            anlamı, örnek cümlesi ve varsa eş/zıt anlam nüansı sağ alttaki{" "}
+            <strong>4. Canlı Bilgi Notu:</strong> Eşleştirilen her kelimenin
+            üçlü kökü, tam anlamı ve örnek cümleleri sağ alttaki{" "}
             <strong>Bilgi Notu</strong> kutusunda anında gösterilir.
           </p>
         </div>
@@ -1233,258 +1039,289 @@ export default function MemoryFlipGame({
   );
 
   // ============================================================================
-  // A) BAŞLANGIÇ / MOD SEÇİM EKRANI (2 SÜTUNLU ŞIK KART)
+  // A) BAŞLANGIÇ / MOD SEÇİM EKRANI (TAM EKRAN 100dvh • 2 SÜTUNLU ŞIK KART)
   // ============================================================================
   if (phase === "menu") {
     return (
-      <div className="rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 shadow-lg overflow-hidden select-none">
+      <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
         {howToModalNode}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 p-4 sm:p-7 items-stretch">
-          {/* SOL SÜTUN: Kitap/Dalga İkonu + Büyük "Hafızanı Yokla" Başlığı + Seçili Havuz Bilgisi */}
-          <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-[#0F766E] via-[#0E7490] to-[#134E4A] text-white p-5 sm:p-7 flex flex-col justify-between gap-6 shadow-md">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-sm">
-                  <div className="relative flex items-center justify-center">
-                    <BookOpen size={30} className="text-[#FDE68A]" />
-                    <Waves
-                      size={18}
-                      className="text-cyan-200 absolute -bottom-2 -right-2"
-                    />
-                  </div>
-                </div>
-                <span
-                  dir="rtl"
-                  className="arabic text-xl sm:text-2xl font-bold text-[#FDE68A]"
-                >
-                  لُعْبَةُ الذَّاكِرَةِ
-                </span>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight text-balance">
-                  Hafızanı Yokla
-                </h2>
-                <p className="text-sm sm:text-base text-teal-50/95 font-medium leading-relaxed">
-                  Deniz kabuğu kartlarını çevir; büyük görselleri, sesli Arapça
-                  kelimeleri ve Türkçe anlamlarını hafızanda tutarak eşleştir.
-                </p>
-              </div>
+        {/* ÜST BAR: Her Zaman Net "✕ Çıkış / Listeye Dön" Butonu */}
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0">
+              <BookOpen size={18} />
             </div>
-
-            <div className="rounded-xl bg-black/20 border border-white/15 p-3.5 space-y-1.5">
-              <div className="text-[11px] font-bold text-teal-200 tracking-wide">
-                AKTİF KELİME HAVUZU
-              </div>
-              <div className="text-xs sm:text-sm font-extrabold text-white leading-snug">
-                {poolSummaryText}
-              </div>
-              <div className="text-xs text-teal-100/85">
-                Seçili seviye:{" "}
-                <strong className="text-[#FDE68A]">
-                  {GRID_CONFIG[difficulty].labelTr} (
-                  {GRID_CONFIG[difficulty].summaryChip})
-                </strong>
-              </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                Hafızanı Yokla
+              </span>
+              <span
+                dir="rtl"
+                className="arabic text-base sm:text-lg font-bold text-[#0F766E] dark:text-teal-300 shrink-0"
+              >
+                لُعْبَةُ الذَّاكِرَةِ
+              </span>
             </div>
           </div>
 
-          {/* SAĞ SÜTUN: Üstte Seviye (3'lü Seçim) + Altta Bir Mod Seç (3 Büyük Kart) */}
-          <div className="lg:col-span-7 flex flex-col justify-between gap-5">
-            {/* Sağ Sütun Üst: Seviye */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                  <BarChart3 size={16} className="text-[#0F766E] dark:text-teal-400" />
-                  <span>Seviye</span>
-                </span>
-                {onClose && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      stopAllAudio();
-                      sfx.stopAllSfx();
-                      onClose();
-                    }}
-                    className="min-h-[36px] px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-rose-400 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    <X size={14} />
-                    <span>Listeye Dön</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {(["easy", "medium", "hard"] as MemoryGridDifficulty[]).map(
-                  (d) => {
-                    const cfg = GRID_CONFIG[d];
-                    const active = difficulty === d;
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setDifficulty(d);
-                        }}
-                        className={`min-h-[58px] px-3.5 py-2.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
-                          active
-                            ? "bg-[#0F766E] text-white border-[#0D9488] shadow-sm"
-                            : "bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border-[#E2D5BC] dark:border-slate-700 hover:border-[#0F766E]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span className="text-sm font-black">
-                            📊 {cfg.labelTr}
-                          </span>
-                          <span
-                            dir="rtl"
-                            className={`arabic text-sm font-bold ${
-                              active
-                                ? "text-amber-200"
-                                : "text-[#0F766E] dark:text-teal-400"
-                            }`}
-                          >
-                            {cfg.labelAr}
-                          </span>
-                        </div>
-                        <span
-                          className={`text-xs font-bold mt-0.5 tabular-nums ${
-                            active
-                              ? "text-teal-50"
-                              : "text-slate-500 dark:text-slate-400"
-                          }`}
-                        >
-                          {cfg.summaryChip}
-                        </span>
-                      </button>
-                    );
-                  }
-                )}
-              </div>
-            </div>
-
-            {/* Sağ Sütun Alt: Bir mod seç (3 Büyük Resimli/İkonlu Mod Kartı) */}
-            <div className="space-y-2.5">
-              <div className="text-sm font-black text-slate-800 dark:text-slate-100">
-                Bir mod seç
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* 1) Yapay zekâya karşı */}
-                <button
-                  type="button"
-                  onClick={() => startGameSession("ai", difficulty, null)}
-                  className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#EA580C] dark:hover:border-orange-500 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
-                >
-                  <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-orange-100 via-amber-50 to-rose-100 dark:from-orange-950/60 dark:to-rose-950/50 border border-orange-200/80 dark:border-orange-800/50 flex items-center justify-center shrink-0">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EA580C] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                      <Bot size={26} />
-                    </div>
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
-                      Yapay zekâya karşı
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
-                      1 • Sırayla oyna; rakibin bazen unutur.
-                    </p>
-                  </div>
-                </button>
-
-                {/* 2) İki kişilik */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    startGameSession("two_player", difficulty, null)
-                  }
-                  className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#0E7490] dark:hover:border-cyan-400 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
-                >
-                  <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-cyan-100 via-sky-50 to-teal-100 dark:from-cyan-950/60 dark:to-teal-950/50 border border-cyan-200/80 dark:border-cyan-800/50 flex items-center justify-center shrink-0">
-                    <div className="w-12 h-12 rounded-2xl bg-[#0E7490] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                      <Users size={25} />
-                    </div>
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
-                      İki kişilik
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
-                      2 • Aynı ekranda arkadaşınla yarış.
-                    </p>
-                  </div>
-                </button>
-
-                {/* 3) Antrenman */}
-                <button
-                  type="button"
-                  onClick={() => startGameSession("practice", difficulty, null)}
-                  className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#1F6E50] dark:hover:border-emerald-400 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
-                >
-                  <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-emerald-100 via-teal-50 to-lime-100 dark:from-emerald-950/60 dark:to-teal-950/50 border border-emerald-200/80 dark:border-emerald-800/50 flex items-center justify-center shrink-0">
-                    <div className="w-12 h-12 rounded-2xl bg-[#1F6E50] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                      <Target size={25} />
-                    </div>
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
-                      Antrenman
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
-                      3 • Tek başına çalış, hafızanı ısıt.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ALT ÇUBUK: Nasıl oynanır? | Tema | Ses */}
-        <div className="border-t border-[#E6D7BE] dark:border-slate-800 bg-[#F3E9D6]/85 dark:bg-slate-950/70 px-4 sm:px-7 py-3 flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => {
-              playClick();
-              setShowHowToModal(true);
-            }}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+            onClick={handleExitToList}
+            className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
           >
-            <HelpCircle size={15} className="text-[#0F766E] dark:text-teal-400" />
-            <span>Nasıl oynanır?</span>
+            <span>✕ Çıkış / Listeye Dön</span>
           </button>
+        </header>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                toggleTheme();
-              }}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              {theme === "dark" ? (
-                <Sun size={15} className="text-amber-400" />
-              ) : (
-                <Moon size={15} className="text-slate-700" />
-              )}
-              <span>Tema</span>
-            </button>
+        {/* ORTA ALAN: 2 Sütunlu Mod ve Seviye Kartı */}
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-3 sm:p-6">
+          <div className="w-full max-w-5xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 shadow-xl overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 p-4 sm:p-7 items-stretch">
+              {/* SOL SÜTUN: Kitap/Dalga İkonu + Büyük "Hafızanı Yokla" Başlığı + Seçili Havuz Bilgisi */}
+              <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-[#0F766E] via-[#0E7490] to-[#134E4A] text-white p-5 sm:p-7 flex flex-col justify-between gap-6 shadow-md">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-sm">
+                      <div className="relative flex items-center justify-center">
+                        <BookOpen size={30} className="text-[#FDE68A]" />
+                        <Waves
+                          size={18}
+                          className="text-cyan-200 absolute -bottom-2 -right-2"
+                        />
+                      </div>
+                    </div>
+                    <span
+                      dir="rtl"
+                      className="arabic text-xl sm:text-2xl font-bold text-[#FDE68A]"
+                    >
+                      لُعْبَةُ الذَّاكِرَةِ
+                    </span>
+                  </div>
 
-            <button
-              type="button"
-              onClick={handleToggleMute}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              {isMuted ? (
-                <VolumeX size={15} className="text-rose-500" />
-              ) : (
-                <Volume2 size={15} className="text-[#0F766E] dark:text-teal-400" />
-              )}
-              <span>{isMuted ? "Ses: Kapalı" : "Ses"}</span>
-            </button>
+                  <div className="space-y-2 pt-1">
+                    <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight text-balance">
+                      Hafızanı Yokla
+                    </h2>
+                    <p className="text-sm sm:text-base text-teal-50/95 font-medium leading-relaxed">
+                      Deniz kabuğu kartlarını çevir; resimli görsel kelimeleri,
+                      sesli Arapça karşılıklarını ve Türkçe anlamlarını hafızanda
+                      tutarak eşleştir.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-black/20 border border-white/15 p-3.5 space-y-1.5">
+                  <div className="text-[11px] font-bold text-teal-200 tracking-wide">
+                    AKTİF GÖRSEL KELİME HAVUZU
+                  </div>
+                  <div className="text-xs sm:text-sm font-extrabold text-white leading-snug">
+                    {poolSummaryText}
+                  </div>
+                  <div className="text-xs text-teal-100/85">
+                    Seçili seviye:{" "}
+                    <strong className="text-[#FDE68A]">
+                      {GRID_CONFIG[difficulty].labelTr} (
+                      {GRID_CONFIG[difficulty].summaryChip})
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* SAĞ SÜTUN: Üstte Seviye (3'lü Seçim) + Altta Bir Mod Seç (3 Büyük Kart) */}
+              <div className="lg:col-span-7 flex flex-col justify-between gap-5">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <BarChart3
+                        size={16}
+                        className="text-[#0F766E] dark:text-teal-400"
+                      />
+                      <span>Seviye</span>
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Sadece Resimli Görsel Kelimeler
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {(["easy", "medium", "hard"] as MemoryGridDifficulty[]).map(
+                      (d) => {
+                        const cfg = GRID_CONFIG[d];
+                        const active = difficulty === d;
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setDifficulty(d);
+                            }}
+                            className={`min-h-[58px] px-3.5 py-2.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
+                              active
+                                ? "bg-[#0F766E] text-white border-[#0D9488] shadow-sm"
+                                : "bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border-[#E2D5BC] dark:border-slate-700 hover:border-[#0F766E]"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1.5">
+                              <span className="text-sm font-black">
+                                📊 {cfg.labelTr}
+                              </span>
+                              <span
+                                dir="rtl"
+                                className={`arabic text-sm font-bold ${
+                                  active
+                                    ? "text-amber-200"
+                                    : "text-[#0F766E] dark:text-teal-400"
+                                }`}
+                              >
+                                {cfg.labelAr}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-xs font-bold mt-0.5 tabular-nums ${
+                                active
+                                  ? "text-teal-50"
+                                  : "text-slate-500 dark:text-slate-400"
+                              }`}
+                            >
+                              {cfg.summaryChip}
+                            </span>
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="text-sm font-black text-slate-800 dark:text-slate-100">
+                    Bir mod seç
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* 1) Yapay zekâya karşı */}
+                    <button
+                      type="button"
+                      onClick={() => startGameSession("ai", difficulty, null)}
+                      className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#EA580C] dark:hover:border-orange-500 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
+                    >
+                      <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-orange-100 via-amber-50 to-rose-100 dark:from-orange-950/60 dark:to-rose-950/50 border border-orange-200/80 dark:border-orange-800/50 flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-[#EA580C] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                          <Bot size={26} />
+                        </div>
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
+                          Yapay zekâya karşı
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+                          1 • Sırayla oyna; rakibin bazen unutur.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* 2) İki kişilik */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startGameSession("two_player", difficulty, null)
+                      }
+                      className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#0E7490] dark:hover:border-cyan-400 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
+                    >
+                      <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-cyan-100 via-sky-50 to-teal-100 dark:from-cyan-950/60 dark:to-teal-950/50 border border-cyan-200/80 dark:border-cyan-800/50 flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-[#0E7490] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                          <Users size={25} />
+                        </div>
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
+                          İki kişilik
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+                          2 • Aynı ekranda arkadaşınla yarış.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* 3) Antrenman */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startGameSession("practice", difficulty, null)
+                      }
+                      className="group rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 hover:border-[#1F6E50] dark:hover:border-emerald-400 p-4 text-left flex sm:flex-col items-center sm:items-start gap-3.5 transition-all hover:-translate-y-0.5 shadow-2xs cursor-pointer"
+                    >
+                      <div className="w-14 h-14 sm:w-full sm:h-24 rounded-xl bg-gradient-to-br from-emerald-100 via-teal-50 to-lime-100 dark:from-emerald-950/60 dark:to-teal-950/50 border border-emerald-200/80 dark:border-emerald-800/50 flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-[#1F6E50] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                          <Target size={25} />
+                        </div>
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-base font-black text-slate-900 dark:text-white leading-snug">
+                          Antrenman
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+                          3 • Tek başına çalış, hafızanı ısıt.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ALT ÇUBUK: Nasıl oynanır? | Tema | Ses */}
+            <div className="border-t border-[#E6D7BE] dark:border-slate-800 bg-[#F3E9D6]/85 dark:bg-slate-950/70 px-4 sm:px-7 py-3 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowHowToModal(true);
+                }}
+                className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <HelpCircle
+                  size={15}
+                  className="text-[#0F766E] dark:text-teal-400"
+                />
+                <span>Nasıl oynanır?</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    toggleTheme();
+                  }}
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  {theme === "dark" ? (
+                    <Sun size={15} className="text-amber-400" />
+                  ) : (
+                    <Moon size={15} className="text-slate-700" />
+                  )}
+                  <span>Tema</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleToggleMute}
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 hover:border-[#0F766E] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  {isMuted ? (
+                    <VolumeX size={15} className="text-rose-500" />
+                  ) : (
+                    <Volume2
+                      size={15}
+                      className="text-[#0F766E] dark:text-teal-400"
+                    />
+                  )}
+                  <span>{isMuted ? "Ses: Kapalı" : "Ses"}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1492,7 +1329,7 @@ export default function MemoryFlipGame({
   }
 
   // ============================================================================
-  // OYUN SONU ÖZET PANELİ
+  // OYUN SONU ÖZET PANELİ (TAM EKRAN 100dvh)
   // ============================================================================
   if (phase === "finished") {
     const winnerHeadline =
@@ -1513,24 +1350,18 @@ export default function MemoryFlipGame({
         : "Tebrikler! Tüm Çiftler Eşleştirildi!";
 
     return (
-      <div className="rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 p-4 sm:p-6 shadow-lg space-y-5 select-none">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#1F6E50] text-white flex items-center justify-center shadow-sm shrink-0">
-              <Trophy size={24} />
+      <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#1F6E50] text-white flex items-center justify-center shrink-0">
+              <Trophy size={18} />
             </div>
-            <div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                {winnerHeadline}
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-semibold tabular-nums">
-                {moves} hamle · {formatSeconds(elapsedSec)} süre ·{" "}
-                {GRID_CONFIG[difficulty].labelTr} ({GRID_CONFIG[difficulty].summaryChip})
-              </p>
-            </div>
+            <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+              Hafızanı Yokla — Oyun Özeti
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -1539,149 +1370,166 @@ export default function MemoryFlipGame({
                 stopAllAudio();
                 setPhase("menu");
               }}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 cursor-pointer whitespace-nowrap shrink-0"
+              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 cursor-pointer whitespace-nowrap"
             >
               Mod Seçimi
             </button>
-            {onClose && (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  clearAllTimers();
-                  stopAllAudio();
-                  onClose();
-                }}
-                className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <X size={14} />
-                <span>Çıkış</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Skor Özeti */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-[#1F6E50] dark:text-emerald-300 flex items-center justify-center">
-                <User size={20} />
-              </div>
-              <div>
-                <div className="text-sm font-black text-slate-900 dark:text-white">
-                  {playMode === "two_player" ? "1. Oyuncu (P1)" : "Sen"}
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                  Doğru eşleşmelerden kazanılan puan
-                </div>
-              </div>
-            </div>
-            <span className="text-2xl font-black text-[#1F6E50] dark:text-emerald-400 tabular-nums">
-              {p1Score}p
-            </span>
-          </div>
-
-          {playMode !== "practice" && (
-            <div className="rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-[#EA580C] dark:text-orange-300 flex items-center justify-center">
-                  {playMode === "ai" ? <Bot size={20} /> : <Users size={20} />}
-                </div>
-                <div>
-                  <div className="text-sm font-black text-slate-900 dark:text-white">
-                    {playMode === "ai" ? "Yapay zekâ" : "2. Oyuncu (P2)"}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                    Rakip toplam puanı
-                  </div>
-                </div>
-              </div>
-              <span className="text-2xl font-black text-[#EA580C] dark:text-orange-400 tabular-nums">
-                {p2Score}p
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Öğrenilen Çiftler (Dinlemek için tıklayın) */}
-        <div className="space-y-2">
-          <div className="text-xs font-extrabold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-500" />
-            <span>Bu Destede Eşleştirilen Kelimeler (Dinlemek için tıklayın)</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {activePairs.map((pair) => {
-              const owner = matchedOwners[pair.pairId];
-              return (
-                <button
-                  key={pair.pairId}
-                  type="button"
-                  onClick={() => speakArabicItem(pair.cardAAr, pair)}
-                  className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 flex items-center justify-between gap-2 text-left hover:border-[#1F6E50] cursor-pointer"
-                >
-                  <div className="min-w-0">
-                    <div
-                      dir="rtl"
-                      className="arabic text-xl font-bold text-slate-900 dark:text-white truncate"
-                    >
-                      {pair.cardAAr}
-                      {pair.cardBAr ? ` • ${pair.cardBAr}` : ""}
-                    </div>
-                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
-                      {pair.fullMeaningTr}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {owner && (
-                      <span className="text-[11px] font-black text-[#1F6E50] dark:text-emerald-300">
-                        {owner}
-                      </span>
-                    )}
-                    <Volume2 size={15} className="text-[#0F766E] dark:text-teal-400" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          {missedPairSources.length >= 2 && (
             <button
               type="button"
-              onClick={() =>
-                startGameSession(playMode, difficulty, missedPairSources)
-              }
-              className="min-h-[48px] px-4 py-2.5 rounded-2xl bg-[#0E7490] hover:bg-[#155E75] text-white font-black text-xs sm:text-sm border-b-4 border-[#164E63] active:border-b-0 flex items-center justify-center gap-2 cursor-pointer"
+              onClick={handleExitToList}
+              className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <Target size={16} />
-              <span>
-                Zorlandığım Çiftlerle Tekrar Oyna ({missedPairSources.length})
-              </span>
+              <span>✕ Çıkış / Listeye Dön</span>
             </button>
-          )}
+          </div>
+        </header>
 
-          <button
-            type="button"
-            onClick={() => startGameSession(playMode, difficulty, null)}
-            className={`min-h-[48px] px-4 py-2.5 rounded-2xl bg-[#1F6E50] hover:bg-[#16533C] text-white font-black text-xs sm:text-sm border-b-4 border-[#113F2E] active:border-b-0 flex items-center justify-center gap-2 cursor-pointer ${
-              missedPairSources.length < 2 ? "sm:col-span-2" : ""
-            }`}
-          >
-            <RotateCcw size={16} />
-            <span>Yeni Deste ile Tekrar Oyna</span>
-          </button>
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
+          <div className="w-full max-w-4xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 p-4 sm:p-6 shadow-lg space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-slate-800 pb-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                  {winnerHeadline}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-semibold tabular-nums">
+                  {moves} hamle · {formatSeconds(elapsedSec)} süre ·{" "}
+                  {GRID_CONFIG[difficulty].labelTr} (
+                  {GRID_CONFIG[difficulty].summaryChip})
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-[#1F6E50] dark:text-emerald-300 flex items-center justify-center">
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-slate-900 dark:text-white">
+                      {playMode === "two_player" ? "1. Oyuncu (P1)" : "Sen"}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                      Doğru eşleşmelerden kazanılan puan
+                    </div>
+                  </div>
+                </div>
+                <span className="text-2xl font-black text-[#1F6E50] dark:text-emerald-400 tabular-nums">
+                  {p1Score}p
+                </span>
+              </div>
+
+              {playMode !== "practice" && (
+                <div className="rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-[#EA580C] dark:text-orange-300 flex items-center justify-center">
+                      {playMode === "ai" ? (
+                        <Bot size={20} />
+                      ) : (
+                        <Users size={20} />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-black text-slate-900 dark:text-white">
+                        {playMode === "ai" ? "Yapay zekâ" : "2. Oyuncu (P2)"}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                        Rakip toplam puanı
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-[#EA580C] dark:text-orange-400 tabular-nums">
+                    {p2Score}p
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-extrabold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-amber-500" />
+                <span>
+                  Bu Destede Eşleştirilen Görsel Kelimeler (Dinlemek için
+                  tıklayın)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {activePairs.map((pair) => {
+                  const owner = matchedOwners[pair.pairId];
+                  return (
+                    <button
+                      key={pair.pairId}
+                      type="button"
+                      onClick={() => speakArabicItem(pair.cardAAr, pair)}
+                      className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700 flex items-center justify-between gap-2 text-left hover:border-[#1F6E50] cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <div
+                          dir="rtl"
+                          className="arabic text-xl font-bold text-slate-900 dark:text-white truncate"
+                        >
+                          {pair.cardAAr}
+                        </div>
+                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
+                          {pair.fullMeaningTr}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {owner && (
+                          <span className="text-[11px] font-black text-[#1F6E50] dark:text-emerald-300">
+                            {owner}
+                          </span>
+                        )}
+                        <Volume2
+                          size={15}
+                          className="text-[#0F766E] dark:text-teal-400"
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {missedPairSources.length >= 2 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    startGameSession(playMode, difficulty, missedPairSources)
+                  }
+                  className="min-h-[48px] px-4 py-2.5 rounded-2xl bg-[#0E7490] hover:bg-[#155E75] text-white font-black text-xs sm:text-sm border-b-4 border-[#164E63] active:border-b-0 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Target size={16} />
+                  <span>
+                    Zorlandığım Çiftlerle Tekrar Oyna (
+                    {missedPairSources.length})
+                  </span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => startGameSession(playMode, difficulty, null)}
+                className={`min-h-[48px] px-4 py-2.5 rounded-2xl bg-[#1F6E50] hover:bg-[#16533C] text-white font-black text-xs sm:text-sm border-b-4 border-[#113F2E] active:border-b-0 flex items-center justify-center gap-2 cursor-pointer ${
+                  missedPairSources.length < 2 ? "sm:col-span-2" : ""
+                }`}
+              >
+                <RotateCcw size={16} />
+                <span>Yeni Deste ile Tekrar Oyna</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   // ============================================================================
-  // B) AKTİF OYUN TAHTASI + BÜYÜK YAZILI/GÖRSELLİ KARTLAR + SAĞ YAN PANEL
+  // B) AKTİF OYUN TAHTASI (TAM EKRAN 100dvh • MASAÜSTÜNDE SIFIR SCROLL • w-64 PANEL)
   // ============================================================================
   const cfg = GRID_CONFIG[difficulty];
-  const ringRadius = 25;
+  const ringRadius = 21;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringProgress = Math.max(0, Math.min(1, turnSecLeft / cfg.turnSeconds));
   const ringDashOffset = ringCircumference * (1 - ringProgress);
@@ -1700,7 +1548,7 @@ export default function MemoryFlipGame({
         : "Sıra 2. Oyuncuda: iki kart çevir."
       : "Sıra sende: iki kart çevir.";
 
-  // Mobil (360px+) ve Masaüstü için tam dikdörtgen ve geniş kart ızgarası
+  // 8, 12 ve 16 kartın tamamı masaüstünde 4 sütunlu ızgarada kaydırmasız sığar
   const boardGridClass =
     difficulty === "easy"
       ? "grid-cols-2 sm:grid-cols-4"
@@ -1709,35 +1557,33 @@ export default function MemoryFlipGame({
       : "grid-cols-2 min-[480px]:grid-cols-4";
 
   return (
-    <div className="rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 p-3 sm:p-5 shadow-lg space-y-3.5 select-none">
+    <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
       {howToModalNode}
 
-      {/* Üst Kompakt Navigasyon ve Mod Başlığı */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6D7BE] dark:border-slate-800 pb-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0">
-            <BookOpen size={18} />
+      {/* Üst Kompakt Bar (shrink-0) — Her Zaman Net "✕ Çıkış / Listeye Dön" */}
+      <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0">
+            <BookOpen size={16} />
           </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white whitespace-nowrap">
-                Hafızanı Yokla
-              </h2>
-              <span
-                dir="rtl"
-                className="arabic text-base sm:text-lg font-bold text-[#0F766E] dark:text-teal-300"
-              >
-                لُعْبَةُ الذَّاكِرَةِ
-              </span>
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              {cfg.labelTr} ({cfg.summaryChip}) ·{" "}
+          <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
+              Hafızanı Yokla
+            </h2>
+            <span
+              dir="rtl"
+              className="arabic text-sm sm:text-base font-bold text-[#0F766E] dark:text-teal-300"
+            >
+              لُعْبَةُ الذَّاكِرَةِ
+            </span>
+            <span className="hidden md:inline text-xs text-slate-500 dark:text-slate-400 font-bold">
+              · {cfg.labelTr} ({cfg.summaryChip}) ·{" "}
               {playMode === "ai"
                 ? "Yapay zekâya karşı"
                 : playMode === "two_player"
                 ? "İki kişilik"
                 : "Antrenman"}
-            </div>
+            </span>
           </div>
         </div>
 
@@ -1747,7 +1593,7 @@ export default function MemoryFlipGame({
               type="button"
               onClick={handlePeekCards}
               disabled={isPeeking || peeksLeft <= 0}
-              className="min-h-[36px] px-2.5 py-1 rounded-xl bg-[#1F6E50] hover:bg-[#16533C] disabled:opacity-45 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              className="min-h-[34px] px-2.5 py-1 rounded-xl bg-[#1F6E50] hover:bg-[#16533C] disabled:opacity-45 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               title="Kartları 1.5 Saniye Göster"
             >
               <Eye size={14} />
@@ -1764,7 +1610,7 @@ export default function MemoryFlipGame({
               playClick();
               setShowHowToModal(true);
             }}
-            className="min-h-[36px] min-w-[36px] p-2 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
             aria-label="Nasıl oynanır?"
             title="Nasıl oynanır?"
           >
@@ -1777,7 +1623,7 @@ export default function MemoryFlipGame({
               playClick();
               toggleTheme();
             }}
-            className="min-h-[36px] min-w-[36px] p-2 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
             aria-label="Tema değiştir"
             title="Tema değiştir"
           >
@@ -1787,7 +1633,7 @@ export default function MemoryFlipGame({
           <button
             type="button"
             onClick={handleToggleMute}
-            className="min-h-[36px] min-w-[36px] p-2 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
             aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
             title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
           >
@@ -1801,10 +1647,10 @@ export default function MemoryFlipGame({
           <button
             type="button"
             onClick={() => startGameSession(playMode, difficulty, null)}
-            className="min-h-[36px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
             title="Desteyi Yenile"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={13} />
             <span className="hidden sm:inline">Yenile</span>
           </button>
 
@@ -1816,216 +1662,28 @@ export default function MemoryFlipGame({
               stopAllAudio();
               setPhase("menu");
             }}
-            className="min-h-[36px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#0F766E] cursor-pointer whitespace-nowrap shrink-0"
+            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#0F766E] cursor-pointer whitespace-nowrap shrink-0"
           >
             Modlar
           </button>
 
-          {onClose && (
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                clearAllTimers();
-                stopAllAudio();
-                onClose();
-              }}
-              className="min-h-[36px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-rose-400 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              <X size={14} />
-              <span className="hidden md:inline">Çıkış</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol Deniz/Turkuaz Kart Masası + Sağ Yan Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* SAĞ ÜST (Mobilde Üst Kompakt Bar, Masaüstünde Sağ Sütun Üstü): Skorlar + Dairesel Geri Sayım + Durum */}
-        <div className="order-1 lg:order-2 lg:col-span-4 space-y-3">
-          {/* Oyuncu Skor Kartları */}
-          <div
-            className={`grid gap-2.5 ${
-              playMode === "practice" ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-1"
-            }`}
+          <button
+            type="button"
+            onClick={handleExitToList}
+            className="min-h-[34px] px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
           >
-            {/* Oyuncu 1 / Sen Kartı */}
-            <div
-              className={`rounded-2xl p-3 border-2 transition-all flex items-center justify-between gap-2 ${
-                isP1Active
-                  ? "border-[#EA580C] bg-orange-50/90 dark:bg-orange-950/35 ring-2 ring-orange-400/35"
-                  : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90"
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-sm ${
-                    isP1Active
-                      ? "bg-[#EA580C] text-white"
-                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                  }`}
-                >
-                  <User size={18} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
-                    {playMode === "two_player" ? "1. Oyuncu (P1)" : "Sen"}
-                  </div>
-                  <div
-                    className={`text-[11px] font-bold truncate ${
-                      isP1Active
-                        ? "text-[#EA580C] dark:text-orange-300"
-                        : "text-slate-500 dark:text-slate-400"
-                    }`}
-                  >
-                    {isP1Active ? "Sırada" : "Bekliyor"}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tabular-nums">
-                  {p1Score}
-                </div>
-                <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                  Puan
-                </div>
-              </div>
-            </div>
-
-            {/* Rakip Kartı: Yapay zekâ veya 2. Oyuncu */}
-            {playMode !== "practice" && (
-              <div
-                className={`rounded-2xl p-3 border-2 transition-all flex items-center justify-between gap-2 ${
-                  isOpponentActive
-                    ? "border-[#EA580C] bg-orange-50/90 dark:bg-orange-950/35 ring-2 ring-orange-400/35"
-                    : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-sm ${
-                      isOpponentActive
-                        ? "bg-[#EA580C] text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    {playMode === "ai" ? <Bot size={18} /> : <Users size={18} />}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
-                      {playMode === "ai" ? "Yapay zekâ" : "2. Oyuncu (P2)"}
-                    </div>
-                    <div
-                      className={`text-[11px] font-bold truncate ${
-                        isOpponentActive
-                          ? "text-[#EA580C] dark:text-orange-300"
-                          : "text-slate-500 dark:text-slate-400"
-                      }`}
-                    >
-                      {playMode === "ai"
-                        ? isOpponentActive
-                          ? "Düşünüyor..."
-                          : "Bekliyor"
-                        : isOpponentActive
-                        ? "Sırada"
-                        : "Bekliyor"}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tabular-nums">
-                    {p2Score}
-                  </div>
-                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                    Puan
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Dairesel Tur Geri Sayım Halkası + Süre & Hamle + Durum Metni */}
-          <div className="rounded-2xl border border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between gap-3">
-              {/* SVG Circular Countdown Ring */}
-              <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-                <svg
-                  viewBox="0 0 64 64"
-                  className="w-16 h-16 -rotate-90"
-                  aria-label={`Tur geri sayımı: ${turnSecLeft} saniye`}
-                >
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r={ringRadius}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="6"
-                    className="text-slate-200 dark:text-slate-700"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r={ringRadius}
-                    fill="none"
-                    stroke={turnSecLeft <= 4 ? "#EF4444" : "#0D9488"}
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={ringCircumference}
-                    strokeDashoffset={ringDashOffset}
-                  />
-                </svg>
-                <span
-                  className={`absolute text-xs font-black tabular-nums ${
-                    turnSecLeft <= 4
-                      ? "text-rose-600 dark:text-rose-400"
-                      : "text-slate-900 dark:text-white"
-                  }`}
-                >
-                  {turnSecLeft} sn
-                </span>
-              </div>
-
-              {/* Sağında Toplam Süre, Hamle ve Eşleşen Çift */}
-              <div className="flex-1 grid grid-cols-2 gap-2 text-xs font-extrabold">
-                <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/70 px-2.5 py-2 border border-[#E6D7BE] dark:border-slate-700">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Timer size={12} />
-                    <span>Süre</span>
-                  </div>
-                  <div className="text-sm font-black text-slate-900 dark:text-white tabular-nums mt-0.5">
-                    {formatSeconds(elapsedSec)}
-                  </div>
-                </div>
-
-                <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/70 px-2.5 py-2 border border-[#E6D7BE] dark:border-slate-700">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Layers size={12} />
-                    <span>Hamle</span>
-                  </div>
-                  <div className="text-sm font-black text-slate-900 dark:text-white tabular-nums mt-0.5">
-                    {moves} ({matchedPairIds.length}/{activePairs.length})
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Canlı Sıra / Durum Metni */}
-            <div
-              className={`rounded-xl px-3 py-2 text-xs sm:text-sm font-extrabold text-center ${
-                isOpponentActive && playMode === "ai"
-                  ? "bg-orange-100/90 dark:bg-orange-950/50 text-[#C2410C] dark:text-orange-300"
-                  : "bg-teal-50 dark:bg-teal-950/40 text-[#0F766E] dark:text-teal-300"
-              }`}
-            >
-              {turnStatusText}
-            </div>
-          </div>
+            <span>✕ Çıkış / Listeye Dön</span>
+          </button>
         </div>
+      </header>
 
-        {/* SOL OYUN ALANI: Deniz/Turkuaz Zemin Üzerinde Sıcak Krem Deniz Kabuğu Kartları */}
-        <div className="order-2 lg:order-1 lg:col-span-8 lg:row-span-2 rounded-3xl p-3 sm:p-5 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner">
-          <div className={`grid ${boardGridClass} gap-2.5 sm:gap-3.5`}>
+      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol %78+ Kaydırmasız Kart Masası + Sağ Kompakt w-64 Yan Panel */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5 sm:gap-3.5 p-2.5 sm:p-4 overflow-y-auto lg:overflow-hidden">
+        {/* SOL KART IZGARASI: Masaüstünde ekranın >%75'i, 8/12/16 kartın tamamı sıfır kaydırmayla sığar */}
+        <div className="order-2 lg:order-1 flex-1 min-w-0 lg:h-full rounded-3xl p-2.5 sm:p-4 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner flex flex-col justify-center lg:overflow-hidden">
+          <div
+            className={`grid ${boardGridClass} gap-2 sm:gap-2.5 md:gap-3 w-full my-auto`}
+          >
             {deck.map((card, idx) => {
               const isMatched = matchedPairIds.includes(card.pairId);
               const ownerTag = matchedOwners[card.pairId];
@@ -2039,7 +1697,7 @@ export default function MemoryFlipGame({
               return (
                 <div
                   key={card.uid}
-                  className="relative h-44 sm:h-52 md:h-56 [perspective:1000px]"
+                  className="relative h-24 sm:h-32 md:h-36 lg:max-h-[calc((100dvh-8.25rem)/4)] [perspective:1000px]"
                 >
                   <div
                     role="button"
@@ -2056,23 +1714,23 @@ export default function MemoryFlipGame({
                       isFlipped ? "[transform:rotateY(180deg)]" : ""
                     }`}
                   >
-                    {/* KAPALI KART TASARIMI: Sıcak krem/kum dokulu (#EFE3C8), kalın alt kenarlı, mercan kırmızısı deniz kabuğu amblemli */}
-                    <div className="absolute inset-0 rounded-2xl bg-[#EFE3C8] hover:bg-[#F5EAD2] border-2 border-[#D4C19C] border-b-[6px] border-b-[#B59B6D] shadow-md flex flex-col items-center justify-center p-3 [backface-visibility:hidden] transition-colors">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs">
+                    {/* KAPALI KART: Sıcak krem/kum (#EFE3C8) + mercan kırmızısı deniz kabuğu (#E05A47) */}
+                    <div className="absolute inset-0 rounded-2xl bg-[#EFE3C8] hover:bg-[#F5EAD2] border-2 border-[#D4C19C] border-b-[5px] border-b-[#B59B6D] shadow-md flex items-center justify-center gap-2 p-2 [backface-visibility:hidden] transition-colors">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs shrink-0">
                         <Shell
-                          size={34}
+                          size={26}
                           strokeWidth={2.2}
                           className="text-[#E05A47]"
                         />
                       </div>
-                      <span className="mt-2 text-[11px] font-extrabold text-[#8C734B] tabular-nums">
+                      <span className="text-xs font-extrabold text-[#8C734B] tabular-nums">
                         #{idx + 1}
                       </span>
                     </div>
 
-                    {/* AÇIK / EŞLEŞMİŞ KART TASARIMI */}
+                    {/* AÇIK / EŞLEŞMİŞ KART: Yatay ergonomik görsel + büyük tipografi */}
                     <div
-                      className={`absolute inset-0 rounded-2xl border-2 border-b-[6px] p-2 sm:p-3 flex flex-col items-center justify-between text-center shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
+                      className={`absolute inset-0 rounded-2xl border-2 border-b-[5px] px-2 py-1.5 sm:px-3 sm:py-2 flex flex-col justify-between shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
                         isMatched
                           ? "bg-[#1F6E50] border-[#34D399] border-b-[#134733] text-white"
                           : isMismatch
@@ -2080,54 +1738,56 @@ export default function MemoryFlipGame({
                           : "bg-[#FFFDF8] dark:bg-slate-800 border-[#F59E0B] border-b-[#B45309] text-slate-900 dark:text-white"
                       }`}
                     >
-                      {/* Üst Satır: Dil/İlişki Etiketi + Eşleşme ✓ veya Ses Butonu */}
-                      <div className="w-full flex items-center justify-between gap-1 shrink-0">
-                        <span
-                          className={`text-[10px] sm:text-[11px] font-black leading-none ${
-                            isMatched
-                              ? "text-emerald-100"
-                              : card.side === "A"
-                              ? "text-[#0F766E] dark:text-teal-300"
-                              : "text-amber-700 dark:text-amber-300"
-                          }`}
-                        >
-                          {card.side === "A"
-                            ? "عَرَبِيّ"
-                            : card.source.relationBadge || "TÜRKÇE"}
-                        </span>
+                      {/* Üst İnce Etiket Şeridi */}
+                      <div className="w-full flex items-center justify-between gap-1 shrink-0 leading-none">
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`text-[9px] sm:text-[10px] font-black ${
+                              isMatched
+                                ? "text-emerald-100"
+                                : card.side === "A"
+                                ? "text-[#0F766E] dark:text-teal-300"
+                                : "text-amber-700 dark:text-amber-300"
+                            }`}
+                          >
+                            {card.side === "A" ? "عَرَبِيّ" : "TÜRKÇE"}
+                          </span>
+                          {isMatched && ownerTag && (
+                            <span className="px-1.5 py-0.5 rounded bg-black/25 text-[9px] font-black text-emerald-50">
+                              {ownerTag}
+                            </span>
+                          )}
+                        </div>
 
                         {isMatched ? (
-                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-400/30 border border-emerald-200 text-white flex items-center justify-center shrink-0">
-                            <Check size={13} strokeWidth={3} />
+                          <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400/30 border border-emerald-200 text-white flex items-center justify-center shrink-0">
+                            <Check size={11} strokeWidth={3} />
                           </span>
                         ) : (
-                          (card.side === "A" || Boolean(card.source.cardBAr)) && (
+                          card.side === "A" && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 speakArabicItem(
-                                  card.side === "A"
-                                    ? card.source.cardAAr
-                                    : card.source.cardBAr ||
-                                        card.source.cardAAr,
+                                  card.source.cardAAr,
                                   card.source
                                 );
                               }}
-                              className="w-6 h-6 rounded-lg bg-teal-100 dark:bg-teal-900/70 text-[#0F766E] dark:text-teal-200 flex items-center justify-center shrink-0 cursor-pointer"
+                              className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-900/70 text-[#0F766E] dark:text-teal-200 flex items-center justify-center shrink-0 cursor-pointer"
                               aria-label="Kelimeyi seslendir"
                             >
-                              <Volume2 size={13} />
+                              <Volume2 size={11} />
                             </button>
                           )
                         )}
                       </div>
 
-                      {/* KART GÖVDESİ: BÜYÜK KARE RESİM (veya ikon) + ÇOK BÜYÜK ARAPÇA / BÜYÜK TÜRKÇE */}
-                      <div className="flex-1 w-full flex flex-col items-center justify-center gap-1.5 min-h-0 px-0.5">
+                      {/* Kart Gövdesi: Sol Kare Görsel + Sağ Büyük Okunaklı Arapça / Türkçe */}
+                      <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-2 sm:gap-3">
                         {hasValidImage ? (
                           <div
-                            className={`w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 aspect-square rounded-xl overflow-hidden border shrink-0 ${
+                            className={`w-11 h-11 sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square rounded-xl overflow-hidden border shrink-0 ${
                               isMatched
                                 ? "border-emerald-300/60 bg-white"
                                 : "border-slate-200 dark:border-slate-600 bg-white"
@@ -2148,75 +1808,44 @@ export default function MemoryFlipGame({
                           </div>
                         ) : (
                           <div
-                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
                               isMatched
                                 ? "bg-white/15 text-emerald-100"
                                 : "bg-amber-100/80 dark:bg-slate-700 text-[#0F766E] dark:text-teal-300"
                             }`}
                           >
                             {card.side === "A" ? (
-                              <Volume2 size={22} />
+                              <Volume2 size={18} />
                             ) : (
-                              <BookOpen size={22} />
+                              <BookOpen size={18} />
                             )}
                           </div>
                         )}
 
-                        {card.side === "A" ? (
-                          <div
-                            dir="rtl"
-                            className={`arabic text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed line-clamp-2 break-words ${
-                              isMatched
-                                ? "text-white"
-                                : "text-slate-900 dark:text-white"
-                            }`}
-                          >
-                            {card.source.cardAAr}
-                          </div>
-                        ) : card.source.cardBAr ? (
-                          <div className="flex flex-col items-center min-h-0">
+                        <div className="flex-1 min-w-0 flex items-center justify-center text-center">
+                          {card.side === "A" ? (
                             <div
                               dir="rtl"
-                              className={`arabic text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed line-clamp-1 ${
+                              className={`arabic text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed truncate max-w-full ${
                                 isMatched
                                   ? "text-white"
-                                  : "text-[#0F766E] dark:text-teal-300"
+                                  : "text-slate-900 dark:text-white"
                               }`}
                             >
-                              {card.source.cardBAr}
+                              {card.source.cardAAr}
                             </div>
+                          ) : (
                             <span
-                              className={`text-sm sm:text-base md:text-lg font-extrabold leading-tight line-clamp-1 ${
+                              className={`text-sm sm:text-base md:text-lg font-extrabold leading-snug line-clamp-2 break-words ${
                                 isMatched
-                                  ? "text-emerald-100"
-                                  : "text-slate-700 dark:text-slate-200"
+                                  ? "text-white"
+                                  : "text-slate-900 dark:text-white"
                               }`}
                             >
                               {card.source.cardBTr}
                             </span>
-                          </div>
-                        ) : (
-                          <span
-                            className={`text-sm sm:text-base md:text-lg font-extrabold leading-snug line-clamp-2 break-words ${
-                              isMatched
-                                ? "text-white"
-                                : "text-slate-900 dark:text-white"
-                            }`}
-                          >
-                            {card.source.cardBTr}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Alt Satır: Eşleştiğinde Sol Altta Bulucu Etiketi (SEN / YZ / P1 / P2) */}
-                      <div className="w-full flex items-center justify-between min-h-[18px] shrink-0">
-                        {isMatched && ownerTag ? (
-                          <span className="px-2 py-0.5 rounded-md bg-black/25 text-[10px] sm:text-xs font-black tracking-wide text-emerald-50">
-                            {ownerTag}
-                          </span>
-                        ) : (
-                          <span />
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2226,78 +1855,266 @@ export default function MemoryFlipGame({
           </div>
         </div>
 
-        {/* SAĞ ALT: 💡 Bilgi Notu Kutusu (Eşleştirilen kelimenin anlamı, örnek cümlesi, eş/zıt nüansı) */}
-        <div className="order-3 lg:order-3 lg:col-span-4 rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/95 p-4 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-2 border-b border-[#EFE5D2] dark:border-slate-700 pb-2">
-            <div className="flex items-center gap-1.5 text-sm font-black text-amber-800 dark:text-amber-300">
-              <Lightbulb size={17} className="text-amber-500 shrink-0" />
-              <span>Bilgi Notu</span>
+        {/* SAĞ KOMPAKT YAN PANEL (lg:w-64): Skorlar + Dairesel Süre & Hamle + Bilgi Notu (Kök & Örnek Cümle) */}
+        <aside className="order-1 lg:order-2 w-full lg:w-64 shrink-0 lg:h-full min-h-0 flex flex-col gap-2 overflow-hidden">
+          {/* 1. Oyuncu Skor Kartları (Kompakt) */}
+          <div
+            className={`shrink-0 grid gap-1.5 ${
+              playMode === "practice"
+                ? "grid-cols-1"
+                : "grid-cols-2 lg:grid-cols-1"
+            }`}
+          >
+            <div
+              className={`rounded-2xl px-2.5 py-2 border-2 transition-all flex items-center justify-between gap-2 ${
+                isP1Active
+                  ? "border-[#EA580C] bg-orange-50/90 dark:bg-orange-950/35"
+                  : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    isP1Active
+                      ? "bg-[#EA580C] text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                  }`}
+                >
+                  <User size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                    {playMode === "two_player" ? "1. Oyuncu (P1)" : "Sen"}
+                  </div>
+                  <div
+                    className={`text-[10px] font-bold truncate ${
+                      isP1Active
+                        ? "text-[#EA580C] dark:text-orange-300"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {isP1Active ? "Sırada" : "Bekliyor"}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-base font-black text-slate-900 dark:text-white tabular-nums">
+                  {p1Score}p
+                </span>
+              </div>
             </div>
-            {lastMatchedSource && (
-              <button
-                type="button"
-                onClick={() =>
-                  speakArabicItem(lastMatchedSource.cardAAr, lastMatchedSource)
-                }
-                className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-[#0F766E] dark:text-teal-300 text-xs font-extrabold flex items-center gap-1 cursor-pointer"
+
+            {playMode !== "practice" && (
+              <div
+                className={`rounded-2xl px-2.5 py-2 border-2 transition-all flex items-center justify-between gap-2 ${
+                  isOpponentActive
+                    ? "border-[#EA580C] bg-orange-50/90 dark:bg-orange-950/35"
+                    : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90"
+                }`}
               >
-                <Volume2 size={13} />
-                <span>Dinle</span>
-              </button>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                      isOpponentActive
+                        ? "bg-[#EA580C] text-white"
+                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                    }`}
+                  >
+                    {playMode === "ai" ? (
+                      <Bot size={15} />
+                    ) : (
+                      <Users size={15} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                      {playMode === "ai" ? "Yapay zekâ" : "2. Oyuncu (P2)"}
+                    </div>
+                    <div
+                      className={`text-[10px] font-bold truncate ${
+                        isOpponentActive
+                          ? "text-[#EA580C] dark:text-orange-300"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {playMode === "ai"
+                        ? isOpponentActive
+                          ? "Düşünüyor..."
+                          : "Bekliyor"
+                        : isOpponentActive
+                        ? "Sırada"
+                        : "Bekliyor"}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-base font-black text-slate-900 dark:text-white tabular-nums">
+                    {p2Score}p
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
-          {lastMatchedSource ? (
-            <div className="space-y-2.5">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span
-                  dir="rtl"
-                  className="arabic text-2xl sm:text-3xl font-bold text-[#1F6E50] dark:text-emerald-300 leading-relaxed"
+          {/* 2. Kompakt Dairesel Tur Sayacı + Süre & Hamle + Canlı Sıra Bandı */}
+          <div className="shrink-0 rounded-2xl border border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/90 p-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                <svg
+                  viewBox="0 0 54 54"
+                  className="w-12 h-12 -rotate-90"
+                  aria-label={`Tur geri sayımı: ${turnSecLeft} saniye`}
                 >
-                  {lastMatchedSource.cardAAr}
+                  <circle
+                    cx="27"
+                    cy="27"
+                    r={ringRadius}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="5"
+                    className="text-slate-200 dark:text-slate-700"
+                  />
+                  <circle
+                    cx="27"
+                    cy="27"
+                    r={ringRadius}
+                    fill="none"
+                    stroke={turnSecLeft <= 4 ? "#EF4444" : "#0D9488"}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={ringCircumference}
+                    strokeDashoffset={ringDashOffset}
+                  />
+                </svg>
+                <span
+                  className={`absolute text-[11px] font-black tabular-nums ${
+                    turnSecLeft <= 4
+                      ? "text-rose-600 dark:text-rose-400"
+                      : "text-slate-900 dark:text-white"
+                  }`}
+                >
+                  {turnSecLeft}s
                 </span>
-                {lastMatchedSource.kok && (
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                    Kök: {lastMatchedSource.kok}
-                  </span>
-                )}
               </div>
 
-              <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
-                {lastMatchedSource.fullMeaningTr}
+              <div className="flex-1 grid grid-cols-2 gap-1.5 text-[11px] font-extrabold">
+                <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/70 px-2 py-1.5 border border-[#E6D7BE] dark:border-slate-700">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Timer size={11} />
+                    <span>Süre</span>
+                  </div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white tabular-nums">
+                    {formatSeconds(elapsedSec)}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/70 px-2 py-1.5 border border-[#E6D7BE] dark:border-slate-700">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Layers size={11} />
+                    <span>Hamle</span>
+                  </div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white tabular-nums">
+                    {moves} ({matchedPairIds.length}/{activePairs.length})
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {(lastMatchedSource.ornekAr || lastMatchedSource.ornekTr) && (
-                <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/80 border border-[#E6D7BE] dark:border-slate-700 p-2.5 space-y-1">
-                  {lastMatchedSource.ornekAr && (
-                    <div
-                      dir="rtl"
-                      className="arabic text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 leading-relaxed"
-                    >
-                      {lastMatchedSource.ornekAr}
-                    </div>
-                  )}
-                  {lastMatchedSource.ornekTr && (
-                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      {lastMatchedSource.ornekTr}
-                    </div>
-                  )}
-                </div>
-              )}
+            <div
+              className={`rounded-xl px-2.5 py-1.5 text-[11px] font-extrabold text-center leading-tight ${
+                isOpponentActive && playMode === "ai"
+                  ? "bg-orange-100/90 dark:bg-orange-950/50 text-[#C2410C] dark:text-orange-300"
+                  : "bg-teal-50 dark:bg-teal-950/40 text-[#0F766E] dark:text-teal-300"
+              }`}
+            >
+              {turnStatusText}
+            </div>
+          </div>
 
-              {lastMatchedSource.nuanceNote && (
-                <div className="text-xs font-semibold text-[#0F766E] dark:text-teal-300 leading-relaxed">
-                  {lastMatchedSource.nuanceNote}
-                </div>
+          {/* 3. Bilgi Notu Kutusu (Kök + Örnek Cümleler — Kendi İçinde Yumuşak Kaydırmalı) */}
+          <div className="flex-1 min-h-[140px] rounded-2xl border-2 border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800/95 p-3 flex flex-col overflow-hidden shadow-2xs">
+            <div className="shrink-0 flex items-center justify-between gap-1.5 border-b border-[#EFE5D2] dark:border-slate-700 pb-1.5 mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-black text-amber-800 dark:text-amber-300">
+                <Lightbulb size={15} className="text-amber-500 shrink-0" />
+                <span>Bilgi Notu</span>
+              </div>
+              {lastMatchedSource && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    speakArabicItem(
+                      lastMatchedSource.cardAAr,
+                      lastMatchedSource
+                    )
+                  }
+                  className="px-2 py-0.5 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-[#0F766E] dark:text-teal-300 text-[11px] font-extrabold flex items-center gap-1 cursor-pointer"
+                >
+                  <Volume2 size={12} />
+                  <span>Dinle</span>
+                </button>
               )}
             </div>
-          ) : (
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-              Bir kelime çiftini eşleştirdiğinde anlamı, varsa örnek cümlesi ve
-              eş/zıt anlam nüansı bu kutuda canlı olarak gösterilir.
-            </p>
-          )}
-        </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 space-y-2">
+              {lastMatchedSource ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <span
+                      dir="rtl"
+                      className="arabic text-2xl font-bold text-[#1F6E50] dark:text-emerald-300 leading-relaxed"
+                    >
+                      {lastMatchedSource.cardAAr}
+                    </span>
+                    {lastMatchedSource.kok && (
+                      <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[11px] font-extrabold text-amber-900 dark:text-amber-200">
+                        Kök:{" "}
+                        <span dir="rtl" className="arabic font-bold">
+                          {lastMatchedSource.kok}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                    {lastMatchedSource.fullMeaningTr}
+                  </div>
+
+                  {(lastMatchedSource.ornekAr || lastMatchedSource.ornekTr) && (
+                    <div className="rounded-xl bg-[#FBF6EA] dark:bg-slate-900/80 border border-[#E6D7BE] dark:border-slate-700 p-2 space-y-1">
+                      <div className="text-[10px] font-black text-[#0F766E] dark:text-teal-300">
+                        ÖRNEK CÜMLE
+                      </div>
+                      {lastMatchedSource.ornekAr && (
+                        <div
+                          dir="rtl"
+                          className="arabic text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-relaxed"
+                        >
+                          {lastMatchedSource.ornekAr}
+                        </div>
+                      )}
+                      {lastMatchedSource.ornekTr && (
+                        <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 leading-snug">
+                          {lastMatchedSource.ornekTr}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {lastMatchedSource.nuanceNote && (
+                    <div className="text-[11px] font-semibold text-[#0F766E] dark:text-teal-300 leading-relaxed">
+                      {lastMatchedSource.nuanceNote}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  Bir görsel kelime çiftini eşleştirdiğinde kelimenin kökü ve
+                  harekeli örnek cümleleri bu kutuda canlı olarak gösterilir.
+                </p>
+              )}
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

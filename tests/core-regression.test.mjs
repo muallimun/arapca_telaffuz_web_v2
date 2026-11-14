@@ -5502,13 +5502,13 @@ test("47. WordTooltip Taşma/Kaydırma Onarımı, Vercel Standalone Kotası Koru
     "utf8"
   );
   assert.equal(
-    tooltipCode.includes("max-h-[82dvh] sm:max-h-[calc(100dvh-5rem)] flex flex-col overflow-hidden") &&
+    tooltipCode.includes("max-h-[80dvh] overflow-y-auto flex flex-col") &&
       tooltipCode.includes("shrink-0 sticky top-0 z-10") &&
       tooltipCode.includes("overflow-y-auto overscroll-contain pr-1.5 pb-4") &&
       tooltipCode.includes("new ResizeObserver") &&
       tooltipCode.includes("popoverRef.current.contains(e.target)"),
     true,
-    "WordTooltip sabit üst başlık, kaydırılabilir gövde, maksimum yükseklik sınırı ve viewport ResizeObserver hizalamasına sahip olmalıdır"
+    "WordTooltip sabit üst başlık, kaydırılabilir gövde, max-h-[80dvh] overflow-y-auto sınırı ve viewport ResizeObserver hizalamasına sahip olmalıdır"
   );
 
   // 2. next.config.ts: Vercel standalone kota koruması + typescript.ignoreBuildErrors
@@ -5621,4 +5621,95 @@ test("48. Hafızanı Yokla (MemoryFlipGame) & Balon Safari (BalloonSafariGame) T
     "BalloonSafariGame panoramik doğa manzarası, gerçek sıcak hava balonu katmanları (#F4F6F0 kubbe, #F3E5AB hasır sepet, #2196F3/#FF9800 etiket) ve yüzer hap HUD tasarımını içermelidir"
   );
 });
+
+test("49. Tam Ekran (100dvh) Oyunlar, Saf Görsel Kelime Havuzu, Kaydırmasız Hafızanı Yokla Izgarası, Karma Aralık (Range) A4 Sınav Üretici ve Sadeleştirilmiş Önizleme", () => {
+  const memoryCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+  const balloonCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const studioEngineCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "a4ExamStudioEngine.ts"),
+    "utf8"
+  );
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const tooltipCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "WordTooltip.tsx"),
+    "utf8"
+  );
+
+  // 1. Yeni oyunların Tam Ekran (fixed inset-0 z-[9999] ... flex flex-col overflow-hidden) ve "✕ Çıkış / Listeye Dön" desteği
+  assert.equal(
+    memoryCode.includes(
+      "fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden"
+    ) &&
+      balloonCode.includes(
+        "fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden"
+      ) &&
+      memoryCode.includes("✕ Çıkış / Listeye Dön") &&
+      balloonCode.includes("✕ Çıkış / Listeye Dön"),
+    true,
+    "BalloonSafariGame ve MemoryFlipGame tam ekran (fixed inset-0 z-[9999]) ve '✕ Çıkış / Listeye Dön' üst bar butonuna sahip olmalıdır"
+  );
+
+  // 2. Her iki oyunun ve /alistirmalar sayfasının yalnızca Görsel Kelimeler (gorselKelimeler_guncel.json) ile çalışması
+  assert.equal(
+    memoryCode.includes("canonicalVisualById") &&
+      !memoryCode.includes("esZitAnlamlilar") &&
+      !memoryCode.includes("extractDialogueVocabulary") &&
+      balloonCode.includes("canonicalVisualById") &&
+      !balloonCode.includes("esZitAnlamlilar") &&
+      alistirmalarCode.includes("strictVisualWordsOnlyPool") &&
+      alistirmalarCode.includes("visualPool={strictVisualWordsOnlyPool}"),
+    true,
+    "Balon Safari ve Hafızanı Yokla yalnızca gorselKelimeler_guncel.json (Görsel Kelimeler) kayıtlarıyla beslenmelidir"
+  );
+
+  // 3. Hafızanı Yokla kaydırmasız (overflow-hidden) masaüstü ızgarası, h-24 sm:h-32 md:h-36 kart boyutu, w-64 yan panel ve Kök + Örnek Cümle Bilgi Notu
+  assert.equal(
+    memoryCode.includes("h-24 sm:h-32 md:h-36") &&
+      memoryCode.includes("lg:w-64") &&
+      memoryCode.includes("lg:overflow-hidden") &&
+      memoryCode.includes("text-2xl sm:text-3xl md:text-4xl font-bold") &&
+      memoryCode.includes("Kök:") &&
+      memoryCode.includes("ÖRNEK CÜMLE"),
+    true,
+    "MemoryFlipGame masaüstünde sıfır kaydırma (lg:overflow-hidden), h-24 sm:h-32 md:h-36 kart yüksekliği, dar sağ panel (lg:w-64) ve Kök + Örnek Cümle Bilgi Notu içermelidir"
+  );
+
+  // 4. A4 Sınav Üretici Stüdyosunda Karma Aralık Seçimi (Range) motoru ve UI kontrolleri
+  assert.equal(
+    studioEngineCode.includes('export type StudioSelectionMode = "single" | "range";') &&
+      studioEngineCode.includes("export function clampStudioRangeBounds(") &&
+      studioEngineCode.includes("export function listStudioRangeItems(") &&
+      studioEngineCode.includes("Günlük Diyaloglar Karma Sınavı (") &&
+      studioEngineCode.includes("Okuma Metinleri Karma Sınavı (") &&
+      pdfModalCode.includes("🎛️ Karma Aralık Seçimi") &&
+      pdfModalCode.includes('aria-label="Başlangıç Sırası"') &&
+      pdfModalCode.includes('aria-label="Bitiş Sırası"'),
+    true,
+    "A4 Sınav Stüdyosu Başlangıç–Bitiş sıralı Karma Aralık Seçimi (Range) motoruna ve kontrollerine sahip olmalıdır"
+  );
+
+  // 5. Sadeleştirilmiş PDF Önizleme (%60+ alan + kapalı varsayılan akordiyon) ve WordTooltip max-h-[80dvh] overflow-y-auto koruması
+  assert.equal(
+    pdfModalCode.includes("useState<boolean>(false)") &&
+      pdfModalCode.includes("⚙️ Gelişmiş Mizanpaj Ayarları") &&
+      pdfModalCode.includes("md:min-h-[60dvh]") &&
+      tooltipCode.includes("max-h-[80dvh] overflow-y-auto"),
+    true,
+    "DialoguePdfModal ikincil ayarları kapalı akordiyon altında toplamalı, %60+ A4 önizleme alanı ayırmalı ve WordTooltip max-h-[80dvh] overflow-y-auto içermelidir"
+  );
+});
+
 

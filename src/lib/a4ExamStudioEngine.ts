@@ -95,6 +95,14 @@ export const STUDIO_MATERIAL_SOURCES: readonly StudioSourceMeta[] = [
   },
 ];
 
+export type StudioSelectionMode = "single" | "range";
+
+export interface StudioRangeOptionItem {
+  index: number;
+  id: string;
+  label: string;
+}
+
 export interface StudioPackOption {
   id: string;
   label: string;
@@ -734,6 +742,107 @@ export function listStudioPackOptions(
   return options;
 }
 
+export function clampStudioRangeBounds(
+  poolLength: number,
+  rawStart?: number,
+  rawEnd?: number
+): { start: number; end: number } {
+  const maxLen = Math.max(1, Math.floor(poolLength));
+  const parsedA =
+    typeof rawStart === "number" && Number.isFinite(rawStart)
+      ? Math.floor(rawStart)
+      : 1;
+  const parsedB =
+    typeof rawEnd === "number" && Number.isFinite(rawEnd)
+      ? Math.floor(rawEnd)
+      : Math.min(10, maxLen);
+  const clampedA = Math.max(1, Math.min(maxLen, parsedA));
+  const clampedB = Math.max(1, Math.min(maxLen, parsedB));
+  return {
+    start: Math.min(clampedA, clampedB),
+    end: Math.max(clampedA, clampedB),
+  };
+}
+
+export function listStudioRangeItems(
+  sourceId: StudioSourceId,
+  levelFilter: StudioLevelFilter
+): StudioRangeOptionItem[] {
+  if (sourceId === "defterim_custom") {
+    return [];
+  }
+
+  if (sourceId === "diyaloglar") {
+    const filtered = diyaloglar.filter(
+      (d) => levelFilter === "all" || d.seviye === levelFilter
+    );
+    const safePool = filtered.length > 0 ? filtered : diyaloglar;
+    return safePool.map((d, idx) => ({
+      index: idx + 1,
+      id: d.id,
+      label: `${idx + 1}. ${d.baslik_tr} (${d.seviye})`,
+    }));
+  }
+
+  if (sourceId === "metinler") {
+    const filtered = metinler.filter(
+      (m) => levelFilter === "all" || m.seviye === levelFilter
+    );
+    const safePool = filtered.length > 0 ? filtered : metinler;
+    return safePool.map((m, idx) => ({
+      index: idx + 1,
+      id: m.id,
+      label: `${idx + 1}. ${m.baslik_tr} (${m.seviye})`,
+    }));
+  }
+
+  if (sourceId === "gorsel_kelimeler") {
+    const filtered = gorselKelimeler.filter(
+      (g) => levelFilter === "all" || g.cefr === levelFilter
+    );
+    const safePool = filtered.length > 0 ? filtered : gorselKelimeler;
+    return safePool.map((g, idx) => ({
+      index: idx + 1,
+      id: g.id,
+      label: `${idx + 1}. ${conciseMeaningTr(g.turkce, 36)} — ${g.arapca}`,
+    }));
+  }
+
+  if (sourceId === "cumleler_1111") {
+    const filtered = cumleler1111.filter(
+      (c) => levelFilter === "all" || (c.cefr || c.seviye) === levelFilter
+    );
+    const safePool = filtered.length > 0 ? filtered : cumleler1111;
+    return safePool.map((c, idx) => ({
+      index: idx + 1,
+      id: c.id,
+      label: `${idx + 1}. ${conciseMeaningTr(c.turkce, 44)}`,
+    }));
+  }
+
+  if (sourceId === "atasozleri") {
+    const filtered = atasozleri.filter(
+      (a) => levelFilter === "all" || a.cefr === levelFilter
+    );
+    const safePool = filtered.length > 0 ? filtered : atasozleri;
+    return safePool.map((a, idx) => ({
+      index: idx + 1,
+      id: a.id,
+      label: `${idx + 1}. ${conciseMeaningTr(a.turkce, 44)}`,
+    }));
+  }
+
+  const filtered = esZitAnlamlilar.filter(
+    (e) => levelFilter === "all" || e.cefr === levelFilter
+  );
+  const safePool = filtered.length > 0 ? filtered : esZitAnlamlilar;
+  return safePool.map((e, idx) => ({
+    index: idx + 1,
+    id: e.id,
+    label: `${idx + 1}. ${conciseMeaningTr(e.anlam_tr, 36)} — ${e.kelime_ar}`,
+  }));
+}
+
 function buildTopicSummaryFromGrammarNote(
   grammarNote: GramerHapBilgi | undefined,
   fallbackTitleTr: string,
@@ -802,6 +911,9 @@ export function resolveStudioMaterialBundle(params: {
   sourceId: StudioSourceId;
   levelFilter: StudioLevelFilter;
   packId: string;
+  selectionMode?: StudioSelectionMode;
+  rangeStart?: number;
+  rangeEnd?: number;
   initialProps?: {
     dialogue: Dialogue;
     vocabEntries: DialogueVocabularyEntry[];
@@ -811,6 +923,18 @@ export function resolveStudioMaterialBundle(params: {
   };
 }): StudioMaterialBundle {
   const { sourceId, levelFilter, packId, initialProps } = params;
+  const encodedRangeMatch = packId.match(/^range::(\d+)::(\d+)$/);
+  const effectiveSelectionMode: StudioSelectionMode =
+    params.selectionMode === "range" || Boolean(encodedRangeMatch)
+      ? "range"
+      : "single";
+  const requestedRangeStart = encodedRangeMatch
+    ? parseInt(encodedRangeMatch[1], 10)
+    : params.rangeStart;
+  const requestedRangeEnd = encodedRangeMatch
+    ? parseInt(encodedRangeMatch[2], 10)
+    : params.rangeEnd;
+
   const fallbackDlg = diyaloglar[0];
   const targetLvl: Level = levelFilter === "all" ? "A1" : levelFilter;
   const lvlText =
@@ -874,6 +998,136 @@ export function resolveStudioMaterialBundle(params: {
       (d) => levelFilter === "all" || d.seviye === levelFilter
     );
     const safePool = filteredDlgs.length > 0 ? filteredDlgs : diyaloglar;
+
+    if (effectiveSelectionMode === "range") {
+      const { start, end } = clampStudioRangeBounds(
+        safePool.length,
+        requestedRangeStart,
+        requestedRangeEnd
+      );
+      const rangeSlice = safePool.slice(start - 1, end);
+      const seenDictIds = new Set<string>();
+      const entryLevelMap = new Map<string, Level>();
+      const allRangeVocab: DialogueVocabularyEntry[] = [];
+      for (const dlg of rangeSlice) {
+        const dlgVocab = getDialogueVocabulary(dlg.id);
+        for (const ve of dlgVocab) {
+          if (seenDictIds.has(ve.item.id)) continue;
+          seenDictIds.add(ve.item.id);
+          entryLevelMap.set(ve.item.id, dlg.seviye);
+          allRangeVocab.push(ve);
+        }
+      }
+
+      const interleavedLines = rangeSlice
+        .flatMap((dlg) =>
+          dlg.satirlar.slice(0, Math.max(2, Math.ceil(24 / rangeSlice.length))).map((ln) => ({
+            ...ln,
+            dlgId: dlg.id,
+            level: dlg.seviye,
+          }))
+        )
+        .slice(0, 24)
+        .map((ln, idx) => ({
+          sira: idx + 1,
+          konusmaci: ln.konusmaci,
+          konusmaci_ar: ln.konusmaci_ar,
+          cinsiyet: ln.cinsiyet,
+          arapca: ln.arapca,
+          turkce: ln.turkce,
+        }));
+
+      const vCands: VocabPairCandidate[] = allRangeVocab
+        .map((v) => ({
+          id: `drv_${v.item.id}`,
+          arabic: (v.item.mufret || v.item.mazi || v.contextWord || "")
+            .split(/[،,/]/)[0]
+            .trim(),
+          turkish: conciseMeaningTr(v.item.anlam_tr),
+          level: entryLevelMap.get(v.item.id) || targetLvl,
+        }))
+        .filter((x) => x.arabic && x.arabic !== "-" && x.turkish);
+
+      const prefTerms = vCands.map((v) => v.arabic);
+      const sCands: SentenceBlankCandidate[] = rangeSlice
+        .flatMap((dlg) =>
+          dlg.satirlar.map((ln) =>
+            createSentenceBlankFromLine(
+              `drs_${dlg.id}_${ln.sira}`,
+              ln.arapca,
+              ln.turkce,
+              dlg.seviye,
+              prefTerms
+            )
+          )
+        )
+        .filter((x): x is SentenceBlankCandidate => Boolean(x));
+
+      const mCands = allRangeVocab
+        .map((v) =>
+          extractMorphologyFromDictItem(
+            v.item,
+            entryLevelMap.get(v.item.id) || targetLvl
+          )
+        )
+        .filter((x): x is MorphologyCandidate => Boolean(x));
+
+      const grammarTopics = Array.from(
+        new Set(rangeSlice.map((d) => d.odak_gramer).filter(Boolean))
+      ).slice(0, 5);
+      const rangeTitleTr = `Günlük Diyaloglar Karma Sınavı (${start}. – ${end}. Diyaloglar Arası)`;
+      const rangeTitleAr = "اِخْتِبَارٌ شَامِلٌ لِلْحِوَارَاتِ الْيَوْمِيَّةِ الْمُخْتَارَةِ";
+      const handoutVocab = allRangeVocab.slice(0, 24);
+      const syntheticRangeDlg: Dialogue = {
+        id: `diyalog_aralik_${start}_${end}`,
+        seviye: rangeSlice[0]?.seviye || targetLvl,
+        baslik_tr: rangeTitleTr,
+        baslik_ar: rangeTitleAr,
+        odak_gramer:
+          grammarTopics.join(" • ") || "Karma İletişimsel Diyalog Kalıpları",
+        satirlar: interleavedLines,
+      };
+
+      return {
+        sourceId,
+        levelFilter,
+        packId: `range::diyaloglar::${levelFilter}::${start}-${end}`,
+        dialogue: syntheticRangeDlg,
+        vocabEntries: handoutVocab,
+        imagePath:
+          rangeSlice[0]?.gorsel ||
+          getDialogueCoverUrl(rangeSlice[0]?.id || "dlg_001"),
+        rawNum: start,
+        readingQuestions: [],
+        sourceCodeBracket: `[dlg_${start}_${end}]`,
+        sourceTitleTr: rangeTitleTr,
+        sourceTitleAr: rangeTitleAr,
+        sourceLevelLabel: `${lvlText} • ${rangeSlice.length} Diyalog`,
+        topicSummary: {
+          titleTr: rangeTitleTr,
+          titleAr: rangeTitleAr,
+          ruleSummaryTr: `Bu yazılı sınav ve çalışma yaprağı; seçilen ${start}. ile ${end}. sıralar arasındaki toplam ${rangeSlice.length} diyaloğun kelime hazinesi, cümle kalıpları ve sarf yapılarını harmanlayarak ölçer.`,
+          rows: [
+            {
+              headingTr: "Seçili Diyalog Aralığı",
+              detailTr: `${start}. (${rangeSlice[0]?.baslik_tr || ""}) → ${end}. (${
+                rangeSlice[rangeSlice.length - 1]?.baslik_tr || ""
+              }) • Toplam ${rangeSlice.length} diyalog, ${vCands.length} kelime adayı.`,
+            },
+            {
+              headingTr: "Kapsanan Dilbilgisi Konuları",
+              detailTr:
+                grammarTopics.length > 0
+                  ? grammarTopics.join(" • ")
+                  : "Temel İletişim Kalıpları ve Kelime Çekimleri",
+            },
+          ],
+        },
+        vocabCandidates: vCands,
+        sentenceCandidates: sCands,
+        morphologyCandidates: mCands,
+      };
+    }
 
     if (packId !== STUDIO_POOL_PACK_ID) {
       const selectedDlg =
@@ -1042,6 +1296,137 @@ export function resolveStudioMaterialBundle(params: {
       (m) => levelFilter === "all" || m.seviye === levelFilter
     );
     const safePool = filteredTexts.length > 0 ? filteredTexts : metinler;
+
+    if (effectiveSelectionMode === "range") {
+      const { start, end } = clampStudioRangeBounds(
+        safePool.length,
+        requestedRangeStart,
+        requestedRangeEnd
+      );
+      const rangeSlice = safePool.slice(start - 1, end);
+      const seenDictIds = new Set<string>();
+      const entryLevelMap = new Map<string, Level>();
+      const allRangeVocab: DialogueVocabularyEntry[] = [];
+      for (const txt of rangeSlice) {
+        const txtVocab = getReadingTextVocabulary(txt.id);
+        for (const ve of txtVocab) {
+          if (seenDictIds.has(ve.item.id)) continue;
+          seenDictIds.add(ve.item.id);
+          entryLevelMap.set(ve.item.id, txt.seviye);
+          allRangeVocab.push(ve);
+        }
+      }
+
+      const interleavedSentences = rangeSlice
+        .flatMap((txt) =>
+          txt.satirlar
+            .slice(0, Math.max(2, Math.ceil(20 / rangeSlice.length)))
+            .map((ln) => ({
+              arapca: ln.arapca,
+              turkce: ln.turkce,
+              title: txt.baslik_tr,
+            }))
+        )
+        .slice(0, 20);
+
+      const vCands: VocabPairCandidate[] = allRangeVocab
+        .map((v) => ({
+          id: `mrv_${v.item.id}`,
+          arabic: (v.item.mufret || v.item.mazi || v.contextWord || "")
+            .split(/[،,/]/)[0]
+            .trim(),
+          turkish: conciseMeaningTr(v.item.anlam_tr),
+          level: entryLevelMap.get(v.item.id) || targetLvl,
+        }))
+        .filter((x) => x.arabic && x.arabic !== "-" && x.turkish);
+
+      const prefTerms = vCands.map((v) => v.arabic);
+      const sCands: SentenceBlankCandidate[] = rangeSlice
+        .flatMap((txt) =>
+          txt.satirlar.map((ln) =>
+            createSentenceBlankFromLine(
+              `mrs_${txt.id}_${ln.sira}`,
+              ln.arapca,
+              ln.turkce,
+              txt.seviye,
+              prefTerms
+            )
+          )
+        )
+        .filter((x): x is SentenceBlankCandidate => Boolean(x));
+
+      const mCands = allRangeVocab
+        .map((v) =>
+          extractMorphologyFromDictItem(
+            v.item,
+            entryLevelMap.get(v.item.id) || targetLvl
+          )
+        )
+        .filter((x): x is MorphologyCandidate => Boolean(x));
+
+      const grammarTopics = Array.from(
+        new Set(rangeSlice.map((m) => m.odak_gramer).filter(Boolean))
+      ).slice(0, 5);
+      const rangeTitleTr = `Okuma Metinleri Karma Sınavı (${start}. – ${end}. Metinler Arası)`;
+      const rangeTitleAr = "اِخْتِبَارٌ شَامِلٌ لِنُصُوصِ الْقِرَاءَةِ الْمُخْتَارَةِ";
+      const handoutVocab = allRangeVocab.slice(0, 24);
+      const syntheticRangeDlg: Dialogue = {
+        id: `metin_aralik_${start}_${end}`,
+        seviye: rangeSlice[0]?.seviye || targetLvl,
+        baslik_tr: rangeTitleTr,
+        baslik_ar: rangeTitleAr,
+        odak_gramer:
+          grammarTopics.join(" • ") || "Okuduğunu Anlama ve Metin Çözümleme",
+        satirlar: interleavedSentences.map((ln, idx) => ({
+          sira: idx + 1,
+          konusmaci: ln.title || `Paragraf ${idx + 1}`,
+          konusmaci_ar: `${idx + 1}`,
+          cinsiyet: "E",
+          arapca: ln.arapca,
+          turkce: ln.turkce,
+        })),
+      };
+
+      return {
+        sourceId,
+        levelFilter,
+        packId: `range::metinler::${levelFilter}::${start}-${end}`,
+        dialogue: syntheticRangeDlg,
+        vocabEntries: handoutVocab,
+        imagePath:
+          rangeSlice[0]?.gorsel ||
+          getReadingTextCoverUrl(rangeSlice[0]?.id || "metin_01"),
+        rawNum: start,
+        readingQuestions: rangeSlice.flatMap((m) => m.sorular || []).slice(0, 10),
+        sourceCodeBracket: `[metin_${start}_${end}]`,
+        sourceTitleTr: rangeTitleTr,
+        sourceTitleAr: rangeTitleAr,
+        sourceLevelLabel: `${lvlText} • ${rangeSlice.length} Metin`,
+        topicSummary: {
+          titleTr: rangeTitleTr,
+          titleAr: rangeTitleAr,
+          ruleSummaryTr: `Bu yazılı sınav ve çalışma yaprağı; seçilen ${start}. ile ${end}. sıralar arasındaki toplam ${rangeSlice.length} okuma metninin kelime dağarcığını, cümle bağlamlarını ve sarf yapılarını harmanlayarak ölçer.`,
+          rows: [
+            {
+              headingTr: "Seçili Okuma Metni Aralığı",
+              detailTr: `${start}. (${rangeSlice[0]?.baslik_tr || ""}) → ${end}. (${
+                rangeSlice[rangeSlice.length - 1]?.baslik_tr || ""
+              }) • Toplam ${rangeSlice.length} metin, ${vCands.length} kelime adayı.`,
+            },
+            {
+              headingTr: "Kapsanan Dilbilgisi Konuları",
+              detailTr:
+                grammarTopics.length > 0
+                  ? grammarTopics.join(" • ")
+                  : "Metin Çözümleme, Kelime ve Sarf Uygulamaları",
+            },
+          ],
+        },
+        vocabCandidates: vCands,
+        sentenceCandidates: sCands,
+        morphologyCandidates: mCands,
+      };
+    }
 
     if (packId !== STUDIO_POOL_PACK_ID) {
       const selectedTxt =
@@ -1222,9 +1607,10 @@ export function resolveStudioMaterialBundle(params: {
     const byLevel = gorselKelimeler.filter(
       (g) => levelFilter === "all" || g.cefr === levelFilter
     );
-    const catFilter = packId.startsWith("gk_cat::")
-      ? packId.slice("gk_cat::".length)
-      : null;
+    const catFilter =
+      effectiveSelectionMode === "single" && packId.startsWith("gk_cat::")
+        ? packId.slice("gk_cat::".length)
+        : null;
     const filtered = catFilter
       ? byLevel.filter(
           (g) =>
@@ -1232,9 +1618,25 @@ export function resolveStudioMaterialBundle(params: {
             catFilter
         )
       : byLevel;
-    const safeItems = filtered.length > 0 ? filtered : gorselKelimeler;
+    const baseItems = filtered.length > 0 ? filtered : gorselKelimeler;
+    const rangeBounds =
+      effectiveSelectionMode === "range"
+        ? clampStudioRangeBounds(
+            baseItems.length,
+            requestedRangeStart,
+            requestedRangeEnd
+          )
+        : null;
+    const safeItems = rangeBounds
+      ? baseItems.slice(rangeBounds.start - 1, rangeBounds.end)
+      : baseItems;
+    const effectivePackKey = rangeBounds
+      ? `range::gorsel_kelimeler::${levelFilter}::${rangeBounds.start}-${rangeBounds.end}`
+      : packId;
     const handoutSlice = safeItems.slice(0, 24);
-    const titleTr = catFilter
+    const titleTr = rangeBounds
+      ? `Görsel Kelimeler Karma Sınavı (${rangeBounds.start}. – ${rangeBounds.end}. Arası)`
+      : catFilter
       ? `Görsel Kelimeler: ${catFilter}`
       : `Görsel Kelimeler Seçkisi (${safeItems.length} Kelime)`;
     const titleAr = "الْمُفْرَدَاتُ الْمُصَوَّرَةُ وَالْأَمْثِلَةُ";
@@ -1332,15 +1734,21 @@ export function resolveStudioMaterialBundle(params: {
     return {
       sourceId,
       levelFilter,
-      packId,
+      packId: effectivePackKey,
       dialogue: syntheticDlg,
       vocabEntries: vEntries,
       imagePath:
         handoutSlice[0]?.gorsel ||
-        (handoutSlice[0] ? getVisualWordCoverUrl(handoutSlice[0]) : "/gorseller/diyaloglar/001.webp"),
-      rawNum: 1,
+        (handoutSlice[0]
+          ? getVisualWordCoverUrl(handoutSlice[0])
+          : "/gorseller/diyaloglar/001.webp"),
+      rawNum: rangeBounds ? rangeBounds.start : 1,
       readingQuestions: [],
-      sourceCodeBracket: catFilter ? "[gorsel_kategori]" : "[gorsel_998]",
+      sourceCodeBracket: rangeBounds
+        ? `[gorsel_${rangeBounds.start}_${rangeBounds.end}]`
+        : catFilter
+        ? "[gorsel_kategori]"
+        : "[gorsel_998]",
       sourceTitleTr: titleTr,
       sourceTitleAr: titleAr,
       sourceLevelLabel: lvlText,
@@ -1352,7 +1760,9 @@ export function resolveStudioMaterialBundle(params: {
         rows: [
           {
             headingTr: "Tematik Odak",
-            detailTr: catFilter || "Tüm Görsel Sözlük Kategorileri",
+            detailTr: rangeBounds
+              ? `${rangeBounds.start}. – ${rangeBounds.end}. Görsel Kelimeler Aralığı`
+              : catFilter || "Tüm Görsel Sözlük Kategorileri",
             exampleAr: handoutSlice[0]?.ornek_ar,
             exampleTr: handoutSlice[0]?.ornek_tr,
           },
@@ -1373,25 +1783,42 @@ export function resolveStudioMaterialBundle(params: {
     const byLevel = cumleler1111.filter(
       (c) => levelFilter === "all" || (c.cefr || c.seviye) === levelFilter
     );
-    const temaFilter = packId.startsWith("cml_tema::")
-      ? packId.slice("cml_tema::".length)
-      : null;
+    const temaFilter =
+      effectiveSelectionMode === "single" && packId.startsWith("cml_tema::")
+        ? packId.slice("cml_tema::".length)
+        : null;
     const filtered = temaFilter
       ? byLevel.filter((c) => (c.tema || "").trim() === temaFilter)
       : byLevel;
-    const safeItems = filtered.length > 0 ? filtered : cumleler1111;
+    const baseItems = filtered.length > 0 ? filtered : cumleler1111;
+    const rangeBounds =
+      effectiveSelectionMode === "range"
+        ? clampStudioRangeBounds(
+            baseItems.length,
+            requestedRangeStart,
+            requestedRangeEnd
+          )
+        : null;
+    const safeItems = rangeBounds
+      ? baseItems.slice(rangeBounds.start - 1, rangeBounds.end)
+      : baseItems;
+    const effectivePackKey = rangeBounds
+      ? `range::cumleler_1111::${levelFilter}::${rangeBounds.start}-${rangeBounds.end}`
+      : packId;
     const handoutSlice = safeItems.slice(0, 24);
-    const titleTr = temaFilter
+    const titleTr = rangeBounds
+      ? `1111 Günlük Cümle Karma Sınavı (${rangeBounds.start}. – ${rangeBounds.end}. Arası)`
+      : temaFilter
       ? `1111 Günlük Cümle: ${temaFilter}`
       : `1111 Günlük Cümle Seçkisi (${safeItems.length} Cümle)`;
     const titleAr = "الْجُمَلُ الْيَوْمِيَّةُ وَالتَّعْبِيرَاتُ التَّطْبِيقِيَّةُ";
 
     const extracted = extractDialogueVocabulary(
-      handoutSlice.map((s) => s.arapca)
-    ).slice(0, 24);
+      safeItems.slice(0, 80).map((s) => s.arapca)
+    ).slice(0, 48);
     const vEntries: DialogueVocabularyEntry[] =
       extracted.length >= 6
-        ? extracted.map((it, idx) => ({
+        ? extracted.slice(0, 24).map((it, idx) => ({
             item: it,
             contextWord: it.mufret || it.mazi || "",
             contextSentence:
@@ -1459,13 +1886,17 @@ export function resolveStudioMaterialBundle(params: {
     return {
       sourceId,
       levelFilter,
-      packId,
+      packId: effectivePackKey,
       dialogue: syntheticDlg,
       vocabEntries: vEntries,
       imagePath: getDialogueCoverUrl("dlg_001"),
-      rawNum: 1,
+      rawNum: rangeBounds ? rangeBounds.start : 1,
       readingQuestions: [],
-      sourceCodeBracket: temaFilter ? "[cumle_tema]" : "[cumle_1111]",
+      sourceCodeBracket: rangeBounds
+        ? `[cumle_${rangeBounds.start}_${rangeBounds.end}]`
+        : temaFilter
+        ? "[cumle_tema]"
+        : "[cumle_1111]",
       sourceTitleTr: titleTr,
       sourceTitleAr: titleAr,
       sourceLevelLabel: lvlText,
@@ -1477,7 +1908,9 @@ export function resolveStudioMaterialBundle(params: {
         rows: [
           {
             headingTr: "Seçili İletişim Teması",
-            detailTr: temaFilter || "Tüm Günlük İletişim Temaları",
+            detailTr: rangeBounds
+              ? `${rangeBounds.start}. – ${rangeBounds.end}. Günlük Cümleler Aralığı`
+              : temaFilter || "Tüm Günlük İletişim Temaları",
             exampleAr: handoutSlice[0]?.arapca,
             exampleTr: handoutSlice[0]?.turkce,
           },
@@ -1503,22 +1936,39 @@ export function resolveStudioMaterialBundle(params: {
     const byLevel = atasozleri.filter(
       (a) => levelFilter === "all" || a.cefr === levelFilter
     );
-    const temaFilter = packId.startsWith("ata_tema::")
-      ? packId.slice("ata_tema::".length)
-      : null;
+    const temaFilter =
+      effectiveSelectionMode === "single" && packId.startsWith("ata_tema::")
+        ? packId.slice("ata_tema::".length)
+        : null;
     const filtered = temaFilter
       ? byLevel.filter((a) => (a.tema || "").trim() === temaFilter)
       : byLevel;
-    const safeItems = filtered.length > 0 ? filtered : atasozleri;
+    const baseItems = filtered.length > 0 ? filtered : atasozleri;
+    const rangeBounds =
+      effectiveSelectionMode === "range"
+        ? clampStudioRangeBounds(
+            baseItems.length,
+            requestedRangeStart,
+            requestedRangeEnd
+          )
+        : null;
+    const safeItems = rangeBounds
+      ? baseItems.slice(rangeBounds.start - 1, rangeBounds.end)
+      : baseItems;
+    const effectivePackKey = rangeBounds
+      ? `range::atasozleri::${levelFilter}::${rangeBounds.start}-${rangeBounds.end}`
+      : packId;
     const handoutSlice = safeItems.slice(0, 22);
-    const titleTr = temaFilter
+    const titleTr = rangeBounds
+      ? `Atasözleri Karma Sınavı (${rangeBounds.start}. – ${rangeBounds.end}. Arası)`
+      : temaFilter
       ? `Atasözleri: ${temaFilter}`
       : `Atasözleri ve Hikmetli Sözler (${safeItems.length} Kayıt)`;
     const titleAr = "الْأَمْثَالُ وَالْحِكَمُ الْعَرَبِيَّةُ";
 
     const extracted = extractDialogueVocabulary(
-      handoutSlice.map((a) => a.arapca)
-    ).slice(0, 22);
+      safeItems.slice(0, 80).map((a) => a.arapca)
+    ).slice(0, 44);
 
     const vEntries: DialogueVocabularyEntry[] = handoutSlice.map((a, idx) => ({
       item: {
@@ -1576,15 +2026,19 @@ export function resolveStudioMaterialBundle(params: {
     return {
       sourceId,
       levelFilter,
-      packId,
+      packId: effectivePackKey,
       dialogue: syntheticDlg,
       vocabEntries: vEntries,
       imagePath:
         handoutSlice[0]?.gorsel ||
         getProverbCoverUrl(handoutSlice[0]?.id || "ata_001"),
-      rawNum: 1,
+      rawNum: rangeBounds ? rangeBounds.start : 1,
       readingQuestions: [],
-      sourceCodeBracket: temaFilter ? "[atasozu_tema]" : "[atasozu_508]",
+      sourceCodeBracket: rangeBounds
+        ? `[atasozu_${rangeBounds.start}_${rangeBounds.end}]`
+        : temaFilter
+        ? "[atasozu_tema]"
+        : "[atasozu_508]",
       sourceTitleTr: titleTr,
       sourceTitleAr: titleAr,
       sourceLevelLabel: lvlText,
@@ -1596,7 +2050,9 @@ export function resolveStudioMaterialBundle(params: {
         rows: [
           {
             headingTr: "Tema ve Belâgat Odağı",
-            detailTr: temaFilter || "Klasik ve Çağdaş Arap Atasözleri Seçkisi",
+            detailTr: rangeBounds
+              ? `${rangeBounds.start}. – ${rangeBounds.end}. Atasözleri Aralığı`
+              : temaFilter || "Klasik ve Çağdaş Arap Atasözleri Seçkisi",
             exampleAr: handoutSlice[0]?.arapca,
             exampleTr: handoutSlice[0]?.turkce,
           },
@@ -1624,13 +2080,28 @@ export function resolveStudioMaterialBundle(params: {
   const byLevel = esZitAnlamlilar.filter(
     (e) => levelFilter === "all" || e.cefr === levelFilter
   );
-  const turFilter = packId.startsWith("esz_tur::")
-    ? (packId.slice("esz_tur::".length) as SynonymAntonymWordTur)
-    : null;
+  const turFilter =
+    effectiveSelectionMode === "single" && packId.startsWith("esz_tur::")
+      ? (packId.slice("esz_tur::".length) as SynonymAntonymWordTur)
+      : null;
   const filtered = turFilter
     ? byLevel.filter((e) => e.tur === turFilter)
     : byLevel;
-  const safeItems = filtered.length > 0 ? filtered : esZitAnlamlilar;
+  const baseItems = filtered.length > 0 ? filtered : esZitAnlamlilar;
+  const rangeBounds =
+    effectiveSelectionMode === "range"
+      ? clampStudioRangeBounds(
+          baseItems.length,
+          requestedRangeStart,
+          requestedRangeEnd
+        )
+      : null;
+  const safeItems = rangeBounds
+    ? baseItems.slice(rangeBounds.start - 1, rangeBounds.end)
+    : baseItems;
+  const effectivePackKey = rangeBounds
+    ? `range::es_zit_anlamlilar::${levelFilter}::${rangeBounds.start}-${rangeBounds.end}`
+    : packId;
   const handoutSlice = safeItems.slice(0, 24);
   const turDisplayMap: Record<SynonymAntonymWordTur, string> = {
     isim: "İsimler",
@@ -1638,7 +2109,9 @@ export function resolveStudioMaterialBundle(params: {
     sifat: "Sıfatlar",
     zarf: "Zarflar",
   };
-  const titleTr = turFilter
+  const titleTr = rangeBounds
+    ? `Eş & Zıt Anlamlılar Karma Sınavı (${rangeBounds.start}. – ${rangeBounds.end}. Arası)`
+    : turFilter
     ? `Eş & Zıt Anlamlılar: ${turDisplayMap[turFilter]}`
     : `Eş & Zıt Anlamlılar Sözlüğü (${safeItems.length} Madde)`;
   const titleAr = "الْمُرَادِفَاتُ وَالْأَضْدَادُ وَالْفُرُوقُ اللُّغَوِيَّةُ";
@@ -1720,19 +2193,23 @@ export function resolveStudioMaterialBundle(params: {
     .filter((x): x is SentenceBlankCandidate => Boolean(x));
 
   const extractedFromExamples = extractDialogueVocabulary(
-    handoutSlice.map((e) => e.ornek_cumle_ar)
+    safeItems.slice(0, 80).map((e) => e.ornek_cumle_ar)
   );
 
   return {
     sourceId,
     levelFilter,
-    packId,
+    packId: effectivePackKey,
     dialogue: syntheticDlg,
     vocabEntries: vEntries,
     imagePath: getDialogueCoverUrl("dlg_001"),
-    rawNum: 1,
+    rawNum: rangeBounds ? rangeBounds.start : 1,
     readingQuestions: [],
-    sourceCodeBracket: turFilter ? `[es_zit_${turFilter}]` : "[es_zit_400]",
+    sourceCodeBracket: rangeBounds
+      ? `[es_zit_${rangeBounds.start}_${rangeBounds.end}]`
+      : turFilter
+      ? `[es_zit_${turFilter}]`
+      : "[es_zit_400]",
     sourceTitleTr: titleTr,
     sourceTitleAr: titleAr,
     sourceLevelLabel: lvlText,
@@ -1744,7 +2221,9 @@ export function resolveStudioMaterialBundle(params: {
       rows: [
         {
           headingTr: "Sözcük Türü ve Kur Kapsamı",
-          detailTr: `${turFilter ? turDisplayMap[turFilter] : "İsim, Fiil, Sıfat ve Zarflar"} • ${lvlText}`,
+          detailTr: rangeBounds
+            ? `${rangeBounds.start}. – ${rangeBounds.end}. Eş & Zıt Anlamlılar Aralığı • ${lvlText}`
+            : `${turFilter ? turDisplayMap[turFilter] : "İsim, Fiil, Sıfat ve Zarflar"} • ${lvlText}`,
           exampleAr: handoutSlice[0]?.ornek_cumle_ar,
           exampleTr: handoutSlice[0]?.ornek_cumle_tr,
         },

@@ -428,7 +428,7 @@ export default function SettingsPage() {
             }}
             className="h-9 px-3.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] flex items-center gap-1.5 cursor-pointer"
           >
-            <span>🏆 İstatistikler &amp; Rozetler</span>
+            <span>🏆 Başarılarım ve Rütbem</span>
           </button>
 
           <button

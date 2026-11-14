@@ -7,6 +7,7 @@ import {
   useCallback,
   useSyncExternalStore,
 } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -56,6 +57,11 @@ import {
   registerActiveMediaStream,
   stopAllActiveMediaStreams,
 } from "@/lib/universalStt";
+
+const StatsAndBadgesModal = dynamic(
+  () => import("@/components/ui/StatsAndBadgesModal"),
+  { ssr: false }
+);
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   stacked: "Alt Alta (Arapça + Türkçe)",
@@ -117,6 +123,7 @@ export default function Header() {
   const [iosInstallOpen, setIosInstallOpen] = useState(false);
   const [fontMenuOpen, setFontMenuOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
   const fontMenuRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -767,8 +774,23 @@ export default function Header() {
                     </button>
                   </div>
 
-                  {/* 0. EN ÜST HIZLI SINIF ARAÇLARI: Kronometre & Geri Sayım ve Sınıf Kura Çarkı */}
+                  {/* 0. EN ÜST HIZLI ERİŞİM: Başarılarım ve Rütbem + Sınıf Araçları */}
                   <div className="space-y-1.5 pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setMoreMenuOpen(false);
+                        setStatsModalOpen(true);
+                      }}
+                      className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/45 border border-amber-400/70 dark:border-amber-700/60 flex items-center justify-between text-xs font-extrabold text-amber-950 dark:text-amber-200 hover:bg-amber-100/80 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>🏆 Başarılarım ve Rütbem</span>
+                      </span>
+                      <span className="text-[11px] font-bold">Aç</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -1273,6 +1295,13 @@ export default function Header() {
             </div>
           </div>
         </div>
+      )}
+
+      {statsModalOpen && (
+        <StatsAndBadgesModal
+          isOpen={statsModalOpen}
+          onClose={() => setStatsModalOpen(false)}
+        />
       )}
     </>
   );

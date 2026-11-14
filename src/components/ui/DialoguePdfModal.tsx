@@ -3682,96 +3682,139 @@ export default function DialoguePdfModal({
             </div>
           </div>
 
-          {/* 2. SATIR: Temel Kağıt Türü + 6 Bölümlü Soru Sayısı + ⚙️ Gelişmiş Mizanpaj Ayarları Akordiyonu */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-            <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-              <div className="inline-flex items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
-                <button
-                  type="button"
-                  onClick={() => applyTeacherPreset("exam-ab")}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                    pdfDocMode === "quiz-sheet"
-                      ? "bg-[#6741D9] text-white shadow-xs"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  📝 6 Bölümlü Sınav
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyTeacherPreset("student-handout")}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                    pdfDocMode === "handout"
-                      ? "bg-[#087F5B] text-white shadow-xs"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  📄 Ders Föyü
-                </button>
+          {/* 2. SATIR: Temel Kağıt Türü + ⚙️ Gelişmiş Mizanpaj Ayarları Akordiyonu + Okunaklı 6 Bölüm Soru Sayısı Izgarası */}
+          <div className="space-y-1.5 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                <div className="inline-flex items-center gap-1 bg-[#F7EFE1] dark:bg-[var(--background)] p-0.5 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => applyTeacherPreset("exam-ab")}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      pdfDocMode === "quiz-sheet"
+                        ? "bg-[#6741D9] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    📝 6 Bölümlü Sınav
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTeacherPreset("student-handout")}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      pdfDocMode === "handout"
+                        ? "bg-[#087F5B] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    📄 Ders Föyü
+                  </button>
+                </div>
+
+                {studioSelectionMode === "range" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-violet-100/90 dark:bg-violet-950/60 border border-violet-300 dark:border-violet-700 text-[10.5px] font-extrabold text-violet-900 dark:text-violet-200">
+                    <span>
+                      🎛️ Aralık: #{effectiveRangeBounds.start} – #
+                      {effectiveRangeBounds.end} (
+                      {Math.max(
+                        1,
+                        effectiveRangeBounds.end -
+                          effectiveRangeBounds.start +
+                          1
+                      )}{" "}
+                      içerik harmanlandı)
+                    </span>
+                  </span>
+                )}
               </div>
 
-              {/* 6 Bölümlü Soru Sayısı Kompakt Şeridi */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 flex-1 min-w-[260px]">
-                {(
-                  [
-                    { key: "sec1ArToTr", label: "1) AR→TR", max: 50 },
-                    { key: "sec2TrToAr", label: "2) TR→AR", max: 50 },
-                    { key: "sec3FillBlank", label: "3) Boşluk", max: 50 },
-                    { key: "sec4MultipleChoice", label: "4) Test", max: 50 },
-                    { key: "sec5Matching", label: "5) Eşleş.", max: 30 },
-                    { key: "sec6Morphology", label: "6) Sarf", max: 30 },
-                  ] as const
-                ).map((sec) => (
-                  <div
-                    key={sec.key}
-                    className="bg-white dark:bg-slate-900 rounded-lg border border-violet-200 dark:border-slate-700 px-1.5 py-0.5 flex items-center justify-between gap-1"
-                  >
-                    <span className="text-[9.5px] font-extrabold text-[var(--foreground)] truncate">
-                      {sec.label}
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={sec.max}
-                      value={examCounts[sec.key]}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value || "0", 10);
-                        if (pdfDocMode !== "quiz-sheet") {
-                          setPdfDocMode("quiz-sheet");
-                          setIncludeStudentHeader(true);
-                          setIncludeAnswerKey(true);
-                        }
-                        setExamCounts((prev) =>
-                          clampExamCounts({
-                            ...prev,
-                            [sec.key]: Number.isNaN(val) ? 0 : val,
-                          })
-                        );
-                      }}
-                      className="w-9 h-5 rounded border border-violet-300 dark:border-slate-600 text-center text-[11px] font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/50 dark:bg-slate-800"
-                    />
-                  </div>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowAdvancedSettings((v) => !v);
+                }}
+                className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
+                  showAdvancedSettings
+                    ? "bg-[#6741D9] text-white border-[#5230B5]"
+                    : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
+                }`}
+              >
+                <span>
+                  ⚙️ Gelişmiş Mizanpaj Ayarları{" "}
+                  {showAdvancedSettings ? "▲" : "▼"}
+                </span>
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setShowAdvancedSettings((v) => !v);
-              }}
-              className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
-                showAdvancedSettings
-                  ? "bg-[#6741D9] text-white border-[#5230B5]"
-                  : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
-              }`}
-            >
-              <span>
-                ⚙️ Gelişmiş Mizanpaj Ayarları{" "}
-                {showAdvancedSettings ? "▲" : "▼"}
-              </span>
-            </button>
+            {/* 6 Bölümlü Soru Sayısı Tam Etiketli Ferah Izgara (Mobil 2x3, Tablet 3x2, Masaüstü 6x1) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
+              {(
+                [
+                  {
+                    key: "sec1ArToTr",
+                    label: "1) Arapça → Türkçe",
+                    max: 50,
+                  },
+                  {
+                    key: "sec2TrToAr",
+                    label: "2) Türkçe → Arapça",
+                    max: 50,
+                  },
+                  {
+                    key: "sec3FillBlank",
+                    label: "3) Boşluk Doldurma",
+                    max: 50,
+                  },
+                  {
+                    key: "sec4MultipleChoice",
+                    label: "4) Çoktan Seçmeli",
+                    max: 50,
+                  },
+                  {
+                    key: "sec5Matching",
+                    label: "5) Eşleştirme",
+                    max: 30,
+                  },
+                  {
+                    key: "sec6Morphology",
+                    label: "6) Sarf Tablosu",
+                    max: 30,
+                  },
+                ] as const
+              ).map((sec) => (
+                <label
+                  key={sec.key}
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-violet-200 dark:border-slate-700 px-2 py-1 flex items-center justify-between gap-1.5 min-w-0 cursor-pointer hover:border-violet-400 transition-colors"
+                >
+                  <span className="text-[10.5px] sm:text-[11px] font-extrabold text-[var(--foreground)] leading-tight whitespace-nowrap">
+                    {sec.label}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={sec.max}
+                    aria-label={sec.label}
+                    value={examCounts[sec.key]}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value || "0", 10);
+                      if (pdfDocMode !== "quiz-sheet") {
+                        setPdfDocMode("quiz-sheet");
+                        setIncludeStudentHeader(true);
+                        setIncludeAnswerKey(true);
+                      }
+                      setExamCounts((prev) =>
+                        clampExamCounts({
+                          ...prev,
+                          [sec.key]: Number.isNaN(val) ? 0 : val,
+                        })
+                      );
+                    }}
+                    className="w-10 h-6 rounded-lg border border-violet-300 dark:border-slate-600 text-center text-xs font-black text-[#4C28B5] dark:text-purple-200 bg-violet-50/60 dark:bg-slate-800 shrink-0 tabular-nums"
+                  />
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* KATLANABİLİR (ACCORDION) GELİŞMİŞ MİZANPAJ VE İKİNCİL ŞABLON AYARLARI */}

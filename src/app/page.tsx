@@ -81,6 +81,7 @@ const DialoguePdfModal = dynamic(
   { ssr: false }
 );
 import type { StatsModalTab } from "@/components/ui/StatsAndBadgesModal";
+import { computeLearnerRank } from "@/lib/learningAnalytics";
 import { MixedText } from "@/components/ui/MixedText";
 import { buildDailyStudyPackage, getLeechSrsItems } from "@/lib/mistakeUtils";
 import {
@@ -156,6 +157,7 @@ export default function HomePage() {
     srsRecords,
     pronunciationScores,
     studyMinutes,
+    activityXp,
     streakDays,
     lastStudyDate,
     dailyGoalMinutes,
@@ -232,6 +234,18 @@ export default function HomePage() {
   >(null);
 
   const contentStats = getDynamicContentStats();
+  const learnerRank = useMemo(
+    () => computeLearnerRank(mounted ? activityXp || 0 : 0),
+    [mounted, activityXp]
+  );
+  const rankMedalEmoji =
+    learnerRank.level === 4
+      ? "👑"
+      : learnerRank.level === 3
+      ? "🥇"
+      : learnerRank.level === 2
+      ? "🥈"
+      : "🥉";
 
   const activeWatchLevel: Level = useMemo(() => {
     if (mounted && detectedCefrLevel) return detectedCefrLevel;
@@ -286,10 +300,10 @@ export default function HomePage() {
         title: "Kelime Alıştırmaları",
         arabicBadge: "التَّدْرِيبَات",
         subtitle:
-          "Kartlar, balon safari, 3B hafıza kartları, i'rab boyama, hata avcısı ve 16 interaktif oyun",
-        meta: "16 Farklı Modül • Görsel & Sesli",
+          "Kartlar, bu nedir?, balon safari, 3B hafıza kartları, i'rab boyama ve 17 interaktif oyun",
+        meta: "17 Farklı Modül • Görsel & Sesli",
         tooltip:
-          "16 farklı interaktif kelime, balon safari, 3B hafıza kartları, cümle ve okuma oyunu",
+          "17 farklı interaktif kelime, bu nedir?, balon safari, 3B hafıza kartları, cümle ve okuma oyunu",
         icon: Gamepad2,
         targetHref: "/alistirmalar",
         accentColor: "emerald",
@@ -525,7 +539,7 @@ export default function HomePage() {
 
       {/* BÖLÜM 1: ÜSTTE 4'LÜ DOĞRUDAN NAVİGASYON KARTLARI */}
       <section aria-label="Çalışma Modülleri" className="space-y-2.5">
-        <div className="flex items-center justify-between px-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div>
             <h1 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight">
               Çalışma Modülleri
@@ -534,9 +548,24 @@ export default function HomePage() {
               Başlamak istediğiniz Arapça eğitim modülüne tıklayın
             </p>
           </div>
-          <span className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400">
-            أَهْلًا وَسَهْلًا
-          </span>
+          <div className="flex items-center gap-2 sm:gap-2.5 ml-auto">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStatsModalTab("badges");
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-[#F7EFE1] dark:from-amber-950/50 dark:to-[var(--surface)] border-2 border-amber-400/80 dark:border-amber-600/70 border-b-3 hover:border-[#087F5B] text-xs font-extrabold text-amber-950 dark:text-amber-200 shadow-2xs active:translate-y-0.5 transition-all cursor-pointer"
+            >
+              <span>🏆 Başarılarım ve Rütbem</span>
+              <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-500/15 dark:bg-amber-400/15 text-[10px] font-black text-amber-900 dark:text-amber-200">
+                {rankMedalEmoji} {learnerRank.shortTitle}
+              </span>
+            </button>
+            <span className="hidden sm:inline arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400">
+              أَهْلًا وَسَهْلًا
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -670,6 +699,17 @@ export default function HomePage() {
                   🏆 Bitirilen Kur: {completedLevelExams.join(", ")}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStatsModalTab("badges");
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-100/90 dark:bg-amber-950/70 border border-amber-400/70 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-[11px] font-extrabold hover:bg-amber-200/80 transition-colors cursor-pointer"
+              >
+                <span>{rankMedalEmoji}</span>
+                <span>{learnerRank.title}</span>
+              </button>
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">
               {mounted && detectedCefrLevel

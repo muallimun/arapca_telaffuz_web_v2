@@ -1066,7 +1066,7 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Okuma"), true);
   assert.equal(alistirmalarCode.includes("Sınıf Yarışması"), true);
 
-  // CONTENT_INVENTORY.exerciseModulesCount === 16
+  // CONTENT_INVENTORY.exerciseModulesCount === 17
   const dataTsCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "lib", "data.ts"),
     "utf8"
@@ -1077,10 +1077,10 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   );
   assert.equal(
     (dataTsCode.includes("CONTENT_INVENTORY") &&
-      contentInvCode.includes("exerciseModulesCount: 16")) ||
-      dataTsCode.includes("exerciseModulesCount: 16"),
+      contentInvCode.includes("exerciseModulesCount: 17")) ||
+      dataTsCode.includes("exerciseModulesCount: 17"),
     true,
-    "CONTENT_INVENTORY.exerciseModulesCount 16 olarak güncellenmelidir"
+    "CONTENT_INVENTORY.exerciseModulesCount 17 olarak güncellenmelidir"
   );
 
   // GrammarHapBilgiPanel kısayol bağlantıları
@@ -1569,7 +1569,7 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
   assert.equal(CONTENT_INVENTORY.dialoguesCount, 120);
   assert.equal(CONTENT_INVENTORY.readingsCount, 60);
   assert.equal(CONTENT_INVENTORY.assessmentQuestionsCount, 550);
-  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 16);
+  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 17);
 
   const layoutSrc = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "layout.tsx"),
@@ -1608,15 +1608,15 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
     "Header.tsx 3 esnek bölgeye, Muallimun Arapça markasına ve kompakt Diğer Araçlar menüsüne sahip olmalıdır"
   );
 
-  // Ana sayfa 16 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
+  // Ana sayfa 17 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
   const homeCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "page.tsx"),
     "utf8"
   );
   assert.equal(
-    homeCode.includes("16 Farklı Modül • Görsel & Sesli"),
+    homeCode.includes("17 Farklı Modül • Görsel & Sesli"),
     true,
-    "Ana sayfa Kelime Alıştırmaları kartı '16 Farklı Modül • Görsel & Sesli' göstermelidir"
+    "Ana sayfa Kelime Alıştırmaları kartı '17 Farklı Modül • Görsel & Sesli' göstermelidir"
   );
   assert.equal(
     /(?<![0-9])6 Farklı Modül • Görsel & Sesli/.test(homeCode),
@@ -5711,5 +5711,109 @@ test("49. Tam Ekran (100dvh) Oyunlar, Saf Görsel Kelime Havuzu, Kaydırmasız H
     "DialoguePdfModal ikincil ayarları kapalı akordiyon altında toplamalı, %60+ A4 önizleme alanı ayırmalı ve WordTooltip max-h-[80dvh] overflow-y-auto içermelidir"
   );
 });
+
+test("50. Başarılarım ve Rütbem Hızlı Erişim Butonları, Tam Adlı 6 A4 Sınav Bölümü, Görsel Kelime Flashcard Resimleri ve Yeni '🖼️ Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' Modülü", () => {
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const ayarlarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "ayarlar", "page.tsx"),
+    "utf8"
+  );
+  const pdfModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "DialoguePdfModal.tsx"),
+    "utf8"
+  );
+  const flashcardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "Flashcard.tsx"),
+    "utf8"
+  );
+  const whatIsThisCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "WhatIsThisGame.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. 🏆 Başarılarım ve Rütbem tek tıkla açılış butonları (Ana sayfa üst şerit, Header Hızlı Menü ve Ayarlar)
+  assert.equal(
+    homeCode.includes("🏆 Başarılarım ve Rütbem") &&
+      homeCode.includes("computeLearnerRank") &&
+      headerCode.includes("🏆 Başarılarım ve Rütbem") &&
+      headerCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
+      ayarlarCode.includes("🏆 Başarılarım ve Rütbem"),
+    true,
+    "Ana sayfa üst şeridinde, Header Hızlı Menüde ve Ayarlar sayfasında '🏆 Başarılarım ve Rütbem' tek tıkla açılış butonu yer almalıdır"
+  );
+
+  // 2. 🖨️ A4 Sınav Üretici 6 bölümün tam ve kesintisiz etiketleri
+  for (const fullLabel of [
+    "1) Arapça → Türkçe",
+    "2) Türkçe → Arapça",
+    "3) Boşluk Doldurma",
+    "4) Çoktan Seçmeli",
+    "5) Eşleştirme",
+    "6) Sarf Tablosu",
+  ]) {
+    assert.equal(
+      pdfModalCode.includes(fullLabel),
+      true,
+      `DialoguePdfModal üst soru sayısı ızgarasında '${fullLabel}' tam etiketi bulunmalıdır`
+    );
+  }
+  assert.equal(
+    pdfModalCode.includes('"1) AR→TR"') || pdfModalCode.includes('"5) Eşleş."'),
+    false,
+    "DialoguePdfModal içinde eski kısaltılmış '1) AR→TR' veya '5) Eşleş.' etiketleri kalmamalıdır"
+  );
+
+  // 3. 🖼️ Flashcard.tsx içinde Görsel Kelimeler seçildiğinde kırpılmayan (object-contain) görsel gösterimi
+  assert.equal(
+    flashcardCode.includes("resolveImageUrl") &&
+      flashcardCode.includes("VISUAL_IMAGE_BY_ID") &&
+      flashcardCode.includes("isVisualWordsMode") &&
+      flashcardCode.includes("object-contain"),
+    true,
+    "Flashcard.tsx Görsel Kelimeler seçildiğinde kelime resmini resolveImageUrl ve object-contain ile göstermelidir"
+  );
+
+  // 4. 🎯 Yeni '🖼️ Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' modülü ve /alistirmalar entegrasyonu
+  assert.equal(
+    whatIsThisCode.includes("Bu görselin Arapçası nedir?") &&
+      whatIsThisCode.includes("selectSmartVisualDistractors") &&
+      whatIsThisCode.includes("resolveImageUrl") &&
+      whatIsThisCode.includes("object-contain") &&
+      whatIsThisCode.includes("playDualGenderAudio") &&
+      whatIsThisCode.includes("recordItemAttempt") &&
+      whatIsThisCode.includes("addMistake") &&
+      whatIsThisCode.includes("saveLastExerciseSummary"),
+    true,
+    "WhatIsThisGame büyük object-contain görsel, 4 harekeli şık, çift cinsiyetli ses, SRS/Hata Defteri ve son özet kaydını içermelidir"
+  );
+  assert.equal(
+    whatIsThisCode.includes("window.open") ||
+      whatIsThisCode.includes("window.alert") ||
+      whatIsThisCode.includes("style={{"),
+    false,
+    "WhatIsThisGame içinde window.open, window.alert veya satır içi style={{ bulunmamalıdır"
+  );
+  assert.equal(
+    alistirmalarCode.includes('import("@/components/exercises/WhatIsThisGame")') &&
+      alistirmalarCode.includes('id: "what-is-this"') &&
+      alistirmalarCode.includes("🖼️ Bu Nedir?") &&
+      alistirmalarCode.includes("صُورَةٌ وَكَلِمَةٌ") &&
+      alistirmalarCode.includes("<WhatIsThisGame"),
+    true,
+    "alistirmalar/page.tsx '🖼️ Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' modülünü vitrinde ve aktif oyun ekranında barındırmalıdır"
+  );
+});
+
 
 

@@ -28,6 +28,7 @@ import {
   Paintbrush,
   Sparkles,
   Layers,
+  HelpCircle,
   X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
@@ -219,6 +220,13 @@ const MemoryFlipGame = dynamic(
     loading: () => <ExerciseModuleLoadingSkeleton />,
   }
 );
+const WhatIsThisGame = dynamic(
+  () => import("@/components/exercises/WhatIsThisGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
 const PhonemeHeatmapModal = dynamic(
   () => import("@/components/ui/PhonemeHeatmapModal"),
   { ssr: false }
@@ -240,7 +248,8 @@ type ExerciseType =
   | "evidence-hunter"
   | "irab-painter"
   | "balloon-safari"
-  | "memory-flip";
+  | "memory-flip"
+  | "what-is-this";
 
 type ExerciseCategoryTab =
   | "all"
@@ -443,6 +452,14 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
     val === "hafiza"
   ) {
     return "memory-flip";
+  }
+  if (
+    val === "what-is-this" ||
+    val === "bu-nedir" ||
+    val === "whatisthis" ||
+    val === "bunedir"
+  ) {
+    return "what-is-this";
   }
   return null;
 }
@@ -748,7 +765,8 @@ function ExercisesPageContent() {
         } else if (
           resolvedMode === "gender-sorting" ||
           resolvedMode === "balloon-safari" ||
-          resolvedMode === "memory-flip"
+          resolvedMode === "memory-flip" ||
+          resolvedMode === "what-is-this"
         ) {
           setRangePreset("visual_words");
         }
@@ -1566,6 +1584,15 @@ function ExercisesPageContent() {
       icon: ImageIcon,
     },
     {
+      id: "what-is-this",
+      category: "vocab_visual",
+      title: "🖼️ Bu Nedir?",
+      arabicBadge: "صُورَةٌ وَكَلِمَةٌ",
+      subtitle:
+        "Büyük kelime görseline bakarak 4 harekeli şık arasından doğru Arapçayı bulun",
+      icon: HelpCircle,
+    },
+    {
       id: "balloon-safari",
       category: "vocab_visual",
       title: "🎈 Balon Safari",
@@ -1815,7 +1842,11 @@ function ExercisesPageContent() {
         poolId === "reading_texts"
       );
     }
-    if (selectedType === "balloon-safari" || selectedType === "memory-flip") {
+    if (
+      selectedType === "balloon-safari" ||
+      selectedType === "memory-flip" ||
+      selectedType === "what-is-this"
+    ) {
       return poolId === "visual_words";
     }
     return true;
@@ -1941,6 +1972,7 @@ function ExercisesPageContent() {
     selectedType !== "visual-rosetta" &&
     selectedType !== "balloon-safari" &&
     selectedType !== "memory-flip" &&
+    selectedType !== "what-is-this" &&
     selectedType !== "morphology-context" &&
     selectedType !== "classroom-battle" &&
     (rangePreset === "all_dialogues" ||
@@ -2069,7 +2101,11 @@ function ExercisesPageContent() {
       };
     }
 
-    if (selectedType === "balloon-safari" || selectedType === "memory-flip") {
+    if (
+      selectedType === "balloon-safari" ||
+      selectedType === "memory-flip" ||
+      selectedType === "what-is-this"
+    ) {
       const cnt = strictVisualWordsOnlyPool.length;
       return {
         activeItemCount: cnt,
@@ -2494,7 +2530,8 @@ function ExercisesPageContent() {
                         setRangePreset("sentences_1111");
                       } else if (
                         card.id === "balloon-safari" ||
-                        card.id === "memory-flip"
+                        card.id === "memory-flip" ||
+                        card.id === "what-is-this"
                       ) {
                         setRangePreset("visual_words");
                         setCategoryFilter("all");
@@ -2573,7 +2610,8 @@ function ExercisesPageContent() {
                 </span>
               </div>
             ) : selectedType === "balloon-safari" ||
-              selectedType === "memory-flip" ? (
+              selectedType === "memory-flip" ||
+              selectedType === "what-is-this" ? (
               <div className="space-y-2 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-300">
                   <span>
@@ -3323,6 +3361,7 @@ function ExercisesPageContent() {
               isMistakesMode={
                 frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
+              isVisualWordsMode={rangePreset === "visual_words"}
               onClose={handleCloseExercise}
             />
           )}
@@ -3503,6 +3542,15 @@ function ExercisesPageContent() {
             <MemoryFlipGame
               visualPool={strictVisualWordsOnlyPool}
               cefrFilter={cefrFilter}
+              timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "what-is-this" && (
+            <WhatIsThisGame
+              visualPool={strictVisualWordsOnlyPool}
+              cefrFilter={cefrFilter}
+              questionCount={questionCount}
               timeLimit={timeLimit}
               onClose={handleCloseExercise}
             />

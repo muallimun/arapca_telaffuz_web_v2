@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Dialogue, DictionaryItem } from "@/types/data";
+import { atasozleri, gorselKelimeler, resolveImageUrl } from "@/lib/data";
 import {
   RotateCcw,
   ChevronLeft,
@@ -40,6 +41,24 @@ import { QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
 
+const VISUAL_IMAGE_BY_ID = new Map<string, string>();
+const VISUAL_IMAGE_BY_ARABIC = new Map<string, string>();
+for (const gk of gorselKelimeler) {
+  if (gk.gorsel) {
+    VISUAL_IMAGE_BY_ID.set(gk.id, gk.gorsel);
+    if (gk.arapca?.trim() && !VISUAL_IMAGE_BY_ARABIC.has(gk.arapca.trim())) {
+      VISUAL_IMAGE_BY_ARABIC.set(gk.arapca.trim(), gk.gorsel);
+    }
+  }
+}
+
+const PROVERB_IMAGE_BY_ID = new Map<string, string>();
+for (const pv of atasozleri) {
+  if (pv.gorsel) {
+    PROVERB_IMAGE_BY_ID.set(pv.id, pv.gorsel);
+  }
+}
+
 export interface FlashcardItem {
   id: string;
   kind: "word" | "idiom" | "sentence";
@@ -47,6 +66,7 @@ export interface FlashcardItem {
   turkish: string;
   badgeText: string;
   subLabel?: string;
+  imageUrl?: string;
   wordItem?: DictionaryItem;
   literalTr?: string;
   usageNote?: string;
@@ -62,6 +82,7 @@ interface Props {
   contentType?: QuizContentType;
   questionCount?: number;
   isMistakesMode?: boolean;
+  isVisualWordsMode?: boolean;
   onClose?: () => void;
 }
 
@@ -69,6 +90,7 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
   const items: FlashcardItem[] = [];
   dialogues.forEach((dlg) => {
     const isStandardDialogue = dlg.id.startsWith("dlg_");
+    const isVisualPool = dlg.id === "pool_visual" || dlg.id.startsWith("pool_visual");
     dlg.satirlar.forEach((line) => {
       const ar = line.arapca.trim();
       const tr = line.turkce.trim();
@@ -82,6 +104,9 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
           line.konusmaci
         );
         const cleanSpeaker = formatTurkishCategory(line.konusmaci);
+        const matchedVisualImg = isVisualPool
+          ? VISUAL_IMAGE_BY_ARABIC.get((line.konusmaci_ar || "").trim())
+          : undefined;
         items.push({
           id: `sent_${dlg.id}_${line.sira}`,
           kind: "sentence",
@@ -89,6 +114,7 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
           turkish: tr,
           badgeText: srcMeta.bottomMeta,
           subLabel: `${cleanSpeaker} (${line.konusmaci_ar})`,
+          imageUrl: matchedVisualImg,
           dialogueId: dlg.id,
           lineSira: line.sira,
           voice:
@@ -107,12 +133,16 @@ export default function Flashcard({
   contentType = "words",
   questionCount = 20,
   isMistakesMode = false,
+  isVisualWordsMode = false,
   onClose,
 }: Props) {
   const [roundSeed, setRoundSeed] = useState(0);
   const [customDeck, setCustomDeck] = useState<FlashcardItem[] | null>(null);
   const [hardItems, setHardItems] = useState<FlashcardItem[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [failedImageMap, setFailedImageMap] = useState<Record<string, boolean>>(
+    {}
+  );
 
   useEffect(() => {
     loadAudioManifest();
@@ -138,30 +168,41 @@ export default function Flashcard({
       return "İsim";
     };
     const wordCards: FlashcardItem[] = vocabulary
-      .map((w) => ({
-        id: `word_${w.id}`,
-        kind: "word" as const,
-        arabic: w.mufret || w.mazi || "",
-        turkish: w.anlam_tr,
-        badgeText:
-          w.kok && w.kok !== "-"
-            ? `${formatCatLabel(w.tur)} · Kök: ${w.kok}`
-            : formatCatLabel(w.tur),
-        wordItem: w,
-      }))
+      .map((w) => {
+        const primaryAr = (w.mufret || w.mazi || "").trim();
+        const resolvedGorsel =
+          w.gorsel ||
+          VISUAL_IMAGE_BY_ID.get(w.id) ||
+          (isVisualWordsMode ? VISUAL_IMAGE_BY_ARABIC.get(primaryAr) : undefined);
+        return {
+          id: `word_${w.id}`,
+          kind: "word" as const,
+          arabic: primaryAr,
+          turkish: w.anlam_tr,
+          badgeText:
+            w.kok && w.kok !== "-"
+              ? `${formatCatLabel(w.tur)} · Kök: ${w.kok}`
+              : formatCatLabel(w.tur),
+          imageUrl: resolvedGorsel,
+          wordItem: resolvedGorsel && !w.gorsel ? { ...w, gorsel: resolvedGorsel } : w,
+        };
+      })
       .filter((c) => c.arabic.trim().length > 0);
 
     const idiomCards: FlashcardItem[] = idioms
       .map((idm) => {
+        const rawId = idm.id.replace(/^idiom_/, "");
         const normalizedId = idm.id.startsWith("idiom_")
           ? idm.id
           : `idiom_${idm.id}`;
+        const proverbImg = PROVERB_IMAGE_BY_ID.get(rawId);
         const idiomAsWord: DictionaryItem = {
           id: normalizedId,
           mufret: idm.arabic,
           anlam_tr: idm.meaningTr,
           kok: "-",
           tur: "ifade",
+          gorsel: proverbImg,
         };
         return {
           id: normalizedId,
@@ -171,6 +212,7 @@ export default function Flashcard({
           badgeText: `✨ Kalıp İfade · Seviye ${idm.level || "A1-B2"}`,
           literalTr: idm.literalTr,
           usageNote: idm.usageNote,
+          imageUrl: proverbImg,
           wordItem: idiomAsWord,
         };
       })
@@ -430,6 +472,14 @@ export default function Flashcard({
   const formatAr = (t: string) => formatArabicText(t, showHareke, arabicFont);
   const displayArabic = formatAr(primaryArabic);
 
+  const rawCardImage = currentCard.imageUrl || currentWord?.gorsel || "";
+  const resolvedCardImageUrl = rawCardImage
+    ? resolveImageUrl(rawCardImage)
+    : "";
+  const showCardImage = Boolean(
+    resolvedCardImageUrl && !failedImageMap[resolvedCardImageUrl]
+  );
+
   const handleSpeak = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     playClick();
@@ -561,7 +611,9 @@ export default function Flashcard({
 
       {/* 3B DÖNEN KART ALANI */}
       <div
-        className="relative w-full h-76 sm:h-82 cursor-pointer [perspective:1000px]"
+        className={`relative w-full cursor-pointer [perspective:1000px] ${
+          showCardImage ? "h-[396px] sm:h-[436px]" : "h-76 sm:h-82"
+        }`}
         onClick={() => {
           setIsFlipped(!isFlipped);
           playFlip();
@@ -572,16 +624,16 @@ export default function Flashcard({
             isFlipped ? "[transform:rotateY(180deg)]" : ""
           }`}
         >
-          {/* ÖN YÜZ (Arapça) */}
+          {/* ÖN YÜZ (Arapça + Görsel Kelime Resmi) */}
           <div
-            className={`absolute inset-0 [backface-visibility:hidden] rounded-2xl border-2 border-b-4 flex flex-col items-center justify-between p-4 sm:p-6 ${
+            className={`absolute inset-0 [backface-visibility:hidden] rounded-2xl border-2 border-b-4 flex flex-col items-center justify-between p-4 sm:p-5 ${
               isLearned
                 ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9]"
                 : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
             }`}
           >
             {/* Üst Köşe Kontrolleri — Tek Satırda Kompakt Dizilim */}
-            <div className="w-full flex flex-wrap items-center justify-center sm:justify-between gap-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5">
+            <div className="w-full flex flex-wrap items-center justify-center sm:justify-between gap-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5 shrink-0">
               {currentWord ? (
                 <button
                   type="button"
@@ -718,15 +770,39 @@ export default function Flashcard({
               )}
             </div>
 
-            {/* Orta Arapça Kelime, Kalıp İfade veya Kısa Diyalog Cümlesi */}
-            <div className="my-auto text-center space-y-2 px-2">
+            {/* Üst/Orta Görsel Kelime Resmi + Arapça Kelime / Kalıp / Cümle */}
+            <div className="my-auto flex flex-col items-center justify-center text-center gap-2 px-2 w-full min-h-0">
+              {showCardImage && (
+                <div className="w-full max-w-[210px] sm:max-w-[250px] h-32 sm:h-40 rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 flex items-center justify-center shadow-2xs shrink-0 mx-auto">
+                  <img
+                    src={resolvedCardImageUrl}
+                    alt={currentCard.turkish}
+                    referrerPolicy="no-referrer"
+                    loading="eager"
+                    onError={() =>
+                      setFailedImageMap((prev) => ({
+                        ...prev,
+                        [resolvedCardImageUrl]: true,
+                      }))
+                    }
+                    className="w-full h-full object-contain select-none"
+                  />
+                </div>
+              )}
+
               <span
                 dir="rtl"
                 className={`arabic font-bold text-[#065F46] dark:text-emerald-400 block leading-relaxed ${
                   currentCard.kind === "sentence"
-                    ? "text-3xl sm:text-4xl"
+                    ? showCardImage
+                      ? "text-2xl sm:text-3xl"
+                      : "text-3xl sm:text-4xl"
                     : currentCard.kind === "idiom"
-                    ? "text-3xl sm:text-5xl"
+                    ? showCardImage
+                      ? "text-2xl sm:text-4xl"
+                      : "text-3xl sm:text-5xl"
+                    : showCardImage
+                    ? "text-4xl sm:text-5xl"
                     : "text-5xl sm:text-6xl"
                 }`}
               >
@@ -751,9 +827,9 @@ export default function Flashcard({
             </div>
           </div>
 
-          {/* ARKA YÜZ (Türkçe Anlamı + Kalıp İfade Harfiyen Anlamı & Kullanım İpucu) */}
-          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-4 flex flex-col items-center justify-between p-4 sm:p-6 text-center">
-            <div className="w-full flex items-center justify-between border-b border-dashed border-[#6741D9]/30 pb-2 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff]">
+          {/* ARKA YÜZ (Türkçe Anlamı + Görsel Küçük Önizleme + Örnek Cümle / Kalıp İpucu) */}
+          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-2xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-4 flex flex-col items-center justify-between p-4 sm:p-5 text-center">
+            <div className="w-full flex items-center justify-between border-b border-dashed border-[#6741D9]/30 pb-2 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] shrink-0">
               <span>
                 {currentCard.kind === "sentence"
                   ? "CÜMLENİN TÜRKÇE ÇEVİRİSİ"
@@ -766,7 +842,18 @@ export default function Flashcard({
               </span>
             </div>
 
-            <div className="my-auto space-y-2.5 w-full">
+            <div className="my-auto space-y-2.5 w-full flex flex-col items-center justify-center min-h-0">
+              {showCardImage && (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white dark:bg-slate-900/85 border border-[#6741D9]/30 p-1.5 flex items-center justify-center shadow-2xs shrink-0">
+                  <img
+                    src={resolvedCardImageUrl}
+                    alt={currentCard.turkish}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-contain select-none"
+                  />
+                </div>
+              )}
+
               <p
                 dir="ltr"
                 lang="tr"
@@ -774,6 +861,29 @@ export default function Flashcard({
               >
                 <MixedText text={currentCard.turkish} />
               </p>
+
+              {currentCard.kind === "word" &&
+                currentWord?.ornek_ar &&
+                currentWord.ornek_ar.trim().length > 0 && (
+                  <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#6741D9]/30 px-3 py-2 text-center space-y-1 max-w-md w-full">
+                    <p
+                      dir="rtl"
+                      lang="ar"
+                      className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-relaxed"
+                    >
+                      {formatAr(currentWord.ornek_ar)}
+                    </p>
+                    {currentWord.ornek_tr && (
+                      <p
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-[11px] sm:text-xs font-semibold text-[var(--muted)] leading-snug"
+                      >
+                        <MixedText text={currentWord.ornek_tr} />
+                      </p>
+                    )}
+                  </div>
+                )}
 
               {currentCard.kind === "idiom" &&
                 (currentCard.literalTr || currentCard.usageNote) && (

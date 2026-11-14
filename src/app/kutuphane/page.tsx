@@ -267,6 +267,7 @@ export default function LibraryPage() {
     readingId?: string;
     sourceId?: string;
     grammarTopic?: string;
+    initialInteractivePracticeOpen?: boolean;
   } | null>(null);
 
   const [youtubeCategoryFilter, setYoutubeCategoryFilter] = useState<
@@ -6720,8 +6721,53 @@ export default function LibraryPage() {
                         )}
                       </div>
 
-                      {/* Mobil Uyumlu Esnek Aksiyon Alanı: İnceleme/Test + A4 PDF & WhatsApp Paylaşım */}
+                      {/* Mobil Uyumlu Esnek Aksiyon Alanı: Gramer-Alıştırma Köprüsü + İnceleme/Test + A4 PDF & WhatsApp */}
                       <div className="pt-2.5 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] space-y-2">
+                        {/* Doğrudan Gramer -> Alıştırma & Bağlı Diyalog/Metin Köprüsü (15 grm_XXX Kartı Dahil) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Link
+                            href={`/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
+                              gItem.title || gItem.grammarQuery
+                            )}&autostart=1`}
+                            onClick={() => playClick()}
+                            className="min-h-[40px] py-2 px-3 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white font-black text-xs border-b-3 border-[#3d2191] flex items-center justify-center gap-1.5 text-center transition-colors"
+                          >
+                            <span>🎯 Bu Konuyu Alıştırmalarda Çalış</span>
+                          </Link>
+
+                          {gItem.linkedLessonUrl ? (
+                            <Link
+                              href={gItem.linkedLessonUrl}
+                              onClick={() => playClick()}
+                              className="min-h-[40px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#065F46] dark:text-emerald-300 font-black text-xs flex items-center justify-center gap-1.5 text-center transition-colors"
+                            >
+                              <span>📖 Bağlı Diyalog / Metne Git</span>
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                if (gItem.exampleAr) {
+                                  void speakHybrid({
+                                    text: gItem.exampleAr,
+                                    rate: speechRate,
+                                  });
+                                }
+                                setActiveGrammarModal({
+                                  grammarNote: gItem.rawNote,
+                                  sourceId: gItem.bagliId,
+                                  grammarTopic: gItem.grammarQuery,
+                                  initialInteractivePracticeOpen: true,
+                                });
+                              }}
+                              className="min-h-[40px] py-2 px-3 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#065F46] dark:text-emerald-300 font-black text-xs flex items-center justify-center gap-1.5 text-center cursor-pointer transition-colors"
+                            >
+                              <span>📖 Bağlı Diyalog / Metne Git</span>
+                            </button>
+                          )}
+                        </div>
+
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
@@ -6860,6 +6906,9 @@ export default function LibraryPage() {
         readingId={activeGrammarModal?.readingId}
         sourceId={activeGrammarModal?.sourceId}
         grammarTopic={activeGrammarModal?.grammarTopic}
+        initialInteractivePracticeOpen={Boolean(
+          activeGrammarModal?.initialInteractivePracticeOpen
+        )}
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />
 

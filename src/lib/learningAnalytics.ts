@@ -7,6 +7,9 @@ import {
   esZitAnlamlilar,
   sozluk,
   tumGramerHapBilgiler,
+  ekGramerNotlari,
+  diyalogGramerNotlari,
+  metinGramerNotlari,
 } from "@/lib/data";
 import { DictionaryItem, Level } from "@/types/data";
 import {
@@ -27,6 +30,7 @@ import {
 } from "@/lib/mistakeUtils";
 import { getCombinedIdiomsCatalog, extractDialoguesIdioms } from "@/lib/arabicIdioms";
 import { cleanArabicText } from "@/lib/dict";
+import { buildUnifiedGrammarAtlasCatalog } from "@/lib/grammarTaxonomy";
 
 export interface LearnerRankInfo {
   level: 1 | 2 | 3 | 4;
@@ -119,6 +123,43 @@ export interface FrequentMistakeRow {
   phonemeLetter?: Arabic28Letter;
 }
 
+export interface CoreLanguageSkillRow {
+  id: "vocabulary" | "reading" | "listening" | "grammar" | "pronunciation";
+  icon: string;
+  titleTr: string;
+  titleAr: string;
+  percent: number;
+  summaryText: string;
+  detailText: string;
+  actionHref: string;
+  actionLabel: string;
+}
+
+export type GrammarCompetencyStatus = "completed" | "studying" | "not_started";
+
+export interface GrammarCompetencyItem {
+  bagliId: string;
+  level: Level;
+  title: string;
+  domainEmoji: string;
+  domainShortTitle: string;
+  status: GrammarCompetencyStatus;
+  statusLabel: "Tamamlandı" | "Çalışılıyor" | "Başlanmadı";
+  targetHref: string;
+  targetKindLabel: string;
+}
+
+export interface GrammarCompetencyLevelGroup {
+  level: Level;
+  titleTr: string;
+  completedCount: number;
+  studyingCount: number;
+  notStartedCount: number;
+  totalCount: number;
+  percent: number;
+  items: GrammarCompetencyItem[];
+}
+
 export interface LearningAnalyticsSnapshot {
   totalXp: number;
   rank: LearnerRankInfo;
@@ -131,6 +172,8 @@ export interface LearningAnalyticsSnapshot {
   cefrProgress: CefrProgressRow[];
   moduleProgress: ModuleProgressRow[];
   frequentMistakes: FrequentMistakeRow[];
+  fiveCoreSkills: CoreLanguageSkillRow[];
+  grammarCompetencyMatrix: GrammarCompetencyLevelGroup[];
 }
 
 export interface LearningAnalyticsInput {
@@ -482,7 +525,7 @@ export function computeLearningAnalyticsSnapshot(
   );
 
   const srsDialogueSentencesPracticed = srsValues.filter((r) =>
-    r.id.startsWith("sent_dlg_")
+    (r?.id || "").startsWith("sent_dlg_")
   ).length;
   const muhadeseCount =
     completedDialogueLinesCount +
@@ -491,8 +534,8 @@ export function computeLearningAnalyticsSnapshot(
     totalPronCount;
 
   const srsSentenceIdiomCorrect = srsValues
-    .filter((r) => r.type === "sentence" || r.type === "idiom")
-    .reduce((sum, r) => sum + (r.correctCount || 0), 0);
+    .filter((r) => r?.type === "sentence" || r?.type === "idiom")
+    .reduce((sum, r) => sum + (r?.correctCount || 0), 0);
   const sentenceMasterCount =
     completedReadingLinesCount +
     srsSentenceIdiomCorrect +
@@ -504,8 +547,8 @@ export function computeLearningAnalyticsSnapshot(
   ).length;
   const grammarSrsIdsCount = srsValues.filter(
     (r) =>
-      r.correctCount >= 1 &&
-      (/^grm_\d+/i.test(r.id) || Boolean(findGrammarNoteByMistakeId(r.id)))
+      (r?.correctCount || 0) >= 1 &&
+      (/^grm_\d+/i.test(r?.id || "") || Boolean(findGrammarNoteByMistakeId(r?.id || "")))
   ).length;
   const grammarLessonsDoneCount =
     completedDialoguesCount + completedReadingsCount;
@@ -1152,6 +1195,357 @@ export function computeLearningAnalyticsSnapshot(
     return (a.accuracyPercent ?? 100) - (b.accuracyPercent ?? 100);
   });
 
+  // Sekme 4A: A1, A2, B1, B2 Gramer Kazanım Matrisi (Isı Haritası — 195 Gramer Kartı)
+  const unifiedGrammarCatalog = buildUnifiedGrammarAtlasCatalog({
+    ekGramerNotlari,
+    diyalogGramerNotlari,
+    metinGramerNotlari,
+    diyaloglar,
+    metinler,
+  });
+  const srsByIdMap = new Map<string, SrsItemRecord>();
+  for (const [k, rec] of Object.entries(input.srsRecords || {})) {
+    if (rec) {
+      srsByIdMap.set(k, rec);
+      if (rec.id) srsByIdMap.set(rec.id, rec);
+    }
+  }
+  const mistakeRawSet = new Set<string>(input.mistakeIds || []);
+  for (const mId of input.mistakeIds || []) {
+    const canon = normalizeToCanonicalMistakeId(mId);
+    if (canon) mistakeRawSet.add(canon);
+  }
+
+  let totalCompletedGrammar = 0;
+  let totalStudyingGrammar = 0;
+
+  const grammarCompetencyMatrix: GrammarCompetencyLevelGroup[] = (
+    ["A1", "A2", "B1", "B2"] as Level[]
+  ).map((lvl) => {
+    const inLevel = unifiedGrammarCatalog.filter((c) => c.level === lvl);
+    let completedCount = 0;
+    let studyingCount = 0;
+    let notStartedCount = 0;
+
+    const items: GrammarCompetencyItem[] = inLevel.map((gItem) => {
+      const srsDirect =
+        srsByIdMap.get(gItem.bagliId) || srsByIdMap.get(`grm_${gItem.bagliId}`);
+      const topicRec = gItem.kttUstKonu
+        ? input.topicMastery?.[gItem.kttUstKonu]
+        : undefined;
+      const topicAccuracy =
+        topicRec && topicRec.total > 0 ? topicRec.correct / topicRec.total : 0;
+
+      // Bu dersin cümlelerinde SRS kaydı var mı?
+      const hasLessonSentenceSrs = srsValues.some(
+        (r) =>
+          ((r?.correctCount || 0) > 0 || (r?.wrongCount || 0) > 0) &&
+          (r?.id || "").startsWith(`sent_${gItem.bagliId}_`)
+      );
+
+      const isCompleted =
+        completedSet.has(gItem.bagliId) ||
+        Boolean(
+          srsDirect &&
+            (srsDirect.status === "mastered" ||
+              (srsDirect.correctCount >= 2 &&
+                srsDirect.correctCount > srsDirect.wrongCount))
+        ) ||
+        Boolean(topicRec && topicRec.total >= 2 && topicAccuracy >= 0.75);
+
+      const isStudying =
+        !isCompleted &&
+        (mistakeRawSet.has(gItem.bagliId) ||
+          hasLessonSentenceSrs ||
+          Boolean(
+            srsDirect && (srsDirect.correctCount > 0 || srsDirect.wrongCount > 0)
+          ) ||
+          Boolean(topicRec && topicRec.total >= 1));
+
+      const status: GrammarCompetencyStatus = isCompleted
+        ? "completed"
+        : isStudying
+        ? "studying"
+        : "not_started";
+
+      if (status === "completed") {
+        completedCount += 1;
+        totalCompletedGrammar += 1;
+      } else if (status === "studying") {
+        studyingCount += 1;
+        totalStudyingGrammar += 1;
+      } else {
+        notStartedCount += 1;
+      }
+
+      const targetHref = gItem.linkedLessonUrl
+        ? gItem.linkedLessonUrl
+        : `/alistirmalar?mode=error-hunter&grammar=${encodeURIComponent(
+            gItem.title || gItem.grammarQuery
+          )}&autostart=1`;
+
+      const targetKindLabel = gItem.bagliId.startsWith("dlg_")
+        ? "Diyaloğa Git"
+        : gItem.bagliId.startsWith("metin_")
+        ? "Metne Git"
+        : "Gramer Alıştırması";
+
+      return {
+        bagliId: gItem.bagliId,
+        level: lvl,
+        title: gItem.title,
+        domainEmoji: gItem.domainMeta.emoji,
+        domainShortTitle: gItem.domainMeta.shortTitle,
+        status,
+        statusLabel:
+          status === "completed"
+            ? "Tamamlandı"
+            : status === "studying"
+            ? "Çalışılıyor"
+            : "Başlanmadı",
+        targetHref,
+        targetKindLabel,
+      };
+    });
+
+    const totalCount = items.length;
+    const weightedDone = completedCount + studyingCount * 0.4;
+    const percent =
+      totalCount > 0
+        ? Math.min(100, Math.round((weightedDone / totalCount) * 100))
+        : 0;
+
+    return {
+      level: lvl,
+      titleTr: levelTitles[lvl],
+      completedCount,
+      studyingCount,
+      notStartedCount,
+      totalCount,
+      percent,
+      items,
+    };
+  });
+
+  // Sekme 4B: 5 Temel Dil Becerisi İlerleme Çubuğu (Gerçek userStore verisi)
+  // 1) 📖 Kelime Bilgisi (المُفْرَدَات)
+  const totalVocabPoolSize = Math.max(1, sozluk.length + gorselKelimeler.length);
+  const learnedAndVisualCount = Math.max(
+    uniquePositiveWordIds.size,
+    visualDoneTotal + learnedSet.size
+  );
+  const vocabSkillStat = input.skillStats?.kelime;
+  const vocabAccuracyPct =
+    vocabSkillStat && vocabSkillStat.total > 0
+      ? Math.round((vocabSkillStat.correct / vocabSkillStat.total) * 100)
+      : null;
+  // Kapsam + aktif doğruluk hibrit ilerleme oranı (öğrencinin somut gelişimini yansıtır)
+  const vocabCoveragePct = Math.min(
+    100,
+    Math.round((learnedAndVisualCount / Math.min(totalVocabPoolSize, 1000)) * 100)
+  );
+  const vocabPercent =
+    learnedAndVisualCount === 0 && !vocabSkillStat?.total
+      ? 0
+      : vocabAccuracyPct !== null
+      ? Math.min(
+          100,
+          Math.max(
+            vocabCoveragePct,
+            Math.round(vocabCoveragePct * 0.65 + vocabAccuracyPct * 0.35)
+          )
+        )
+      : vocabCoveragePct;
+
+  // 2) 📚 Okuduğunu Anlama (الفَهْمُ القِرَائِيّ)
+  const readingCompletionPct = Math.round(
+    (completedReadingsCount / Math.max(1, metinler.length)) * 100
+  );
+  const readingSkillStat = input.skillStats?.okuma;
+  const readingAccuracyPct =
+    readingSkillStat && readingSkillStat.total > 0
+      ? Math.round((readingSkillStat.correct / readingSkillStat.total) * 100)
+      : null;
+  const readingPercent =
+    completedReadingsCount === 0 && !readingSkillStat?.total
+      ? 0
+      : readingAccuracyPct !== null
+      ? Math.min(
+          100,
+          Math.round(readingCompletionPct * 0.6 + readingAccuracyPct * 0.4)
+        )
+      : readingCompletionPct;
+
+  // 3) 🎧 Dinleme & Muhâdese (الاِسْتِمَاعُ وَالمُحَادَثَة)
+  const dialogueCompletionPct = Math.round(
+    (completedDialoguesCount / Math.max(1, diyaloglar.length)) * 100
+  );
+  const listeningTotal =
+    (input.skillStats?.dinleme?.total || 0) + (input.skillStats?.imla?.total || 0);
+  const listeningCorrect =
+    (input.skillStats?.dinleme?.correct || 0) +
+    (input.skillStats?.imla?.correct || 0);
+  const listeningAccPct =
+    listeningTotal > 0 ? Math.round((listeningCorrect / listeningTotal) * 100) : null;
+  const videoBonusPct = Math.min(20, watchedCount * 4);
+  const listeningBasePct = Math.min(100, dialogueCompletionPct + videoBonusPct);
+  const listeningPercent =
+    completedDialoguesCount === 0 && watchedCount === 0 && listeningTotal === 0
+      ? 0
+      : listeningAccPct !== null
+      ? Math.min(
+          100,
+          Math.round(listeningBasePct * 0.65 + listeningAccPct * 0.35)
+        )
+      : listeningBasePct;
+
+  // 4) 📐 Sarf & Nahiv / İ'rab (القَوَاعِدُ وَالإِعْرَاب)
+  const totalGrammarCatalogCount = Math.max(1, unifiedGrammarCatalog.length);
+  const grammarCoveragePct = Math.round(
+    ((totalCompletedGrammar + totalStudyingGrammar * 0.4) /
+      totalGrammarCatalogCount) *
+      100
+  );
+  const topicTotals = Object.values(input.topicMastery || {}).reduce(
+    (acc, t) => ({
+      total: acc.total + (t?.total || 0),
+      correct: acc.correct + (t?.correct || 0),
+    }),
+    { total: 0, correct: 0 }
+  );
+  const gramerSkillTotal =
+    (input.skillStats?.gramer?.total || 0) + topicTotals.total;
+  const gramerSkillCorrect =
+    (input.skillStats?.gramer?.correct || 0) + topicTotals.correct;
+  const gramerAccPct =
+    gramerSkillTotal > 0
+      ? Math.round((gramerSkillCorrect / gramerSkillTotal) * 100)
+      : null;
+  const grammarPercent =
+    totalCompletedGrammar === 0 &&
+    totalStudyingGrammar === 0 &&
+    gramerSkillTotal === 0
+      ? 0
+      : gramerAccPct !== null
+      ? Math.min(100, Math.round(grammarCoveragePct * 0.55 + gramerAccPct * 0.45))
+      : grammarCoveragePct;
+
+  // 5) 🎙️ Telaffuz & Mahreç (النُّطْقُ وَالمَخَارِج)
+  const rawPronScores = [
+    ...(input.pronunciationScores || []),
+    ...(input.pronunciationHistory || []).map((h) => h.score),
+  ].filter((n) => typeof n === "number" && Number.isFinite(n) && n >= 0);
+  const avgPronScore =
+    rawPronScores.length > 0
+      ? Math.round(
+          rawPronScores.reduce((sum, s) => sum + s, 0) / rawPronScores.length
+        )
+      : null;
+  const phonemeAgg = Object.values(input.phonemeStats || {}).reduce(
+    (acc, p) => ({
+      attempts: acc.attempts + (p?.attempts || 0),
+      cleanHits: acc.cleanHits + (p?.cleanHits || 0),
+    }),
+    { attempts: 0, cleanHits: 0 }
+  );
+  const phonemeCleanPct =
+    phonemeAgg.attempts > 0
+      ? Math.round((phonemeAgg.cleanHits / phonemeAgg.attempts) * 100)
+      : null;
+  const telaffuzSkillStat = input.skillStats?.telaffuz;
+  const telaffuzSkillPct =
+    telaffuzSkillStat && telaffuzSkillStat.total > 0
+      ? Math.round((telaffuzSkillStat.correct / telaffuzSkillStat.total) * 100)
+      : null;
+
+  const pronSignals = [avgPronScore, phonemeCleanPct, telaffuzSkillPct].filter(
+    (v): v is number => v !== null
+  );
+  const pronunciationPercent =
+    pronSignals.length > 0
+      ? Math.min(
+          100,
+          Math.round(
+            pronSignals.reduce((s, v) => s + v, 0) / pronSignals.length
+          )
+        )
+      : 0;
+
+  const fiveCoreSkills: CoreLanguageSkillRow[] = [
+    {
+      id: "vocabulary",
+      icon: "📖",
+      titleTr: "Kelime Bilgisi",
+      titleAr: "المُفْرَدَات",
+      percent: vocabPercent,
+      summaryText: `${learnedAndVisualCount} kelime · Görsel: ${visualDoneTotal}/${gorselKelimeler.length}`,
+      detailText:
+        vocabAccuracyPct !== null
+          ? `Alıştırma doğruluğu: %${vocabAccuracyPct}`
+          : "Sözlük ve 998 görsel kelime tekrarı",
+      actionHref: "/alistirmalar?pool=visual_words",
+      actionLabel: "Kelime Çalış",
+    },
+    {
+      id: "reading",
+      icon: "📚",
+      titleTr: "Okuduğunu Anlama",
+      titleAr: "الفَهْمُ القِرَائِيّ",
+      percent: readingPercent,
+      summaryText: `${completedReadingsCount} / ${metinler.length} okuma metni`,
+      detailText:
+        readingAccuracyPct !== null
+          ? `Kanıt Avcısı & Okuma başarısı: %${readingAccuracyPct}`
+          : "60 bağlamlı okuma metni ve Kanıt Avcısı",
+      actionHref: "/alistirmalar?mode=evidence-hunter",
+      actionLabel: "Okuma & Kanıt Avcısı",
+    },
+    {
+      id: "listening",
+      icon: "🎧",
+      titleTr: "Dinleme & Muhâdese",
+      titleAr: "الاِسْتِمَاعُ وَالمُحَادَثَة",
+      percent: listeningPercent,
+      summaryText: `${completedDialoguesCount} / ${diyaloglar.length} diyalog · ${watchedCount} video`,
+      detailText:
+        listeningAccPct !== null
+          ? `Kör Dikte & Dinleme doğruluğu: %${listeningAccPct}`
+          : "120 günlük diyalog, video ve Kör Dikte",
+      actionHref: "/alistirmalar?mode=blind-dictation",
+      actionLabel: "Dinleme & Dikte",
+    },
+    {
+      id: "grammar",
+      icon: "📐",
+      titleTr: "Sarf & Nahiv / İ'rab",
+      titleAr: "القَوَاعِدُ وَالإِعْرَاب",
+      percent: grammarPercent,
+      summaryText: `${totalCompletedGrammar} tamamlandı · ${totalStudyingGrammar} çalışılıyor / ${totalGrammarCatalogCount}`,
+      detailText:
+        gramerAccPct !== null
+          ? `Hata Avcısı & İ'rab doğruluğu: %${gramerAccPct}`
+          : "195 gramer konusu, Hata Avcısı ve İ'rab Boyama",
+      actionHref: "/alistirmalar?mode=error-hunter",
+      actionLabel: "Hata Avcısı & İ'rab",
+    },
+    {
+      id: "pronunciation",
+      icon: "🎙️",
+      titleTr: "Telaffuz & Mahreç",
+      titleAr: "النُّطْقُ وَالمَخَارِج",
+      percent: pronunciationPercent,
+      summaryText: `${totalPronCount} sesli pratik${
+        avgPronScore !== null ? ` · Gölgeleme ort.: %${avgPronScore}` : ""
+      }`,
+      detailText:
+        phonemeCleanPct !== null
+          ? `28 Harf Mahreç isabeti: %${phonemeCleanPct}`
+          : "Gölgeleme (Shadowing) ve 28 Harf Mahreç pratiği",
+      actionHref: "/harf-mahrec",
+      actionLabel: "Mahreç & Gölgeleme",
+    },
+  ];
+
   return {
     totalXp,
     rank,
@@ -1164,5 +1558,7 @@ export function computeLearningAnalyticsSnapshot(
     cefrProgress,
     moduleProgress,
     frequentMistakes,
+    fiveCoreSkills,
+    grammarCompetencyMatrix,
   };
 }

@@ -41,6 +41,7 @@ import {
   playSuccess,
   playWrong,
 } from "@/lib/sfxManager";
+import { GrammarHapBilgiModal } from "@/components/ui/GrammarHapBilgiPanel";
 
 export interface ErrorHunterProps {
   cefrFilter?: "all" | Level;
@@ -465,6 +466,7 @@ export default function ErrorHunter({
   const [wrongRepairChoices, setWrongRepairChoices] = useState<string[]>([]);
   const [selectedRepair, setSelectedRepair] = useState<string | null>(null);
   const [hadAnyMistakeOnCurrent, setHadAnyMistakeOnCurrent] = useState(false);
+  const [isGrammarRuleModalOpen, setIsGrammarRuleModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const [correctFirstTryCount, setCorrectFirstTryCount] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -577,6 +579,7 @@ export default function ErrorHunter({
     setWrongRepairChoices([]);
     setSelectedRepair(null);
     setHadAnyMistakeOnCurrent(false);
+    setIsGrammarRuleModalOpen(false);
     setIsPlayingAudio(false);
     setStage(item?.hasSingleSpanDiff ? "spot" : "repair");
     setRemainingSeconds(timeLimit);
@@ -1111,6 +1114,28 @@ export default function ErrorHunter({
           </div>
         )}
 
+        {/* YANLIŞ DENEME GERİ BİLDİRİM KUTUSU VE GRAMER KÖPRÜSÜ */}
+        {(hadAnyMistakeOnCurrent ||
+          spotWrongIndices.length > 0 ||
+          wrongRepairChoices.length > 0) &&
+          (currentItem.sourceId || currentItem.konuBasligi) && (
+            <div className="rounded-2xl bg-rose-50/90 dark:bg-rose-950/35 border border-rose-300 dark:border-rose-700 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150">
+              <div className="text-xs font-bold text-rose-950 dark:text-rose-100 leading-relaxed">
+                Bu cümlede takıldınız mı? Doğru hareke ve cümle yapısını kavramak için bağlı gramer kuralını inceleyebilirsiniz.
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsGrammarRuleModalOpen(true);
+                }}
+                className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <span>💡 İlgili Gramer Kuralını Gör</span>
+              </button>
+            </div>
+          )}
+
         {/* Adım 1'de takılanlar için doğrudan Tamir adımına geçme yardımcısı */}
         {effectiveStage === "spot" && (
           <div className="flex items-center justify-between gap-2 pt-1">
@@ -1132,6 +1157,13 @@ export default function ErrorHunter({
           </div>
         )}
       </div>
+
+      <GrammarHapBilgiModal
+        isOpen={isGrammarRuleModalOpen}
+        onClose={() => setIsGrammarRuleModalOpen(false)}
+        sourceId={currentItem.sourceId}
+        grammarTopic={currentItem.konuBasligi}
+      />
     </div>
   );
 }

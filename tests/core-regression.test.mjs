@@ -276,8 +276,13 @@ function resolveCandidateFile(basePath) {
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "next/dynamic") {
-      return nextResolve("next/dynamic.js", context);
+    if (
+      specifier === "next/dynamic" ||
+      specifier === "next/link" ||
+      specifier === "next/navigation" ||
+      specifier === "next/image"
+    ) {
+      return nextResolve(`${specifier}.js`, context);
     }
     if (specifier.startsWith("@/")) {
       const target = resolveCandidateFile(
@@ -6025,6 +6030,192 @@ test("51. UTF-8/CESU-8 Kesin Doğrulaması, Tüm Alıştırma Modüllerinde Gör
   );
 });
 
+test("52. CEFR Kazanım & 5 Temel Beceri Haritası, Çift Yönlü Gramer-Alıştırma Köprüsü, A1 Sezdirme Özeti ve 30 Dakikalık Çalışma Rotası", async () => {
+  // 1. learningAnalytics.ts: 5 Temel Dil Becerisi + 195 Gramer Kazanım Isı Haritası (A1, A2, B1, B2)
+  const { computeLearningAnalyticsSnapshot } = await import(
+    "../src/lib/learningAnalytics.ts"
+  );
 
+  const snapshot = computeLearningAnalyticsSnapshot({
+    learnedWords: ["كِتَابٌ", "قَلَمٌ", "مَدْرَسَةٌ"],
+    completedDialogues: ["dlg_001", "dlg_066", "metin_07"],
+    mistakeIds: ["dlg_070"],
+    srsRecords: {
+      grm_001: {
+        id: "grm_001",
+        type: "word",
+        box: 2,
+        status: "learning",
+        nextReviewAt: "2026-11-20T00:00:00.000Z",
+        lastReviewedAt: "2026-11-14T10:00:00.000Z",
+        correctCount: 2,
+        wrongCount: 1,
+      },
+    },
+    pronunciationScores: [88, 94],
+    pronunciationHistory: [
+      { id: "p1", score: 91, timestamp: "2026-11-14T10:00:00.000Z" },
+    ],
+    totalPronunciationAttempts: 3,
+    studyMinutes: 25,
+    activityXp: 1400,
+    streakDays: 5,
+    lastStudyDate: "2026-11-14",
+    todayStr: "2026-11-14",
+    yesterdayStr: "2026-11-13",
+    dailyGoalMinutes: 30,
+    topicMastery: {
+      grm_002: { correct: 3, total: 5 },
+    },
+    skillStats: {
+      okuma: { correct: 9, total: 10 },
+      dinleme: { correct: 8, total: 10 },
+      konusma: { correct: 6, total: 7 },
+      kelime: { correct: 22, total: 25 },
+      gramer: { correct: 7, total: 9 },
+    },
+    completedLevelExams: ["A1"],
+    phonemeStats: {
+      ع: { attempts: 5, cleanHits: 4, confusions: 1 },
+    },
+    watchedVideos: ["vid_1", "vid_2"],
+    storedLastExercise: null,
+  });
 
+  assert.equal(
+    Array.isArray(snapshot.fiveCoreSkills) && snapshot.fiveCoreSkills.length === 5,
+    true,
+    "5 Temel Dil Becerisi ilerleme dizisi tam 5 beceri satırı içermelidir"
+  );
+  assert.deepEqual(
+    snapshot.fiveCoreSkills.map((s) => s.titleAr),
+    [
+      "المُفْرَدَات",
+      "الفَهْمُ القِرَائِيّ",
+      "الاِسْتِمَاعُ وَالمُحَادَثَة",
+      "القَوَاعِدُ وَالإِعْرَاب",
+      "النُّطْقُ وَالمَخَارِج",
+    ],
+    "5 Temel Dil Becerisi Arapça başlıkları eksiksiz eşleşmelidir"
+  );
 
+  assert.deepEqual(
+    snapshot.grammarCompetencyMatrix.map((g) => g.level),
+    ["A1", "A2", "B1", "B2"],
+    "Gramer kazanım matrisi A1, A2, B1 ve B2 CEFR gruplarını içermelidir"
+  );
+  const allMatrixItems = snapshot.grammarCompetencyMatrix.flatMap((g) => g.items);
+  assert.equal(
+    allMatrixItems.length,
+    195,
+    "Gramer kazanım matrisi 195 birleşik gramer kazanımının tamamını kapsamalıdır"
+  );
+  assert.equal(
+    allMatrixItems.find((i) => i.bagliId === "dlg_066")?.status,
+    "completed",
+    "Tamamlanan diyaloğa ait gramer kazanımı 'completed' (✓ Tamamlandı) olarak işaretlenmelidir"
+  );
+  assert.equal(
+    allMatrixItems.find((i) => i.bagliId === "metin_07")?.status,
+    "completed",
+    "Tamamlanan okuma metnine ait gramer kazanımı 'completed' (✓ Tamamlandı) olarak işaretlenmelidir"
+  );
+  assert.equal(
+    allMatrixItems.find((i) => i.bagliId === "dlg_070")?.status,
+    "studying",
+    "Hata defterindeki gramer kazanımı 'studying' (◐ Çalışılıyor) olarak işaretlenmelidir"
+  );
+
+  // 2. StatsAndBadgesModal.tsx: 4. Sekme "🧭 CEFR & Beceri Haritası" ve sıfır satır içi style={{
+  const statsModalCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "StatsAndBadgesModal.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    statsModalCode.includes('"cefr_map"') &&
+      statsModalCode.includes("🧭 CEFR & Beceri Haritası") &&
+      statsModalCode.includes("fiveCoreSkills") &&
+      statsModalCode.includes("grammarCompetencyMatrix") &&
+      statsModalCode.includes("router.push(item.targetHref)"),
+    true,
+    "StatsAndBadgesModal 4. sekme olarak CEFR & Beceri Haritası'nı ve doğrudan hedef derse/alıştırmaya yönlendirmeyi içermelidir"
+  );
+  assert.equal(
+    statsModalCode.includes("style={{"),
+    false,
+    "StatsAndBadgesModal içinde satır içi style={{ kullanılmamalıdır"
+  );
+
+  // 3. GrammarHapBilgiPanel.tsx + kutuphane/page.tsx: İleri köprü + A1 Sezdirme + A1'de kapalı İ'rab Tahlili
+  const { resolveGrammarNoteAndSentences } = await import(
+    "../src/components/ui/GrammarHapBilgiPanel.tsx"
+  );
+  const resolvedMetin007 = resolveGrammarNoteAndSentences({ sourceId: "metin_007" });
+  assert.equal(
+    resolvedMetin007.resolvedNote?.bagli_id === "metin_07" &&
+      resolvedMetin007.linkedLevel === "A1",
+    true,
+    "resolveGrammarNoteAndSentences 3 haneli 'metin_007' kimliğini 'metin_07' (A1) olarak çözümlemelidir"
+  );
+
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    grammarPanelCode.includes("🌱 A1 Başlangıç Özeti (Kalıp Olarak Öğren)") &&
+      (grammarPanelCode.includes("🔍 İleri Düzey (B1-B2) Akademik İ'rab Tahlilini Göster ▾") ||
+        grammarPanelCode.includes("🔍 İleri Düzey (B1-B2) Akademik İ&apos;rab Tahlilini Göster ▾")) &&
+      grammarPanelCode.includes("🎯 Bu Konuyu Alıştırmalarda Çalış") &&
+      grammarPanelCode.includes("📖 Bağlı Diyalog / Metne Git") &&
+      grammarPanelCode.includes("!isA1Level"),
+    true,
+    "GrammarHapBilgiPanel A1 Sezdirme özetini, A1'de varsayılan kapalı İ'rab katmanını ve çift yönlü köprü butonlarını içermelidir"
+  );
+
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    kutuphaneCode.includes("🎯 Bu Konuyu Alıştırmalarda Çalış") &&
+      kutuphaneCode.includes("📖 Bağlı Diyalog / Metne Git"),
+    true,
+    "Kütüphane Gramer Atlası kartlarında her iki köprü butonu yer almalıdır"
+  );
+
+  // 4. Alıştırmadan Gramere Ters Köprü: MultipleChoice.tsx, ErrorHunter.tsx, IrabColorPainter.tsx
+  for (const modFile of [
+    "MultipleChoice.tsx",
+    "ErrorHunter.tsx",
+    "IrabColorPainter.tsx",
+  ]) {
+    const code = fs.readFileSync(
+      path.join(ROOT_DIR, "src", "components", "exercises", modFile),
+      "utf8"
+    );
+    assert.equal(
+      code.includes("💡 İlgili Gramer Kuralını Gör") &&
+        code.includes("GrammarHapBilgiModal"),
+      true,
+      `${modFile} yanlış cevapta '💡 İlgili Gramer Kuralını Gör' butonuyla GrammarHapBilgiModal açmalıdır`
+    );
+  }
+
+  // 5. Ana Sayfa (src/app/page.tsx): "Bugünkü 30 Dakikalık Arapça Çalışma Rotam" 4 adımlı canlı rehber
+  const homePageCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    homePageCode.includes("Bugünkü 30 Dakikalık Arapça Çalışma Rotam") &&
+      homePageCode.includes("1. Adım · 5 dk") &&
+      homePageCode.includes("2. Adım · 10 dk") &&
+      homePageCode.includes("3. Adım · 10 dk") &&
+      homePageCode.includes("4. Adım · 5 dk") &&
+      homePageCode.includes("✓ Tamamlandı") &&
+      homePageCode.includes("Başla →"),
+    true,
+    "Ana sayfada 4 adımlı 'Bugünkü 30 Dakikalık Arapça Çalışma Rotam' canlı rehberi yer almalıdır"
+  );
+});

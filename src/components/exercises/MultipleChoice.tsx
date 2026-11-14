@@ -50,6 +50,10 @@ import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
 import { lookupVisualWordGorsel } from "@/lib/visualWordImageLookup";
+import {
+  GrammarHapBilgiModal,
+  resolveGrammarNoteAndSentences,
+} from "@/components/ui/GrammarHapBilgiPanel";
 
 export type QuizContentType = "words" | "idioms" | "sentences" | "mixed";
 export type FeedbackMode = "instant" | "end";
@@ -66,6 +70,8 @@ export interface QuizQuestionItem {
   imageUrl?: string;
   literalTr?: string;
   usageNote?: string;
+  grammarSourceId?: string;
+  grammarTopic?: string;
   options: { text: string; isCorrect: boolean }[];
 }
 
@@ -100,6 +106,7 @@ interface Props {
   timeLimit: number | null;
   questionCount?: number;
   isMistakesMode?: boolean;
+  grammarFilter?: string;
   onClose?: () => void;
 }
 
@@ -115,11 +122,16 @@ export default function MultipleChoice({
   timeLimit,
   questionCount = 10,
   isMistakesMode: _isMistakesMode = false,
+  grammarFilter = "all",
   onClose,
 }: Props) {
   const fanfarePlayedRef = useRef(false);
   const wrongAttemptedQuestionsRef = useRef<Set<string>>(new Set());
   const [roundSeed, setRoundSeed] = useState(0);
+  const [activeGrammarBridge, setActiveGrammarBridge] = useState<{
+    sourceId?: string;
+    grammarTopic?: string;
+  } | null>(null);
   const [customQuestions, setCustomQuestions] = useState<
     QuizQuestionItem[] | null
   >(null);
@@ -167,6 +179,9 @@ export default function MultipleChoice({
       }))
       .filter((w) => w.arabic.length > 0 && w.turkish.length > 0);
 
+    const activeGrammarTopicProp =
+      grammarFilter && grammarFilter !== "all" ? grammarFilter : undefined;
+
     const idiomPool: {
       id: string;
       arabic: string;
@@ -174,15 +189,30 @@ export default function MultipleChoice({
       metaLabel: string;
       literalTr?: string;
       usageNote?: string;
+      grammarSourceId?: string;
+      grammarTopic?: string;
     }[] = idioms
-      .map((idm) => ({
-        id: `idm-${idm.id}`,
-        arabic: idm.arabic.trim(),
-        turkish: idm.meaningTr.trim(),
-        metaLabel: `✨ Kalıp İfade · Seviye: ${idm.level || "A1-B2"}`,
-        literalTr: idm.literalTr,
-        usageNote: idm.usageNote,
-      }))
+      .map((idm) => {
+        const extractedTopic = idm.literalTr?.startsWith("Odak Kalıp:")
+          ? idm.literalTr.replace(/^Odak Kalıp:\s*/i, "").trim()
+          : activeGrammarTopicProp;
+        const extractedSource =
+          idm.id.startsWith("dlg_") ||
+          idm.id.startsWith("metin_") ||
+          idm.id.startsWith("grm_")
+            ? idm.id
+            : undefined;
+        return {
+          id: `idm-${idm.id}`,
+          arabic: idm.arabic.trim(),
+          turkish: idm.meaningTr.trim(),
+          metaLabel: `✨ Kalıp İfade · Seviye: ${idm.level || "A1-B2"}`,
+          literalTr: idm.literalTr,
+          usageNote: idm.usageNote,
+          grammarSourceId: extractedSource,
+          grammarTopic: extractedTopic,
+        };
+      })
       .filter((i) => i.arabic.length > 0 && i.turkish.length > 0);
 
     const sentencePool: {
@@ -193,11 +223,19 @@ export default function MultipleChoice({
       topBadge: string;
       promptQuestionTr: string;
       imageUrl?: string;
+      grammarSourceId?: string;
+      grammarTopic?: string;
     }[] = [];
 
     dialogues.forEach((dlg) => {
       const isVisualDlg =
         dlg.id === "pool_visual" || dlg.id.startsWith("pool_visual");
+      const dlgGrammarSource =
+        dlg.id.startsWith("dlg_") ||
+        dlg.id.startsWith("metin_") ||
+        dlg.id.startsWith("grm_")
+          ? dlg.id
+          : undefined;
       dlg.satirlar.forEach((line) => {
         if (line.arapca.trim() && line.turkce.trim()) {
           const srcMeta = resolveSentenceSourceMeta(
@@ -221,6 +259,8 @@ export default function MultipleChoice({
             topBadge: srcMeta.topBadge,
             promptQuestionTr: srcMeta.promptQuestionTr,
             imageUrl: matchedImg,
+            grammarSourceId: dlgGrammarSource,
+            grammarTopic: line.odak_kalip || activeGrammarTopicProp,
           });
         }
       });
@@ -297,6 +337,7 @@ export default function MultipleChoice({
         metaLabel: target.metaLabel,
         wordId: target.wordId,
         imageUrl: resolvedWordImg,
+        grammarTopic: activeGrammarTopicProp,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -345,6 +386,8 @@ export default function MultipleChoice({
         metaLabel: target.metaLabel,
         literalTr: target.literalTr,
         usageNote: target.usageNote,
+        grammarSourceId: target.grammarSourceId,
+        grammarTopic: target.grammarTopic,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -391,6 +434,8 @@ export default function MultipleChoice({
         topBadge: target.topBadge,
         promptQuestionTr: target.promptQuestionTr,
         imageUrl: target.imageUrl,
+        grammarSourceId: target.grammarSourceId,
+        grammarTopic: target.grammarTopic,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -1006,6 +1051,34 @@ export default function MultipleChoice({
               </div>
             )}
 
+            {!reviewAns?.isCorrect &&
+              Boolean(reviewQ.grammarSourceId || reviewQ.grammarTopic) &&
+              Boolean(
+                resolveGrammarNoteAndSentences({
+                  sourceId: reviewQ.grammarSourceId,
+                  grammarTopic: reviewQ.grammarTopic,
+                }).resolvedNote
+              ) && (
+                <div className="rounded-xl bg-rose-50/90 dark:bg-rose-950/35 border border-rose-300 dark:border-rose-700 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
+                  <span className="text-xs font-bold text-rose-950 dark:text-rose-100">
+                    Bu sorunun bağlı olduğu gramer yapısını inceleyerek hatanızı pekiştirin:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setActiveGrammarBridge({
+                        sourceId: reviewQ.grammarSourceId,
+                        grammarTopic: reviewQ.grammarTopic,
+                      });
+                    }}
+                    className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                  >
+                    <span>💡 İlgili Gramer Kuralını Gör</span>
+                  </button>
+                </div>
+              )}
+
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-[#E2D3B8]">
               <button
                 type="button"
@@ -1119,6 +1192,13 @@ export default function MultipleChoice({
             </button>
           )}
         </div>
+
+        <GrammarHapBilgiModal
+          isOpen={Boolean(activeGrammarBridge)}
+          onClose={() => setActiveGrammarBridge(null)}
+          sourceId={activeGrammarBridge?.sourceId}
+          grammarTopic={activeGrammarBridge?.grammarTopic}
+        />
       </div>
     );
   }
@@ -1389,6 +1469,39 @@ export default function MultipleChoice({
           </div>
         )}
 
+      {/* YANLIŞ CEVAP VERİLDİĞİNDE İLGİLİ GRAMER KURALI TERS KÖPRÜSÜ */}
+      {feedbackMode === "instant" &&
+        Boolean(selected) &&
+        !currentQuestion.options.find((o) => o.text === selected)?.isCorrect &&
+        Boolean(
+          currentQuestion.grammarSourceId || currentQuestion.grammarTopic
+        ) &&
+        Boolean(
+          resolveGrammarNoteAndSentences({
+            sourceId: currentQuestion.grammarSourceId,
+            grammarTopic: currentQuestion.grammarTopic,
+          }).resolvedNote
+        ) && (
+          <div className="rounded-2xl bg-rose-50/90 dark:bg-rose-950/35 border-2 border-rose-300 dark:border-rose-700 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-left animate-in fade-in duration-150">
+            <div className="text-xs font-bold text-rose-950 dark:text-rose-100 leading-relaxed">
+              Yanlış cevap! Bu cümledeki gramer kuralını ve örneklerini incelemek ister misiniz?
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setActiveGrammarBridge({
+                  sourceId: currentQuestion.grammarSourceId,
+                  grammarTopic: currentQuestion.grammarTopic,
+                });
+              }}
+              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+            >
+              <span>💡 İlgili Gramer Kuralını Gör</span>
+            </button>
+          </div>
+        )}
+
       {/* ÖNCEKİ SORU / SONRAKİ SORU (VEYA TESTİ BİTİR) NAVİGASYON BAR */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <button
@@ -1414,6 +1527,13 @@ export default function MultipleChoice({
           <ArrowRight size={16} />
         </button>
       </div>
+
+      <GrammarHapBilgiModal
+        isOpen={Boolean(activeGrammarBridge)}
+        onClose={() => setActiveGrammarBridge(null)}
+        sourceId={activeGrammarBridge?.sourceId}
+        grammarTopic={activeGrammarBridge?.grammarTopic}
+      />
     </div>
   );
 }

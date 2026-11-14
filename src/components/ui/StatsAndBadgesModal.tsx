@@ -20,6 +20,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Lock,
+  Compass,
 } from "lucide-react";
 import {
   useUserStore,
@@ -31,7 +32,10 @@ import {
   computeLearningAnalyticsSnapshot,
   readStoredLastExerciseSummary,
   FrequentMistakeRow,
+  GrammarCompetencyStatus,
 } from "@/lib/learningAnalytics";
+import { Level } from "@/types/data";
+import { MixedText } from "@/components/ui/MixedText";
 import {
   playDualGenderAudio,
   speakHybrid,
@@ -45,7 +49,7 @@ const ShadowingModal = dynamic(
   { ssr: false }
 );
 
-export type StatsModalTab = "badges" | "charts" | "mistakes";
+export type StatsModalTab = "badges" | "charts" | "mistakes" | "cefr_map";
 
 export interface StatsAndBadgesModalProps {
   isOpen: boolean;
@@ -118,6 +122,10 @@ export default function StatsAndBadgesModal({
       ? tabOverride.tab
       : initialTab;
   const [mistakeFilter, setMistakeFilter] = useState<MistakeFilterKind>("all");
+  const [cefrLevelFilter, setCefrLevelFilter] = useState<"all" | Level>("all");
+  const [cefrStatusFilter, setCefrStatusFilter] = useState<
+    "all" | GrammarCompetencyStatus
+  >("all");
   const [playingRowId, setPlayingRowId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState("");
   const [studentClass, setStudentClass] = useState("");
@@ -867,11 +875,11 @@ export default function StatsAndBadgesModal({
               </div>
             </section>
 
-            {/* 2. 3 SEKMELİ DETAYLI ANALİZ ÇUBUĞU */}
+            {/* 2. 4 SEKMELİ DETAYLI ANALİZ ÇUBUĞU */}
             <div
               role="tablist"
               aria-label="Öğrenme Analiz Sekmeleri"
-              className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-[#EFE5D2] dark:bg-[var(--background)] p-1.5 rounded-2xl border border-[#E6D7BE] dark:border-[var(--border)]"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 bg-[#EFE5D2] dark:bg-[var(--background)] p-1.5 rounded-2xl border border-[#E6D7BE] dark:border-[var(--border)]"
             >
               {(
                 [
@@ -889,6 +897,11 @@ export default function StatsAndBadgesModal({
                     id: "mistakes",
                     label: `⚠️ En Çok Hata Yapılanlar & Ses Dinleme (${snapshot.frequentMistakes.length})`,
                     icon: AlertTriangle,
+                  },
+                  {
+                    id: "cefr_map",
+                    label: "🧭 CEFR & Beceri Haritası",
+                    icon: Compass,
                   },
                 ] as const
               ).map((tab) => {
@@ -1422,6 +1435,291 @@ export default function StatsAndBadgesModal({
                     })}
                   </div>
                 )}
+              </section>
+            )}
+
+            {/* SEKME 4: 🧭 CEFR KAZANIM & BECERİ HARİTASI */}
+            {activeTab === "cefr_map" && (
+              <section
+                role="tabpanel"
+                aria-label="CEFR Kazanım ve 5 Temel Dil Becerisi Haritası"
+                className="space-y-4"
+              >
+                {/* ÜST BÖLÜM: 5 TEMEL DİL BECERİSİ İLERLEME ÇUBUĞU */}
+                <div className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-5 space-y-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                        🧭 5 Temel Dil Becerisi Gelişim Çubuğu
+                      </h3>
+                      <p className="text-xs font-medium text-[var(--muted)] mt-0.5">
+                        Gerçek çalışma, okuma, dinleme, gramer ve sesli telaffuz verilerinizden canlı hesaplanır.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {snapshot.fiveCoreSkills.map((skill, idx) => {
+                      const barVariant =
+                        skill.id === "grammar"
+                          ? "purple"
+                          : skill.id === "pronunciation"
+                          ? "amber"
+                          : "emerald";
+                      return (
+                        <div
+                          key={skill.id}
+                          className={`rounded-xl bg-[#FAF4E8] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 space-y-2 ${
+                            idx === 4 ? "md:col-span-2" : ""
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                              <span className="text-base shrink-0">
+                                {skill.icon}
+                              </span>
+                              <span className="text-xs sm:text-sm font-black text-[var(--foreground)]">
+                                {skill.titleTr}
+                              </span>
+                              <span
+                                dir="rtl"
+                                lang="ar"
+                                className="arabic font-arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-400"
+                              >
+                                ({skill.titleAr})
+                              </span>
+                            </div>
+                            <span className="text-sm font-black text-[#087F5B] dark:text-emerald-400 tabular-nums shrink-0">
+                              %{skill.percent}
+                            </span>
+                          </div>
+
+                          <SvgProgressBar
+                            percent={skill.percent}
+                            variant={barVariant}
+                          />
+
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
+                            <div className="text-[var(--muted)] font-semibold space-x-1.5">
+                              <span className="text-[var(--foreground)] font-bold tabular-nums">
+                                {skill.summaryText}
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span>{skill.detailText}</span>
+                            </div>
+                            <Link
+                              href={skill.actionHref}
+                              onClick={() => {
+                                playClick();
+                                handleCloseModal();
+                              }}
+                              className="inline-flex items-center gap-1 font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:underline shrink-0"
+                            >
+                              <span>{skill.actionLabel}</span>
+                              <ArrowRight size={12} />
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ALT BÖLÜM: A1, A2, B1, B2 GRAMER KAZANIM MATRİSİ (ISI HARİTASI) */}
+                <div className="rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+                        📐 A1 – B2 Gramer Kazanım Matrisi (Isı Haritası)
+                      </h3>
+                      <p className="text-xs font-medium text-[var(--muted)] mt-0.5">
+                        Herhangi bir kazanım rozetine tıklayarak doğrudan bağlı diyaloğa, okuma metnine veya gramer alıştırmasına gidin.
+                      </p>
+                    </div>
+
+                    {/* Renk Anahtarı / Durum Filtresi */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {(
+                        [
+                          { id: "all", label: "Tüm Durumlar" },
+                          { id: "completed", label: "✓ Tamamlandı" },
+                          { id: "studying", label: "◐ Çalışılıyor" },
+                          { id: "not_started", label: "○ Başlanmadı" },
+                        ] as const
+                      ).map((st) => {
+                        const active = cefrStatusFilter === st.id;
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setCefrStatusFilter(st.id);
+                            }}
+                            className={`min-h-[34px] px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
+                              active
+                                ? "bg-[#087F5B] text-white"
+                                : "bg-[#FAF4E8] dark:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)]"
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Kur Filtresi (Tümü / A1 / A2 / B1 / B2) */}
+                  <div className="flex flex-wrap items-center gap-1.5 pb-1 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)]">
+                    {(["all", "A1", "A2", "B1", "B2"] as const).map((lvl) => {
+                      const active = cefrLevelFilter === lvl;
+                      const groupObj =
+                        lvl === "all"
+                          ? null
+                          : snapshot.grammarCompetencyMatrix.find(
+                              (g) => g.level === lvl
+                            );
+                      return (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setCefrLevelFilter(lvl);
+                          }}
+                          className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-extrabold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+                            active
+                              ? "bg-[#6741D9] text-white"
+                              : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] hover:border-[#6741D9] border border-[#E6D7BE] dark:border-[var(--border)]"
+                          }`}
+                        >
+                          {lvl === "all"
+                            ? "Tüm Kurlar (A1–B2)"
+                            : `${lvl} Kuru (${groupObj?.completedCount || 0}/${
+                                groupObj?.totalCount || 0
+                              })`}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Kur Grupları */}
+                  <div className="space-y-4">
+                    {snapshot.grammarCompetencyMatrix
+                      .filter(
+                        (grp) =>
+                          cefrLevelFilter === "all" ||
+                          grp.level === cefrLevelFilter
+                      )
+                      .map((grp) => {
+                        const visibleItems = grp.items.filter(
+                          (it) =>
+                            cefrStatusFilter === "all" ||
+                            it.status === cefrStatusFilter
+                        );
+
+                        return (
+                          <div
+                            key={grp.level}
+                            className="rounded-2xl bg-[#FAF4E8] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] p-3.5 sm:p-4 space-y-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-[#087F5B] text-white text-xs font-black">
+                                  {grp.level}
+                                </span>
+                                <h4 className="text-xs sm:text-sm font-black text-[var(--foreground)]">
+                                  {grp.titleTr}
+                                </h4>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-bold tabular-nums">
+                                <span className="text-[#065F46] dark:text-emerald-400">
+                                  ✓ {grp.completedCount} Tamamlandı
+                                </span>
+                                <span aria-hidden="true" className="text-[var(--muted)]">
+                                  ·
+                                </span>
+                                <span className="text-amber-700 dark:text-amber-300">
+                                  ◐ {grp.studyingCount} Çalışılıyor
+                                </span>
+                                <span aria-hidden="true" className="text-[var(--muted)]">
+                                  ·
+                                </span>
+                                <span className="text-slate-500 dark:text-slate-400">
+                                  ○ {grp.notStartedCount} Başlanmadı
+                                </span>
+                              </div>
+                            </div>
+
+                            <SvgProgressBar
+                              percent={grp.percent}
+                              variant={grp.percent >= 70 ? "emerald" : "purple"}
+                            />
+
+                            {visibleItems.length === 0 ? (
+                              <p className="text-xs font-semibold text-[var(--muted)] py-2 text-center">
+                                Bu kurda seçili duruma ait gramer kazanımı bulunmuyor.
+                              </p>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {visibleItems.map((item) => {
+                                  const badgeStyle =
+                                    item.status === "completed"
+                                      ? "bg-emerald-50 dark:bg-emerald-950/45 border-emerald-500 text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100/80"
+                                      : item.status === "studying"
+                                      ? "bg-amber-50 dark:bg-amber-950/45 border-amber-400 text-amber-950 dark:text-amber-100 hover:bg-amber-100/80"
+                                      : "bg-white dark:bg-[var(--background)] border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[#087F5B]";
+                                  const statusGlyph =
+                                    item.status === "completed"
+                                      ? "✓"
+                                      : item.status === "studying"
+                                      ? "◐"
+                                      : "○";
+
+                                  return (
+                                    <button
+                                      key={`${grp.level}-${item.bagliId}`}
+                                      type="button"
+                                      onClick={() => {
+                                        playClick();
+                                        handleCloseModal();
+                                        router.push(item.targetHref);
+                                      }}
+                                      className={`min-h-[44px] rounded-xl border p-2.5 text-left flex flex-col justify-between gap-1.5 transition-colors cursor-pointer ${badgeStyle}`}
+                                    >
+                                      <div className="flex items-start justify-between gap-1.5">
+                                        <span
+                                          dir="ltr"
+                                          lang="tr"
+                                          className="text-xs font-bold leading-snug line-clamp-2"
+                                        >
+                                          <MixedText text={item.title} />
+                                        </span>
+                                        <span className="text-[11px] font-black shrink-0 tabular-nums">
+                                          {statusGlyph}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold opacity-85">
+                                        <span className="truncate">
+                                          {item.domainEmoji} {item.domainShortTitle} ·{" "}
+                                          {item.statusLabel}
+                                        </span>
+                                        <span className="inline-flex items-center gap-0.5 font-extrabold shrink-0">
+                                          <span>{item.targetKindLabel}</span>
+                                          <ArrowRight size={10} />
+                                        </span>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
               </section>
             )}
           </div>

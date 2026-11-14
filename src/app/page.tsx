@@ -156,6 +156,7 @@ export default function HomePage() {
     mistakeIds,
     srsRecords,
     pronunciationScores,
+    pronunciationHistory,
     studyMinutes,
     activityXp,
     streakDays,
@@ -773,62 +774,237 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* BÖLÜM 1.5: BUGÜN NE ÇALIŞMALIYIM? (~12 DAKİKALIK AKILLI PAKET) */}
+      {/* BÖLÜM 1.5: BUGÜNKÜ 30 DAKİKALIK ARAPÇA ÇALIŞMA ROTAM (4 ADIMLI REHBER + GÜNLÜK ÖNİZLEME) */}
       <section
-        aria-label="Bugün Ne Çalışmalıyım? Akıllı Günlük Çalışma Paketi"
-        className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#087F5B] dark:border-[#087F5B]/80 border-b-4 pt-4 sm:pt-5 px-3.5 sm:px-4 pb-3.5 sm:pb-4 space-y-3"
+        aria-label="Bugünkü 30 Dakikalık Arapça Çalışma Rotam"
+        className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#087F5B] dark:border-[#087F5B]/80 border-b-4 pt-4 sm:pt-5 px-3.5 sm:px-4 pb-3.5 sm:pb-4 space-y-4"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-3">
-          <div className="space-y-0.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-3">
+          <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-600 dark:bg-emerald-600 text-white text-xs font-extrabold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs sm:text-sm font-black">
                 <Target size={15} />
-                <span>Bugün Ne Çalışmalıyım?</span>
+                <span>Bugünkü 30 Dakikalık Arapça Çalışma Rotam</span>
               </span>
-              <span className="px-2 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/30 text-[11px] font-extrabold text-[#6741D9] dark:text-[#d0bfff]">
-                ~12 Dakikalık Akıllı Paket
+              <span className="text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] tabular-nums">
+                Bugün: {todayStudyMinutes} / 30 dk
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Diyalog, Okuma Metni, SRS Kelime, {contentStats.sentenceCount} Günlük Cümle ve {contentStats.proverbCount} Atasözü modüllerinden oluşan kişisel günlük çalışma planınız
+              &ldquo;Şimdi ne yapmalıyım?&rdquo; sorusuna tek bakışta cevap veren 4 adımlı günlük çalışma rotanız ({activeLevel} Kuru):
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <Link
-              href={`/diyalog/${dailyPackage.dailyDialogue.dialogue.id}`}
-              onClick={() => playClick()}
-              data-tooltip="Bugün için önerilen sesli diyaloğu açın ve dinleyin"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all whitespace-nowrap"
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStatsModalTab("cefr_map");
+              }}
+              className="flex-1 sm:flex-initial min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9]/60 hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] transition-colors whitespace-nowrap cursor-pointer"
             >
-              <BookOpen size={14} className="text-[#065F46] dark:text-emerald-400" />
-              <span>Günün Diyaloğu</span>
-            </Link>
-
-            <Link
-              href={`/metin/${recommendedReading.id}`}
-              onClick={() => playClick()}
-              data-tooltip="Bugün için önerilen okuma metnini açın"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:border-[#6741D9] transition-all whitespace-nowrap"
-            >
-              <BookOpen size={14} />
-              <span>Günün Metni</span>
-            </Link>
+              <span>🧭 CEFR &amp; Beceri Haritası</span>
+            </button>
 
             <Link
               href="/alistirmalar?plan=daily"
               onClick={() => playClick()}
               data-tooltip="Aralıklı tekrar (SRS) algoritmasıyla seçilen kelimelerle günlük çalışmayı başlatın"
               data-tooltip-align="right"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white border-b-3 border-emerald-800 text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all whitespace-nowrap shadow-xs"
+              className="w-full sm:w-auto min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-b-3 border-emerald-800 text-xs font-extrabold active:border-b-0 active:translate-y-0.5 transition-all whitespace-nowrap shadow-xs"
             >
               <Play size={14} fill="currentColor" />
-              <span>12 Dakikalık Günlük Paketi Başlat</span>
+              <span>Günlük Paketi Başlat</span>
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch">
+        {/* 4 ADIMLI 30 DAKİKALIK CANLI ÇALIŞMA ROTASI */}
+        {(() => {
+          const todayIso = mounted ? getTodayDateString() : "";
+          const srsList = mounted ? Object.values(srsRecords || {}) : [];
+          const reviewedSrsToday =
+            Boolean(todayIso) &&
+            srsList.some(
+              (r) => r && r.lastReviewedAt && r.lastReviewedAt.startsWith(todayIso)
+            );
+          const grammarReviewedToday =
+            Boolean(todayIso) &&
+            (srsList.some(
+              (r) =>
+                r &&
+                r.lastReviewedAt?.startsWith(todayIso) &&
+                (r.id.startsWith("grm_") ||
+                  r.id.startsWith("dlg_") ||
+                  r.id.startsWith("metin_"))
+            ) ||
+              Object.values(topicMastery || {}).some(
+                (t) => t && t.lastTestedAt && t.lastTestedAt.startsWith(todayIso)
+              ));
+          const pronunciationDoneToday =
+            Boolean(todayIso) &&
+            (pronunciationHistory || []).some(
+              (p) => p && p.timestamp && p.timestamp.startsWith(todayIso)
+            );
+
+          const step1Done =
+            mounted &&
+            (reviewedSrsToday ||
+              (todayStudyMinutes >= 5 && (skillStats?.kelime?.total || 0) > 0));
+          const step2Done =
+            mounted &&
+            (completedDialogues.includes(recommendedDialogue.id) ||
+              completedDialogues.includes(recommendedReading.id) ||
+              todayStudyMinutes >= 15);
+          const step3Done =
+            mounted && (grammarReviewedToday || todayStudyMinutes >= 25);
+          const step4Done =
+            mounted && (pronunciationDoneToday || todayStudyMinutes >= 30);
+
+          const step1Href =
+            mounted && (mistakeIds?.length || 0) > 0
+              ? "/alistirmalar?pool=mistakes"
+              : "/alistirmalar?plan=daily";
+
+          const routeSteps = [
+            {
+              stepNo: 1,
+              badge: "1. Adım · 5 dk",
+              title: "Kelime & SRS Tekrarı",
+              desc:
+                mounted && (mistakeIds?.length || 0) > 0
+                  ? `Hata defterindeki ${mistakeIds.length} öğeyi ve SRS kelimelerini tekrar et`
+                  : "SRS vadesi gelen kelimeler ve görsel kelime kartları",
+              done: step1Done,
+              primaryHref: step1Href,
+              secondaryAction: {
+                label: "Görsel Kelimeler",
+                href: "/alistirmalar?pool=visual_words",
+              },
+            },
+            {
+              stepNo: 2,
+              badge: "2. Adım · 10 dk",
+              title: "Bağlamlı Diyalog / Okuma",
+              desc: `Sıradaki ${recommendedDialogue.seviye} diyaloğu (${recommendedDialogue.baslik_tr}) veya okuma metni`,
+              done: step2Done,
+              primaryHref: `/diyalog/${recommendedDialogue.id}`,
+              secondaryAction: {
+                label: "Okuma Metnine Git",
+                href: `/metin/${recommendedReading.id}`,
+              },
+            },
+            {
+              stepNo: 3,
+              badge: "3. Adım · 10 dk",
+              title: "Gramer & Uygulama",
+              desc: "Günün gramer hap bilgisi ve Hata Avcısı / İ'rab uygulaması",
+              done: step3Done,
+              primaryHref: `/alistirmalar?mode=error-hunter&autostart=1`,
+              onSecondaryClick: () => {
+                playClick();
+                setActiveGrammarModal({ dialogueId: recommendedDialogue.id });
+              },
+              secondaryLabel: "📌 Günün Gramer Notu",
+            },
+            {
+              stepNo: 4,
+              badge: "4. Adım · 5 dk",
+              title: "Sesli Telaffuz / Oyun",
+              desc: "Gölgeleme pratiği veya Balon Safari / Hafızanı Yokla oyunu",
+              done: step4Done,
+              primaryHref: "/alistirmalar?mode=balloon-safari&autostart=1",
+              onSecondaryClick: () => {
+                playClick();
+                setShadowingModalData({
+                  text: featuredDialogue.line.arapca,
+                  audioUrl: featuredDialogue.line.ses_dosyasi,
+                });
+              },
+              secondaryLabel: "🎙️ Gölgeleme · 🃏 Hafızanı Yokla",
+              extraHref: "/alistirmalar?mode=memory-flip&autostart=1",
+            },
+          ];
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              {routeSteps.map((st) => (
+                <div
+                  key={st.stepNo}
+                  className={`rounded-2xl border-2 p-3.5 flex flex-col justify-between gap-3 transition-colors ${
+                    st.done
+                      ? "bg-emerald-50/90 dark:bg-emerald-950/35 border-[#087F5B]"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B]"
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-black text-[#087F5B] dark:text-emerald-400 tabular-nums">
+                        {st.badge}
+                      </span>
+                      <Link
+                        href={st.primaryHref}
+                        onClick={() => playClick()}
+                        className={`min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-black inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors ${
+                          st.done
+                            ? "bg-[#087F5B] text-white"
+                            : "bg-[#6741D9] hover:bg-[#5230B5] text-white"
+                        }`}
+                      >
+                        {st.done ? (
+                          <span>✓ Tamamlandı</span>
+                        ) : (
+                          <span>Başla →</span>
+                        )}
+                      </Link>
+                    </div>
+
+                    <h3 className="text-sm font-black text-[var(--foreground)] leading-snug">
+                      {st.title}
+                    </h3>
+                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-2">
+                      {st.desc}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-dashed border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
+                    {st.secondaryAction ? (
+                      <Link
+                        href={st.secondaryAction.href}
+                        onClick={() => playClick()}
+                        className="font-extrabold text-[#065F46] dark:text-emerald-400 hover:underline"
+                      >
+                        {st.secondaryAction.label} →
+                      </Link>
+                    ) : st.onSecondaryClick ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={st.onSecondaryClick}
+                          className="font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:underline cursor-pointer text-left"
+                        >
+                          {st.stepNo === 4 ? "🎙️ Gölgeleme" : st.secondaryLabel}
+                        </button>
+                        {st.extraHref && (
+                          <Link
+                            href={st.extraHref}
+                            onClick={() => playClick()}
+                            className="font-extrabold text-[#065F46] dark:text-emerald-400 hover:underline"
+                          >
+                            🃏 Hafızanı Yokla
+                          </Link>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch pt-1">
           {/* 1. SÜTUN: 📖 1. DİYALOG & METİN */}
           <div className="bg-white dark:bg-[var(--background)] rounded-xl border border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
             <div className="flex items-center justify-between gap-1.5">

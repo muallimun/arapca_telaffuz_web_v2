@@ -3404,6 +3404,7 @@ function ExercisesPageContent() {
               isMistakesMode={
                 frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
+              grammarFilter={grammarFilter}
               onClose={handleCloseExercise}
             />
           )}

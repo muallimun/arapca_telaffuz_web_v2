@@ -35,6 +35,7 @@ import {
   playSuccess,
   playWrong,
 } from "@/lib/sfxManager";
+import { GrammarHapBilgiModal } from "@/components/ui/GrammarHapBilgiPanel";
 
 export interface IrabColorPainterProps {
   cefrFilter?: "all" | Level;
@@ -498,6 +499,9 @@ export default function IrabColorPainter({
   );
   const [wrongSegFlash, setWrongSegFlash] = useState<string | null>(null);
   const [hadMistakeOnCurrent, setHadMistakeOnCurrent] = useState(false);
+  const [grammarModalForItemId, setGrammarModalForItemId] = useState<
+    string | null
+  >(null);
   const [cleanSentencesCount, setCleanSentencesCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -1037,6 +1041,26 @@ export default function IrabColorPainter({
           </div>
         )}
 
+        {/* YANLIŞ FIRÇA DENEMESİNDE İLGİLİ GRAMER KURALI GERİ BİLDİRİM KÖPRÜSÜ */}
+        {hadMistakeOnCurrent &&
+          (currentItem.sourceId || currentItem.konuBasligi) && (
+            <div className="rounded-2xl bg-rose-50/90 dark:bg-rose-950/35 border border-rose-300 dark:border-rose-700 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150">
+              <div className="text-xs font-bold text-rose-950 dark:text-rose-100 leading-relaxed">
+                Öge ve hareke eşleştirmesinde zorlandınız mı? Bu cümlenin dayandığı gramer kuralını hemen inceleyebilirsiniz.
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setGrammarModalForItemId(currentItem.id);
+                }}
+                className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <span>💡 İlgili Gramer Kuralını Gör</span>
+              </button>
+            </div>
+          )}
+
         {/* CÜMLE TAMAMLANDIĞINDA SONRAKİ BUTONU */}
         {isCurrentSentenceDone && (
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E6D7BE]/70 dark:border-[var(--border)]">
@@ -1060,6 +1084,13 @@ export default function IrabColorPainter({
           </div>
         )}
       </div>
+
+      <GrammarHapBilgiModal
+        isOpen={grammarModalForItemId === currentItem.id}
+        onClose={() => setGrammarModalForItemId(null)}
+        sourceId={currentItem.sourceId}
+        grammarTopic={currentItem.konuBasligi}
+      />
     </div>
   );
 }

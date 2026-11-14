@@ -536,7 +536,7 @@ export function buildDynamicAssessmentTopics(
 
     const topicItem: DynamicAssessmentTopicMeta = {
       ust_konu,
-      icon: known?.icon || "📘",
+      icon: known?.icon || "🏛️",
       primaryLevel,
       questionCount: stat.count,
       levelRange: primaryLevel,

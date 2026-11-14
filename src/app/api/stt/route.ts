@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pipeline, env } from "@huggingface/transformers";
+import { createIpRateLimiter, getClientIp } from "@/lib/apiRateLimit";
 
 env.allowLocalModels = false;
 
@@ -187,30 +188,20 @@ function parseWavBufferToFloat32(buffer: ArrayBuffer): Float32Array {
 }
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
-const MAX_AUDIO_SAMPLES = 16000 * 30; // 30 saniye @ 16kHz
+const MAX_AUDIO_SECONDS = 30;
+const HARD_LIMIT_AUDIO_SECONDS = 35;
+const MAX_AUDIO_SAMPLES = 16000 * MAX_AUDIO_SECONDS; // 30 saniye @ 16kHz
+const HARD_LIMIT_AUDIO_SAMPLES = 16000 * HARD_LIMIT_AUDIO_SECONDS; // >35 saniye HTTP 400 ile reddedilir
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 dakika
 const RATE_LIMIT_MAX_REQUESTS = 20;
 
-const ipRequestHistory = new Map<string, number[]>();
+const sttRateLimiter = createIpRateLimiter({
+  maxRequestsPerMinute: RATE_LIMIT_MAX_REQUESTS,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+});
 
 function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const prev = ipRequestHistory.get(ip) || [];
-  const valid = prev.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (valid.length >= RATE_LIMIT_MAX_REQUESTS) {
-    ipRequestHistory.set(ip, valid);
-    return true;
-  }
-  valid.push(now);
-  ipRequestHistory.set(ip, valid);
-  if (ipRequestHistory.size > 500) {
-    for (const [k, list] of ipRequestHistory.entries()) {
-      if (list.every((ts) => now - ts >= RATE_LIMIT_WINDOW_MS)) {
-        ipRequestHistory.delete(k);
-      }
-    }
-  }
-  return false;
+  return sttRateLimiter.isRateLimited(ip);
 }
 
 export async function GET() {
@@ -220,7 +211,7 @@ export async function GET() {
       service: "stt",
       status: "ready",
       maxBytes: MAX_BODY_BYTES,
-      maxDurationSec: 30,
+      maxDurationSec: MAX_AUDIO_SECONDS,
       rateLimitPerMinute: RATE_LIMIT_MAX_REQUESTS,
     },
     { status: 200 }
@@ -229,10 +220,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const clientIp =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      req.headers.get("x-real-ip")?.trim() ||
-      "anonymous";
+    const clientIp = getClientIp(req);
 
     if (isRateLimited(clientIp)) {
       return NextResponse.json(
@@ -332,18 +320,23 @@ export async function POST(req: NextRequest) {
         );
       }
       if (Array.isArray(body?.samples) && body.samples.length > 0) {
-        if (body.samples.length > MAX_AUDIO_SAMPLES) {
+        if (body.samples.length > HARD_LIMIT_AUDIO_SAMPLES) {
           return NextResponse.json(
             {
               ok: false,
               text: "",
-              error: "Ses örneği sayısı 30 saniye (480.000 örnek) sınırını aşıyor.",
+              error:
+                "Ses kaydı 30 saniye sınırını aşıyor, lütfen daha kısa bir kayıt gönderin.",
             },
-            { status: 413 }
+            { status: 400 }
           );
         }
+        const boundedSamples =
+          body.samples.length > MAX_AUDIO_SAMPLES
+            ? body.samples.slice(0, MAX_AUDIO_SAMPLES)
+            : body.samples;
         if (
-          body.samples.some(
+          boundedSamples.some(
             (v: unknown) => typeof v !== "number" || !Number.isFinite(v)
           )
         ) {
@@ -356,7 +349,7 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
-        pcm16k = Float32Array.from(body.samples, (v: number) =>
+        pcm16k = Float32Array.from(boundedSamples, (v: number) =>
           Math.max(-1, Math.min(1, v))
         );
       } else if (typeof body?.audioBase64 === "string" && body.audioBase64.trim()) {
@@ -397,6 +390,18 @@ export async function POST(req: NextRequest) {
         );
       }
       pcm16k = parseWavBufferToFloat32(ab);
+    }
+
+    if (pcm16k.length > HARD_LIMIT_AUDIO_SAMPLES) {
+      return NextResponse.json(
+        {
+          ok: false,
+          text: "",
+          error:
+            "Ses kaydı 30 saniye sınırını aşıyor, lütfen daha kısa bir kayıt gönderin.",
+        },
+        { status: 400 }
+      );
     }
 
     if (pcm16k.length > MAX_AUDIO_SAMPLES) {

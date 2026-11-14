@@ -6,8 +6,16 @@ import {
   synthesizeEdgeTtsBuffer,
   synthesizeGoogleTtsBuffer,
 } from "@/lib/serverTts";
+import { createIpRateLimiter, getClientIp } from "@/lib/apiRateLimit";
 
 export const runtime = "nodejs";
+
+const ADMIN_RATE_LIMIT_WINDOW_MS = 60_000;
+const ADMIN_RATE_LIMIT_MAX_REQUESTS = 30;
+const adminRateLimiter = createIpRateLimiter({
+  maxRequestsPerMinute: ADMIN_RATE_LIMIT_MAX_REQUESTS,
+  windowMs: ADMIN_RATE_LIMIT_WINDOW_MS,
+});
 
 export type AdminDatasetKey =
   | "gorsel_kelimeler"
@@ -504,6 +512,17 @@ async function githubPutFile(params: {
 
 export async function GET(req: NextRequest) {
   try {
+    if (adminRateLimiter.isRateLimited(getClientIp(req))) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Çok fazla istek gönderildi (429 Too Many Requests). Dakikada en fazla 30 yönetici isteği yapılabilir.",
+        },
+        { status: 429 }
+      );
+    }
+
     const configuredSecret = (process.env.ADMIN_SECRET || "").trim();
     if (process.env.NODE_ENV === "production" && !configuredSecret) {
       return NextResponse.json(
@@ -584,6 +603,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (adminRateLimiter.isRateLimited(getClientIp(req))) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Çok fazla istek gönderildi (429 Too Many Requests). Dakikada en fazla 30 yönetici isteği yapılabilir.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const action = body?.action as AdminPostAction | undefined;
 

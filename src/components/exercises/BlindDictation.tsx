@@ -541,7 +541,10 @@ export default function BlindDictation({
     };
   }, [clearPendingTimers]);
 
+  const answerLockedRef = useRef<boolean>(false);
+
   const resetQuestionState = useCallback(() => {
+    answerLockedRef.current = false;
     clearPendingTimers();
     stopAllAudio();
     setPlacedTileIds([]);
@@ -573,7 +576,8 @@ export default function BlindDictation({
     const timer = setTimeout(() => {
       if (remainingSeconds <= 1) {
         setRemainingSeconds(0);
-        if (currentEntry) {
+        if (currentEntry && !answerLockedRef.current) {
+          answerLockedRef.current = true;
           void playWrong();
           recordSkillAttempt("imla", false);
           recordSkillAttempt("dinleme", false);
@@ -610,7 +614,8 @@ export default function BlindDictation({
   ]);
 
   const handleCheckDictation = async () => {
-    if (!currentEntry || dictationEval !== "idle") return;
+    if (!currentEntry || dictationEval !== "idle" || answerLockedRef.current) return;
+    answerLockedRef.current = true;
 
     if (dictationStyle === "tiles") {
       const targetWords = tokenizeSentenceWords(currentEntry.arabic);
@@ -693,7 +698,12 @@ export default function BlindDictation({
 
   const handleApplyHarakaStone = useCallback(
     async (harakaId: string) => {
-      if (!currentEntry || tashkeelEval !== "idle" || tashkeelSlots.length === 0) {
+      if (
+        !currentEntry ||
+        tashkeelEval !== "idle" ||
+        answerLockedRef.current ||
+        tashkeelSlots.length === 0
+      ) {
         return;
       }
       playClick();
@@ -713,6 +723,8 @@ export default function BlindDictation({
         setActiveSlotIdx(nextUnfilledIdx);
         return;
       }
+
+      answerLockedRef.current = true;
 
       // Tüm boşluklar doldurulduysa anında değerlendir
       const allRight = tashkeelSlots.every(

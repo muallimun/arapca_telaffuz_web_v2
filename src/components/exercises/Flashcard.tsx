@@ -35,19 +35,24 @@ import ShadowingModal from "@/components/ui/ShadowingModal";
 import {
   formatArabicText,
   formatTurkishCategory,
+  removeArabicHarakat,
 } from "@/lib/arabicTextUtils";
 import { MixedText } from "@/components/ui/MixedText";
 import { QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import {
+  lookupVisualWordGorsel,
+  VISUAL_IMAGE_BY_ARABIC,
+  VISUAL_IMAGE_BY_ID,
+} from "@/lib/visualWordImageLookup";
 
-const VISUAL_IMAGE_BY_ID = new Map<string, string>();
-const VISUAL_IMAGE_BY_ARABIC = new Map<string, string>();
+const BARE_VISUAL_FALLBACK = new Map<string, string>();
 for (const gk of gorselKelimeler) {
-  if (gk.gorsel) {
-    VISUAL_IMAGE_BY_ID.set(gk.id, gk.gorsel);
-    if (gk.arapca?.trim() && !VISUAL_IMAGE_BY_ARABIC.has(gk.arapca.trim())) {
-      VISUAL_IMAGE_BY_ARABIC.set(gk.arapca.trim(), gk.gorsel);
+  if (gk.gorsel && gk.arapca?.trim()) {
+    const bare = removeArabicHarakat(gk.arapca.split("/")[0].trim()).trim();
+    if (bare && !BARE_VISUAL_FALLBACK.has(bare)) {
+      BARE_VISUAL_FALLBACK.set(bare, gk.gorsel);
     }
   }
 }
@@ -104,9 +109,18 @@ export function getShortDialogueSentences(dialogues: Dialogue[]): FlashcardItem[
           line.konusmaci
         );
         const cleanSpeaker = formatTurkishCategory(line.konusmaci);
+        const speakerArTrim = (line.konusmaci_ar || "").trim();
         const matchedVisualImg = isVisualPool
-          ? VISUAL_IMAGE_BY_ARABIC.get((line.konusmaci_ar || "").trim())
-          : undefined;
+          ? VISUAL_IMAGE_BY_ARABIC.get(speakerArTrim) ||
+            lookupVisualWordGorsel({
+              arabic: speakerArTrim,
+              exampleAr: ar,
+              allowBareMatch: true,
+            })
+          : lookupVisualWordGorsel({
+              exampleAr: ar,
+              allowBareMatch: false,
+            });
         items.push({
           id: `sent_${dlg.id}_${line.sira}`,
           kind: "sentence",
@@ -170,10 +184,20 @@ export default function Flashcard({
     const wordCards: FlashcardItem[] = vocabulary
       .map((w) => {
         const primaryAr = (w.mufret || w.mazi || "").trim();
+        const barePrimaryAr = removeArabicHarakat(
+          primaryAr.split("/")[0].trim()
+        ).trim();
         const resolvedGorsel =
           w.gorsel ||
           VISUAL_IMAGE_BY_ID.get(w.id) ||
-          (isVisualWordsMode ? VISUAL_IMAGE_BY_ARABIC.get(primaryAr) : undefined);
+          lookupVisualWordGorsel({
+            id: w.id,
+            directGorsel: w.gorsel,
+            arabic: primaryAr,
+            exampleAr: w.ornek_ar,
+            allowBareMatch: true,
+          }) ||
+          (barePrimaryAr ? BARE_VISUAL_FALLBACK.get(barePrimaryAr) : undefined);
         return {
           id: `word_${w.id}`,
           kind: "word" as const,
@@ -235,7 +259,7 @@ export default function Flashcard({
     }
     return wordCards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsSignature, contentType, questionCount, roundSeed]);
+  }, [itemsSignature, contentType, questionCount, roundSeed, isVisualWordsMode]);
 
   const shuffledPool = useMemo(() => {
     return shuffleArray(fullPool).slice(0, questionCount);
@@ -472,7 +496,16 @@ export default function Flashcard({
   const formatAr = (t: string) => formatArabicText(t, showHareke, arabicFont);
   const displayArabic = formatAr(primaryArabic);
 
-  const rawCardImage = currentCard.imageUrl || currentWord?.gorsel || "";
+  const rawCardImage =
+    currentCard.imageUrl ||
+    currentWord?.gorsel ||
+    lookupVisualWordGorsel({
+      id: currentWord?.id || currentCard.id,
+      arabic: currentCard.kind === "word" ? primaryArabic : undefined,
+      exampleAr: currentCard.kind === "sentence" ? primaryArabic : currentWord?.ornek_ar,
+      allowBareMatch: isVisualWordsMode || currentCard.kind === "word",
+    }) ||
+    "";
   const resolvedCardImageUrl = rawCardImage
     ? resolveImageUrl(rawCardImage)
     : "";
@@ -612,7 +645,7 @@ export default function Flashcard({
       {/* 3B DÖNEN KART ALANI */}
       <div
         className={`relative w-full cursor-pointer [perspective:1000px] ${
-          showCardImage ? "h-[396px] sm:h-[436px]" : "h-76 sm:h-82"
+          showCardImage ? "h-[440px] sm:h-[488px]" : "h-76 sm:h-82"
         }`}
         onClick={() => {
           setIsFlipped(!isFlipped);
@@ -773,7 +806,7 @@ export default function Flashcard({
             {/* Üst/Orta Görsel Kelime Resmi + Arapça Kelime / Kalıp / Cümle */}
             <div className="my-auto flex flex-col items-center justify-center text-center gap-2 px-2 w-full min-h-0">
               {showCardImage && (
-                <div className="w-full max-w-[210px] sm:max-w-[250px] h-32 sm:h-40 rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 flex items-center justify-center shadow-2xs shrink-0 mx-auto">
+                <div className="w-full max-w-[220px] sm:max-w-[260px] rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 flex items-center justify-center shadow-2xs shrink-0 mx-auto">
                   <img
                     src={resolvedCardImageUrl}
                     alt={currentCard.turkish}
@@ -785,7 +818,7 @@ export default function Flashcard({
                         [resolvedCardImageUrl]: true,
                       }))
                     }
-                    className="w-full h-full object-contain select-none"
+                    className="h-32 sm:h-40 w-full object-contain select-none"
                   />
                 </div>
               )}
@@ -844,12 +877,18 @@ export default function Flashcard({
 
             <div className="my-auto space-y-2.5 w-full flex flex-col items-center justify-center min-h-0">
               {showCardImage && (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white dark:bg-slate-900/85 border border-[#6741D9]/30 p-1.5 flex items-center justify-center shadow-2xs shrink-0">
+                <div className="w-full max-w-[210px] sm:max-w-[250px] rounded-2xl bg-white dark:bg-slate-900/85 border border-[#6741D9]/30 p-2 flex items-center justify-center shadow-2xs shrink-0 mx-auto">
                   <img
                     src={resolvedCardImageUrl}
                     alt={currentCard.turkish}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-contain select-none"
+                    onError={() =>
+                      setFailedImageMap((prev) => ({
+                        ...prev,
+                        [resolvedCardImageUrl]: true,
+                      }))
+                    }
+                    className="h-32 sm:h-40 w-full object-contain select-none"
                   />
                 </div>
               )}

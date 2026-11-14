@@ -97,6 +97,7 @@ export default function WhatIsThisGame({
   const [shareOpen, setShareOpen] = useState(false);
 
   const summarySavedRef = useRef(false);
+  const answerLockedRef = useRef(false);
 
   useEffect(() => {
     void loadAudioManifest();
@@ -135,6 +136,10 @@ export default function WhatIsThisGame({
   const currentQuestion = questions[currentIndex] || questions[0];
   const currentAnswer = answersMap[currentIndex];
   const isAnswered = Boolean(currentAnswer);
+
+  useEffect(() => {
+    answerLockedRef.current = Boolean(answersMap[currentIndex]);
+  }, [currentIndex, answersMap]);
 
   const correctCount = useMemo(
     () => Object.values(answersMap).filter((a) => a.isCorrect).length,
@@ -206,7 +211,16 @@ export default function WhatIsThisGame({
 
   const handleSelectOption = useCallback(
     (option: ResimliKelime) => {
-      if (!currentQuestion || isAnswered || isFinished || isTimeUp) return;
+      if (
+        !currentQuestion ||
+        isAnswered ||
+        answerLockedRef.current ||
+        isFinished ||
+        isTimeUp
+      ) {
+        return;
+      }
+      answerLockedRef.current = true;
 
       const isCorrect = option.id === currentQuestion.target.id;
       setSelectedOptionId(option.id);
@@ -256,6 +270,7 @@ export default function WhatIsThisGame({
   );
 
   const handleNextQuestion = useCallback(() => {
+    answerLockedRef.current = false;
     playClick();
     setSelectedOptionId(null);
     setUsedAudioHint(false);
@@ -315,6 +330,7 @@ export default function WhatIsThisGame({
   const resetForNewRun = (nextCustom: WhatIsThisQuestion[] | null, bumpSeed: boolean) => {
     playStart();
     summarySavedRef.current = false;
+    answerLockedRef.current = false;
     setCustomQuestions(nextCustom);
     if (bumpSeed) setRoundSeed((s) => s + 1);
     setCurrentIndex(0);

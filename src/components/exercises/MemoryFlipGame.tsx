@@ -1677,12 +1677,12 @@ export default function MemoryFlipGame({
         </div>
       </header>
 
-      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol %78+ Kaydırmasız Kart Masası + Sağ Kompakt w-64 Yan Panel */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5 sm:gap-3.5 p-2.5 sm:p-4 overflow-y-auto lg:overflow-hidden">
+      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol %78+ Kaydırmasız Kart Masası + Sağ Kompakt lg:w-60 xl:w-64 Yan Panel */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5 sm:gap-3 p-2 sm:p-3.5 overflow-y-auto lg:overflow-hidden">
         {/* SOL KART IZGARASI: Masaüstünde ekranın >%75'i, 8/12/16 kartın tamamı sıfır kaydırmayla sığar */}
-        <div className="order-2 lg:order-1 flex-1 min-w-0 lg:h-full rounded-3xl p-2.5 sm:p-4 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner flex flex-col justify-center lg:overflow-hidden">
+        <div className="order-2 lg:order-1 flex-1 min-w-0 min-h-0 lg:h-full rounded-3xl p-2 sm:p-3.5 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner flex flex-col justify-center lg:overflow-hidden">
           <div
-            className={`grid ${boardGridClass} gap-2 sm:gap-2.5 md:gap-3 w-full my-auto`}
+            className={`flex-1 min-h-0 grid ${boardGridClass} content-center gap-2 sm:gap-2.5 md:gap-3 w-full`}
           >
             {deck.map((card, idx) => {
               const isMatched = matchedPairIds.includes(card.pairId);
@@ -1697,7 +1697,7 @@ export default function MemoryFlipGame({
               return (
                 <div
                   key={card.uid}
-                  className="relative h-24 sm:h-32 md:h-36 lg:max-h-[calc((100dvh-8.25rem)/4)] [perspective:1000px]"
+                  className="relative h-[clamp(5.2rem,17vh,8.8rem)] [perspective:1000px]"
                 >
                   <div
                     role="button"
@@ -1716,9 +1716,9 @@ export default function MemoryFlipGame({
                   >
                     {/* KAPALI KART: Sıcak krem/kum (#EFE3C8) + mercan kırmızısı deniz kabuğu (#E05A47) */}
                     <div className="absolute inset-0 rounded-2xl bg-[#EFE3C8] hover:bg-[#F5EAD2] border-2 border-[#D4C19C] border-b-[5px] border-b-[#B59B6D] shadow-md flex items-center justify-center gap-2 p-2 [backface-visibility:hidden] transition-colors">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs shrink-0">
+                      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs shrink-0">
                         <Shell
-                          size={26}
+                          size={24}
                           strokeWidth={2.2}
                           className="text-[#E05A47]"
                         />
@@ -1728,9 +1728,9 @@ export default function MemoryFlipGame({
                       </span>
                     </div>
 
-                    {/* AÇIK / EŞLEŞMİŞ KART: Yatay ergonomik görsel + büyük tipografi */}
+                    {/* AÇIK / EŞLEŞMİŞ KART: Ortalı kırpılmaz görsel + büyük tipografi */}
                     <div
-                      className={`absolute inset-0 rounded-2xl border-2 border-b-[5px] px-2 py-1.5 sm:px-3 sm:py-2 flex flex-col justify-between shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
+                      className={`absolute inset-0 rounded-2xl border-2 border-b-[5px] px-2 py-1 sm:px-2.5 sm:py-1.5 flex flex-col justify-between shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
                         isMatched
                           ? "bg-[#1F6E50] border-[#34D399] border-b-[#134733] text-white"
                           : isMismatch
@@ -1783,11 +1783,11 @@ export default function MemoryFlipGame({
                         )}
                       </div>
 
-                      {/* Kart Gövdesi: Sol Kare Görsel + Sağ Büyük Okunaklı Arapça / Türkçe */}
-                      <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-2 sm:gap-3">
+                      {/* Kart Gövdesi: Ortalı object-contain görsel + Büyük Okunaklı Arapça / Türkçe */}
+                      <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-2 sm:gap-2.5">
                         {hasValidImage ? (
                           <div
-                            className={`w-11 h-11 sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square rounded-xl overflow-hidden border shrink-0 ${
+                            className={`w-10 h-10 sm:w-13 sm:h-13 md:w-15 md:h-15 aspect-square rounded-xl overflow-hidden border p-0.5 flex items-center justify-center shrink-0 ${
                               isMatched
                                 ? "border-emerald-300/60 bg-white"
                                 : "border-slate-200 dark:border-slate-600 bg-white"
@@ -1803,21 +1803,21 @@ export default function MemoryFlipGame({
                                   [card.source.pairId]: true,
                                 }))
                               }
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain"
                             />
                           </div>
                         ) : (
                           <div
-                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 ${
                               isMatched
                                 ? "bg-white/15 text-emerald-100"
                                 : "bg-amber-100/80 dark:bg-slate-700 text-[#0F766E] dark:text-teal-300"
                             }`}
                           >
                             {card.side === "A" ? (
-                              <Volume2 size={18} />
+                              <Volume2 size={17} />
                             ) : (
-                              <BookOpen size={18} />
+                              <BookOpen size={17} />
                             )}
                           </div>
                         )}
@@ -1826,7 +1826,7 @@ export default function MemoryFlipGame({
                           {card.side === "A" ? (
                             <div
                               dir="rtl"
-                              className={`arabic text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed truncate max-w-full ${
+                              className={`arabic text-2xl sm:text-3xl font-bold leading-snug truncate max-w-full ${
                                 isMatched
                                   ? "text-white"
                                   : "text-slate-900 dark:text-white"
@@ -1855,8 +1855,8 @@ export default function MemoryFlipGame({
           </div>
         </div>
 
-        {/* SAĞ KOMPAKT YAN PANEL (lg:w-64): Skorlar + Dairesel Süre & Hamle + Bilgi Notu (Kök & Örnek Cümle) */}
-        <aside className="order-1 lg:order-2 w-full lg:w-64 shrink-0 lg:h-full min-h-0 flex flex-col gap-2 overflow-hidden">
+        {/* SAĞ KOMPAKT YAN PANEL (w-full lg:w-60 xl:w-64): Skorlar + Dairesel Süre & Hamle + Bilgi Notu (Kök & Örnek Cümle) */}
+        <aside className="order-1 lg:order-2 w-full lg:w-60 xl:w-64 shrink-0 lg:h-full min-h-0 flex flex-col gap-2 overflow-hidden">
           {/* 1. Oyuncu Skor Kartları (Kompakt) */}
           <div
             className={`shrink-0 grid gap-1.5 ${

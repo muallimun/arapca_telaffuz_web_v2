@@ -16,7 +16,7 @@ import {
   stripParentheticalArabicExamples,
   generateSynonymAntonymMcQuestions,
 } from "@/lib/quiz";
-import { cumleler1111, atasozleri } from "@/lib/data";
+import { cumleler1111, atasozleri, resolveImageUrl } from "@/lib/data";
 import {
   CheckCircle2,
   XCircle,
@@ -49,6 +49,7 @@ import { MixedText } from "@/components/ui/MixedText";
 import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import { lookupVisualWordGorsel } from "@/lib/visualWordImageLookup";
 
 export type QuizContentType = "words" | "idioms" | "sentences" | "mixed";
 export type FeedbackMode = "instant" | "end";
@@ -62,6 +63,7 @@ export interface QuizQuestionItem {
   topBadge?: string;
   promptQuestionTr?: string;
   wordId?: string;
+  imageUrl?: string;
   literalTr?: string;
   usageNote?: string;
   options: { text: string; isCorrect: boolean }[];
@@ -92,6 +94,7 @@ interface Props {
   dialogues?: Dialogue[];
   synonymEntries?: SynonymAntonymEntry[];
   isSynonymsAntonymsMode?: boolean;
+  isVisualWordsMode?: boolean;
   contentType?: QuizContentType;
   feedbackMode?: FeedbackMode;
   timeLimit: number | null;
@@ -106,6 +109,7 @@ export default function MultipleChoice({
   dialogues = [],
   synonymEntries = [],
   isSynonymsAntonymsMode = false,
+  isVisualWordsMode = false,
   contentType = "words",
   feedbackMode = "instant",
   timeLimit,
@@ -119,6 +123,7 @@ export default function MultipleChoice({
   const [customQuestions, setCustomQuestions] = useState<
     QuizQuestionItem[] | null
   >(null);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const { speechRate, showHareke, arabicFont } = useSettings();
   const { addStudyMinutes, addMistake, recordItemAttempt } = useUserStore();
 
@@ -187,9 +192,12 @@ export default function MultipleChoice({
       metaLabel: string;
       topBadge: string;
       promptQuestionTr: string;
+      imageUrl?: string;
     }[] = [];
 
     dialogues.forEach((dlg) => {
+      const isVisualDlg =
+        dlg.id === "pool_visual" || dlg.id.startsWith("pool_visual");
       dlg.satirlar.forEach((line) => {
         if (line.arapca.trim() && line.turkce.trim()) {
           const srcMeta = resolveSentenceSourceMeta(
@@ -197,6 +205,14 @@ export default function MultipleChoice({
             dlg.baslik_tr,
             line.konusmaci
           );
+          const matchedImg =
+            isVisualDlg || isVisualWordsMode
+              ? lookupVisualWordGorsel({
+                  arabic: line.konusmaci_ar,
+                  exampleAr: line.arapca,
+                  allowBareMatch: true,
+                })
+              : undefined;
           sentencePool.push({
             id: `s-${dlg.id}-${line.sira}`,
             arabic: line.arapca.trim(),
@@ -204,6 +220,7 @@ export default function MultipleChoice({
             metaLabel: srcMeta.bottomMeta,
             topBadge: srcMeta.topBadge,
             promptQuestionTr: srcMeta.promptQuestionTr,
+            imageUrl: matchedImg,
           });
         }
       });
@@ -259,6 +276,19 @@ export default function MultipleChoice({
         3
       );
 
+      const resolvedWordImg =
+        targetItem?.gorsel ||
+        lookupVisualWordGorsel({
+          id: target.wordId,
+          directGorsel: targetItem?.gorsel,
+          arabic: target.arabic,
+          exampleAr: targetItem?.ornek_ar,
+          allowBareMatch:
+            isVisualWordsMode ||
+            Boolean(targetItem?.gorsel) ||
+            target.wordId.startsWith("gk_"),
+        });
+
       return {
         id: target.id,
         kind: "word",
@@ -266,6 +296,7 @@ export default function MultipleChoice({
         turkish: target.turkish,
         metaLabel: target.metaLabel,
         wordId: target.wordId,
+        imageUrl: resolvedWordImg,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -359,6 +390,7 @@ export default function MultipleChoice({
         metaLabel: target.metaLabel,
         topBadge: target.topBadge,
         promptQuestionTr: target.promptQuestionTr,
+        imageUrl: target.imageUrl,
         options: shuffleArray([
           { text: target.turkish, isCorrect: true },
           ...distractors,
@@ -399,7 +431,13 @@ export default function MultipleChoice({
       .slice(0, questionCount)
       .map(buildWordQuestion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsSignature, contentType, questionCount, roundSeed]);
+  }, [
+    itemsSignature,
+    contentType,
+    questionCount,
+    roundSeed,
+    isVisualWordsMode,
+  ]);
 
   const questions = customQuestions || generatedQuestions;
   const questionsSignature = useMemo(
@@ -482,6 +520,22 @@ export default function MultipleChoice({
     showHareke,
     arabicFont
   );
+  const rawQuestionImage =
+    currentQuestion.imageUrl ||
+    lookupVisualWordGorsel({
+      id: currentQuestion.wordId || currentQuestion.id,
+      arabic:
+        currentQuestion.kind === "word" ? currentQuestion.arabic : undefined,
+      exampleAr:
+        currentQuestion.kind === "sentence"
+          ? currentQuestion.arabic
+          : undefined,
+      allowBareMatch: isVisualWordsMode,
+    }) ||
+    "";
+  const currentQuestionImageUrl = rawQuestionImage
+    ? resolveImageUrl(rawQuestionImage)
+    : "";
 
   const correctCount = Object.values(userAnswers).filter(
     (a) => a.isCorrect
@@ -1188,6 +1242,24 @@ export default function MultipleChoice({
             <span>Sesli Dinle</span>
           </button>
         </div>
+
+        {currentQuestionImageUrl && !failedImages[currentQuestionImageUrl] && (
+          <div className="mx-auto w-fit max-w-full rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 shadow-2xs">
+            <img
+              src={currentQuestionImageUrl}
+              alt={currentQuestion.turkish}
+              referrerPolicy="no-referrer"
+              loading="eager"
+              onError={() =>
+                setFailedImages((prev) => ({
+                  ...prev,
+                  [currentQuestionImageUrl]: true,
+                }))
+              }
+              className="h-28 sm:h-36 w-auto object-contain rounded-2xl mx-auto select-none"
+            />
+          </div>
+        )}
 
         <h3
           dir="rtl"

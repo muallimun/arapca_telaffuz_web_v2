@@ -13,7 +13,7 @@ import {
   stripParentheticalArabicExamples,
   generateSynonymAntonymMatchingPairs,
 } from "@/lib/quiz";
-import { atasozleri } from "@/lib/data";
+import { atasozleri, resolveImageUrl } from "@/lib/data";
 import {
   RotateCcw,
   Trophy,
@@ -36,6 +36,7 @@ import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { FeedbackMode, QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import { lookupVisualWordGorsel } from "@/lib/visualWordImageLookup";
 
 interface Props {
   vocabulary: DictionaryItem[];
@@ -43,6 +44,7 @@ interface Props {
   dialogues?: Dialogue[];
   synonymEntries?: SynonymAntonymEntry[];
   isSynonymsAntonymsMode?: boolean;
+  isVisualWordsMode?: boolean;
   contentType?: QuizContentType;
   timeLimit: number | null;
   questionCount?: number;
@@ -56,6 +58,7 @@ export interface PairDefinition {
   arText: string;
   trText: string;
   isSentence: boolean;
+  imageUrl?: string;
 }
 
 interface MatchCardItem {
@@ -64,6 +67,7 @@ interface MatchCardItem {
   type: "ar" | "tr";
   matchId: string;
   isSentence?: boolean;
+  imageUrl?: string;
 }
 
 interface ArrowConnection {
@@ -85,6 +89,7 @@ export default function MatchingGame({
   dialogues = [],
   synonymEntries = [],
   isSynonymsAntonymsMode = false,
+  isVisualWordsMode = false,
   contentType = "words",
   timeLimit,
   feedbackMode = "instant",
@@ -98,6 +103,7 @@ export default function MatchingGame({
   const { speechRate, showHareke, arabicFont } = useSettings();
   const { addStudyMinutes, addMistake, recordItemAttempt } = useUserStore();
   const formatAr = (t: string) => formatArabicText(t, showHareke, arabicFont);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const [currentPairs, setCurrentPairs] = useState<PairDefinition[]>([]);
   const [arCards, setArCards] = useState<MatchCardItem[]>([]);
@@ -190,12 +196,26 @@ export default function MatchingGame({
     }
 
     const wordPairs: PairDefinition[] = vocabulary
-      .map((w) => ({
-        matchId: `w_${w.id}`,
-        arText: (w.mufret || w.mazi || "").split("/")[0].trim(),
-        trText: w.anlam_tr,
-        isSentence: false,
-      }))
+      .map((w) => {
+        const arPrimary = (w.mufret || w.mazi || "").split("/")[0].trim();
+        const rawGorsel =
+          w.gorsel ||
+          lookupVisualWordGorsel({
+            id: w.id,
+            directGorsel: w.gorsel,
+            arabic: arPrimary,
+            exampleAr: w.ornek_ar,
+            allowBareMatch:
+              isVisualWordsMode || Boolean(w.gorsel) || w.id.startsWith("gk_"),
+          });
+        return {
+          matchId: `w_${w.id}`,
+          arText: arPrimary,
+          trText: w.anlam_tr,
+          isSentence: false,
+          imageUrl: rawGorsel ? resolveImageUrl(rawGorsel) : undefined,
+        };
+      })
       .filter((p) => p.arText.length > 0 && p.trText.length > 0);
 
     const idiomPairs: PairDefinition[] = idioms
@@ -210,16 +230,27 @@ export default function MatchingGame({
     const allSentencePairs: PairDefinition[] = [];
     const shortSentencePairs: PairDefinition[] = [];
     dialogues.forEach((dlg) => {
+      const isVisualDlg =
+        dlg.id === "pool_visual" || dlg.id.startsWith("pool_visual");
       dlg.satirlar.forEach((line) => {
         const arTrim = line.arapca.trim();
         const trTrim = line.turkce.trim();
         if (arTrim && trTrim) {
           const wordCount = arTrim.split(/\s+/).filter(Boolean).length;
+          const rawLineImg =
+            isVisualDlg || isVisualWordsMode
+              ? lookupVisualWordGorsel({
+                  arabic: line.konusmaci_ar,
+                  exampleAr: arTrim,
+                  allowBareMatch: true,
+                })
+              : undefined;
           const pairObj: PairDefinition = {
             matchId: `s_${dlg.id}_${line.sira}`,
             arText: arTrim,
             trText: trTrim,
             isSentence: true,
+            imageUrl: rawLineImg ? resolveImageUrl(rawLineImg) : undefined,
           };
           allSentencePairs.push(pairObj);
           if (wordCount >= 2 && (wordCount <= 5 || arTrim.length <= 50)) {
@@ -284,6 +315,7 @@ export default function MatchingGame({
     return dedupePairs(shuffleArray(wordPairs)).slice(0, pairTarget);
   }, [
     isSynonymsAntonymsMode,
+    isVisualWordsMode,
     synonymEntries,
     vocabulary,
     idioms,
@@ -305,8 +337,16 @@ export default function MatchingGame({
     const dIds = dialogues
       .map((i) => `${i.id}_${i.satirlar.length}_${i.satirlar[0]?.arapca || ""}`)
       .join("|");
-    return `${isSynonymsAntonymsMode ? "syn" : "std"}::${contentType}::${sIds}::${vIds}::${iIds}::${dIds}`;
-  }, [isSynonymsAntonymsMode, synonymEntries, vocabulary, idioms, dialogues, contentType]);
+    return `${isSynonymsAntonymsMode ? "syn" : "std"}::${isVisualWordsMode ? "vis" : "txt"}::${contentType}::${sIds}::${vIds}::${iIds}::${dIds}`;
+  }, [
+    isSynonymsAntonymsMode,
+    isVisualWordsMode,
+    synonymEntries,
+    vocabulary,
+    idioms,
+    dialogues,
+    contentType,
+  ]);
 
   const lastInitializedSignatureRef = useRef<string | null>(null);
 
@@ -320,6 +360,7 @@ export default function MatchingGame({
       type: "ar",
       matchId: p.matchId,
       isSentence: p.isSentence,
+      imageUrl: p.imageUrl,
     }));
 
     const nextTr: MatchCardItem[] = chosenPairs.map((p) => ({
@@ -328,6 +369,7 @@ export default function MatchingGame({
       type: "tr",
       matchId: p.matchId,
       isSentence: p.isSentence,
+      imageUrl: p.imageUrl,
     }));
 
     setArCards(shuffleArray(nextAr));
@@ -1041,10 +1083,30 @@ export default function MatchingGame({
                 }}
                 className={`h-auto min-h-[58px] py-2.5 px-2.5 sm:px-3.5 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer transition-all ${rowStyle}`}
               >
-                {/* Sol: Türkçe / Eş-Zıt İlişkisi (Kesilmeden Tam Görünür) */}
-                <span className="flex-1 min-w-0 text-left text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-snug break-words">
-                  <MixedText text={trCard.text} />
-                </span>
+                {/* Sol: Varsa Görsel Kelime Resmi + Türkçe / Eş-Zıt İlişkisi */}
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {trCard.imageUrl && !failedImages[trCard.imageUrl] && (
+                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 p-1 flex items-center justify-center shrink-0">
+                      <img
+                        src={trCard.imageUrl}
+                        alt={trCard.text}
+                        referrerPolicy="no-referrer"
+                        onLoad={updateSocketCoordinates}
+                        onError={() => {
+                          setFailedImages((prev) => ({
+                            ...prev,
+                            [trCard.imageUrl!]: true,
+                          }));
+                          requestAnimationFrame(updateSocketCoordinates);
+                        }}
+                        className="w-full h-full object-contain select-none pointer-events-none"
+                      />
+                    </div>
+                  )}
+                  <span className="flex-1 min-w-0 text-left text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-snug break-words">
+                    <MixedText text={trCard.text} />
+                  </span>
+                </div>
 
                 {/* Sağ İç Kenar: Orta Koridora Bakan Bağlantı Noktası (■) */}
                 <span

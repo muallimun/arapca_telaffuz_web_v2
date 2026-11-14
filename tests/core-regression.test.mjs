@@ -5588,7 +5588,7 @@ test("48. Hafızanı Yokla (MemoryFlipGame) & Balon Safari (BalloonSafariGame) T
       memoryCode.includes("#EFE3C8") &&
       memoryCode.includes("#E05A47") &&
       memoryCode.includes("#1F6E50") &&
-      memoryCode.includes("text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed") &&
+      memoryCode.includes("text-2xl sm:text-3xl font-bold") &&
       memoryCode.includes("text-sm sm:text-base md:text-lg font-extrabold") &&
       memoryCode.includes("Sıra sende: iki kart çevir.") &&
       memoryCode.includes("Yapay zekâ düşünüyor...") &&
@@ -5675,16 +5675,16 @@ test("49. Tam Ekran (100dvh) Oyunlar, Saf Görsel Kelime Havuzu, Kaydırmasız H
     "Balon Safari ve Hafızanı Yokla yalnızca gorselKelimeler_guncel.json (Görsel Kelimeler) kayıtlarıyla beslenmelidir"
   );
 
-  // 3. Hafızanı Yokla kaydırmasız (overflow-hidden) masaüstü ızgarası, h-24 sm:h-32 md:h-36 kart boyutu, w-64 yan panel ve Kök + Örnek Cümle Bilgi Notu
+  // 3. Hafızanı Yokla kaydırmasız (overflow-hidden) masaüstü ızgarası, clamp(5.2rem,17vh,8.8rem) kart boyutu, lg:w-60 xl:w-64 yan panel ve Kök + Örnek Cümle Bilgi Notu
   assert.equal(
-    memoryCode.includes("h-24 sm:h-32 md:h-36") &&
-      memoryCode.includes("lg:w-64") &&
+    memoryCode.includes("h-[clamp(5.2rem,17vh,8.8rem)]") &&
+      memoryCode.includes("lg:w-60 xl:w-64") &&
       memoryCode.includes("lg:overflow-hidden") &&
-      memoryCode.includes("text-2xl sm:text-3xl md:text-4xl font-bold") &&
+      memoryCode.includes("text-2xl sm:text-3xl font-bold") &&
       memoryCode.includes("Kök:") &&
       memoryCode.includes("ÖRNEK CÜMLE"),
     true,
-    "MemoryFlipGame masaüstünde sıfır kaydırma (lg:overflow-hidden), h-24 sm:h-32 md:h-36 kart yüksekliği, dar sağ panel (lg:w-64) ve Kök + Örnek Cümle Bilgi Notu içermelidir"
+    "MemoryFlipGame masaüstünde sıfır kaydırma (lg:overflow-hidden), h-[clamp(5.2rem,17vh,8.8rem)] kart yüksekliği, dar sağ panel (lg:w-60 xl:w-64) ve Kök + Örnek Cümle Bilgi Notu içermelidir"
   );
 
   // 4. A4 Sınav Üretici Stüdyosunda Karma Aralık Seçimi (Range) motoru ve UI kontrolleri
@@ -5814,6 +5814,217 @@ test("50. Başarılarım ve Rütbem Hızlı Erişim Butonları, Tam Adlı 6 A4 S
     "alistirmalar/page.tsx '🖼️ Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' modülünü vitrinde ve aktif oyun ekranında barındırmalıdır"
   );
 });
+
+test("51. UTF-8/CESU-8 Kesin Doğrulaması, Tüm Alıştırma Modüllerinde Görsel Kelime Resimleri, Hafızanı Yokla Tek Ekran Sığdırma, answerLockedRef Çift Tıklama Koruması ve API Hız/Süre Sınırları", async () => {
+  // 1. P0: assessment.ts satır 539 ve tüm kaynak/JSON dosyalarında %100 geçerli UTF-8 kontrolü
+  const assessmentLines = fs
+    .readFileSync(path.join(ROOT_DIR, "src", "types", "assessment.ts"), "utf8")
+    .split("\n");
+  assert.equal(
+    assessmentLines[538]?.trim(),
+    'icon: known?.icon || "🏛️",',
+    "src/types/assessment.ts 539. satırda temiz standart UTF-8 'icon: known?.icon || \"🏛️\",' bulunmalıdır"
+  );
+
+  const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
+  const loneSurrogateRegex =
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+  function verifyValidUtf8Tree(dirPath) {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === ".next") continue;
+      const full = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        verifyValidUtf8Tree(full);
+      } else if (/\.(ts|tsx|json)$/.test(entry.name)) {
+        const bytes = fs.readFileSync(full);
+        const decoded = utf8Decoder.decode(bytes);
+        assert.equal(
+          loneSurrogateRegex.test(decoded),
+          false,
+          `${full} dosyasında bozuk CESU-8 veya tekil vekil çifti (surrogate) bulunmamalıdır`
+        );
+      }
+    }
+  }
+  verifyValidUtf8Tree(path.join(ROOT_DIR, "src"));
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizindeki metadata.json dosyası korunmalıdır"
+  );
+
+  // 2. P0: Görsel Kelimeler seçildiğinde frozenPools sıfırlama ve Flashcard / MultipleChoice / MatchingGame / FillInBlanks görsel gösterimi
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const lookupCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "visualWordImageLookup.ts"),
+    "utf8"
+  );
+  const flashcardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "Flashcard.tsx"),
+    "utf8"
+  );
+  const multipleChoiceCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  const matchingCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MatchingGame.tsx"),
+    "utf8"
+  );
+  const fillInBlanksCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "FillInBlanks.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    alistirmalarCode.includes("setFrozenPools(null)") &&
+      alistirmalarCode.includes("frozenPools?.isVisualWordsMode") &&
+      alistirmalarCode.includes("isVisualWordsMode={"),
+    true,
+    "alistirmalar/page.tsx havuz/filtre değişimlerinde frozenPools önbelleğini sıfırlamalı ve isVisualWordsMode aktarmalıdır"
+  );
+  assert.equal(
+    lookupCode.includes("removeArabicHarakat") &&
+      lookupCode.includes("lookupVisualWordGorsel"),
+    true,
+    "visualWordImageLookup.ts hem id hem harekesiz Arapça eşleştirmesiyle görsel bulmalıdır"
+  );
+
+  const flashcardImgMatches = flashcardCode.match(/h-32 sm:h-40 w-full object-contain/g) || [];
+  assert.equal(
+    flashcardImgMatches.length >= 2 &&
+      flashcardCode.includes("lookupVisualWordGorsel") &&
+      flashcardCode.includes("resolveImageUrl"),
+    true,
+    "Flashcard.tsx görseli hem ön hem arka yüzde h-32 sm:h-40 w-full object-contain çerçevesinde göstermelidir"
+  );
+  assert.equal(
+    multipleChoiceCode.includes("lookupVisualWordGorsel") &&
+      multipleChoiceCode.includes("resolveImageUrl") &&
+      multipleChoiceCode.includes("h-28 sm:h-36") &&
+      multipleChoiceCode.includes("object-contain rounded-2xl"),
+    true,
+    "MultipleChoice.tsx Görsel Kelime sorularında h-28 sm:h-36 object-contain rounded-2xl resmi soru metninin üzerinde göstermelidir"
+  );
+  assert.equal(
+    matchingCode.includes("lookupVisualWordGorsel") &&
+      matchingCode.includes("resolveImageUrl") &&
+      matchingCode.includes("object-contain"),
+    true,
+    "MatchingGame.tsx Görsel Kelime kartlarında küçük kelime resmini object-contain ile göstermelidir"
+  );
+  assert.equal(
+    fillInBlanksCode.includes("lookupVisualWordGorsel") &&
+      fillInBlanksCode.includes("resolveImageUrl") &&
+      fillInBlanksCode.includes("h-28 sm:h-36") &&
+      fillInBlanksCode.includes("object-contain rounded-2xl"),
+    true,
+    "FillInBlanks.tsx Görsel Kelime cümle tamamlama sorularında kelime görselini cümlenin üstünde göstermelidir"
+  );
+
+  // 3. Hafızanı Yokla masaüstü tek ekran (sıfır scroll) dinamik kart yüksekliği ve kırpılmaz görsel kontrolü
+  const memoryCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+  assert.equal(
+    memoryCode.includes("flex-1 min-h-0 grid") &&
+      memoryCode.includes("content-center") &&
+      memoryCode.includes("h-[clamp(5.2rem,17vh,8.8rem)]") &&
+      memoryCode.includes("w-full lg:w-60 xl:w-64") &&
+      memoryCode.includes("object-contain") &&
+      memoryCode.includes("text-2xl sm:text-3xl font-bold"),
+    true,
+    "MemoryFlipGame masaüstünde flex-1 min-h-0 grid content-center, h-[clamp(5.2rem,17vh,8.8rem)], lg:w-60 xl:w-64 ve object-contain içermelidir"
+  );
+
+  // 4. Alıştırmalarda çift tıklama / çift Enter kilidi (answerLockedRef)
+  const blindDictationCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BlindDictation.tsx"),
+    "utf8"
+  );
+  const whatIsThisCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "WhatIsThisGame.tsx"),
+    "utf8"
+  );
+  for (const [modName, modCode] of [
+    ["MultipleChoice.tsx", multipleChoiceCode],
+    ["FillInBlanks.tsx", fillInBlanksCode],
+    ["BlindDictation.tsx", blindDictationCode],
+    ["WhatIsThisGame.tsx", whatIsThisCode],
+  ]) {
+    assert.equal(
+      modCode.includes("answerLockedRef") &&
+        modCode.includes("answerLockedRef.current = true") &&
+        modCode.includes("answerLockedRef.current = false"),
+      true,
+      `${modName} içinde senkron answerLockedRef çift tıklama/Enter koruması bulunmalıdır`
+    );
+  }
+
+  // 5. Ortak API hız sınırı yardımcısı (/api/admin 30 istek/dk, /api/stt 20 istek/dk) ve 30 sn / 35 sn ses sınırı
+  const rateLimitHelperCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "apiRateLimit.ts"),
+    "utf8"
+  );
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  const sttRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "stt", "route.ts"),
+    "utf8"
+  );
+
+  assert.equal(
+    rateLimitHelperCode.includes("export function createIpRateLimiter") &&
+      rateLimitHelperCode.includes("export function getClientIp"),
+    true,
+    "src/lib/apiRateLimit.ts ortak createIpRateLimiter ve getClientIp yardımcılarını dışa aktarmalıdır"
+  );
+  assert.equal(
+    adminRouteCode.includes("createIpRateLimiter") &&
+      adminRouteCode.includes("const ADMIN_RATE_LIMIT_MAX_REQUESTS = 30;") &&
+      adminRouteCode.includes("maxRequestsPerMinute: ADMIN_RATE_LIMIT_MAX_REQUESTS") &&
+      adminRouteCode.includes("status: 429"),
+    true,
+    "/api/admin dakikada IP başına 30 istek sınırına (HTTP 429) sahip olmalıdır"
+  );
+  assert.equal(
+    sttRouteCode.includes("createIpRateLimiter") &&
+      sttRouteCode.includes("const RATE_LIMIT_MAX_REQUESTS = 20;") &&
+      sttRouteCode.includes("maxRequestsPerMinute: RATE_LIMIT_MAX_REQUESTS") &&
+      sttRouteCode.includes("status: 429") &&
+      sttRouteCode.includes("const MAX_AUDIO_SECONDS = 30;") &&
+      sttRouteCode.includes("const HARD_LIMIT_AUDIO_SECONDS = 35;") &&
+      sttRouteCode.includes(
+        "Ses kaydı 30 saniye sınırını aşıyor, lütfen daha kısa bir kayıt gönderin."
+      ),
+    true,
+    "/api/stt dakikada 20 istek (429), 30 sn üst sınır ve >35 sn için HTTP 400 Türkçe uyarı mesajı içermelidir"
+  );
+
+  const { createIpRateLimiter } = await import("../src/lib/apiRateLimit.ts");
+  const limiter = createIpRateLimiter({ maxRequestsPerMinute: 3, windowMs: 60_000 });
+  assert.equal(limiter.isRateLimited("203.0.113.10", 1_000), false);
+  assert.equal(limiter.isRateLimited("203.0.113.10", 2_000), false);
+  assert.equal(limiter.isRateLimited("203.0.113.10", 3_000), false);
+  assert.equal(
+    limiter.isRateLimited("203.0.113.10", 4_000),
+    true,
+    "Dakikalık limiti aşan 4. istek hız sınırına (true) takılmalıdır"
+  );
+  assert.equal(
+    limiter.isRateLimited("203.0.113.10", 65_000),
+    false,
+    "1 dakikalık pencere geçtikten sonra IP hız sınırı sıfırlanmalıdır"
+  );
+});
+
 
 
 

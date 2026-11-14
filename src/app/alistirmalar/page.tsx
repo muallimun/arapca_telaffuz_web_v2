@@ -480,6 +480,7 @@ function ExercisesPageContent() {
     synonymEntries: SynonymAntonymEntry[];
     isSynonymsAntonymsMode: boolean;
     isMistakesMode: boolean;
+    isVisualWordsMode: boolean;
   } | null>(null);
 
   const {
@@ -600,6 +601,7 @@ function ExercisesPageContent() {
           synonymEntries: [],
           isSynonymsAntonymsMode: false,
           isMistakesMode: true,
+          isVisualWordsMode: false,
         });
         setIsPlaying(true);
         return;
@@ -648,6 +650,7 @@ function ExercisesPageContent() {
           synonymEntries: [],
           isSynonymsAntonymsMode: false,
           isMistakesMode: true,
+          isVisualWordsMode: false,
         });
         setIsPlaying(true);
         return;
@@ -1916,6 +1919,7 @@ function ExercisesPageContent() {
 
   const handleDialogueSubSelectChange = (val: string) => {
     playClick();
+    setFrozenPools(null);
     if (val === "range:1-30") {
       setSingleDialogueId("range:1-30");
       setStartNum(1);
@@ -1954,6 +1958,7 @@ function ExercisesPageContent() {
       isSynonymsAntonymsMode: rangePreset === "synonyms_antonyms",
       isMistakesMode:
         rangePreset === "mistakes" || rangePreset === "srs_due",
+      isVisualWordsMode: rangePreset === "visual_words",
     });
     setIsPlaying(true);
   };
@@ -2497,6 +2502,7 @@ function ExercisesPageContent() {
                     type="button"
                     onClick={() => {
                       playClick();
+                      setFrozenPools(null);
                       setSelectedType(card.id);
                       if (card.id === "sentence-builder") {
                         setContentType("sentences");
@@ -2627,6 +2633,7 @@ function ExercisesPageContent() {
                     type="button"
                     onClick={() => {
                       playClick();
+                      setFrozenPools(null);
                       setRangePreset("visual_words");
                       setCategoryFilter("all");
                     }}
@@ -2651,6 +2658,7 @@ function ExercisesPageContent() {
                         type="button"
                         onClick={() => {
                           playClick();
+                          setFrozenPools(null);
                           setRangePreset("visual_words");
                           setCategoryFilter(cat.category);
                         }}
@@ -2821,6 +2829,7 @@ function ExercisesPageContent() {
                           type="button"
                           onClick={() => {
                             playClick();
+                            setFrozenPools(null);
                             setContentType(item.id);
                           }}
                           className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
@@ -2850,6 +2859,7 @@ function ExercisesPageContent() {
                           type="button"
                           onClick={() => {
                             playClick();
+                            setFrozenPools(null);
                             setContentType(item.id);
                           }}
                           className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
@@ -2924,6 +2934,7 @@ function ExercisesPageContent() {
                     value={singleReadingId}
                     onChange={(e) => {
                       playClick();
+                      setFrozenPools(null);
                       setSingleReadingId(e.target.value);
                     }}
                     aria-label="Okuma Metni Seçimi"
@@ -2959,6 +2970,7 @@ function ExercisesPageContent() {
                     value={categoryFilter}
                     onChange={(e) => {
                       playClick();
+                      setFrozenPools(null);
                       setCategoryFilter(e.target.value);
                     }}
                     aria-label="Kategori Seçimi"
@@ -3003,6 +3015,7 @@ function ExercisesPageContent() {
                           type="button"
                           onClick={() => {
                             playClick();
+                            setFrozenPools(null);
                             setWordPosFilter(posItem.id);
                           }}
                           className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
@@ -3046,6 +3059,7 @@ function ExercisesPageContent() {
                           type="button"
                           onClick={() => {
                             playClick();
+                            setFrozenPools(null);
                             setSynTurFilter(turItem.id);
                           }}
                           className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
@@ -3071,6 +3085,7 @@ function ExercisesPageContent() {
                   value={cefrFilter}
                   onChange={(e) => {
                     playClick();
+                    setFrozenPools(null);
                     setCefrFilter(e.target.value as "all" | Level);
                   }}
                   aria-label="CEFR Seviye Filtresi"
@@ -3361,7 +3376,9 @@ function ExercisesPageContent() {
               isMistakesMode={
                 frozenPools?.isMistakesMode ?? rangePreset === "mistakes"
               }
-              isVisualWordsMode={rangePreset === "visual_words"}
+              isVisualWordsMode={
+                frozenPools?.isVisualWordsMode ?? rangePreset === "visual_words"
+              }
               onClose={handleCloseExercise}
             />
           )}
@@ -3376,6 +3393,9 @@ function ExercisesPageContent() {
               isSynonymsAntonymsMode={
                 frozenPools?.isSynonymsAntonymsMode ??
                 rangePreset === "synonyms_antonyms"
+              }
+              isVisualWordsMode={
+                frozenPools?.isVisualWordsMode ?? rangePreset === "visual_words"
               }
               contentType={effectiveContentType}
               timeLimit={timeLimit}
@@ -3399,6 +3419,9 @@ function ExercisesPageContent() {
                 frozenPools?.isSynonymsAntonymsMode ??
                 rangePreset === "synonyms_antonyms"
               }
+              isVisualWordsMode={
+                frozenPools?.isVisualWordsMode ?? rangePreset === "visual_words"
+              }
               contentType={effectiveContentType}
               timeLimit={timeLimit}
               questionCount={questionCount}
@@ -3421,6 +3444,9 @@ function ExercisesPageContent() {
               isSynonymsAntonymsMode={
                 frozenPools?.isSynonymsAntonymsMode ??
                 rangePreset === "synonyms_antonyms"
+              }
+              isVisualWordsMode={
+                frozenPools?.isVisualWordsMode ?? rangePreset === "visual_words"
               }
               contentType={effectiveContentType}
               timeLimit={timeLimit}

@@ -9,6 +9,7 @@ import {
   playClick,
 } from "@/lib/sfxManager";
 import { Dialogue, DictionaryItem, SynonymAntonymEntry } from "@/types/data";
+import { resolveImageUrl } from "@/lib/data";
 import {
   shuffleArray,
   generateSynonymAntonymFillQuestions,
@@ -53,6 +54,7 @@ import ShareAchievementModal from "@/components/ui/ShareAchievementModal";
 import { FeedbackMode, QuizContentType } from "./MultipleChoice";
 import { ArabicIdiom, extractDialoguesIdioms } from "@/lib/arabicIdioms";
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
+import { lookupVisualWordGorsel } from "@/lib/visualWordImageLookup";
 
 export type FillSubMode = "choices" | "dictation";
 
@@ -66,6 +68,7 @@ export interface FillQuestionItem {
   dialogueId: string;
   lineSira: number;
   voice: VoiceOption;
+  imageUrl?: string;
 }
 
 interface Props {
@@ -74,6 +77,7 @@ interface Props {
   idioms?: ArabicIdiom[];
   synonymEntries?: SynonymAntonymEntry[];
   isSynonymsAntonymsMode?: boolean;
+  isVisualWordsMode?: boolean;
   contentType?: QuizContentType;
   feedbackMode?: FeedbackMode;
   initialSubMode?: FillSubMode;
@@ -107,6 +111,7 @@ export default function FillInBlanks({
   idioms = [],
   synonymEntries = [],
   isSynonymsAntonymsMode = false,
+  isVisualWordsMode = false,
   contentType = "sentences",
   feedbackMode = "instant",
   initialSubMode = "choices",
@@ -119,6 +124,7 @@ export default function FillInBlanks({
   const wrongAttemptedQuestionsRef = useRef<Set<string>>(new Set());
   const dropZoneRef = useRef<HTMLSpanElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const answerLockedRef = useRef<boolean>(false);
 
   const [subMode, setSubMode] = useState<FillSubMode>(initialSubMode);
   const [roundSeed, setRoundSeed] = useState(0);
@@ -129,6 +135,7 @@ export default function FillInBlanks({
   const [isFinished, setIsFinished] = useState(false);
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   // Instant mode & End mode state
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
@@ -557,6 +564,19 @@ export default function FillInBlanks({
               words,
               chosenCandidate.idx
             );
+            const isVisualDlg =
+              dlg.id === "pool_visual" || dlg.id.startsWith("pool_visual");
+            const matchedVisualImg =
+              isVisualDlg || isVisualWordsMode
+                ? lookupVisualWordGorsel({
+                    arabic: line.konusmaci_ar || cleanTarget,
+                    exampleAr: line.arapca,
+                    allowBareMatch: true,
+                  })
+                : lookupVisualWordGorsel({
+                    exampleAr: line.arapca,
+                    allowBareMatch: false,
+                  });
             generated.push({
               id: `fill_${dlg.id}_${line.sira}`,
               sentenceWithBlank,
@@ -570,6 +590,7 @@ export default function FillInBlanks({
                 line.cinsiyet === "K"
                   ? "ar-SA-ZariyahNeural"
                   : "ar-SA-HamedNeural",
+              imageUrl: matchedVisualImg,
             });
           }
         }
@@ -577,7 +598,13 @@ export default function FillInBlanks({
     }
     return shuffleArray(generated).slice(0, questionCount);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsSignature, contentType, questionCount, roundSeed]);
+  }, [
+    itemsSignature,
+    contentType,
+    questionCount,
+    roundSeed,
+    isVisualWordsMode,
+  ]);
 
   const questions = customQuestions || generatedQuestions;
   const currentQ = questions[currentIndex];
@@ -604,6 +631,9 @@ export default function FillInBlanks({
     lastQuestionKeyRef.current = qKey;
 
     const saved = userAnswers[currentIndex];
+    answerLockedRef.current = Boolean(
+      feedbackMode === "instant" && saved?.isCorrect
+    );
     setFeedback(
       feedbackMode === "instant" && saved?.isCorrect ? "correct" : null
     );
@@ -741,7 +771,14 @@ export default function FillInBlanks({
   // Seçmeli / Sürükle-Bırak Cevaplama
   const handleChooseOption = (word: string) => {
     if (isTimeUp) return;
-    if (feedbackMode === "instant" && feedback === "correct") return;
+    if (
+      feedbackMode === "instant" &&
+      (feedback === "correct" || answerLockedRef.current)
+    )
+      return;
+    if (feedbackMode === "instant") {
+      answerLockedRef.current = true;
+    }
 
     const isRight =
       normalizeArabicSpelling(word) ===
@@ -772,6 +809,7 @@ export default function FillInBlanks({
       playCorrect({ streak: streakRef.current });
       autoAdvanceTimerRef.current = setTimeout(() => {
         autoAdvanceTimerRef.current = null;
+        answerLockedRef.current = false;
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);
         } else {
@@ -790,6 +828,7 @@ export default function FillInBlanks({
       playWrong();
       feedbackTimerRef.current = setTimeout(() => {
         feedbackTimerRef.current = null;
+        answerLockedRef.current = false;
         setFeedback(null);
         setSelectedWord(null);
       }, 850);
@@ -799,7 +838,9 @@ export default function FillInBlanks({
   // İmla (Dictation) Cevaplama
   const handleCheckDictation = () => {
     if (isTimeUp || !typedText.trim()) return;
+    if (answerLockedRef.current) return;
     if (feedbackMode === "instant" && feedback === "correct") return;
+    answerLockedRef.current = true;
 
     const rawTyped = typedText.trim();
     const isRight =
@@ -842,6 +883,7 @@ export default function FillInBlanks({
       autoAdvanceTimerRef.current = setTimeout(
         () => {
           autoAdvanceTimerRef.current = null;
+          answerLockedRef.current = false;
           if (currentIndex < questions.length - 1) {
             setCurrentIndex((prev) => prev + 1);
           } else {
@@ -863,6 +905,7 @@ export default function FillInBlanks({
       playWrong();
       feedbackTimerRef.current = setTimeout(() => {
         feedbackTimerRef.current = null;
+        answerLockedRef.current = false;
         setFeedback(null);
       }, 950);
     }
@@ -982,6 +1025,7 @@ export default function FillInBlanks({
   const prevQuestion = () => {
     if (currentIndex > 0) {
       clearPendingTimers();
+      answerLockedRef.current = false;
       playClick();
       setCurrentIndex((prev) => prev - 1);
     }
@@ -989,6 +1033,7 @@ export default function FillInBlanks({
 
   const nextQuestion = () => {
     clearPendingTimers();
+    answerLockedRef.current = false;
     playClick();
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -1002,6 +1047,7 @@ export default function FillInBlanks({
   // 4 Sonuç Ekranı Aksiyonu
   const handleRepeatSameSet = () => {
     clearPendingTimers();
+    answerLockedRef.current = false;
     playStart();
     streakRef.current = 0;
     fanfarePlayedRef.current = false;
@@ -1026,6 +1072,7 @@ export default function FillInBlanks({
 
   const handleStartNewSet = () => {
     clearPendingTimers();
+    answerLockedRef.current = false;
     playClick();
     fanfarePlayedRef.current = false;
     setCustomQuestions(null);
@@ -1722,6 +1769,36 @@ export default function FillInBlanks({
             )}
           </div>
         </div>
+
+        {(() => {
+          const rawFillImg =
+            currentQ.imageUrl ||
+            (isVisualWordsMode || currentQ.dialogueId === "pool_visual"
+              ? lookupVisualWordGorsel({
+                  arabic: currentQ.correctWord,
+                  exampleAr: currentQ.fullArabic,
+                  allowBareMatch: true,
+                })
+              : undefined);
+          const resolvedFillImg = rawFillImg ? resolveImageUrl(rawFillImg) : "";
+          if (!resolvedFillImg || failedImages[resolvedFillImg]) return null;
+          return (
+            <div className="mx-auto w-fit max-w-full rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 shadow-2xs">
+              <img
+                src={resolvedFillImg}
+                alt={currentQ.turkce}
+                referrerPolicy="no-referrer"
+                onError={() =>
+                  setFailedImages((prev) => ({
+                    ...prev,
+                    [resolvedFillImg]: true,
+                  }))
+                }
+                className="h-28 sm:h-36 w-auto object-contain rounded-2xl mx-auto select-none"
+              />
+            </div>
+          );
+        })()}
 
         {/* ARAPÇA CÜMLE VE BOŞLUK ALANI */}
         <div

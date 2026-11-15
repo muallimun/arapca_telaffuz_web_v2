@@ -4,9 +4,9 @@
   "description": "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi — 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü ve akıllı A4 PDF çalışma kağıdı üreticisi.",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "eslint",
     "test": "node --test tests/core-regression.test.mjs"
   },

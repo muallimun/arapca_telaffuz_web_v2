@@ -53,12 +53,15 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    const isVercel = Boolean(process.env.VERCEL);
+    const frameAncestorsDirective = isVercel ? " frame-ancestors 'self';" : "";
+
     return [
       {
         source: "/(.*)",
         headers: [
-          // Güvenlik Başlıkları (COEP/COOP YouTube iframe'lerini ERR_BLOCKED_BY_RESPONSE ile engellediği için kaldırıldı)
-          { key: "X-Frame-Options", value: "DENY" },
+          // Güvenlik Başlıkları (AI Studio önizleme iframe'ini engellememek için X-Frame-Options: DENY ve frame-ancestors 'none' kaldırıldı)
+          ...(isVercel ? [{ key: "X-Frame-Options", value: "SAMEORIGIN" }] : []),
           { key: "X-Content-Type-Options", value: "nosniff" },
           {
             key: "Referrer-Policy",
@@ -68,7 +71,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; worker-src 'self' blob: data:; connect-src 'self' blob: data: https://raw.githubusercontent.com https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net https://www.youtube.com https://*.googlevideo.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be; child-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.ytimg.com https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; media-src 'self' blob: data: https://*.googlevideo.com https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+              `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; worker-src 'self' blob: data:; connect-src 'self' ws: wss: blob: data: https://raw.githubusercontent.com https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net https://www.youtube.com https://*.googlevideo.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be; child-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://*.ytimg.com https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; media-src 'self' blob: data: https://*.googlevideo.com https://raw.githubusercontent.com https://cdn.jsdelivr.net https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; object-src 'none'; base-uri 'self';${frameAncestorsDirective}`,
           },
         ],
       },

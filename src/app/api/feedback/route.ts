@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp } from "@/lib/apiRateLimit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GOOGLE_SCRIPT_URL =
@@ -21,16 +22,6 @@ function sanitizeSheetCell(value: string): string {
   return cleaned;
 }
 
-function getClientIp(req: NextRequest): string {
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(",")[0]?.trim();
-    if (firstIp) return firstIp;
-  }
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  return "unknown";
-}
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -86,7 +77,7 @@ export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
     const rawText = await req.text();
-    if (rawText.length > MAX_BODY_BYTES) {
+    if (Buffer.byteLength(rawText, "utf8") > MAX_BODY_BYTES) {
       return NextResponse.json(
         { error: "İstek gövdesi çok büyük (en fazla 16 KB kabul edilir)." },
         { status: 413 }

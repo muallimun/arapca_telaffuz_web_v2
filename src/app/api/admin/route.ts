@@ -12,6 +12,7 @@ export const runtime = "nodejs";
 
 const ADMIN_RATE_LIMIT_WINDOW_MS = 60_000;
 const ADMIN_RATE_LIMIT_MAX_REQUESTS = 30;
+const MAX_ADMIN_POST_BODY_BYTES = 15 * 1024 * 1024; // 15 MB
 const adminRateLimiter = createIpRateLimiter({
   maxRequestsPerMinute: ADMIN_RATE_LIMIT_MAX_REQUESTS,
   windowMs: ADMIN_RATE_LIMIT_WINDOW_MS,
@@ -603,6 +604,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const contentLengthHeader = req.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (
+        Number.isFinite(contentLength) &&
+        contentLength > MAX_ADMIN_POST_BODY_BYTES
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "İstek gövdesi çok büyük (maksimum 15 MB kabul edilir).",
+          },
+          { status: 413 }
+        );
+      }
+    }
+
     if (adminRateLimiter.isRateLimited(getClientIp(req))) {
       return NextResponse.json(
         {
@@ -614,7 +632,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const rawBodyText = await req.text();
+    if (Buffer.byteLength(rawBodyText, "utf8") > MAX_ADMIN_POST_BODY_BYTES) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "İstek gövdesi çok büyük (maksimum 15 MB kabul edilir).",
+        },
+        { status: 413 }
+      );
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(rawBodyText);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json(
+          { ok: false, error: "Geçersiz JSON istek gövdesi." },
+          { status: 400 }
+        );
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Geçersiz JSON formatı." },
+        { status: 400 }
+      );
+    }
+
     const action = body?.action as AdminPostAction | undefined;
 
     if (
@@ -843,8 +888,9 @@ export async function POST(req: NextRequest) {
       const jsonString =
         JSON.stringify(normalizeDatasetNode(data), null, 2) + "\n";
       const commitMessage =
-        body?.commitMessage ||
-        `chore(data): ${fileName} yönetim stüdyosu üzerinden güncellendi`;
+        typeof body?.commitMessage === "string" && body.commitMessage.trim()
+          ? body.commitMessage.trim()
+          : `chore(data): ${fileName} yönetim stüdyosu üzerinden güncellendi`;
 
       const localSaved = writeLocalFileAtomicInDev(localFilePath, jsonString);
 
@@ -961,8 +1007,9 @@ export async function POST(req: NextRequest) {
       const { normalizedTarget, repoFilePath, resolvedLocalPath } =
         pathValidation;
       const commitMessage =
-        body?.commitMessage ||
-        `chore(media): ${repoFilePath} yönetim stüdyosu üzerinden yüklendi`;
+        typeof body?.commitMessage === "string" && body.commitMessage.trim()
+          ? body.commitMessage.trim()
+          : `chore(media): ${repoFilePath} yönetim stüdyosu üzerinden yüklendi`;
 
       const localSaved = writeLocalFileAtomicInDev(
         resolvedLocalPath,
@@ -1122,8 +1169,9 @@ export async function POST(req: NextRequest) {
       const { normalizedTarget, repoFilePath, resolvedLocalPath } =
         pathValidation;
       const commitMessage =
-        body?.commitMessage ||
-        `chore(tts): ${repoFilePath} otomatik seslendirildi (${ttsEngine})`;
+        typeof body?.commitMessage === "string" && body.commitMessage.trim()
+          ? body.commitMessage.trim()
+          : `chore(tts): ${repoFilePath} otomatik seslendirildi (${ttsEngine})`;
 
       const localSaved = writeLocalFileAtomicInDev(
         resolvedLocalPath,

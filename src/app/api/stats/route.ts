@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
+import { getClientIp } from "@/lib/apiRateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -448,18 +449,12 @@ const STATS_RATE_LIMIT_WINDOW_MS = 60_000;
 const STATS_RATE_LIMIT_MAX_POST_REQUESTS = 30;
 const STATS_RATE_LIMIT_MAX_GET_REQUESTS = 120;
 const STATS_MAX_IP_MAP_SIZE = 2000;
+const MAX_STATS_BODY_BYTES = 8_192;
 const statsIpPostTimestamps = new Map<string, number[]>();
 const statsIpGetTimestamps = new Map<string, number[]>();
 
 function getStatsClientIp(req: NextRequest): string {
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(",")[0]?.trim();
-    if (firstIp) return firstIp;
-  }
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  return "unknown";
+  return getClientIp(req);
 }
 
 function isStatsRateLimited(
@@ -529,6 +524,23 @@ export async function GET(req: NextRequest) {
  * değerlerine kesinlikle güvenilmez (sayaç şişirme koruması).
  */
 export async function POST(req: NextRequest) {
+  const contentLengthHeader = req.headers.get("content-length");
+  if (contentLengthHeader) {
+    const contentLength = Number(contentLengthHeader);
+    if (
+      Number.isFinite(contentLength) &&
+      contentLength > MAX_STATS_BODY_BYTES
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "İstek gövdesi çok büyük (en fazla 8 KB kabul edilir).",
+        },
+        { status: 413 }
+      );
+    }
+  }
+
   const clientIp = getStatsClientIp(req);
   if (
     isStatsRateLimited(
@@ -543,6 +555,22 @@ export async function POST(req: NextRequest) {
         error: "Çok fazla istek gönderildi. Lütfen bir dakika sonra tekrar deneyin.",
       },
       { status: 429 }
+    );
+  }
+
+  let rawBodyText = "";
+  try {
+    rawBodyText = await req.text();
+  } catch {
+    rawBodyText = "";
+  }
+  if (Buffer.byteLength(rawBodyText, "utf8") > MAX_STATS_BODY_BYTES) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "İstek gövdesi çok büyük (en fazla 8 KB kabul edilir).",
+      },
+      { status: 413 }
     );
   }
 
@@ -564,50 +592,56 @@ export async function POST(req: NextRequest) {
   let legacyToday = req.nextUrl.searchParams.get("today") === "1";
   let legacySession = req.nextUrl.searchParams.get("session") === "1";
 
-  try {
-    const body = (await req.json()) as Record<string, unknown>;
-    if (body && typeof body === "object") {
-      if (typeof body.visitorId === "string") {
-        // Yalnızca güvenli karakterlerden oluşan makul uzunluktaki visitorId kabul edilir
-        visitorId = body.visitorId
-          .trim()
-          .replace(/[^a-zA-Z0-9_-]/g, "")
-          .slice(0, 96);
+  if (rawBodyText.trim().length > 0) {
+    try {
+      const body = JSON.parse(rawBodyText) as Record<string, unknown>;
+      if (body && typeof body === "object") {
+        if (typeof body.visitorId === "string") {
+          // Yalnızca güvenli karakterlerden oluşan makul uzunluktaki visitorId kabul edilir
+          visitorId = body.visitorId
+            .trim()
+            .replace(/[^a-zA-Z0-9_-]/g, "")
+            .slice(0, 96);
+        }
+        if (typeof body.sessionId === "string") {
+          sessionId = body.sessionId
+            .trim()
+            .replace(/[^a-zA-Z0-9_-]/g, "")
+            .slice(0, 96);
+        }
+        const rawRepUsers = Number(body.knownTotalUsers);
+        if (
+          Number.isFinite(rawRepUsers) &&
+          rawRepUsers >= SEED_TOTAL_USERS &&
+          rawRepUsers <= ABSOLUTE_MAX_RECOVERY_CAP
+        ) {
+          reportedUsersFloor = Math.floor(rawRepUsers);
+        }
+        const rawRepSessions = Number(body.knownTotalSessions);
+        if (
+          Number.isFinite(rawRepSessions) &&
+          rawRepSessions >= SEED_TOTAL_SESSIONS &&
+          rawRepSessions <= ABSOLUTE_MAX_RECOVERY_CAP
+        ) {
+          reportedSessionsFloor = Math.floor(rawRepSessions);
+        }
+        if (body.unique === "1" || body.unique === true || body.unique === 1) {
+          legacyUnique = true;
+        }
+        if (body.today === "1" || body.today === true || body.today === 1) {
+          legacyToday = true;
+        }
+        if (
+          body.session === "1" ||
+          body.session === true ||
+          body.session === 1
+        ) {
+          legacySession = true;
+        }
       }
-      if (typeof body.sessionId === "string") {
-        sessionId = body.sessionId
-          .trim()
-          .replace(/[^a-zA-Z0-9_-]/g, "")
-          .slice(0, 96);
-      }
-      const rawRepUsers = Number(body.knownTotalUsers);
-      if (
-        Number.isFinite(rawRepUsers) &&
-        rawRepUsers >= SEED_TOTAL_USERS &&
-        rawRepUsers <= ABSOLUTE_MAX_RECOVERY_CAP
-      ) {
-        reportedUsersFloor = Math.floor(rawRepUsers);
-      }
-      const rawRepSessions = Number(body.knownTotalSessions);
-      if (
-        Number.isFinite(rawRepSessions) &&
-        rawRepSessions >= SEED_TOTAL_SESSIONS &&
-        rawRepSessions <= ABSOLUTE_MAX_RECOVERY_CAP
-      ) {
-        reportedSessionsFloor = Math.floor(rawRepSessions);
-      }
-      if (body.unique === "1" || body.unique === true || body.unique === 1) {
-        legacyUnique = true;
-      }
-      if (body.today === "1" || body.today === true || body.today === 1) {
-        legacyToday = true;
-      }
-      if (body.session === "1" || body.session === true || body.session === 1) {
-        legacySession = true;
-      }
+    } catch {
+      // Boş gövde veya query param desteklenir
     }
-  } catch {
-    // Boş gövde veya query param desteklenir
   }
 
   // Vercel /tmp soğuk sıfırlamasında (cold reset) istemci önbelleğindeki önceki gerçek toplamı

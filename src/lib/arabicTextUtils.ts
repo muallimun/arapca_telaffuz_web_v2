@@ -546,6 +546,51 @@ export function canonicalizeArabicDiacritics(text: string): string {
 }
 
 /**
+ * TTS sentezleyicileri (Edge Neural, Google TTS, Web Speech) ve NLP analizleri için
+ * Arapça fonetik ve imlâ normalizasyon katmanı:
+ * 1) Unicode NFC standartlaştırması uygular,
+ * 2) Lâm-Elif ligatüründe med elifi üzerine kaymış fetha/şeddeleri (\u0644\u0627\u064E -> \u0644\u064E\u0627)
+ *    ve med elifi üzerindeki yanlış fethaları (\u064E\u0627\u064E -> \u064E\u0627) düzeltir,
+ * 3) Haraka + şedde ters dizilimlerini (([\u064B-\u0650])\u0651 -> \u0651$1) düzeltir,
+ * 4) Üst üste binmiş aynı harekeleri (([\u064B-\u0652])\1+ -> $1) tekilleştirir,
+ * 5) Belirlilik takısında şemsî harflerden önce şedde varsa lâm üzerindeki yanlış sükûnu
+ *    (الْ([تثدذرزسشصضطظلن]\u0651) -> ال$1) temizler ve الِا yazımlarını الْاِ yapar,
+ * 6) Şeddesiz الله lafızlarını kelime sınırında şeddeli اللَّه biçimine tamamlar.
+ */
+export function normalizeArabicForTtsAndNlp(text: string): string {
+  if (!text) return "";
+
+  return (
+    text
+      // 1) NFC standartlaştırması
+      .normalize("NFC")
+      // 2) Lâm-Elif ligatüründe med elifi üzerine kaymış fetha/şedde ve med elifi üzerindeki yanlış fetha
+      .replace(/\u0644([\u064E\u0651]*)\u0627([\u064E\u0651]+)/g, "\u0644$1$2\u0627")
+      .replace(/\u064E\u0627\u064E/g, "\u064E\u0627")
+      // 3 & 4) Üst üste binmiş harekelerin tekilleştirilmesi ve haraka + şedde sırasının düzeltilmesi
+      .replace(/([\u064B-\u0652])\1+/g, "$1")
+      .replace(/([\u064B-\u0650])\u0651/g, "\u0651$1")
+      .replace(/([\u064B-\u0652])\1+/g, "$1")
+      // 5) Şemsî harflerden önce lâm üzerindeki yanlış sükûn ve الِا -> الْاِ onarımı
+      .replace(
+        /\u0627(\u064E?)\u0644\u0652([\u062A\u062B\u062F\u0630\u0631\u0632\u0633\u0634\u0635\u0636\u0637\u0638\u0644\u0646]\u0651)/g,
+        "\u0627$1\u0644$2"
+      )
+      .replace(/\u0627\u0644\u0650\u0627/g, "\u0627\u0644\u0652\u0627\u0650")
+      // 6) Şeddesiz Lafzatullah (الله / بالله / والله / لله) lafızlarını şeddeli اللَّه biçimine tamamlama
+      .replace(
+        /(^|[^\u0621-\u064A\u0671])([وفبتك]?[\u064B-\u0652]*)\u0627([\u064B-\u0652]*)\u0644([\u064B-\u0652]*)\u0644[\u064E\u0670]*\u0647([\u064B-\u0652]*)(?=$|[^\u0621-\u064A\u0671])/g,
+        "$1$2\u0627$3\u0644$4\u0644\u0651\u064E\u0647$5"
+      )
+      .replace(
+        /(^|[^\u0621-\u064A\u0671])([وف]?[\u064B-\u0652]*)\u0644(\u0650?)\u0644[\u064E\u0670]*\u0647([\u064B-\u0652]*)(?=$|[^\u0621-\u064A\u0671])/g,
+        (_m, lead: string, pref: string, kasra: string, endMark: string) =>
+          `${lead}${pref}\u0644${kasra || "\u0650"}\u0644\u0651\u064E\u0647${endMark}`
+      )
+  );
+}
+
+/**
  * Hedef metindeki parantez içi sayı/açıklama bloklarını (ör. "(40)", "(167)")
  * ve yüzde (٪ / %) sembollerini telaffuz puanlamasından önce temizler.
  */
@@ -943,9 +988,14 @@ const NON_ARABIC_GLOSS_OPT =
 const SIMPLE_TERMINOLOGY_RULES: Array<[RegExp, string]> = [
   [new RegExp(`(?<![\\p{L}])N[âa]ib-i\\s+F[âa]il(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sözde Özne"],
   [new RegExp(`(?<![\\p{L}])Mef['’]?[ûu]l[üu]n\\s+Bih(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Etkilenen Nesne"],
-  [new RegExp(`(?<![\\p{L}])Muz[âa]fun\\s+[İI]leyh(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlayan İsim"],
-  [new RegExp(`(?<![\\p{L}])Muz[âa]f(?![\\p{L}])(?!\\s+[İI]leyh)${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlanan İsim"],
-  [new RegExp(`(?<![\\p{L}])[İI]z[âa]fet(?:\\s+Tamlamas[ıi])?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İsim Tamlaması"],
+  [new RegExp(`(?<![\\p{L}])Mef['’]?[ûu]l[üu]n\\s+F[îiİI]h(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Zaman/Yer Zarfı"],
+  [new RegExp(`(?<![\\p{L}])Mef['’]?[ûu]l(?:-?[iüuİI]|[üu]n)\\s+Mutlak(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Pekiştirme Mastarı"],
+  [new RegExp(`(?<![\\p{L}])Mef['’]?[ûu]l[üu]n\\s+(?:Li-?eclih[îiİI]?|Leh|\u0644\u064E?\u0647\u064F?)(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sebep Bildiren Tümleç"],
+  [new RegExp(`(?<![\\p{L}])S[âa]hib[uü]['’]?l[-\\s]+H[âa]l(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Durumu Belirtilen İsim"],
+  [new RegExp(`(?<![\\p{L}])Gayr(?:-?[ıiİI])?\\s+Munsarif(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tenvin ve Esre Almayan İsim"],
+  [new RegExp(`(?<![\\p{L}])Muz[âa]fun\\s+[İIıi]leyh(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlayan İsim"],
+  [new RegExp(`(?<![\\p{L}])Muz[âa]f(?![\\p{L}])(?!\\s+[İIıi]leyh)${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tamlanan İsim"],
+  [new RegExp(`(?<![\\p{L}])[İIıi]z[âa]fet(?:\\s+Tamlamas[ıiİI])?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İsim Tamlaması"],
   [new RegExp(`(?<![\\p{L}])M[üu]bted[âa](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İsim Cümlesi Öznesi"],
   [/(?<![\p{L}])Haber(?![\p{L}])(?:[ \t]*\(Yüklem\))?/gu, "Yüklem"],
   [new RegExp(`(?<![\\p{L}])F[âa]il(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İşi Yapan Özne"],
@@ -954,13 +1004,13 @@ const SIMPLE_TERMINOLOGY_RULES: Array<[RegExp, string]> = [
   [new RegExp(`(?<![\\p{L}])Mans[ûu]b(?:tur|dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Üstünlü Durum"],
   [new RegExp(`(?<![\\p{L}])Mecr[ûu]r(?:dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Esreli Durum"],
   [new RegExp(`(?<![\\p{L}])Mecz[ûu]m(?:dur)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Cezimli Durum"],
-  [new RegExp(`(?<![\\p{L}])Mebn[îi](?:dir)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sonu Değişmeyen"],
-  [new RegExp(`(?<![\\p{L}])[İI]stifh[âa]m(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Soru"],
+  [new RegExp(`(?<![\\p{L}])Mebn[îiİI](?:dir)?(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Sonu Değişmeyen"],
+  [new RegExp(`(?<![\\p{L}])[İIıi]stifh[âa]m(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Soru"],
   [new RegExp(`(?<![\\p{L}])M[üu]zekker(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Eril"],
   [new RegExp(`(?<![\\p{L}])M[üu]ennes(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Dişil"],
   [new RegExp(`(?<![\\p{L}])M[üu]fre[dt](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Tekil"],
   [new RegExp(`(?<![\\p{L}])Tesniye(?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "İkil"],
-  [new RegExp(`(?<![\\p{L}])Cem[îi](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Çoğul"],
+  [new RegExp(`(?<![\\p{L}])Cem[îiİI](?![\\p{L}])${NON_ARABIC_GLOSS_OPT}`, "giu"), "Çoğul"],
 ];
 
 /**
@@ -974,7 +1024,7 @@ export function simplifyGrammarTerminology(text: string): string {
     out = out.replace(pattern, replacement);
   }
   out = out.replace(
-    /([\p{L}]+(?:\s+[\p{L}]+){0,4})\s*\(\s*([\p{L}]+(?:\s+[\p{L}]+){0,4})\s*\)/gu,
+    /([\p{L}/-]+(?:\s+[\p{L}/-]+){0,6})\s*\(\s*([\p{L}/-]+(?:\s+[\p{L}/-]+){0,6})\s*\)/gu,
     (fullMatch, beforeRaw: string, insideRaw: string) => {
       const insideWords = insideRaw.trim().split(/\s+/);
       const beforeWords = beforeRaw.trim().split(/\s+/);

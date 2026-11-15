@@ -13,6 +13,7 @@ import {
   resolveAudioUrl,
   sozluk,
 } from "@/lib/data";
+import { normalizeArabicForTtsAndNlp } from "@/lib/arabicTextUtils";
 import { useSettings, VoiceGender } from "@/store/settings";
 
 export type VoiceOption =
@@ -340,6 +341,8 @@ export function playWebSpeechFallback(
     const gender = normalizeVoiceGender(voice);
     const isArabic = /[\u0600-\u06FF]/.test(text);
     const targetLang = langOverride || (isArabic ? "ar-SA" : "tr-TR");
+    const preparedText =
+      targetLang === "ar-SA" ? normalizeArabicForTtsAndNlp(text) : text;
 
     let hasSpokenOnce = false;
     let fallbackVoiceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -353,7 +356,7 @@ export function playWebSpeechFallback(
       }
       window.speechSynthesis.onvoiceschanged = null;
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(preparedText);
       if (targetLang === "ar-SA") {
         const bestVoice = pickBestArabicVoice(gender);
         if (bestVoice) {
@@ -403,7 +406,7 @@ async function getOrFetchNeuralTtsBlobUrl(
   text: string,
   gender: "male" | "female"
 ): Promise<string | null> {
-  const cleanText = text.trim();
+  const cleanText = normalizeArabicForTtsAndNlp(text).trim();
   if (!cleanText) return null;
 
   const cacheKey = `${gender}:${cleanText}`;
@@ -738,7 +741,7 @@ export async function playTTS(
   rate: number = 1,
   voice?: VoiceOption
 ): Promise<void> {
-  const cleanText = text.trim();
+  const cleanText = normalizeArabicForTtsAndNlp(text).trim();
   if (!cleanText) return;
 
   const gender = normalizeVoiceGender(voice);

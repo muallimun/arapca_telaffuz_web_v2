@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { normalizeArabicForTtsAndNlp } from "@/lib/arabicTextUtils";
 
 export type ServerTtsVoiceInput =
   | "ar-SA-HamedNeural"
@@ -19,7 +20,7 @@ export function splitArabicTextIntoChunks(
   text: string,
   maxChunkLength = 175
 ): string[] {
-  const cleaned = text.trim();
+  const cleaned = normalizeArabicForTtsAndNlp(text).trim();
   if (!cleaned) return [];
   if (cleaned.length <= maxChunkLength) return [cleaned];
 
@@ -83,6 +84,8 @@ export async function synthesizeEdgeTtsBuffer(
   timeoutMs = 4200
 ): Promise<Buffer | null> {
   try {
+    const normalizedArabic = normalizeArabicForTtsAndNlp(text).trim();
+    if (!normalizedArabic) return null;
     const ratePercent = Math.round((rate - 1) * 100);
     const rateStr = ratePercent >= 0 ? `+${ratePercent}%` : `${ratePercent}%`;
     const normalized = String(voiceOrGender).trim();
@@ -161,7 +164,7 @@ export async function synthesizeEdgeTtsBuffer(
               });
             ws.send(configMsg);
 
-            const escapedText = text
+            const escapedText = normalizedArabic
               .replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
@@ -240,7 +243,7 @@ async function fetchSingleGoogleTtsChunk(
   }, 8000);
 
   try {
-    const ttsspeed = rate < 0.9 ? "0.24" : "1";
+    const ttsspeed = rate <= 0.75 ? "0.24" : rate < 0.95 ? "0.6" : "1";
     const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&ttsspeed=${ttsspeed}&q=${encodeURIComponent(
       chunkText
     )}`;
@@ -275,7 +278,8 @@ export async function synthesizeGoogleTtsBuffer(
   text: string,
   rate = 1.0
 ): Promise<Buffer | null> {
-  const chunks = splitArabicTextIntoChunks(text, 175);
+  const normalizedArabic = normalizeArabicForTtsAndNlp(text).trim();
+  const chunks = splitArabicTextIntoChunks(normalizedArabic, 175);
   if (chunks.length === 0) return null;
 
   if (chunks.length === 1) {

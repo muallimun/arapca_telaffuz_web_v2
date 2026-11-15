@@ -19,17 +19,47 @@ export interface IpRateLimiter {
   resetAll: () => void;
 }
 
+export const MAX_CLIENT_IP_LENGTH = 128;
+
+const SAFE_IP_CANDIDATE_REGEX = /^[0-9a-fA-F:.%[\]-]{2,128}$/;
+
+function extractFirstValidIp(rawHeader: string | null): string | null {
+  if (!rawHeader) return null;
+  const parts = rawHeader.split(",");
+  for (const part of parts) {
+    const candidate = part.trim();
+    if (!candidate || candidate.length > MAX_CLIENT_IP_LENGTH) continue;
+    if (candidate === "localhost") return candidate;
+    if (
+      SAFE_IP_CANDIDATE_REGEX.test(candidate) &&
+      (candidate.includes(".") || candidate.includes(":"))
+    ) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 /**
- * İstemci IP adresini proxy başlıklarından (`x-forwarded-for`, `x-real-ip`) güvenli biçimde çıkarır.
+ * İstemci IP adresini Vercel ve standart reverse-proxy başlıklarından güvenli öncelik sırasıyla
+ * (`x-vercel-forwarded-for`, `x-real-ip`, `cf-connecting-ip`, `x-forwarded-for` ilk geçerli IP
+ * ve maksimum 128 karakter uzunluk sınırı ile) çıkarır.
  */
 export function getClientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) {
-    const firstIp = xff.split(",")[0]?.trim();
-    if (firstIp) return firstIp;
+  const orderedHeaders = [
+    "x-vercel-forwarded-for",
+    "x-real-ip",
+    "cf-connecting-ip",
+    "x-forwarded-for",
+  ] as const;
+
+  for (const headerName of orderedHeaders) {
+    const validIp = extractFirstValidIp(req.headers.get(headerName));
+    if (validIp) {
+      return validIp;
+    }
   }
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
+
   return "local";
 }
 
@@ -53,7 +83,8 @@ export function createIpRateLimiter({
 
   return {
     isRateLimited(ip: string, now = Date.now()): boolean {
-      const normalizedIp = (ip || "local").trim() || "local";
+      const normalizedIp =
+        (ip || "local").trim().slice(0, MAX_CLIENT_IP_LENGTH) || "local";
       const existing = buckets.get(normalizedIp);
 
       if (!existing || existing.resetAt <= now) {

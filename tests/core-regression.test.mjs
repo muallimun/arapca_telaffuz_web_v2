@@ -4974,10 +4974,9 @@ test("43. UTF-8 Bütünlüğü, API Güvenlik Sertleştirmesi, 195 Gramer İlmî
     "utf8"
   );
   assert.equal(
-    assessmentTypesCode.includes('icon: known?.icon || "📘"') ||
-      assessmentTypesCode.includes('icon: known?.icon || "🏛️"'),
+    assessmentTypesCode.includes('icon: known?.icon || "\\u{1F3DB}\\uFE0F"'),
     true,
-    "src/types/assessment.ts içindeki varsayılan ikon standart UTF-8 emoji olmalıdır"
+    "src/types/assessment.ts içindeki varsayılan ikon saf ASCII Unicode kaçış dizisi olmalıdır"
   );
 
   // 2. API Güvenlik Sertleştirmeleri (/api/stt, /api/admin, /api/stats, /api/feedback) ve MultipleChoice senkron tıklama kilidi
@@ -5542,9 +5541,9 @@ test("47. WordTooltip Taşma/Kaydırma Onarımı, Vercel Standalone Kotası Koru
   );
   assert.equal(
     nextConfigCode.includes('output: process.env.VERCEL ? undefined : "standalone"') &&
-      nextConfigCode.includes("ignoreBuildErrors: true"),
+      nextConfigCode.includes("ignoreBuildErrors: false"),
     true,
-    "next.config.ts Vercel için koşullu standalone çıktısını ve ignoreBuildErrors ayarını içermelidir"
+    "next.config.ts Vercel için koşullu standalone çıktısını ve ignoreBuildErrors: false tip güvenliği ayarını içermelidir"
   );
 
   // 3. src/types/data.ts: ResimliKelime ve AtasozuDeyim opsiyonel tip uyumu + metadata.json koruması
@@ -5848,8 +5847,8 @@ test("51. UTF-8/CESU-8 Kesin Doğrulaması, Tüm Alıştırma Modüllerinde Gör
     .split("\n");
   assert.equal(
     assessmentLines[538]?.trim(),
-    'icon: known?.icon || "🏛️",',
-    "src/types/assessment.ts 539. satırda temiz standart UTF-8 'icon: known?.icon || \"🏛️\",' bulunmalıdır"
+    'icon: known?.icon || "\\u{1F3DB}\\uFE0F",',
+    "src/types/assessment.ts 539. satırda saf ASCII 'icon: known?.icon || \"\\u{1F3DB}\\uFE0F\",' bulunmalıdır"
   );
 
   const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
@@ -6692,10 +6691,10 @@ test("55. A4 PDF Split-Studio Mimarisi, Mobil Hızlı PDF Kartı, Pedagojik pair
       pdfModalCode.includes("🖨️ Öğrenci Kağıdı (Cevapsız)") &&
       pdfModalCode.includes("🔑 Sadece Cevap Anahtarı") &&
       pdfModalCode.includes("📚 İkisini Birlikte Yazdır") &&
-      assessmentCode.includes('icon: known?.icon || "🏛️",') &&
+      assessmentCode.includes('icon: known?.icon || "\\u{1F3DB}\\uFE0F",') &&
       fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
     true,
-    "Alt yazdırma çubuğu soru/boşluk durumuna göre 1 veya 3 buton göstermeli, assessment.ts geçerli UTF-8 içermeli ve metadata.json korunmalıdır"
+    "Alt yazdırma çubuğu soru/boşluk durumuna göre 1 veya 3 buton göstermeli, assessment.ts saf ASCII kaçış dizisi içermeli ve metadata.json korunmalıdır"
   );
 });
 
@@ -7510,8 +7509,8 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
   const line539 = assessmentText.split(/\r?\n/)[538]?.trim();
   assert.equal(
     line539,
-    'icon: known?.icon || "🏛️",',
-    "src/types/assessment.ts 539. satırda temiz standart UTF-8 '🏛️' bulunmalıdır"
+    'icon: known?.icon || "\\u{1F3DB}\\uFE0F",',
+    "src/types/assessment.ts 539. satırda saf ASCII '\\u{1F3DB}\\uFE0F' kaçış dizisi bulunmalıdır"
   );
   assert.equal(
     Buffer.from("🏛️", "utf8").toString("hex"),
@@ -8449,6 +8448,244 @@ test("70. Stüdyo TTS Öncesi 12 JSON Veri Tabanında Şedde+Hareke Sırası, La
       ),
       true,
       `${mId} içinde cemi müennes sâlim nasb açıklaması netleştirilmiş olmalıdır`
+    );
+  }
+});
+
+test("71. Saf ASCII Kaçış Yaması & ignoreBuildErrors: false, normalizeArabicForTtsAndNlp Katmanı, Genişletilmiş simplifyGrammarTerminology ve Güvenilir Proxy IP / Payload Koruması", async () => {
+  const { pathToFileURL } = await import("node:url");
+
+  // 1) assessment.ts satır 539 saf ASCII kaçışı ve next.config.ts ignoreBuildErrors: false
+  const assessmentRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "types", "assessment.ts"),
+    "utf8"
+  );
+  const line539 = assessmentRaw.split(/\r?\n/)[538];
+  assert.equal(
+    line539.trim(),
+    'icon: known?.icon || "\\u{1F3DB}\\uFE0F",',
+    "assessment.ts 539. satırda ham emoji baytı yerine saf ASCII kaçış dizisi bulunmalıdır"
+  );
+  assert.equal(
+    /^[\x00-\x7F]+$/.test(line539),
+    true,
+    "assessment.ts 539. satırı yalnızca 7-bit saf ASCII karakterlerden oluşmalıdır"
+  );
+
+  const { buildDynamicAssessmentTopics } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "types", "assessment.ts")).href
+  );
+  const sampleDynamic = buildDynamicAssessmentTopics([
+    {
+      id: "test_unknown_topic",
+      seviye: "B1",
+      zorluk_basamagi: 2,
+      ust_konu: "Özel Yeni Konu",
+      alt_grup: "Alt Grup",
+      beceri_alani: "sarf_nahiv",
+      soru_tipi: "bosluk_doldurma",
+      soru_yonergesi_tr: "Yönerge",
+      soru_metni_ar: "كَتَبَ",
+      secenek_dili: "ar",
+      secenekler: [
+        { harf: "A", metin: "أ" },
+        { harf: "B", metin: "ب" },
+        { harf: "C", metin: "ج" },
+        { harf: "D", metin: "د" },
+      ],
+      dogru_secenek: "A",
+    },
+  ]);
+  assert.equal(sampleDynamic[0]?.icon, "🏛️");
+
+  const nextConfigCode = fs.readFileSync(
+    path.join(ROOT_DIR, "next.config.ts"),
+    "utf8"
+  );
+  assert.equal(
+    nextConfigCode.includes("ignoreBuildErrors: false") &&
+      !nextConfigCode.includes("ignoreBuildErrors: true"),
+    true,
+    "next.config.ts içinde ignoreBuildErrors: false etkin olmalıdır"
+  );
+
+  // 2) normalizeArabicForTtsAndNlp (6 adımlı fonetik/imlâ katmanı), serverTts, audio ve /api/tts 500 karakter sınırı
+  const {
+    normalizeArabicForTtsAndNlp,
+    simplifyGrammarTerminology,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts")).href
+  );
+
+  assert.equal(
+    normalizeArabicForTtsAndNlp("\u0644\u0627\u064E"),
+    "\u0644\u064E\u0627",
+    "Lâm-Elif ligatüründe med elifi üzerine kaymış fetha düzeltilmelidir"
+  );
+  assert.equal(
+    normalizeArabicForTtsAndNfcCheck(normalizeArabicForTtsAndNlp("كَاَدَتْ")),
+    "كَادَتْ",
+    "Med elifi üzerindeki yanlış fetha (كَاَدَتْ -> كَادَتْ) düzeltilmelidir"
+  );
+  assert.equal(
+    normalizeArabicForTtsAndNlp("مُعَل\u0650\u0651مٌ"),
+    "مُعَل\u0651\u0650مٌ",
+    "Haraka + şedde ters dizilimi (\u0650\u0651 -> \u0651\u0650) düzeltilmelidir"
+  );
+  assert.equal(
+    normalizeArabicForTtsAndNlp("الط\u064F\u064F\u0651ر\u064F\u064Fق\u0650"),
+    "الط\u0651\u064Fر\u064Fق\u0650",
+    "Üst üste binmiş aynı harekeler tekilleştirilmelidir"
+  );
+  assert.equal(
+    normalizeArabicForTtsAndNlp("الْش\u064E\u0651مْسُ فِي الِاسْتِقْبَالِ"),
+    "الش\u0651\u064Eمْسُ فِي الْاِسْتِقْبَالِ",
+    "Şemsî harf öncesi yanlış lâm sükûnu temizlenmeli ve الِا -> الْاِ düzeltilmelidir"
+  );
+  assert.equal(
+    normalizeArabicForTtsAndNlp("بِاللهِ وَالحَمْدُ للهِ لِلْهُدُوءِ"),
+    "بِالل\u0651\u064Eهِ وَالحَمْدُ لِل\u0651\u064Eهِ لِلْهُدُوءِ",
+    "Şeddesiz الله / بالله / لله lafızları şeddeli اللَّه biçimine tamamlanmalı, لِلْهُدُوءِ korunmalıdır"
+  );
+
+  function normalizeArabicForTtsAndNfcCheck(v) {
+    return v;
+  }
+
+  const serverTtsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "serverTts.ts"),
+    "utf8"
+  );
+  const audioCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "audio.ts"),
+    "utf8"
+  );
+  const ttsRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "tts", "route.ts"),
+    "utf8"
+  );
+
+  assert.equal(
+    serverTtsCode.includes("normalizeArabicForTtsAndNlp") &&
+      serverTtsCode.includes(
+        'const ttsspeed = rate <= 0.75 ? "0.24" : rate < 0.95 ? "0.6" : "1";'
+      ),
+    true,
+    "serverTts.ts normalizeArabicForTtsAndNlp kullanmalı ve 3 kademeli ttsspeed hız duyarlılığına sahip olmalıdır"
+  );
+  assert.equal(
+    audioCode.includes("normalizeArabicForTtsAndNlp"),
+    true,
+    "audio.ts TTS motoruna gönderilen Arapça metinleri normalizeArabicForTtsAndNlp üzerinden geçirmelidir"
+  );
+  assert.equal(
+    ttsRouteCode.includes("MAX_TTS_TEXT_LENGTH = 500") &&
+      ttsRouteCode.includes("rawText.length > MAX_TTS_TEXT_LENGTH") &&
+      ttsRouteCode.includes("normalizeArabicForTtsAndNlp"),
+    true,
+    "/api/tts/route.ts 500 karakter üst sınırını güvenli şekilde kontrol etmelidir"
+  );
+
+  // 3) simplifyGrammarTerminology genişletilmiş kurallar ve mükerrer parantez temizliği
+  assert.equal(simplifyGrammarTerminology("Mef'ûlün Fîh"), "Zaman/Yer Zarfı");
+  assert.equal(simplifyGrammarTerminology("Mef'ûlün fîh"), "Zaman/Yer Zarfı");
+  assert.equal(
+    simplifyGrammarTerminology("Mef'ûlün Fîh (Zaman/Yer Zarfı)"),
+    "Zaman/Yer Zarfı"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("Zaman/Yer Zarfı (zaman/yer zarfı)"),
+    "Zaman/Yer Zarfı"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("Mef'ûl-i Mutlak ve Mef'ûlün Mutlak"),
+    "Pekiştirme Mastarı ve Pekiştirme Mastarı"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("Mef'ûlün Li-eclih veya Mef'ûlün له"),
+    "Sebep Bildiren Tümleç veya Sebep Bildiren Tümleç"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("Sâhibu'l-Hâl"),
+    "Durumu Belirtilen İsim"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("Gayr-ı Munsarif / Gayri Munsarif"),
+    "Tenvin ve Esre Almayan İsim / Tenvin ve Esre Almayan İsim"
+  );
+  assert.equal(
+    simplifyGrammarTerminology(
+      "Tenvin ve Esre Almayan İsim (tenvin ve esre almayan isim)"
+    ),
+    "Tenvin ve Esre Almayan İsim"
+  );
+
+  // 4) getClientIp güvenli proxy başlık önceliği + 128 karakter sınırı ve POST gövde boyutu korumaları
+  const { getClientIp, MAX_CLIENT_IP_LENGTH } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "apiRateLimit.ts")).href
+  );
+  assert.equal(MAX_CLIENT_IP_LENGTH, 128);
+
+  const reqVercelWins = new Request("https://example.com/api/test", {
+    headers: {
+      "x-vercel-forwarded-for": "198.51.100.11, 10.0.0.1",
+      "x-real-ip": "198.51.100.22",
+      "cf-connecting-ip": "198.51.100.33",
+      "x-forwarded-for": "198.51.100.44",
+    },
+  });
+  assert.equal(getClientIp(reqVercelWins), "198.51.100.11");
+
+  const reqRealIpWins = new Request("https://example.com/api/test", {
+    headers: {
+      "x-real-ip": "198.51.100.22",
+      "cf-connecting-ip": "198.51.100.33",
+      "x-forwarded-for": "198.51.100.44",
+    },
+  });
+  assert.equal(getClientIp(reqRealIpWins), "198.51.100.22");
+
+  const reqCfWins = new Request("https://example.com/api/test", {
+    headers: {
+      "cf-connecting-ip": "2001:db8::abcd",
+      "x-forwarded-for": "198.51.100.44",
+    },
+  });
+  assert.equal(getClientIp(reqCfWins), "2001:db8::abcd");
+
+  const overlongSpoof = "1".repeat(140) + ".1.1.1";
+  const reqXffFiltered = new Request("https://example.com/api/test", {
+    headers: {
+      "x-forwarded-for": `${overlongSpoof}, invalid_script<>, 203.0.113.77`,
+    },
+  });
+  assert.equal(getClientIp(reqXffFiltered), "203.0.113.77");
+
+  const adminRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "admin", "route.ts"),
+    "utf8"
+  );
+  const feedbackRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "feedback", "route.ts"),
+    "utf8"
+  );
+  const statsRouteCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "api", "stats", "route.ts"),
+    "utf8"
+  );
+
+  for (const [label, code] of [
+    ["/api/admin", adminRouteCode],
+    ["/api/feedback", feedbackRouteCode],
+    ["/api/stats", statsRouteCode],
+  ]) {
+    assert.equal(
+      code.includes('req.headers.get("content-length")') &&
+        code.includes("Buffer.byteLength(") &&
+        code.includes("status: 413") &&
+        code.includes("getClientIp"),
+      true,
+      `${label} POST ucu content-length / Buffer.byteLength gövde boyutu üst sınırına (413) ve getClientIp çözümlemesine sahip olmalıdır`
     );
   }
 });

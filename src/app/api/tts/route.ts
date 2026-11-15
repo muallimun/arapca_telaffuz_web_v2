@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp } from "@/lib/apiRateLimit";
+import { normalizeArabicForTtsAndNlp } from "@/lib/arabicTextUtils";
 import {
   synthesizeEdgeTtsBuffer,
   synthesizeGoogleTtsBuffer,
 } from "@/lib/serverTts";
 
 export const runtime = "nodejs";
+
+const MAX_TTS_TEXT_LENGTH = 500;
 
 // Sunucu tarafı bellek içi ses önbelleği (Aynı cümle tekrar istendiğinde anında döner)
 const serverAudioCache = new Map<string, Uint8Array>();
@@ -54,11 +58,7 @@ function setServerCache(key: string, bytes: Uint8Array) {
 }
 
 export async function GET(req: NextRequest) {
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const clientIp =
-    (forwardedFor ? forwardedFor.split(",")[0].trim() : null) ||
-    req.headers.get("x-real-ip") ||
-    "anonymous";
+  const clientIp = getClientIp(req);
 
   if (!checkIpRateLimit(clientIp)) {
     return NextResponse.json(
@@ -80,7 +80,24 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const trimmedText = rawText.slice(0, 600);
+  if (rawText.length > MAX_TTS_TEXT_LENGTH) {
+    return NextResponse.json(
+      {
+        error: `Metin uzunluğu en fazla ${MAX_TTS_TEXT_LENGTH} karakter olabilir.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  const trimmedText = normalizeArabicForTtsAndNlp(rawText)
+    .slice(0, MAX_TTS_TEXT_LENGTH)
+    .trim();
+  if (!trimmedText) {
+    return NextResponse.json(
+      { error: "Geçerli bir metin parametresi (text) gerekli." },
+      { status: 400 }
+    );
+  }
   const voiceKey =
     voiceParam === "female" ||
     voiceParam === "K" ||

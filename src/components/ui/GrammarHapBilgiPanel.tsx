@@ -25,7 +25,6 @@ import {
   ListChecks,
   ArrowRight,
   ArrowLeft,
-  ChevronDown,
   ChevronUp,
   Printer,
   MessageCircle,
@@ -607,6 +606,46 @@ export function splitArabicAndTurkish(rawText: string): {
     arabicPart: arWords.join(" ").trim(),
     turkishNotes,
   };
+}
+
+/**
+ * "5. Sık Yapılan Hata & Doğrusu" kartındaki `/` ile ayrılmış çoklu Arapça örnekleri
+ * (parantez içi `/` işaretlerini bozmadan) bağımsız satırlara ayırır ve her birini
+ * `splitArabicAndTurkish` ile ayrıştırır.
+ */
+export function splitUsageExamplesList(rawText: string): Array<{
+  arabicPart: string;
+  turkishNotes: string[];
+}> {
+  if (!rawText || !rawText.trim()) return [];
+
+  const segments: string[] = [];
+  let current = "";
+  let parenDepth = 0;
+
+  for (let i = 0; i < rawText.length; i++) {
+    const ch = rawText[i];
+    if (ch === "(") {
+      parenDepth += 1;
+      current += ch;
+    } else if (ch === ")") {
+      parenDepth = Math.max(0, parenDepth - 1);
+      current += ch;
+    } else if (ch === "/" && parenDepth === 0) {
+      const trimmed = current.trim();
+      if (trimmed) segments.push(trimmed);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  const tail = current.trim();
+  if (tail) segments.push(tail);
+
+  const sourceList = segments.length > 0 ? segments : [rawText.trim()];
+  return sourceList
+    .map((seg) => splitArabicAndTurkish(seg))
+    .filter((item) => Boolean(item.arabicPart || item.turkishNotes.length > 0));
 }
 
 export type IsolatedArabicSegment =
@@ -1374,7 +1413,9 @@ export function GrammarDeepDiveModal({
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const effectiveDeepLevel: Level = grammarNote.seviye || linkedLevel || "A1";
   const isA1DeepLevel = effectiveDeepLevel === "A1";
-  const deepIrabScopeKey = `${grammarNote.bagli_id}::${effectiveDeepLevel}`;
+  const isSimpleMode = grammarDepthMode === "simple";
+  const defaultDeepIrabOpen = grammarDepthMode === "academic" || !isA1DeepLevel;
+  const deepIrabScopeKey = `${grammarNote.bagli_id}::${effectiveDeepLevel}::${grammarDepthMode}`;
   const [deepIrabOverride, setDeepIrabOverride] = useState<{
     scopeKey: string;
     open: boolean;
@@ -1382,8 +1423,7 @@ export function GrammarDeepDiveModal({
   const isDeepIrabExpanded =
     deepIrabOverride && deepIrabOverride.scopeKey === deepIrabScopeKey
       ? deepIrabOverride.open
-      : !isA1DeepLevel;
-  const isSimpleMode = grammarDepthMode === "simple";
+      : defaultDeepIrabOpen;
   const formatByDepth = (str: string) =>
     isSimpleMode ? simplifyGrammarTerminology(str) : str;
 
@@ -1428,15 +1468,23 @@ export function GrammarDeepDiveModal({
     [detailLayer.formul_sema]
   );
 
-  const parsedYanlis = useMemo(
-    () => splitArabicAndTurkish(detailLayer.dikkat_sik_hata.yanlis),
+  const parsedYanlisList = useMemo(
+    () => splitUsageExamplesList(detailLayer.dikkat_sik_hata.yanlis),
     [detailLayer.dikkat_sik_hata.yanlis]
   );
 
-  const parsedDogru = useMemo(
-    () => splitArabicAndTurkish(detailLayer.dikkat_sik_hata.dogru),
+  const parsedDogruList = useMemo(
+    () => splitUsageExamplesList(detailLayer.dikkat_sik_hata.dogru),
     [detailLayer.dikkat_sik_hata.dogru]
   );
+
+  const dogruAudioText = useMemo(() => {
+    const joined = parsedDogruList
+      .map((item) => item.arabicPart)
+      .filter(Boolean)
+      .join(" . ");
+    return joined || grammarNote.metinden_ornek?.arapca || "";
+  }, [parsedDogruList, grammarNote.metinden_ornek?.arapca]);
 
   if (!isOpen) return null;
 
@@ -1861,31 +1909,22 @@ export function GrammarDeepDiveModal({
                   </span>
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setDeepIrabOverride({
-                        scopeKey: deepIrabScopeKey,
-                        open: !isDeepIrabExpanded,
-                      });
-                    }}
-                    className="px-3 py-1 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/80 border-2 border-[#6741D9]/45 text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-all"
-                  >
-                    {isDeepIrabExpanded ? (
-                      <>
-                        <ChevronUp className="w-3.5 h-3.5 shrink-0" />
-                        <span>İ&apos;rab Tahlilini Daralt ▴</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-3.5 h-3.5 shrink-0" />
-                        <span>
-                          🔍 İleri Düzey (B1-B2) Akademik İ&apos;rab Tahlilini Göster ▾
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {isDeepIrabExpanded && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setDeepIrabOverride({
+                          scopeKey: deepIrabScopeKey,
+                          open: false,
+                        });
+                      }}
+                      className="px-3 py-1 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/80 border-2 border-[#6741D9]/45 text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+                      <span>İ&apos;rab Tahlilini Daralt ▴</span>
+                    </button>
+                  )}
                   {grammarNote.metinden_ornek?.arapca && (
                     <button
                       type="button"
@@ -1978,7 +2017,7 @@ export function GrammarDeepDiveModal({
                   className="rounded-2xl bg-white/90 dark:bg-[var(--background)] border border-dashed border-[#6741D9]/35 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                 >
                   <p className="text-xs font-bold text-[var(--muted)]">
-                    🌱 A1 seviyesinde bilişsel yükü korumak için kelime kelime akademik i&apos;rab tablosu varsayılan olarak katlanmıştır.
+                    🌱 Sade anlatımda bilişsel yükü korumak için kelime kelime cümle/i&apos;rab tablosu katlanmıştır.
                   </p>
                   <button
                     type="button"
@@ -1989,11 +2028,9 @@ export function GrammarDeepDiveModal({
                         open: true,
                       });
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                    className="px-3.5 py-2 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                   >
-                    <span>
-                      🔍 İleri Düzey (B1-B2) Akademik İ&apos;rab Tahlilini Göster ▾
-                    </span>
+                    <span>🔍 Kelime Kelime İ&apos;rab Tahlilini Göster ▾</span>
                   </button>
                 </div>
               )}
@@ -2011,92 +2048,113 @@ export function GrammarDeepDiveModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
               {/* Sol Kutu: Yanlış Kullanım */}
-              <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-800 bg-rose-50/90 dark:bg-rose-950/40 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between">
+              <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-800 bg-rose-50/90 dark:bg-rose-950/40 p-3.5 sm:p-4 space-y-2.5 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-black text-xs uppercase tracking-wider">
                     <XCircle className="w-4 h-4 shrink-0" />
                     <span>❌ Yanlış Kullanım</span>
                   </div>
-                  {parsedYanlis.arabicPart && (
-                    <div
-                      dir="rtl"
-                      lang="ar"
-                      className="arabic font-arabic text-xl sm:text-2xl font-bold text-rose-900 dark:text-rose-200 text-right leading-relaxed break-words"
-                    >
-                      {parsedYanlis.arabicPart}
-                    </div>
-                  )}
-                </div>
-                {parsedYanlis.turkishNotes.length > 0 && (
-                  <div
-                    dir="ltr"
-                    lang="tr"
-                    className="font-sans text-xs text-slate-600 dark:text-rose-200 font-semibold text-left mt-1 pt-1.5 border-t border-rose-200/80 dark:border-rose-800/60"
-                  >
-                    {parsedYanlis.turkishNotes.map((note, idx) => (
-                      <div key={idx}>
-                        ({renderTurkishWithIsolatedArabic(
-                          note,
-                          "arabic font-arabic text-sm font-bold text-rose-900 dark:text-rose-200 mx-0.5 inline-block"
-                        )})
+                  <div className="space-y-2">
+                    {parsedYanlisList.map((entry, eIdx) => (
+                      <div
+                        key={eIdx}
+                        className={
+                          parsedYanlisList.length > 1
+                            ? "rounded-xl bg-white/70 dark:bg-rose-950/50 border border-rose-200/90 dark:border-rose-800/70 px-3 py-2 space-y-1"
+                            : "space-y-1"
+                        }
+                      >
+                        {entry.arabicPart && (
+                          <div
+                            dir="rtl"
+                            lang="ar"
+                            className="arabic font-arabic text-xl sm:text-2xl font-bold text-rose-900 dark:text-rose-200 text-right leading-relaxed break-words"
+                          >
+                            {fixArabicTypography(entry.arabicPart, arabicFont)}
+                          </div>
+                        )}
+                        {entry.turkishNotes.length > 0 && (
+                          <div
+                            dir="ltr"
+                            lang="tr"
+                            className="font-sans text-xs text-slate-600 dark:text-rose-200 font-semibold text-left pt-1 border-t border-rose-200/80 dark:border-rose-800/60"
+                          >
+                            {entry.turkishNotes.map((note, idx) => (
+                              <div key={idx}>
+                                ({renderTurkishWithIsolatedArabic(
+                                  note,
+                                  "arabic font-arabic text-sm font-bold text-rose-900 dark:text-rose-200 mx-0.5 inline-block"
+                                )})
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Sağ Kutu: Doğru Kullanım */}
-              <div className="rounded-2xl border-2 border-emerald-400 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/40 p-4 space-y-2 flex flex-col justify-between">
+              <div className="rounded-2xl border-2 border-emerald-400 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/40 p-3.5 sm:p-4 space-y-2.5 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-[#065F46] dark:text-emerald-300 font-black text-xs uppercase tracking-wider">
                       <CheckCircle2 className="w-4 h-4 shrink-0" />
                       <span>✅ Doğru Kullanım</span>
                     </div>
-                    {(parsedDogru.arabicPart ||
-                      grammarNote.metinden_ornek?.arapca) && (
+                    {dogruAudioText && (
                       <button
                         type="button"
                         onClick={() =>
-                          handleListen(
-                            parsedDogru.arabicPart ||
-                              grammarNote.metinden_ornek.arapca,
-                            "correct-usage-audio"
-                          )
+                          handleListen(dogruAudioText, "correct-usage-audio")
                         }
-                        className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-emerald-400 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 inline-flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-emerald-400 text-[11px] font-extrabold text-[#065F46] dark:text-emerald-300 inline-flex items-center gap-1 cursor-pointer shrink-0"
                       >
                         <Volume2 className="w-3 h-3 shrink-0" />
                         <span>Dinle</span>
                       </button>
                     )}
                   </div>
-                  {parsedDogru.arabicPart && (
-                    <div
-                      dir="rtl"
-                      lang="ar"
-                      className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 text-right leading-relaxed break-words"
-                    >
-                      {parsedDogru.arabicPart}
-                    </div>
-                  )}
-                </div>
-                {parsedDogru.turkishNotes.length > 0 && (
-                  <div
-                    dir="ltr"
-                    lang="tr"
-                    className="font-sans text-xs text-slate-600 dark:text-emerald-200 font-semibold text-left mt-1 pt-1.5 border-t border-emerald-200/80 dark:border-emerald-800/60"
-                  >
-                    {parsedDogru.turkishNotes.map((note, idx) => (
-                      <div key={idx}>
-                        ({renderTurkishWithIsolatedArabic(
-                          note,
-                          "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
-                        )})
+                  <div className="space-y-2">
+                    {parsedDogruList.map((entry, eIdx) => (
+                      <div
+                        key={eIdx}
+                        className={
+                          parsedDogruList.length > 1
+                            ? "rounded-xl bg-white/75 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/70 px-3 py-2 space-y-1"
+                            : "space-y-1"
+                        }
+                      >
+                        {entry.arabicPart && (
+                          <div
+                            dir="rtl"
+                            lang="ar"
+                            className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 text-right leading-relaxed break-words"
+                          >
+                            {fixArabicTypography(entry.arabicPart, arabicFont)}
+                          </div>
+                        )}
+                        {entry.turkishNotes.length > 0 && (
+                          <div
+                            dir="ltr"
+                            lang="tr"
+                            className="font-sans text-xs text-slate-600 dark:text-emerald-200 font-semibold text-left pt-1 border-t border-emerald-200/80 dark:border-emerald-800/60"
+                          >
+                            {entry.turkishNotes.map((note, idx) => (
+                              <div key={idx}>
+                                ({renderTurkishWithIsolatedArabic(
+                                  note,
+                                  "arabic font-arabic text-sm font-bold text-[#065F46] dark:text-emerald-300 mx-0.5 inline-block"
+                                )})
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
@@ -2293,7 +2351,8 @@ export function GrammarHapBilgiPanel({
   const activeBagliId = activeNote?.bagli_id || "";
   const effectiveLevel: Level = activeNote.seviye || linkedLevel || "A1";
   const isA1Level = effectiveLevel === "A1";
-  const panelIrabScopeKey = `${activeBagliId}::${effectiveLevel}`;
+  const defaultInlineIrabOpen = grammarDepthMode === "academic" || !isA1Level;
+  const panelIrabScopeKey = `${activeBagliId}::${effectiveLevel}::${grammarDepthMode}`;
   const [panelIrabOverride, setPanelIrabOverride] = useState<{
     scopeKey: string;
     open: boolean;
@@ -2301,7 +2360,7 @@ export function GrammarHapBilgiPanel({
   const isInlineIrabOpen =
     panelIrabOverride && panelIrabOverride.scopeKey === panelIrabScopeKey
       ? panelIrabOverride.open
-      : !isA1Level;
+      : defaultInlineIrabOpen;
 
   const isStandaloneGrmCard =
     activeBagliId.startsWith("grm_") || !linkedLessonUrl;
@@ -2973,38 +3032,29 @@ export function GrammarHapBilgiPanel({
         </div>
       )}
 
-      {/* 4A. SEVİYE DUYARLI KELİME KELİME İ'RAB TAHLİLİ TABLOSU (A1'de Katlanmış, A2-B1-B2'de Doğrudan Açık) */}
+      {/* 4A. SEVİYE & DERİNLİK DUYARLI KELİME KELİME İ'RAB TAHLİLİ TABLOSU */}
       {inlineDetailLayer.irab_tahlili.length > 0 && (
         <div className="w-full max-w-full min-w-0 box-border bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl sm:rounded-3xl border-2 border-[#6741D9]/40 border-b-4 p-3.5 sm:p-5 shadow-xs space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-sans text-xs sm:text-sm font-black text-[#4C28B5] dark:text-indigo-300">
               📐 Kelime Kelime İ&apos;rab Tahlili ({effectiveLevel} Kuru)
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setPanelIrabOverride({
-                  scopeKey: panelIrabScopeKey,
-                  open: !isInlineIrabOpen,
-                });
-              }}
-              className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/45 text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {isInlineIrabOpen ? (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5 shrink-0" />
-                  <span>İ&apos;rab Tahlilini Gizle ▴</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5 shrink-0" />
-                  <span>
-                    🔍 İleri Düzey (B1-B2) Akademik İ&apos;rab Tahlilini Göster ▾
-                  </span>
-                </>
-              )}
-            </button>
+            {isInlineIrabOpen && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPanelIrabOverride({
+                    scopeKey: panelIrabScopeKey,
+                    open: false,
+                  });
+                }}
+                className="min-h-[34px] px-3 py-1 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/80 border border-[#6741D9]/45 text-[#4C28B5] dark:text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+                <span>İ&apos;rab Tahlilini Daralt ▴</span>
+              </button>
+            )}
           </div>
 
           {isInlineIrabOpen ? (
@@ -3062,13 +3112,28 @@ export function GrammarHapBilgiPanel({
               })}
             </div>
           ) : (
-            <p
+            <div
               dir="ltr"
               lang="tr"
-              className="font-sans text-xs font-semibold text-[var(--muted)] text-left"
+              className="rounded-2xl bg-white/90 dark:bg-[var(--background)] border border-dashed border-[#6741D9]/35 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-left"
             >
-              A1 başlangıç seviyesinde kalıp odaklı sezdirme esas alındığı için akademik i&apos;rab tablosu varsayılan olarak gizlenmiştir. Merak ediyorsanız üstteki düğmeyle açabilirsiniz.
-            </p>
+              <p className="font-sans text-xs font-semibold text-[var(--muted)]">
+                🌱 Sade anlatımda kalıp odaklı sezdirme esas alındığı için kelime kelime cümle/i&apos;rab tablosu katlanmıştır.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPanelIrabOverride({
+                    scopeKey: panelIrabScopeKey,
+                    open: true,
+                  });
+                }}
+                className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-black inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+              >
+                <span>🔍 Kelime Kelime İ&apos;rab Tahlilini Göster ▾</span>
+              </button>
+            </div>
           )}
         </div>
       )}

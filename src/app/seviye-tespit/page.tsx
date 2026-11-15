@@ -46,12 +46,16 @@ import {
 import type { Level } from "@/types/data";
 import {
   ASSESSMENT_TOPICS,
+  buildBalancedLevelExamQuestions,
   buildDynamicAssessmentTopics,
   getDistractorAnalysisForSelection,
+  getLevelExamPoolSummary,
   isSelectedOptionCorrect,
   prepareQuestionOptions,
+  recordLevelExamWrongQuestionIds,
   splitArabicDialogueLines,
   type AssessmentQuestion,
+  type BalancedLevelExamResult,
   type DynamicAssessmentTopicMeta,
   type OptionLetter,
   type PreparedAssessmentOption,
@@ -1793,6 +1797,9 @@ function SeviyeTespitContent() {
   const [sessionTitle, setSessionTitle] = useState<string>("");
   const [sessionTopic, setSessionTopic] = useState<string | null>(null);
   const [sessionExamLevel, setSessionExamLevel] = useState<Level | null>(null);
+  const [sessionExamMeta, setSessionExamMeta] =
+    useState<BalancedLevelExamResult | null>(null);
+  const [examPoolRefreshTick, setExamPoolRefreshTick] = useState<number>(0);
   const [sessionItems, setSessionItems] = useState<SessionItemRecord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [navGridOpen, setNavGridOpen] = useState(false);
@@ -1975,6 +1982,7 @@ function SeviyeTespitContent() {
       setSessionTitle("Adaptif Seviye Tespit Sınavı (CAT)");
       setSessionTopic(null);
       setSessionExamLevel(null);
+      setSessionExamMeta(null);
       setSessionItems([makeSessionRecord(firstQ)]);
       setCurrentIndex(0);
       setNavGridOpen(false);
@@ -2023,6 +2031,7 @@ function SeviyeTespitContent() {
       setSessionTitle(`Konu Tarama: ${topicName}`);
       setSessionTopic(topicName);
       setSessionExamLevel(null);
+      setSessionExamMeta(null);
       setSessionItems(picked.map((q) => makeSessionRecord(q)));
       setCurrentIndex(0);
       setNavGridOpen(false);
@@ -2034,29 +2043,36 @@ function SeviyeTespitContent() {
     [bank, clearPendingAdvance, makeSessionRecord, topicQuizLength]
   );
 
-  // 3. MOD 3: Kur Bitirme / Seviye Atlama Sınavı Başlat (20 Soru)
+  // 3. MOD 3: Kur Bitirme / Seviye Atlama Sınavı Başlat (Katmanlı & Hafızalı Akıllı 20 Soru Seçimi)
   const startLevelExamSession = useCallback(
     (level: Level, sourceBank: AssessmentQuestion[] = bank) => {
-      const levelPool = sourceBank.filter((q) => q.seviye === level);
-      if (levelPool.length === 0) return;
+      const hasAnyForLevel = sourceBank.some((q) => q.seviye === level);
+      if (!hasAnyForLevel) return;
       clearPendingAdvance();
       stopAllAudio();
       playStart();
       navButtonRefs.current = [];
 
-      const shuffled = [...levelPool];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const picked = shuffled.slice(0, Math.min(20, shuffled.length));
-      picked.sort((a, b) => a.zorluk_basamagi - b.zorluk_basamagi);
+      const weakTopics = Object.entries(topicMastery)
+        .filter(
+          ([, stat]) => stat && stat.total > 0 && stat.correct / stat.total < 0.75
+        )
+        .map(([tName]) => tName);
 
+      const examSelection = buildBalancedLevelExamQuestions(sourceBank, level, {
+        weakTopics,
+      });
+      if (examSelection.questions.length === 0) return;
+
+      setExamPoolRefreshTick((prev) => prev + 1);
       setSessionMode("exam");
       setSessionTitle(`${level} Kur Bitirme Sınavı`);
       setSessionTopic(null);
       setSessionExamLevel(level);
-      setSessionItems(picked.map((q) => makeSessionRecord(q)));
+      setSessionExamMeta(examSelection);
+      setSessionItems(
+        examSelection.questions.map((q) => makeSessionRecord(q))
+      );
       setCurrentIndex(0);
       setNavGridOpen(false);
       setSessionCompleted(false);
@@ -2064,7 +2080,7 @@ function SeviyeTespitContent() {
       setAppliedPlanFeedback(false);
       setSessionActive(true);
     },
-    [bank, clearPendingAdvance, makeSessionRecord]
+    [bank, clearPendingAdvance, makeSessionRecord, topicMastery]
   );
 
   // URL Parametreleri (?mode=cat|topic|exam & ?topic=... & ?level=A1)
@@ -2275,6 +2291,17 @@ function SeviyeTespitContent() {
           accuracyPercent: pct,
           updatedAt: new Date().toISOString(),
         });
+      }
+
+      if (sessionMode === "exam" && sessionExamLevel) {
+        const wrongIds = normalizedRecords
+          .filter((r) => !r.isCorrect && !r.question.isListeningAudioItem)
+          .map((r) => r.question.id);
+        const correctIds = normalizedRecords
+          .filter((r) => r.isCorrect && !r.question.isListeningAudioItem)
+          .map((r) => r.question.id);
+        recordLevelExamWrongQuestionIds(sessionExamLevel, wrongIds, correctIds);
+        setExamPoolRefreshTick((prev) => prev + 1);
       }
 
       if (sessionMode === "exam" && sessionExamLevel && pct >= 75) {
@@ -3146,6 +3173,22 @@ function SeviyeTespitContent() {
           />
         </div>
 
+        {/* Kur Bitirme Sınavı Şeffaf Konu & Beceri Dağılım Etiketi */}
+        {sessionMode === "exam" && sessionExamMeta && (
+          <div className="rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/35 px-3 py-1.5 flex flex-wrap items-center justify-center sm:justify-between gap-1.5 text-[11px] font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
+            <span>
+              🎯 {sessionExamMeta.selectedTopicCount} Farklı Üst Konu ·{" "}
+              {sessionExamMeta.selectedSkillAreaCount} Beceri Alanı Dengeli ·{" "}
+              {sessionExamMeta.cycleResetOccurred
+                ? "Yenilenen Soru Havuzu"
+                : `${sessionExamMeta.freshUnseenSelectedCount} Yeni Soru Havuzu`}
+            </span>
+            <span className="text-[10px] font-bold text-[#6741D9]/85 dark:text-indigo-200/90 tabular-nums">
+              Kademeli Zorluk (1→2→3)
+            </span>
+          </div>
+        )}
+
         {/* MOBİL UYUMLU SORU NAVİGATÖRÜ (Yatay Şerit + [🔢 Liste] 5 Sütun Izgara) */}
         <div className="rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1]/90 dark:bg-[var(--surface)] px-2.5 py-2 space-y-2">
           <div className="flex items-center gap-2">
@@ -3910,18 +3953,28 @@ function SeviyeTespitContent() {
 
       {/* MOD 3 İÇERİĞİ: KUR BİTİRME / SEVİYE ATLAMA SINAVLARI */}
       {activeTab === "exam" && (
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <section
+          data-exam-refresh={examPoolRefreshTick}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+        >
           {(["A1", "A2", "B1", "B2"] as Level[]).map((lvl) => {
             const meta = getLevelMeta(lvl);
             const isCompleted = mounted && completedLevelExams.includes(lvl);
-            const lvlCount = bank.filter((q) => q.seviye === lvl).length;
+            const poolSummary = getLevelExamPoolSummary(bank, lvl, {
+              readStorage: mounted,
+            });
+            const lvlCount = poolSummary.totalPoolCount;
+            const unseenBadgeLabel =
+              poolSummary.unseenCount >= 20
+                ? `Yeni Soru Havuzu (${poolSummary.unseenCount} Çözülmemiş)`
+                : "Yenilenen Tam Havuz";
 
             return (
               <div
                 key={lvl}
                 className="rounded-3xl border-2 border-b-4 border-[#E6D7BE] dark:border-[var(--border)] bg-[#F7EFE1] dark:bg-[var(--surface)] p-5 flex flex-col justify-between gap-4"
               >
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`px-2.5 py-1 rounded-xl border text-xs font-black ${meta.badgeCls}`}
@@ -3942,8 +3995,19 @@ function SeviyeTespitContent() {
                   <h3 className="text-base sm:text-lg font-extrabold text-[var(--foreground)]">
                     {meta.title}
                   </h3>
+
+                  <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#6741D9]/30 px-2.5 py-1.5 text-[11px] font-extrabold text-[#4C28B5] dark:text-[#d0bfff] leading-snug">
+                    🎯 {poolSummary.targetTopicCoverageCount} Farklı Üst Konu ·{" "}
+                    {poolSummary.skillAreaCount || 5} Beceri Alanı Dengeli ·{" "}
+                    {unseenBadgeLabel}
+                  </div>
+
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    {meta.subtitle}. Havuzdaki {lvlCount} sorudan dengeli 20 soru seçilir; sınav sonunda tam gerekçeli karne açılır.
+                    {meta.subtitle}. Havuzdaki {lvlCount} sorudan{" "}
+                    {poolSummary.totalTopicCount} üst konuyu ve 5 beceri alanını
+                    dengeli tarayan, daha önce çözmediğiniz sorulara öncelik veren
+                    kademeli 20 soru seçilir; sınav sonunda tam gerekçeli karne
+                    açılır.
                   </p>
                 </div>
 

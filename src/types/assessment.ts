@@ -634,3 +634,587 @@ export function splitArabicDialogueLines(
     };
   });
 }
+
+// ============================================================================
+// KUR BİTİRME SINAVLARI İÇİN KATMANLI & HAFIZALI AKILLI 20 SORU SEÇİM ALGORİTMASI
+// ============================================================================
+
+export const SEEN_LEVEL_EXAM_STORAGE_PREFIX = "muallimun_seen_exam_q_";
+export const WRONG_LEVEL_EXAM_STORAGE_PREFIX = "muallimun_wrong_exam_q_";
+export const DEFAULT_LEVEL_EXAM_QUESTION_COUNT = 20;
+
+export interface SimpleKeyValueStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
+}
+
+const ALL_SKILL_AREAS: AssessmentSkillArea[] = [
+  "sarf_nahiv",
+  "kelime_baglam",
+  "diyalog_iletisim",
+  "hata_bulma",
+  "okuma_anlama",
+];
+
+/**
+ * 20 soruluk Kur Bitirme Sınavı için hedef 5 beceri alanı dengesi:
+ * - sarf_nahiv: ~8–9 soru (taban 8)
+ * - kelime_baglam: ~4 soru
+ * - diyalog_iletisim: ~3–4 soru (taban 4)
+ * - hata_bulma: ~3 soru
+ * - okuma_anlama: ~1–2 soru (taban 1, yumuşak tavan 2)
+ */
+export const LEVEL_EXAM_BASE_SKILL_QUOTAS: Record<AssessmentSkillArea, number> = {
+  sarf_nahiv: 8,
+  kelime_baglam: 4,
+  diyalog_iletisim: 4,
+  hata_bulma: 3,
+  okuma_anlama: 1,
+};
+
+const SKILL_RARITY_PRIORITY: Record<AssessmentSkillArea, number> = {
+  okuma_anlama: 5,
+  hata_bulma: 4,
+  diyalog_iletisim: 3,
+  kelime_baglam: 2,
+  sarf_nahiv: 1,
+};
+
+function resolveDefaultStorage(
+  customStorage?: SimpleKeyValueStorage | null
+): SimpleKeyValueStorage | null {
+  if (customStorage !== undefined) return customStorage;
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+}
+
+function readIdListFromStorage(
+  key: string,
+  storage?: SimpleKeyValueStorage | null
+): string[] {
+  const store = resolveDefaultStorage(storage);
+  if (!store) return [];
+  try {
+    const raw = store.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(
+      new Set(
+        parsed.filter((id): id is string => typeof id === "string" && id.length > 0)
+      )
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeIdListToStorage(
+  key: string,
+  ids: Iterable<string>,
+  storage?: SimpleKeyValueStorage | null
+): void {
+  const store = resolveDefaultStorage(storage);
+  if (!store) return;
+  try {
+    const unique = Array.from(new Set(ids)).filter(Boolean);
+    store.setItem(key, JSON.stringify(unique));
+  } catch {
+    // Gizli sekme veya kota aşımında sessizce devam et
+  }
+}
+
+export function getSeenLevelExamStorageKey(level: Level): string {
+  return `${SEEN_LEVEL_EXAM_STORAGE_PREFIX}${level}`;
+}
+
+export function getWrongLevelExamStorageKey(level: Level): string {
+  return `${WRONG_LEVEL_EXAM_STORAGE_PREFIX}${level}`;
+}
+
+export function readSeenLevelExamQuestionIds(
+  level: Level,
+  storage?: SimpleKeyValueStorage | null
+): string[] {
+  return readIdListFromStorage(getSeenLevelExamStorageKey(level), storage);
+}
+
+export function writeSeenLevelExamQuestionIds(
+  level: Level,
+  ids: Iterable<string>,
+  storage?: SimpleKeyValueStorage | null
+): void {
+  writeIdListToStorage(getSeenLevelExamStorageKey(level), ids, storage);
+}
+
+export function recordLevelExamWrongQuestionIds(
+  level: Level,
+  wrongIds: Iterable<string>,
+  correctIds: Iterable<string>,
+  storage?: SimpleKeyValueStorage | null
+): void {
+  const existing = new Set(
+    readIdListFromStorage(getWrongLevelExamStorageKey(level), storage)
+  );
+  for (const cId of correctIds) {
+    existing.delete(cId);
+  }
+  for (const wId of wrongIds) {
+    if (wId) existing.add(wId);
+  }
+  writeIdListToStorage(getWrongLevelExamStorageKey(level), existing, storage);
+}
+
+export interface LevelExamPoolSummary {
+  level: Level;
+  totalPoolCount: number;
+  totalTopicCount: number;
+  targetTopicCoverageCount: number;
+  skillAreaCount: number;
+  seenCount: number;
+  unseenCount: number;
+}
+
+export function getLevelExamPoolSummary(
+  bank: AssessmentQuestion[],
+  level: Level,
+  options?: {
+    readStorage?: boolean;
+    storage?: SimpleKeyValueStorage | null;
+    targetCount?: number;
+  }
+): LevelExamPoolSummary {
+  const targetCount = options?.targetCount ?? DEFAULT_LEVEL_EXAM_QUESTION_COUNT;
+  const levelPool = bank.filter((q) => q.seviye === level);
+  const topics = new Set(levelPool.map((q) => q.ust_konu));
+  const skills = new Set(levelPool.map((q) => q.beceri_alani));
+
+  const validIds = new Set(levelPool.map((q) => q.id));
+  const rawSeen =
+    options?.readStorage === false
+      ? []
+      : readSeenLevelExamQuestionIds(level, options?.storage);
+  const seenCount = rawSeen.filter((id) => validIds.has(id)).length;
+  const unseenCount = Math.max(0, levelPool.length - seenCount);
+
+  return {
+    level,
+    totalPoolCount: levelPool.length,
+    totalTopicCount: topics.size,
+    targetTopicCoverageCount: Math.min(targetCount, topics.size),
+    skillAreaCount: skills.size,
+    seenCount,
+    unseenCount,
+  };
+}
+
+export interface BuildBalancedLevelExamOptions {
+  targetCount?: number;
+  storage?: SimpleKeyValueStorage | null;
+  persistSeen?: boolean;
+  mistakeQuestionIds?: Iterable<string>;
+  weakTopics?: Iterable<string>;
+  rng?: () => number;
+}
+
+export interface BalancedLevelExamResult {
+  questions: AssessmentQuestion[];
+  level: Level;
+  totalPoolCount: number;
+  totalTopicCount: number;
+  selectedTopicCount: number;
+  selectedSkillAreaCount: number;
+  freshUnseenSelectedCount: number;
+  cycleResetOccurred: boolean;
+  remainingUnseenAfterSelection: number;
+  skillBreakdown: Record<AssessmentSkillArea, number>;
+}
+
+function shuffleWithRng<T>(items: readonly T[], rng: () => number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
+/**
+ * Kur Bitirme Sınavları için 4 katmanlı akıllı soru seçim motoru:
+ * 1) Çözülmüş Soru Hafızası (`muallimun_seen_exam_q_${level}`): Daha önce sorulmamış sorulara 1. önceliği verir;
+ *    havuzda < 20 çözülmemiş soru kaldığında kalan görülmemişlere + yanlış yapılanlara öncelik verip döngüyü sıfırlar.
+ * 2) Üst Konu (`ust_konu`) Temsil Garantisi (Round-Robin): Kura ait tüm konuları homojen tarar, tek bir konudan 4-5 soru yığılmasını önler.
+ * 3) 5 Beceri Alanı (`beceri_alani`) Dengesi: sarf_nahiv (~8-9), kelime_baglam (~4), diyalog_iletisim (~3-4), hata_bulma (~3), okuma_anlama (~1-2).
+ * 4) Kademeli Zorluk Sıralaması: Seçilen 20 soruyu `zorluk_basamagi` (1 -> 2 -> 3) sırasıyla ve aynı konuları arka arkaya getirmeden dizer.
+ */
+export function buildBalancedLevelExamQuestions(
+  bank: AssessmentQuestion[],
+  level: Level,
+  options?: BuildBalancedLevelExamOptions
+): BalancedLevelExamResult {
+  const rng = options?.rng ?? Math.random;
+  const persistSeen = options?.persistSeen !== false;
+  const levelPool = bank.filter((q) => q.seviye === level);
+  const targetCount = Math.min(
+    options?.targetCount ?? DEFAULT_LEVEL_EXAM_QUESTION_COUNT,
+    levelPool.length
+  );
+
+  const emptySkills: Record<AssessmentSkillArea, number> = {
+    sarf_nahiv: 0,
+    kelime_baglam: 0,
+    diyalog_iletisim: 0,
+    hata_bulma: 0,
+    okuma_anlama: 0,
+  };
+
+  if (targetCount <= 0) {
+    return {
+      questions: [],
+      level,
+      totalPoolCount: 0,
+      totalTopicCount: 0,
+      selectedTopicCount: 0,
+      selectedSkillAreaCount: 0,
+      freshUnseenSelectedCount: 0,
+      cycleResetOccurred: false,
+      remainingUnseenAfterSelection: 0,
+      skillBreakdown: emptySkills,
+    };
+  }
+
+  const validIdSet = new Set(levelPool.map((q) => q.id));
+  const priorSeenIds = readSeenLevelExamQuestionIds(
+    level,
+    options?.storage
+  ).filter((id) => validIdSet.has(id));
+  const priorSeenSet = new Set(priorSeenIds);
+
+  const storedWrongIds = readIdListFromStorage(
+    getWrongLevelExamStorageKey(level),
+    options?.storage
+  );
+  const mistakeSet = new Set<string>(storedWrongIds);
+  if (options?.mistakeQuestionIds) {
+    for (const mId of options.mistakeQuestionIds) {
+      if (mId) mistakeSet.add(mId);
+    }
+  }
+  const weakTopicSet = new Set<string>(options?.weakTopics ?? []);
+
+  const unseenInPool = levelPool.filter((q) => !priorSeenSet.has(q.id));
+  const cycleResetOccurred =
+    levelPool.length >= targetCount && unseenInPool.length < targetCount;
+
+  // Ölçeklenmiş hedef beceri kotaları (20 soru için 8 / 4 / 4 / 3 / 1)
+  const scale = targetCount / DEFAULT_LEVEL_EXAM_QUESTION_COUNT;
+  const targetSkillQuotas: Record<AssessmentSkillArea, number> = {
+    sarf_nahiv: Math.max(1, Math.round(LEVEL_EXAM_BASE_SKILL_QUOTAS.sarf_nahiv * scale)),
+    kelime_baglam: Math.max(
+      1,
+      Math.round(LEVEL_EXAM_BASE_SKILL_QUOTAS.kelime_baglam * scale)
+    ),
+    diyalog_iletisim: Math.max(
+      1,
+      Math.round(LEVEL_EXAM_BASE_SKILL_QUOTAS.diyalog_iletisim * scale)
+    ),
+    hata_bulma: Math.max(1, Math.round(LEVEL_EXAM_BASE_SKILL_QUOTAS.hata_bulma * scale)),
+    okuma_anlama: Math.max(
+      1,
+      Math.round(LEVEL_EXAM_BASE_SKILL_QUOTAS.okuma_anlama * scale)
+    ),
+  };
+
+  // Yumuşak üst tavanlar (tek beceri alanına aşırı yığılmayı önler)
+  const softMaxSkillCaps: Record<AssessmentSkillArea, number> = {
+    sarf_nahiv: Math.max(targetSkillQuotas.sarf_nahiv + 1, 9),
+    kelime_baglam: Math.max(targetSkillQuotas.kelime_baglam + 1, 5),
+    diyalog_iletisim: Math.max(targetSkillQuotas.diyalog_iletisim, 4),
+    hata_bulma: Math.max(targetSkillQuotas.hata_bulma + 1, 4),
+    okuma_anlama: Math.max(targetSkillQuotas.okuma_anlama + 1, 2),
+  };
+
+  // Konu gruplarını oluştur (her grup içi karıştırılmış)
+  const byTopic = new Map<string, AssessmentQuestion[]>();
+  for (const q of shuffleWithRng(levelPool, rng)) {
+    const t = q.ust_konu;
+    const arr = byTopic.get(t);
+    if (arr) arr.push(q);
+    else byTopic.set(t, [q]);
+  }
+
+  const allTopicNames = Array.from(byTopic.keys());
+  const totalTopicCount = allTopicNames.length;
+
+  // Konu başına azami soru sınırı:
+  // - 16+ konu varsa (A1=16, A2=19, B1=21): konu başına en fazla 2 soru
+  // - 10-15 konu varsa (B2=10): konu başına en fazla 3 soru
+  // - Daha az konu varsa: Math.ceil(targetCount / totalTopicCount) + 1
+  const strictMaxPerTopic =
+    totalTopicCount >= 16
+      ? 2
+      : totalTopicCount >= 9
+      ? 3
+      : Math.ceil(targetCount / Math.max(1, totalTopicCount)) + 1;
+
+  const selectedIds = new Set<string>();
+  const selectedQuestions: AssessmentQuestion[] = [];
+  const topicPickedCounts: Record<string, number> = {};
+  const skillPickedCounts: Record<AssessmentSkillArea, number> = {
+    ...emptySkills,
+  };
+
+  // Konu içinden mevcut beceri açığına ve hafıza önceliğine göre en uygun adayı puanla
+  const pickBestCandidateFromTopic = (
+    topicName: string,
+    tierFilter: "unseen_only" | "mistake_or_unseen" | "any",
+    respectSkillCap: boolean
+  ): AssessmentQuestion | null => {
+    const candidates = byTopic.get(topicName) || [];
+    let bestQ: AssessmentQuestion | null = null;
+    let bestScore = -Infinity;
+
+    for (const q of candidates) {
+      if (selectedIds.has(q.id)) continue;
+      const isUnseen = !priorSeenSet.has(q.id);
+      const isMistake = mistakeSet.has(q.id);
+
+      if (tierFilter === "unseen_only" && !isUnseen) continue;
+      if (tierFilter === "mistake_or_unseen" && !isUnseen && !isMistake) {
+        continue;
+      }
+
+      const sk = q.beceri_alani;
+      const pickedForSkill = skillPickedCounts[sk] || 0;
+      if (respectSkillCap && pickedForSkill >= softMaxSkillCaps[sk]) {
+        continue;
+      }
+
+      const deficit = targetSkillQuotas[sk] - pickedForSkill;
+      let score = 0;
+
+      // 1. Öncelik: Çözülmemiş soru -> Yanlış yapılmış soru -> Tekrar havuzu
+      if (isUnseen) score += 1000;
+      else if (isMistake) score += 500;
+
+      // 2. Öncelik: Beceri kotası açığı (henüz dolmamış beceriler güçlü pozitif puan alır)
+      if (deficit > 0) {
+        score += 120 + deficit * 35 + SKILL_RARITY_PRIORITY[sk] * 12;
+      } else if (pickedForSkill < softMaxSkillCaps[sk]) {
+        score += 20 - (pickedForSkill - targetSkillQuotas[sk]) * 15;
+      } else {
+        score -= 80;
+      }
+
+      // Zayıf olunan üst konulara ikinci turda küçük pedagojik destek
+      if (weakTopicSet.has(topicName)) {
+        score += 8;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestQ = q;
+      }
+    }
+
+    return bestQ;
+  };
+
+  const commitQuestion = (q: AssessmentQuestion) => {
+    selectedIds.add(q.id);
+    selectedQuestions.push(q);
+    topicPickedCounts[q.ust_konu] = (topicPickedCounts[q.ust_konu] || 0) + 1;
+    skillPickedCounts[q.beceri_alani] =
+      (skillPickedCounts[q.beceri_alani] || 0) + 1;
+  };
+
+  // Konuları Round-Robin için sırala:
+  // Nadir beceri (`okuma_anlama`) içeren veya tek beceriye kilitli konular önce ziyaret edilir ki
+  // çok becerili konular kalan kotaları esnekçe tamamlasın (eşitlikte rastgele sıra korunur).
+  const buildOrderedTopics = (
+    tierFilter: "unseen_only" | "mistake_or_unseen" | "any"
+  ): string[] => {
+    const shuffledTopics = shuffleWithRng(allTopicNames, rng);
+    return shuffledTopics.sort((tA, tB) => {
+      const availA = (byTopic.get(tA) || []).filter((q) => {
+        if (selectedIds.has(q.id)) return false;
+        if (tierFilter === "unseen_only") return !priorSeenSet.has(q.id);
+        if (tierFilter === "mistake_or_unseen") {
+          return !priorSeenSet.has(q.id) || mistakeSet.has(q.id);
+        }
+        return true;
+      });
+      const availB = (byTopic.get(tB) || []).filter((q) => {
+        if (selectedIds.has(q.id)) return false;
+        if (tierFilter === "unseen_only") return !priorSeenSet.has(q.id);
+        if (tierFilter === "mistake_or_unseen") {
+          return !priorSeenSet.has(q.id) || mistakeSet.has(q.id);
+        }
+        return true;
+      });
+
+      const hasReadingA = availA.some((q) => q.beceri_alani === "okuma_anlama")
+        ? 1
+        : 0;
+      const hasReadingB = availB.some((q) => q.beceri_alani === "okuma_anlama")
+        ? 1
+        : 0;
+      if (hasReadingA !== hasReadingB) return hasReadingB - hasReadingA;
+
+      const skillDiversityA = new Set(availA.map((q) => q.beceri_alani)).size;
+      const skillDiversityB = new Set(availB.map((q) => q.beceri_alani)).size;
+      if (skillDiversityA !== skillDiversityB) {
+        return skillDiversityA - skillDiversityB;
+      }
+      return 0;
+    });
+  };
+
+  const runRoundRobinPasses = (
+    tierFilter: "unseen_only" | "mistake_or_unseen" | "any",
+    maxPerTopicCap: number,
+    respectSkillCap: boolean
+  ) => {
+    for (let round = 0; round < maxPerTopicCap; round++) {
+      if (selectedQuestions.length >= targetCount) break;
+      const orderedTopics = buildOrderedTopics(tierFilter);
+      let addedInRound = false;
+
+      for (const topicName of orderedTopics) {
+        if (selectedQuestions.length >= targetCount) break;
+        const currentTopicCount = topicPickedCounts[topicName] || 0;
+        if (currentTopicCount > round || currentTopicCount >= maxPerTopicCap) {
+          continue;
+        }
+
+        const chosen = pickBestCandidateFromTopic(
+          topicName,
+          tierFilter,
+          respectSkillCap
+        );
+        if (chosen) {
+          commitQuestion(chosen);
+          addedInRound = true;
+        }
+      }
+
+      // Eğer mevcut round sınırında ilerleme olmadıysa bir üst rounda geçebilmek için
+      // halihazırda 1 soru almış konuların da 2. soruyu almasına izin ver
+      if (!addedInRound) {
+        for (const topicName of orderedTopics) {
+          if (selectedQuestions.length >= targetCount) break;
+          if ((topicPickedCounts[topicName] || 0) >= maxPerTopicCap) continue;
+          const chosen = pickBestCandidateFromTopic(
+            topicName,
+            tierFilter,
+            respectSkillCap
+          );
+          if (chosen) {
+            commitQuestion(chosen);
+          }
+        }
+      }
+    }
+  };
+
+  // AŞAMA 1: Önce çözülmemiş sorulardan sıkı konu ve beceri dengesiyle Round-Robin
+  runRoundRobinPasses("unseen_only", strictMaxPerTopic, true);
+  if (selectedQuestions.length < targetCount) {
+    runRoundRobinPasses("unseen_only", strictMaxPerTopic, false);
+  }
+  // Bazı az sorulu köprü konular tükendiğinde kalan çözülmemiş soruların hiçbirini geride bırakmamak için konu tavanını kademeli esnet
+  if (selectedQuestions.length < targetCount) {
+    runRoundRobinPasses("unseen_only", strictMaxPerTopic + 1, true);
+    runRoundRobinPasses("unseen_only", strictMaxPerTopic + 2, false);
+    runRoundRobinPasses("unseen_only", levelPool.length, false);
+  }
+
+  // AŞAMA 2: Döngü sıfırlama durumundaysa (< 20 çözülmemiş kaldıysa) önce yanlış yapılanları dahil et
+  if (selectedQuestions.length < targetCount) {
+    runRoundRobinPasses("mistake_or_unseen", strictMaxPerTopic, true);
+    runRoundRobinPasses("mistake_or_unseen", strictMaxPerTopic, false);
+    runRoundRobinPasses("mistake_or_unseen", strictMaxPerTopic + 2, false);
+    runRoundRobinPasses("mistake_or_unseen", levelPool.length, false);
+  }
+
+  // AŞAMA 3: Tam havuzdan konu ve beceri dengesini koruyarak 20 soruya tamamla
+  if (selectedQuestions.length < targetCount) {
+    runRoundRobinPasses("any", strictMaxPerTopic, true);
+    runRoundRobinPasses("any", strictMaxPerTopic, false);
+    runRoundRobinPasses("any", levelPool.length, false);
+  }
+
+  const freshUnseenSelectedCount = selectedQuestions.filter(
+    (q) => !priorSeenSet.has(q.id)
+  ).length;
+
+  // AŞAMA 4: Kademeli Zorluk Sıralaması (zorluk_basamagi: 1 -> 2 -> 3)
+  // Aynı zorluk basamağı içinde aynı üst konunun peş peşe gelmemesini sağla
+  const orderedFinal: AssessmentQuestion[] = [];
+  for (const diffTier of [1, 2, 3] as const) {
+    const bucket = shuffleWithRng(
+      selectedQuestions.filter((q) => q.zorluk_basamagi === diffTier),
+      rng
+    );
+    while (bucket.length > 0) {
+      const prevTopic =
+        orderedFinal.length > 0
+          ? orderedFinal[orderedFinal.length - 1].ust_konu
+          : null;
+      const nonAdjacentIdx = prevTopic
+        ? bucket.findIndex((q) => q.ust_konu !== prevTopic)
+        : 0;
+      const pickIdx = nonAdjacentIdx >= 0 ? nonAdjacentIdx : 0;
+      orderedFinal.push(bucket[pickIdx]);
+      bucket.splice(pickIdx, 1);
+    }
+  }
+  // Olası farklı zorluk basamağı değerlerine karşı güvenlik
+  if (orderedFinal.length < selectedQuestions.length) {
+    const placed = new Set(orderedFinal.map((q) => q.id));
+    for (const q of selectedQuestions) {
+      if (!placed.has(q.id)) orderedFinal.push(q);
+    }
+    orderedFinal.sort((a, b) => a.zorluk_basamagi - b.zorluk_basamagi);
+  }
+
+  // Çözülmüş soru hafızasını güncelle
+  const nextSeenIds = cycleResetOccurred
+    ? orderedFinal.map((q) => q.id)
+    : [...priorSeenIds, ...orderedFinal.map((q) => q.id)];
+
+  if (persistSeen) {
+    writeSeenLevelExamQuestionIds(level, nextSeenIds, options?.storage);
+  }
+
+  const uniqueNextSeenCount = new Set(
+    nextSeenIds.filter((id) => validIdSet.has(id))
+  ).size;
+  const remainingUnseenAfterSelection = Math.max(
+    0,
+    levelPool.length - uniqueNextSeenCount
+  );
+
+  const selectedTopicsSet = new Set(orderedFinal.map((q) => q.ust_konu));
+  const selectedSkillsSet = new Set(
+    orderedFinal.map((q) => q.beceri_alani).filter((s) => ALL_SKILL_AREAS.includes(s))
+  );
+
+  return {
+    questions: orderedFinal,
+    level,
+    totalPoolCount: levelPool.length,
+    totalTopicCount,
+    selectedTopicCount: selectedTopicsSet.size,
+    selectedSkillAreaCount: selectedSkillsSet.size,
+    freshUnseenSelectedCount,
+    cycleResetOccurred,
+    remainingUnseenAfterSelection,
+    skillBreakdown: skillPickedCounts,
+  };
+}

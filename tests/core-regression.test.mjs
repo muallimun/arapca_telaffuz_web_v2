@@ -6168,8 +6168,8 @@ test("52. CEFR Kazanım & 5 Temel Beceri Haritası, Çift Yönlü Gramer-Alışt
   );
   assert.equal(
     grammarPanelCode.includes("🌱 A1 Başlangıç Özeti (Kalıp Olarak Öğren)") &&
-      (grammarPanelCode.includes("🔍 İleri Düzey (B1-B2) Akademik İ'rab Tahlilini Göster ▾") ||
-        grammarPanelCode.includes("🔍 İleri Düzey (B1-B2) Akademik İ&apos;rab Tahlilini Göster ▾")) &&
+      (grammarPanelCode.includes("🔍 Kelime Kelime İ'rab Tahlilini Göster ▾") ||
+        grammarPanelCode.includes("🔍 Kelime Kelime İ&apos;rab Tahlilini Göster ▾")) &&
       grammarPanelCode.includes("🎯 Bu Konuyu Alıştırmalarda Çalış") &&
       grammarPanelCode.includes("📖 Bağlı Diyalog / Metne Git") &&
       grammarPanelCode.includes("!isA1Level"),
@@ -8040,6 +8040,222 @@ test("68. Kütüphane ve Gramer Yan Paneli: Büyük Kart Modalı Z-Katmanı & Es
     "GrammarHapBilgiPanel ve Diyalog kartlarındaki çift ikon (SVG + emoji) tekrarları temizlenmiş ve Diyaloğu Aç butonu tek satıra sabitlenmiş olmalıdır"
   );
 });
+
+// ============================================================================
+// TEST 69: Tekil İ'rab Butonu, Akademik Mod Senkronizasyonu, Çoklu Hata Örneği
+// Ayrıştırması ve Katmanlı & Hafızalı 20 Soru Kur Sınavı Algoritması
+// ============================================================================
+test("GrammarHapBilgiPanel tekil İ'rab butonu + Akademik mod açık varsayılanı ve buildBalancedLevelExamQuestions 4 kur dengesi doğrulanmalı", async () => {
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+  const seviyeTespitCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. Mükerrer eski İ'rab açma butonu kaldırılmış, tekil "🔍 Kelime Kelime İ'rab Tahlilini Göster ▾" ve Akademik mod senkronizasyonu kurulmuş olmalı
+  assert.equal(
+    grammarPanelCode.includes("İleri Düzey (B1-B2) Akademik İ"),
+    false,
+    "Mükerrer eski 'İleri Düzey (B1-B2) Akademik İ'rab Tahlilini Göster' etiketi tamamen kaldırılmalıdır"
+  );
+  assert.equal(
+    grammarPanelCode.includes(
+      'const defaultDeepIrabOpen = grammarDepthMode === "academic" || !isA1DeepLevel;'
+    ) &&
+      grammarPanelCode.includes(
+        'const defaultInlineIrabOpen = grammarDepthMode === "academic" || !isA1Level;'
+      ) &&
+      grammarPanelCode.includes(
+        "${grammarNote.bagli_id}::${effectiveDeepLevel}::${grammarDepthMode}"
+      ) &&
+      grammarPanelCode.includes(
+        "${activeBagliId}::${effectiveLevel}::${grammarDepthMode}"
+      ),
+    true,
+    "Akademik mod seçildiğinde A1 dahil tüm kurlarda kelime kelime İ'rab tablosu varsayılan olarak açık gelmelidir"
+  );
+
+  // 2. Çoklu `/` kullanım örnekleri dikey satırlara ayrılmalı
+  const { splitUsageExamplesList } = await import(
+    "../src/components/ui/GrammarHapBilgiPanel.tsx"
+  );
+  const multiSlash = splitUsageExamplesList(
+    "الطَّقْسُ الْحَارُّ / السَّمَاءُ صَافِيٌ"
+  );
+  assert.equal(
+    multiSlash.length,
+    2,
+    "Slash (/) ile ayrılan çoklu Arapça örnekler ayrı satırlara bölünmelidir"
+  );
+  assert.equal(multiSlash[0].arabicPart, "الطَّقْسُ الْحَارُّ");
+  assert.equal(multiSlash[1].arabicPart, "السَّمَاءُ صَافِيٌ");
+
+  const withParenNotes = splitUsageExamplesList(
+    "جَوَازِي فِي حَقِيبَةٍ صَغِيرَةٍ (Belirli çanta ise) / جَوَازِي الْجَدِيدٌ."
+  );
+  assert.equal(withParenNotes.length, 2);
+  assert.deepEqual(withParenNotes[0].turkishNotes, ["Belirli çanta ise"]);
+
+  // 3. Katmanlı & Hafızalı 20 Soru Kur Bitirme Sınavı Algoritması
+  const bank = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT_DIR, "src", "data", "seviye_tespit_sorulari.json"),
+      "utf8"
+    )
+  );
+  const {
+    buildBalancedLevelExamQuestions,
+    readSeenLevelExamQuestionIds,
+    recordLevelExamWrongQuestionIds,
+  } = await import("../src/types/assessment.ts");
+
+  const createMemoryStorage = () => {
+    const map = new Map();
+    return {
+      getItem: (k) => (map.has(k) ? map.get(k) : null),
+      setItem: (k, v) => map.set(k, String(v)),
+      removeItem: (k) => map.delete(k),
+    };
+  };
+
+  let seed = 42;
+  const deterministicRng = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+
+  const expectedInitialTopics = { A1: 16, A2: 19, B1: 20, B2: 10 };
+
+  for (const lvl of ["A1", "A2", "B1", "B2"]) {
+    const mem = createMemoryStorage();
+    const res1 = buildBalancedLevelExamQuestions(bank, lvl, {
+      storage: mem,
+      rng: deterministicRng,
+    });
+
+    assert.equal(
+      res1.questions.length,
+      20,
+      `${lvl} Kur Sınavı tam 20 soru üretmelidir`
+    );
+    assert.equal(
+      new Set(res1.questions.map((q) => q.id)).size,
+      20,
+      `${lvl} Kur Sınavında mükerrer soru bulunmamalıdır`
+    );
+    assert.equal(
+      res1.questions.every((q) => q.seviye === lvl),
+      true,
+      `${lvl} Kur Sınavındaki tüm sorular ${lvl} seviyesine ait olmalıdır`
+    );
+    assert.equal(
+      res1.selectedTopicCount,
+      expectedInitialTopics[lvl],
+      `${lvl} ilk Kur Sınavı Round-Robin ile ${expectedInitialTopics[lvl]} farklı üst konuyu kapsamalıdır`
+    );
+    assert.equal(
+      res1.selectedSkillAreaCount,
+      5,
+      `${lvl} Kur Sınavı 5 temel beceri alanının tamamını içermelidir`
+    );
+    assert.ok(
+      res1.skillBreakdown.sarf_nahiv >= 7 && res1.skillBreakdown.sarf_nahiv <= 10,
+      `${lvl} Kur Sınavında sarf_nahiv dengeli olmalıdır (gerçekleşen: ${res1.skillBreakdown.sarf_nahiv})`
+    );
+
+    // Tek bir konudan yığılma olmamalı (A1/A2/B1 <= 2, B2 <= 3)
+    const perTopic = {};
+    for (const q of res1.questions) {
+      perTopic[q.ust_konu] = (perTopic[q.ust_konu] || 0) + 1;
+    }
+    const maxInSingleTopic = Math.max(...Object.values(perTopic));
+    assert.ok(
+      maxInSingleTopic <= (lvl === "B2" ? 3 : 2),
+      `${lvl} Kur Sınavında tek konudan aşırı soru yığılmamalıdır (en çok: ${maxInSingleTopic})`
+    );
+
+    // Kademeli zorluk sıralaması (1 -> 2 -> 3)
+    for (let i = 1; i < res1.questions.length; i++) {
+      assert.ok(
+        res1.questions[i - 1].zorluk_basamagi <=
+          res1.questions[i].zorluk_basamagi,
+        `${lvl} Kur Sınavı soruları artan zorluk basamağına göre sıralanmalıdır`
+      );
+    }
+
+    // 2. sınavda ilk sınavdaki hiçbir soru tekrar gelmemeli (%100 çözülmemiş önceliği)
+    const res2 = buildBalancedLevelExamQuestions(bank, lvl, {
+      storage: mem,
+      rng: deterministicRng,
+    });
+    assert.equal(res2.freshUnseenSelectedCount, 20);
+    const firstIds = new Set(res1.questions.map((q) => q.id));
+    assert.equal(
+      res2.questions.some((q) => firstIds.has(q.id)),
+      false,
+      `${lvl} 2. Kur Sınavında 1. sınavda sorulan hiçbir soru tekrar gelmemelidir`
+    );
+  }
+
+  // B2 havuzunda (90 soru) 4 sınav (80 soru) sonrası 5. sınavda (< 20 çözülmemiş = 10 soru)
+  // kalan 10 çözülmemiş soru + yanlış yapılan sorular önceliklendirilip döngü sıfırlanmalı
+  const cycleMem = createMemoryStorage();
+  const b2Run1 = buildBalancedLevelExamQuestions(bank, "B2", {
+    storage: cycleMem,
+    rng: deterministicRng,
+  });
+  const simulatedWrongIds = [b2Run1.questions[0].id, b2Run1.questions[1].id];
+  recordLevelExamWrongQuestionIds("B2", simulatedWrongIds, [], cycleMem);
+
+  for (let k = 0; k < 3; k++) {
+    const r = buildBalancedLevelExamQuestions(bank, "B2", {
+      storage: cycleMem,
+      rng: deterministicRng,
+    });
+    assert.equal(r.cycleResetOccurred, false);
+    assert.equal(r.freshUnseenSelectedCount, 20);
+  }
+  assert.equal(readSeenLevelExamQuestionIds("B2", cycleMem).length, 80);
+
+  const b2ResetRun = buildBalancedLevelExamQuestions(bank, "B2", {
+    storage: cycleMem,
+    rng: deterministicRng,
+  });
+  assert.equal(
+    b2ResetRun.cycleResetOccurred,
+    true,
+    "Havuzda 20'den az çözülmemiş soru kaldığında döngü sıfırlanmalıdır"
+  );
+  assert.equal(
+    b2ResetRun.freshUnseenSelectedCount,
+    10,
+    "Sıfırlama sınavında kalan 10 çözülmemiş sorunun tamamı öncelikle seçilmelidir"
+  );
+  const resetIds = new Set(b2ResetRun.questions.map((q) => q.id));
+  assert.equal(
+    simulatedWrongIds.every((wId) => resetIds.has(wId)),
+    true,
+    "Döngü sıfırlanırken daha önce yanlış yapılan sorular öncelikle sınava dahil edilmelidir"
+  );
+  assert.equal(
+    readSeenLevelExamQuestionIds("B2", cycleMem).length,
+    20,
+    "Döngü sıfırlandıktan sonra localStorage hafızası yeni 20 soruyla temiz başlamalıdır"
+  );
+
+  // seviye-tespit/page.tsx entegrasyonu ve şeffaf bilgi rozeti kontrolü
+  assert.equal(
+    seviyeTespitCode.includes("buildBalancedLevelExamQuestions") &&
+      seviyeTespitCode.includes("Farklı Üst Konu") &&
+      seviyeTespitCode.includes("Beceri Alanı Dengeli"),
+    true,
+    "seviye-tespit/page.tsx yeni akıllı Kur Sınavı motorunu ve şeffaf konu/beceri etiketini kullanmalıdır"
+  );
+});
+
 
 
 

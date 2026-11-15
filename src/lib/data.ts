@@ -53,6 +53,7 @@ const CEFR_RANK: Record<Level, number> = {
 
 function normalizeCanonicalArabicLine(text: string): string {
   return (text || "")
+    .normalize("NFC")
     .replace(/\u0640+/g, "")
     .replace(/([\u064B-\u0650\u0652\u0670])\u0651/g, "\u0651$1");
 }
@@ -244,16 +245,14 @@ export const youtubeTavsiyeleri: YoutubeRecommendationItem[] = (
   .map((item) => ({
     ...item,
     baslik_tr: (item.baslik_tr || "").normalize("NFC"),
-    baslik_ar: (item.baslik_ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+    baslik_ar: normalizeCanonicalArabicLine(item.baslik_ar || ""),
     kanal_adi: (item.kanal_adi || "").normalize("NFC"),
     sure_etiketi: item.sure_etiketi
       ? item.sure_etiketi.normalize("NFC")
       : undefined,
-    pedagojik_not: (item.pedagojik_not || "").normalize("NFC"),
+    pedagojik_not: normalizeCanonicalArabicLine(item.pedagojik_not || ""),
     odak_kelimeler: Array.isArray(item.odak_kelimeler)
-      ? item.odak_kelimeler.map((w) =>
-          (w || "").replace(/\u0640+/g, "").normalize("NFC")
-        )
+      ? item.odak_kelimeler.map((w) => normalizeCanonicalArabicLine(w || ""))
       : [],
   }))
   .sort((a, b) => (a.sira || 0) - (b.sira || 0));
@@ -265,12 +264,12 @@ export const esZitAnlamlilar: SynonymAntonymEntry[] = (
   .map((entry, idx): SynonymAntonymEntry => ({
     ...entry,
     sira: entry.sira || idx + 1,
-    kelime_ar: normalizeCanonicalArabicLine(entry.kelime_ar || "").normalize("NFC"),
+    kelime_ar: normalizeCanonicalArabicLine(entry.kelime_ar || ""),
     kelime_harekesiz: (entry.kelime_harekesiz || "").normalize("NFC"),
     anlam_tr: (entry.anlam_tr || "").normalize("NFC"),
     es_anlamlilar: Array.isArray(entry.es_anlamlilar)
       ? entry.es_anlamlilar.map((sub) => ({
-          ar: normalizeCanonicalArabicLine(sub.ar || "").normalize("NFC"),
+          ar: normalizeCanonicalArabicLine(sub.ar || ""),
           harekesiz: (sub.harekesiz || "").normalize("NFC"),
           tr: (sub.tr || "").normalize("NFC"),
           ...(sub.nuans_tr ? { nuans_tr: sub.nuans_tr.normalize("NFC") } : {}),
@@ -278,15 +277,13 @@ export const esZitAnlamlilar: SynonymAntonymEntry[] = (
       : [],
     zit_anlamlilar: Array.isArray(entry.zit_anlamlilar)
       ? entry.zit_anlamlilar.map((sub) => ({
-          ar: normalizeCanonicalArabicLine(sub.ar || "").normalize("NFC"),
+          ar: normalizeCanonicalArabicLine(sub.ar || ""),
           harekesiz: (sub.harekesiz || "").normalize("NFC"),
           tr: (sub.tr || "").normalize("NFC"),
           ...(sub.nuans_tr ? { nuans_tr: sub.nuans_tr.normalize("NFC") } : {}),
         }))
       : [],
-    ornek_cumle_ar: normalizeCanonicalArabicLine(
-      entry.ornek_cumle_ar || ""
-    ).normalize("NFC"),
+    ornek_cumle_ar: normalizeCanonicalArabicLine(entry.ornek_cumle_ar || ""),
     ornek_cumle_tr: (entry.ornek_cumle_tr || "").normalize("NFC"),
   }))
   .sort((a, b) => (a.sira || 0) - (b.sira || 0));

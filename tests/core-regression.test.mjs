@@ -26,18 +26,22 @@ function readDataJson(fileName) {
   return { raw, parsed: JSON.parse(raw) };
 }
 
-function collectStrings(node, out = []) {
+function toCanonicalArabicShaddaNfc(str) {
+  return str.normalize("NFC").replace(/([\u064B-\u0650])\u0651/g, "\u0651$1");
+}
+
+function collectStrings(node, out = [], keyName = "") {
   if (typeof node === "string") {
-    out.push(node);
+    out.push({ text: node, keyName });
   } else if (Array.isArray(node)) {
-    for (const item of node) collectStrings(item, out);
+    for (const item of node) collectStrings(item, out, keyName);
   } else if (node && typeof node === "object") {
-    for (const val of Object.values(node)) collectStrings(val, out);
+    for (const [k, val] of Object.entries(node)) collectStrings(val, out, k);
   }
   return out;
 }
 
-test("1. Tüm 8 JSON dosyası hatasız parse edilir, 0 tatweel (\\u0640) içerir ve %100 NFC kanonik formdadır", () => {
+test("1. Tüm 8 JSON dosyası hatasız parse edilir, 0 tatweel (\\u0640) içerir ve %100 NFC + kanonik şedde+hareke formundadır", () => {
   for (const fileName of ALL_JSON_FILES) {
     const { raw, parsed } = readDataJson(fileName);
     assert.ok(Array.isArray(parsed), `${fileName} kök düzeyde bir dizi olmalıdır`);
@@ -55,12 +59,13 @@ test("1. Tüm 8 JSON dosyası hatasız parse edilir, 0 tatweel (\\u0640) içerir
       `${fileName} içinde bozuk 'ə' karakteri bulunmamalıdır`
     );
 
-    const strings = collectStrings(parsed);
-    for (const str of strings) {
+    const entries = collectStrings(parsed);
+    for (const { text: str, keyName } of entries) {
+      if (keyName === "yanlis") continue;
       assert.equal(
         str,
-        str.normalize("NFC"),
-        `${fileName} içinde NFC formunda olmayan metin bulundu: ${str.slice(0, 40)}`
+        toCanonicalArabicShaddaNfc(str),
+        `${fileName} içinde kanonik NFC+şedde formunda olmayan metin bulundu: ${str.slice(0, 40)}`
       );
     }
   }
@@ -180,13 +185,13 @@ test("3. 120/120 diyalog gramer, 60/60 metin gramer ve 180/180 ayrintili_anlatim
   const line5 = dlg007.satirlar.find((s) => s.sira === 5);
   assert.equal(
     line5.arapca,
-    "اِفْتَحْ كِتَابَكَ عَلَى الصَّفْحَةِ الْعَاشِرَةِ.".normalize("NFC"),
+    toCanonicalArabicShaddaNfc("اِفْتَحْ كِتَابَكَ عَلَى الصَّفْحَةِ الْعَاشِرَةِ."),
     "dlg_007 5. satır hemze-i vasıl ve sıra sayısıyla düzeltilmiş olmalıdır"
   );
 
   const dlg020 = diyaloglar.find((d) => d.id === "dlg_020");
   assert.equal(
-    JSON.stringify(dlg020).includes("تَنْصَحِينَنِي".normalize("NFC")),
+    JSON.stringify(dlg020).includes(toCanonicalArabicShaddaNfc("تَنْصَحِينَنِي")),
     true,
     "dlg_020 içinde sükûnlu 'تَنْصَحِينَنِي' bulunmalıdır"
   );
@@ -768,12 +773,13 @@ test("12. FAZ 4A — seviye_tespit_sorulari.json: benzersiz ID, NFC, 0 tatweel, 
     "seviye_tespit_sorulari.json içinde tatweel (\\u0640) bulunmamalıdır"
   );
 
-  const strings = collectStrings(parsed);
-  for (const s of strings) {
+  const entries = collectStrings(parsed);
+  for (const { text: s, keyName } of entries) {
+    if (keyName === "yanlis") continue;
     assert.equal(
       s,
-      s.normalize("NFC"),
-      `seviye_tespit_sorulari.json içinde NFC olmayan metin bulundu: ${s.slice(0, 40)}`
+      toCanonicalArabicShaddaNfc(s),
+      `seviye_tespit_sorulari.json içinde kanonik NFC+şedde olmayan metin bulundu: ${s.slice(0, 40)}`
     );
   }
 
@@ -3480,9 +3486,15 @@ test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag Lit
   assert.equal(youtubeTavsiyeleri.length, 60);
   assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   for (const runtimeItem of youtubeTavsiyeleri) {
-    assert.equal(runtimeItem.baslik_ar, runtimeItem.baslik_ar.normalize("NFC"));
+    assert.equal(
+      runtimeItem.baslik_ar,
+      toCanonicalArabicShaddaNfc(runtimeItem.baslik_ar)
+    );
     assert.equal(runtimeItem.baslik_tr, runtimeItem.baslik_tr.normalize("NFC"));
-    assert.equal(runtimeItem.pedagojik_not, runtimeItem.pedagojik_not.normalize("NFC"));
+    assert.equal(
+      runtimeItem.pedagojik_not,
+      toCanonicalArabicShaddaNfc(runtimeItem.pedagojik_not)
+    );
   }
   assert.ok(getYoutubeRecommendationsByContentId("dlg_001").length >= 1);
   assert.ok(getYoutubeRecommendationsByContentId("metin_05").length >= 1);
@@ -3597,8 +3609,13 @@ test("34. 400 Eş & Zıt Anlamlılar (المرادفات والأضداد) veri 
   }
   assert.ok(totalSubWords >= 1800, `Toplam kelime havuzu 1800+ olmalıdır (bulunan: ${totalSubWords})`);
 
-  for (const s of collectStrings(parsed)) {
-    assert.equal(s, s.normalize("NFC"), `NFC formunda olmayan metin: ${s.slice(0, 40)}`);
+  for (const { text: s, keyName } of collectStrings(parsed)) {
+    if (keyName === "yanlis") continue;
+    assert.equal(
+      s,
+      toCanonicalArabicShaddaNfc(s),
+      `Kanonik NFC+şedde formunda olmayan metin: ${s.slice(0, 40)}`
+    );
   }
 
   // 2. data.ts & dict.ts O(1) eş/zıt anlam arama doğrulaması
@@ -4088,7 +4105,7 @@ test("38. Ölü YouTube Link Temizliği (60 Sıralı Kayıt + Tek Aktif Iframe),
   assert.ok(hediyeItem, "0004_01_hediye kaydı bulunmalıdır");
   assert.equal(
     hediyeItem.ornek_ar,
-    "اشْتَرَيْتُ هَدِيَّةً جَمِيلَةً لِصَدِيقِي.",
+    toCanonicalArabicShaddaNfc("اشْتَرَيْتُ هَدِيَّةً جَمِيلَةً لِصَدِيقِي."),
     "İftial babı اشْتَرَيْتُ fiili hemze-i kat' (إ) olmadan hemze-i vasıl ile yazılmalıdır"
   );
 
@@ -6802,12 +6819,22 @@ test("57. ErrorHunter Şık Tıklanabilirliği, Slash (/) Çoklu Örnek Eşleşt
   }
 
   const allamaniItem = catalog.find(
-    (it) => it.wrongSentenceAr.includes("عَلَّمَي") && it.correctSentenceAr.includes("عَلَّمَنِي")
+    (it) =>
+      toCanonicalArabicShaddaNfc(it.wrongSentenceAr).includes(
+        toCanonicalArabicShaddaNfc("عَلَّمَي")
+      ) &&
+      toCanonicalArabicShaddaNfc(it.correctSentenceAr).includes(
+        toCanonicalArabicShaddaNfc("عَلَّمَنِي")
+      )
   );
   const iyyakaItem = catalog.find(
     (it) =>
-      it.wrongSentenceAr.includes("إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ") &&
-      it.correctSentenceAr.includes("إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ")
+      toCanonicalArabicShaddaNfc(it.wrongSentenceAr).includes(
+        toCanonicalArabicShaddaNfc("إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ")
+      ) &&
+      toCanonicalArabicShaddaNfc(it.correctSentenceAr).includes(
+        toCanonicalArabicShaddaNfc("إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ")
+      )
   );
   assert.ok(allamaniItem, "عَلَّمَي -> عَلَّمَنِي örneği müstakil soru olarak eşleşmelidir");
   assert.ok(
@@ -7519,20 +7546,20 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
       `${item.id} kaydında üst üste binmiş çift hareke bulunmamalıdır: ${item.arapca}`
     );
   }
-  assert.equal(byAtaId.get("ata_0062")?.arapca.includes("الطُّرُقِ"), true);
-  assert.equal(byAtaId.get("ata_0102")?.arapca.includes("الطُّيُورَ"), true);
-  assert.equal(byAtaId.get("ata_0137")?.arapca.includes("السُّفُنُ"), true);
-  assert.equal(byAtaId.get("ata_0185")?.arapca.includes("يُحِبُّهُ"), true);
-  assert.equal(byAtaId.get("ata_0186")?.arapca.includes("يَدُلُّكَ"), true);
-  assert.equal(byAtaId.get("ata_0348")?.arapca.includes("الرُّتَبُ"), true);
-  assert.equal(byAtaId.get("ata_0369")?.arapca.includes("بِالصُّرَعَةِ"), true);
+  assert.equal(byAtaId.get("ata_0062")?.arapca.includes(toCanonicalArabicShaddaNfc("الطُّرُقِ")), true);
+  assert.equal(byAtaId.get("ata_0102")?.arapca.includes(toCanonicalArabicShaddaNfc("الطُّيُورَ")), true);
+  assert.equal(byAtaId.get("ata_0137")?.arapca.includes(toCanonicalArabicShaddaNfc("السُّفُنُ")), true);
+  assert.equal(byAtaId.get("ata_0185")?.arapca.includes(toCanonicalArabicShaddaNfc("يُحِبُّهُ")), true);
+  assert.equal(byAtaId.get("ata_0186")?.arapca.includes(toCanonicalArabicShaddaNfc("يَدُلُّكَ")), true);
+  assert.equal(byAtaId.get("ata_0348")?.arapca.includes(toCanonicalArabicShaddaNfc("الرُّتَبُ")), true);
+  assert.equal(byAtaId.get("ata_0369")?.arapca.includes(toCanonicalArabicShaddaNfc("بِالصُّرَعَةِ")), true);
   assert.equal(
     byAtaId.get("ata_0370")?.arapca.includes("مَنْ يَكْفِيكَ"),
     true,
     "ata_0370 kaydında مَنْ يَكْفِيكَ imlâsı bulunmalıdır"
   );
   assert.equal(
-    byAtaId.get("ata_0480")?.arapca.includes("لِلطَّفَّافِينَ"),
+    byAtaId.get("ata_0480")?.arapca.includes(toCanonicalArabicShaddaNfc("لِلطَّفَّافِينَ")),
     true,
     "ata_0480 kaydında şemsî harf öncesi sükûnsuz لِلطَّفَّافِينَ bulunmalıdır"
   );
@@ -7543,14 +7570,14 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
   );
   const byCumleId = new Map(cumleler.map((x) => [x.id, x]));
   assert.equal(
-    byCumleId.get("cumle_0395")?.arapca.includes("الطَّائِرُ") &&
-      !byCumleId.get("cumle_0395")?.arapca.includes("اَلْطَّائِرُ"),
+    byCumleId.get("cumle_0395")?.arapca.includes(toCanonicalArabicShaddaNfc("الطَّائِرُ")) &&
+      !byCumleId.get("cumle_0395")?.arapca.includes(toCanonicalArabicShaddaNfc("اَلْطَّائِرُ")),
     true,
     "cumle_0395 kaydında اَلْطَّائِرُ -> الطَّائِرُ olarak düzeltilmelidir"
   );
   assert.equal(
-    byCumleId.get("cumle_1038")?.arapca.includes("اللَّازِمَةَ") &&
-      !byCumleId.get("cumle_1038")?.arapca.includes("الْلَّازِمَةَ"),
+    byCumleId.get("cumle_1038")?.arapca.includes(toCanonicalArabicShaddaNfc("اللَّازِمَةَ")) &&
+      !byCumleId.get("cumle_1038")?.arapca.includes(toCanonicalArabicShaddaNfc("الْلَّازِمَةَ")),
     true,
     "cumle_1038 kaydında الْلَّازِمَةَ -> اللَّازِمَةَ olarak düzeltilmelidir"
   );
@@ -7594,7 +7621,7 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
   const metin32 = metinler.find((m) => m.id === "metin_32");
   const metin51 = metinler.find((m) => m.id === "metin_51");
   assert.equal(
-    JSON.stringify(metin32).includes("النَّشِيطُ") &&
+    JSON.stringify(metin32).includes(toCanonicalArabicShaddaNfc("النَّشِيطُ")) &&
       !JSON.stringify(metin32).includes("النشِيطُ"),
     true,
     "metin_32 içinde النَّشِيطُ şeddeli olmalıdır"
@@ -8256,6 +8283,172 @@ test("GrammarHapBilgiPanel tekil İ'rab butonu + Akademik mod açık varsayılan
   );
 });
 
+test("70. Stüdyo TTS Öncesi 12 JSON Veri Tabanında Şedde+Hareke Sırası, Lafzatullah, الْاِ Hemze-i Vasıl, Atasözü CEFR (A2+) ve İ'rab Terminolojisi Doğrulaması", () => {
+  const all12Files = fs
+    .readdirSync(DATA_DIR)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  assert.equal(all12Files.length, 12, "src/data altında 12 JSON veri dosyası bulunmalıdır");
 
+  const reversedShaddaRegex = /[\u064B-\u0650]\u0651/;
+  const wrongLamKasraSeq = "\u0627\u0644\u0650\u0627"; // الِا
+  const allahBoundaryRegex =
+    /(^|[^\u0621-\u064A\u0671])([وفبتك]?[\u064B-\u0652]*)(?:ا[\u064B-\u0652]*ل[\u064B-\u0652]*ل[\u064E\u0670]*ه|ل[\u064B-\u0652]*ل[\u064E\u0670]*ه)([\u064B-\u0652]*)(?=$|[^\u0621-\u064A\u0671])/g;
 
+  for (const fileName of all12Files) {
+    const { parsed } = readDataJson(fileName);
+    const entries = collectStrings(parsed);
+    for (const { text, keyName } of entries) {
+      if (keyName === "yanlis") continue;
+      assert.equal(
+        reversedShaddaRegex.test(text),
+        false,
+        `${fileName} içinde harekenin şeddeden önce geldiği ters dizilim kalmamalıdır: ${text.slice(0, 50)}`
+      );
+      assert.equal(
+        text.includes(wrongLamKasraSeq),
+        false,
+        `${fileName} içinde lâm altında yanlış kesralı الِا dizilimi kalmamalıdır: ${text.slice(0, 50)}`
+      );
+      allahBoundaryRegex.lastIndex = 0;
+      let m;
+      while ((m = allahBoundaryRegex.exec(text)) !== null) {
+        assert.equal(
+          m[0].includes("\u0651"),
+          true,
+          `${fileName} içinde şeddesiz Lafzatullah kalmamalıdır: ${m[0]}`
+        );
+      }
+    }
+  }
 
+  // Kasıtlı yanlış örnekler (hata_bulma ve dikkat_sik_hata.yanlis) korunmuş olmalı
+  const { parsed: sts } = readDataJson("seviye_tespit_sorulari.json");
+  const ktt09 = sts.find((q) => q.id === "ktt_grm_001_09");
+  assert.ok(ktt09, "ktt_grm_001_09 sorusu korunmalıdır");
+  assert.equal(
+    ktt09.soru_metni_ar.includes("\u0627\u0644\u0652\u0634\u0651\u064E\u0645\u0652\u0633\u064F") &&
+      ktt09.secenekler.some(
+        (o) => o.harf === "B" && o.metin === "\u0627\u0644\u0652\u0634\u0651\u064E\u0645\u0652\u0633\u064F"
+      ),
+    true,
+    "ktt_grm_001_09 hata_bulma sorusundaki kasıtlı الْشَّمْسُ kelimesi korunmalıdır"
+  );
+
+  const { parsed: dlgGramer } = readDataJson("diyaloglar_gramer_hap_bilgi.json");
+  const byDlgG = new Map(dlgGramer.map((g) => [g.bagli_id, g]));
+  assert.equal(
+    byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.yanlis.includes(wrongLamKasraSeq),
+    true,
+    "dlg_041 dikkat_sik_hata.yanlis içindeki kasıtlı yanlış örnek korunmalıdır"
+  );
+  assert.equal(
+    byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.dogru.includes(
+      "\u0627\u0644\u0652\u0627\u0650\u0632\u0652\u062F\u0650\u062D\u064E\u0627\u0645\u0650"
+    ),
+    true,
+    "dlg_041 dikkat_sik_hata.dogru içinde الْاِزْدِحَامِ yer almalıdır"
+  );
+
+  // Med elifi (كَاَدَتْ -> كَادَتْ ve (وَاْوُ -> (وَاوُ) düzeltmeleri
+  const { parsed: diyaloglar } = readDataJson("tum_diyaloglar_120.json");
+  const byDlg = new Map(diyaloglar.map((d) => [d.id, d]));
+  assert.equal(
+    byDlg.get("dlg_103")?.satirlar[0]?.arapca.startsWith("كَادَتْ ") &&
+      !JSON.stringify(byDlgG.get("dlg_103")).includes("كَاَدَتْ") &&
+      JSON.stringify(byDlgG.get("dlg_103")).includes("كَادَتْ"),
+    true,
+    "dlg_103 içinde كَاَدَتْ -> كَادَتْ düzeltilmiş olmalıdır"
+  );
+  assert.equal(
+    !JSON.stringify(byDlgG.get("dlg_107")).includes("(وَاْوُ") &&
+      JSON.stringify(byDlgG.get("dlg_107")).includes("(وَاوُ"),
+    true,
+    "dlg_107 içinde (وَاْوُ -> (وَاوُ düzeltilmiş olmalıdır"
+  );
+  assert.equal(
+    byDlg
+      .get("dlg_055")
+      ?.satirlar.find((s) => s.sira === 11)
+      ?.arapca.includes("الْاِثْنَيْنِ"),
+    true,
+    "dlg_055 11. satırda الْاِثْنَيْنِ vasl hemzesiyle yazılmalıdır"
+  );
+
+  // 1111_cumle.json nokta atışı düzeltmeler
+  const { parsed: cumleler } = readDataJson("1111_cumle.json");
+  const byC = new Map(cumleler.map((c) => [c.id, c]));
+  assert.equal(byC.get("cumle_0488")?.arapca, "اِشْهَدْنَ لِمَا أَقُولُ!");
+  assert.equal(byC.get("cumle_0492")?.arapca.includes("فَاسْتَكْبَرَ"), true);
+  assert.equal(byC.get("cumle_0496")?.arapca.includes("وَانْهَزَمَ"), true);
+  assert.equal(
+    byC.get("cumle_0257")?.arapca.includes("بِاجْتِهَادِهِن\u0651\u064E"),
+    true
+  );
+  assert.equal(
+    byC.get("cumle_0414")?.arapca.includes("الْاِقْتِصَادِي\u0651\u064Eةِ"),
+    true
+  );
+  assert.equal(byC.get("cumle_0696")?.arapca.includes("اِقْتِرَاحًا"), true);
+  assert.equal(byC.get("cumle_0957")?.arapca.includes("اِحْتِرَامَهُمْ"), true);
+  assert.equal(
+    byC.get("cumle_1090")?.arapca.includes("اِسْتِرَاتِيجِي\u0651\u064Eةٍ"),
+    true
+  );
+  assert.equal(byC.get("cumle_0787")?.arapca.includes("الْاِثْنَيْنِ"), true);
+  for (const id of ["cumle_0040", "cumle_0277", "cumle_0481", "cumle_0490"]) {
+    assert.equal(
+      byC.get(id)?.odak_kalip.includes("الاِثْنَيْنِ"),
+      true,
+      `${id} odak_kalip içinde الاِثْنَيْنِ bulunmalıdır`
+    );
+  }
+  assert.equal(
+    byC.get("cumle_0564")?.turkce,
+    "Zulmün bütün insanlar için bir kötülük olduğunu gördüm."
+  );
+
+  // atasozleri.json düzeltmeleri ve A1 -> A2 seviye güncellemesi
+  const { parsed: atasozleri } = readDataJson("atasozleri.json");
+  const byAta = new Map(atasozleri.map((a) => [a.id, a]));
+  assert.equal(byAta.get("ata_0003")?.arapca.startsWith("الْاِبْنُ"), true);
+  assert.equal(
+    byAta.get("ata_0004")?.arapca.startsWith("الْاِت\u0651\u0650حَادُ"),
+    true
+  );
+  assert.equal(byAta.get("ata_0079")?.arapca.startsWith("الْاِعْتِرَافُ"), true);
+  assert.equal(byAta.get("ata_0115")?.arapca.startsWith("الْاِنْتِظَارُ"), true);
+  assert.equal(byAta.get("ata_0116")?.arapca.startsWith("اِنْتِظَارُ"), true);
+  assert.equal(
+    atasozleri.filter((a) => a.cefr === "A1").length,
+    0,
+    "atasozleri.json içinde A1 etiketli kayıt kalmamalı, tamamı en az A2 olmalıdır"
+  );
+
+  // yeni_tum_sozluk.json düzeltmeleri
+  const { parsed: sozluk } = readDataJson("yeni_tum_sozluk.json");
+  const bySoz = new Map(sozluk.map((k) => [k.id, k]));
+  assert.equal(bySoz.get("kelime_1530")?.mufret, "اِت\u0651\u0650حَادٌ");
+  assert.equal(bySoz.get("kelime_1530")?.cemi, "اِت\u0651\u0650حَادَاتٌ");
+  assert.equal(bySoz.get("kelime_1621")?.mufret, "اِسْتِرَاتِيجِي\u0651\u064Eةٌ");
+  assert.equal(bySoz.get("kelime_1621")?.cemi, "اِسْتِرَاتِيجِي\u0651\u064Eاتٌ");
+
+  // Cemi müennes sâlim i'rab terminolojisi netliği
+  const { parsed: metinGramer } = readDataJson("metinler_gramer_hap_bilgi.json");
+  const byMetG = new Map(metinGramer.map((g) => [g.bagli_id, g]));
+  assert.equal(
+    JSON.stringify(byDlgG.get("dlg_074")).includes(
+      "fetha yerine kesra ile mansûb (nasb alâmeti kesra)"
+    ),
+    true
+  );
+  for (const mId of ["metin_53", "metin_57", "metin_59"]) {
+    assert.equal(
+      JSON.stringify(byMetG.get(mId)).includes(
+        "fetha yerine kesra ile mansûb (nasb alâmeti kesra)"
+      ),
+      true,
+      `${mId} içinde cemi müennes sâlim nasb açıklaması netleştirilmiş olmalıdır`
+    );
+  }
+});

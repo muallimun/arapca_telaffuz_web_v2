@@ -5407,16 +5407,22 @@ populateDictionaryCefrLevels();
 // EŞ VE ZIT ANLAMLI KELİMELER (المرادفات والأضداد) HIZLI SORGULAMA İNDEKSİ
 // ============================================================================
 
+const toCanonicalShaddaNfc = (s: string): string =>
+  (s || "")
+    .normalize("NFC")
+    .replace(/\u0640+/g, "")
+    .replace(/([\u064B-\u0650\u0652\u0670])\u0651/g, "\u0651$1");
+
 const SYNONYM_ANTONYM_ENTRIES: SynonymAntonymEntry[] = (
   esZitRaw as SynonymAntonymEntry[]
 ).map((entry) => ({
   ...entry,
-  kelime_ar: (entry.kelime_ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+  kelime_ar: toCanonicalShaddaNfc(entry.kelime_ar || ""),
   kelime_harekesiz: (entry.kelime_harekesiz || "").normalize("NFC"),
   anlam_tr: (entry.anlam_tr || "").normalize("NFC"),
   es_anlamlilar: Array.isArray(entry.es_anlamlilar)
     ? entry.es_anlamlilar.map((s) => ({
-        ar: (s.ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+        ar: toCanonicalShaddaNfc(s.ar || ""),
         harekesiz: (s.harekesiz || "").normalize("NFC"),
         tr: (s.tr || "").normalize("NFC"),
         ...(s.nuans_tr ? { nuans_tr: s.nuans_tr.normalize("NFC") } : {}),
@@ -5424,25 +5430,23 @@ const SYNONYM_ANTONYM_ENTRIES: SynonymAntonymEntry[] = (
     : [],
   zit_anlamlilar: Array.isArray(entry.zit_anlamlilar)
     ? entry.zit_anlamlilar.map((s) => ({
-        ar: (s.ar || "").replace(/\u0640+/g, "").normalize("NFC"),
+        ar: toCanonicalShaddaNfc(s.ar || ""),
         harekesiz: (s.harekesiz || "").normalize("NFC"),
         tr: (s.tr || "").normalize("NFC"),
         ...(s.nuans_tr ? { nuans_tr: s.nuans_tr.normalize("NFC") } : {}),
       }))
     : [],
-  ornek_cumle_ar: (entry.ornek_cumle_ar || "")
-    .replace(/\u0640+/g, "")
-    .normalize("NFC"),
+  ornek_cumle_ar: toCanonicalShaddaNfc(entry.ornek_cumle_ar || ""),
   ornek_cumle_tr: (entry.ornek_cumle_tr || "").normalize("NFC"),
 }));
 
 function normalizeVocalizedKey(raw: string): string {
   return (raw || "")
+    .normalize("NFC")
     .replace(/\u0640+/g, "")
     .replace(/[.,!?؟،;؛:"'«»()\[\]{}\d]/g, "")
     .replace(/([\u064B-\u0650\u0652\u0670])\u0651/g, "\u0651$1")
-    .trim()
-    .normalize("NFC");
+    .trim();
 }
 
 function stripCaseEndings(vocalized: string): string {

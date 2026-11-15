@@ -24,7 +24,7 @@
     "kok": "ب ك ر",
     "anlam_tr": "Yenilikçi, inovatif",
     "cefr": "B2",
-    "mufret": "اِبْتِكَارِيَّةٌ",
+    "mufret": "اِبْتِكَارِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -51,7 +51,7 @@
     "kok": "ب د ع",
     "anlam_tr": "Yaratıcı, kreatif",
     "cefr": "B2",
-    "mufret": "إِبْدَاعِيَّةٌ",
+    "mufret": "إِبْدَاعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -154,8 +154,8 @@
     "kok": "ب ي ض",
     "anlam_tr": "Ağarmak, beyazlaşmak, beyazlaştı",
     "cefr": "B2",
-    "mazi": "اِبْيَاضَّ",
-    "muzari": "يَبْيَضُّ",
+    "mazi": "اِبْيَاضَّ",
+    "muzari": "يَبْيَضُّ",
     "masdar": "اِبْيِضَاضٌ"
   },
   {
@@ -164,9 +164,9 @@
     "kok": "أ خ ر",
     "anlam_tr": "Gecikmek, geride kalmak, gecikti",
     "cefr": "A2",
-    "mazi": "تَأَخَّرَ",
-    "muzari": "يَتَأَخَّرُ",
-    "masdar": "تَأَخُّرٌ (عَنْ)"
+    "mazi": "تَأَخَّرَ",
+    "muzari": "يَتَأَخَّرُ",
+    "masdar": "تَأَخُّرٌ (عَنْ)"
   },
   {
     "id": "kelime_1529",
@@ -174,9 +174,9 @@
     "kok": "و ج ه",
     "anlam_tr": "Yönelmek, gitmek, yöneldi",
     "cefr": "A2",
-    "mazi": "اتَّجَهَ",
-    "muzari": "يَتَّجِهُ",
-    "masdar": "اتِّجَاهٌ (إِلَى/نَحْوَ)"
+    "mazi": "اتَّجَهَ",
+    "muzari": "يَتَّجِهُ",
+    "masdar": "اتِّجَاهٌ (إِلَى/نَحْوَ)"
   },
   {
     "id": "kelime_1530",
@@ -184,8 +184,8 @@
     "kok": "و ح د",
     "anlam_tr": "Birlik, ittifak, birleşme",
     "cefr": "B1",
-    "mufret": "إِتِّحَادٌ",
-    "cemi": "إِتِّحَادَاتٌ"
+    "mufret": "اِتِّحَادٌ",
+    "cemi": "اِتِّحَادَاتٌ"
   },
   {
     "id": "kelime_1531",
@@ -193,9 +193,9 @@
     "kok": "ح ق ق",
     "anlam_tr": "Gerçekleşmek, doğrulamak, doğruladı",
     "cefr": "B1",
-    "mazi": "تَحَقَّقَ",
-    "muzari": "يَتَحَقَّقُ",
-    "masdar": "تَحَقُّقٌ (مِنْ)"
+    "mazi": "تَحَقَّقَ",
+    "muzari": "يَتَحَقَّقُ",
+    "masdar": "تَحَقُّقٌ (مِنْ)"
   },
   {
     "id": "kelime_1532",
@@ -203,9 +203,9 @@
     "kok": "أ خ ذ",
     "anlam_tr": "Edinmek, almak, edindi",
     "cefr": "B1",
-    "mazi": "اتَّخَذَ",
-    "muzari": "يَتَّخِذُ",
-    "masdar": "اتِّخَاذٌ"
+    "mazi": "اتَّخَذَ",
+    "muzari": "يَتَّخِذُ",
+    "masdar": "اتِّخَاذٌ"
   },
   {
     "id": "kelime_1533",
@@ -233,8 +233,8 @@
     "kok": "و ف ق",
     "anlam_tr": "Anlaşma, sözleşme, uzlaşı",
     "cefr": "A2",
-    "mufret": "اتِّفَاقٌ",
-    "cemi": "اتِّفَاقَاتٌ"
+    "mufret": "اتِّفَاقٌ",
+    "cemi": "اتِّفَاقَاتٌ"
   },
   {
     "id": "kelime_1536",
@@ -242,9 +242,9 @@
     "kok": "و ق ي",
     "anlam_tr": "Sakınmak, korunmak, Allah'tan korktu",
     "cefr": "B1",
-    "mazi": "اتَّقَى",
-    "muzari": "يَتَّقِي",
-    "masdar": "اتِّقَاءٌ"
+    "mazi": "اتَّقَى",
+    "muzari": "يَتَّقِي",
+    "masdar": "اتِّقَاءٌ"
   },
   {
     "id": "kelime_1537",
@@ -252,7 +252,7 @@
     "kok": "و ق ي",
     "anlam_tr": "Takva sahibi, dindar, müttaki",
     "cefr": "B2",
-    "mufret": "تَقِيٌّ",
+    "mufret": "تَقِيٌّ",
     "cemi": "أَتْقِيَاءُ"
   },
   {
@@ -307,7 +307,7 @@
     "kok": "ج م ع",
     "anlam_tr": "Sosyal, toplumsal",
     "cefr": "B1",
-    "mufret": "اجْتِمَاعِيٌّ / اجْتِمَاعِيَّةٌ",
+    "mufret": "اجْتِمَاعِيٌّ / اجْتِمَاعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -391,8 +391,8 @@
     "kok": "ح ج ج",
     "anlam_tr": "Protesto etmek, itiraz etmek, itiraz etti",
     "cefr": "B2",
-    "mazi": "احْتَجَّ",
-    "muzari": "يَحْتَجُّ",
+    "mazi": "احْتَجَّ",
+    "muzari": "يَحْتَجُّ",
     "masdar": "احْتِجَاجٌ (عَلَى)"
   },
   {
@@ -487,8 +487,8 @@
     "kok": "ح ف ر",
     "anlam_tr": "Fosil, fosilleşmiş",
     "cefr": "B2",
-    "mufret": "أُحْفُورِيٌّ",
-    "cemi": "أُحْفُورِيَّاتٌ"
+    "mufret": "أُحْفُورِيٌّ",
+    "cemi": "أُحْفُورِيَّاتٌ"
   },
   {
     "id": "kelime_1563",
@@ -496,9 +496,9 @@
     "kok": "ح ل ل",
     "anlam_tr": "Çözmek, halletmek, çözdü",
     "cefr": "A2",
-    "mazi": "حَلَّ",
-    "muzari": "يَحُلُّ",
-    "masdar": "حَلٌّ"
+    "mazi": "حَلَّ",
+    "muzari": "يَحُلُّ",
+    "masdar": "حَلٌّ"
   },
   {
     "id": "kelime_1564",
@@ -534,7 +534,7 @@
     "kok": "خ ب ر",
     "anlam_tr": "Haber niteliğinde, haberle ilgili",
     "cefr": "B1",
-    "mufret": "إِخْبَارِيٌّ",
+    "mufret": "إِخْبَارِيٌّ",
     "cemi": "-"
   },
   {
@@ -617,7 +617,7 @@
     "kok": "خ ل ق",
     "anlam_tr": "Etik kurallar, ahlak ilkeleri",
     "cefr": "B2",
-    "mufret": "أَخْلَاقِيَّاتٌ",
+    "mufret": "أَخْلَاقِيَّاتٌ",
     "cemi": "-"
   },
   {
@@ -636,8 +636,8 @@
     "kok": "أ د ي",
     "anlam_tr": "Eda etmek, yerine getirmek, sağladı",
     "cefr": "A2",
-    "mazi": "أَدَّى",
-    "muzari": "يُؤَدِّي",
+    "mazi": "أَدَّى",
+    "muzari": "يُؤَدِّي",
     "masdar": "أَدَاءٌ (إِلَى)"
   },
   {
@@ -655,7 +655,7 @@
     "kok": "أ د ب",
     "anlam_tr": "Edebi, edebiyatla ilgili",
     "cefr": "B1",
-    "mufret": "أَدَبِيٌّ / أَدَبِيَّةٌ",
+    "mufret": "أَدَبِيٌّ / أَدَبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -843,7 +843,7 @@
     "kok": "ر ش د",
     "anlam_tr": "Rehberlik edici, bilgilendirici",
     "cefr": "B1",
-    "mufret": "إِرْشَادِيٌّ / إِرْشَادِيَّةٌ",
+    "mufret": "إِرْشَادِيٌّ / إِرْشَادِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -946,7 +946,7 @@
     "kok": "س س س",
     "anlam_tr": "Temel, esaslı, birincil",
     "cefr": "A2",
-    "mufret": "أَسَاسِيٌّ",
+    "mufret": "أَسَاسِيٌّ",
     "cemi": "-"
   },
   {
@@ -964,7 +964,7 @@
     "kok": "س ب ع",
     "anlam_tr": "Haftalık, haftada bir olan",
     "cefr": "A2",
-    "mufret": "أُسْبُوعِيٌّ",
+    "mufret": "أُسْبُوعِيٌّ",
     "cemi": "-"
   },
   {
@@ -992,7 +992,7 @@
     "kok": "ث م ر",
     "anlam_tr": "Yatırım ile ilgili, yatırımsal",
     "cefr": "B2",
-    "mufret": "اِسْتِثْمَارِيٌّ / اِسْتِثْمَارِيَّةٌ",
+    "mufret": "اِسْتِثْمَارِيٌّ / اِسْتِثْمَارِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -1039,8 +1039,8 @@
     "kok": "-",
     "anlam_tr": "Strateji, stratejik plan",
     "cefr": "B1",
-    "mufret": "إِسْتِرَاتِيجِيَّةٌ",
-    "cemi": "إِسْتِرَاتِيجِيَّاتٌ"
+    "mufret": "اِسْتِرَاتِيجِيَّةٌ",
+    "cemi": "اِسْتِرَاتِيجِيَّاتٌ"
   },
   {
     "id": "kelime_1622",
@@ -1126,8 +1126,8 @@
     "kok": "ع د د",
     "anlam_tr": "Hazırlanmak, hazır olmak, hazırlandı",
     "cefr": "A2",
-    "mazi": "اِسْتَعَدَّ",
-    "muzari": "يَسْتَعِدُّ",
+    "mazi": "اِسْتَعَدَّ",
+    "muzari": "يَسْتَعِدُّ",
     "masdar": "اِسْتِعْدَادٌ (لِ)"
   },
   {
@@ -1239,8 +1239,8 @@
     "kok": "م ر ر",
     "anlam_tr": "Devam etmek, sürmek, devam etti",
     "cefr": "A2",
-    "mazi": "اِسْتَمَرَّ",
-    "muzari": "يَسْتَمِرُّ",
+    "mazi": "اِسْتَمَرَّ",
+    "muzari": "يَسْتَمِرُّ",
     "masdar": "اِسْتِمْرَارٌ"
   },
   {
@@ -1279,7 +1279,7 @@
     "kok": "س ر ر",
     "anlam_tr": "Sır, gizem",
     "cefr": "A2",
-    "mufret": "سِرٌّ",
+    "mufret": "سِرٌّ",
     "cemi": "أَسْرَارٌ"
   },
   {
@@ -1297,8 +1297,8 @@
     "kok": "أ س س",
     "anlam_tr": "Kurmak, tesis etmek, kurdu",
     "cefr": "B1",
-    "mazi": "أَسَّسَ",
-    "muzari": "يُؤَسِّسُ",
+    "mazi": "أَسَّسَ",
+    "muzari": "يُؤَسِّسُ",
     "masdar": "تَأْسِيسٌ"
   },
   {
@@ -1354,7 +1354,7 @@
     "kok": "-",
     "anlam_tr": "İskenderiye (şehir)",
     "cefr": "A1",
-    "mufret": "إِسْكَنْدَرِيَّةُ",
+    "mufret": "إِسْكَنْدَرِيَّةُ",
     "cemi": "-"
   },
   {
@@ -1363,7 +1363,7 @@
     "kok": "س ل م",
     "anlam_tr": "İslami, İslam ile ilgili",
     "cefr": "A2",
-    "mufret": "إِسْلَامِيٌّ / إِسْلَامِيَّةٌ",
+    "mufret": "إِسْلَامِيٌّ / إِسْلَامِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -1435,8 +1435,8 @@
     "kok": "ش د د",
     "anlam_tr": "Şiddetlenmek, artmak, şiddetlendi",
     "cefr": "B1",
-    "mazi": "اِشْتَدَّ",
-    "muzari": "يَشْتَدُّ",
+    "mazi": "اِشْتَدَّ",
+    "muzari": "يَشْتَدُّ",
     "masdar": "اِشْتِدَادٌ"
   },
   {
@@ -1454,7 +1454,7 @@
     "kok": "ش د د",
     "anlam_tr": "Daha şiddetli, en güçlü",
     "cefr": "B1",
-    "mufret": "أَشَدُّ",
+    "mufret": "أَشَدُّ",
     "cemi": "-"
   },
   {
@@ -1531,7 +1531,7 @@
     "kok": "ص ن ع",
     "anlam_tr": "Yapay, sentetik",
     "cefr": "B1",
-    "mufret": "اِصْطِنَاعِيٌّ",
+    "mufret": "اِصْطِنَاعِيٌّ",
     "cemi": "-"
   },
   {
@@ -1577,7 +1577,7 @@
     "kok": "ض و ف",
     "anlam_tr": "Ek, ilave, ekstra",
     "cefr": "A2",
-    "mufret": "إِضَافِيٌّ / إِضَافِيَّةٌ",
+    "mufret": "إِضَافِيٌّ / إِضَافِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -1595,8 +1595,8 @@
     "kok": "ض ح و",
     "anlam_tr": "Kurbanlık hayvan, kurban",
     "cefr": "A2",
-    "mufret": "أُضْحِيَّةٌ",
-    "cemi": "أَضَاحِيُّ"
+    "mufret": "أُضْحِيَّةٌ",
+    "cemi": "أَضَاحِيُّ"
   },
   {
     "id": "kelime_1681",
@@ -1661,9 +1661,9 @@
     "kok": "ظ ن ن",
     "anlam_tr": "Sanmak, zannetmek, zannetti",
     "cefr": "A1",
-    "mazi": "ظَنَّ",
-    "muzari": "يَظُنُّ",
-    "masdar": "ظَنٌّ"
+    "mazi": "ظَنَّ",
+    "muzari": "يَظُنُّ",
+    "masdar": "ظَنٌّ"
   },
   {
     "id": "kelime_1688",
@@ -1757,7 +1757,7 @@
     "kok": "غ و ث",
     "anlam_tr": "Yardım amaçlı, insani yardım ile ilgili",
     "cefr": "B1",
-    "mufret": "إِغَاثِيٌّ / إِغَاثِيَّةٌ",
+    "mufret": "إِغَاثِيٌّ / إِغَاثِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -1803,7 +1803,7 @@
     "kok": "ف ت ح",
     "anlam_tr": "Açılış ile ilgili, başyazı",
     "cefr": "B1",
-    "mufret": "اِفْتِتَاحِيٌّ / اِفْتِتَاحِيَّةٌ",
+    "mufret": "اِفْتِتَاحِيٌّ / اِفْتِتَاحِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -1822,7 +1822,7 @@
     "kok": "ف ر ض",
     "anlam_tr": "Sanal, varsayımsal, hipoteze dayalı",
     "cefr": "B1",
-    "mufret": "اِفْتِرَاضِيٌّ",
+    "mufret": "اِفْتِرَاضِيٌّ",
     "cemi": "-"
   },
   {
@@ -1979,8 +1979,8 @@
     "kok": "ق ش ع ر",
     "anlam_tr": "Ürpermek, tüyleri diken diken olmak, ürperdi",
     "cefr": "B2",
-    "mazi": "اِقْشَعَرَّ",
-    "muzari": "يَقْشَعِرُّ",
+    "mazi": "اِقْشَعَرَّ",
+    "muzari": "يَقْشَعِرُّ",
     "masdar": "اِقْشِعْرَارٌ"
   },
   {
@@ -1989,8 +1989,8 @@
     "kok": "ق ض ي",
     "anlam_tr": "Vakit geçirmek, tamamlamak, geçirdi",
     "cefr": "A2",
-    "mazi": "قَضَّى",
-    "muzari": "يُقَضِّي",
+    "mazi": "قَضَّى",
+    "muzari": "يُقَضِّي",
     "masdar": "تَقْضِيَةٌ"
   },
   {
@@ -2019,7 +2019,7 @@
     "kok": "ق ل م",
     "anlam_tr": "Bölgesel, bölgesel nitelikte",
     "cefr": "B1",
-    "mufret": "إِقْلِيمِيٌّ / إِقْلِيمِيَّةٌ",
+    "mufret": "إِقْلِيمِيٌّ / إِقْلِيمِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2064,8 +2064,8 @@
     "kok": "أ ك د",
     "anlam_tr": "Vurgulamak, teyit etmek, vurguladı",
     "cefr": "B1",
-    "mazi": "أَكَّدَ",
-    "muzari": "يُؤَكِّدُ",
+    "mazi": "أَكَّدَ",
+    "muzari": "يُؤَكِّدُ",
     "masdar": "تَأْكِيدٌ"
   },
   {
@@ -2093,7 +2093,7 @@
     "kok": "ك م ل",
     "anlam_tr": "Genel, toplam, tamamlayıcı",
     "cefr": "B2",
-    "mufret": "إِكْمَالِيٌّ",
+    "mufret": "إِكْمَالِيٌّ",
     "cemi": "-"
   },
   {
@@ -2112,7 +2112,7 @@
     "kok": "-",
     "anlam_tr": "Ancak, hariç, haricinde (istisna edatı)",
     "cefr": "A1",
-    "mufret": "إِلَّا",
+    "mufret": "إِلَّا",
     "cemi": "-"
   },
   {
@@ -2121,7 +2121,7 @@
     "kok": "ب ث ث",
     "anlam_tr": "Yayın, canlı yayın, yayma",
     "cefr": "B1",
-    "mufret": "بَثٌّ",
+    "mufret": "بَثٌّ",
     "cemi": "-"
   },
   {
@@ -2139,7 +2139,7 @@
     "kok": "ت ل ل",
     "anlam_tr": "Tepe, höyük",
     "cefr": "A2",
-    "mufret": "تَلٌّ",
+    "mufret": "تَلٌّ",
     "cemi": "تِلَالٌ"
   },
   {
@@ -2148,7 +2148,7 @@
     "kok": "-",
     "anlam_tr": "O ki, ki o (dişil ism-i mevsul)",
     "cefr": "A1",
-    "mufret": "الَّتِي",
+    "mufret": "الَّتِي",
     "cemi": "-"
   },
   {
@@ -2157,7 +2157,7 @@
     "kok": "ح ر ر",
     "anlam_tr": "Hür, özgür, bağımsız",
     "cefr": "B1",
-    "mufret": "حُرٌّ",
+    "mufret": "حُرٌّ",
     "cemi": "أَحْرَارٌ"
   },
   {
@@ -2176,7 +2176,7 @@
     "kok": "ح ق ق",
     "anlam_tr": "Hak, gerçek, doğru",
     "cefr": "A1",
-    "mufret": "حَقٌّ",
+    "mufret": "حَقٌّ",
     "cemi": "حُقُوقٌ"
   },
   {
@@ -2185,7 +2185,7 @@
     "kok": "ح ل ل",
     "anlam_tr": "Çözüm, çare, halletme",
     "cefr": "A2",
-    "mufret": "حَلٌّ",
+    "mufret": "حَلٌّ",
     "cemi": "حُلُولٌ"
   },
   {
@@ -2194,7 +2194,7 @@
     "kok": "ر ب ب",
     "anlam_tr": "Rab, efendi, koruyucu",
     "cefr": "A1",
-    "mufret": "رَبٌّ",
+    "mufret": "رَبٌّ",
     "cemi": "أَرْبَابٌ"
   },
   {
@@ -2203,7 +2203,7 @@
     "kok": "س م م",
     "anlam_tr": "Zehir, toksin",
     "cefr": "B1",
-    "mufret": "سَمٌّ",
+    "mufret": "سَمٌّ",
     "cemi": "سُمُومٌ"
   },
   {
@@ -2212,7 +2212,7 @@
     "kok": "ش ر ر",
     "anlam_tr": "Kötülük, şer, fena",
     "cefr": "A2",
-    "mufret": "شَرٌّ",
+    "mufret": "شَرٌّ",
     "cemi": "شُرُورٌ"
   },
   {
@@ -2221,7 +2221,7 @@
     "kok": "ش م م",
     "anlam_tr": "Koklama, koku duyusu",
     "cefr": "A2",
-    "mufret": "شَمٌّ",
+    "mufret": "شَمٌّ",
     "cemi": "-"
   },
   {
@@ -2230,7 +2230,7 @@
     "kok": "ض م م",
     "anlam_tr": "Birleştirme, ekleme, zamme harekesi",
     "cefr": "B1",
-    "mufret": "ضَمٌّ",
+    "mufret": "ضَمٌّ",
     "cemi": "-"
   },
   {
@@ -2239,7 +2239,7 @@
     "kok": "ط ب ب",
     "anlam_tr": "Tıp, hekimlik, tıp bilimi",
     "cefr": "A2",
-    "mufret": "طِبٌّ",
+    "mufret": "طِبٌّ",
     "cemi": "-"
   },
   {
@@ -2248,7 +2248,7 @@
     "kok": "ظ ن ن",
     "anlam_tr": "Zan, sanı, şüphe, varsayım",
     "cefr": "A2",
-    "mufret": "ظَنٌّ",
+    "mufret": "ظَنٌّ",
     "cemi": "ظُنُونٌ"
   },
   {
@@ -2284,7 +2284,7 @@
     "kok": "ك ل ل",
     "anlam_tr": "Her biri, hepsi, bütün, tüm",
     "cefr": "A1",
-    "mufret": "كُلٌّ",
+    "mufret": "كُلٌّ",
     "cemi": "-"
   },
   {
@@ -2293,7 +2293,7 @@
     "kok": "ل ص ص",
     "anlam_tr": "Hırsız",
     "cefr": "A2",
-    "mufret": "لِصٌّ",
+    "mufret": "لِصٌّ",
     "cemi": "لُصُوصٌ"
   },
   {
@@ -2426,7 +2426,7 @@
     "anlam_tr": "Dilek, istek, arzu, umut",
     "cefr": "A2",
     "mufret": "أُمْنِيَةٌ",
-    "cemi": "أَمَانِيُّ"
+    "cemi": "أَمَانِيُّ"
   },
   {
     "id": "kelime_1770",
@@ -2452,7 +2452,7 @@
     "kok": "-",
     "anlam_tr": "Şüphesiz, muhakkak ki, gerçekten",
     "cefr": "A1",
-    "mufret": "إِنَّ",
+    "mufret": "إِنَّ",
     "cemi": "-"
   },
   {
@@ -2508,7 +2508,7 @@
     "kok": "ن ت ج",
     "anlam_tr": "Verimlilik, prodüktivite",
     "cefr": "B2",
-    "mufret": "إِنْتَاجِيَّةٌ",
+    "mufret": "إِنْتَاجِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2593,7 +2593,7 @@
     "kok": "-",
     "anlam_tr": "İngilizce / İngiliz",
     "cefr": "A1",
-    "mufret": "إِنْجِلِيزِيٌّ / إِنْجِلِيزِيَّةٌ",
+    "mufret": "إِنْجِلِيزِيٌّ / إِنْجِلِيزِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2629,7 +2629,7 @@
     "kok": "أ ن س",
     "anlam_tr": "İnsani, insancıl, insanlıkla ilgili",
     "cefr": "A2",
-    "mufret": "إِنْسَانِيٌّ",
+    "mufret": "إِنْسَانِيٌّ",
     "cemi": "-"
   },
   {
@@ -2657,8 +2657,8 @@
     "kok": "ض م م",
     "anlam_tr": "Katılmak, dahil olmak, katıldı",
     "cefr": "B1",
-    "mazi": "اِنْضَمَّ",
-    "muzari": "يَنْضَمُّ",
+    "mazi": "اِنْضَمَّ",
+    "muzari": "يَنْضَمُّ",
     "masdar": "اِنْضِمَامٌ (إِلَى)"
   },
   {
@@ -2695,8 +2695,8 @@
     "kok": "ن ظ ف",
     "anlam_tr": "Temizlemek, temizledi",
     "cefr": "A1",
-    "mazi": "نَظَّفَ",
-    "muzari": "يُنَظِّفُ",
+    "mazi": "نَظَّفَ",
+    "muzari": "يُنَظِّفُ",
     "masdar": "تَنْظِيفٌ"
   },
   {
@@ -2742,7 +2742,7 @@
     "kok": "-",
     "anlam_tr": "Ankaralı",
     "cefr": "A1",
-    "mufret": "أَنْقَرِوِيٌّ",
+    "mufret": "أَنْقَرِوِيٌّ",
     "cemi": "-"
   },
   {
@@ -2769,8 +2769,8 @@
     "kok": "ه م م",
     "anlam_tr": "İlgilenmek, önem vermek, ilgilendi",
     "cefr": "A2",
-    "mazi": "اِهْتَمَّ",
-    "muzari": "يَهْتَمُّ",
+    "mazi": "اِهْتَمَّ",
+    "muzari": "يَهْتَمُّ",
     "masdar": "اِهْتِمَامٌ (بِ)"
   },
   {
@@ -2807,7 +2807,7 @@
     "kok": "أ ه ل",
     "anlam_tr": "Ehliyet, liyakat, yetkinlik",
     "cefr": "B2",
-    "mufret": "أَهْلِيَّةٌ",
+    "mufret": "أَهْلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2816,7 +2816,7 @@
     "kok": "ه م م",
     "anlam_tr": "Daha önemli, en önemli",
     "cefr": "A2",
-    "mufret": "أَهَمُّ",
+    "mufret": "أَهَمُّ",
     "cemi": "-"
   },
   {
@@ -2844,7 +2844,7 @@
     "kok": "ه م م",
     "anlam_tr": "Önem, ehemmiyet",
     "cefr": "A2",
-    "mufret": "أَهَمِّيَّةٌ",
+    "mufret": "أَهَمِّيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2873,9 +2873,9 @@
     "kok": "و د د",
     "anlam_tr": "İstemek, arzu etmek, istedi",
     "cefr": "A2",
-    "mazi": "وَدَّ",
-    "muzari": "يَوَدُّ",
-    "masdar": "وُدٌّ / مَوَدَّةٌ"
+    "mazi": "وَدَّ",
+    "muzari": "يَوَدُّ",
+    "masdar": "وُدٌّ / مَوَدَّةٌ"
   },
   {
     "id": "kelime_1818",
@@ -2883,7 +2883,7 @@
     "kok": "-",
     "anlam_tr": "Avrupa (kıta)",
     "cefr": "A1",
-    "mufret": "أُورُوبَّا",
+    "mufret": "أُورُوبَّا",
     "cemi": "-"
   },
   {
@@ -2892,7 +2892,7 @@
     "kok": "-",
     "anlam_tr": "Avrupalı, Avrupa ile ilgili",
     "cefr": "A2",
-    "mufret": "أُورُوبِّيٌّ / أُورُوبِّيَّةٌ",
+    "mufret": "أُورُوبِّيٌّ / أُورُوبِّيَّةٌ",
     "cemi": "-"
   },
   {
@@ -2931,7 +2931,7 @@
     "cefr": "B1",
     "mazi": "أَوْصَى",
     "muzari": "يُوصِي",
-    "masdar": "إِيصَاءٌ / وَصِيَّةٌ (بِ)"
+    "masdar": "إِيصَاءٌ / وَصِيَّةٌ (بِ)"
   },
   {
     "id": "kelime_1824",
@@ -2939,7 +2939,7 @@
     "kok": "-",
     "anlam_tr": "Of, bıktım (bıkkınlık edatı)",
     "cefr": "A2",
-    "mufret": "أُفٍّ",
+    "mufret": "أُفٍّ",
     "cemi": "-"
   },
   {
@@ -2966,7 +2966,7 @@
     "kok": "أ و ل",
     "anlam_tr": "İlk, birinci",
     "cefr": "A1",
-    "mufret": "أَوَّلُ",
+    "mufret": "أَوَّلُ",
     "cemi": "أَوَائِلُ"
   },
   {
@@ -2993,8 +2993,8 @@
     "kok": "أ و ل",
     "anlam_tr": "Öncelik, birincillik",
     "cefr": "B1",
-    "mufret": "أَوَّلِيَّةٌ",
-    "cemi": "أَوَّلِيَّاتٌ"
+    "mufret": "أَوَّلِيَّةٌ",
+    "cemi": "أَوَّلِيَّاتٌ"
   },
   {
     "id": "kelime_1831",
@@ -3011,7 +3011,7 @@
     "kok": "أ ي ي",
     "anlam_tr": "Hangi, hangisi",
     "cefr": "A1",
-    "mufret": "أَيُّ",
+    "mufret": "أَيُّ",
     "cemi": "-"
   },
   {
@@ -3029,7 +3029,7 @@
     "kok": "و ج ب",
     "anlam_tr": "Olumlu, pozitif",
     "cefr": "A2",
-    "mufret": "إِيجَابِيٌّ",
+    "mufret": "إِيجَابِيٌّ",
     "cemi": "-"
   },
   {
@@ -3092,7 +3092,7 @@
     "kok": "أ م ن",
     "anlam_tr": "İmani, inançla ilgili",
     "cefr": "B1",
-    "mufret": "إِيمَانِيٌّ / إِيمَانِيَّةٌ",
+    "mufret": "إِيمَانِيٌّ / إِيمَانِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -3129,7 +3129,7 @@
     "kok": "ت ب ع",
     "anlam_tr": "Tabi olma, uyma, izleme",
     "cefr": "B1",
-    "mufret": "اِتِّبَاعٌ",
+    "mufret": "اِتِّبَاعٌ",
     "cemi": "-"
   },
   {
@@ -3273,7 +3273,7 @@
     "kok": "د ب ر",
     "anlam_tr": "Derin düşünme, tefekkür, tedebbür",
     "cefr": "B2",
-    "mufret": "تَدَبُّرٌ",
+    "mufret": "تَدَبُّرٌ",
     "cemi": "-"
   },
   {
@@ -3327,7 +3327,7 @@
     "kok": "ب ح ر",
     "anlam_tr": "Denizci, bahriye, denizle ilgili",
     "cefr": "B1",
-    "mufret": "بَحْرِيٌّ / بَحْرِيَّةٌ",
+    "mufret": "بَحْرِيٌّ / بَحْرِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -3336,7 +3336,7 @@
     "kok": "ح ل ل",
     "anlam_tr": "Takım elbise, giysi, süs",
     "cefr": "B2",
-    "mufret": "حُلَّةٌ",
+    "mufret": "حُلَّةٌ",
     "cemi": "حُلَلٌ"
   },
   {
@@ -3426,7 +3426,7 @@
     "kok": "د ق ق",
     "anlam_tr": "Hassasiyet, doğruluk, titizlik",
     "cefr": "A2",
-    "mufret": "دِقَّةٌ",
+    "mufret": "دِقَّةٌ",
     "cemi": "-"
   },
   {
@@ -3518,8 +3518,8 @@
     "kok": "-",
     "anlam_tr": "İngiliz, Britanyalı",
     "cefr": "A1",
-    "mufret": "بَرِيطَانِيٌّ",
-    "cemi": "بَرِيطَانِيُّونَ"
+    "mufret": "بَرِيطَانِيٌّ",
+    "cemi": "بَرِيطَانِيُّونَ"
   },
   {
     "id": "kelime_1889",
@@ -3527,8 +3527,8 @@
     "kok": "ز ل ل",
     "anlam_tr": "Hata, sürçme, yanılma",
     "cefr": "B2",
-    "mufret": "زَلَّةٌ",
-    "cemi": "زَلَّاتٌ"
+    "mufret": "زَلَّةٌ",
+    "cemi": "زَلَّاتٌ"
   },
   {
     "id": "kelime_1890",
@@ -3554,7 +3554,7 @@
     "kok": "ش د د",
     "anlam_tr": "Şiddet, sertlik, yoğunluk",
     "cefr": "A2",
-    "mufret": "شِدَّةٌ",
+    "mufret": "شِدَّةٌ",
     "cemi": "-"
   },
   {
@@ -3590,7 +3590,7 @@
     "kok": "ب ش ر",
     "anlam_tr": "İnsanlık, beşeriyet",
     "cefr": "B1",
-    "mufret": "بَشَرِيَّةٌ",
+    "mufret": "بَشَرِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -3753,8 +3753,8 @@
     "kok": "ك م م",
     "anlam_tr": "Miktar, nicelik",
     "cefr": "A2",
-    "mufret": "كَمِّيَّةٌ",
-    "cemi": "كَمِّيَّاتٌ"
+    "mufret": "كَمِّيَّةٌ",
+    "cemi": "كَمِّيَّاتٌ"
   },
   {
     "id": "kelime_1915",
@@ -3798,7 +3798,7 @@
     "kok": "-",
     "anlam_tr": "Plastik, plastikten yapılmış",
     "cefr": "A2",
-    "mufret": "بْلَاسْتِيكِيٌّ / بْلَاسْتِيكِيَّةٌ",
+    "mufret": "بْلَاسْتِيكِيٌّ / بْلَاسْتِيكِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -3861,7 +3861,7 @@
     "kok": "ح ب ب",
     "anlam_tr": "Sevgi, muhabbet, aşk",
     "cefr": "A2",
-    "mufret": "مَحَبَّةٌ",
+    "mufret": "مَحَبَّةٌ",
     "cemi": "-"
   },
   {
@@ -3943,7 +3943,7 @@
     "anlam_tr": "Akrobat, cambaz, palyaço",
     "cefr": "B1",
     "mufret": "بَهْلَوَانٌ",
-    "cemi": "بَهْلَوَانِيُّونَ"
+    "cemi": "بَهْلَوَانِيُّونَ"
   },
   {
     "id": "kelime_1936",
@@ -3951,8 +3951,8 @@
     "kok": "ب و ب",
     "anlam_tr": "Büyük kapı, geçit, portal",
     "cefr": "A2",
-    "mufret": "بَوَّابَةٌ",
-    "cemi": "بَوَّابَاتٌ"
+    "mufret": "بَوَّابَةٌ",
+    "cemi": "بَوَّابَاتٌ"
   },
   {
     "id": "kelime_1937",
@@ -3979,7 +3979,7 @@
     "kok": "-",
     "anlam_tr": "Kefal balığı",
     "cefr": "B2",
-    "mufret": "بُورِيٌّ",
+    "mufret": "بُورِيٌّ",
     "cemi": "-"
   },
   {
@@ -4025,8 +4025,8 @@
     "kok": "أ ج ل",
     "anlam_tr": "Ertelemek, geciktirmek, erteledi",
     "cefr": "A2",
-    "mazi": "أَجَّلَ",
-    "muzari": "يُؤَجِّلُ",
+    "mazi": "أَجَّلَ",
+    "muzari": "يُؤَجِّلُ",
     "masdar": "تَأْجِيلٌ"
   },
   {
@@ -4062,7 +4062,7 @@
     "kok": "أ ر خ",
     "anlam_tr": "Tarihi, tarihsel",
     "cefr": "A2",
-    "mufret": "تَارِيخِيٌّ",
+    "mufret": "تَارِيخِيٌّ",
     "cemi": "-"
   },
   {
@@ -4098,9 +4098,9 @@
     "kok": "أ ن ي",
     "anlam_tr": "Ağırdan almak, temkinli davranmak, acele etmedi",
     "cefr": "B2",
-    "mazi": "تَأَنَّى",
-    "muzari": "يَتَأَنَّى",
-    "masdar": "تَأَنٍّ"
+    "mazi": "تَأَنَّى",
+    "muzari": "يَتَأَنَّى",
+    "masdar": "تَأَنٍّ"
   },
   {
     "id": "kelime_1953",
@@ -4127,9 +4127,9 @@
     "kok": "ب ث ث",
     "anlam_tr": "Yayınlamak, yaymak, yayınladı",
     "cefr": "B1",
-    "mazi": "بَثَّ",
-    "muzari": "يَبُثُّ",
-    "masdar": "بَثٌّ"
+    "mazi": "بَثَّ",
+    "muzari": "يَبُثُّ",
+    "masdar": "بَثٌّ"
   },
   {
     "id": "kelime_1956",
@@ -4139,7 +4139,7 @@
     "cefr": "A2",
     "mazi": "بَدَا",
     "muzari": "يَبْدُو",
-    "masdar": "بُدُوٌّ"
+    "masdar": "بُدُوٌّ"
   },
   {
     "id": "kelime_1957",
@@ -4147,8 +4147,8 @@
     "kok": "ب ر ع",
     "anlam_tr": "Bağış, yardım, donasyon",
     "cefr": "B1",
-    "mufret": "تَبَرُّعٌ",
-    "cemi": "تَبَرُّعَاتٌ"
+    "mufret": "تَبَرُّعٌ",
+    "cemi": "تَبَرُّعَاتٌ"
   },
   {
     "id": "kelime_1958",
@@ -4186,7 +4186,7 @@
     "kok": "ب ل ل",
     "anlam_tr": "Islanma, nemlenme",
     "cefr": "B2",
-    "mufret": "تَبَلُّلٌ",
+    "mufret": "تَبَلُّلٌ",
     "cemi": "-"
   },
   {
@@ -4205,9 +4205,9 @@
     "kok": "ز ي ن",
     "anlam_tr": "Süslenmek, bezenmek, süslendi",
     "cefr": "B1",
-    "mazi": "تَزَيَّنَ",
-    "muzari": "يَتَزَيَّنُ",
-    "masdar": "تَزَيُّنٌ"
+    "mazi": "تَزَيَّنَ",
+    "muzari": "يَتَزَيَّنُ",
+    "masdar": "تَزَيُّنٌ"
   },
   {
     "id": "kelime_1964",
@@ -4235,9 +4235,9 @@
     "kok": "ع ل ق",
     "anlam_tr": "İlgili olmak, bağlanmak, bağlandı",
     "cefr": "B1",
-    "mazi": "تَعَلَّقَ",
-    "muzari": "يَتَعَلَّقُ",
-    "masdar": "تَعَلُّقٌ (بِ)"
+    "mazi": "تَعَلَّقَ",
+    "muzari": "يَتَعَلَّقُ",
+    "masdar": "تَعَلُّقٌ (بِ)"
   },
   {
     "id": "kelime_1967",
@@ -4245,9 +4245,9 @@
     "kok": "غ ي ر",
     "anlam_tr": "Değişmek, başkalaşmak, değişti",
     "cefr": "A2",
-    "mazi": "تَغَيَّرَ",
-    "muzari": "يَتَغَيَّرُ",
-    "masdar": "تَغَيُّرٌ"
+    "mazi": "تَغَيَّرَ",
+    "muzari": "يَتَغَيَّرُ",
+    "masdar": "تَغَيُّرٌ"
   },
   {
     "id": "kelime_1968",
@@ -4255,9 +4255,9 @@
     "kok": "ك ر ر",
     "anlam_tr": "Tekrarlanmak, yinelenmek, tekrarlandı",
     "cefr": "B1",
-    "mazi": "تَكَرَّرَ",
-    "muzari": "يَتَكَرَّرُ",
-    "masdar": "تَكَرُّرٌ"
+    "mazi": "تَكَرَّرَ",
+    "muzari": "يَتَكَرَّرُ",
+    "masdar": "تَكَرُّرٌ"
   },
   {
     "id": "kelime_1969",
@@ -4265,8 +4265,8 @@
     "kok": "ت م م",
     "anlam_tr": "Tamamlanmak, gerçekleşmek, bitti",
     "cefr": "A2",
-    "mazi": "تَمَّ",
-    "muzari": "يَتِمُّ",
+    "mazi": "تَمَّ",
+    "muzari": "يَتِمُّ",
     "masdar": "تَمَامٌ"
   },
   {
@@ -4275,9 +4275,9 @@
     "kok": "م س ك",
     "anlam_tr": "Tutunmak, sarılmak, tutundu",
     "cefr": "B1",
-    "mazi": "تَمَسَّكَ",
-    "muzari": "يَتَمَسَّكُ",
-    "masdar": "تَمَسُّكٌ (بِ)"
+    "mazi": "تَمَسَّكَ",
+    "muzari": "يَتَمَسَّكُ",
+    "masdar": "تَمَسُّكٌ (بِ)"
   },
   {
     "id": "kelime_1971",
@@ -4285,9 +4285,9 @@
     "kok": "و ر م",
     "anlam_tr": "Şişmek, iltihaplanmak, şişti",
     "cefr": "B2",
-    "mazi": "تَوَرَّمَ",
-    "muzari": "يَتَوَرَّمُ",
-    "masdar": "تَوَرُّمٌ"
+    "mazi": "تَوَرَّمَ",
+    "muzari": "يَتَوَرَّمُ",
+    "masdar": "تَوَرُّمٌ"
   },
   {
     "id": "kelime_1972",
@@ -4305,7 +4305,7 @@
     "kok": "ث ب ت",
     "anlam_tr": "Doğrulama, teyit etme, araştırma",
     "cefr": "B2",
-    "mufret": "تَثَبُّتٌ",
+    "mufret": "تَثَبُّتٌ",
     "cemi": "-"
   },
   {
@@ -4383,9 +4383,9 @@
     "kok": "ج ر ع",
     "anlam_tr": "Yudumlamak, katlanmak, yudumladı",
     "cefr": "B2",
-    "mazi": "تَجَرَّعَ",
-    "muzari": "يَتَجَرَّعُ",
-    "masdar": "تَجَرُّعٌ"
+    "mazi": "تَجَرَّعَ",
+    "muzari": "يَتَجَرَّعُ",
+    "masdar": "تَجَرُّعٌ"
   },
   {
     "id": "kelime_1982",
@@ -4393,7 +4393,7 @@
     "kok": "ج ر ب",
     "anlam_tr": "Deneysel, tecrübi",
     "cefr": "B2",
-    "mufret": "تَجْرِيبِيٌّ / تَجْرِيبِيَّةٌ",
+    "mufret": "تَجْرِيبِيٌّ / تَجْرِيبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -4412,7 +4412,7 @@
     "kok": "ج ن ب",
     "anlam_tr": "Kaçınma, sakınma, uzak durma",
     "cefr": "B1",
-    "mufret": "تَجَنُّبٌ",
+    "mufret": "تَجَنُّبٌ",
     "cemi": "-"
   },
   {
@@ -4421,9 +4421,9 @@
     "kok": "ج و ل",
     "anlam_tr": "Gezinmek, dolaşmak, gezindi",
     "cefr": "A2",
-    "mazi": "تَجَوَّلَ",
-    "muzari": "يَتَجَوَّلُ",
-    "masdar": "تَجَوُّلٌ"
+    "mazi": "تَجَوَّلَ",
+    "muzari": "يَتَجَوَّلُ",
+    "masdar": "تَجَوُّلٌ"
   },
   {
     "id": "kelime_1986",
@@ -4469,8 +4469,8 @@
     "kok": "ح د د",
     "anlam_tr": "Belirlemek, tespit etmek, belirledi",
     "cefr": "B1",
-    "mazi": "حَدَّدَ",
-    "muzari": "يُحَدِّدُ",
+    "mazi": "حَدَّدَ",
+    "muzari": "يُحَدِّدُ",
     "masdar": "تَحْدِيدٌ"
   },
   {
@@ -4479,8 +4479,8 @@
     "kok": "ح د ي",
     "anlam_tr": "Meydan okuma, zorluk, çetin görev",
     "cefr": "B1",
-    "mufret": "تَحَدٍّ",
-    "cemi": "تَحَدِّيَاتٌ"
+    "mufret": "تَحَدٍّ",
+    "cemi": "تَحَدِّيَاتٌ"
   },
   {
     "id": "kelime_1992",
@@ -4488,7 +4488,7 @@
     "kok": "ح ذ ر",
     "anlam_tr": "Uyarıcı, ikaz niteliğinde",
     "cefr": "B1",
-    "mufret": "تَحْذِيرِيٌّ / تَحْذِيرِيَّةٌ",
+    "mufret": "تَحْذِيرِيٌّ / تَحْذِيرِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -4536,8 +4536,8 @@
     "kok": "ح ق ق",
     "anlam_tr": "Gerçekleştirmek, başarmak, gerçekleştirdi",
     "cefr": "B1",
-    "mazi": "حَقَّقَ",
-    "muzari": "يُحَقِّقُ",
+    "mazi": "حَقَّقَ",
+    "muzari": "يُحَقِّقُ",
     "masdar": "تَحْقِيقٌ"
   },
   {
@@ -4546,8 +4546,8 @@
     "kok": "ح ل ل",
     "anlam_tr": "Analiz etmek, tahlil etmek, çözümledi",
     "cefr": "B1",
-    "mazi": "حَلَّلَ",
-    "muzari": "يُحَلِّلُ",
+    "mazi": "حَلَّلَ",
+    "muzari": "يُحَلِّلُ",
     "masdar": "تَحْلِيلٌ"
   },
   {
@@ -4625,8 +4625,8 @@
     "kok": "خ ف ض",
     "anlam_tr": "Düşürmek, indirmek, ucuzlattı",
     "cefr": "A2",
-    "mazi": "خَفَّضَ",
-    "muzari": "يُخَفِّضُ",
+    "mazi": "خَفَّضَ",
+    "muzari": "يُخَفِّضُ",
     "masdar": "تَخْفِيضٌ"
   },
   {
@@ -4644,9 +4644,9 @@
     "kok": "خ ل ص",
     "anlam_tr": "Kurtulmak, başından atmak, kurtuldu",
     "cefr": "B1",
-    "mazi": "تَخَلَّصَ",
-    "muzari": "يَتَخَلَّصُ",
-    "masdar": "تَخَلُّصٌ (مِنْ)"
+    "mazi": "تَخَلَّصَ",
+    "muzari": "يَتَخَلَّصُ",
+    "masdar": "تَخَلُّصٌ (مِنْ)"
   },
   {
     "id": "kelime_2009",
@@ -4663,7 +4663,7 @@
     "kok": "د ر ب",
     "anlam_tr": "Eğitimle ilgili, tatbiki, antrenman niteliğinde",
     "cefr": "B1",
-    "mufret": "تَدْرِيبِيٌّ / تَدْرِيبِيَّةٌ",
+    "mufret": "تَدْرِيبِيٌّ / تَدْرِيبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -4690,9 +4690,9 @@
     "kok": "د ق ق",
     "anlam_tr": "Çalmak (kapı/saat), vurmak, çaldı",
     "cefr": "A2",
-    "mazi": "دَقَّ",
-    "muzari": "يَدُقُّ",
-    "masdar": "دَقٌّ"
+    "mazi": "دَقَّ",
+    "muzari": "يَدُقُّ",
+    "masdar": "دَقٌّ"
   },
   {
     "id": "kelime_2014",
@@ -4700,8 +4700,8 @@
     "kok": "د م ر",
     "anlam_tr": "Tahrip etmek, yıkmak, mahvetti",
     "cefr": "B1",
-    "mazi": "دَمَّرَ",
-    "muzari": "يُدَمِّرُ",
+    "mazi": "دَمَّرَ",
+    "muzari": "يُدَمِّرُ",
     "masdar": "تَدْمِيرٌ"
   },
   {
@@ -4739,7 +4739,7 @@
     "kok": "ذ ك ر",
     "anlam_tr": "Hediyelik eşya, hatıra eşyası, anımsatıcı",
     "cefr": "A2",
-    "mufret": "تِذْكَارِيٌّ / تِذْكَارِيَّةٌ",
+    "mufret": "تِذْكَارِيٌّ / تِذْكَارِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -4748,7 +4748,7 @@
     "kok": "و ر ث",
     "anlam_tr": "Geleneksel, miras niteliğinde olan",
     "cefr": "B1",
-    "mufret": "تُرَاثِيٌّ / تُرَاثِيَّةٌ",
+    "mufret": "تُرَاثِيٌّ / تُرَاثِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -4853,7 +4853,7 @@
     "kok": "ز ل ج",
     "anlam_tr": "Kayma, kayak sporu",
     "cefr": "A2",
-    "mufret": "تَزَلُّجٌ",
+    "mufret": "تَزَلُّجٌ",
     "cemi": "-"
   },
   {
@@ -4919,8 +4919,8 @@
     "kok": "ح ق ق",
     "anlam_tr": "Hak etmek, layık olmak, hak etti",
     "cefr": "B1",
-    "mazi": "اِسْتَحَقَّ",
-    "muzari": "يَسْتَحِقُّ",
+    "mazi": "اِسْتَحَقَّ",
+    "muzari": "يَسْتَحِقُّ",
     "masdar": "اِسْتِحْقَاقٌ"
   },
   {
@@ -5008,9 +5008,9 @@
     "kok": "س ل ق",
     "anlam_tr": "Tırmanmak, tırmandı",
     "cefr": "A2",
-    "mazi": "تَسَلَّقَ",
-    "muzari": "يَتَسَلَّقُ",
-    "masdar": "تَسَلُّقٌ"
+    "mazi": "تَسَلَّقَ",
+    "muzari": "يَتَسَلَّقُ",
+    "masdar": "تَسَلُّقٌ"
   },
   {
     "id": "kelime_2047",
@@ -5018,8 +5018,8 @@
     "kok": "س ه ل",
     "anlam_tr": "Kolaylaştırmak, kolaylaştırdı",
     "cefr": "A2",
-    "mazi": "سَهَّلَ",
-    "muzari": "يُسَهِّلُ",
+    "mazi": "سَهَّلَ",
+    "muzari": "يُسَهِّلُ",
     "masdar": "تَسْهِيلٌ"
   },
   {
@@ -5124,8 +5124,8 @@
     "kok": "ص ف ق",
     "anlam_tr": "Alkışlamak, el çırpmak, alkışladı",
     "cefr": "A2",
-    "mazi": "صَفَّقَ",
-    "muzari": "يُصَفِّقُ",
+    "mazi": "صَفَّقَ",
+    "muzari": "يُصَفِّقُ",
     "masdar": "تَصْفِيقٌ"
   },
   {
@@ -5161,9 +5161,9 @@
     "kok": "ض ر ع",
     "anlam_tr": "Yalvarmak, yakarmak, yalvardı",
     "cefr": "B2",
-    "mazi": "تَضَرَّعَ",
-    "muzari": "يَتَضَرَّعُ",
-    "masdar": "تَضَرُّعٌ (إِلَى)"
+    "mazi": "تَضَرَّعَ",
+    "muzari": "يَتَضَرَّعُ",
+    "masdar": "تَضَرُّعٌ (إِلَى)"
   },
   {
     "id": "kelime_2063",
@@ -5171,9 +5171,9 @@
     "kok": "ض م م",
     "anlam_tr": "Kapsamak, bünyesine katmak, birleştirdi",
     "cefr": "A2",
-    "mazi": "ضَمَّ",
-    "muzari": "يَضُمُّ",
-    "masdar": "ضَمٌّ"
+    "mazi": "ضَمَّ",
+    "muzari": "يَضُمُّ",
+    "masdar": "ضَمٌّ"
   },
   {
     "id": "kelime_2064",
@@ -5200,8 +5200,8 @@
     "kok": "ط ل ل",
     "anlam_tr": "Bakmak, tepeden bakmak, manzaraya baktı",
     "cefr": "B1",
-    "mazi": "أَطَلَّ",
-    "muzari": "يُطِلُّ",
+    "mazi": "أَطَلَّ",
+    "muzari": "يُطِلُّ",
     "masdar": "إِطْلَالَةٌ (عَلَى)"
   },
   {
@@ -5210,8 +5210,8 @@
     "kok": "ط م أ ن",
     "anlam_tr": "Huzur bulmak, rahatlamak, emin oldu",
     "cefr": "B1",
-    "mazi": "اِطْمَأَنَّ",
-    "muzari": "يَطْمَئِنُّ",
+    "mazi": "اِطْمَأَنَّ",
+    "muzari": "يَطْمَئِنُّ",
     "masdar": "اِطْمِئْنَانٌ (إِلَى)"
   },
   {
@@ -5313,8 +5313,8 @@
     "kok": "ع ل ق",
     "anlam_tr": "Asmak, yorum yapmak, askıya aldı",
     "cefr": "A2",
-    "mazi": "عَلَّقَ",
-    "muzari": "يُعَلِّقُ",
+    "mazi": "عَلَّقَ",
+    "muzari": "يُعَلِّقُ",
     "masdar": "تَعْلِيقٌ"
   },
   {
@@ -5325,7 +5325,7 @@
     "cefr": "B1",
     "mazi": "عَلَا",
     "muzari": "يَعْلُو",
-    "masdar": "عُلُوٌّ"
+    "masdar": "عُلُوٌّ"
   },
   {
     "id": "kelime_2080",
@@ -5353,9 +5353,9 @@
     "kok": "غ د و",
     "anlam_tr": "Öğle yemeği yemek, öğle yemeği yedi",
     "cefr": "A1",
-    "mazi": "تَغَدَّى",
-    "muzari": "يَتَغَدَّى",
-    "masdar": "تَغَدٍّ"
+    "mazi": "تَغَدَّى",
+    "muzari": "يَتَغَدَّى",
+    "masdar": "تَغَدٍّ"
   },
   {
     "id": "kelime_2083",
@@ -5372,8 +5372,8 @@
     "kok": "غ ر د",
     "anlam_tr": "Ötmek, cıvıldamak, öttü",
     "cefr": "A2",
-    "mazi": "غَرَّدَ",
-    "muzari": "يُغَرِّدُ",
+    "mazi": "غَرَّدَ",
+    "muzari": "يُغَرِّدُ",
     "masdar": "تَغْرِيدٌ"
   },
   {
@@ -5382,8 +5382,8 @@
     "kok": "غ ر ر",
     "anlam_tr": "Kandırmak, aldatmak, aldatıcı oldu",
     "cefr": "B1",
-    "mazi": "غَرَّ",
-    "muzari": "يَغُرُّ",
+    "mazi": "غَرَّ",
+    "muzari": "يَغُرُّ",
     "masdar": "غُرُورٌ"
   },
   {
@@ -5392,9 +5392,9 @@
     "kok": "غ ل ب",
     "anlam_tr": "Yenmek, üstesinden gelmek, galip geldi",
     "cefr": "B1",
-    "mazi": "تَغَلَّبَ",
-    "muzari": "يَتَغَلَّبُ",
-    "masdar": "تَغَلُّبٌ (عَلَى)"
+    "mazi": "تَغَلَّبَ",
+    "muzari": "يَتَغَلَّبُ",
+    "masdar": "تَغَلُّبٌ (عَلَى)"
   },
   {
     "id": "kelime_2087",
@@ -5402,8 +5402,8 @@
     "kok": "غ ي ر",
     "anlam_tr": "Değişim, değişme, başkalaşım",
     "cefr": "A2",
-    "mufret": "تَغَيُّرٌ",
-    "cemi": "تَغَيُّرَاتٌ"
+    "mufret": "تَغَيُّرٌ",
+    "cemi": "تَغَيُّرَاتٌ"
   },
   {
     "id": "kelime_2088",
@@ -5595,7 +5595,7 @@
     "kok": "ق ل د",
     "anlam_tr": "Geleneksel, konvansiyonel, klasik",
     "cefr": "A2",
-    "mufret": "تَقْلِيدِيٌّ / تَقْلِيدِيَّةٌ",
+    "mufret": "تَقْلِيدِيٌّ / تَقْلِيدِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -5698,7 +5698,7 @@
     "kok": "-",
     "anlam_tr": "Teknolojik, teknolojiye ait",
     "cefr": "A2",
-    "mufret": "تِكْنُولُوجِيٌّ / تِكْنُولُوجِيَّةٌ",
+    "mufret": "تِكْنُولُوجِيٌّ / تِكْنُولُوجِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -5754,8 +5754,8 @@
     "kok": "ت م م",
     "anlam_tr": "Tamamlanmak, gerçekleşmek, tamamlandı",
     "cefr": "A2",
-    "mazi": "تَمَّ",
-    "muzari": "يَتِمُّ",
+    "mazi": "تَمَّ",
+    "muzari": "يَتِمُّ",
     "masdar": "تَمَامٌ"
   },
   {
@@ -5802,8 +5802,8 @@
     "kok": "م د د",
     "anlam_tr": "Uzanmak, yayılmak, uzandı",
     "cefr": "B1",
-    "mazi": "اِمْتَدَّ",
-    "muzari": "يَمْتَدُّ",
+    "mazi": "اِمْتَدَّ",
+    "muzari": "يَمْتَدُّ",
     "masdar": "اِمْتِدَادٌ (إِلَى)"
   },
   {
@@ -5841,9 +5841,9 @@
     "kok": "م ي ز",
     "anlam_tr": "Seçkinleşmek, ayrışmak, öne çıktı",
     "cefr": "B1",
-    "mazi": "تَمَيَّزَ",
-    "muzari": "يَتَمَيَّزُ",
-    "masdar": "تَمَيُّزٌ (بِ)"
+    "mazi": "تَمَيَّزَ",
+    "muzari": "يَتَمَيَّزُ",
+    "masdar": "تَمَيُّزٌ (بِ)"
   },
   {
     "id": "kelime_2134",
@@ -5879,8 +5879,8 @@
     "kok": "ن ب أ",
     "anlam_tr": "Tahmin, öngörü, kehanet",
     "cefr": "B1",
-    "mufret": "تَنَبُّؤٌ",
-    "cemi": "تَنَبُّؤَاتٌ"
+    "mufret": "تَنَبُّؤٌ",
+    "cemi": "تَنَبُّؤَاتٌ"
   },
   {
     "id": "kelime_2138",
@@ -5946,7 +5946,7 @@
     "kok": "ن ظ م",
     "anlam_tr": "Düzenleyici, örgütsel, organizasyonel",
     "cefr": "B2",
-    "mufret": "تَنْظِيمِيٌّ / تَنْظِيمِيَّةٌ",
+    "mufret": "تَنْظِيمِيٌّ / تَنْظِيمِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -5996,7 +5996,7 @@
     "cefr": "A2",
     "mazi": "نَمَا",
     "muzari": "يَنْمُو",
-    "masdar": "نُمُوٌّ"
+    "masdar": "نُمُوٌّ"
   },
   {
     "id": "kelime_2150",
@@ -6014,8 +6014,8 @@
     "kok": "ه د د",
     "anlam_tr": "Tehdit etmek, korkutmak, tehdit etti",
     "cefr": "B1",
-    "mazi": "هَدَّدَ",
-    "muzari": "يُهَدِّدُ",
+    "mazi": "هَدَّدَ",
+    "muzari": "يُهَدِّدُ",
     "masdar": "تَهْدِيدٌ (بِ)"
   },
   {
@@ -6060,8 +6060,8 @@
     "kok": "و ت ر",
     "anlam_tr": "Gerginlik, stres, tansiyon",
     "cefr": "B1",
-    "mufret": "تَوَتُّرٌ",
-    "cemi": "تَوَتُّرَاتٌ"
+    "mufret": "تَوَتُّرٌ",
+    "cemi": "تَوَتُّرَاتٌ"
   },
   {
     "id": "kelime_2157",
@@ -6069,8 +6069,8 @@
     "kok": "و ز ع",
     "anlam_tr": "Dağıtmak, bölüştürmek, dağıttı",
     "cefr": "A2",
-    "mazi": "وَزَّعَ",
-    "muzari": "يُوَزِّعُ",
+    "mazi": "وَزَّعَ",
+    "muzari": "يُوَزِّعُ",
     "masdar": "تَوْزِيعٌ"
   },
   {
@@ -6088,7 +6088,7 @@
     "kok": "و ع ي",
     "anlam_tr": "Bilinçlendirici, farkındalık yaratan",
     "cefr": "B2",
-    "mufret": "تَوْعَوِيٌّ / تَوْعَوِيَّةٌ",
+    "mufret": "تَوْعَوِيٌّ / تَوْعَوِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6125,8 +6125,8 @@
     "kok": "و ق ع",
     "anlam_tr": "İmzalamak, beklemek, imzaladı",
     "cefr": "B1",
-    "mazi": "وَقَّعَ",
-    "muzari": "يُوَقِّعُ",
+    "mazi": "وَقَّعَ",
+    "muzari": "يُوَقِّعُ",
     "masdar": "تَوْقِيعٌ"
   },
   {
@@ -6198,7 +6198,7 @@
     "kok": "ث ل ث",
     "anlam_tr": "Üçlü, üç parçalı",
     "cefr": "B1",
-    "mufret": "ثُلَاثِيٌّ / ثُلَاثِيَّةٌ",
+    "mufret": "ثُلَاثِيٌّ / ثُلَاثِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6216,7 +6216,7 @@
     "kok": "ث ل ج",
     "anlam_tr": "Karlı, buzlu, karla ilgili",
     "cefr": "A2",
-    "mufret": "ثَلْجِيٌّ / ثَلْجِيَّةٌ",
+    "mufret": "ثَلْجِيٌّ / ثَلْجِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6225,7 +6225,7 @@
     "kok": "-",
     "anlam_tr": "Sonra, ardından (bağlaç)",
     "cefr": "A1",
-    "mufret": "ثُمَّ",
+    "mufret": "ثُمَّ",
     "cemi": "-"
   },
   {
@@ -6261,8 +6261,8 @@
     "kok": "ج د د",
     "anlam_tr": "Ciddi, gayretli, kararlı",
     "cefr": "A2",
-    "mufret": "جَادٌّ",
-    "cemi": "جَادُّونَ"
+    "mufret": "جَادٌّ",
+    "cemi": "جَادُّونَ"
   },
   {
     "id": "kelime_2179",
@@ -6279,7 +6279,7 @@
     "kok": "ج ف ف",
     "anlam_tr": "Kuru, çorak, nemsiz",
     "cefr": "A2",
-    "mufret": "جَافٌّ / جَافَّةٌ",
+    "mufret": "جَافٌّ / جَافَّةٌ",
     "cemi": "-"
   },
   {
@@ -6299,7 +6299,7 @@
     "anlam_tr": "Cahil, bilgisiz",
     "cefr": "A2",
     "mufret": "جَاهِلٌ",
-    "cemi": "جُهَّالٌ / جُهَلَاءُ"
+    "cemi": "جُهَّالٌ / جُهَلَاءُ"
   },
   {
     "id": "kelime_2183",
@@ -6326,7 +6326,7 @@
     "kok": "ج ب ل",
     "anlam_tr": "Dağlık, dağla ilgili",
     "cefr": "A2",
-    "mufret": "جَبَلِيٌّ / جَبَلِيَّةٌ",
+    "mufret": "جَبَلِيٌّ / جَبَلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6362,8 +6362,8 @@
     "kok": "ج د ر",
     "anlam_tr": "Duvar resmi, mural, duvara ait",
     "cefr": "B2",
-    "mufret": "جِدَارِيَّةٌ",
-    "cemi": "جِدَارِيَّاتٌ"
+    "mufret": "جِدَارِيَّةٌ",
+    "cemi": "جِدَارِيَّاتٌ"
   },
   {
     "id": "kelime_2190",
@@ -6371,7 +6371,7 @@
     "kok": "ج ر ح",
     "anlam_tr": "Cerrahi, ameliyatla ilgili",
     "cefr": "B1",
-    "mufret": "جِرَاحِيٌّ / جِرَاحِيَّةٌ",
+    "mufret": "جِرَاحِيٌّ / جِرَاحِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6417,8 +6417,8 @@
     "kok": "ج ف ف",
     "anlam_tr": "Kurutmak, kuruttu",
     "cefr": "A2",
-    "mazi": "جَفَّفَ",
-    "muzari": "يُجَفِّفُ",
+    "mazi": "جَفَّفَ",
+    "muzari": "يُجَفِّفُ",
     "masdar": "تَجْفِيفٌ"
   },
   {
@@ -6445,7 +6445,7 @@
     "kok": "ج ل د",
     "anlam_tr": "Buzul, buzlu, buzla ilgili",
     "cefr": "B1",
-    "mufret": "جَلِيدِيٌّ / جَلِيدِيَّةٌ",
+    "mufret": "جَلِيدِيٌّ / جَلِيدِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6508,8 +6508,8 @@
     "kok": "ج ن ن",
     "anlam_tr": "Cennet, bahçe",
     "cefr": "A2",
-    "mufret": "جَنَّةٌ",
-    "cemi": "جَنَّاتٌ"
+    "mufret": "جَنَّةٌ",
+    "cemi": "جَنَّاتٌ"
   },
   {
     "id": "kelime_2206",
@@ -6599,7 +6599,7 @@
     "anlam_tr": "Avcı, tuzak kuran, ip tutan",
     "cefr": "B2",
     "mufret": "حَابِلٌ",
-    "cemi": "حُبَّالٌ"
+    "cemi": "حُبَّالٌ"
   },
   {
     "id": "kelime_2216",
@@ -6607,8 +6607,8 @@
     "kok": "ح ج ج",
     "anlam_tr": "Hacı, hac ziyaretinde bulunan",
     "cefr": "A2",
-    "mufret": "حَاجٌّ",
-    "cemi": "حُجَّاجٌ"
+    "mufret": "حَاجٌّ",
+    "cemi": "حُجَّاجٌ"
   },
   {
     "id": "kelime_2217",
@@ -6626,7 +6626,7 @@
     "anlam_tr": "Kıskanç, haset eden",
     "cefr": "B1",
     "mufret": "حَاسِدٌ",
-    "cemi": "حُسَّادٌ"
+    "cemi": "حُسَّادٌ"
   },
   {
     "id": "kelime_2219",
@@ -6643,7 +6643,7 @@
     "kok": "ح س ب",
     "anlam_tr": "Bilgisayarla ilgili, bilişimsel",
     "cefr": "A2",
-    "mufret": "حَاسُوبِيٌّ / حَاسُوبِيَّةٌ",
+    "mufret": "حَاسُوبِيٌّ / حَاسُوبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6699,7 +6699,7 @@
     "kok": "-",
     "anlam_tr": "Ne güzel! Ne hoş! (övgü edatı)",
     "cefr": "B1",
-    "mufret": "حَبَّذَا",
+    "mufret": "حَبَّذَا",
     "cemi": "-"
   },
   {
@@ -6708,9 +6708,9 @@
     "kok": "ح ث ث",
     "anlam_tr": "Teşvik etmek, özendirmek, teşvik etti",
     "cefr": "B1",
-    "mazi": "حَثَّ",
-    "muzari": "يَحُثُّ",
-    "masdar": "حَثٌّ (عَلَى)"
+    "mazi": "حَثَّ",
+    "muzari": "يَحُثُّ",
+    "masdar": "حَثٌّ (عَلَى)"
   },
   {
     "id": "kelime_2228",
@@ -6718,7 +6718,7 @@
     "kok": "ح ج ر",
     "anlam_tr": "Taştan yapılmış, taş çağına ait",
     "cefr": "B1",
-    "mufret": "حَجَرِيٌّ / حَجَرِيَّةٌ",
+    "mufret": "حَجَرِيٌّ / حَجَرِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6745,7 +6745,7 @@
     "kok": "ح د د",
     "anlam_tr": "Sınır, derece, engel",
     "cefr": "A2",
-    "mufret": "حَدٌّ",
+    "mufret": "حَدٌّ",
     "cemi": "حُدُودٌ"
   },
   {
@@ -6754,7 +6754,7 @@
     "kok": "ح د د",
     "anlam_tr": "Sınırla ilgili, hudut boyunda olan",
     "cefr": "B1",
-    "mufret": "حُدُودِيٌّ / حُدُودِيَّةٌ",
+    "mufret": "حُدُودِيٌّ / حُدُودِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6772,8 +6772,8 @@
     "kok": "ح ر ب",
     "anlam_tr": "Askeri, harp ile ilgili",
     "cefr": "B1",
-    "mufret": "حَرْبِيٌّ",
-    "cemi": "حَرْبِيُّونَ"
+    "mufret": "حَرْبِيٌّ",
+    "cemi": "حَرْبِيُّونَ"
   },
   {
     "id": "kelime_2235",
@@ -6799,8 +6799,8 @@
     "kok": "ح ر ك",
     "anlam_tr": "Hareket ettirmek, kımıldattı",
     "cefr": "A2",
-    "mazi": "حَرَّكَ",
-    "muzari": "يُحَرِّكُ",
+    "mazi": "حَرَّكَ",
+    "muzari": "يُحَرِّكُ",
     "masdar": "تَحْرِيكٌ"
   },
   {
@@ -6818,7 +6818,7 @@
     "kok": "ح س ب",
     "anlam_tr": "Aritmetik, hesapla ilgili",
     "cefr": "B1",
-    "mufret": "حِسَابِيٌّ / حِسَابِيَّةٌ",
+    "mufret": "حِسَابِيٌّ / حِسَابِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -6864,7 +6864,7 @@
     "kok": "ح ض ر",
     "anlam_tr": "Medeni, uygarlıkla ilgili, çağdaş",
     "cefr": "B1",
-    "mufret": "حَضَارِيٌّ",
+    "mufret": "حَضَارِيٌّ",
     "cemi": "-"
   },
   {
@@ -6882,7 +6882,7 @@
     "kok": "ح ظ ظ",
     "anlam_tr": "Şans, talih, kısmet, nasip",
     "cefr": "A2",
-    "mufret": "حَظٌّ",
+    "mufret": "حَظٌّ",
     "cemi": "حُظُوظٌ"
   },
   {
@@ -6910,9 +6910,9 @@
     "kok": "ح ق ق",
     "anlam_tr": "Hak kazanmak, gerekli olmak, gerekti",
     "cefr": "B1",
-    "mazi": "حَقَّ",
-    "muzari": "يَحِقُّ",
-    "masdar": "حَقٌّ"
+    "mazi": "حَقَّ",
+    "muzari": "يَحِقُّ",
+    "masdar": "حَقٌّ"
   },
   {
     "id": "kelime_2250",
@@ -6920,7 +6920,7 @@
     "kok": "ح ق ق",
     "anlam_tr": "Gerçekten, hakikaten, doğrusu",
     "cefr": "A1",
-    "mufret": "حَقًّا",
+    "mufret": "حَقًّا",
     "cemi": "-"
   },
   {
@@ -6938,7 +6938,7 @@
     "kok": "ح ق ق",
     "anlam_tr": "Gerçek, hakiki, reel",
     "cefr": "A2",
-    "mufret": "حَقِيقِيٌّ",
+    "mufret": "حَقِيقِيٌّ",
     "cemi": "-"
   },
   {
@@ -6947,9 +6947,9 @@
     "kok": "ح ك ك",
     "anlam_tr": "Kaşımak, sürtmek, kaşıdı",
     "cefr": "B1",
-    "mazi": "حَكَّ",
-    "muzari": "يَحُكُّ",
-    "masdar": "حَكٌّ"
+    "mazi": "حَكَّ",
+    "muzari": "يَحُكُّ",
+    "masdar": "حَكٌّ"
   },
   {
     "id": "kelime_2254",
@@ -7030,7 +7030,7 @@
     "kok": "ح م ص",
     "anlam_tr": "Nohut",
     "cefr": "A1",
-    "mufret": "حِمِّصٌ",
+    "mufret": "حِمِّصٌ",
     "cemi": "-"
   },
   {
@@ -7039,8 +7039,8 @@
     "kok": "ح م ض",
     "anlam_tr": "Narenciye, turunçgiller, asidik",
     "cefr": "B1",
-    "mufret": "حَمْضِيٌّ / حَمْضِيَّةٌ",
-    "cemi": "حَمْضِيَّاتٌ"
+    "mufret": "حَمْضِيٌّ / حَمْضِيَّةٌ",
+    "cemi": "حَمْضِيَّاتٌ"
   },
   {
     "id": "kelime_2264",
@@ -7093,7 +7093,7 @@
     "kok": "ح ي ي",
     "anlam_tr": "Canlı, diri, mahalle, semt",
     "cefr": "A2",
-    "mufret": "حَيٌّ",
+    "mufret": "حَيٌّ",
     "cemi": "أَحْيَاءٌ"
   },
   {
@@ -7120,8 +7120,8 @@
     "kok": "ح ي ر",
     "anlam_tr": "Şaşırtmak, hayrete düşürmek, şaşırttı",
     "cefr": "B1",
-    "mazi": "حَيَّرَ",
-    "muzari": "يُحَيِّرُ",
+    "mazi": "حَيَّرَ",
+    "muzari": "يُحَيِّرُ",
     "masdar": "تَحْيِيرٌ"
   },
   {
@@ -7157,7 +7157,7 @@
     "kok": "ح ي ي",
     "anlam_tr": "Hayati, canlı, dinamik",
     "cefr": "B1",
-    "mufret": "حَيَوِيٌّ",
+    "mufret": "حَيَوِيٌّ",
     "cemi": "-"
   },
   {
@@ -7175,7 +7175,7 @@
     "kok": "خ ر ج",
     "anlam_tr": "Dış, dışişleri, harici",
     "cefr": "A2",
-    "mufret": "خَارِجِيٌّ / خَارِجِيَّةٌ",
+    "mufret": "خَارِجِيٌّ / خَارِجِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7267,8 +7267,8 @@
     "kok": "خ ب أ",
     "anlam_tr": "Saklamak, gizlemek, sakladı",
     "cefr": "A2",
-    "mazi": "خَبَّأَ",
-    "muzari": "يُخَبِّئُ",
+    "mazi": "خَبَّأَ",
+    "muzari": "يُخَبِّئُ",
     "masdar": "تَخْبِئَةٌ"
   },
   {
@@ -7314,7 +7314,7 @@
     "kok": "خ ش ب",
     "anlam_tr": "Ahşap, tahtadan yapılmış",
     "cefr": "A2",
-    "mufret": "خَشَبِيٌّ / خَشَبِيَّةٌ",
+    "mufret": "خَشَبِيٌّ / خَشَبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7387,8 +7387,8 @@
     "kok": "خ ف ف",
     "anlam_tr": "Hafifletmek, yatıştırmak, hafifletti",
     "cefr": "B1",
-    "mazi": "خَفَّفَ",
-    "muzari": "يُخَفِّفُ",
+    "mazi": "خَفَّفَ",
+    "muzari": "يُخَفِّفُ",
     "masdar": "تَخْفِيفٌ"
   },
   {
@@ -7399,7 +7399,7 @@
     "cefr": "B1",
     "mazi": "خَلَا",
     "muzari": "يَخْلُو",
-    "masdar": "خُلُوٌّ (مِنْ)"
+    "masdar": "خُلُوٌّ (مِنْ)"
   },
   {
     "id": "kelime_2303",
@@ -7407,7 +7407,7 @@
     "kok": "خ ل ب",
     "anlam_tr": "Büyüleyici, çekici, alımlı",
     "cefr": "B2",
-    "mufret": "خَلَّابٌ / خَلَّابَةٌ",
+    "mufret": "خَلَّابٌ / خَلَّابَةٌ",
     "cemi": "-"
   },
   {
@@ -7453,7 +7453,7 @@
     "anlam_tr": "Dost, samimi arkadaş, Halil (özel isim)",
     "cefr": "B1",
     "mufret": "خَلِيلٌ",
-    "cemi": "أَخِلَّاءُ"
+    "cemi": "أَخِلَّاءُ"
   },
   {
     "id": "kelime_2309",
@@ -7488,8 +7488,8 @@
     "kok": "خ و ر ز م",
     "anlam_tr": "Algoritma",
     "cefr": "B2",
-    "mufret": "خَوَارِزْمِيَّةٌ",
-    "cemi": "خَوَارِزْمِيَّاتٌ"
+    "mufret": "خَوَارِزْمِيَّةٌ",
+    "cemi": "خَوَارِزْمِيَّاتٌ"
   },
   {
     "id": "kelime_2313",
@@ -7506,7 +7506,7 @@
     "kok": "خ ي ل",
     "anlam_tr": "Hayali, fantezi, kurgusal",
     "cefr": "B1",
-    "mufret": "خَيَالِيٌّ / خَيَالِيَّةٌ",
+    "mufret": "خَيَالِيٌّ / خَيَالِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7571,7 +7571,7 @@
     "kok": "د ب ل م س",
     "anlam_tr": "Diplomasi, diplomatiklik",
     "cefr": "B1",
-    "mufret": "دِبْلُومَاسِيَّةٌ",
+    "mufret": "دِبْلُومَاسِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7628,8 +7628,8 @@
     "kok": "د ل ل",
     "anlam_tr": "Göstermek, delalet etmek, yol gösterdi",
     "cefr": "A2",
-    "mazi": "دَلَّ",
-    "muzari": "يَدُلُّ",
+    "mazi": "دَلَّ",
+    "muzari": "يَدُلُّ",
     "masdar": "دَلَالَةٌ (عَلَى)"
   },
   {
@@ -7693,8 +7693,8 @@
     "kok": "د و ر",
     "anlam_tr": "Devriye, periyodik yayın, dergi",
     "cefr": "B1",
-    "mufret": "دَوْرِيٌّ / دَوْرِيَّةٌ",
-    "cemi": "دَوْرِيَّاتٌ"
+    "mufret": "دَوْرِيٌّ / دَوْرِيَّةٌ",
+    "cemi": "دَوْرِيَّاتٌ"
   },
   {
     "id": "kelime_2335",
@@ -7729,7 +7729,7 @@
     "kok": "د ي ن",
     "anlam_tr": "Dini, dinle ilgili, dinsel",
     "cefr": "A2",
-    "mufret": "دِينِيٌّ / دِينِيَّةٌ",
+    "mufret": "دِينِيٌّ / دِينِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7766,7 +7766,7 @@
     "kok": "ذ و ت",
     "anlam_tr": "Öz, kişisel, öznel, otobiyografi",
     "cefr": "B1",
-    "mufret": "ذَاتِيٌّ / ذَاتِيَّةٌ",
+    "mufret": "ذَاتِيٌّ / ذَاتِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -7820,7 +7820,7 @@
     "kok": "ذ ل ل",
     "anlam_tr": "Aşağılanma, zillet, hor görülme",
     "cefr": "B1",
-    "mufret": "ذُلٌّ",
+    "mufret": "ذُلٌّ",
     "cemi": "-"
   },
   {
@@ -7875,7 +7875,7 @@
     "anlam_tr": "Öncü, lider, astronot, binbaşı",
     "cefr": "B1",
     "mufret": "رَائِدٌ",
-    "cemi": "رُوَّادٌ"
+    "cemi": "رُوَّادٌ"
   },
   {
     "id": "kelime_2355",
@@ -7931,7 +7931,7 @@
     "anlam_tr": "Yolcu, binen kişi",
     "cefr": "A1",
     "mufret": "رَاكِبٌ",
-    "cemi": "رُكَّابٌ"
+    "cemi": "رُكَّابٌ"
   },
   {
     "id": "kelime_2361",
@@ -7966,8 +7966,8 @@
     "kok": "ر ب ب",
     "anlam_tr": "Ev hanımı, hanımefendi, sahibe",
     "cefr": "A2",
-    "mufret": "رَبَّةٌ",
-    "cemi": "رَبَّاتٌ"
+    "mufret": "رَبَّةٌ",
+    "cemi": "رَبَّاتٌ"
   },
   {
     "id": "kelime_2365",
@@ -7975,8 +7975,8 @@
     "kok": "ر ح ل",
     "anlam_tr": "Gezgin, seyyah, kâşif",
     "cefr": "B1",
-    "mufret": "رَحَّالَةٌ",
-    "cemi": "رَحَّالُونَ"
+    "mufret": "رَحَّالَةٌ",
+    "cemi": "رَحَّالُونَ"
   },
   {
     "id": "kelime_2366",
@@ -8003,8 +8003,8 @@
     "kok": "ر س م",
     "anlam_tr": "Resmi, formal, resmiyet",
     "cefr": "A2",
-    "mufret": "رَسْمِيٌّ / رَسْمِيَّةٌ",
-    "cemi": "رَسْمِيَّاتٌ"
+    "mufret": "رَسْمِيٌّ / رَسْمِيَّةٌ",
+    "cemi": "رَسْمِيَّاتٌ"
   },
   {
     "id": "kelime_2369",
@@ -8012,8 +8012,8 @@
     "kok": "ر ش ح",
     "anlam_tr": "Aday göstermek, süzmek, aday gösterdi",
     "cefr": "B1",
-    "mazi": "رَشَّحَ",
-    "muzari": "يُرَشِّحُ",
+    "mazi": "رَشَّحَ",
+    "muzari": "يُرَشِّحُ",
     "masdar": "تَرْشِيحٌ"
   },
   {
@@ -8040,7 +8040,7 @@
     "kok": "ر ع ي",
     "anlam_tr": "Halk, tebaa, güdülen topluluk",
     "cefr": "B2",
-    "mufret": "رَعِيَّةٌ",
+    "mufret": "رَعِيَّةٌ",
     "cemi": "رَعَايَا"
   },
   {
@@ -8085,7 +8085,7 @@
     "kok": "ر ف ف",
     "anlam_tr": "Raf",
     "cefr": "A1",
-    "mufret": "رَفٌّ",
+    "mufret": "رَفٌّ",
     "cemi": "رُفُوفٌ"
   },
   {
@@ -8112,7 +8112,7 @@
     "kok": "ر ق م",
     "anlam_tr": "Dijital, sayısal",
     "cefr": "A2",
-    "mufret": "رَقْمِيٌّ / رَقْمِيَّةٌ",
+    "mufret": "رَقْمِيٌّ / رَقْمِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8139,8 +8139,8 @@
     "kok": "ر ن ن",
     "anlam_tr": "Çalmak (telefon/zil), çınlamak, çaldı",
     "cefr": "A2",
-    "mazi": "رَنَّ",
-    "muzari": "يَرِنُّ",
+    "mazi": "رَنَّ",
+    "muzari": "يَرِنُّ",
     "masdar": "رَنِينٌ"
   },
   {
@@ -8185,7 +8185,7 @@
     "kok": "ر و ض",
     "anlam_tr": "Sporla ilgili, matematiksel, sporcu",
     "cefr": "A2",
-    "mufret": "رِيَاضِيٌّ / رِيَاضِيَّةٌ",
+    "mufret": "رِيَاضِيٌّ / رِيَاضِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8213,7 +8213,7 @@
     "anlam_tr": "Ziyaretçi, konuk",
     "cefr": "A1",
     "mufret": "زَائِرٌ",
-    "cemi": "زُوَّارٌ / زَائِرُونَ"
+    "cemi": "زُوَّارٌ / زَائِرُونَ"
   },
   {
     "id": "kelime_2392",
@@ -8267,7 +8267,7 @@
     "kok": "ز ج ج",
     "anlam_tr": "Camdan yapılmış, camsı, şeffaf",
     "cefr": "A2",
-    "mufret": "زُجَاجِيٌّ / زُجَاجِيَّةٌ",
+    "mufret": "زُجَاجِيٌّ / زُجَاجِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8286,7 +8286,7 @@
     "kok": "ز ر ر",
     "anlam_tr": "Düğme, buton",
     "cefr": "A1",
-    "mufret": "زِرٌّ",
+    "mufret": "زِرٌّ",
     "cemi": "أَزْرَارٌ"
   },
   {
@@ -8295,7 +8295,7 @@
     "kok": "ز ر ع",
     "anlam_tr": "Tarımsal, ziraatle ilgili",
     "cefr": "A2",
-    "mufret": "زِرَاعِيٌّ / زِرَاعِيَّةٌ",
+    "mufret": "زِرَاعِيٌّ / زِرَاعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8313,7 +8313,7 @@
     "kok": "ز ك و",
     "anlam_tr": "Temiz, nezih, lekesiz, erdemli",
     "cefr": "B1",
-    "mufret": "زَكِيٌّ",
+    "mufret": "زَكِيٌّ",
     "cemi": "أَزْكِيَاءُ"
   },
   {
@@ -8414,8 +8414,8 @@
     "kok": "ز و د",
     "anlam_tr": "Donatmak, sağlamak, tedarik etti",
     "cefr": "B1",
-    "mazi": "زَوَّدَ",
-    "muzari": "يُزَوِّدُ",
+    "mazi": "زَوَّدَ",
+    "muzari": "يُزَوِّدُ",
     "masdar": "تَزْوِيدٌ (بِ)"
   },
   {
@@ -8451,8 +8451,8 @@
     "kok": "ز ي ن",
     "anlam_tr": "Süslemek, bezemek, süsledi",
     "cefr": "A2",
-    "mazi": "زَيَّنَ",
-    "muzari": "يُزَيِّنُ",
+    "mazi": "زَيَّنَ",
+    "muzari": "يُزَيِّنُ",
     "masdar": "تَزْيِينٌ"
   },
   {
@@ -8490,9 +8490,9 @@
     "kok": "ز و ج",
     "anlam_tr": "Evlenmek, evlendi",
     "cefr": "A1",
-    "mazi": "تَزَوَّجَ",
-    "muzari": "يَتَزَوَّجُ",
-    "masdar": "تَزَوُّجٌ / زَوَاجٌ"
+    "mazi": "تَزَوَّجَ",
+    "muzari": "يَتَزَوَّجُ",
+    "masdar": "تَزَوُّجٌ / زَوَاجٌ"
   },
   {
     "id": "kelime_2422",
@@ -8500,7 +8500,7 @@
     "kok": "س ح ل",
     "anlam_tr": "Sahille ilgili, kıyıya ait",
     "cefr": "A2",
-    "mufret": "سَاحِلِيٌّ / سَاحِلِيَّةٌ",
+    "mufret": "سَاحِلِيٌّ / سَاحِلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8518,8 +8518,8 @@
     "kok": "س ر ر",
     "anlam_tr": "Sevindirici, neşe verici",
     "cefr": "A2",
-    "mufret": "سَارٌّ",
-    "cemi": "سَارُّونَ"
+    "mufret": "سَارٌّ",
+    "cemi": "سَارُّونَ"
   },
   {
     "id": "kelime_2425",
@@ -8538,7 +8538,7 @@
     "anlam_tr": "Hırsız",
     "cefr": "A2",
     "mufret": "سَارِقٌ",
-    "cemi": "سُرَّاقٌ / سَارِقُونَ"
+    "cemi": "سُرَّاقٌ / سَارِقُونَ"
   },
   {
     "id": "kelime_2427",
@@ -8546,7 +8546,7 @@
     "kok": "س ر ر",
     "anlam_tr": "Sevindirici, neşeli, Sarah (özel isim)",
     "cefr": "A2",
-    "mufret": "سَارَّةٌ",
+    "mufret": "سَارَّةٌ",
     "cemi": "-"
   },
   {
@@ -8573,7 +8573,7 @@
     "kok": "س د س",
     "anlam_tr": "Altı (dişil için sayı)",
     "cefr": "A1",
-    "mufret": "سِتٌّ",
+    "mufret": "سِتٌّ",
     "cemi": "-"
   },
   {
@@ -8602,7 +8602,7 @@
     "kok": "س د س",
     "anlam_tr": "Altı (müzekker için sayı)",
     "cefr": "A1",
-    "mufret": "سِتَّةٌ",
+    "mufret": "سِتَّةٌ",
     "cemi": "-"
   },
   {
@@ -8621,7 +8621,7 @@
     "kok": "س خ و",
     "anlam_tr": "Cömert, eli açık",
     "cefr": "B1",
-    "mufret": "سَخِيٌّ",
+    "mufret": "سَخِيٌّ",
     "cemi": "أَسْخِيَاءُ"
   },
   {
@@ -8630,8 +8630,8 @@
     "kok": "س د د",
     "anlam_tr": "Ödemek, borcunu kapatmak, isabet ettirdi",
     "cefr": "B1",
-    "mazi": "سَدَّدَ",
-    "muzari": "يُسَدِّدُ",
+    "mazi": "سَدَّدَ",
+    "muzari": "يُسَدِّدُ",
     "masdar": "تَسْدِيدٌ"
   },
   {
@@ -8668,8 +8668,8 @@
     "kok": "س ر ر",
     "anlam_tr": "Sevindirmek, mutlu etmek, sevindirdi",
     "cefr": "A2",
-    "mazi": "سَرَّ",
-    "muzari": "يَسُرُّ",
+    "mazi": "سَرَّ",
+    "muzari": "يَسُرُّ",
     "masdar": "سُرُورٌ"
   },
   {
@@ -8687,7 +8687,7 @@
     "kok": "س ر ر",
     "anlam_tr": "Gizli, sırrı olan, kitleye kapalı",
     "cefr": "B1",
-    "mufret": "سِرِّيٌّ / سِرِّيَّةٌ",
+    "mufret": "سِرِّيٌّ / سِرِّيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8723,8 +8723,8 @@
     "kok": "س ق ي",
     "anlam_tr": "Sucu, su dağıtan",
     "cefr": "B2",
-    "mufret": "سَقَّاءٌ",
-    "cemi": "سَقَّاؤُونَ / سَقَّايِينَ"
+    "mufret": "سَقَّاءٌ",
+    "cemi": "سَقَّاؤُونَ / سَقَّايِينَ"
   },
   {
     "id": "kelime_2447",
@@ -8759,7 +8759,7 @@
     "kok": "س ل م",
     "anlam_tr": "Barışçıl, barışıl, huzurlu",
     "cefr": "B1",
-    "mufret": "سِلْمِيٌّ / سِلْمِيَّةٌ",
+    "mufret": "سِلْمِيٌّ / سِلْمِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8769,7 +8769,7 @@
     "anlam_tr": "Davranış, tutum, gidişat",
     "cefr": "A2",
     "mufret": "سُلُوكٌ",
-    "cemi": "سُلُوكِيَّاتٌ"
+    "cemi": "سُلُوكِيَّاتٌ"
   },
   {
     "id": "kelime_2452",
@@ -8777,8 +8777,8 @@
     "kok": "س م و",
     "anlam_tr": "Adlandırmak, isim vermek, adlandırdı",
     "cefr": "A2",
-    "mazi": "سَمَّى",
-    "muzari": "يُسَمِّي",
+    "mazi": "سَمَّى",
+    "muzari": "يُسَمِّي",
     "masdar": "تَسْمِيَةٌ"
   },
   {
@@ -8796,8 +8796,8 @@
     "kok": "س م ك",
     "anlam_tr": "Balıkçı, balık satan",
     "cefr": "A2",
-    "mufret": "سَمَّاكٌ",
-    "cemi": "سَمَّاكُونَ"
+    "mufret": "سَمَّاكٌ",
+    "cemi": "سَمَّاكُونَ"
   },
   {
     "id": "kelime_2455",
@@ -8823,7 +8823,7 @@
     "kok": "-",
     "anlam_tr": "Sümeyye (özel isim)",
     "cefr": "A1",
-    "mufret": "سُمَيَّةُ",
+    "mufret": "سُمَيَّةُ",
     "cemi": "-"
   },
   {
@@ -8832,9 +8832,9 @@
     "kok": "و ق ف",
     "anlam_tr": "Durmak, ara vermek, kalmak, durdu",
     "cefr": "A2",
-    "mazi": "تَوَقَّفَ",
-    "muzari": "يَتَوَقَّفُ",
-    "masdar": "تَوَقُّفٌ (عَنْ)"
+    "mazi": "تَوَقَّفَ",
+    "muzari": "يَتَوَقَّفُ",
+    "masdar": "تَوَقُّفٌ (عَنْ)"
   },
   {
     "id": "kelime_2459",
@@ -8842,7 +8842,7 @@
     "kok": "س ن و",
     "anlam_tr": "Yıllık, senelik",
     "cefr": "A2",
-    "mufret": "سَنَوِيٌّ / سَنَوِيَّةٌ",
+    "mufret": "سَنَوِيٌّ / سَنَوِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -8932,8 +8932,8 @@
     "kok": "س و ف",
     "anlam_tr": "Ertelemek, savsaklamak, erteledi",
     "cefr": "B2",
-    "mazi": "سَوَّفَ",
-    "muzari": "يُسَوِّفُ",
+    "mazi": "سَوَّفَ",
+    "muzari": "يُسَوِّفُ",
     "masdar": "تَسْوِيفٌ"
   },
   {
@@ -8942,8 +8942,8 @@
     "kok": "س و أ",
     "anlam_tr": "Kötü, fena",
     "cefr": "A1",
-    "mufret": "سَيِّئٌ",
-    "cemi": "سَيِّئُونَ"
+    "mufret": "سَيِّئٌ",
+    "cemi": "سَيِّئُونَ"
   },
   {
     "id": "kelime_2471",
@@ -8951,8 +8951,8 @@
     "kok": "س و أ",
     "anlam_tr": "Kötülük, günah, seyyie",
     "cefr": "A2",
-    "mufret": "سَيِّئَةٌ",
-    "cemi": "سَيِّئَاتٌ"
+    "mufret": "سَيِّئَةٌ",
+    "cemi": "سَيِّئَاتٌ"
   },
   {
     "id": "kelime_2472",
@@ -8969,7 +8969,7 @@
     "kok": "س و د",
     "anlam_tr": "Efendi, bay, beyefendi",
     "cefr": "A1",
-    "mufret": "سَيِّدٌ",
+    "mufret": "سَيِّدٌ",
     "cemi": "سَادَةٌ"
   },
   {
@@ -9024,7 +9024,7 @@
     "anlam_tr": "Zeki, becerikli, kurnaz",
     "cefr": "A2",
     "mufret": "شَاطِرٌ",
-    "cemi": "شُطَّارٌ"
+    "cemi": "شُطَّارٌ"
   },
   {
     "id": "kelime_2480",
@@ -9032,7 +9032,7 @@
     "kok": "ش ف ع",
     "anlam_tr": "Şafi, Şafiî mezhebine mensup",
     "cefr": "B1",
-    "mufret": "شَافِعِيٌّ",
+    "mufret": "شَافِعِيٌّ",
     "cemi": "-"
   },
   {
@@ -9096,7 +9096,7 @@
     "kok": "ش ب ب",
     "anlam_tr": "Gençlik ile ilgili, gençlere yönelik",
     "cefr": "A2",
-    "mufret": "شَبَابِيٌّ / شَبَابِيَّةٌ",
+    "mufret": "شَبَابِيٌّ / شَبَابِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9132,7 +9132,7 @@
     "kok": "ش ت و",
     "anlam_tr": "Kışlık, kışa ait",
     "cefr": "A2",
-    "mufret": "شَتَوِيٌّ / شَتَوِيَّةٌ",
+    "mufret": "شَتَوِيٌّ / شَتَوِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9141,8 +9141,8 @@
     "kok": "ش خ ص",
     "anlam_tr": "Kişilik, şahsiyet, kimlik",
     "cefr": "A2",
-    "mufret": "شَخْصِيَّةٌ",
-    "cemi": "شَخْصِيَّاتٌ"
+    "mufret": "شَخْصِيَّةٌ",
+    "cemi": "شَخْصِيَّاتٌ"
   },
   {
     "id": "kelime_2493",
@@ -9150,9 +9150,9 @@
     "kok": "ش د د",
     "anlam_tr": "Çekmek, bağlamak, sıkılaştırdı",
     "cefr": "A2",
-    "mazi": "شَدَّ",
-    "muzari": "يَشُدُّ",
-    "masdar": "شَدٌّ"
+    "mazi": "شَدَّ",
+    "muzari": "يَشُدُّ",
+    "masdar": "شَدٌّ"
   },
   {
     "id": "kelime_2494",
@@ -9179,7 +9179,7 @@
     "anlam_tr": "Şiddetli, yoğun, sert",
     "cefr": "A2",
     "mufret": "شَدِيدٌ",
-    "cemi": "أَشِدَّاءُ"
+    "cemi": "أَشِدَّاءُ"
   },
   {
     "id": "kelime_2497",
@@ -9197,7 +9197,7 @@
     "kok": "ش ر ق",
     "anlam_tr": "Doğulu, doğuya ait",
     "cefr": "A2",
-    "mufret": "شَرْقِيٌّ / شَرْقِيَّةٌ",
+    "mufret": "شَرْقِيٌّ / شَرْقِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9242,7 +9242,7 @@
     "kok": "ش ف ف",
     "anlam_tr": "Şeffaflık, saydamlık",
     "cefr": "B1",
-    "mufret": "شَفَافِيَّةٌ",
+    "mufret": "شَفَافِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9307,7 +9307,7 @@
     "cefr": "A2",
     "mazi": "شَوَى",
     "muzari": "يَشْوِي",
-    "masdar": "شَيٌّ"
+    "masdar": "شَيٌّ"
   },
   {
     "id": "kelime_2511",
@@ -9426,7 +9426,7 @@
     "kok": "ص ب ح",
     "anlam_tr": "Sabahleyin olan, sabaha ait",
     "cefr": "A2",
-    "mufret": "صَبَاحِيٌّ / صَبَاحِيَّةٌ",
+    "mufret": "صَبَاحِيٌّ / صَبَاحِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9462,7 +9462,7 @@
     "kok": "ص ح ح",
     "anlam_tr": "Sağlık, afiyet, doğruluk",
     "cefr": "A1",
-    "mufret": "صِحَّةٌ",
+    "mufret": "صِحَّةٌ",
     "cemi": "-"
   },
   {
@@ -9471,8 +9471,8 @@
     "kok": "ص ح ح",
     "anlam_tr": "Düzeltmek, tashih etmek, düzeltti",
     "cefr": "A2",
-    "mazi": "صَحَّحَ",
-    "muzari": "يُصَحِّحُ",
+    "mazi": "صَحَّحَ",
+    "muzari": "يُصَحِّحُ",
     "masdar": "تَصْحِيحٌ"
   },
   {
@@ -9581,8 +9581,8 @@
     "kok": "ص ل ح",
     "anlam_tr": "Yetki, geçerlilik, elverişlilik",
     "cefr": "B1",
-    "mufret": "صَلَاحِيَّةٌ",
-    "cemi": "صَلَاحِيَّاتٌ"
+    "mufret": "صَلَاحِيَّةٌ",
+    "cemi": "صَلَاحِيَّاتٌ"
   },
   {
     "id": "kelime_2541",
@@ -9599,8 +9599,8 @@
     "kok": "ص م م",
     "anlam_tr": "Tasarlamak, kararlaştırmak, tasarladı",
     "cefr": "A2",
-    "mazi": "صَمَّمَ",
-    "muzari": "يُصَمِّمُ",
+    "mazi": "صَمَّمَ",
+    "muzari": "يُصَمِّمُ",
     "masdar": "تَصْمِيمٌ"
   },
   {
@@ -9609,7 +9609,7 @@
     "kok": "ص ن ع",
     "anlam_tr": "Sanayi ile ilgili, sınai, yapay",
     "cefr": "A2",
-    "mufret": "صِنَاعِيٌّ / صِنَاعِيَّةٌ",
+    "mufret": "صِنَاعِيٌّ / صِنَاعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9645,8 +9645,8 @@
     "kok": "ص ي ح",
     "anlam_tr": "Çok bağıran, feryat eden, hırçın",
     "cefr": "B2",
-    "mufret": "صَيَّاحٌ",
-    "cemi": "صَيَّاحُونَ"
+    "mufret": "صَيَّاحٌ",
+    "cemi": "صَيَّاحُونَ"
   },
   {
     "id": "kelime_2548",
@@ -9699,7 +9699,7 @@
     "kok": "ص ي ف",
     "anlam_tr": "Yazlık, yaza ait",
     "cefr": "A1",
-    "mufret": "صَيْفِيٌّ / صَيْفِيَّةٌ",
+    "mufret": "صَيْفِيٌّ / صَيْفِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9726,8 +9726,8 @@
     "kok": "ض ر ر",
     "anlam_tr": "Zararlı, ziyan veren",
     "cefr": "A2",
-    "mufret": "ضَارٌّ",
-    "cemi": "ضَارُّونَ"
+    "mufret": "ضَارٌّ",
+    "cemi": "ضَارُّونَ"
   },
   {
     "id": "kelime_2557",
@@ -9755,8 +9755,8 @@
     "kok": "ض ل ل",
     "anlam_tr": "Sapan, doğru yoldan sapmış kimse",
     "cefr": "B1",
-    "mufret": "ضَالٌّ",
-    "cemi": "ضَالُّونَ / ضَالِّينَ"
+    "mufret": "ضَالٌّ",
+    "cemi": "ضَالُّونَ / ضَالِّينَ"
   },
   {
     "id": "kelime_2560",
@@ -9773,7 +9773,7 @@
     "kok": "ض خ خ",
     "anlam_tr": "Pompalama, basma, fışkırtma",
     "cefr": "B1",
-    "mufret": "ضَخٌّ",
+    "mufret": "ضَخٌّ",
     "cemi": "-"
   },
   {
@@ -9782,7 +9782,7 @@
     "kok": "ض د د",
     "anlam_tr": "Karşı, -e karşı, zıt",
     "cefr": "A2",
-    "mufret": "ضِدَّ",
+    "mufret": "ضِدَّ",
     "cemi": "-"
   },
   {
@@ -9818,7 +9818,7 @@
     "kok": "ض ي ق",
     "anlam_tr": "Dar, sıkıntılı, kısıtlı",
     "cefr": "A2",
-    "mufret": "ضَيِّقٌ",
+    "mufret": "ضَيِّقٌ",
     "cemi": "ضِيَاقٌ"
   },
   {
@@ -9866,7 +9866,7 @@
     "anlam_tr": "Gece gelen, kapı çalan, Tarık (özel isim)",
     "cefr": "A1",
     "mufret": "طَارِقٌ",
-    "cemi": "طُوَّاقٌ"
+    "cemi": "طُوَّاقٌ"
   },
   {
     "id": "kelime_2572",
@@ -9885,7 +9885,7 @@
     "anlam_tr": "Kötü, faydasız, bozuk kimse",
     "cefr": "B2",
     "mufret": "طَالِحٌ",
-    "cemi": "طَالِحُونَ / طُلَّاحٌ"
+    "cemi": "طَالِحُونَ / طُلَّاحٌ"
   },
   {
     "id": "kelime_2574",
@@ -9920,7 +9920,7 @@
     "kok": "ط ب ع",
     "anlam_tr": "Elbette, tabii ki, doğası gereği",
     "cefr": "A1",
-    "mufret": "بِالطَّبْعِ",
+    "mufret": "بِالطَّبْعِ",
     "cemi": "-"
   },
   {
@@ -9929,7 +9929,7 @@
     "kok": "ط ب ب",
     "anlam_tr": "Tıbbi, tıpla ilgili, medikal",
     "cefr": "A2",
-    "mufret": "طِبِّيٌّ / طِبِّيَّةٌ",
+    "mufret": "طِبِّيٌّ / طِبِّيَّةٌ",
     "cemi": "-"
   },
   {
@@ -9974,8 +9974,8 @@
     "kok": "ط ف ف",
     "anlam_tr": "Ölçüde veya tartıda hile yapan, eksik tartan",
     "cefr": "B2",
-    "mufret": "طَفَّافٌ",
-    "cemi": "طَفَّافُونَ"
+    "mufret": "طَفَّافٌ",
+    "cemi": "طَفَّافُونَ"
   },
   {
     "id": "kelime_2584",
@@ -10030,7 +10030,7 @@
     "kok": "ط ن ن",
     "anlam_tr": "Ton (ağırlık ölçüsü)",
     "cefr": "A2",
-    "mufret": "طَنٌّ",
+    "mufret": "طَنٌّ",
     "cemi": "أَطْنَانٌ"
   },
   {
@@ -10093,8 +10093,8 @@
     "kok": "ط ي ب",
     "anlam_tr": "İyi, güzel, hoş, temiz, helal",
     "cefr": "A1",
-    "mufret": "طَيِّبٌ",
-    "cemi": "طَيِّبُونَ / طَيِّبَاتٌ"
+    "mufret": "طَيِّبٌ",
+    "cemi": "طَيِّبُونَ / طَيِّبَاتٌ"
   },
   {
     "id": "kelime_2597",
@@ -10147,9 +10147,9 @@
     "kok": "ظ ن ن",
     "anlam_tr": "Sanmak, zannetmek, zannetti",
     "cefr": "A1",
-    "mazi": "ظَنَّ",
-    "muzari": "يَظُنُّ",
-    "masdar": "ظَنٌّ"
+    "mazi": "ظَنَّ",
+    "muzari": "يَظُنُّ",
+    "masdar": "ظَنٌّ"
   },
   {
     "id": "kelime_2603",
@@ -10157,7 +10157,7 @@
     "kok": "ظ ن ن",
     "anlam_tr": "Zan, sanı, şüphe, varsayım",
     "cefr": "A2",
-    "mufret": "ظَنٌّ",
+    "mufret": "ظَنٌّ",
     "cemi": "ظُنُونٌ"
   },
   {
@@ -10184,7 +10184,7 @@
     "kok": "ع و ل",
     "anlam_tr": "Ailevi, aileye ait",
     "cefr": "A2",
-    "mufret": "عَائِلِيٌّ / عَائِلِيَّةٌ",
+    "mufret": "عَائِلِيٌّ / عَائِلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -10338,8 +10338,8 @@
     "kok": "ع ب س",
     "anlam_tr": "Abbasi, Abbasilere mensup",
     "cefr": "B1",
-    "mufret": "عَبَّاسِيٌّ",
-    "cemi": "عَبَّاسِيُّونَ"
+    "mufret": "عَبَّاسِيٌّ",
+    "cemi": "عَبَّاسِيُّونَ"
   },
   {
     "id": "kelime_2624",
@@ -10438,8 +10438,8 @@
     "kok": "ع ذ ب",
     "anlam_tr": "Eziyet etmek, işkence etmek, cezalandırdı",
     "cefr": "B1",
-    "mazi": "عَذَّبَ",
-    "muzari": "يُعَذِّبُ",
+    "mazi": "عَذَّبَ",
+    "muzari": "يُعَذِّبُ",
     "masdar": "تَعْذِيبٌ"
   },
   {
@@ -10477,7 +10477,7 @@
     "anlam_tr": "Aziz, sevgili, kıymetli",
     "cefr": "A1",
     "mufret": "عَزِيزٌ / عَزِيزَةٌ",
-    "cemi": "أَعِزَّاءُ"
+    "cemi": "أَعِزَّاءُ"
   },
   {
     "id": "kelime_2639",
@@ -10504,7 +10504,7 @@
     "kok": "ع ش و",
     "anlam_tr": "Rastgele, gelişigüzel, kontrolsüz",
     "cefr": "B2",
-    "mufret": "عَشْوَائِيٌّ",
+    "mufret": "عَشْوَائِيٌّ",
     "cemi": "-"
   },
   {
@@ -10514,7 +10514,7 @@
     "anlam_tr": "Baston, sopa, asa",
     "cefr": "A2",
     "mufret": "عَصًا",
-    "cemi": "عِصِيٌّ / عِصِيَّاتٌ"
+    "cemi": "عِصِيٌّ / عِصِيَّاتٌ"
   },
   {
     "id": "kelime_2643",
@@ -10531,8 +10531,8 @@
     "kok": "ع ص و",
     "anlam_tr": "Basil, çubuk bakteri",
     "cefr": "B2",
-    "mufret": "عُصَيَّةٌ",
-    "cemi": "عُصَيَّاتٌ"
+    "mufret": "عُصَيَّةٌ",
+    "cemi": "عُصَيَّاتٌ"
   },
   {
     "id": "kelime_2645",
@@ -10540,7 +10540,7 @@
     "kok": "ع ض و",
     "anlam_tr": "Organik, üyelik",
     "cefr": "B1",
-    "mufret": "عُضْوِيٌّ / عُضْوِيَّةٌ",
+    "mufret": "عُضْوِيٌّ / عُضْوِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -10558,8 +10558,8 @@
     "kok": "ع ط ر",
     "anlam_tr": "Aktar, baharatçı",
     "cefr": "A2",
-    "mufret": "عَطَّارٌ",
-    "cemi": "عَطَّارُونَ"
+    "mufret": "عَطَّارٌ",
+    "cemi": "عَطَّارُونَ"
   },
   {
     "id": "kelime_2648",
@@ -10585,7 +10585,7 @@
     "kok": "ع ق ل",
     "anlam_tr": "Zihinsel, akli, zihniyet",
     "cefr": "B1",
-    "mufret": "عَقْلِيٌّ / عَقْلِيَّةٌ",
+    "mufret": "عَقْلِيٌّ / عَقْلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -10630,7 +10630,7 @@
     "kok": "ع ل ل",
     "anlam_tr": "Hastalık, kusur, gerekçe, sebep",
     "cefr": "B1",
-    "mufret": "عِلَّةٌ",
+    "mufret": "عِلَّةٌ",
     "cemi": "عِلَلٌ"
   },
   {
@@ -10640,7 +10640,7 @@
     "anlam_tr": "Hasta, rahatsız, hafif rüzgar",
     "cefr": "B1",
     "mufret": "عَلِيلٌ",
-    "cemi": "أَعِلَّاءُ"
+    "cemi": "أَعِلَّاءُ"
   },
   {
     "id": "kelime_2657",
@@ -10648,8 +10648,8 @@
     "kok": "ع م ل",
     "anlam_tr": "Ameliyat, işlem, operasyon, süreç",
     "cefr": "A2",
-    "mufret": "عَمَلِيَّةٌ",
-    "cemi": "عَمَلِيَّاتٌ"
+    "mufret": "عَمَلِيَّةٌ",
+    "cemi": "عَمَلِيَّاتٌ"
   },
   {
     "id": "kelime_2658",
@@ -10703,8 +10703,8 @@
     "kok": "ع و م",
     "anlam_tr": "İyi yüzen, yüzücü, şamandıra",
     "cefr": "B1",
-    "mufret": "عَوَّامٌ",
-    "cemi": "عَوَّامُونَ"
+    "mufret": "عَوَّامٌ",
+    "cemi": "عَوَّامُونَ"
   },
   {
     "id": "kelime_2664",
@@ -10730,8 +10730,8 @@
     "kok": "ع و د",
     "anlam_tr": "Bayram harçlığı, bayram hediyesi",
     "cefr": "A2",
-    "mufret": "عِيدِيَّةٌ",
-    "cemi": "عِيدِيَّاتٌ"
+    "mufret": "عِيدِيَّةٌ",
+    "cemi": "عِيدِيَّاتٌ"
   },
   {
     "id": "kelime_2667",
@@ -10748,8 +10748,8 @@
     "kok": "غ ز و",
     "anlam_tr": "Gazlı, gaz içeren",
     "cefr": "B1",
-    "mufret": "غَازِيٌّ / غَازِيَّةٌ",
-    "cemi": "غَازِيَّاتٌ"
+    "mufret": "غَازِيٌّ / غَازِيَّةٌ",
+    "cemi": "غَازِيَّاتٌ"
   },
   {
     "id": "kelime_2669",
@@ -10766,7 +10766,7 @@
     "kok": "غ ب ب",
     "anlam_tr": "Aralıklı olarak, zaman zaman, seyrek olarak",
     "cefr": "B2",
-    "mufret": "غِبًّا",
+    "mufret": "غِبًّا",
     "cemi": "-"
   },
   {
@@ -10784,7 +10784,7 @@
     "kok": "غ ذ و",
     "anlam_tr": "Besinsel, gıda ile ilgili, besleyici",
     "cefr": "A2",
-    "mufret": "غِذَائِيٌّ / غِذَائِيَّةٌ",
+    "mufret": "غِذَائِيٌّ / غِذَائِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -10803,7 +10803,7 @@
     "kok": "غ ر ب",
     "anlam_tr": "Batılı, batıya ait",
     "cefr": "A2",
-    "mufret": "غَرْبِيٌّ / غَرْبِيَّةٌ",
+    "mufret": "غَرْبِيٌّ / غَرْبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -10839,9 +10839,9 @@
     "kok": "غ ش ش",
     "anlam_tr": "Aldatmak, hile yapmak, kandırdı",
     "cefr": "B1",
-    "mazi": "غَشَّ",
-    "muzari": "يَغُشُّ",
-    "masdar": "غِشٌّ"
+    "mazi": "غَشَّ",
+    "muzari": "يَغُشُّ",
+    "masdar": "غِشٌّ"
   },
   {
     "id": "kelime_2679",
@@ -10860,7 +10860,7 @@
     "cefr": "B1",
     "mazi": "غَلَا",
     "muzari": "يَغْلُو",
-    "masdar": "غَلَاءٌ / غُلُوٌّ"
+    "masdar": "غَلَاءٌ / غُلُوٌّ"
   },
   {
     "id": "kelime_2681",
@@ -10895,7 +10895,7 @@
     "kok": "غ ن ي",
     "anlam_tr": "Yeşilliklerle dolu, verimli, bol ağaçlı",
     "cefr": "B2",
-    "mufret": "غَنَّاءُ",
+    "mufret": "غَنَّاءُ",
     "cemi": "-"
   },
   {
@@ -11024,8 +11024,8 @@
     "kok": "ف ر ر",
     "anlam_tr": "Kaçmak, firar etmek, kaçtı",
     "cefr": "B1",
-    "mazi": "فَرَّ",
-    "muzari": "يَفِرُّ",
+    "mazi": "فَرَّ",
+    "muzari": "يَفِرُّ",
     "masdar": "فِرَارٌ"
   },
   {
@@ -11043,7 +11043,7 @@
     "kok": "ر ب ب",
     "anlam_tr": "Belki de, ihtimal ki",
     "cefr": "A2",
-    "mufret": "رُبَّمَا",
+    "mufret": "رُبَّمَا",
     "cemi": "-"
   },
   {
@@ -11079,8 +11079,8 @@
     "kok": "ف ر غ",
     "anlam_tr": "Boşaltmak, tahliye etmek, boşalttı",
     "cefr": "B1",
-    "mazi": "فَرَّغَ",
-    "muzari": "يُفَرِّغُ",
+    "mazi": "فَرَّغَ",
+    "muzari": "يُفَرِّغُ",
     "masdar": "تَفْرِيغٌ"
   },
   {
@@ -11125,8 +11125,8 @@
     "kok": "ف س ر",
     "anlam_tr": "Açıklamak, tefsir etmek, yorumladı",
     "cefr": "B1",
-    "mazi": "فَسَّرَ",
-    "muzari": "يُفَسِّرُ",
+    "mazi": "فَسَّرَ",
+    "muzari": "يُفَسِّرُ",
     "masdar": "تَفْسِيرٌ"
   },
   {
@@ -11144,8 +11144,8 @@
     "kok": "ف ض و",
     "anlam_tr": "Uzay ile ilgili, uydu yayını",
     "cefr": "B1",
-    "mufret": "فَضَائِيٌّ / فَضَائِيَّةٌ",
-    "cemi": "فَضَائِيَّاتٌ"
+    "mufret": "فَضَائِيٌّ / فَضَائِيَّةٌ",
+    "cemi": "فَضَائِيَّاتٌ"
   },
   {
     "id": "kelime_2712",
@@ -11162,7 +11162,7 @@
     "kok": "ك ل ل",
     "anlam_tr": "Her, hepsi, bütün",
     "cefr": "A1",
-    "mufret": "كُلٌّ",
+    "mufret": "كُلٌّ",
     "cemi": "-"
   },
   {
@@ -11207,7 +11207,7 @@
     "kok": "ف ن ن",
     "anlam_tr": "Sanatsal, teknik, sanata ait",
     "cefr": "A2",
-    "mufret": "فَنِّيٌّ / فَنِّيَّةٌ",
+    "mufret": "فَنِّيٌّ / فَنِّيَّةٌ",
     "cemi": "-"
   },
   {
@@ -11289,7 +11289,7 @@
     "anlam_tr": "Lider, komutan, sürücü",
     "cefr": "A2",
     "mufret": "قَائِدٌ",
-    "cemi": "قُوَّادٌ / قَادَةٌ"
+    "cemi": "قُوَّادٌ / قَادَةٌ"
   },
   {
     "id": "kelime_2728",
@@ -11379,7 +11379,7 @@
     "kok": "ق ب ب",
     "anlam_tr": "Kubbe, kubbeli yapı",
     "cefr": "B1",
-    "mufret": "قُبَّةٌ",
+    "mufret": "قُبَّةٌ",
     "cemi": "قُبَبٌ"
   },
   {
@@ -11415,7 +11415,7 @@
     "kok": "ق د م",
     "anlam_tr": "Önünde, karşısında",
     "cefr": "B1",
-    "mufret": "قُدَّامَ",
+    "mufret": "قُدَّامَ",
     "cemi": "-"
   },
   {
@@ -11470,7 +11470,7 @@
     "kok": "ق ض ي",
     "anlam_tr": "Mesele, dava, sorun",
     "cefr": "B1",
-    "mufret": "قَضِيَّةٌ",
+    "mufret": "قَضِيَّةٌ",
     "cemi": "قَضَايَا"
   },
   {
@@ -11615,7 +11615,7 @@
     "kok": "-",
     "anlam_tr": "Sanki, adeta, güya (benzetme edatı)",
     "cefr": "A2",
-    "mufret": "كَأَنَّ",
+    "mufret": "كَأَنَّ",
     "cemi": "-"
   },
   {
@@ -11698,7 +11698,7 @@
     "kok": "ك ح ل",
     "anlam_tr": "Lacivert, koyu mavi",
     "cefr": "A2",
-    "mufret": "كَحْلِيٌّ / كَحْلِيَّةٌ",
+    "mufret": "كَحْلِيٌّ / كَحْلِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -11707,9 +11707,9 @@
     "kok": "ك د د",
     "anlam_tr": "Yorulmak, çabalamak, emek vermek, çabaladı",
     "cefr": "B1",
-    "mazi": "كَدَّ",
-    "muzari": "يَكُدُّ",
-    "masdar": "كَدٌّ"
+    "mazi": "كَدَّ",
+    "muzari": "يَكُدُّ",
+    "masdar": "كَدٌّ"
   },
   {
     "id": "kelime_2774",
@@ -11717,8 +11717,8 @@
     "kok": "ك ذ ب",
     "anlam_tr": "Yalancı, çok yalan söyleyen",
     "cefr": "A2",
-    "mufret": "كَذَّابٌ",
-    "cemi": "كَذَّابُونَ"
+    "mufret": "كَذَّابٌ",
+    "cemi": "كَذَّابُونَ"
   },
   {
     "id": "kelime_2775",
@@ -11726,8 +11726,8 @@
     "kok": "ك ر س",
     "anlam_tr": "Defter, not defteri, kitapçık",
     "cefr": "A1",
-    "mufret": "كَرَّاسَةٌ",
-    "cemi": "كَرَّاسَاتٌ / كَرَارِيسُ"
+    "mufret": "كَرَّاسَةٌ",
+    "cemi": "كَرَّاسَاتٌ / كَرَارِيسُ"
   },
   {
     "id": "kelime_2776",
@@ -11735,7 +11735,7 @@
     "kok": "ك ر ب ن",
     "anlam_tr": "Karbonlu, karbonla ilgili",
     "cefr": "B2",
-    "mufret": "كَرْبُونِيٌّ / كَرْبُونِيَّةٌ",
+    "mufret": "كَرْبُونِيٌّ / كَرْبُونِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -11744,8 +11744,8 @@
     "kok": "ك ر ر",
     "anlam_tr": "Tekrarlamak, yinelemek, tekrarladı",
     "cefr": "A2",
-    "mazi": "كَرَّرَ",
-    "muzari": "يُكَرِّرُ",
+    "mazi": "كَرَّرَ",
+    "muzari": "يُكَرِّرُ",
     "masdar": "تَكْرَارٌ / تَكْرِيرٌ"
   },
   {
@@ -11863,7 +11863,7 @@
     "kok": "ك ن ن",
     "anlam_tr": "Gelin, oğul eşi",
     "cefr": "B1",
-    "mufret": "كَنَّةٌ",
+    "mufret": "كَنَّةٌ",
     "cemi": "كَنَائِنُ"
   },
   {
@@ -11881,7 +11881,7 @@
     "kok": "ك ه ر ب",
     "anlam_tr": "Hidroelektrik, su gücüyle çalışan",
     "cefr": "B2",
-    "mufret": "كَهْرُومَائِيٌّ / كَهْرُومَائِيَّةٌ",
+    "mufret": "كَهْرُومَائِيٌّ / كَهْرُومَائِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -11917,8 +11917,8 @@
     "kok": "ك ي م",
     "anlam_tr": "Kimyasal, kimyevi",
     "cefr": "A2",
-    "mufret": "كِيمِيَائِيٌّ / كِيمِيَائِيَّةٌ",
-    "cemi": "كِيمِيَائِيَّاتٌ"
+    "mufret": "كِيمِيَائِيٌّ / كِيمِيَائِيَّةٌ",
+    "cemi": "كِيمِيَائِيَّاتٌ"
   },
   {
     "id": "kelime_2797",
@@ -11926,7 +11926,7 @@
     "kok": "-",
     "anlam_tr": "Olmasın diye, -memesi için (olumsuz sebep edatı)",
     "cefr": "B1",
-    "mufret": "لِئَلَّا",
+    "mufret": "لِئَلَّا",
     "cemi": "-"
   },
   {
@@ -12000,7 +12000,7 @@
     "kok": "-",
     "anlam_tr": "Çünkü, -dığı için (sebep edatı)",
     "cefr": "A1",
-    "mufret": "لِأَنَّ",
+    "mufret": "لِأَنَّ",
     "cemi": "-"
   },
   {
@@ -12109,8 +12109,8 @@
     "kok": "-",
     "anlam_tr": "O ikisi ki (eril ikil ilgi zamiri)",
     "cefr": "A2",
-    "mufret": "اَلَّذِي / اَلَّذَانِ",
-    "cemi": "اَلَّذِينَ"
+    "mufret": "اَلَّذِي / اَلَّذَانِ",
+    "cemi": "اَلَّذِينَ"
   },
   {
     "id": "kelime_2818",
@@ -12155,7 +12155,7 @@
     "kok": "ل ص ص",
     "anlam_tr": "Hırsız, soyguncu",
     "cefr": "A2",
-    "mufret": "لِصٌّ",
+    "mufret": "لِصٌّ",
     "cemi": "لُصُوصٌ"
   },
   {
@@ -12191,7 +12191,7 @@
     "kok": "-",
     "anlam_tr": "Umulur ki, belki (ihtimal/temenni edatı)",
     "cefr": "A2",
-    "mufret": "لَعَلَّ",
+    "mufret": "لَعَلَّ",
     "cemi": "-"
   },
   {
@@ -12200,9 +12200,9 @@
     "kok": "ل ف ف",
     "anlam_tr": "Sarmak, dolamak, büktü",
     "cefr": "A2",
-    "mazi": "لَفَّ",
-    "muzari": "يَلُفُّ",
-    "masdar": "لَفٌّ"
+    "mazi": "لَفَّ",
+    "muzari": "يَلُفُّ",
+    "masdar": "لَفٌّ"
   },
   {
     "id": "kelime_2828",
@@ -12228,7 +12228,7 @@
     "kok": "-",
     "anlam_tr": "Fakat, lakin, ancak (İnne kardeşlerinden)",
     "cefr": "A1",
-    "mufret": "لَكِنَّ",
+    "mufret": "لَكِنَّ",
     "cemi": "-"
   },
   {
@@ -12255,7 +12255,7 @@
     "kok": "م د د",
     "anlam_tr": "Süre, müddet, periyot",
     "cefr": "A1",
-    "mufret": "مُدَّةٌ",
+    "mufret": "مُدَّةٌ",
     "cemi": "مُدَدٌ"
   },
   {
@@ -12321,8 +12321,8 @@
     "kok": "-",
     "anlam_tr": "Onlar ki (dişil çoğul ilgi zamiri)",
     "cefr": "A2",
-    "mufret": "اَلَّتِي",
-    "cemi": "اَللَّوَاتِي"
+    "mufret": "اَلَّتِي",
+    "cemi": "اَللَّوَاتِي"
   },
   {
     "id": "kelime_2841",
@@ -12357,8 +12357,8 @@
     "kok": "أ ك د",
     "anlam_tr": "Vurgulamak, teyit etmek, doğruladı",
     "cefr": "A2",
-    "mazi": "أَكَّدَ",
-    "muzari": "يُؤَكِّدُ",
+    "mazi": "أَكَّدَ",
+    "muzari": "يُؤَكِّدُ",
     "masdar": "تَأْكِيدٌ"
   },
   {
@@ -12385,8 +12385,8 @@
     "kok": "أ ر خ",
     "anlam_tr": "Tarihçi, tarih yazarı",
     "cefr": "B1",
-    "mufret": "مُؤَرِّخٌ",
-    "cemi": "مُؤَرِّخُونَ"
+    "mufret": "مُؤَرِّخٌ",
+    "cemi": "مُؤَرِّخُونَ"
   },
   {
     "id": "kelime_2848",
@@ -12394,7 +12394,7 @@
     "kok": "و ق ت",
     "anlam_tr": "Geçici, muvakkat, süreli",
     "cefr": "A2",
-    "mufret": "مُؤَقَّتٌ / مُؤَقَّتَةٌ",
+    "mufret": "مُؤَقَّتٌ / مُؤَقَّتَةٌ",
     "cemi": "-"
   },
   {
@@ -12403,8 +12403,8 @@
     "kok": "أ ل ف",
     "anlam_tr": "Eser, kitap, yapıt",
     "cefr": "B1",
-    "mufret": "مُؤَلَّفٌ",
-    "cemi": "مُؤَلَّفَاتٌ"
+    "mufret": "مُؤَلَّفٌ",
+    "cemi": "مُؤَلَّفَاتٌ"
   },
   {
     "id": "kelime_2850",
@@ -12430,8 +12430,8 @@
     "kok": "م د د",
     "anlam_tr": "Madde, konu, ders, fıkra (kanun)",
     "cefr": "A2",
-    "mufret": "مَادَّةٌ",
-    "cemi": "مَوَادُّ"
+    "mufret": "مَادَّةٌ",
+    "cemi": "مَوَادُّ"
   },
   {
     "id": "kelime_2853",
@@ -12475,7 +12475,7 @@
     "kok": "-",
     "anlam_tr": "Malta ile ilgili, Maltalı",
     "cefr": "B1",
-    "mufret": "مَالِطِيٌّ / مَالِطِيَّةٌ",
+    "mufret": "مَالِطِيٌّ / مَالِطِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -12484,7 +12484,7 @@
     "kok": "م و ل",
     "anlam_tr": "Mali, finansal, parayla ilgili",
     "cefr": "A2",
-    "mufret": "مَالِيٌّ / مَالِيَّةٌ",
+    "mufret": "مَالِيٌّ / مَالِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -12583,7 +12583,7 @@
     "kok": "ب ك ر",
     "anlam_tr": "Erken, erkenden",
     "cefr": "A1",
-    "mufret": "مُبَكِّرٌ",
+    "mufret": "مُبَكِّرٌ",
     "cemi": "-"
   },
   {
@@ -12601,8 +12601,8 @@
     "kok": "أ خ ر",
     "anlam_tr": "Gecikmiş, geç, rötarlı",
     "cefr": "A1",
-    "mufret": "مُتَأَخِّرٌ",
-    "cemi": "مُتَأَخِّرُونَ"
+    "mufret": "مُتَأَخِّرٌ",
+    "cemi": "مُتَأَخِّرُونَ"
   },
   {
     "id": "kelime_2872",
@@ -12619,7 +12619,7 @@
     "kok": "ج د د",
     "anlam_tr": "Yenilenebilir, sürekli yenilenen",
     "cefr": "B1",
-    "mufret": "مُتَجَدِّدٌ / مُتَجَدِّدَةٌ",
+    "mufret": "مُتَجَدِّدٌ / مُتَجَدِّدَةٌ",
     "cemi": "-"
   },
   {
@@ -12628,8 +12628,8 @@
     "kok": "و ج ه",
     "anlam_tr": "Yönelen, giden, doğrultusunda olan",
     "cefr": "B1",
-    "mufret": "مُتَّجِهٌ / مُتَّجِهَةٌ",
-    "cemi": "مُتَّجِهُونَ"
+    "mufret": "مُتَّجِهٌ / مُتَّجِهَةٌ",
+    "cemi": "مُتَّجِهُونَ"
   },
   {
     "id": "kelime_2875",
@@ -12664,8 +12664,8 @@
     "kok": "ط و ر",
     "anlam_tr": "Gelişmiş, kalkınmış, ileri",
     "cefr": "B1",
-    "mufret": "مُتَطَوِّرٌ",
-    "cemi": "مُتَطَوِّرُونَ"
+    "mufret": "مُتَطَوِّرٌ",
+    "cemi": "مُتَطَوِّرُونَ"
   },
   {
     "id": "kelime_2879",
@@ -12673,8 +12673,8 @@
     "kok": "ط و ع",
     "anlam_tr": "Gönüllü",
     "cefr": "A2",
-    "mufret": "مُتَطَوِّعٌ",
-    "cemi": "مُتَطَوِّعُونَ"
+    "mufret": "مُتَطَوِّعٌ",
+    "cemi": "مُتَطَوِّعُونَ"
   },
   {
     "id": "kelime_2880",
@@ -12700,8 +12700,8 @@
     "kok": "ع ل م",
     "anlam_tr": "Öğrenci, öğrenen kişi, okumuş",
     "cefr": "A2",
-    "mufret": "مُتَعَلِّمٌ",
-    "cemi": "مُتَعَلِّمُونَ"
+    "mufret": "مُتَعَلِّمٌ",
+    "cemi": "مُتَعَلِّمُونَ"
   },
   {
     "id": "kelime_2883",
@@ -12709,8 +12709,8 @@
     "kok": "ف ر غ",
     "anlam_tr": "Tam zamanlı çalışan, kendini adayan, boşta olan",
     "cefr": "B1",
-    "mufret": "مُتَفَرِّغٌ",
-    "cemi": "مُتَفَرِّغُونَ"
+    "mufret": "مُتَفَرِّغٌ",
+    "cemi": "مُتَفَرِّغُونَ"
   },
   {
     "id": "kelime_2884",
@@ -12718,8 +12718,8 @@
     "kok": "و ف ق",
     "anlam_tr": "Anlaşmış, hemfikir, müttefik",
     "cefr": "B1",
-    "mufret": "مُتَّفِقٌ",
-    "cemi": "مُتَّفِقُونَ"
+    "mufret": "مُتَّفِقٌ",
+    "cemi": "مُتَّفِقُونَ"
   },
   {
     "id": "kelime_2885",
@@ -12727,8 +12727,8 @@
     "kok": "ف و ق",
     "anlam_tr": "Üstün başarılı, dereceye giren",
     "cefr": "A2",
-    "mufret": "مُتَفَوِّقٌ",
-    "cemi": "مُتَفَوِّقُونَ"
+    "mufret": "مُتَفَوِّقٌ",
+    "cemi": "مُتَفَوِّقُونَ"
   },
   {
     "id": "kelime_2886",
@@ -12745,8 +12745,8 @@
     "kok": "ق د م",
     "anlam_tr": "İleri, gelişmiş, başvuran kimse",
     "cefr": "B1",
-    "mufret": "مُتَقَدِّمٌ",
-    "cemi": "مُتَقَدِّمُونَ"
+    "mufret": "مُتَقَدِّمٌ",
+    "cemi": "مُتَقَدِّمُونَ"
   },
   {
     "id": "kelime_2888",
@@ -12772,8 +12772,8 @@
     "kok": "ك ب ر",
     "anlam_tr": "Kibirli, büyüklük taslayan",
     "cefr": "B1",
-    "mufret": "مُتَكَبِّرٌ",
-    "cemi": "مُتَكَبِّرُونَ / مُتَكَبِّرِينَ"
+    "mufret": "مُتَكَبِّرٌ",
+    "cemi": "مُتَكَبِّرُونَ / مُتَكَبِّرِينَ"
   },
   {
     "id": "kelime_2891",
@@ -12781,8 +12781,8 @@
     "kok": "ك ل م",
     "anlam_tr": "Konuşmacı, mütekellim, birinci şahıs",
     "cefr": "A2",
-    "mufret": "مُتَكَلِّمٌ",
-    "cemi": "مُتَكَلِّمُونَ"
+    "mufret": "مُتَكَلِّمٌ",
+    "cemi": "مُتَكَلِّمُونَ"
   },
   {
     "id": "kelime_2892",
@@ -12817,8 +12817,8 @@
     "kok": "و س ط",
     "anlam_tr": "Orta, ortalama, orta düzey",
     "cefr": "A2",
-    "mufret": "مُتَوَسِّطٌ",
-    "cemi": "مُتَوَسِّطُونَ"
+    "mufret": "مُتَوَسِّطٌ",
+    "cemi": "مُتَوَسِّطُونَ"
   },
   {
     "id": "kelime_2896",
@@ -12826,7 +12826,7 @@
     "kok": "و ق ع",
     "anlam_tr": "Beklenen, umulan, öngörülen",
     "cefr": "A2",
-    "mufret": "مُتَوَقَّعٌ",
+    "mufret": "مُتَوَقَّعٌ",
     "cemi": "-"
   },
   {
@@ -12871,8 +12871,8 @@
     "kok": "ث ق ف",
     "anlam_tr": "Entelektüel, kültürlü, okumuş",
     "cefr": "B1",
-    "mufret": "مُثَقَّفٌ / مُثَقَّفَةٌ",
-    "cemi": "مُثَقَّفُونَ / مُثَقَّفَاتٌ"
+    "mufret": "مُثَقَّفٌ / مُثَقَّفَةٌ",
+    "cemi": "مُثَقَّفُونَ / مُثَقَّفَاتٌ"
   },
   {
     "id": "kelime_2902",
@@ -12916,7 +12916,7 @@
     "kok": "م ج ن",
     "anlam_tr": "Ücretsiz, bedava",
     "cefr": "A1",
-    "mufret": "مَجَّانًا",
+    "mufret": "مَجَّانًا",
     "cemi": "-"
   },
   {
@@ -12934,7 +12934,7 @@
     "kok": "م ج ن",
     "anlam_tr": "Ücretsiz olma, parasızlık, bedava",
     "cefr": "A2",
-    "mufret": "مَجَّانِيٌّ / مَجَّانِيَّةٌ",
+    "mufret": "مَجَّانِيٌّ / مَجَّانِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -12979,7 +12979,7 @@
     "kok": "ج م ع",
     "anlam_tr": "Toplumsal, sosyal, topluma ait",
     "cefr": "B1",
-    "mufret": "مُجْتَمَعِيٌّ / مُجْتَمَعِيَّةٌ",
+    "mufret": "مُجْتَمَعِيٌّ / مُجْتَمَعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -13006,8 +13006,8 @@
     "kok": "ج ر ب",
     "anlam_tr": "Deneyimli, tecrübe eden, deneyci",
     "cefr": "B1",
-    "mufret": "مُجَرِّبٌ",
-    "cemi": "مُجَرِّبُونَ"
+    "mufret": "مُجَرِّبٌ",
+    "cemi": "مُجَرِّبُونَ"
   },
   {
     "id": "kelime_2917",
@@ -13033,8 +13033,8 @@
     "kok": "ج ف ف",
     "anlam_tr": "Kurutulmuş, kuru",
     "cefr": "A2",
-    "mufret": "مُجَفَّفٌ",
-    "cemi": "مُجَفَّفَاتٌ"
+    "mufret": "مُجَفَّفٌ",
+    "cemi": "مُجَفَّفَاتٌ"
   },
   {
     "id": "kelime_2920",
@@ -13159,7 +13159,7 @@
     "kok": "ح د د",
     "anlam_tr": "Belirli, sınırlı, tanımlanmış",
     "cefr": "A2",
-    "mufret": "مُحَدَّدٌ",
+    "mufret": "مُحَدَّدٌ",
     "cemi": "-"
   },
   {
@@ -13168,8 +13168,8 @@
     "kok": "ح ر ك",
     "anlam_tr": "Motor, tahrik edici, arama motoru",
     "cefr": "A2",
-    "mufret": "مُحَرِّكٌ",
-    "cemi": "مُحَرِّكَاتٌ"
+    "mufret": "مُحَرِّكٌ",
+    "cemi": "مُحَرِّكَاتٌ"
   },
   {
     "id": "kelime_2935",
@@ -13177,7 +13177,7 @@
     "kok": "ح ر م",
     "anlam_tr": "Yasak, haram, Muharrem ayı",
     "cefr": "A2",
-    "mufret": "مُحَرَّمٌ",
+    "mufret": "مُحَرَّمٌ",
     "cemi": "-"
   },
   {
@@ -13222,7 +13222,7 @@
     "kok": "ح ش و",
     "anlam_tr": "Dolgulu, içi doldurulmuş",
     "cefr": "A2",
-    "mufret": "مَحْشُوٌّ / مَحْشُوَّةٌ",
+    "mufret": "مَحْشُوٌّ / مَحْشُوَّةٌ",
     "cemi": "-"
   },
   {
@@ -13258,8 +13258,8 @@
     "kok": "ح ق ق",
     "anlam_tr": "Haklı, doğru yolda olan",
     "cefr": "B1",
-    "mufret": "مُحِقٌّ",
-    "cemi": "مُحِقُّونَ"
+    "mufret": "مُحِقٌّ",
+    "cemi": "مُحِقُّونَ"
   },
   {
     "id": "kelime_2945",
@@ -13267,7 +13267,7 @@
     "kok": "ح م د",
     "anlam_tr": "Muhammed (özel isim)",
     "cefr": "A1",
-    "mufret": "مُحَمَّدٌ",
+    "mufret": "مُحَمَّدٌ",
     "cemi": "-"
   },
   {
@@ -13285,7 +13285,7 @@
     "kok": "ح و ر",
     "anlam_tr": "Merkezi, eksensel, kilit önemde",
     "cefr": "B1",
-    "mufret": "مَحْوَرِيٌّ",
+    "mufret": "مَحْوَرِيٌّ",
     "cemi": "-"
   },
   {
@@ -13339,8 +13339,8 @@
     "kok": "خ ص ص",
     "anlam_tr": "Uzman, ihtisas sahibi",
     "cefr": "B1",
-    "mufret": "مُخْتَصٌّ",
-    "cemi": "مُخْتَصُّونَ"
+    "mufret": "مُخْتَصٌّ",
+    "cemi": "مُخْتَصُّونَ"
   },
   {
     "id": "kelime_2954",
@@ -13384,9 +13384,9 @@
     "kok": "م د د",
     "anlam_tr": "Uzatmak, yaymak, uzattı",
     "cefr": "A2",
-    "mazi": "مَدَّ",
-    "muzari": "يَمُدُّ",
-    "masdar": "مَدٌّ"
+    "mazi": "مَدَّ",
+    "muzari": "يَمُدُّ",
+    "masdar": "مَدٌّ"
   },
   {
     "id": "kelime_2959",
@@ -13422,7 +13422,7 @@
     "kok": "د ر س",
     "anlam_tr": "Okulla ilgili, okul çağındaki",
     "cefr": "A1",
-    "mufret": "مَدْرَسِيٌّ / مَدْرَسِيَّةٌ",
+    "mufret": "مَدْرَسِيٌّ / مَدْرَسِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -13440,8 +13440,8 @@
     "kok": "د ع و",
     "anlam_tr": "Davacı, savcı, iddia eden",
     "cefr": "B1",
-    "mufret": "مُدَّعٍ",
-    "cemi": "مُدَّعُونَ"
+    "mufret": "مُدَّعٍ",
+    "cemi": "مُدَّعُونَ"
   },
   {
     "id": "kelime_2965",
@@ -13548,8 +13548,8 @@
     "kok": "م ر ر",
     "anlam_tr": "Geçirmek, pas vermek, ulaştırdı",
     "cefr": "A2",
-    "mazi": "مَرَّرَ",
-    "muzari": "يُمَرِّرُ",
+    "mazi": "مَرَّرَ",
+    "muzari": "يُمَرِّرُ",
     "masdar": "تَمْرِيرٌ"
   },
   {
@@ -13558,8 +13558,8 @@
     "kok": "ر ش ح",
     "anlam_tr": "Aday, aday gösterilen",
     "cefr": "B1",
-    "mufret": "مُرَشَّحٌ",
-    "cemi": "مُرَشَّحُونَ"
+    "mufret": "مُرَشَّحٌ",
+    "cemi": "مُرَشَّحُونَ"
   },
   {
     "id": "kelime_2978",
@@ -13612,7 +13612,7 @@
     "kok": "م ر ر",
     "anlam_tr": "Trafikle ilgili, trafiğe ait",
     "cefr": "A2",
-    "mufret": "مُرُورِيٌّ / مُرُورِيَّةٌ",
+    "mufret": "مُرُورِيٌّ / مُرُورِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -13810,8 +13810,8 @@
     "kok": "ع د د",
     "anlam_tr": "Hazır, amade",
     "cefr": "A2",
-    "mufret": "مُسْتَعِدٌّ",
-    "cemi": "مُسْتَعِدُّونَ"
+    "mufret": "مُسْتَعِدٌّ",
+    "cemi": "مُسْتَعِدُّونَ"
   },
   {
     "id": "kelime_3006",
@@ -13828,8 +13828,8 @@
     "kok": "م ر ر",
     "anlam_tr": "Sürekli, kesintisiz, devam eden",
     "cefr": "A2",
-    "mufret": "مُسْتَمِرٌّ",
-    "cemi": "مُسْتَمِرُّونَ"
+    "mufret": "مُسْتَمِرٌّ",
+    "cemi": "مُسْتَمِرُّونَ"
   },
   {
     "id": "kelime_3008",
@@ -13865,8 +13865,8 @@
     "kok": "س ر ح",
     "anlam_tr": "Tiyatro oyunu, piyes",
     "cefr": "A2",
-    "mufret": "مَسْرَحِيَّةٌ",
-    "cemi": "مَسْرَحِيَّاتٌ"
+    "mufret": "مَسْرَحِيَّةٌ",
+    "cemi": "مَسْرَحِيَّاتٌ"
   },
   {
     "id": "kelime_3012",
@@ -13901,8 +13901,8 @@
     "kok": "س ك ن",
     "anlam_tr": "Ağrı kesici, yatıştırıcı",
     "cefr": "B1",
-    "mufret": "مُسَكِّنٌ",
-    "cemi": "مُسَكِّنَاتٌ"
+    "mufret": "مُسَكِّنٌ",
+    "cemi": "مُسَكِّنَاتٌ"
   },
   {
     "id": "kelime_3016",
@@ -13910,8 +13910,8 @@
     "kok": "س ل ح",
     "anlam_tr": "Silahlı, zırhlı",
     "cefr": "B1",
-    "mufret": "مُسَلَّحٌ / مُسَلَّحَةٌ",
-    "cemi": "مُسَلَّحُونَ"
+    "mufret": "مُسَلَّحٌ / مُسَلَّحَةٌ",
+    "cemi": "مُسَلَّحُونَ"
   },
   {
     "id": "kelime_3017",
@@ -14063,7 +14063,7 @@
     "kok": "ش و ي",
     "anlam_tr": "Izgara, közlenmiş, kızartılmış",
     "cefr": "A1",
-    "mufret": "مَشْوِيٌّ",
+    "mufret": "مَشْوِيٌّ",
     "cemi": "-"
   },
   {
@@ -14099,7 +14099,7 @@
     "kok": "ص د ق",
     "anlam_tr": "Güvenilirlik, inandırıcılık, dürüstlük",
     "cefr": "B1",
-    "mufret": "مِصْدَاقِيَّةٌ",
+    "mufret": "مِصْدَاقِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -14108,7 +14108,7 @@
     "kok": "ص ر ف",
     "anlam_tr": "Bankacılık, bankayla ilgili",
     "cefr": "A2",
-    "mufret": "مَصْرِفِيٌّ / مَصْرِفِيَّةٌ",
+    "mufret": "مَصْرِفِيٌّ / مَصْرِفِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -14126,8 +14126,8 @@
     "kok": "ص ل و",
     "anlam_tr": "Namaz kılan kimse",
     "cefr": "A2",
-    "mufret": "مُصَلٍّ",
-    "cemi": "مُصَلُّونَ"
+    "mufret": "مُصَلٍّ",
+    "cemi": "مُصَلُّونَ"
   },
   {
     "id": "kelime_3041",
@@ -14243,8 +14243,8 @@
     "kok": "ط م أ ن",
     "anlam_tr": "Huzurlu, sakince, kendinden emin",
     "cefr": "B1",
-    "mufret": "مُطْمَئِنٌّ",
-    "cemi": "مُطْمَئِنُّونَ"
+    "mufret": "مُطْمَئِنٌّ",
+    "cemi": "مُطْمَئِنُّونَ"
   },
   {
     "id": "kelime_3054",
@@ -14252,7 +14252,7 @@
     "kok": "ط ه ر",
     "anlam_tr": "Tertemiz kılınmış, mukaddes",
     "cefr": "B1",
-    "mufret": "مُطَهَّرٌ / مُطَهَّرَةٌ",
+    "mufret": "مُطَهَّرٌ / مُطَهَّرَةٌ",
     "cemi": "-"
   },
   {
@@ -14351,8 +14351,8 @@
     "kok": "ع ط ل",
     "anlam_tr": "Bozuk, arızalı, tatil edilmiş",
     "cefr": "A2",
-    "mufret": "مُعَطَّلٌ",
-    "cemi": "مُعَطَّلُونَ"
+    "mufret": "مُعَطَّلٌ",
+    "cemi": "مُعَطَّلُونَ"
   },
   {
     "id": "kelime_3066",
@@ -14360,7 +14360,7 @@
     "kok": "ع ق د",
     "anlam_tr": "Karmaşık, çetrefilli, karmaşık yapı",
     "cefr": "B1",
-    "mufret": "مُعَقَّدٌ / مُعَقَّدَةٌ",
+    "mufret": "مُعَقَّدٌ / مُعَقَّدَةٌ",
     "cemi": "-"
   },
   {
@@ -14369,8 +14369,8 @@
     "kok": "ع ل ق",
     "anlam_tr": "Asılı, askıda, şiir (Muallaka)",
     "cefr": "B1",
-    "mufret": "مُعَلَّقٌ / مُعَلَّقَةٌ",
-    "cemi": "مُعَلَّقَاتٌ"
+    "mufret": "مُعَلَّقٌ / مُعَلَّقَةٌ",
+    "cemi": "مُعَلَّقَاتٌ"
   },
   {
     "id": "kelime_3068",
@@ -14378,7 +14378,7 @@
     "kok": "ع م ر",
     "anlam_tr": "Mimari, mimarlıkla ilgili",
     "cefr": "A2",
-    "mufret": "مِعْمَارِيٌّ",
+    "mufret": "مِعْمَارِيٌّ",
     "cemi": "-"
   },
   {
@@ -14405,7 +14405,7 @@
     "kok": "غ ر ب",
     "anlam_tr": "Faslı, Fas'a ait, Batılı",
     "cefr": "A2",
-    "mufret": "مَغْرِبِيٌّ / مَغْرِبِيَّةٌ",
+    "mufret": "مَغْرِبِيٌّ / مَغْرِبِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -14432,7 +14432,7 @@
     "kok": "غ ط ي",
     "anlam_tr": "Üstü kapalı, örtülü",
     "cefr": "A2",
-    "mufret": "مُغَطًّى / مُغَطَّاةٌ",
+    "mufret": "مُغَطًّى / مُغَطَّاةٌ",
     "cemi": "-"
   },
   {
@@ -14522,8 +14522,8 @@
     "kok": "ف ض ل",
     "anlam_tr": "Favori, tercih edilen, en sevilen",
     "cefr": "A1",
-    "mufret": "مُفَضَّلٌ",
-    "cemi": "مُفَضَّلُونَ"
+    "mufret": "مُفَضَّلٌ",
+    "cemi": "مُفَضَّلُونَ"
   },
   {
     "id": "kelime_3085",
@@ -14594,8 +14594,8 @@
     "kok": "ق د س",
     "anlam_tr": "Kutsal, mukaddes",
     "cefr": "A2",
-    "mufret": "مُقَدَّسٌ / مُقَدَّسَةٌ",
-    "cemi": "مُقَدَّسَاتٌ"
+    "mufret": "مُقَدَّسٌ / مُقَدَّسَةٌ",
+    "cemi": "مُقَدَّسَاتٌ"
   },
   {
     "id": "kelime_3093",
@@ -14603,8 +14603,8 @@
     "kok": "ق د م",
     "anlam_tr": "Öne sürülen, peşin, yarbay, sunucu",
     "cefr": "B1",
-    "mufret": "مُقَدَّمٌ",
-    "cemi": "مُقَدَّمُونَ"
+    "mufret": "مُقَدَّمٌ",
+    "cemi": "مُقَدَّمُونَ"
   },
   {
     "id": "kelime_3094",
@@ -14621,8 +14621,8 @@
     "kok": "ق ص ر",
     "anlam_tr": "Kusurlu, yetersiz kalan, ihmalkar",
     "cefr": "B1",
-    "mufret": "مُقَصِّرٌ",
-    "cemi": "مُقَصِّرُونَ"
+    "mufret": "مُقَصِّرٌ",
+    "cemi": "مُقَصِّرُونَ"
   },
   {
     "id": "kelime_3096",
@@ -14675,7 +14675,7 @@
     "kok": "ك ث ف",
     "anlam_tr": "Yoğun, yoğunlaştırılmış, hırslı",
     "cefr": "B1",
-    "mufret": "مُكَثَّفٌ / مُكَثَّفَةٌ",
+    "mufret": "مُكَثَّفٌ / مُكَثَّفَةٌ",
     "cemi": "-"
   },
   {
@@ -14684,7 +14684,7 @@
     "kok": "ك ر م",
     "anlam_tr": "Saygıdeğer, yüce, hürmete layık (Mekke-i Mükerreme)",
     "cefr": "A2",
-    "mufret": "مُكَرَّمٌ / مُكَرَّمَةٌ",
+    "mufret": "مُكَرَّمٌ / مُكَرَّمَةٌ",
     "cemi": "-"
   },
   {
@@ -14693,7 +14693,7 @@
     "kok": "ك س ر",
     "anlam_tr": "Kuruyemişler, çerezler",
     "cefr": "A1",
-    "mufret": "مُكَسَّرَاتٌ",
+    "mufret": "مُكَسَّرَاتٌ",
     "cemi": "-"
   },
   {
@@ -14729,7 +14729,7 @@
     "kok": "-",
     "anlam_tr": "Mekke (şehir)",
     "cefr": "A1",
-    "mufret": "مَكَّةُ",
+    "mufret": "مَكَّةُ",
     "cemi": "-"
   },
   {
@@ -14738,8 +14738,8 @@
     "kok": "ك و ن",
     "anlam_tr": "Bileşenler, içerik, malzemeler, unsurlar",
     "cefr": "B1",
-    "mufret": "مُكَوِّنٌ",
-    "cemi": "مُكَوِّنَاتٌ"
+    "mufret": "مُكَوِّنٌ",
+    "cemi": "مُكَوِّنَاتٌ"
   },
   {
     "id": "kelime_3109",
@@ -14829,8 +14829,8 @@
     "kok": "ل و ث",
     "anlam_tr": "Kirli, kirlenmiş, kontamine",
     "cefr": "A2",
-    "mufret": "مُلَوَّثٌ",
-    "cemi": "مُلَوَّثَاتٌ"
+    "mufret": "مُلَوَّثٌ",
+    "cemi": "مُلَوَّثَاتٌ"
   },
   {
     "id": "kelime_3119",
@@ -14847,7 +14847,7 @@
     "kok": "ل و ن",
     "anlam_tr": "Renkli, boyalı",
     "cefr": "A1",
-    "mufret": "مُلَوَّنٌ / مُلَوَّنَةٌ",
+    "mufret": "مُلَوَّنٌ / مُلَوَّنَةٌ",
     "cemi": "-"
   },
   {
@@ -14856,7 +14856,7 @@
     "kok": "-",
     "anlam_tr": "-den/-dan oluşan şey, nitekim",
     "cefr": "A2",
-    "mufret": "مِمَّا",
+    "mufret": "مِمَّا",
     "cemi": "-"
   },
   {
@@ -14865,7 +14865,7 @@
     "kok": "م د د",
     "anlam_tr": "Uzanıp giden, yayılan, genişleyen",
     "cefr": "B1",
-    "mufret": "مُمْتَدٌّ / مُمْتَدَّةٌ",
+    "mufret": "مُمْتَدٌّ / مُمْتَدَّةٌ",
     "cemi": "-"
   },
   {
@@ -14883,8 +14883,8 @@
     "kok": "م ز ق",
     "anlam_tr": "Yırtık, parçalanmış, yırtılmış",
     "cefr": "B1",
-    "mufret": "مُمَزَّقٌ",
-    "cemi": "مُمَزَّقُونَ"
+    "mufret": "مُمَزَّقٌ",
+    "cemi": "مُمَزَّقُونَ"
   },
   {
     "id": "kelime_3125",
@@ -14919,7 +14919,7 @@
     "kok": "م ه د",
     "anlam_tr": "Düzeltilmiş, asfaltlanmış, elverişli kılınmış",
     "cefr": "B1",
-    "mufret": "مُمَهَّدٌ",
+    "mufret": "مُمَهَّدٌ",
     "cemi": "-"
   },
   {
@@ -14928,8 +14928,8 @@
     "kok": "م ي ز",
     "anlam_tr": "Ayrıcalıklı, özel, seçkin, üstün",
     "cefr": "A2",
-    "mufret": "مُمَيَّزٌ",
-    "cemi": "مُمَيَّزُونَ"
+    "mufret": "مُمَيَّزٌ",
+    "cemi": "مُمَيَّزُونَ"
   },
   {
     "id": "kelime_3130",
@@ -15135,7 +15135,7 @@
     "kok": "ن و ب",
     "anlam_tr": "Nöbetçi (eczane vb.)",
     "cefr": "B1",
-    "mufret": "مُنَوَّبٌ / مُنَوَّبَةٌ",
+    "mufret": "مُنَوَّبٌ / مُنَوَّبَةٌ",
     "cemi": "-"
   },
   {
@@ -15144,7 +15144,7 @@
     "kok": "ن و ر",
     "anlam_tr": "Aydınlık, nurlu, aydınlatılmış",
     "cefr": "A2",
-    "mufret": "مُنَوَّرٌ / مُنَوَّرَةٌ",
+    "mufret": "مُنَوَّرٌ / مُنَوَّرَةٌ",
     "cemi": "-"
   },
   {
@@ -15171,8 +15171,8 @@
     "kok": "ه م م",
     "anlam_tr": "Görev, vazife, misyon",
     "cefr": "A2",
-    "mufret": "مَهَمَّةٌ",
-    "cemi": "مَهَامُّ"
+    "mufret": "مَهَمَّةٌ",
+    "cemi": "مَهَامُّ"
   },
   {
     "id": "kelime_3157",
@@ -15198,7 +15198,7 @@
     "kok": "ه د د",
     "anlam_tr": "Tehdit edilen, tehlikede olan",
     "cefr": "B1",
-    "mufret": "مُهَدَّدٌ / مُهَدَّدَةٌ",
+    "mufret": "مُهَدَّدٌ / مُهَدَّدَةٌ",
     "cemi": "-"
   },
   {
@@ -15207,7 +15207,7 @@
     "kok": "م ه ن",
     "anlam_tr": "Mesleki, profesyonel",
     "cefr": "A2",
-    "mufret": "مِهْنِيٌّ / مِهْنِيَّةٌ",
+    "mufret": "مِهْنِيٌّ / مِهْنِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15225,8 +15225,8 @@
     "kok": "م د د",
     "anlam_tr": "Madde, malzeme, konu, ders",
     "cefr": "A2",
-    "mufret": "مَادَّةٌ",
-    "cemi": "مَوَادُّ"
+    "mufret": "مَادَّةٌ",
+    "cemi": "مَوَادُّ"
   },
   {
     "id": "kelime_3163",
@@ -15297,8 +15297,8 @@
     "kok": "و ر د",
     "anlam_tr": "Tedarikçi, ithalatçı, satan",
     "cefr": "B1",
-    "mufret": "مُوَرِّدٌ",
-    "cemi": "مُوَرِّدُونَ"
+    "mufret": "مُوَرِّدٌ",
+    "cemi": "مُوَرِّدُونَ"
   },
   {
     "id": "kelime_3171",
@@ -15315,7 +15315,7 @@
     "kok": "و ض ع",
     "anlam_tr": "Nesnellik, objektiflik, tarafsızlık",
     "cefr": "B1",
-    "mufret": "مَوْضُوعِيَّةٌ",
+    "mufret": "مَوْضُوعِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15324,7 +15324,7 @@
     "kok": "و ف ق",
     "anlam_tr": "Başarılı, muvaffak, isabetli",
     "cefr": "A2",
-    "mufret": "مُوَفَّقٌ / مُوَفَّقَةٌ",
+    "mufret": "مُوَفَّقٌ / مُوَفَّقَةٌ",
     "cemi": "-"
   },
   {
@@ -15351,7 +15351,7 @@
     "kok": "و ل د",
     "anlam_tr": "Üretilmiş, türetilmiş, üreteçten çıkan",
     "cefr": "B1",
-    "mufret": "مُوَلَّدٌ / مُوَلَّدَةٌ",
+    "mufret": "مُوَلَّدٌ / مُوَلَّدَةٌ",
     "cemi": "-"
   },
   {
@@ -15360,7 +15360,7 @@
     "kok": "م ي د",
     "anlam_tr": "Saha ile ilgili, alana ait, araziye dönük",
     "cefr": "B1",
-    "mufret": "مَيْدَانِيٌّ / مَيْدَانِيَّةٌ",
+    "mufret": "مَيْدَانِيٌّ / مَيْدَانِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15369,7 +15369,7 @@
     "kok": "ي س ر",
     "anlam_tr": "Kolaylaştırılmış, elverişli, kolay",
     "cefr": "B1",
-    "mufret": "مُيَسَّرٌ / مُيَسَّرَةٌ",
+    "mufret": "مُيَسَّرٌ / مُيَسَّرَةٌ",
     "cemi": "-"
   },
   {
@@ -15387,8 +15387,8 @@
     "kok": "-",
     "anlam_tr": "Mekanik, tamirci, teknisyen",
     "cefr": "A2",
-    "mufret": "مِيكَانِيكِيٌّ",
-    "cemi": "مِيكَانِيكِيُّونَ"
+    "mufret": "مِيكَانِيكِيٌّ",
+    "cemi": "مِيكَانِيكِيُّونَ"
   },
   {
     "id": "kelime_3181",
@@ -15433,7 +15433,7 @@
     "anlam_tr": "Okçu, nişancı, becerikli",
     "cefr": "B2",
     "mufret": "نَابِلٌ",
-    "cemi": "نُبَّالٌ / نَابِلُونَ"
+    "cemi": "نُبَّالٌ / نَابِلُونَ"
   },
   {
     "id": "kelime_3186",
@@ -15522,8 +15522,8 @@
     "kok": "ن ب أ",
     "anlam_tr": "Haber vermek, bildirmek, haber verdi",
     "cefr": "B1",
-    "mazi": "نَبَّأَ",
-    "muzari": "يُنَبِّئُ",
+    "mazi": "نَبَّأَ",
+    "muzari": "يُنَبِّئُ",
     "masdar": "تَنْبِئَةٌ / تَنْبِيئٌ"
   },
   {
@@ -15532,7 +15532,7 @@
     "kok": "ن ب ت",
     "anlam_tr": "Vejetaryen, bitkisel",
     "cefr": "A2",
-    "mufret": "نَبَاتِيٌّ / نَبَاتِيَّةٌ",
+    "mufret": "نَبَاتِيٌّ / نَبَاتِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15541,7 +15541,7 @@
     "kok": "ن ب ح",
     "anlam_tr": "Çok havlayan, havlayıcı",
     "cefr": "B2",
-    "mufret": "نَبَّاحٌ",
+    "mufret": "نَبَّاحٌ",
     "cemi": "-"
   },
   {
@@ -15550,8 +15550,8 @@
     "kok": "ن ب أ",
     "anlam_tr": "Peygamber, nebi",
     "cefr": "A2",
-    "mufret": "نَبِيٌّ",
-    "cemi": "أَنْبِيَاءُ / نَبِيُّونَ"
+    "mufret": "نَبِيٌّ",
+    "cemi": "أَنْبِيَاءُ / نَبِيُّونَ"
   },
   {
     "id": "kelime_3199",
@@ -15577,9 +15577,9 @@
     "kok": "أ ك د",
     "anlam_tr": "Emin olmak, doğrulamak, ikna oldu",
     "cefr": "A2",
-    "mazi": "تَأَكَّدَ",
-    "muzari": "يَتَأَكَّدُ",
-    "masdar": "تَأَكُّدٌ"
+    "mazi": "تَأَكَّدَ",
+    "muzari": "يَتَأَكَّدُ",
+    "masdar": "تَأَكُّدٌ"
   },
   {
     "id": "kelime_3202",
@@ -15587,9 +15587,9 @@
     "kok": "ج و ل",
     "anlam_tr": "Dolaşmak, gezmek, tur attı",
     "cefr": "A2",
-    "mazi": "تَجَوَّلَ",
-    "muzari": "يَتَجَوَّلُ",
-    "masdar": "تَجَوُّلٌ"
+    "mazi": "تَجَوَّلَ",
+    "muzari": "يَتَجَوَّلُ",
+    "masdar": "تَجَوُّلٌ"
   },
   {
     "id": "kelime_3203",
@@ -15646,9 +15646,9 @@
     "kok": "ذ خ ر",
     "anlam_tr": "Biriktirmek, tasarruf etmek, biriktirdi",
     "cefr": "B1",
-    "mazi": "اِدَّخَرَ",
-    "muzari": "يَدَّخِرُ",
-    "masdar": "اِدِّخَارٌ"
+    "mazi": "اِدَّخَرَ",
+    "muzari": "يَدَّخِرُ",
+    "masdar": "اِدِّخَارٌ"
   },
   {
     "id": "kelime_3209",
@@ -15710,8 +15710,8 @@
     "kok": "ط و ر",
     "anlam_tr": "Geliştirmek, ilerletmek, geliştirdi",
     "cefr": "A2",
-    "mazi": "طَوَّرَ",
-    "muzari": "يُطَوِّرُ",
+    "mazi": "طَوَّرَ",
+    "muzari": "يُطَوِّرُ",
     "masdar": "تَطْوِيرٌ"
   },
   {
@@ -15810,8 +15810,8 @@
     "kok": "ق د ر",
     "anlam_tr": "Takdir etmek, değer vermek, takdir etti",
     "cefr": "A2",
-    "mazi": "قَدَّرَ",
-    "muzari": "يُقَدِّرُ",
+    "mazi": "قَدَّرَ",
+    "muzari": "يُقَدِّرُ",
     "masdar": "تَقْدِيرٌ"
   },
   {
@@ -15849,8 +15849,8 @@
     "kok": "ن ه ي",
     "anlam_tr": "Final, sonuncu, nihai",
     "cefr": "A2",
-    "mufret": "نِهَائِيٌّ",
-    "cemi": "نِهَائِيَّاتٌ"
+    "mufret": "نِهَائِيٌّ",
+    "cemi": "نِهَائِيَّاتٌ"
   },
   {
     "id": "kelime_3231",
@@ -15858,7 +15858,7 @@
     "kok": "ن ه ر",
     "anlam_tr": "Nehirle ilgili, ırmağa ait",
     "cefr": "A2",
-    "mufret": "نَهْرِيٌّ / نَهْرِيَّةٌ",
+    "mufret": "نَهْرِيٌّ / نَهْرِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15913,7 +15913,7 @@
     "kok": "ه ت ف",
     "anlam_tr": "Telefonla ilgili, telefonla",
     "cefr": "A2",
-    "mufret": "هَاتَفِيٌّ / هَاتَفِيَّةٌ",
+    "mufret": "هَاتَفِيٌّ / هَاتَفِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -15949,8 +15949,8 @@
     "kok": "ه ز ز",
     "anlam_tr": "Sarsıntı, şok, deprem sarsıntısı",
     "cefr": "A2",
-    "mufret": "هَزَّةٌ",
-    "cemi": "هَزَّاتٌ"
+    "mufret": "هَزَّةٌ",
+    "cemi": "هَزَّاتٌ"
   },
   {
     "id": "kelime_3242",
@@ -15976,8 +15976,8 @@
     "kok": "ه ل ل",
     "anlam_tr": "Kelime-i tevhîd söylemek, neşeyle bağırdı",
     "cefr": "B1",
-    "mazi": "هَلَّلَ",
-    "muzari": "يُهَلِّلُ",
+    "mazi": "هَلَّلَ",
+    "muzari": "يُهَلِّلُ",
     "masdar": "تَهْلِيلٌ"
   },
   {
@@ -15995,7 +15995,7 @@
     "kok": "ه م م",
     "anlam_tr": "Tasa, kaygı, keder, dert",
     "cefr": "A2",
-    "mufret": "هَمٌّ",
+    "mufret": "هَمٌّ",
     "cemi": "هُمُومٌ"
   },
   {
@@ -16004,7 +16004,7 @@
     "kok": "ه م م",
     "anlam_tr": "Gayret, azim, yüksek çaba",
     "cefr": "B1",
-    "mufret": "هِمَّةٌ",
+    "mufret": "هِمَّةٌ",
     "cemi": "هِمَمٌ"
   },
   {
@@ -16013,7 +16013,7 @@
     "kok": "-",
     "anlam_tr": "Onlar (dişil çoğul şahıs zamiri)",
     "cefr": "A1",
-    "mufret": "هُنَّ",
+    "mufret": "هُنَّ",
     "cemi": "-"
   },
   {
@@ -16049,7 +16049,7 @@
     "kok": "ه ن د س",
     "anlam_tr": "Geometrik, mühendislikle ilgili",
     "cefr": "A2",
-    "mufret": "هَنْدَسِيٌّ / هَنْدَسِيَّةٌ",
+    "mufret": "هَنْدَسِيٌّ / هَنْدَسِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -16076,9 +16076,9 @@
     "kok": "م ن ي",
     "anlam_tr": "Dilemek, temenni etmek, diledi",
     "cefr": "A2",
-    "mazi": "تَمَنَّى",
-    "muzari": "يَتَمَنَّى",
-    "masdar": "تَمَنٍّ"
+    "mazi": "تَمَنَّى",
+    "muzari": "يَتَمَنَّى",
+    "masdar": "تَمَنٍّ"
   },
   {
     "id": "kelime_3256",
@@ -16205,7 +16205,7 @@
     "kok": "و ل ي",
     "anlam_tr": "Veli, dost, koruyucu, ebeveyn",
     "cefr": "A2",
-    "mufret": "وَلِيٌّ",
+    "mufret": "وَلِيٌّ",
     "cemi": "أَوْلِيَاءُ"
   },
   {
@@ -16214,8 +16214,8 @@
     "kok": "ب ي أ",
     "anlam_tr": "Ağırlamak, yerleştirmek, yüzünü güldürdü",
     "cefr": "B2",
-    "mazi": "بَيَّأَ",
-    "muzari": "يُبَيِّئُ",
+    "mazi": "بَيَّأَ",
+    "muzari": "يُبَيِّئُ",
     "masdar": "تَبْيِيئٌ"
   },
   {
@@ -16234,8 +16234,8 @@
     "kok": "ظ ل ل",
     "anlam_tr": "Gölgelemek, gölge yapmak, gölgeledi",
     "cefr": "B1",
-    "mazi": "ظَلَّلَ",
-    "muzari": "يُظَلِّلُ",
+    "mazi": "ظَلَّلَ",
+    "muzari": "يُظَلِّلُ",
     "masdar": "تَظْلِيلٌ"
   },
   {
@@ -16254,9 +16254,9 @@
     "kok": "و ك ل",
     "anlam_tr": "Tevekkül etmek, güvenmek, tevekkül etti",
     "cefr": "A2",
-    "mazi": "تَوَكَّلَ",
-    "muzari": "يَتَوَكَّلُ",
-    "masdar": "تَوَكُّلٌ (عَلَى)"
+    "mazi": "تَوَكَّلَ",
+    "muzari": "يَتَوَكَّلُ",
+    "masdar": "تَوَكُّلٌ (عَلَى)"
   },
   {
     "id": "kelime_3275",
@@ -16273,8 +16273,8 @@
     "kok": "د ر س",
     "anlam_tr": "Ders vermek, öğretmek, öğretti",
     "cefr": "A2",
-    "mazi": "دَرَّسَ",
-    "muzari": "يُدَرِّسُ",
+    "mazi": "دَرَّسَ",
+    "muzari": "يُدَرِّسُ",
     "masdar": "تَدْرِيسٌ"
   },
   {
@@ -16283,9 +16283,9 @@
     "kok": "د ل ل",
     "anlam_tr": "Yol göstermek, delalet etmek, gösterdi",
     "cefr": "A2",
-    "mazi": "دَلَّ",
-    "muzari": "يَدُلُّ",
-    "masdar": "دَلَالَةٌ / دَلٌّ"
+    "mazi": "دَلَّ",
+    "muzari": "يَدُلُّ",
+    "masdar": "دَلَالَةٌ / دَلٌّ"
   },
   {
     "id": "kelime_3278",
@@ -16293,7 +16293,7 @@
     "kok": "ر ب ب",
     "anlam_tr": "Rab, efendi, sahip",
     "cefr": "A1",
-    "mufret": "رَبٌّ",
+    "mufret": "رَبٌّ",
     "cemi": "أَرْبَابٌ"
   },
   {
@@ -16311,7 +16311,7 @@
     "kok": "و ر ق",
     "anlam_tr": "Kağıttan, kağıtla ilgili, basılı",
     "cefr": "A2",
-    "mufret": "وَرَقِيٌّ / وَرَقِيَّةٌ",
+    "mufret": "وَرَقِيٌّ / وَرَقِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -16320,8 +16320,8 @@
     "kok": "و ز ع",
     "anlam_tr": "Dağıtmak, taksim etmek, dağıttı",
     "cefr": "A2",
-    "mazi": "وَزَّعَ",
-    "muzari": "يُوَزِّعُ",
+    "mazi": "وَزَّعَ",
+    "muzari": "يُوَزِّعُ",
     "masdar": "تَوْزِيعٌ"
   },
   {
@@ -16330,7 +16330,7 @@
     "kok": "س د س",
     "anlam_tr": "Altmış (sayı)",
     "cefr": "A1",
-    "mufret": "سِتُّونَ",
+    "mufret": "سِتُّونَ",
     "cemi": "-"
   },
   {
@@ -16394,7 +16394,7 @@
     "kok": "و ق ي",
     "anlam_tr": "Koruyucu, önleyici, koruma amaçlı",
     "cefr": "B1",
-    "mufret": "وِقَائِيٌّ / وِقَائِيَّةٌ",
+    "mufret": "وِقَائِيٌّ / وِقَائِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -16422,7 +16422,7 @@
     "kok": "و ق ف",
     "anlam_tr": "Vakıf ile ilgili, vakfa ait",
     "cefr": "B1",
-    "mufret": "وَقْفِيٌّ / وَقْفِيَّةٌ",
+    "mufret": "وَقْفِيٌّ / وَقْفِيَّةٌ",
     "cemi": "-"
   },
   {
@@ -16459,7 +16459,7 @@
     "kok": "أ ث ث",
     "anlam_tr": "Mobilyalı, döşeli",
     "cefr": "A2",
-    "mufret": "مُؤَثَّثٌ / مُؤَثَّثَةٌ",
+    "mufret": "مُؤَثَّثٌ / مُؤَثَّثَةٌ",
     "cemi": "-"
   },
   {
@@ -16486,7 +16486,7 @@
     "kok": "ح ب ب",
     "anlam_tr": "Sevilen, sevimli, hoşa giden",
     "cefr": "A2",
-    "mufret": "مُحَبَّبٌ",
+    "mufret": "مُحَبَّبٌ",
     "cemi": "-"
   },
   {
@@ -16513,8 +16513,8 @@
     "kok": "و ف ق",
     "anlam_tr": "Başarılı kılmak, muvaffak etmek, muvaffak kıldı",
     "cefr": "A2",
-    "mazi": "وَفَّقَ",
-    "muzari": "يُوَّفِّقُ",
+    "mazi": "وَفَّقَ",
+    "muzari": "يُوَّفِّقُ",
     "masdar": "تَوْفِيقٌ"
   },
   {
@@ -16561,8 +16561,8 @@
     "kok": "أ ث ر",
     "anlam_tr": "Etkilemek, tesir etmek, etkiledi",
     "cefr": "B1",
-    "mazi": "أَثَّرَ",
-    "muzari": "يُؤَثِّرُ",
+    "mazi": "أَثَّرَ",
+    "muzari": "يُؤَثِّرُ",
     "masdar": "تَأْثِيرٌ (فِي / عَلَى)"
   },
   {
@@ -16571,8 +16571,8 @@
     "kok": "أ د ي",
     "anlam_tr": "Yol açmak, yerine getirmek, ödedi, ifa etti",
     "cefr": "B1",
-    "mazi": "أَدَّى",
-    "muzari": "يُؤَدِّي",
+    "mazi": "أَدَّى",
+    "muzari": "يُؤَدِّي",
     "masdar": "تَأْدِيَةٌ / أَدَاءٌ (إِلَى)"
   },
   {
@@ -16669,9 +16669,9 @@
     "kok": "ج ز أ",
     "anlam_tr": "Bölünmek, parçalanmak, ayrıştı",
     "cefr": "B2",
-    "mazi": "تَجَزَّأَ",
-    "muzari": "يَتَجَزَّأُ",
-    "masdar": "تَجَزُّؤٌ"
+    "mazi": "تَجَزَّأَ",
+    "muzari": "يَتَجَزَّأُ",
+    "masdar": "تَجَزُّؤٌ"
   },
   {
     "id": "kelime_3319",
@@ -16679,9 +16679,9 @@
     "kok": "ج ن ب",
     "anlam_tr": "Kaçınmak, sakınmak, uzak durdu",
     "cefr": "B1",
-    "mazi": "تَجَنَّبَ",
-    "muzari": "يَتَجَنَّبُ",
-    "masdar": "تَجَنُّبٌ"
+    "mazi": "تَجَنَّبَ",
+    "muzari": "يَتَجَنَّبُ",
+    "masdar": "تَجَنُّبٌ"
   },
   {
     "id": "kelime_3320",
@@ -16689,9 +16689,9 @@
     "kok": "خ ل ص",
     "anlam_tr": "Kurtulmak, başından atmak, kurtuldu",
     "cefr": "B1",
-    "mazi": "تَخَلَّصَ",
-    "muzari": "يَتَخَلَّصُ",
-    "masdar": "تَخَلُّصٌ (مِنْ)"
+    "mazi": "تَخَلَّصَ",
+    "muzari": "يَتَخَلَّصُ",
+    "masdar": "تَخَلُّصٌ (مِنْ)"
   },
   {
     "id": "kelime_3321",
@@ -16699,9 +16699,9 @@
     "kok": "ر د د",
     "anlam_tr": "Tereddüt etmek, gidip gelmek, kararsız kaldı",
     "cefr": "A2",
-    "mazi": "تَرَدَّدَ",
-    "muzari": "يَتَرَدَّدُ",
-    "masdar": "تَرَدُّدٌ (فِي / إِلَى)"
+    "mazi": "تَرَدَّدَ",
+    "muzari": "يَتَرَدَّدُ",
+    "masdar": "تَرَدُّدٌ (فِي / إِلَى)"
   },
   {
     "id": "kelime_3322",
@@ -16709,9 +16709,9 @@
     "kok": "س ب ب",
     "anlam_tr": "Neden olmak, yol açmak, sebep oldu",
     "cefr": "A2",
-    "mazi": "تَسَبَّبَ",
-    "muzari": "يَتَسَبَّبُ",
-    "masdar": "تَسَبُّبٌ (فِي)"
+    "mazi": "تَسَبَّبَ",
+    "muzari": "يَتَسَبَّبُ",
+    "masdar": "تَسَبُّبٌ (فِي)"
   },
   {
     "id": "kelime_3323",
@@ -16719,9 +16719,9 @@
     "kok": "س ل ق",
     "anlam_tr": "Tırmanmak, tırmandı",
     "cefr": "A2",
-    "mazi": "تَسَلَّقَ",
-    "muzari": "يَتَسَلَّقُ",
-    "masdar": "تَسَلُّقٌ"
+    "mazi": "تَسَلَّقَ",
+    "muzari": "يَتَسَلَّقُ",
+    "masdar": "تَسَلُّقٌ"
   },
   {
     "id": "kelime_3324",
@@ -16749,9 +16749,9 @@
     "kok": "ع ر ض",
     "anlam_tr": "Maruz kalmak, hedef olmak, maruz kaldı",
     "cefr": "B1",
-    "mazi": "تَعَرَّضَ",
-    "muzari": "يَتَعَرَّضُ",
-    "masdar": "تَعَرُّضٌ (لِ)"
+    "mazi": "تَعَرَّضَ",
+    "muzari": "يَتَعَرَّضُ",
+    "masdar": "تَعَرُّضٌ (لِ)"
   },
   {
     "id": "kelime_3327",
@@ -16759,9 +16759,9 @@
     "kok": "ع ش و",
     "anlam_tr": "Akşam yemeği yemek, akşam yemeği yedi",
     "cefr": "A1",
-    "mazi": "تَعَشَّى",
-    "muzari": "يَتَعَشَّى",
-    "masdar": "تَعَشٍّ"
+    "mazi": "تَعَشَّى",
+    "muzari": "يَتَعَشَّى",
+    "masdar": "تَعَشٍّ"
   },
   {
     "id": "kelime_3328",
@@ -16769,9 +16769,9 @@
     "kok": "و ف ق",
     "anlam_tr": "Anlaşmak, uzlaşmak, anlaştı",
     "cefr": "A2",
-    "mazi": "اِتَّفَقَ",
-    "muzari": "يَتَّفِقُ",
-    "masdar": "اِتِّفَاقٌ (عَلَى / مَعَ)"
+    "mazi": "اِتَّفَقَ",
+    "muzari": "يَتَّفِقُ",
+    "masdar": "اِتِّفَاقٌ (عَلَى / مَعَ)"
   },
   {
     "id": "kelime_3329",
@@ -16799,9 +16799,9 @@
     "kok": "ك ي ف",
     "anlam_tr": "Uyum sağlamak, adapte olmak, uyum sağladı",
     "cefr": "B1",
-    "mazi": "تَكَيَّفَ",
-    "muzari": "يَتَكَيَّفُ",
-    "masdar": "تَكَيُّفٌ (مَعَ)"
+    "mazi": "تَكَيَّفَ",
+    "muzari": "يَتَكَيَّفُ",
+    "masdar": "تَكَيُّفٌ (مَعَ)"
   },
   {
     "id": "kelime_3332",
@@ -16809,9 +16809,9 @@
     "kok": "م ه ل",
     "anlam_tr": "Ağırdan almak, acele etmemek, yavaş davrandı",
     "cefr": "B1",
-    "mazi": "تَمَهَّلَ",
-    "muzari": "يَتَمَهَّلُ",
-    "masdar": "تَمَهُّلٌ"
+    "mazi": "تَمَهَّلَ",
+    "muzari": "يَتَمَهَّلُ",
+    "masdar": "تَمَهُّلٌ"
   },
   {
     "id": "kelime_3333",
@@ -16819,9 +16819,9 @@
     "kok": "ن ز ه",
     "anlam_tr": "Gezintiye çıkmak, gezip dolaşmak, gezindi",
     "cefr": "A2",
-    "mazi": "تَنَزَّهَ",
-    "muzari": "يَتَنَزَّهُ",
-    "masdar": "تَنَزُّهٌ"
+    "mazi": "تَنَزَّهَ",
+    "muzari": "يَتَنَزَّهُ",
+    "masdar": "تَنَزُّهٌ"
   },
   {
     "id": "kelime_3334",
@@ -16829,9 +16829,9 @@
     "kok": "و ج ه",
     "anlam_tr": "Yönelmek, gitmek, yöneldi",
     "cefr": "A2",
-    "mazi": "تَوَجَّهَ",
-    "muzari": "يَتَوَجَّهُ",
-    "masdar": "تَوَجُّهٌ (إِلَى)"
+    "mazi": "تَوَجَّهَ",
+    "muzari": "يَتَوَجَّهُ",
+    "masdar": "تَوَجُّهٌ (إِلَى)"
   },
   {
     "id": "kelime_3335",
@@ -16859,8 +16859,8 @@
     "kok": "ج ف ف",
     "anlam_tr": "Kurumak, kurudu",
     "cefr": "A2",
-    "mazi": "جَفَّ",
-    "muzari": "يَجِفُّ",
+    "mazi": "جَفَّ",
+    "muzari": "يَجِفُّ",
     "masdar": "جَفَافٌ / جَفَفٌ"
   },
   {
@@ -16869,9 +16869,9 @@
     "kok": "ح ث ث",
     "anlam_tr": "Teşvik etmek, özendirmek, teşvik etti",
     "cefr": "B1",
-    "mazi": "حَثَّ",
-    "muzari": "يَحُثُّ",
-    "masdar": "حَثٌّ (عَلَى)"
+    "mazi": "حَثَّ",
+    "muzari": "يَحُثُّ",
+    "masdar": "حَثٌّ (عَلَى)"
   },
   {
     "id": "kelime_3339",
@@ -16879,8 +16879,8 @@
     "kok": "ح ر ز",
     "anlam_tr": "Emniyete almak, korumak, el koydu",
     "cefr": "B2",
-    "mazi": "حَرَّزَ",
-    "muzari": "يُحَرِّزُ",
+    "mazi": "حَرَّزَ",
+    "muzari": "يُحَرِّزُ",
     "masdar": "تَحْرِيزٌ"
   },
   {
@@ -16899,8 +16899,8 @@
     "kok": "ح ر ك",
     "anlam_tr": "Hareket ettirmek, oynatmak, kımıldattı",
     "cefr": "A2",
-    "mazi": "حَرَّكَ",
-    "muzari": "يُحَرِّكُ",
+    "mazi": "حَرَّكَ",
+    "muzari": "يُحَرِّكُ",
     "masdar": "تَحْرِيكٌ"
   },
   {
@@ -16919,9 +16919,9 @@
     "kok": "ح ك ك",
     "anlam_tr": "Kaşımak, sürtmek, kaşıdı",
     "cefr": "B1",
-    "mazi": "حَكَّ",
-    "muzari": "يَحُكُّ",
-    "masdar": "حَكٌّ"
+    "mazi": "حَكَّ",
+    "muzari": "يَحُكُّ",
+    "masdar": "حَكٌّ"
   },
   {
     "id": "kelime_3344",
@@ -16979,9 +16979,9 @@
     "kok": "د ق ق",
     "anlam_tr": "Çalmak (kapı), vurmak, un ufak etti",
     "cefr": "A2",
-    "mazi": "دَقَّ",
-    "muzari": "يَدُقُّ",
-    "masdar": "دَقٌّ"
+    "mazi": "دَقَّ",
+    "muzari": "يَدُقُّ",
+    "masdar": "دَقٌّ"
   },
   {
     "id": "kelime_3350",
@@ -17061,7 +17061,7 @@
     "cefr": "B1",
     "mazi": "رَقِيَ",
     "muzari": "يَرْقَى",
-    "masdar": "رُقِيٌّ"
+    "masdar": "رُقِيٌّ"
   },
   {
     "id": "kelime_3358",
@@ -17071,7 +17071,7 @@
     "cefr": "A2",
     "mazi": "رَوَى",
     "muzari": "يَرْوِي",
-    "masdar": "رِوَايَةٌ / رَيٌّ"
+    "masdar": "رِوَايَةٌ / رَيٌّ"
   },
   {
     "id": "kelime_3359",
@@ -17189,8 +17189,8 @@
     "kok": "ش ق ق",
     "anlam_tr": "Türemek, türetilmek, türedi",
     "cefr": "B1",
-    "mazi": "اِشْتَقَّ",
-    "muzari": "يَشْتَقُّ",
+    "mazi": "اِشْتَقَّ",
+    "muzari": "يَشْتَقُّ",
     "masdar": "اِشْتِقَاقٌ"
   },
   {
@@ -17209,8 +17209,8 @@
     "kok": "ش د د",
     "anlam_tr": "Vurgulamak, sıkılaştırmak, sertleştirdi",
     "cefr": "B1",
-    "mazi": "شَدَّدَ",
-    "muzari": "يُشَدِّدُ",
+    "mazi": "شَدَّدَ",
+    "muzari": "يُشَدِّدُ",
     "masdar": "تَشْدِيدٌ"
   },
   {
@@ -17219,8 +17219,8 @@
     "kok": "ض ر ر",
     "anlam_tr": "Zarar vermek, ziyan etmek, zarar verdi",
     "cefr": "A2",
-    "mazi": "أَضَرَّ",
-    "muzari": "يُضِرُّ",
+    "mazi": "أَضَرَّ",
+    "muzari": "يُضِرُّ",
     "masdar": "إِضْرَارٌ (بِ)"
   },
   {
@@ -17249,8 +17249,8 @@
     "kok": "ع ز ز",
     "anlam_tr": "Güçlendirmek, pekiştirmek, destekledi",
     "cefr": "B1",
-    "mazi": "عَزَّزَ",
-    "muzari": "يُعَزِّزُ",
+    "mazi": "عَزَّزَ",
+    "muzari": "يُعَزِّزُ",
     "masdar": "تَعْزِيزٌ"
   },
   {
@@ -17359,8 +17359,8 @@
     "kok": "ل ب ي",
     "anlam_tr": "Davete uymak, karşılamak, yanıt verdi",
     "cefr": "B1",
-    "mazi": "لَبَّى",
-    "muzari": "يُلَبِّي",
+    "mazi": "لَبَّى",
+    "muzari": "يُلَبِّي",
     "masdar": "تَلْبِيَةٌ"
   },
   {
@@ -17489,8 +17489,8 @@
     "kok": "ه ن أ",
     "anlam_tr": "Tebrik etmek, kutlamak, kutladı",
     "cefr": "A2",
-    "mazi": "هَنَّأَ",
-    "muzari": "يُهَنِّئُ",
+    "mazi": "هَنَّأَ",
+    "muzari": "يُهَنِّئُ",
     "masdar": "تَهْنِئَةٌ"
   },
   {
@@ -17499,7 +17499,7 @@
     "kok": "ي ه د",
     "anlam_tr": "Yahudi, Musevi",
     "cefr": "A2",
-    "mufret": "يَهُودِيٌّ",
+    "mufret": "يَهُودِيٌّ",
     "cemi": "يَهُودٌ"
   },
   {
@@ -17527,8 +17527,8 @@
     "kok": "و ل ي",
     "anlam_tr": "Tayin etmek, başa geçirmek, yönetmek, atadı",
     "cefr": "B1",
-    "mazi": "وَلَّى",
-    "muzari": "يُوَلِّي",
+    "mazi": "وَلَّى",
+    "muzari": "يُوَلِّي",
     "masdar": "تَوْلِيَةٌ"
   },
   {

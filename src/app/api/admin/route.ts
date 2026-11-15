@@ -821,7 +821,27 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const jsonString = JSON.stringify(data, null, 2).normalize("NFC") + "\n";
+      const normalizeDatasetNode = (node: unknown, keyName = ""): unknown => {
+        if (typeof node === "string") {
+          if (keyName === "yanlis") return node;
+          return node
+            .normalize("NFC")
+            .replace(/([\u064B-\u0650])\u0651/g, "\u0651$1");
+        }
+        if (Array.isArray(node)) {
+          return node.map((item) => normalizeDatasetNode(item, keyName));
+        }
+        if (node && typeof node === "object") {
+          const out: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+            out[k] = normalizeDatasetNode(v, k);
+          }
+          return out;
+        }
+        return node;
+      };
+      const jsonString =
+        JSON.stringify(normalizeDatasetNode(data), null, 2) + "\n";
       const commitMessage =
         body?.commitMessage ||
         `chore(data): ${fileName} yönetim stüdyosu üzerinden güncellendi`;

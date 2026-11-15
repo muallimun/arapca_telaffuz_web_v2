@@ -134,7 +134,10 @@ function computeSpanDiff(
     };
   }
 
-  const cleanToken = (t: string) => stripPunctuationEdge(t).core.trim();
+  const cleanToken = (t: string) =>
+    stripPunctuationEdge(t)
+      .core.trim()
+      .replace(/([\u064B-\u0650\u0652\u0670])\u0651/g, "\u0651$1");
 
   let prefixLen = 0;
   while (
@@ -178,7 +181,11 @@ function computeSpanDiff(
       .join(" ")
       .trim();
 
-    if (wrongSpanText && correctSpanText && wrongSpanText !== correctSpanText) {
+    if (
+      wrongSpanText &&
+      correctSpanText &&
+      cleanToken(wrongSpanText) !== cleanToken(correctSpanText)
+    ) {
       return {
         hasSingleSpanDiff: true,
         wrongTokens,

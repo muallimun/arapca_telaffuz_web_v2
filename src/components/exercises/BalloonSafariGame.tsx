@@ -45,6 +45,18 @@ import {
 import { normalizeToCanonicalMistakeId } from "@/lib/mistakeUtils";
 import { saveLastExerciseSummary } from "@/lib/learningAnalytics";
 import { useEscapeKey } from "@/lib/modalStack";
+import {
+  SAFARI_DESKTOP_STAGE,
+  SAFARI_PORTRAIT_STAGE,
+  computeSafariLevelFromRound,
+  getSafariBalloonCountForLevel,
+  computeSafariWavePlacements,
+  computeWrappedBalloonX,
+  resolveSafariAtmosphere,
+  getNextSafariAtmosphereMode,
+  type SafariAtmosphereMode,
+  type SafariStageLevel,
+} from "@/lib/balloonSafariLayout";
 
 export type SafariDifficulty = "easy" | "medium" | "hard";
 export type SafariGameMode = "normal" | "time";
@@ -152,33 +164,45 @@ function cleanMeaningTr(raw: string): string {
   return firstPart.length > 34 ? `${firstPart.slice(0, 32)}…` : firstPart;
 }
 
-function computeLevelFromRound(roundNum: number): 1 | 2 | 3 | 4 {
-  if (roundNum <= 3) return 1;
-  if (roundNum <= 7) return 2;
-  if (roundNum <= 12) return 3;
-  return 4;
-}
-
-function getBalloonCountForLevel(level: 1 | 2 | 3 | 4): number {
-  if (level === 1) return 2;
-  if (level === 2) return 3;
-  if (level === 3) return 4;
-  return 5;
-}
-
-function getSpeedBase(difficulty: SafariDifficulty, level: 1 | 2 | 3 | 4): number {
+function getSpeedBase(
+  difficulty: SafariDifficulty,
+  level: SafariStageLevel
+): number {
   const diffBase =
     difficulty === "easy" ? 58 : difficulty === "medium" ? 80 : 106;
   const levelBoost = (level - 1) * 11;
   return diffBase + levelBoost;
 }
 
+const NIGHT_STARFIELD = [
+  { rx: 0.07, ry: 0.11, r: 1.8, op: 0.85 },
+  { rx: 0.14, ry: 0.24, r: 1.3, op: 0.55 },
+  { rx: 0.21, ry: 0.14, r: 2.1, op: 0.92 },
+  { rx: 0.28, ry: 0.34, r: 1.4, op: 0.48 },
+  { rx: 0.35, ry: 0.18, r: 1.7, op: 0.78 },
+  { rx: 0.42, ry: 0.09, r: 2.2, op: 0.9 },
+  { rx: 0.48, ry: 0.29, r: 1.3, op: 0.52 },
+  { rx: 0.55, ry: 0.15, r: 1.9, op: 0.82 },
+  { rx: 0.62, ry: 0.38, r: 1.4, op: 0.46 },
+  { rx: 0.68, ry: 0.12, r: 2.0, op: 0.88 },
+  { rx: 0.74, ry: 0.31, r: 1.5, op: 0.62 },
+  { rx: 0.86, ry: 0.14, r: 1.8, op: 0.84 },
+  { rx: 0.92, ry: 0.27, r: 1.4, op: 0.58 },
+  { rx: 0.11, ry: 0.46, r: 1.5, op: 0.5 },
+  { rx: 0.24, ry: 0.54, r: 1.8, op: 0.72 },
+  { rx: 0.39, ry: 0.48, r: 1.3, op: 0.44 },
+  { rx: 0.53, ry: 0.58, r: 1.6, op: 0.64 },
+  { rx: 0.67, ry: 0.51, r: 1.9, op: 0.76 },
+  { rx: 0.82, ry: 0.44, r: 1.4, op: 0.52 },
+  { rx: 0.91, ry: 0.56, r: 1.7, op: 0.68 },
+] as const;
+
 export default function BalloonSafariGame({
   visualPool = [],
   cefrFilter = "all",
   onClose,
 }: BalloonSafariGameProps) {
-  const { preferredVoiceGender, speechRate } = useSettings();
+  const { preferredVoiceGender, speechRate, theme } = useSettings();
   const { addMistake, recordItemAttempt, addStudyMinutes } = useUserStore();
 
   // Sadece gerçek Görsel Kelimeler (gorselKelimeler_guncel.json) doğrulama dizini
@@ -253,6 +277,8 @@ export default function BalloonSafariGame({
   const [gameMode, setGameMode] = useState<SafariGameMode>("normal");
   const [isMuted, setIsMuted] = useState(false);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [atmosphereMode, setAtmosphereMode] =
+    useState<SafariAtmosphereMode>("auto");
 
   // Opsiyonel yerel public/images/background.png ve public/images/balon.png algılama (kırık görsel üretmeden)
   const [hasCustomBg, setHasCustomBg] = useState(false);
@@ -308,6 +334,7 @@ export default function BalloonSafariGame({
 
   // Animasyon döngüsü için güncel referanslar
   const balloonsRef = useRef<ActiveBalloon[]>([]);
+  const balloonGroupRefs = useRef<Map<string, SVGGElement>>(new Map());
   const particlesRef = useRef<PopParticle[]>([]);
   const badgesRef = useRef<FloatingBadge[]>([]);
   const freezeUntilRef = useRef<number>(0);
@@ -336,19 +363,47 @@ export default function BalloonSafariGame({
       setIsPortraitMobile(isPortrait);
 
       if (prevPortrait !== isPortrait && balloonsRef.current.length > 0) {
-        const nextW = isPortrait ? PORTRAIT_STAGE_W : STAGE_W;
-        const nextMinY = isPortrait ? 190 : 175;
-        const nextMaxY = isPortrait ? PORTRAIT_STAGE_H - 165 : STAGE_H - 185;
-        const remapped = balloonsRef.current.map((b, idx, arr) => {
-          const laneRatio =
-            arr.length > 1 ? idx / Math.max(1, arr.length - 1) : 0.5;
-          const clampedBaseY = nextMinY + laneRatio * (nextMaxY - nextMinY);
-          const clampedX = Math.min(nextW + 180, Math.max(80, b.x));
+        const wordBalloons = balloonsRef.current.filter(
+          (b) => b.kind === "word"
+        );
+        const lvl = computeSafariLevelFromRound(roundNumber);
+        const baseSpeed = getSpeedBase(difficulty, lvl);
+        const placements = computeSafariWavePlacements({
+          isPortraitMobile: isPortrait,
+          count: Math.max(1, wordBalloons.length),
+          baseSpeed,
+          roundNum: roundNumber,
+        });
+        const stageCfg = isPortrait
+          ? SAFARI_PORTRAIT_STAGE
+          : SAFARI_DESKTOP_STAGE;
+        let wordIdx = 0;
+        let bonusIdx = 0;
+        const remapped = balloonsRef.current.map((b) => {
+          if (b.kind === "word") {
+            const slot = placements[wordIdx] ?? placements[0];
+            wordIdx += 1;
+            return {
+              ...b,
+              x: slot ? slot.x : stageCfg.width + stageCfg.firstSpawnOffset,
+              baseY: slot ? slot.baseY : (stageCfg.minY + stageCfg.maxY) / 2,
+              y: slot ? slot.baseY : (stageCfg.minY + stageCfg.maxY) / 2,
+              speedX: slot ? slot.speedX : b.speedX,
+            };
+          }
+          const lastWordX =
+            placements.length > 0
+              ? placements[placements.length - 1]!.x
+              : stageCfg.width + stageCfg.firstSpawnOffset;
+          bonusIdx += 1;
+          const bonusY =
+            bonusIdx % 2 === 1 ? stageCfg.minY + 24 : stageCfg.maxY - 24;
           return {
             ...b,
-            x: clampedX,
-            baseY: clampedBaseY,
-            y: clampedBaseY,
+            x: lastWordX + bonusIdx * stageCfg.horizontalSpacing,
+            baseY: bonusY,
+            y: bonusY,
+            speedX: placements[0]?.speedX ?? b.speedX,
           };
         });
         balloonsRef.current = remapped;
@@ -363,7 +418,7 @@ export default function BalloonSafariGame({
       window.removeEventListener("resize", syncViewportOrientation);
       window.removeEventListener("orientationchange", syncViewportOrientation);
     };
-  }, []);
+  }, [roundNumber, difficulty]);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -419,9 +474,73 @@ export default function BalloonSafariGame({
   }, []);
 
   const currentLevel = useMemo(
-    () => computeLevelFromRound(roundNumber),
+    () => computeSafariLevelFromRound(roundNumber),
     [roundNumber]
   );
+
+  const resolvedAtmosphere = useMemo(
+    () =>
+      resolveSafariAtmosphere({
+        mode: atmosphereMode,
+        level: currentLevel,
+        isDarkTheme: theme === "dark",
+      }),
+    [atmosphereMode, currentLevel, theme]
+  );
+
+  const handleCycleAtmosphere = useCallback(() => {
+    playClick();
+    setBalloons([...balloonsRef.current]);
+    setAtmosphereMode((prev) => getNextSafariAtmosphereMode(prev));
+  }, []);
+
+  const atmosphereBadgeMeta = useMemo(() => {
+    const icon =
+      resolvedAtmosphere === "day"
+        ? "🌤️"
+        : resolvedAtmosphere === "sunset"
+        ? "🌅"
+        : "🌌";
+    if (atmosphereMode === "auto") {
+      return {
+        icon,
+        shortLabel: `${icon} Oto`,
+        desktopLabel: `${icon} Otomatik`,
+        title:
+          "Atmosfer: Otomatik (Seviye ve temaya göre değişir — değiştirmek için tıklayın)",
+      };
+    }
+    if (atmosphereMode === "day") {
+      return {
+        icon: "🌤️",
+        shortLabel: "🌤️",
+        desktopLabel: "🌤️ Gündüz",
+        title: "Atmosfer: Gündüz Ufku (Değiştirmek için tıklayın)",
+      };
+    }
+    if (atmosphereMode === "sunset") {
+      return {
+        icon: "🌅",
+        shortLabel: "🌅",
+        desktopLabel: "🌅 Gün Batımı",
+        title: "Atmosfer: Altın Saat / Gün Batımı (Değiştirmek için tıklayın)",
+      };
+    }
+    return {
+      icon: "🌌",
+      shortLabel: "🌌",
+      desktopLabel: "🌌 Gece",
+      title: "Atmosfer: Yıldızlı Gece Seması (Değiştirmek için tıklayın)",
+    };
+  }, [atmosphereMode, resolvedAtmosphere]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.dataset.state = phase === "menu" ? "title" : phase;
+    return () => {
+      delete document.body.dataset.state;
+    };
+  }, [phase]);
 
   const speakSafariWord = useCallback(
     (word: SafariWordItem | null) => {
@@ -540,8 +659,8 @@ export default function BalloonSafariGame({
       setTargetWord(pickedTarget);
       setRoundNumber(nextRoundNum);
 
-      const lvl = computeLevelFromRound(nextRoundNum);
-      const count = getBalloonCountForLevel(lvl);
+      const lvl = computeSafariLevelFromRound(nextRoundNum);
+      const count = getSafariBalloonCountForLevel(lvl);
       const baseSpeed = getSpeedBase(diff, lvl);
 
       const distractorCandidates = shuffleArray(
@@ -555,78 +674,81 @@ export default function BalloonSafariGame({
       const distractors = distractorCandidates.slice(0, Math.max(1, count - 1));
       const waveWords = shuffleArray([pickedTarget, ...distractors]);
 
-      // Dikey mobil (540x860) ve masaüstü (1120x620) sahne yüksekliğine göre uçuş şeritlerini dengeli dağıt
+      // Dikey mobil (540x860: minY=185, maxY=610, spacing=210) ve masaüstü (1120x620: minY=165, maxY=415, spacing=235)
+      // için birebir aynı yatay hızda (speedX = baseSpeed * speedScale) ve kademeli zikzak düzende yerleştir
       const portraitNow = isPortraitMobileRef.current;
-      const curStageW = portraitNow ? PORTRAIT_STAGE_W : STAGE_W;
-      const curStageH = portraitNow ? PORTRAIT_STAGE_H : STAGE_H;
-      const minY = portraitNow ? 190 : 175;
-      const maxY = portraitNow ? curStageH - 165 : curStageH - 185;
-      const speedScale = portraitNow ? 0.78 : 1;
-      const horizontalSpacing = portraitNow ? 172 : 195;
-
-      const laneStep =
-        waveWords.length > 1 ? (maxY - minY) / (waveWords.length - 1) : 0;
-      const shuffledLanes = shuffleArray(
-        waveWords.map((_, idx) =>
-          waveWords.length === 1 ? (minY + maxY) / 2 : minY + idx * laneStep
-        )
-      );
+      const stageCfg = portraitNow
+        ? SAFARI_PORTRAIT_STAGE
+        : SAFARI_DESKTOP_STAGE;
+      const placements = computeSafariWavePlacements({
+        isPortraitMobile: portraitNow,
+        count: waveWords.length,
+        baseSpeed,
+        roundNum: nextRoundNum,
+      });
+      const uniformSpeedX =
+        placements[0]?.speedX ?? baseSpeed * (portraitNow ? 0.78 : 1);
 
       const created: ActiveBalloon[] = waveWords.map((w, idx) => {
-        const startX =
-          curStageW + 85 + idx * horizontalSpacing + (idx % 2) * 26;
-        const baseY = shuffledLanes[idx] ?? (minY + maxY) / 2;
+        const slot = placements[idx]!;
         return {
           uid: `b_${nextRoundNum}_${idx}_${w.id}`,
           kind: "word",
           word: w,
           isTarget: w.id === pickedTarget.id,
-          x: startX,
-          y: baseY,
-          baseY,
-          speedX: baseSpeed * speedScale * (0.92 + (idx % 3) * 0.09),
-          wobblePhase: idx * 1.35,
-          wobbleSpeed: 2.0 + (idx % 3) * 0.32,
-          wobbleAmp: portraitNow ? 14 + (idx % 2) * 6 : 12 + (idx % 2) * 6,
+          x: slot.x,
+          y: slot.baseY,
+          baseY: slot.baseY,
+          speedX: uniformSpeedX,
+          wobblePhase: idx * 1.15,
+          wobbleSpeed: 2.0,
+          wobbleAmp: portraitNow ? 10 : 9,
           paletteIndex: (nextRoundNum + idx) % HOT_AIR_PALETTES.length,
           popped: false,
         };
       });
 
-      // Her birkaç turda güçlendirici veya 5x Altın Sıcak Hava Balonu ekle
+      let trailingX =
+        placements.length > 0
+          ? placements[placements.length - 1]!.x
+          : stageCfg.width + stageCfg.firstSpawnOffset;
+
+      // Güçlendirici ve Altın Balonları kelime dalgasının arkasına aynı hızla ekle ki hiçbir balon üst üste binmesin
       if (nextRoundNum % 3 === 0) {
         const powerKind: BalloonKind =
           nextRoundNum % 6 === 0 ? "freeze" : "hint";
-        const pwrY = portraitNow ? minY + 35 : 195;
+        trailingX += stageCfg.horizontalSpacing;
+        const pwrY = portraitNow ? stageCfg.minY + 30 : stageCfg.minY + 25;
         created.push({
           uid: `pwr_${nextRoundNum}_${powerKind}`,
           kind: powerKind,
           isTarget: false,
-          x: curStageW + 220,
+          x: trailingX,
           y: pwrY,
           baseY: pwrY,
-          speedX: baseSpeed * speedScale * 1.12,
+          speedX: uniformSpeedX,
           wobblePhase: 0.7,
-          wobbleSpeed: 2.6,
-          wobbleAmp: 14,
+          wobbleSpeed: 2.2,
+          wobbleAmp: 10,
           paletteIndex: 2,
           popped: false,
         });
       }
 
       if (nextRoundNum % 4 === 0) {
-        const goldY = portraitNow ? maxY - 25 : curStageH - 195;
+        trailingX += stageCfg.horizontalSpacing;
+        const goldY = portraitNow ? stageCfg.maxY - 30 : stageCfg.maxY - 20;
         created.push({
           uid: `gold_${nextRoundNum}`,
           kind: "golden",
           isTarget: false,
-          x: curStageW + 340,
+          x: trailingX,
           y: goldY,
           baseY: goldY,
-          speedX: baseSpeed * speedScale * 1.42,
+          speedX: uniformSpeedX,
           wobblePhase: 1.9,
-          wobbleSpeed: 3.1,
-          wobbleAmp: 16,
+          wobbleSpeed: 2.4,
+          wobbleAmp: 11,
           paletteIndex: 1,
           popped: false,
         });
@@ -680,26 +802,60 @@ export default function BalloonSafariGame({
       lastFrameTimeRef.current = now;
 
       const frozenLeft = Math.max(0, freezeUntilRef.current - now);
-      setFreezeRemainingMs(frozenLeft > 50 ? frozenLeft : 0);
+      const quantizedFreeze =
+        frozenLeft > 50 ? Math.ceil(frozenLeft / 100) * 100 : 0;
+      setFreezeRemainingMs((prev) =>
+        prev === quantizedFreeze ? prev : quantizedFreeze
+      );
       const isFrozen = frozenLeft > 0;
 
-      const curStageW = isPortraitMobileRef.current
-        ? PORTRAIT_STAGE_W
-        : STAGE_W;
+      const portraitNow = isPortraitMobileRef.current;
+      const scaleVal = portraitNow ? 1.06 : 1;
+      const activeList = balloonsRef.current.filter((item) => !item.popped);
+      const advancedXByUid = new Map<string, number>();
+      for (const item of activeList) {
+        advancedXByUid.set(
+          item.uid,
+          isFrozen ? item.x : item.x - item.speedX * dt
+        );
+      }
+
       const nextBalloons: ActiveBalloon[] = [];
-      for (const b of balloonsRef.current) {
-        if (b.popped) continue;
+      for (const b of activeList) {
         const nextPhase =
           b.wobblePhase + (isFrozen ? dt * 0.55 : dt * b.wobbleSpeed);
-        let nextX = isFrozen ? b.x : b.x - b.speedX * dt;
+        let nextX = advancedXByUid.get(b.uid) ?? b.x;
         const nextY = b.baseY + Math.sin(nextPhase) * b.wobbleAmp;
 
         if (nextX < -125) {
           if (b.kind === "word") {
-            nextX = curStageW + 110;
+            const otherXs: number[] = [];
+            for (const placed of nextBalloons) {
+              otherXs.push(placed.x);
+            }
+            for (const candidate of activeList) {
+              if (candidate.uid === b.uid) continue;
+              const candX = advancedXByUid.get(candidate.uid) ?? candidate.x;
+              if (candX >= -125) {
+                otherXs.push(candX);
+              }
+            }
+            nextX = computeWrappedBalloonX({
+              isPortraitMobile: portraitNow,
+              otherActiveBalloonXs: otherXs,
+            });
+            advancedXByUid.set(b.uid, nextX);
           } else {
             continue;
           }
+        }
+
+        const domGroup = balloonGroupRefs.current.get(b.uid);
+        if (domGroup) {
+          domGroup.setAttribute(
+            "transform",
+            `translate(${nextX.toFixed(1)}, ${nextY.toFixed(1)}) scale(${scaleVal})`
+          );
         }
 
         nextBalloons.push({
@@ -710,7 +866,9 @@ export default function BalloonSafariGame({
         });
       }
       balloonsRef.current = nextBalloons;
-      setBalloons(nextBalloons);
+      if (nextBalloons.length !== activeList.length) {
+        setBalloons(nextBalloons);
+      }
 
       if (particlesRef.current.length > 0) {
         const updatedParticles = particlesRef.current
@@ -826,7 +984,10 @@ export default function BalloonSafariGame({
   );
 
   const handleBalloonPop = useCallback(
-    (balloon: ActiveBalloon) => {
+    (rawBalloon: ActiveBalloon) => {
+      const balloon =
+        balloonsRef.current.find((item) => item.uid === rawBalloon.uid) ??
+        rawBalloon;
       if (phase !== "playing" || balloon.popped) return;
 
       // 1. Buz Balonu (تَجْمِيد)
@@ -1536,15 +1697,17 @@ export default function BalloonSafariGame({
             <span>Sıcak Hava Balonu Kademeleri &amp; Güçlendiriciler:</span>
           </div>
           <p>
-            <strong>Seviye 1:</strong> Hasır sepetin altında tam boy harekeli
-            Arapça etiket · <strong>Seviye 2:</strong> Küçültülmüş etiket ·{" "}
-            <strong>Seviye 3 &amp; 4 (اِحْتِرَاف):</strong> Etiket gizlenir,
-            yalnızca sesi dinleyerek doğru görselli sıcak hava balonu seçilir!
+            <strong>Seviye 1–2 (🌤️ Gündüz):</strong> Hasır sepetin altında
+            harekeli Arapça etiket ·{" "}
+            <strong>Seviye 3–4 (🌅 Gün Batımı · اِحْتِرَاف):</strong> Etiket
+            gizlenir, sesi dinleyerek görsel seçilir ·{" "}
+            <strong>Seviye 5+ (🌌 Gece Seması):</strong> Usta uçuş!
           </p>
         </div>
 
         <button
           type="button"
+          data-start="true"
           onClick={() => startNewSession(null)}
           className="w-full min-h-[52px] rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-base border-b-4 border-[#044E38] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer"
         >
@@ -1663,7 +1826,7 @@ export default function BalloonSafariGame({
               Ulaşılan Seviye
             </div>
             <div className="text-2xl font-black text-[#6741D9] dark:text-purple-300 tabular-nums mt-0.5">
-              {currentLevel} / 4
+              {currentLevel} / 5
             </div>
           </div>
 
@@ -1885,15 +2048,99 @@ export default function BalloonSafariGame({
     );
   }
 
-  // ---------------- 3. AKTİF PANORAMİK DOĞA & SICAK HAVA BALONU SAHNESİ (TAM EKRAN 100dvh) ----------------
+  // ---------------- 3. AKTİF PANORAMİK UFUK & SICAK HAVA BALONU SAHNESİ (TAM EKRAN 100dvh) ----------------
+  const stageWrapperBgClass =
+    resolvedAtmosphere === "night"
+      ? "bg-gradient-to-b from-[#081021] via-[#132347] to-[#0C1A2E]"
+      : resolvedAtmosphere === "sunset"
+      ? "bg-gradient-to-b from-[#35235D] via-[#DF765B] to-[#3B203E]"
+      : "bg-gradient-to-b from-[#3898EC] via-[#85CEFA] to-[#2D6366]";
+
+  const skyFillUrl =
+    resolvedAtmosphere === "night"
+      ? "url(#safariNightSkyGrad)"
+      : resolvedAtmosphere === "sunset"
+      ? "url(#safariSunsetSkyGrad)"
+      : "url(#safariSkyGrad)";
+
+  const farRidgeFill =
+    resolvedAtmosphere === "night"
+      ? "#26476E"
+      : resolvedAtmosphere === "sunset"
+      ? "#9B5A78"
+      : "#86B8BD";
+  const midRidgeFill =
+    resolvedAtmosphere === "night"
+      ? "#172E4B"
+      : resolvedAtmosphere === "sunset"
+      ? "#69395A"
+      : "#538D8B";
+  const nearRidgeFill =
+    resolvedAtmosphere === "night"
+      ? "#0C1A2E"
+      : resolvedAtmosphere === "sunset"
+      ? "#3B203E"
+      : "#2D6366";
+
+  const farRidgePath = `M 0 ${Math.round(activeStageH * 0.81)} C ${Math.round(
+    activeStageW * 0.18
+  )} ${Math.round(activeStageH * 0.765)}, ${Math.round(
+    activeStageW * 0.36
+  )} ${Math.round(activeStageH * 0.825)}, ${Math.round(
+    activeStageW * 0.56
+  )} ${Math.round(activeStageH * 0.785)} C ${Math.round(
+    activeStageW * 0.76
+  )} ${Math.round(activeStageH * 0.752)}, ${Math.round(
+    activeStageW * 0.9
+  )} ${Math.round(activeStageH * 0.805)}, ${activeStageW} ${Math.round(
+    activeStageH * 0.782
+  )} L ${activeStageW} ${activeStageH} L 0 ${activeStageH} Z`;
+
+  const midRidgePath = `M 0 ${Math.round(activeStageH * 0.865)} C ${Math.round(
+    activeStageW * 0.24
+  )} ${Math.round(activeStageH * 0.835)}, ${Math.round(
+    activeStageW * 0.48
+  )} ${Math.round(activeStageH * 0.892)}, ${Math.round(
+    activeStageW * 0.72
+  )} ${Math.round(activeStageH * 0.848)} C ${Math.round(
+    activeStageW * 0.86
+  )} ${Math.round(activeStageH * 0.828)}, ${Math.round(
+    activeStageW * 0.94
+  )} ${Math.round(activeStageH * 0.862)}, ${activeStageW} ${Math.round(
+    activeStageH * 0.855
+  )} L ${activeStageW} ${activeStageH} L 0 ${activeStageH} Z`;
+
+  const nearRidgePath = `M 0 ${Math.round(activeStageH * 0.922)} C ${Math.round(
+    activeStageW * 0.28
+  )} ${Math.round(activeStageH * 0.896)}, ${Math.round(
+    activeStageW * 0.62
+  )} ${Math.round(activeStageH * 0.946)}, ${activeStageW} ${Math.round(
+    activeStageH * 0.912
+  )} L ${activeStageW} ${activeStageH} L 0 ${activeStageH} Z`;
+
+  const sunOrMoonX = Math.round(
+    activeStageW * (resolvedAtmosphere === "night" ? 0.78 : 0.68)
+  );
+  const sunOrMoonY = Math.round(
+    activeStageH *
+      (resolvedAtmosphere === "night"
+        ? 0.18
+        : resolvedAtmosphere === "sunset"
+        ? 0.75
+        : 0.72)
+  );
+  const moonRadius = Math.round(Math.min(activeStageW, activeStageH) * 0.042);
+
   return (
     <div
       className={`fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none transition-transform ${
         isShaking ? "translate-x-1.5" : ""
       }`}
     >
-      <div className="relative flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-b from-[#46A5ED] via-[#8ED1FC] to-[#2D6A4F]">
-        {/* C-1) MOBİL (< 640px) TEK SATIR KOMPAKT HUD: Sol [← Çık + 🔊 إِعَادَة + 🔇] | Sağ [⭐ Puan · Lv.X · ❤️❤️❤️/⏳ + 🏆 Karne] */}
+      <div
+        className={`relative flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden ${stageWrapperBgClass}`}
+      >
+        {/* C-1) MOBİL (< 640px) TEK SATIR KOMPAKT HUD: Sol [← Çık + 🔊 إِعَادَة + 🔇 + Atmosfer] | Sağ [⭐ Puan · Lv.X · ❤️❤️❤️/⏳ + 🏆 Karne] */}
         <div className="sm:hidden absolute top-2 inset-x-2 z-20 h-10 flex items-center justify-between gap-1 flex-nowrap pointer-events-none">
           {/* Sol Kompakt Grup */}
           <div className="flex items-center gap-1 shrink-0 pointer-events-auto">
@@ -1916,7 +2163,7 @@ export default function BalloonSafariGame({
                 }
                 speakSafariWord(targetWord);
               }}
-              className="h-9 px-2.5 rounded-full bg-[#FACC15] active:bg-[#EAB308] text-slate-900 border border-white shadow-sm flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+              className="h-9 px-2 rounded-full bg-[#FACC15] active:bg-[#EAB308] text-slate-900 border border-white shadow-sm flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
               title="Hedef Kelime Sesini Tekrar Dinle"
             >
               <Volume2 size={14} className="shrink-0" />
@@ -1937,14 +2184,24 @@ export default function BalloonSafariGame({
                   sfx.stopAllSfx();
                 }
               }}
-              className="h-9 w-9 rounded-full bg-white/95 text-slate-900 border border-white shadow-sm flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+              className="h-9 w-8 rounded-full bg-white/95 text-slate-900 border border-white shadow-sm flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
               aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
             >
               {isMuted ? (
-                <VolumeX size={15} className="text-rose-600" />
+                <VolumeX size={14} className="text-rose-600" />
               ) : (
-                <Volume2 size={15} className="text-slate-800" />
+                <Volume2 size={14} className="text-slate-800" />
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCycleAtmosphere}
+              className="h-9 px-2 rounded-full bg-white/95 text-slate-900 border border-white shadow-sm flex items-center justify-center text-[11px] font-extrabold cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+              aria-label={atmosphereBadgeMeta.title}
+              title={atmosphereBadgeMeta.title}
+            >
+              <span>{atmosphereBadgeMeta.shortLabel}</span>
             </button>
           </div>
 
@@ -1981,14 +2238,14 @@ export default function BalloonSafariGame({
               title="Oyunu Tamamla ve Karne Ekranını Aç"
             >
               <Trophy size={13} className="shrink-0" />
-              <span className="hidden min-[380px]:inline">Karne</span>
+              <span className="hidden min-[400px]:inline">Karne</span>
             </button>
           </div>
         </div>
 
-        {/* C-2) MASAÜSTÜ (sm: ve üzeri) YÜZER HAP HUD TASARIMI + NET "✕ Çıkış / Listeye Dön" BUTONU */}
+        {/* C-2) MASAÜSTÜ (sm: ve üzeri) YÜZER HAP HUD TASARIMI + ATMOSFER SEÇİCİ + NET "✕ Çıkış / Listeye Dön" BUTONU */}
         <div className="hidden sm:flex sm:absolute sm:top-3 sm:inset-x-4 z-20 items-center justify-between gap-2 pointer-events-none shrink-0">
-          {/* EN SOLDA: Sarı renkli 🔊 ve 🔊 إِعَادَة الصَّوْت (Sesi Tekrar Dinle) hap butonları */}
+          {/* EN SOLDA: Sarı renkli 🔊, 🔊 إِعَادَة الصَّوْت ve Atmosfer değiştirici hap butonları */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
               type="button"
@@ -2029,6 +2286,16 @@ export default function BalloonSafariGame({
               <span dir="rtl" className="arabic text-sm sm:text-base font-bold">
                 إِعَادَة الصَّوْت
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCycleAtmosphere}
+              className="min-h-[38px] px-3 py-1 rounded-full bg-white/95 hover:bg-amber-50 text-slate-900 border-2 border-white shadow-md text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95 whitespace-nowrap shrink-0"
+              aria-label={atmosphereBadgeMeta.title}
+              title={atmosphereBadgeMeta.title}
+            >
+              <span>{atmosphereBadgeMeta.desktopLabel}</span>
             </button>
           </div>
 
@@ -2167,7 +2434,7 @@ export default function BalloonSafariGame({
           </div>
         )}
 
-        {/* A) PANORAMİK DOĞA & SAFARİ MANZARASI + B) GERÇEK SICAK HAVA BALONLARI (60FPS TAM EKRAN SVG) */}
+        {/* A) 3 ATMOSFERLİ PANORAMİK UFUK MANZARASI (🌤️ Gündüz / 🌅 Gün Batımı / 🌌 Gece) + B) SICAK HAVA BALONLARI (60FPS TAM EKRAN SVG) */}
         <svg
           viewBox={`0 0 ${activeStageW} ${activeStageH}`}
           preserveAspectRatio="xMidYMid slice"
@@ -2176,23 +2443,73 @@ export default function BalloonSafariGame({
           aria-label="Balon Safari Oyun Alanı"
         >
           <defs>
+            {/* 1) Gündüz Ufku (day) */}
             <linearGradient id="safariSkyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#46A5ED" />
-              <stop offset="52%" stopColor="#8ED1FC" />
-              <stop offset="82%" stopColor="#D7F3E3" />
-              <stop offset="100%" stopColor="#B7E4C7" />
+              <stop offset="0%" stopColor="#3898EC" />
+              <stop offset="48%" stopColor="#85CEFA" />
+              <stop offset="80%" stopColor="#CBEFF0" />
+              <stop offset="100%" stopColor="#F5F0DC" />
             </linearGradient>
 
-            <linearGradient id="safariRiverGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#67D4FA" />
-              <stop offset="45%" stopColor="#29B6F6" />
-              <stop offset="100%" stopColor="#0284C7" />
+            {/* 2) Altın Saat / Kapadokya Gün Batımı (sunset) */}
+            <linearGradient
+              id="safariSunsetSkyGrad"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop offset="0%" stopColor="#35235D" />
+              <stop offset="35%" stopColor="#7A3B69" />
+              <stop offset="68%" stopColor="#DF765B" />
+              <stop offset="90%" stopColor="#F6BC66" />
+              <stop offset="100%" stopColor="#FDE8B8" />
             </linearGradient>
 
-            <linearGradient id="safariSandPathGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#F8E2B0" />
-              <stop offset="100%" stopColor="#E3BA73" />
+            {/* 3) Yıldızlı Gece Seması (night) */}
+            <linearGradient id="safariNightSkyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#081021" />
+              <stop offset="48%" stopColor="#122344" />
+              <stop offset="82%" stopColor="#1C395E" />
+              <stop offset="100%" stopColor="#284F7A" />
             </linearGradient>
+
+            {/* Ufuk Işık Halesi (Gündüz & Gün Batımı & Ay Halesi) */}
+            <radialGradient id="safariDaySunGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FFFDF2" stopOpacity="0.92" />
+              <stop offset="42%" stopColor="#FDE68A" stopOpacity="0.38" />
+              <stop offset="100%" stopColor="#FDE68A" stopOpacity="0" />
+            </radialGradient>
+
+            <radialGradient id="safariSunsetSunGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FFFBEB" stopOpacity="0.95" />
+              <stop offset="36%" stopColor="#FBBF24" stopOpacity="0.58" />
+              <stop offset="72%" stopColor="#FB923C" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#FB923C" stopOpacity="0" />
+            </radialGradient>
+
+            <radialGradient id="safariNightMoonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FEF9C3" stopOpacity="0.32" />
+              <stop offset="55%" stopColor="#93C5FD" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="#93C5FD" stopOpacity="0" />
+            </radialGradient>
+
+            {/* Hilal Ay Kesim Maskesi */}
+            <mask id="safariCrescentMask">
+              <rect
+                x="0"
+                y="0"
+                width={activeStageW}
+                height={activeStageH}
+                fill="#FFFFFF"
+              />
+              <circle
+                cx={sunOrMoonX - Math.round(moonRadius * 0.42)}
+                cy={sunOrMoonY - Math.round(moonRadius * 0.18)}
+                r={Math.round(moonRadius * 0.88)}
+                fill="#000000"
+              />
+            </mask>
 
             {/* Sıcak Hava Balonu Kubbe Kırpma Maskesi */}
             <clipPath id="hotAirDomeClip">
@@ -2205,13 +2522,13 @@ export default function BalloonSafariGame({
             </clipPath>
           </defs>
 
-          {/* 1. Gökyüzü Katmanı (Dikey veya yatay tüm ekranı boşluksuz kaplar) */}
+          {/* 1. Panoramik Gökyüzü Katmanı */}
           <rect
             x="0"
             y="0"
             width={activeStageW}
             height={activeStageH}
-            fill="url(#safariSkyGrad)"
+            fill={skyFillUrl}
           />
 
           {/* Eğer public/images/background.png mevcutsa en arka plana çiz */}
@@ -2226,289 +2543,163 @@ export default function BalloonSafariGame({
             />
           )}
 
-          {/* Dikey mobil (540x860) üst gökyüzü ek bulut kümeleri */}
-          {!hasCustomBg && isPortraitMobile && (
-            <g opacity="0.88" fill="#FFFFFF" aria-hidden="true">
-              <ellipse cx="115" cy="130" rx="54" ry="18" />
-              <ellipse cx="152" cy="122" rx="40" ry="19" />
-              <ellipse cx="408" cy="195" rx="60" ry="19" />
-              <ellipse cx="446" cy="188" rx="42" ry="17" />
-              <ellipse cx="165" cy="290" rx="52" ry="17" />
-              <ellipse cx="204" cy="284" rx="38" ry="16" />
-            </g>
-          )}
-
+          {/* 2. Koordinat Duyarlı 3 Atmosferli Panoramik Ufuk & Vadi Manzarası */}
           {!hasCustomBg && (
-            <g
-              aria-hidden="true"
-              transform={
-                isPortraitMobile ? "translate(-290, 240)" : undefined
-              }
-            >
-              {/* Yumuşak Bulut Kümeleri */}
-              <g opacity="0.88" fill="#FFFFFF">
-                <ellipse cx="185" cy="96" rx="58" ry="20" />
-                <ellipse cx="222" cy="88" rx="44" ry="22" />
-                <ellipse cx="148" cy="100" rx="36" ry="15" />
-
-                <ellipse cx="520" cy="78" rx="64" ry="19" />
-                <ellipse cx="562" cy="72" rx="44" ry="18" />
-
-                <ellipse cx="890" cy="105" rx="68" ry="21" />
-                <ellipse cx="938" cy="96" rx="48" ry="19" />
-                <ellipse cx="845" cy="108" rx="38" ry="15" />
-              </g>
-
-              {/* Uzak Sisli Sıradağlar */}
-              <path
-                d="M 0 365 L 130 278 L 255 335 L 395 248 L 515 318 L 690 232 L 835 322 L 980 258 L 1120 332 L 1120 420 L 0 420 Z"
-                fill="#93B7D6"
-                opacity="0.65"
-              />
-
-              {/* Arka Planda Karlı Dağ Zirveleri (Sol Işıklı Yamacı + Sağ Gölgeli Yamacı + Beyaz Kar Örtüsü) */}
-              <g>
-                {/* Ana Merkez Karlı Dağ */}
-                <polygon
-                  points="350,375 565,142 565,375"
-                  fill="#647D96"
-                />
-                <polygon
-                  points="565,142 785,375 565,375"
-                  fill="#496178"
-                />
-                {/* Karlı Zirve Başlığı */}
-                <polygon
-                  points="565,142 496,217 522,208 544,228 565,205 565,142"
-                  fill="#FFFFFF"
-                />
-                <polygon
-                  points="565,142 565,205 588,226 610,209 636,219"
-                  fill="#E2E8F0"
-                />
-
-                {/* Sağ Yan Karlı Zirve */}
-                <polygon
-                  points="645,380 805,195 805,380"
-                  fill="#5C758E"
-                />
-                <polygon
-                  points="805,195 965,380 805,380"
-                  fill="#41586E"
-                />
-                <polygon
-                  points="805,195 754,250 778,244 805,260"
-                  fill="#F8FAFC"
-                />
-                <polygon
-                  points="805,195 805,260 828,246 856,252"
-                  fill="#CBD5E1"
-                />
-              </g>
-
-              {/* Orta Plan Yeşil Tepeler */}
-              <path
-                d="M 0 392 Q 210 326 455 372 T 890 356 Q 1020 346 1120 374 L 1120 510 L 0 510 Z"
-                fill="#74C69D"
-              />
-              <path
-                d="M 0 426 Q 260 374 548 408 T 1120 398 L 1120 560 L 0 560 Z"
-                fill="#52B788"
-              />
-
-              {/* Vadi Sırtındaki Çam Ağaçları (Pine Trees) */}
-              {[
-                { x: 245, y: 366, s: 0.9 },
-                { x: 278, y: 372, s: 1.08 },
-                { x: 312, y: 378, s: 0.85 },
-                { x: 668, y: 378, s: 0.92 },
-                { x: 702, y: 384, s: 0.8 },
-              ].map((pt, idx) => (
-                <g
-                  key={`pine_${idx}`}
-                  transform={`translate(${pt.x}, ${pt.y}) scale(${pt.s})`}
-                >
-                  <rect x="-4" y="14" width="8" height="16" fill="#5D4037" />
-                  <polygon points="0,-34 -20,-4 20,-4" fill="#1B4332" />
-                  <polygon points="0,-20 -24,10 24,10" fill="#2D6A4F" />
-                  <polygon points="0,-6 -28,20 28,20" fill="#1B4332" />
+            <g aria-hidden="true">
+              {/* Gece Seması: Parıldayan Yıldızlar ve Zarif Hilal */}
+              {resolvedAtmosphere === "night" && (
+                <g>
+                  {NIGHT_STARFIELD.map((st, idx) => (
+                    <circle
+                      key={`star_${idx}`}
+                      cx={Math.round(activeStageW * st.rx)}
+                      cy={Math.round(activeStageH * st.ry)}
+                      r={st.r}
+                      fill={idx % 4 === 0 ? "#FEF08A" : "#F8FAFC"}
+                      opacity={st.op}
+                    />
+                  ))}
+                  <circle
+                    cx={sunOrMoonX}
+                    cy={sunOrMoonY}
+                    r={moonRadius * 3.1}
+                    fill="url(#safariNightMoonGlow)"
+                  />
+                  <circle
+                    cx={sunOrMoonX}
+                    cy={sunOrMoonY}
+                    r={moonRadius}
+                    fill="#FEF9C3"
+                    mask="url(#safariCrescentMask)"
+                  />
                 </g>
-              ))}
+              )}
 
-              {/* Ön Plan Zengin Yeşil Çayır Zemini */}
-              <path
-                d={`M 0 468 Q 290 438 560 462 T 1120 452 L 1120 ${STAGE_H} L 0 ${STAGE_H} Z`}
-                fill="#40916C"
-              />
-              <path
-                d={`M 0 522 Q 280 492 580 524 T 1120 508 L 1120 ${STAGE_H} L 0 ${STAGE_H} Z`}
-                fill="#2D6A4F"
-              />
+              {/* Gündüz Ufku: Yumuşak Güneş Halesi */}
+              {resolvedAtmosphere === "day" && (
+                <circle
+                  cx={sunOrMoonX}
+                  cy={sunOrMoonY}
+                  r={Math.round(Math.max(activeStageW, activeStageH) * 0.28)}
+                  fill="url(#safariDaySunGlow)"
+                />
+              )}
 
-              {/* Kumsal Patika (Nehrin Yanında Kıvrılan Altın Kumsal Yol) */}
-              <path
-                d={`M 518 392 C 472 426, 404 456, 434 504 C 458 544, 392 582, 345 ${STAGE_H} L 468 ${STAGE_H} C 504 580, 548 542, 520 500 C 494 460, 526 426, 556 392 Z`}
-                fill="url(#safariSandPathGrad)"
-              />
-
-              {/* Ortada Kıvrılan Mavi Nehir */}
-              <path
-                d={`M 562 390 C 594 424, 650 452, 608 500 C 570 544, 622 582, 668 ${STAGE_H} L 502 ${STAGE_H} C 476 580, 444 544, 488 498 C 528 456, 538 424, 542 390 Z`}
-                fill="url(#safariRiverGrad)"
-              />
-              {/* Nehir Su Parıltıları */}
-              <path
-                d="M 552 426 Q 576 432 562 444 M 536 488 Q 566 496 544 512 M 554 556 Q 594 566 572 584"
-                stroke="#E0F7FA"
-                strokeWidth="3"
-                strokeLinecap="round"
-                fill="none"
-                opacity="0.78"
-              />
-
-              {/* Sağda Safari Akasya Ağaçları (Flat-Topped Acacia Trees) */}
-              <g transform="translate(955, 442)">
-                {/* Gövde ve Çatallı Dallar */}
-                <path
-                  d="M -6 38 L -3 -18 L -48 -54 M 0 38 L 3 -20 L 46 -56 M 0 -18 L -12 -60 M 2 -18 L 18 -60"
-                  stroke="#5D4037"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Düz Tepeli Akasya Taç Katmanları */}
-                <ellipse cx="-42" cy="-58" rx="46" ry="12" fill="#1B4332" />
-                <ellipse cx="42" cy="-60" rx="48" ry="12" fill="#1B4332" />
-                <ellipse cx="0" cy="-68" rx="74" ry="16" fill="#2D6A4F" />
-                <ellipse cx="-6" cy="-72" rx="60" ry="12" fill="#52B788" />
-              </g>
-
-              <g transform="translate(832, 434) scale(0.72)">
-                <path
-                  d="M -4 34 L -2 -16 L -38 -46 M 2 34 L 3 -16 L 38 -48 M 0 -16 L 0 -52"
-                  stroke="#5D4037"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                <ellipse cx="-34" cy="-50" rx="38" ry="10" fill="#1B4332" />
-                <ellipse cx="34" cy="-52" rx="38" ry="10" fill="#1B4332" />
-                <ellipse cx="0" cy="-58" rx="58" ry="14" fill="#2D6A4F" />
-                <ellipse cx="0" cy="-62" rx="44" ry="10" fill="#52B788" />
-              </g>
-
-              {/* Solda Büyük Gövdeli Ağaç */}
-              <g transform="translate(88, 468)">
-                {/* Kökler ve Kalın Gövde */}
-                <path
-                  d="M -28 74 Q -16 42 -16 -22 L 18 -22 Q 18 42 32 74 Z"
-                  fill="#5D4037"
-                />
-                <path
-                  d="M -6 66 Q -4 22 -6 -20"
-                  stroke="#795548"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M -10 -18 L -42 -58 M 10 -18 L 44 -54 M 0 -22 L 0 -68"
-                  stroke="#5D4037"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                {/* Gür Yaprak Kümeleri */}
-                <circle cx="-46" cy="-68" r="38" fill="#1B4332" />
-                <circle cx="46" cy="-64" r="38" fill="#1B4332" />
-                <circle cx="0" cy="-94" r="48" fill="#2D6A4F" />
-                <circle cx="-22" cy="-84" r="36" fill="#40916C" />
-                <circle cx="24" cy="-82" r="34" fill="#52B788" />
-              </g>
-
-              {/* Ahşap Çiftlik Çiti (Sol Çayır ve Sağ Çayır Kenarı) */}
-              <g>
-                {/* Sol Ahşap Çit */}
-                <rect
-                  x="164"
-                  y="492"
-                  width="196"
-                  height="7"
-                  rx="2"
-                  fill="#8D6E63"
-                />
-                <rect
-                  x="164"
-                  y="508"
-                  width="196"
-                  height="7"
-                  rx="2"
-                  fill="#795548"
-                />
-                {[172, 216, 260, 304, 348].map((fx) => (
-                  <polygon
-                    key={`fence_l_${fx}`}
-                    points={`${fx},480 ${fx + 10},480 ${fx + 10},526 ${fx},526`}
-                    fill="#6D4C41"
+              {/* Altın Saat / Gün Batımı: Altın Güneş Küresi & Kehribar Hale */}
+              {resolvedAtmosphere === "sunset" && (
+                <g>
+                  <circle
+                    cx={sunOrMoonX}
+                    cy={sunOrMoonY}
+                    r={Math.round(Math.max(activeStageW, activeStageH) * 0.32)}
+                    fill="url(#safariSunsetSunGlow)"
                   />
-                ))}
-
-                {/* Sağ Ahşap Çit */}
-                <rect
-                  x="706"
-                  y="494"
-                  width="174"
-                  height="7"
-                  rx="2"
-                  fill="#8D6E63"
-                />
-                <rect
-                  x="706"
-                  y="510"
-                  width="174"
-                  height="7"
-                  rx="2"
-                  fill="#795548"
-                />
-                {[714, 756, 798, 840, 870].map((fx) => (
-                  <polygon
-                    key={`fence_r_${fx}`}
-                    points={`${fx},482 ${fx + 10},482 ${fx + 10},528 ${fx},528`}
-                    fill="#6D4C41"
+                  <circle
+                    cx={sunOrMoonX}
+                    cy={sunOrMoonY}
+                    r={Math.round(Math.min(activeStageW, activeStageH) * 0.058)}
+                    fill="#FEF3C7"
+                    opacity="0.88"
                   />
-                ))}
-              </g>
-
-              {/* Ön Planda Çimen Kümeleri ve Renkli Papatyalar / Çiçekler */}
-              {[
-                { x: 64, y: 576, petal: "#FFFFFF", center: "#FACC15" },
-                { x: 136, y: 590, petal: "#FB7185", center: "#FEF08A" },
-                { x: 218, y: 568, petal: "#FFFFFF", center: "#FACC15" },
-                { x: 292, y: 592, petal: "#FDE047", center: "#D97706" },
-                { x: 734, y: 574, petal: "#FFFFFF", center: "#FACC15" },
-                { x: 818, y: 592, petal: "#C084FC", center: "#FEF08A" },
-                { x: 912, y: 568, petal: "#FFFFFF", center: "#FACC15" },
-                { x: 1004, y: 586, petal: "#FB7185", center: "#FACC15" },
-                { x: 1062, y: 564, petal: "#FFFFFF", center: "#FACC15" },
-              ].map((fl, idx) => (
-                <g
-                  key={`flower_${idx}`}
-                  transform={`translate(${fl.x}, ${fl.y})`}
-                >
-                  {/* Çimen Kümesi */}
-                  <path
-                    d="M -12 14 Q -16 -2 -22 -6 M -6 14 Q -6 -6 -10 -12 M 2 14 Q 6 -4 12 -10 M 10 14 Q 16 0 22 -4"
-                    stroke="#1B4332"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                  {/* Çiçek / Papatya Taç Yaprakları */}
-                  <circle cx="-6" cy="-8" r="5" fill={fl.petal} />
-                  <circle cx="6" cy="-8" r="5" fill={fl.petal} />
-                  <circle cx="0" cy="-14" r="5" fill={fl.petal} />
-                  <circle cx="0" cy="-2" r="5" fill={fl.petal} />
-                  <circle cx="0" cy="-8" r="4.2" fill={fl.center} />
                 </g>
-              ))}
+              )}
+
+              {/* Yumuşak Katmanlı Panoramik Bulut Kuşakları */}
+              <g
+                fill={
+                  resolvedAtmosphere === "night"
+                    ? "#94A3B8"
+                    : resolvedAtmosphere === "sunset"
+                    ? "#FED7AA"
+                    : "#FFFFFF"
+                }
+                opacity={
+                  resolvedAtmosphere === "night"
+                    ? 0.14
+                    : resolvedAtmosphere === "sunset"
+                    ? 0.36
+                    : 0.72
+                }
+              >
+                <g
+                  transform={`translate(${Math.round(
+                    activeStageW * 0.18
+                  )}, ${Math.round(activeStageH * 0.17)})`}
+                >
+                  <ellipse cx="0" cy="0" rx="64" ry="18" />
+                  <ellipse cx="34" cy="-7" rx="44" ry="17" />
+                  <ellipse cx="-34" cy="4" rx="38" ry="13" />
+                </g>
+                <g
+                  transform={`translate(${Math.round(
+                    activeStageW * 0.54
+                  )}, ${Math.round(activeStageH * 0.13)})`}
+                >
+                  <ellipse cx="0" cy="0" rx="72" ry="17" />
+                  <ellipse cx="42" cy="-6" rx="46" ry="16" />
+                </g>
+                <g
+                  transform={`translate(${Math.round(
+                    activeStageW * 0.84
+                  )}, ${Math.round(activeStageH * 0.22)})`}
+                >
+                  <ellipse cx="0" cy="0" rx="58" ry="16" />
+                  <ellipse cx="-32" cy="-5" rx="40" ry="15" />
+                </g>
+                {isPortraitMobile && (
+                  <g
+                    transform={`translate(${Math.round(
+                      activeStageW * 0.32
+                    )}, ${Math.round(activeStageH * 0.38)})`}
+                    opacity="0.65"
+                  >
+                    <ellipse cx="0" cy="0" rx="56" ry="15" />
+                    <ellipse cx="32" cy="-5" rx="38" ry="14" />
+                  </g>
+                )}
+              </g>
+
+              {/* Ufukta Çok Uzakta Süzülen Dekoratif Silüet Balonlar (Derinlik Hissi) */}
+              <g
+                fill={
+                  resolvedAtmosphere === "night"
+                    ? "#64748B"
+                    : resolvedAtmosphere === "sunset"
+                    ? "#582F4D"
+                    : "#5B8E93"
+                }
+                opacity="0.24"
+              >
+                <g
+                  transform={`translate(${Math.round(
+                    activeStageW * 0.22
+                  )}, ${Math.round(activeStageH * 0.71)}) scale(0.14)`}
+                >
+                  <path d="M 0 -98 C 60 -98, 84 -52, 73 2 C 64 40, 35 58, 24 72 L -24 72 C -35 58, -64 40, -73 2 C -84 -52, -60 -98, 0 -98 Z" />
+                  <rect x="-18" y="88" width="36" height="24" rx="4" />
+                </g>
+                <g
+                  transform={`translate(${Math.round(
+                    activeStageW * 0.79
+                  )}, ${Math.round(activeStageH * 0.68)}) scale(0.1)`}
+                >
+                  <path d="M 0 -98 C 60 -98, 84 -52, 73 2 C 64 40, 35 58, 24 72 L -24 72 C -35 58, -64 40, -73 2 C -84 -52, -60 -98, 0 -98 Z" />
+                  <rect x="-18" y="88" width="36" height="24" rx="4" />
+                </g>
+              </g>
+
+              {/* Alt %22: 3 Katmanlı Yumuşak Sisli Vadi & Panoramik Ufuk Tepeleri */}
+              <path
+                d={farRidgePath}
+                fill={farRidgeFill}
+                opacity={resolvedAtmosphere === "day" ? 0.68 : 0.74}
+              />
+              <path
+                d={midRidgePath}
+                fill={midRidgeFill}
+                opacity={resolvedAtmosphere === "day" ? 0.86 : 0.9}
+              />
+              <path d={nearRidgePath} fill={nearRidgeFill} />
             </g>
           )}
 
@@ -2547,6 +2738,13 @@ export default function BalloonSafariGame({
             return (
               <g
                 key={b.uid}
+                ref={(el) => {
+                  if (el) {
+                    balloonGroupRefs.current.set(b.uid, el);
+                  } else {
+                    balloonGroupRefs.current.delete(b.uid);
+                  }
+                }}
                 transform={`translate(${b.x.toFixed(1)}, ${b.y.toFixed(1)}) scale(${balloonScale})`}
                 opacity={isDimmedByHint ? 0.25 : 1}
                 onPointerDown={(e) => {

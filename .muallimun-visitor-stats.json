@@ -1,0 +1,78 @@
+{
+  "dateKey": "2026-11-15",
+  "totalUsers": 1491,
+  "todayUsers": 12,
+  "totalSessions": 3931,
+  "knownVisitorIds": [
+    "85e2cc77-bf54-45bb-b42c-1e26e7f901cc",
+    "93efee71-f2e9-4d61-a510-446307d93fee",
+    "39f01dc2-d144-4d1a-a3b8-1d45a3170a01",
+    "b5ac9069-210c-4fba-92c8-5d0550a1c705",
+    "0bc31b6a-b87c-4c09-a95a-225d108bee36",
+    "7d8fe789-534f-4c60-b49b-9c5a89ecb137",
+    "f8422cc3-70a6-4a31-91f4-b69baa54afc1",
+    "71bcb361-0ebe-4056-a870-308709d9ba2a",
+    "196959cd-8266-43cc-b272-6a132749fba4",
+    "b1da9bde-654e-498b-9270-a8a9b7c54372",
+    "1115ad00-b9b9-48ac-ab96-c797f6c9d19a"
+  ],
+  "todayVisitorIds": [
+    "85e2cc77-bf54-45bb-b42c-1e26e7f901cc",
+    "93efee71-f2e9-4d61-a510-446307d93fee",
+    "39f01dc2-d144-4d1a-a3b8-1d45a3170a01",
+    "b5ac9069-210c-4fba-92c8-5d0550a1c705",
+    "0bc31b6a-b87c-4c09-a95a-225d108bee36",
+    "7d8fe789-534f-4c60-b49b-9c5a89ecb137",
+    "f8422cc3-70a6-4a31-91f4-b69baa54afc1",
+    "71bcb361-0ebe-4056-a870-308709d9ba2a",
+    "196959cd-8266-43cc-b272-6a132749fba4",
+    "b1da9bde-654e-498b-9270-a8a9b7c54372",
+    "1115ad00-b9b9-48ac-ab96-c797f6c9d19a"
+  ],
+  "visitorLastSeen": {
+    "85e2cc77-bf54-45bb-b42c-1e26e7f901cc": {
+      "lastSessionId": "s_mwi507l1_pafqcd",
+      "lastTimestamp": 1794765493092
+    },
+    "93efee71-f2e9-4d61-a510-446307d93fee": {
+      "lastSessionId": "s_mwi5591v_dzke6u",
+      "lastTimestamp": 1794765712209
+    },
+    "39f01dc2-d144-4d1a-a3b8-1d45a3170a01": {
+      "lastSessionId": "s_mwi56zd4_tsmmb0",
+      "lastTimestamp": 1794765769315
+    },
+    "b5ac9069-210c-4fba-92c8-5d0550a1c705": {
+      "lastSessionId": "s_mwi57of1_b5e8kc",
+      "lastTimestamp": 1794765811948
+    },
+    "0bc31b6a-b87c-4c09-a95a-225d108bee36": {
+      "lastSessionId": "s_mwi599oo_cn2pxc",
+      "lastTimestamp": 1794765885667
+    },
+    "7d8fe789-534f-4c60-b49b-9c5a89ecb137": {
+      "lastSessionId": "s_mwi5b6qh_35nvxf",
+      "lastTimestamp": 1794765956107
+    },
+    "f8422cc3-70a6-4a31-91f4-b69baa54afc1": {
+      "lastSessionId": "s_mwi5f632_6hl51i",
+      "lastTimestamp": 1794766158554
+    },
+    "71bcb361-0ebe-4056-a870-308709d9ba2a": {
+      "lastSessionId": "s_mwi5hm9n_dda48x",
+      "lastTimestamp": 1794766302083
+    },
+    "196959cd-8266-43cc-b272-6a132749fba4": {
+      "lastSessionId": "s_mwi5j9f7_6cg7kz",
+      "lastTimestamp": 1794766353157
+    },
+    "b1da9bde-654e-498b-9270-a8a9b7c54372": {
+      "lastSessionId": "s_mwi5ore3_kdfj0x",
+      "lastTimestamp": 1794766614934
+    },
+    "1115ad00-b9b9-48ac-ab96-c797f6c9d19a": {
+      "lastSessionId": "s_mwi5qdgv_my8nra",
+      "lastTimestamp": 1794766681726
+    }
+  }
+}

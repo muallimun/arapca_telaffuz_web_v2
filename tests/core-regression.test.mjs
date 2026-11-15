@@ -5624,8 +5624,8 @@ test("48. Hafızanı Yokla (MemoryFlipGame) & Balon Safari (BalloonSafariGame) T
   // 2. Balon Safari: Panoramik doğa manzarası, gerçek sıcak hava balonu (#F4F6F0 kubbe, #F3E5AB hasır sepet, #2196F3/#FF9800 etiket) ve yüzer hap HUD
   assert.equal(
     balloonCode.includes("safariSkyGrad") &&
-      balloonCode.includes("safariRiverGrad") &&
-      balloonCode.includes("safariSandPathGrad") &&
+      balloonCode.includes("safariSunsetSkyGrad") &&
+      balloonCode.includes("safariNightSkyGrad") &&
       balloonCode.includes("/images/background.png") &&
       balloonCode.includes("/images/balon.png") &&
       balloonCode.includes("hotAirDomeClip") &&
@@ -9338,5 +9338,107 @@ test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter
     );
   }
 });
+
+test("79. Mobil Alt Navigasyon (MobileNav) Güvenli Boşluğu, Kütüphane Üst/Alt Mobil Ergonomisi ve Balon Safarisi Çarpışmasız 3 Atmosferli Panoramik Ufuk Doğrulaması", async () => {
+  const layoutSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  const kutuphaneSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const balloonSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+
+  // 1) layout.tsx <main> alt boşluğu ve kutuphane/page.tsx alt/üst mobil düzeni
+  assert.ok(
+    layoutSrc.includes(
+      "pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-8"
+    ),
+    "layout.tsx içindeki <main> etiketi MobileNav arkasında kart/buton kalmaması için pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-8 içermelidir"
+  );
+  assert.ok(
+    kutuphaneSrc.includes("grid grid-cols-1 sm:flex") &&
+      kutuphaneSrc.includes("İnteraktif Kök Sözlüğü") &&
+      kutuphaneSrc.includes("Kütüphane Havuzuyla Alıştırma Yap") &&
+      kutuphaneSrc.includes("hidden sm:flex w-10 h-10") &&
+      kutuphaneSrc.includes("line-clamp-1") &&
+      kutuphaneSrc.includes("h-9 px-2.5 sm:px-3 rounded-xl bg-[#6741D9]") &&
+      kutuphaneSrc.includes('aria-label="Sekmeleri sola kaydır"') &&
+      kutuphaneSrc.includes('aria-label="Sekmeleri sağa kaydır"') &&
+      kutuphaneSrc.includes('mobileLabel: "🏛️ Vitrin"') &&
+      kutuphaneSrc.includes('mobileLabel: "❤️ Defterim"') &&
+      kutuphaneSrc.includes('mobileLabel: "🎯 Mahreç"'),
+    "kutuphane/page.tsx mobil üst başlık kompaktlığını, ‹/› sekme kaydırma butonlarını, kısa mobil sekme etiketlerini ve tam genişlikli alt özet butonlarını içermelidir"
+  );
+
+  // 2) BalloonSafariGame klip-art temizliği ve 3 atmosferli panoramik ufuk + HUD atmosfer değiştirici
+  assert.equal(
+    balloonSrc.includes("fence_l_") ||
+      balloonSrc.includes("flower_") ||
+      balloonSrc.includes("pine_") ||
+      balloonSrc.includes("safariRiverGrad") ||
+      balloonSrc.includes("translate(-290, 240)"),
+    false,
+    "BalloonSafariGame içinden eski sivri dağ, çit, nehir, papatya ve translate(-290, 240) kalıntıları tamamen kaldırılmış olmalıdır"
+  );
+  assert.ok(
+    balloonSrc.includes("safariSkyGrad") &&
+      balloonSrc.includes("safariSunsetSkyGrad") &&
+      balloonSrc.includes("safariNightSkyGrad") &&
+      balloonSrc.includes("safariCrescentMask") &&
+      balloonSrc.includes("handleCycleAtmosphere") &&
+      balloonSrc.includes("Otomatik"),
+    "BalloonSafariGame 3 atmosferli (day/sunset/night) panoramik ufuk manzarasını ve HUD atmosfer değiştirici butonu içermelidir"
+  );
+
+  // 3) Aynı dalgadaki balonların birebir aynı hızı (uniformSpeedX) ve kademeli zikzak mesafeleri
+  const {
+    SAFARI_DESKTOP_STAGE,
+    SAFARI_PORTRAIT_STAGE,
+    computeSafariWavePlacements,
+    resolveSafariAtmosphere,
+  } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "lib", "balloonSafariLayout.ts")
+    ).href
+  );
+
+  assert.equal(SAFARI_DESKTOP_STAGE.minY, 165);
+  assert.equal(SAFARI_DESKTOP_STAGE.maxY, 415);
+  assert.equal(SAFARI_DESKTOP_STAGE.horizontalSpacing, 235);
+  assert.equal(SAFARI_PORTRAIT_STAGE.minY, 185);
+  assert.equal(SAFARI_PORTRAIT_STAGE.maxY, 610);
+  assert.equal(SAFARI_PORTRAIT_STAGE.horizontalSpacing, 210);
+
+  const mobileWave3 = computeSafariWavePlacements({
+    isPortraitMobile: true,
+    count: 3,
+    baseSpeed: 90,
+    roundNum: 5,
+  });
+  assert.equal(mobileWave3[0].speedX, mobileWave3[1].speedX);
+  assert.equal(mobileWave3[1].speedX, mobileWave3[2].speedX);
+  assert.equal(mobileWave3[1].x - mobileWave3[0].x, 210);
+  assert.ok(Math.abs(mobileWave3[1].baseY - mobileWave3[0].baseY) >= 200);
+  assert.ok(Math.abs(mobileWave3[2].baseY - mobileWave3[1].baseY) >= 200);
+
+  assert.equal(
+    resolveSafariAtmosphere({ mode: "auto", level: 2, isDarkTheme: false }),
+    "day"
+  );
+  assert.equal(
+    resolveSafariAtmosphere({ mode: "auto", level: 3, isDarkTheme: false }),
+    "sunset"
+  );
+  assert.equal(
+    resolveSafariAtmosphere({ mode: "auto", level: 5, isDarkTheme: false }),
+    "night"
+  );
+});
+
 
 

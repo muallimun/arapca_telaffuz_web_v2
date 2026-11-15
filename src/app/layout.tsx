@@ -142,7 +142,7 @@ export default function RootLayout({
         <InAppBrowserBanner />
         <SmartboardMount />
         <Header />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-6 lg:pb-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 pt-3 md:pt-6 pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-8">
           {children}
         </main>
         <ScrollToTopButton />

@@ -1320,6 +1320,35 @@ export default function LibraryPage() {
     activeSection === "gorsel-kelimeler";
 
   const tabsScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollTabsLeft, setCanScrollTabsLeft] = useState(false);
+  const [canScrollTabsRight, setCanScrollTabsRight] = useState(true);
+
+  const updateTabsScrollAffordance = () => {
+    const container = tabsScrollContainerRef.current;
+    if (!container) return;
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setCanScrollTabsLeft(container.scrollLeft > 6);
+    setCanScrollTabsRight(maxScrollLeft - container.scrollLeft > 6);
+  };
+
+  const handleScrollTabsBy = (direction: "left" | "right") => {
+    playClick();
+    const container = tabsScrollContainerRef.current;
+    if (!container) return;
+    const step = Math.max(150, Math.round(container.clientWidth * 0.65));
+    container.scrollBy({
+      left: direction === "left" ? -step : step,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    if (!mounted) return;
+    updateTabsScrollAffordance();
+    const handleResize = () => updateTabsScrollAffordance();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -1336,6 +1365,8 @@ export default function LibraryPage() {
         block: "nearest",
       });
     }
+    const timer = setTimeout(updateTabsScrollAffordance, 260);
+    return () => clearTimeout(timer);
   }, [activeSection, mounted]);
 
   const favoriteIdsSet = useMemo(() => {
@@ -2937,9 +2968,9 @@ export default function LibraryPage() {
       )}
 
       {/* ÜST BAŞLIK & V2 MODÜL SEÇİCİ */}
-      <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5">
+      <div className="space-y-2 sm:space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             {activeSection !== "vitrin" ? (
               <button
                 type="button"
@@ -2955,17 +2986,17 @@ export default function LibraryPage() {
               <Link
                 href="/"
                 onClick={() => playClick()}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0"
+                className="hidden sm:flex w-10 h-10 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] active:border-b-2 active:translate-y-0.5 transition-all shrink-0"
                 aria-label="Ana Sayfaya Dön"
               >
                 <ChevronLeft size={19} strokeWidth={2.5} />
               </Link>
             )}
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight">
                 Eğitim Kütüphanesi
               </h1>
-              <p className="text-[11px] sm:text-xs font-medium text-[var(--muted)]">
+              <p className="line-clamp-1 sm:line-clamp-none text-[11px] sm:text-xs font-medium text-[var(--muted)]">
                 {contentStats.dialogueCount} diyalog, {contentStats.readingCount}{" "}
                 okuma metni, {contentStats.sentenceCount} cümle,{" "}
                 {contentStats.proverbCount} atasözü ve{" "}
@@ -3019,7 +3050,7 @@ export default function LibraryPage() {
               <button
                 type="button"
                 onClick={() => handleOpenLibraryPdfModal()}
-                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Printer size={14} className="shrink-0" />
                 <span>A4 Sınav &amp; Not</span>
@@ -3031,7 +3062,7 @@ export default function LibraryPage() {
                   playClick();
                   setIsStatsBadgesOpen(true);
                 }}
-                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Trophy size={14} className="shrink-0" />
                 <span>İstatistik &amp; Rozet</span>
@@ -3040,106 +3071,77 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* Modül Sekmeleri (Mobilde Temiz Yatay Kaydırma + Aktif Sekme Otomatik Hizalama, Masaüstünde Dengeli Flex-Wrap) */}
-        <div className="max-w-full">
-          <div
-            ref={tabsScrollContainerRef}
-            className="bg-white dark:bg-[var(--background)] rounded-xl px-2 py-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto lg:overflow-visible no-scrollbar scroll-smooth whitespace-nowrap lg:whitespace-normal lg:flex-wrap items-center gap-1.5 max-w-full"
+        {/* Modül Sekmeleri (Mobilde ‹ / › Kaydırma Okları + Sağ Kenar Yumuşak Geçiş İpucu + Kompakt Sekme Etiketleri, Masaüstünde Dengeli Flex-Wrap) */}
+        <div className="relative max-w-full flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => handleScrollTabsBy("left")}
+            disabled={!canScrollTabsLeft}
+            aria-label="Sekmeleri sola kaydır"
+            title="Sekmeleri sola kaydır"
+            className={`lg:hidden h-9 w-7 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)] flex items-center justify-center shrink-0 transition-all ${
+              canScrollTabsLeft
+                ? "text-[#087F5B] dark:text-emerald-400 hover:bg-[#F7EFE1] active:scale-95 cursor-pointer shadow-2xs"
+                : "text-[var(--muted)]/40 opacity-50 cursor-default"
+            }`}
           >
-            {(
-              [
-                {
-                  id: "vitrin",
-                  label: "🏛️ Vitrin (Genel Bakış)",
-                },
-                {
-                  id: "dialogues",
-                  label: `💬 Diyaloglar (${contentStats.dialogueCount})`,
-                },
-                {
-                  id: "metinler",
-                  label: `📖 Metinler (${contentStats.readingCount})`,
-                },
-                {
-                  id: "cumleler",
-                  label: `🗣️ Günlük Cümle (${contentStats.sentenceCount})`,
-                },
-                {
-                  id: "atasozleri",
-                  label: `📜 Atasözleri (${contentStats.proverbCount})`,
-                },
-                {
-                  id: "gorsel-kelimeler",
-                  label: `🖼️ Görsel Kelime (${contentStats.visualWordCount})`,
-                },
-                {
-                  id: "gramer",
-                  label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
-                },
-                {
-                  id: "es-zit",
-                  label: `🔄 Eş & Zıt Anlamlılar (${contentStats.synonymsAntonymsCount})`,
-                },
-                {
-                  id: "videolar",
-                  label: `🎬 Video & İzleme Rehberi (${contentStats.youtubeCount})`,
-                },
-              ] as { id: ViewSection; label: string }[]
-            ).map((tab) => {
-              const active = activeSection === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  data-kutuphane-tab={tab.id}
-                  onClick={() => handleSwitchSection(tab.id)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                    active
-                      ? tab.id === "vitrin"
-                        ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
-                        : "bg-[#087F5B] text-white font-extrabold shadow-2xs"
-                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+            <ChevronLeft size={16} strokeWidth={2.6} />
+          </button>
 
-            {/* Kişisel Çalışma Alanı Ayırıcısı ve Kişisel Sekmeler (md:ml-auto olmadan dengeli sarma) */}
-            <span
-              aria-hidden="true"
-              className="h-5 w-px bg-[#D9C7A8] dark:bg-slate-700 mx-0.5 shrink-0"
-            />
+          <div className="relative flex-1 min-w-0">
             <div
-              role="group"
-              aria-label="Kişisel Çalışma Sekmeleri"
-              className="flex items-center gap-1.5 shrink-0"
+              ref={tabsScrollContainerRef}
+              onScroll={updateTabsScrollAffordance}
+              className="bg-white dark:bg-[var(--background)] rounded-xl px-2 py-1.5 pr-6 lg:pr-2 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto lg:overflow-visible no-scrollbar scroll-smooth whitespace-nowrap lg:whitespace-normal lg:flex-wrap items-center gap-1.5 max-w-full"
             >
               {(
                 [
                   {
-                    id: "saved-words",
-                    label: `❤️ Defterim (${mounted ? favoriteWords.length : 0})`,
-                    activeClass:
-                      "bg-rose-600 border-rose-700 text-white font-extrabold shadow-2xs",
-                    idleClass:
-                      "bg-rose-50/75 dark:bg-rose-950/35 border-rose-300/70 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 font-bold hover:border-rose-500",
+                    id: "vitrin",
+                    mobileLabel: "🏛️ Vitrin",
+                    label: "🏛️ Vitrin (Genel Bakış)",
                   },
                   {
-                    id: "weak-words",
-                    label: `🎯 Mahreç (${mounted ? weakWords.length : 0})`,
-                    activeClass:
-                      "bg-[#6741D9] border-[#5230B5] text-white font-extrabold shadow-2xs",
-                    idleClass:
-                      "bg-[#F3F0FF]/80 dark:bg-indigo-950/35 border-[#6741D9]/35 dark:border-indigo-700/60 text-[#4C28B5] dark:text-indigo-300 font-bold hover:border-[#6741D9]",
+                    id: "dialogues",
+                    mobileLabel: `💬 Diyalog (${contentStats.dialogueCount})`,
+                    label: `💬 Diyaloglar (${contentStats.dialogueCount})`,
                   },
-                ] as {
-                  id: ViewSection;
-                  label: string;
-                  activeClass: string;
-                  idleClass: string;
-                }[]
+                  {
+                    id: "metinler",
+                    mobileLabel: `📖 Metin (${contentStats.readingCount})`,
+                    label: `📖 Metinler (${contentStats.readingCount})`,
+                  },
+                  {
+                    id: "cumleler",
+                    mobileLabel: `🗣️ Cümle (${contentStats.sentenceCount})`,
+                    label: `🗣️ Günlük Cümle (${contentStats.sentenceCount})`,
+                  },
+                  {
+                    id: "atasozleri",
+                    mobileLabel: `📜 Atasözü (${contentStats.proverbCount})`,
+                    label: `📜 Atasözleri (${contentStats.proverbCount})`,
+                  },
+                  {
+                    id: "gorsel-kelimeler",
+                    mobileLabel: `🖼️ Görsel (${contentStats.visualWordCount})`,
+                    label: `🖼️ Görsel Kelime (${contentStats.visualWordCount})`,
+                  },
+                  {
+                    id: "gramer",
+                    mobileLabel: `📌 Gramer (${contentStats.grammarNoteCount})`,
+                    label: `📌 Gramer Atlası (${contentStats.grammarNoteCount})`,
+                  },
+                  {
+                    id: "es-zit",
+                    mobileLabel: `🔄 Eş-Zıt (${contentStats.synonymsAntonymsCount})`,
+                    label: `🔄 Eş & Zıt Anlamlılar (${contentStats.synonymsAntonymsCount})`,
+                  },
+                  {
+                    id: "videolar",
+                    mobileLabel: `🎬 Video (${contentStats.youtubeCount})`,
+                    label: `🎬 Video & İzleme Rehberi (${contentStats.youtubeCount})`,
+                  },
+                ] as { id: ViewSection; mobileLabel: string; label: string }[]
               ).map((tab) => {
                 const active = activeSection === tab.id;
                 return (
@@ -3148,16 +3150,100 @@ export default function LibraryPage() {
                     type="button"
                     data-kutuphane-tab={tab.id}
                     onClick={() => handleSwitchSection(tab.id)}
-                    className={`px-2.5 py-1.5 rounded-lg border text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                      active ? tab.activeClass : tab.idleClass
+                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                      active
+                        ? tab.id === "vitrin"
+                          ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
+                          : "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
                     }`}
                   >
-                    {tab.label}
+                    <span className="sm:hidden">{tab.mobileLabel}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </button>
                 );
               })}
+
+              {/* Kişisel Çalışma Alanı Ayırıcısı ve Kişisel Sekmeler */}
+              <span
+                aria-hidden="true"
+                className="h-5 w-px bg-[#D9C7A8] dark:bg-slate-700 mx-0.5 shrink-0"
+              />
+              <div
+                role="group"
+                aria-label="Kişisel Çalışma Sekmeleri"
+                className="flex items-center gap-1.5 shrink-0"
+              >
+                {(
+                  [
+                    {
+                      id: "saved-words",
+                      mobileLabel: "❤️ Defterim",
+                      label: `❤️ Defterim (${mounted ? favoriteWords.length : 0})`,
+                      activeClass:
+                        "bg-rose-600 border-rose-700 text-white font-extrabold shadow-2xs",
+                      idleClass:
+                        "bg-rose-50/75 dark:bg-rose-950/35 border-rose-300/70 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 font-bold hover:border-rose-500",
+                    },
+                    {
+                      id: "weak-words",
+                      mobileLabel: "🎯 Mahreç",
+                      label: `🎯 Mahreç (${mounted ? weakWords.length : 0})`,
+                      activeClass:
+                        "bg-[#6741D9] border-[#5230B5] text-white font-extrabold shadow-2xs",
+                      idleClass:
+                        "bg-[#F3F0FF]/80 dark:bg-indigo-950/35 border-[#6741D9]/35 dark:border-indigo-700/60 text-[#4C28B5] dark:text-indigo-300 font-bold hover:border-[#6741D9]",
+                    },
+                  ] as {
+                    id: ViewSection;
+                    mobileLabel: string;
+                    label: string;
+                    activeClass: string;
+                    idleClass: string;
+                  }[]
+                ).map((tab) => {
+                  const active = activeSection === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      data-kutuphane-tab={tab.id}
+                      onClick={() => handleSwitchSection(tab.id)}
+                      className={`px-2.5 py-1.5 rounded-lg border text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                        active ? tab.activeClass : tab.idleClass
+                      }`}
+                    >
+                      <span className="sm:hidden">{tab.mobileLabel}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Sağ Kenar Yumuşak Geçiş (Gradient Fade) İpucu */}
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none lg:hidden absolute right-[2px] top-[2px] bottom-[2px] w-8 rounded-r-[10px] bg-gradient-to-l from-white via-white/85 to-transparent dark:from-[var(--background)] dark:via-[var(--background)]/85 transition-opacity duration-200 ${
+                canScrollTabsRight ? "opacity-100" : "opacity-0"
+              }`}
+            />
           </div>
+
+          <button
+            type="button"
+            onClick={() => handleScrollTabsBy("right")}
+            disabled={!canScrollTabsRight}
+            aria-label="Sekmeleri sağa kaydır"
+            title="Sekmeleri sağa kaydır"
+            className={`lg:hidden h-9 w-7 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-white dark:bg-[var(--background)] flex items-center justify-center shrink-0 transition-all ${
+              canScrollTabsRight
+                ? "text-[#087F5B] dark:text-emerald-400 hover:bg-[#F7EFE1] active:scale-95 cursor-pointer shadow-2xs"
+                : "text-[var(--muted)]/40 opacity-50 cursor-default"
+            }`}
+          >
+            <ChevronRight size={16} strokeWidth={2.6} />
+          </button>
         </div>
       </div>
 
@@ -3984,26 +4070,27 @@ export default function LibraryPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-2 w-full lg:w-auto shrink-0">
               <Link
                 href="/alistirmalar"
                 onClick={() => playClick()}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold transition-all whitespace-nowrap"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold transition-all whitespace-nowrap"
               >
-                <Gamepad2 size={15} />
+                <Gamepad2 size={15} className="shrink-0" />
                 <span>
-                  {CONTENT_INVENTORY.exerciseModulesCount} Modülle Alıştırma Yap
+                  Kütüphane Havuzuyla Alıştırma Yap (
+                  {CONTENT_INVENTORY.exerciseModulesCount} Modül)
                 </span>
               </Link>
 
               <Link
                 href="/sozluk"
                 onClick={() => playClick()}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#5230B5] text-xs font-extrabold transition-all whitespace-nowrap"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white border-b-3 border-[#5230B5] text-xs font-extrabold transition-all whitespace-nowrap"
               >
-                <BookOpen size={15} />
+                <BookOpen size={15} className="shrink-0" />
                 <span>
-                  Birleşik Kök Sözlüğü (
+                  İnteraktif Kök Sözlüğü (
                   {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
                   Kelime)
                 </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useRef } from "react";
 import Link from "next/link";
 import {
   Play,
@@ -15,6 +15,7 @@ import {
   Film,
   Sparkles,
   Link2,
+  Plus,
 } from "lucide-react";
 import { YoutubeRecommendationItem } from "@/types/data";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/lib/youtubeUtils";
 import { formatArabicByHarekeMode } from "@/lib/arabicTextUtils";
 import { speakHybrid, stopAllAudio } from "@/lib/audio";
+import { useEscapeKey } from "@/lib/modalStack";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { useSettings } from "@/store/settings";
 import { useUserStore } from "@/store/userStore";
@@ -51,6 +53,165 @@ function notifyActiveInlineYoutube(nextId: string | null) {
   inlineYoutubeSubscribers.forEach((listener) => listener(nextId));
 }
 
+/* ============================================================================
+ * OYNATMA LİSTESİ UYGULAMA İÇİ BÖLÜM SEÇİCİ ÇUBUĞU (Kart + Sinema Modu Ortak)
+ * ============================================================================ */
+
+interface PlaylistEpisodeSelectorBarProps {
+  activeEpisode: number;
+  watchedEpisodes: number[];
+  isSeriesCompleted: boolean;
+  onSelectEpisode: (episodeNum: number) => void;
+  onToggleSeriesCompleted: () => void;
+}
+
+function PlaylistEpisodeSelectorBar({
+  activeEpisode,
+  watchedEpisodes,
+  isSeriesCompleted,
+  onSelectEpisode,
+  onToggleSeriesCompleted,
+}: PlaylistEpisodeSelectorBarProps) {
+  const [extraBatches, setExtraBatches] = useState(0);
+  const stripRef = useRef<HTMLDivElement | null>(null);
+
+  const baseBlocks = Math.max(1, Math.ceil(activeEpisode / 20));
+  const visibleEpisodeCount = Math.min(500, (baseBlocks + extraBatches) * 20);
+
+  useEffect(() => {
+    const stripEl = stripRef.current;
+    if (!stripEl) return;
+    const activeChip = stripEl.querySelector<HTMLElement>(
+      `[data-episode-chip="${activeEpisode}"]`
+    );
+    if (!activeChip) return;
+    const targetLeft = Math.max(
+      0,
+      activeChip.offsetLeft -
+        stripEl.clientWidth / 2 +
+        activeChip.clientWidth / 2
+    );
+    stripEl.scrollTo({ left: targetLeft, behavior: "smooth" });
+  }, [activeEpisode, visibleEpisodeCount]);
+
+  return (
+    <div
+      aria-label="Oynatma Listesi Bölüm Kontrol Çubuğu"
+      className="bg-[#F7EFE1] dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] px-2.5 sm:px-3.5 py-2 space-y-1.5 shrink-0"
+    >
+      {/* Üst Satır: Önceki / Sonraki Bölüm + Seri Tamamlama */}
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <button
+            type="button"
+            disabled={activeEpisode <= 1}
+            onClick={() => {
+              if (activeEpisode > 1) {
+                onSelectEpisode(activeEpisode - 1);
+              }
+            }}
+            className="min-h-[30px] px-2 sm:px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-45 disabled:cursor-not-allowed text-[11px] font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer whitespace-nowrap transition-colors"
+            title="Önceki bölüme geç"
+          >
+            <span>⏮ Önceki</span>
+          </button>
+
+          <span className="px-2 py-0.5 rounded-lg bg-[#087F5B]/12 dark:bg-emerald-950/60 border border-[#087F5B]/30 text-[#065F46] dark:text-emerald-300 text-[11px] font-extrabold whitespace-nowrap">
+            🎬 {activeEpisode}. Bölüm
+          </span>
+
+          <button
+            type="button"
+            disabled={activeEpisode >= 500}
+            onClick={() => {
+              if (activeEpisode < 500) {
+                onSelectEpisode(activeEpisode + 1);
+              }
+            }}
+            className="min-h-[30px] px-2 sm:px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-45 disabled:cursor-not-allowed text-[11px] font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer whitespace-nowrap transition-colors"
+            title="Sonraki bölüme geç"
+          >
+            <span>Sonraki ⏭</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onToggleSeriesCompleted}
+          aria-pressed={isSeriesCompleted}
+          className={`min-h-[30px] px-2 sm:px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] font-extrabold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap transition-colors ${
+            isSeriesCompleted
+              ? "bg-emerald-600 border-emerald-800 text-white"
+              : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-emerald-700 hover:border-emerald-500"
+          }`}
+          title="Tüm oynatma listesini tamamlandı olarak işaretle"
+        >
+          <CheckCircle2 size={12} className="shrink-0" />
+          <span>
+            {isSeriesCompleted ? "Tüm Seri Tamamlandı" : "Tüm Seriyi Tamamladım"}
+          </span>
+        </button>
+      </div>
+
+      {/* Alt Satır: Yatay Kaydırılabilir Numaralı Bölüm Çipleri (1..20 + Daha Fazla Bölüm) */}
+      <div
+        ref={stripRef}
+        className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5 scroll-px-2"
+      >
+        {Array.from({ length: visibleEpisodeCount }, (_, idx) => {
+          const ep = idx + 1;
+          const isCurrent = ep === activeEpisode;
+          const isEpWatched = watchedEpisodes.includes(ep);
+          return (
+            <button
+              key={ep}
+              type="button"
+              data-episode-chip={ep}
+              onClick={() => onSelectEpisode(ep)}
+              aria-current={isCurrent ? "true" : undefined}
+              className={`min-h-[30px] px-2.5 py-1 rounded-lg border text-[11px] font-extrabold inline-flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer transition-all ${
+                isCurrent
+                  ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                  : isEpWatched
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 dark:border-emerald-600 text-emerald-800 dark:text-emerald-200"
+                  : "bg-white dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+              }`}
+              title={`${ep}. Bölümü oynat`}
+            >
+              {isEpWatched && (
+                <CheckCircle2
+                  size={11}
+                  className={
+                    isCurrent
+                      ? "text-emerald-200 shrink-0"
+                      : "text-emerald-600 dark:text-emerald-400 shrink-0"
+                  }
+                />
+              )}
+              <span>{ep}. Bölüm</span>
+            </button>
+          );
+        })}
+
+        {visibleEpisodeCount < 500 && (
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setExtraBatches((prev) => prev + 1);
+            }}
+            className="min-h-[30px] px-2.5 py-1 rounded-lg border border-dashed border-[#087F5B]/65 bg-white/85 dark:bg-[var(--surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#087F5B] dark:text-emerald-300 text-[11px] font-extrabold inline-flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+            title="Sonraki 20 bölümü listeye ekle"
+          >
+            <Plus size={12} className="shrink-0" />
+            <span>+ Daha Fazla Bölüm</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LiteYoutubeCard({
   item,
   onOpenCinemaModal,
@@ -58,7 +219,14 @@ export default function LiteYoutubeCard({
 }: LiteYoutubeCardProps) {
   const instanceId = useId();
   const { showHareke, harekeMode, speechRate } = useSettings();
-  const { watchedVideos, toggleWatchedVideo } = useUserStore();
+  const {
+    watchedVideos,
+    toggleWatchedVideo,
+    playlistWatchedEpisodes,
+    playlistLastEpisode,
+    togglePlaylistEpisodeWatched,
+    setPlaylistLastEpisode,
+  } = useUserStore();
 
   const [mounted, setMounted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -86,12 +254,27 @@ export default function LiteYoutubeCard({
   }, [instanceId]);
 
   const { videoId, playlistId } = resolveYoutubeIds(item);
+  const isPlaylistItem =
+    item.tur === "playlist" || Boolean(!videoId && playlistId);
+
+  const savedLastEpisode =
+    mounted && isPlaylistItem ? playlistLastEpisode?.[item.id] || 1 : 1;
+  const activeEpisode = isPlaylistItem ? savedLastEpisode : 1;
+  const watchedEpisodesForItem =
+    mounted && isPlaylistItem ? playlistWatchedEpisodes?.[item.id] || [] : [];
+  const watchedEpisodeCount = watchedEpisodesForItem.length;
+  const isActiveEpisodeWatched =
+    isPlaylistItem && watchedEpisodesForItem.includes(activeEpisode);
+
   const thumbnailUrl =
     videoId && !imageError
       ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
       : null;
 
-  const embedUrl = buildYoutubeEmbedUrl(item, { autoplay: true });
+  const embedUrl = buildYoutubeEmbedUrl(item, {
+    autoplay: true,
+    playlistIndex: isPlaylistItem ? activeEpisode : undefined,
+  });
   const meta =
     YOUTUBE_CATEGORY_META[item.kategori] ||
     YOUTUBE_CATEGORY_META.cizgi_animasyon;
@@ -124,6 +307,17 @@ export default function LiteYoutubeCard({
     setIsPlaying(false);
   };
 
+  const handleSelectPlaylistEpisode = (episodeNum: number) => {
+    const clamped = Math.max(1, Math.min(500, Math.floor(episodeNum)));
+    playClick();
+    stopAllAudio();
+    setPlaylistLastEpisode(item.id, clamped);
+    if (!isPlaying && embedUrl) {
+      notifyActiveInlineYoutube(instanceId);
+      setIsPlaying(true);
+    }
+  };
+
   const handleOpenCinema = () => {
     playClick();
     stopAllAudio();
@@ -138,6 +332,14 @@ export default function LiteYoutubeCard({
       playSuccess();
     }
     toggleWatchedVideo(item.id);
+  };
+
+  const handleToggleActiveEpisodeWatched = () => {
+    playClick();
+    if (!isActiveEpisodeWatched) {
+      playSuccess();
+    }
+    togglePlaylistEpisodeWatched(item.id, activeEpisode);
   };
 
   const handleSpeakWord = async (word: string) => {
@@ -165,6 +367,9 @@ export default function LiteYoutubeCard({
           {isPlaying && embedUrl ? (
             <div className="relative w-full h-full bg-black">
               <iframe
+                key={
+                  isPlaylistItem ? `${item.id}_ep_${activeEpisode}` : item.id
+                }
                 src={embedUrl}
                 title={item.baslik_tr}
                 className="w-full h-full aspect-video border-0"
@@ -247,8 +452,6 @@ export default function LiteYoutubeCard({
 
               {/* Üst Rozetler (CEFR + Tür / Süre Etiketi - Mükerrer Oynatma Listesi rozeti engellenir) */}
               {(() => {
-                const isPlaylistItem =
-                  item.tur === "playlist" || Boolean(!videoId && playlistId);
                 const rawDuration = item.sure_etiketi?.trim() || "";
                 const showDurationTag =
                   Boolean(rawDuration) &&
@@ -297,21 +500,36 @@ export default function LiteYoutubeCard({
                 );
               })()}
 
-              {/* Alt Kanal & İzlendi Rozeti */}
+              {/* Alt Kanal & İzlendi / Bölüm İlerlemesi Rozeti */}
               <div className="absolute bottom-2 left-2.5 right-2.5 flex items-end justify-between gap-2 z-10 pointer-events-none">
-                <span className="px-2 py-0.5 rounded-md bg-black/70 text-white/95 text-[11px] font-bold border border-white/10 truncate max-w-[68%]">
+                <span className="px-2 py-0.5 rounded-md bg-black/70 text-white/95 text-[11px] font-bold border border-white/10 truncate max-w-[65%]">
                   📺 {item.kanal_adi}
                 </span>
-                {isWatched && (
+                {isWatched ? (
                   <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black shadow-xs inline-flex items-center gap-1 shrink-0">
                     <CheckCircle2 size={11} />
                     <span>İzlendi</span>
                   </span>
-                )}
+                ) : isPlaylistItem && watchedEpisodeCount > 0 ? (
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-700/90 text-white text-[10px] font-black shadow-xs inline-flex items-center gap-1 shrink-0">
+                    <span>📊 {watchedEpisodeCount} Bölüm</span>
+                  </span>
+                ) : null}
               </div>
             </button>
           )}
         </div>
+
+        {/* OYNATMA LİSTESİ BÖLÜM SEÇİCİ ÇUBUĞU (Yalnızca oynatma listesi açıkken) */}
+        {isPlaying && isPlaylistItem && Boolean(embedUrl) && (
+          <PlaylistEpisodeSelectorBar
+            activeEpisode={activeEpisode}
+            watchedEpisodes={watchedEpisodesForItem}
+            isSeriesCompleted={isWatched}
+            onSelectEpisode={handleSelectPlaylistEpisode}
+            onToggleSeriesCompleted={handleToggleWatched}
+          />
+        )}
 
         {/* KART İÇERİĞİ */}
         <div className="p-3.5 sm:p-4 space-y-2.5">
@@ -446,6 +664,8 @@ export default function LiteYoutubeCard({
               <X size={13} className="shrink-0" />
               <span>Oynatıcıyı Kapat</span>
             </>
+          ) : isPlaylistItem && savedLastEpisode > 1 ? (
+            <span>▶ {savedLastEpisode}. Bölümden Devam Et</span>
           ) : (
             <>
               <Play size={13} className="fill-white shrink-0" />
@@ -466,22 +686,57 @@ export default function LiteYoutubeCard({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={handleToggleWatched}
-          aria-pressed={isWatched}
-          className={`min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap ${
-            isWatched
-              ? "bg-emerald-600 border-emerald-800 text-white"
-              : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-emerald-500"
-          }`}
-          title={
-            isWatched ? "İzlenenlerden çıkar" : "Bu içeriği izledim olarak işaretle"
-          }
-        >
-          {isWatched ? <CheckCircle2 size={14} /> : <Circle size={14} />}
-          <span>{isWatched ? "İzlendi" : "İzledim"}</span>
-        </button>
+        {isPlaylistItem ? (
+          <>
+            <button
+              type="button"
+              onClick={handleToggleActiveEpisodeWatched}
+              aria-pressed={isActiveEpisodeWatched}
+              className={`min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap ${
+                isActiveEpisodeWatched
+                  ? "bg-emerald-600 border-emerald-800 text-white"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-emerald-500"
+              }`}
+              title={
+                isActiveEpisodeWatched
+                  ? `${activeEpisode}. bölümü izlenenlerden çıkar`
+                  : `${activeEpisode}. bölümü izledim olarak işaretle`
+              }
+            >
+              <span>
+                {isActiveEpisodeWatched
+                  ? `✓ ${activeEpisode}. Bölüm İzlendi`
+                  : `✓ ${activeEpisode}. Bölümü İzledim`}
+              </span>
+            </button>
+
+            <span
+              className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[11px] font-extrabold text-[var(--foreground)] inline-flex items-center justify-center gap-1 whitespace-nowrap"
+              title="Bu oynatma listesinde izlediğiniz toplam bölüm sayısı"
+            >
+              <span>📊 {watchedEpisodeCount} Bölüm İzlendi</span>
+            </span>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={handleToggleWatched}
+            aria-pressed={isWatched}
+            className={`min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center justify-center gap-1 cursor-pointer transition-all whitespace-nowrap ${
+              isWatched
+                ? "bg-emerald-600 border-emerald-800 text-white"
+                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-emerald-500"
+            }`}
+            title={
+              isWatched
+                ? "İzlenenlerden çıkar"
+                : "Bu içeriği izledim olarak işaretle"
+            }
+          >
+            {isWatched ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+            <span>{isWatched ? "İzlendi" : "İzledim"}</span>
+          </button>
+        )}
 
         <a
           href={item.url}
@@ -519,27 +774,48 @@ export function YoutubePlayerModal({
   onClose,
 }: YoutubePlayerModalProps) {
   const { showHareke, harekeMode, speechRate } = useSettings();
-  const { watchedVideos, toggleWatchedVideo } = useUserStore();
+  const {
+    watchedVideos,
+    toggleWatchedVideo,
+    playlistWatchedEpisodes,
+    playlistLastEpisode,
+    togglePlaylistEpisodeWatched,
+    setPlaylistLastEpisode,
+  } = useUserStore();
 
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [speakingWord, setSpeakingWord] = useState<string | null>(null);
 
+  useEscapeKey(onClose, Boolean(items && items.length > 0));
+
   useEffect(() => {
     stopAllAudio();
     notifyActiveInlineYoutube(null);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   if (!items || items.length === 0) return null;
   const safeIndex = Math.min(Math.max(0, activeIndex), items.length - 1);
   const activeItem = items[safeIndex];
-  const embedUrl = buildYoutubeEmbedUrl(activeItem, { autoplay: true });
+  const { videoId: activeVideoId, playlistId: activePlaylistId } =
+    resolveYoutubeIds(activeItem);
+  const activeIsPlaylist =
+    activeItem.tur === "playlist" ||
+    Boolean(!activeVideoId && activePlaylistId);
+
+  const activeEpisode = activeIsPlaylist
+    ? playlistLastEpisode?.[activeItem.id] || 1
+    : 1;
+  const activeWatchedEpisodes = activeIsPlaylist
+    ? playlistWatchedEpisodes?.[activeItem.id] || []
+    : [];
+  const activeWatchedEpCount = activeWatchedEpisodes.length;
+  const isActiveEpisodeWatched =
+    activeIsPlaylist && activeWatchedEpisodes.includes(activeEpisode);
+
+  const embedUrl = buildYoutubeEmbedUrl(activeItem, {
+    autoplay: true,
+    playlistIndex: activeIsPlaylist ? activeEpisode : undefined,
+  });
   const meta =
     YOUTUBE_CATEGORY_META[activeItem.kategori] ||
     YOUTUBE_CATEGORY_META.cizgi_animasyon;
@@ -550,6 +826,21 @@ export function YoutubePlayerModal({
     : harekeMode === "irab-only"
     ? "irab-only"
     : "full";
+
+  const handleModalSelectEpisode = (episodeNum: number) => {
+    const clamped = Math.max(1, Math.min(500, Math.floor(episodeNum)));
+    playClick();
+    stopAllAudio();
+    setPlaylistLastEpisode(activeItem.id, clamped);
+  };
+
+  const handleModalToggleSeriesCompleted = () => {
+    playClick();
+    if (!isWatched) {
+      playSuccess();
+    }
+    toggleWatchedVideo(activeItem.id);
+  };
 
   return (
     <div
@@ -631,7 +922,11 @@ export function YoutubePlayerModal({
         <div className="w-full aspect-video bg-black shrink-0">
           {embedUrl ? (
             <iframe
-              key={activeItem.id}
+              key={
+                activeIsPlaylist
+                  ? `${activeItem.id}_ep_${activeEpisode}`
+                  : activeItem.id
+              }
               src={embedUrl}
               title={activeItem.baslik_tr}
               className="w-full h-full aspect-video border-0"
@@ -656,6 +951,17 @@ export function YoutubePlayerModal({
           )}
         </div>
 
+        {/* Sinema Modunda da Oynatma Listesi Bölüm Seçici Çubuğu */}
+        {activeIsPlaylist && Boolean(embedUrl) && (
+          <PlaylistEpisodeSelectorBar
+            activeEpisode={activeEpisode}
+            watchedEpisodes={activeWatchedEpisodes}
+            isSeriesCompleted={isWatched}
+            onSelectEpisode={handleModalSelectEpisode}
+            onToggleSeriesCompleted={handleModalToggleSeriesCompleted}
+          />
+        )}
+
         {/* Kaydırılabilir Alt Detaylar & Aksiyonlar */}
         <div className="p-3.5 sm:p-5 space-y-3 overflow-y-auto min-h-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -676,24 +982,60 @@ export function YoutubePlayerModal({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (!isWatched) playSuccess();
-                  toggleWatchedVideo(activeItem.id);
-                }}
-                className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer ${
-                  isWatched
-                    ? "bg-emerald-600 border-emerald-800 text-white"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
-                }`}
-              >
-                {isWatched ? <CheckCircle2 size={15} /> : <Circle size={15} />}
-                <span>
-                  {isWatched ? "İzlendi İşaretlendi" : "İzledim İşaretle"}
-                </span>
-              </button>
+              {activeIsPlaylist ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      if (!isActiveEpisodeWatched) playSuccess();
+                      togglePlaylistEpisodeWatched(
+                        activeItem.id,
+                        activeEpisode
+                      );
+                    }}
+                    aria-pressed={isActiveEpisodeWatched}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer ${
+                      isActiveEpisodeWatched
+                        ? "bg-emerald-600 border-emerald-800 text-white"
+                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-emerald-500"
+                    }`}
+                  >
+                    <span>
+                      {isActiveEpisodeWatched
+                        ? `✓ ${activeEpisode}. Bölüm İzlendi`
+                        : `✓ ${activeEpisode}. Bölümü İzledim`}
+                    </span>
+                  </button>
+
+                  <span className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 whitespace-nowrap">
+                    <span>📊 {activeWatchedEpCount} Bölüm İzlendi</span>
+                  </span>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (!isWatched) playSuccess();
+                    toggleWatchedVideo(activeItem.id);
+                  }}
+                  className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer ${
+                    isWatched
+                      ? "bg-emerald-600 border-emerald-800 text-white"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                  }`}
+                >
+                  {isWatched ? (
+                    <CheckCircle2 size={15} />
+                  ) : (
+                    <Circle size={15} />
+                  )}
+                  <span>
+                    {isWatched ? "İzlendi İşaretlendi" : "İzledim İşaretle"}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 

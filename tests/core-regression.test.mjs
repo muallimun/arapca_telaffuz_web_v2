@@ -7088,3 +7088,142 @@ test("60) Ana Sayfalar (diyalog, metin, sozluk, seviye-tespit, Header ve ScrollT
     "Header mobilde kompakt buton hizasına sahip olmalı, ScrollToTopButton yalnızca scrollY > 600 iken opacity-80 ile görünmeli ve tam ekran oyun/modal açıkken gizlenmelidir"
   );
 });
+
+test("61) Oynatma Listeleri İçin Uygulama İçi Bölüm Seçici, Kaldığı Bölümü Hatırlama (playlistLastEpisode) ve Bölüm Bazlı İzlendi Takibi (playlistWatchedEpisodes)", async () => {
+  const { buildYoutubeEmbedUrl } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts")).href
+  );
+  const { useUserStore } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "store", "userStore.ts")).href
+  );
+  const { parsed: ytItems } = readDataJson("youtube_tavsiyeleri.json");
+
+  const playlistItems = ytItems.filter((x) => x.tur === "playlist");
+  const singleVideoItems = ytItems.filter((x) => x.tur === "video");
+  assert.equal(playlistItems.length, 40, "40 adet oynatma listesi bulunmalıdır");
+  assert.equal(singleVideoItems.length, 20, "20 adet tekil video bulunmalıdır");
+
+  // 1. youtubeUtils.ts: playlistIndex > 1 olduğunda (video_id olsa bile) videoseries?list=...&index=N-1 üretilmeli
+  const plWithVideo = {
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+    video_id: "dQw4w9WgXcQ",
+    playlist_id: "PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx",
+    tur: "playlist",
+  };
+  assert.equal(
+    buildYoutubeEmbedUrl(plWithVideo, { autoplay: true, playlistIndex: 1 }),
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1",
+    "playlistIndex === 1 olduğunda mevcut 1. bölüm URL davranışı korunmalıdır"
+  );
+  assert.equal(
+    buildYoutubeEmbedUrl(plWithVideo, { autoplay: true, playlistIndex: 4 }),
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&index=3&rel=0&modestbranding=1&autoplay=1",
+    "playlistIndex === 4 olduğunda videoId atlanarak doğrudan videoseries?list=...&index=3 (0-tabanlı) üretilmelidir"
+  );
+
+  // 40 oynatma listesinin tamamında 7. bölüm URL'si index=6 içermeli
+  for (const pl of playlistItems) {
+    const ep7Url = buildYoutubeEmbedUrl(pl, { autoplay: true, playlistIndex: 7 });
+    assert.equal(
+      ep7Url.startsWith("https://www.youtube.com/embed/videoseries?list=") &&
+        ep7Url.includes("&index=6&rel=0&modestbranding=1&autoplay=1"),
+      true,
+      `${pl.id} oynatma listesinde 7. bölüm seçildiğinde videoseries ve &index=6 üretilmelidir`
+    );
+  }
+
+  // 20 tekil videonun tamamı playlistIndex verilse bile mevcut tekil video davranışını korumalı
+  for (const vid of singleVideoItems) {
+    const baseUrl = buildYoutubeEmbedUrl(vid, { autoplay: true });
+    const withIdxUrl = buildYoutubeEmbedUrl(vid, {
+      autoplay: true,
+      playlistIndex: 3,
+    });
+    assert.equal(
+      withIdxUrl,
+      baseUrl,
+      `${vid.id} tekil videosunun URL üretimi bozulmamalıdır`
+    );
+  }
+
+  // 2. userStore.ts: playlistLastEpisode, togglePlaylistEpisodeWatched ve >= 5 bölümde otomatik watchedVideos senkronizasyonu
+  useUserStore.getState().resetProgress();
+  assert.deepEqual(useUserStore.getState().playlistWatchedEpisodes, {});
+  assert.deepEqual(useUserStore.getState().playlistLastEpisode, {});
+
+  useUserStore.getState().setPlaylistLastEpisode("yt_001", 6);
+  assert.equal(
+    useUserStore.getState().playlistLastEpisode["yt_001"],
+    6,
+    "Öğrencinin kaldığı son bölüm (6. Bölüm) kaydedilmelidir"
+  );
+
+  for (const ep of [3, 1, 4, 2]) {
+    useUserStore.getState().togglePlaylistEpisodeWatched("yt_001", ep);
+  }
+  assert.deepEqual(
+    useUserStore.getState().playlistWatchedEpisodes["yt_001"],
+    [1, 2, 3, 4],
+    "İzlenen bölümler küçükten büyüğe sıralı tutulmalıdır"
+  );
+  assert.equal(
+    useUserStore.getState().watchedVideos.includes("yt_001"),
+    false,
+    "Henüz 4 bölüm izlendiğinde oynatma listesi tümüyle tamamlandı sayılmamalıdır"
+  );
+
+  // 5. bölüm işaretlendiğinde otomatik olarak watchedVideos içine eklenmeli
+  useUserStore.getState().togglePlaylistEpisodeWatched("yt_001", 5);
+  assert.deepEqual(
+    useUserStore.getState().playlistWatchedEpisodes["yt_001"],
+    [1, 2, 3, 4, 5]
+  );
+  assert.equal(
+    useUserStore.getState().watchedVideos.includes("yt_001"),
+    true,
+    "En az 5 bölüm izlendiğinde oynatma listesi otomatik olarak watchedVideos listesine eklenmelidir"
+  );
+
+  // Yedekleme / İçe Aktarma (exportProgress & importProgress) doğrulaması
+  const exportedJson = useUserStore.getState().exportProgress();
+  useUserStore.getState().resetProgress();
+  assert.deepEqual(useUserStore.getState().playlistWatchedEpisodes, {});
+  assert.deepEqual(useUserStore.getState().playlistLastEpisode, {});
+
+  const importedOk = useUserStore.getState().importProgress(exportedJson, "merge");
+  assert.equal(importedOk, true, "Yedek başarıyla geri yüklenmelidir");
+  assert.deepEqual(
+    useUserStore.getState().playlistWatchedEpisodes["yt_001"],
+    [1, 2, 3, 4, 5]
+  );
+  assert.equal(useUserStore.getState().playlistLastEpisode["yt_001"], 6);
+  assert.equal(useUserStore.getState().watchedVideos.includes("yt_001"), true);
+  useUserStore.getState().resetProgress();
+
+  // 3. LiteYoutubeCard.tsx & YoutubePlayerModal arayüz doğrulaması
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  const selectorUsages =
+    liteCardCode.match(/<PlaylistEpisodeSelectorBar/g) || [];
+  assert.equal(
+    selectorUsages.length >= 2 &&
+      liteCardCode.includes("⏮ Önceki") &&
+      liteCardCode.includes("Sonraki ⏭") &&
+      liteCardCode.includes("+ Daha Fazla Bölüm") &&
+      liteCardCode.includes("Tüm Seriyi Tamamladım") &&
+      liteCardCode.includes(". Bölümden Devam Et") &&
+      liteCardCode.includes(". Bölümü İzledim") &&
+      liteCardCode.includes(". Bölüm İzlendi") &&
+      liteCardCode.includes("Bölüm İzlendi") &&
+      liteCardCode.includes("playlistIndex: isPlaylistItem ? activeEpisode : undefined") &&
+      liteCardCode.includes("playlistIndex: activeIsPlaylist ? activeEpisode : undefined") &&
+      !liteCardCode.includes("style={{") &&
+      !liteCardCode.includes("sandbox=") &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "LiteYoutubeCard ve YoutubePlayerModal oynatma listeleri için Bölüm Kontrol Çubuğu, Kaldığı Bölümden Devam Et ve Bölüm Bazlı İzlendi kontrollerini eksiksiz içermelidir"
+  );
+});
+

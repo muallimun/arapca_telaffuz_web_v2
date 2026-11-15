@@ -394,7 +394,9 @@ export function resolveYoutubeIds(
 
 /**
  * Standart YouTube gömülü oynatıcı (https://www.youtube.com/embed/...) URL'sini üretir:
- * - Hem videoId hem playlistId varsa:
+ * - playlistId varsa ve playlistIndex > 1 seçilmişse (0-tabanlı index = playlistIndex - 1):
+ *   https://www.youtube.com/embed/videoseries?list=${playlistId}&index=${playlistIndex - 1}&rel=0&modestbranding=1&autoplay=1
+ * - Hem videoId hem playlistId varsa (varsayılan 1. bölüm):
  *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
  * - Sadece playlistId varsa (!videoId):
  *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
@@ -408,13 +410,26 @@ export function buildYoutubeEmbedUrl(
   > & {
     tur?: "video" | "playlist";
   },
-  options?: { autoplay?: boolean }
+  options?: { autoplay?: boolean; playlistIndex?: number }
 ): string {
   const { videoId, playlistId, startSeconds } = resolveYoutubeIds(item);
   const autoplay = options?.autoplay ?? true;
   const autoplayParam = autoplay ? "&autoplay=1" : "";
   const startParam =
     startSeconds && startSeconds > 0 ? `&start=${startSeconds}` : "";
+
+  const rawPlaylistIndex = options?.playlistIndex;
+  const normalizedEpisode =
+    typeof rawPlaylistIndex === "number" && Number.isFinite(rawPlaylistIndex)
+      ? Math.floor(rawPlaylistIndex)
+      : undefined;
+
+  if (playlistId && normalizedEpisode && normalizedEpisode > 1) {
+    const zeroBasedIndex = normalizedEpisode - 1;
+    return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
+      playlistId
+    )}&index=${zeroBasedIndex}&rel=0&modestbranding=1${autoplayParam}`;
+  }
 
   if (videoId && playlistId) {
     return `https://www.youtube.com/embed/${encodeURIComponent(

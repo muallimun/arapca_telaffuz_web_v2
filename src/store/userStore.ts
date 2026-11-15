@@ -617,6 +617,62 @@ function sanitizePhonemeStats(raw: unknown): Record<string, PhonemeStatRecord> {
   return { ...safeMap };
 }
 
+function sanitizeEpisodeNumber(val: unknown): number | null {
+  if (typeof val !== "number" || !Number.isFinite(val)) return null;
+  const floored = Math.floor(val);
+  if (floored < 1 || floored > 500) return null;
+  return floored;
+}
+
+function sanitizePlaylistWatchedEpisodes(
+  raw: unknown
+): Record<string, number[]> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const safeMap: Record<string, number[]> = Object.create(null);
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const cleanKey = key.trim();
+    if (
+      !cleanKey ||
+      cleanKey.length > 200 ||
+      FORBIDDEN_OBJECT_KEYS.has(cleanKey) ||
+      !Array.isArray(val)
+    ) {
+      continue;
+    }
+    const epSet = new Set<number>();
+    for (const entry of val) {
+      const ep = sanitizeEpisodeNumber(entry);
+      if (ep !== null) {
+        epSet.add(ep);
+      }
+    }
+    if (epSet.size > 0) {
+      safeMap[cleanKey] = Array.from(epSet).sort((a, b) => a - b);
+    }
+  }
+  return { ...safeMap };
+}
+
+function sanitizePlaylistLastEpisode(raw: unknown): Record<string, number> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const safeMap: Record<string, number> = Object.create(null);
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const cleanKey = key.trim();
+    if (
+      !cleanKey ||
+      cleanKey.length > 200 ||
+      FORBIDDEN_OBJECT_KEYS.has(cleanKey)
+    ) {
+      continue;
+    }
+    const ep = sanitizeEpisodeNumber(val);
+    if (ep !== null) {
+      safeMap[cleanKey] = ep;
+    }
+  }
+  return { ...safeMap };
+}
+
 interface UserState {
   favoriteDialogues: string[];
   completedDialogues: string[];
@@ -641,10 +697,14 @@ interface UserState {
   completedLevelExams: Level[];
   phonemeStats: Record<string, PhonemeStatRecord>;
   watchedVideos: string[];
+  playlistWatchedEpisodes: Record<string, number[]>;
+  playlistLastEpisode: Record<string, number>;
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
   toggleWatchedVideo: (id: string) => void;
+  togglePlaylistEpisodeWatched: (itemId: string, episodeNum: number) => void;
+  setPlaylistLastEpisode: (itemId: string, episodeNum: number) => void;
   toggleFavoriteWord: (word: DictionaryItem) => void;
   toggleLearnedWord: (id: string) => void;
   addWeakWord: (word: DictionaryItem) => void;
@@ -718,6 +778,8 @@ export const useUserStore = create<UserState>()(
       completedLevelExams: [],
       phonemeStats: {},
       watchedVideos: [],
+      playlistWatchedEpisodes: {},
+      playlistLastEpisode: {},
 
       toggleFavoriteDialogue: (id) =>
         set((state) => ({
@@ -736,6 +798,70 @@ export const useUserStore = create<UserState>()(
             watchedVideos: alreadyWatched
               ? currentList.filter((v) => v !== cleanId)
               : [...currentList, cleanId],
+          };
+        }),
+
+      togglePlaylistEpisodeWatched: (itemId, episodeNum) =>
+        set((state) => {
+          const cleanId = (itemId || "").trim();
+          const ep = sanitizeEpisodeNumber(episodeNum);
+          if (
+            !cleanId ||
+            cleanId.length > 200 ||
+            FORBIDDEN_OBJECT_KEYS.has(cleanId) ||
+            ep === null
+          ) {
+            return state;
+          }
+          const currentMap = sanitizePlaylistWatchedEpisodes(
+            state.playlistWatchedEpisodes
+          );
+          const prevEpisodes = currentMap[cleanId] || [];
+          const alreadyWatchedEp = prevEpisodes.includes(ep);
+          const nextEpisodes = alreadyWatchedEp
+            ? prevEpisodes.filter((n) => n !== ep)
+            : [...prevEpisodes, ep].sort((a, b) => a - b);
+
+          const nextMap: Record<string, number[]> = { ...currentMap };
+          if (nextEpisodes.length > 0) {
+            nextMap[cleanId] = nextEpisodes;
+          } else {
+            delete nextMap[cleanId];
+          }
+
+          const currentWatchedVideos = sanitizeStringArray(state.watchedVideos);
+          const nextWatchedVideos =
+            nextEpisodes.length >= 5 && !currentWatchedVideos.includes(cleanId)
+              ? [...currentWatchedVideos, cleanId]
+              : currentWatchedVideos;
+
+          return {
+            playlistWatchedEpisodes: nextMap,
+            watchedVideos: nextWatchedVideos,
+          };
+        }),
+
+      setPlaylistLastEpisode: (itemId, episodeNum) =>
+        set((state) => {
+          const cleanId = (itemId || "").trim();
+          const ep = sanitizeEpisodeNumber(episodeNum);
+          if (
+            !cleanId ||
+            cleanId.length > 200 ||
+            FORBIDDEN_OBJECT_KEYS.has(cleanId) ||
+            ep === null
+          ) {
+            return state;
+          }
+          const currentMap = sanitizePlaylistLastEpisode(
+            state.playlistLastEpisode
+          );
+          if (currentMap[cleanId] === ep) return state;
+          return {
+            playlistLastEpisode: {
+              ...currentMap,
+              [cleanId]: ep,
+            },
           };
         }),
 
@@ -1412,6 +1538,12 @@ export const useUserStore = create<UserState>()(
           completedLevelExams: sanitizeCefrLevelArray(state.completedLevelExams),
           phonemeStats: sanitizePhonemeStats(state.phonemeStats),
           watchedVideos: sanitizeStringArray(state.watchedVideos),
+          playlistWatchedEpisodes: sanitizePlaylistWatchedEpisodes(
+            state.playlistWatchedEpisodes
+          ),
+          playlistLastEpisode: sanitizePlaylistLastEpisode(
+            state.playlistLastEpisode
+          ),
         };
         return JSON.stringify(payload, null, 2);
       },
@@ -1476,6 +1608,8 @@ export const useUserStore = create<UserState>()(
             "completedLevelExams",
             "phonemeStats",
             "watchedVideos",
+            "playlistWatchedEpisodes",
+            "playlistLastEpisode",
           ];
           if (!knownKeys.some((k) => k in data)) {
             return false;
@@ -1678,7 +1812,20 @@ export const useUserStore = create<UserState>()(
             data.completedLevelExams
           );
           const importedPhonemeStats = sanitizePhonemeStats(data.phonemeStats);
-          const importedWatchedVideos = sanitizeStringArray(data.watchedVideos);
+          const importedPlaylistWatchedEpisodes =
+            sanitizePlaylistWatchedEpisodes(data.playlistWatchedEpisodes);
+          const importedPlaylistLastEpisode = sanitizePlaylistLastEpisode(
+            data.playlistLastEpisode
+          );
+          const autoCompletedFromEpisodes = Object.entries(
+            importedPlaylistWatchedEpisodes
+          )
+            .filter(([, eps]) => eps.length >= 5)
+            .map(([itemId]) => itemId);
+          const importedWatchedVideos = sanitizeStringArray([
+            ...sanitizeStringArray(data.watchedVideos),
+            ...autoCompletedFromEpisodes,
+          ]);
 
           if (mode === "overwrite") {
             set({
@@ -1708,6 +1855,8 @@ export const useUserStore = create<UserState>()(
               completedLevelExams: importedCompletedExams,
               phonemeStats: importedPhonemeStats,
               watchedVideos: importedWatchedVideos,
+              playlistWatchedEpisodes: importedPlaylistWatchedEpisodes,
+              playlistLastEpisode: importedPlaylistLastEpisode,
             });
             return true;
           }
@@ -1923,10 +2072,56 @@ export const useUserStore = create<UserState>()(
               }
               return mergedPhonemes;
             })(),
-            watchedVideos: sanitizeStringArray([
-              ...(current.watchedVideos || []),
-              ...importedWatchedVideos,
-            ]),
+            watchedVideos: (() => {
+              const mergedEpMap: Record<string, number[]> = {
+                ...sanitizePlaylistWatchedEpisodes(
+                  current.playlistWatchedEpisodes
+                ),
+              };
+              for (const [k, incEps] of Object.entries(
+                importedPlaylistWatchedEpisodes
+              )) {
+                const curEps = mergedEpMap[k] || [];
+                mergedEpMap[k] = Array.from(new Set([...curEps, ...incEps])).sort(
+                  (a, b) => a - b
+                );
+              }
+              const completedByMergedEpisodes = Object.entries(mergedEpMap)
+                .filter(([, eps]) => eps.length >= 5)
+                .map(([id]) => id);
+              return sanitizeStringArray([
+                ...(current.watchedVideos || []),
+                ...importedWatchedVideos,
+                ...completedByMergedEpisodes,
+              ]);
+            })(),
+            playlistWatchedEpisodes: (() => {
+              const mergedEpMap: Record<string, number[]> = {
+                ...sanitizePlaylistWatchedEpisodes(
+                  current.playlistWatchedEpisodes
+                ),
+              };
+              for (const [k, incEps] of Object.entries(
+                importedPlaylistWatchedEpisodes
+              )) {
+                const curEps = mergedEpMap[k] || [];
+                mergedEpMap[k] = Array.from(new Set([...curEps, ...incEps])).sort(
+                  (a, b) => a - b
+                );
+              }
+              return mergedEpMap;
+            })(),
+            playlistLastEpisode: (() => {
+              const mergedLast: Record<string, number> = {
+                ...sanitizePlaylistLastEpisode(current.playlistLastEpisode),
+              };
+              for (const [k, incLast] of Object.entries(
+                importedPlaylistLastEpisode
+              )) {
+                mergedLast[k] = Math.max(mergedLast[k] || 1, incLast);
+              }
+              return mergedLast;
+            })(),
           });
           return true;
         } catch {
@@ -1970,6 +2165,8 @@ export const useUserStore = create<UserState>()(
           completedLevelExams: [],
           phonemeStats: {},
           watchedVideos: [],
+          playlistWatchedEpisodes: {},
+          playlistLastEpisode: {},
         }),
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
@@ -2064,6 +2261,12 @@ export const useUserStore = create<UserState>()(
           completedLevelExams: sanitizeCefrLevelArray(raw.completedLevelExams),
           phonemeStats: sanitizePhonemeStats(raw.phonemeStats),
           watchedVideos: sanitizeStringArray(raw.watchedVideos),
+          playlistWatchedEpisodes: sanitizePlaylistWatchedEpisodes(
+            raw.playlistWatchedEpisodes
+          ),
+          playlistLastEpisode: sanitizePlaylistLastEpisode(
+            raw.playlistLastEpisode
+          ),
         };
       },
     }

@@ -1027,7 +1027,7 @@ export default function VisualSwipeSprintGame({
       className="fixed inset-0 z-[9999] h-[100dvh] w-full overflow-hidden bg-[#FDFBF7] dark:bg-[#0F172A] text-[var(--foreground)] flex flex-col select-none"
     >
       {/* TEK SATIR ÜST HUD */}
-      <header className="shrink-0 bg-[#F7EFE1] dark:bg-slate-900 border-b border-[#E6D7BE] dark:border-slate-800">
+      <header className="shrink-0 pt-[env(safe-area-inset-top)] bg-[#F7EFE1] dark:bg-slate-900 border-b border-[#E6D7BE] dark:border-slate-800">
         <div className="h-12 sm:h-14 max-w-4xl mx-auto px-2.5 sm:px-5 flex items-center justify-between gap-1.5 sm:gap-3">
           {/* Sol: Dairesel Geri Sayım Halkası veya Süre Seçici */}
           {phase === "playing" ? (
@@ -1228,108 +1228,110 @@ export default function VisualSwipeSprintGame({
 
       {/* 1. AŞAMA: SEANS BAŞLANGIÇ EKRANI */}
       {phase === "ready" && (
-        <main className="flex-1 min-h-0 w-full max-w-xl mx-auto px-4 py-4 sm:py-6 flex flex-col items-center justify-center gap-4 sm:gap-5 overflow-y-auto">
-          <div className="text-center space-y-1.5">
-            <p
-              lang="ar"
-              dir="rtl"
-              className="arabic text-2xl sm:text-3xl font-bold text-[#087F5B] dark:text-emerald-400"
-            >
-              {formatArabicText("سِبَاقُ الصُّوَرِ", true, arabicFont)}
-            </p>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-balance">
-              Görsel Hız Seansı
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--muted)] max-w-md mx-auto leading-relaxed">
-              {activeVisualPool.length} resimli ve sesli kelimeyle klavyesiz,
-              tek başparmakla kaydırarak veya yön tuşlarıyla refleks pratiği
-              yapın.
-            </p>
-          </div>
+        <main className="flex-1 min-h-0 w-full overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="my-auto w-full max-w-xl flex flex-col items-center gap-3.5 sm:gap-5">
+            <div className="text-center space-y-1.5">
+              <p
+                lang="ar"
+                dir="rtl"
+                className="arabic text-2xl sm:text-3xl font-bold text-[#087F5B] dark:text-emerald-400"
+              >
+                {formatArabicText("سِبَاقُ الصُّوَرِ", true, arabicFont)}
+              </p>
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-balance">
+                Görsel Hız Seansı
+              </h1>
+              <p className="text-xs sm:text-sm text-[var(--muted)] max-w-md mx-auto leading-relaxed">
+                {activeVisualPool.length} resimli ve sesli kelimeyle klavyesiz,
+                tek başparmakla kaydırarak veya yön tuşlarıyla refleks pratiği
+                yapın.
+              </p>
+            </div>
 
-          {/* Süre Seçimi (2 Dk Hızlı Seans | 5 Dk Tam Seans) */}
-          <div className="w-full grid grid-cols-2 gap-2.5">
+            {/* Süre Seçimi (2 Dk Hızlı Seans | 5 Dk Tam Seans) */}
+            <div className="w-full grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedDuration(120);
+                }}
+                className={`min-h-[56px] p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
+                  selectedDuration === 120
+                    ? "bg-[#E6FCF5] dark:bg-emerald-950/50 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
+                    : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-800 text-[var(--foreground)] hover:border-[#087F5B]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap">
+                  ⚡ 2 Dk Hızlı Seans
+                </span>
+                <span className="text-[11px] text-[var(--muted)]">
+                  Günlük hızlı kelime refleksi
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedDuration(300);
+                }}
+                className={`min-h-[56px] p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
+                  selectedDuration === 300
+                    ? "bg-[#F3F0FF] dark:bg-indigo-950/50 border-[#6741D9] text-[#4C28B5] dark:text-indigo-200"
+                    : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-800 text-[var(--foreground)] hover:border-[#6741D9]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap">
+                  🔥 5 Dk Tam Seans
+                </span>
+                <span className="text-[11px] text-[var(--muted)]">
+                  Derin görsel-işitsel pekiştirme
+                </span>
+              </button>
+            </div>
+
+            {/* 3 Mikro-Etkileşim Özeti */}
+            <div className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-[#E6D7BE] dark:border-slate-800 divide-y divide-[#E6D7BE]/60 dark:divide-slate-800 text-xs">
+              <div className="p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                <span className="font-bold text-[var(--foreground)]">
+                  ⬆️ Yukarı Doğru · ⬇️ Aşağı Yanlış
+                </span>
+                <span className="text-[var(--muted)] whitespace-nowrap">
+                  Kaydır veya ↑ / ↓
+                </span>
+              </div>
+              <div className="p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                <span className="font-bold text-[var(--foreground)]">
+                  ⬅️ Sol · ➡️ Sağ Doğru Görsel Seçimi
+                </span>
+                <span className="text-[var(--muted)] whitespace-nowrap">
+                  Kaydır veya ← / →
+                </span>
+              </div>
+              <div className="p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                <span className="font-bold text-[var(--foreground)]">
+                  🧩 Sağdan Sola Hızlı Hece Birleştirme
+                </span>
+                <span className="text-[var(--muted)] whitespace-nowrap">
+                  Dokun veya 1–4
+                </span>
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                setSelectedDuration(120);
-              }}
-              className={`min-h-[56px] p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
-                selectedDuration === 120
-                  ? "bg-[#E6FCF5] dark:bg-emerald-950/50 border-[#087F5B] text-[#065F46] dark:text-emerald-300"
-                  : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-800 text-[var(--foreground)] hover:border-[#087F5B]"
-              }`}
+              onClick={() => startSession(selectedDuration)}
+              className="w-full min-h-[50px] sm:min-h-[52px] mb-1 px-6 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-sm sm:text-base border-b-4 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
-              <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap">
-                ⚡ 2 Dk Hızlı Seans
-              </span>
-              <span className="text-[11px] text-[var(--muted)]">
-                Günlük hızlı kelime refleksi
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSelectedDuration(300);
-              }}
-              className={`min-h-[56px] p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-center ${
-                selectedDuration === 300
-                  ? "bg-[#F3F0FF] dark:bg-indigo-950/50 border-[#6741D9] text-[#4C28B5] dark:text-indigo-200"
-                  : "bg-white dark:bg-slate-900 border-[#E6D7BE] dark:border-slate-800 text-[var(--foreground)] hover:border-[#6741D9]"
-              }`}
-            >
-              <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap">
-                🔥 5 Dk Tam Seans
-              </span>
-              <span className="text-[11px] text-[var(--muted)]">
-                Derin görsel-işitsel pekiştirme
+              <Play size={18} fill="currentColor" />
+              <span>
+                {selectedDuration === 120
+                  ? "⚡ 2 Dk Hızlı Seansı Başlat"
+                  : "🔥 5 Dk Tam Seansı Başlat"}
               </span>
             </button>
           </div>
-
-          {/* 3 Mikro-Etkileşim Özeti */}
-          <div className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-[#E6D7BE] dark:border-slate-800 divide-y divide-[#E6D7BE]/60 dark:divide-slate-800 text-xs">
-            <div className="p-3 flex items-center justify-between gap-3">
-              <span className="font-bold text-[var(--foreground)]">
-                ⬆️ Yukarı Doğru · ⬇️ Aşağı Yanlış
-              </span>
-              <span className="text-[var(--muted)] whitespace-nowrap">
-                Kaydır veya ↑ / ↓
-              </span>
-            </div>
-            <div className="p-3 flex items-center justify-between gap-3">
-              <span className="font-bold text-[var(--foreground)]">
-                ⬅️ Sol · ➡️ Sağ Doğru Görsel Seçimi
-              </span>
-              <span className="text-[var(--muted)] whitespace-nowrap">
-                Kaydır veya ← / →
-              </span>
-            </div>
-            <div className="p-3 flex items-center justify-between gap-3">
-              <span className="font-bold text-[var(--foreground)]">
-                🧩 Sağdan Sola Hızlı Hece Birleştirme
-              </span>
-              <span className="text-[var(--muted)] whitespace-nowrap">
-                Dokun veya 1–4
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => startSession(selectedDuration)}
-            className="w-full min-h-[52px] px-6 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-sm sm:text-base border-b-4 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
-          >
-            <Play size={18} fill="currentColor" />
-            <span>
-              {selectedDuration === 120
-                ? "⚡ 2 Dk Hızlı Seansı Başlat"
-                : "🔥 5 Dk Tam Seansı Başlat"}
-            </span>
-          </button>
         </main>
       )}
 

@@ -1495,26 +1495,31 @@ export default function BalloonSafariGame({
   if (phase === "menu") {
     return (
       <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
-        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center shadow-sm shrink-0">
-              <Sparkles size={20} />
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] pt-[max(0.5rem,env(safe-area-inset-top))] px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Sparkles size={19} />
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)]">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-nowrap">
+                <h2 className="text-sm sm:text-lg font-black text-[var(--foreground)] whitespace-nowrap">
                   Balon Safari
                 </h2>
                 <span
                   dir="rtl"
-                  className="arabic text-base sm:text-lg font-bold text-[#087F5B] dark:text-emerald-400"
+                  className="arabic text-sm sm:text-lg font-bold text-[#087F5B] dark:text-emerald-400 whitespace-nowrap shrink-0"
                 >
                   سَفَارِي البَالُونَات
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-[var(--muted)] font-semibold truncate">
-                🖼️ Görsel Kelimeler Havuzu ({fullSafariPool.length} resimli
-                kelime hazır)
+                <span className="sm:hidden">
+                  🖼️ {fullSafariPool.length} Görsel Kelime
+                </span>
+                <span className="hidden sm:inline">
+                  🖼️ Görsel Kelimeler Havuzu ({fullSafariPool.length} resimli
+                  kelime hazır)
+                </span>
               </p>
             </div>
           </div>
@@ -1522,22 +1527,23 @@ export default function BalloonSafariGame({
           <button
             type="button"
             onClick={handleExitToList}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs sm:text-sm font-extrabold text-[var(--foreground)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+            className="min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs sm:text-sm font-extrabold text-[var(--foreground)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
           >
-            <span>✕ Çıkış / Listeye Dön</span>
+            <span className="sm:hidden">✕ Çıkış</span>
+            <span className="hidden sm:inline">✕ Çıkış / Listeye Dön</span>
           </button>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-3 sm:p-6">
-          <div className="w-full max-w-3xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xl space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="my-auto w-full max-w-3xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-3 sm:p-6 shadow-xl space-y-3 sm:space-y-5">
 
         {/* Yüksek Skor Rekor Kartları */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-amber-300/80 dark:border-amber-700/60 p-3 flex items-center justify-between gap-2">
-            <div>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-amber-300/80 dark:border-amber-700/60 p-2.5 sm:p-3 flex items-center justify-between gap-1.5 sm:gap-2">
+            <div className="min-w-0">
               <div className="text-[11px] font-extrabold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                <Trophy size={13} />
-                <span>Normal Mod Rekoru</span>
+                <Trophy size={13} className="shrink-0" />
+                <span className="truncate">Normal Mod Rekoru</span>
               </div>
               <div
                 dir="rtl"
@@ -1546,16 +1552,16 @@ export default function BalloonSafariGame({
                 الوَضْعُ العادِيّ
               </div>
             </div>
-            <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+            <span className="text-lg sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums shrink-0">
               {hsNormal}
             </span>
           </div>
 
-          <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-purple-300/80 dark:border-purple-700/60 p-3 flex items-center justify-between gap-2">
-            <div>
+          <div className="rounded-xl bg-white dark:bg-[var(--background)] border-2 border-purple-300/80 dark:border-purple-700/60 p-2.5 sm:p-3 flex items-center justify-between gap-1.5 sm:gap-2">
+            <div className="min-w-0">
               <div className="text-[11px] font-extrabold text-purple-800 dark:text-purple-300 flex items-center gap-1">
-                <Timer size={13} />
-                <span>Zamana Karşı Rekoru</span>
+                <Timer size={13} className="shrink-0" />
+                <span className="truncate">Zamana Karşı Rekoru</span>
               </div>
               <div
                 dir="rtl"
@@ -1564,43 +1570,43 @@ export default function BalloonSafariGame({
                 تَحَدِّي الوَقْت
               </div>
             </div>
-            <span className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 tabular-nums">
+            <span className="text-lg sm:text-2xl font-black text-purple-600 dark:text-purple-400 tabular-nums shrink-0">
               {hsTime}
             </span>
           </div>
         </div>
 
         {/* Oyun Modu Seçimi */}
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           <label className="block text-xs font-extrabold text-[var(--muted)]">
             1. Oyun Modunu Seçin
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => {
                 playClick();
                 setGameMode("normal");
               }}
-              className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                 gameMode === "normal"
                   ? "bg-emerald-50 dark:bg-emerald-950/40 border-[#087F5B] shadow-sm"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)]"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-black text-[var(--foreground)] flex items-center gap-1.5">
-                  <Heart size={16} className="text-rose-500 fill-rose-500" />
-                  Normal Mod (3 Can)
+                <span className="text-xs sm:text-sm font-black text-[var(--foreground)] flex items-center gap-1.5">
+                  <Heart size={15} className="text-rose-500 fill-rose-500 shrink-0" />
+                  <span>Normal Mod (3 Can)</span>
                 </span>
                 <span
                   dir="rtl"
-                  className="arabic text-base font-bold text-[#087F5B] dark:text-emerald-400"
+                  className="arabic text-sm sm:text-base font-bold text-[#087F5B] dark:text-emerald-400 shrink-0"
                 >
                   الوَضْعُ العادِيّ
                 </span>
               </div>
-              <p className="text-xs text-[var(--muted)] mt-1 font-medium">
+              <p className="text-[11px] sm:text-xs text-[var(--muted)] mt-1 font-medium">
                 ❤️❤️❤️ 3 hakla başla; her 10&apos;lu komboda ekstra 💚 kazan!
               </p>
             </button>
@@ -1611,25 +1617,25 @@ export default function BalloonSafariGame({
                 playClick();
                 setGameMode("time");
               }}
-              className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                 gameMode === "time"
                   ? "bg-purple-50 dark:bg-purple-950/40 border-[#6741D9] shadow-sm"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)]"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-black text-[var(--foreground)] flex items-center gap-1.5">
-                  <Timer size={16} className="text-[#6741D9]" />
-                  Zamana Karşı (60 Saniye)
+                <span className="text-xs sm:text-sm font-black text-[var(--foreground)] flex items-center gap-1.5">
+                  <Timer size={15} className="text-[#6741D9] shrink-0" />
+                  <span>Zamana Karşı (60 Saniye)</span>
                 </span>
                 <span
                   dir="rtl"
-                  className="arabic text-base font-bold text-[#6741D9] dark:text-purple-300"
+                  className="arabic text-sm sm:text-base font-bold text-[#6741D9] dark:text-purple-300 shrink-0"
                 >
                   تَحَدِّي الوَقْت
                 </span>
               </div>
-              <p className="text-xs text-[var(--muted)] mt-1 font-medium">
+              <p className="text-[11px] sm:text-xs text-[var(--muted)] mt-1 font-medium">
                 Doğru sıcak hava balonu +2 sn kazandırır, yanlış balon -3 sn
                 düşürür!
               </p>
@@ -1638,11 +1644,11 @@ export default function BalloonSafariGame({
         </div>
 
         {/* Zorluk Seçimi */}
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           <label className="block text-xs font-extrabold text-[var(--muted)]">
             2. Uçuş Hızı &amp; Zorluk (سَهْل / مُتَوَسِّط / صَعْب)
           </label>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
             {(
               [
                 { id: "easy", tr: "Kolay", ar: "سَهْل", desc: "Sakin Rüzgâr" },
@@ -1664,7 +1670,7 @@ export default function BalloonSafariGame({
                     playClick();
                     setDifficulty(d.id);
                   }}
-                  className={`min-h-[60px] p-2.5 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                  className={`min-h-[54px] sm:min-h-[60px] p-2 sm:p-2.5 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                     active
                       ? "bg-[#087F5B] text-white border-[#065F46] shadow-sm"
                       : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)]"
@@ -1676,7 +1682,7 @@ export default function BalloonSafariGame({
                   >
                     {d.ar}
                   </span>
-                  <span className="text-xs font-extrabold mt-1">{d.tr}</span>
+                  <span className="text-xs font-extrabold mt-0.5 sm:mt-1">{d.tr}</span>
                   <span
                     className={`text-[10px] ${
                       active ? "text-emerald-100" : "text-[var(--muted)]"
@@ -1691,9 +1697,9 @@ export default function BalloonSafariGame({
         </div>
 
         {/* Pedagojik Kademe Rehberi */}
-        <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-3 text-xs text-[var(--muted)] space-y-1">
+        <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] p-2.5 sm:p-3 text-[11px] sm:text-xs text-[var(--muted)] space-y-1">
           <div className="font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-500" />
+            <Sparkles size={14} className="text-amber-500 shrink-0" />
             <span>Sıcak Hava Balonu Kademeleri &amp; Güçlendiriciler:</span>
           </div>
           <p>
@@ -1709,7 +1715,7 @@ export default function BalloonSafariGame({
           type="button"
           data-start="true"
           onClick={() => startNewSession(null)}
-          className="w-full min-h-[52px] rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-base border-b-4 border-[#044E38] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer"
+          className="w-full min-h-[50px] sm:min-h-[52px] mb-1 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white font-black text-sm sm:text-base border-b-4 border-[#044E38] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer"
         >
           <Play size={18} fill="currentColor" />
           <span>Safariyi Başlat</span>
@@ -1732,56 +1738,58 @@ export default function BalloonSafariGame({
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
-        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
-              <Award size={22} />
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-[var(--background)] border-b border-[#E6D7BE] dark:border-[var(--border)] pt-[max(0.5rem,env(safe-area-inset-top))] px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Award size={20} />
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)]">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-nowrap">
+                <h2 className="text-sm sm:text-lg font-black text-[var(--foreground)] truncate">
                   Safari Tamamlandı!
                 </h2>
                 <span
                   dir="rtl"
-                  className="arabic text-lg font-bold text-[#087F5B] dark:text-emerald-400"
+                  className="hidden sm:inline arabic text-lg font-bold text-[#087F5B] dark:text-emerald-400 shrink-0"
                 >
                   شَهَادَة نَجَاح
                 </span>
                 {isNewHighScore && (
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                  <span className="text-[11px] sm:text-xs font-black text-amber-600 dark:text-amber-400 whitespace-nowrap shrink-0">
                     · YENİ REKOR!
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[var(--muted)] font-semibold truncate">
+              <p className="text-[11px] sm:text-xs text-[var(--muted)] font-semibold truncate">
                 Toplam {correctPops} doğru balon yakalandı · En yüksek seri:{" "}
                 {maxCombo}🔥
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={returnToSafariHome}
-              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              className="min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Home size={14} />
-              <span>Mod Seçimi</span>
+              <span className="hidden sm:inline">Mod Seçimi</span>
+              <span className="sm:hidden">Mod</span>
             </button>
             <button
               type="button"
               onClick={handleExitToList}
-              className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-500 text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              className="min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-rose-500 text-xs sm:text-sm font-extrabold text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <span>✕ Çıkış / Listeye Dön</span>
+              <span className="sm:hidden">✕ Çıkış</span>
+              <span className="hidden sm:inline">✕ Çıkış / Listeye Dön</span>
             </button>
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
-          <div className="w-full max-w-4xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-4 sm:p-6 shadow-xl space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="my-auto w-full max-w-4xl rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] bg-[#FDF9F0] dark:bg-[var(--surface)] p-3 sm:p-6 shadow-xl space-y-4 sm:space-y-5">
 
         {/* Özet Skor ve Doğruluk Kartları */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">

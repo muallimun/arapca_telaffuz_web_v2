@@ -9440,5 +9440,59 @@ test("79. Mobil Alt Navigasyon (MobileNav) Güvenli Boşluğu, Kütüphane Üst/
   );
 });
 
+test("80. Görsel Oyunlar (BalloonSafariGame, MemoryFlipGame, VisualSwipeSprintGame) Mobil Başlatma Ekranı Üst/Alt Ezilme Onarımı (items-start + my-auto + safe-area)", () => {
+  const balloonSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+  const memorySrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+  const swipeSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "VisualSwipeSprintGame.tsx"),
+    "utf8"
+  );
+
+  // 1) Hiçbir oyunun dikey kaydırılabilir (overflow-y-auto) ana gövdesinde üst kısmı kesen items-center kalmamalı; items-start justify-center + my-auto + safe-area alt boşluğu bulunmalı
+  const safeScrollPattern =
+    "flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]";
+  assert.ok(
+    balloonSrc.includes(safeScrollPattern) &&
+      !balloonSrc.includes("overflow-y-auto flex items-center justify-center") &&
+      balloonSrc.includes("my-auto w-full max-w-3xl") &&
+      balloonSrc.includes("my-auto w-full max-w-4xl"),
+    "BalloonSafariGame menu ve gameover ekranlarında items-start justify-center + my-auto + safe-area alt boşluğu kullanılmalıdır"
+  );
+
+  assert.ok(
+    memorySrc.includes(safeScrollPattern) &&
+      !memorySrc.includes("overflow-y-auto flex items-center justify-center") &&
+      memorySrc.includes("my-auto w-full max-w-5xl") &&
+      memorySrc.includes("my-auto w-full max-w-4xl"),
+    "MemoryFlipGame menu ve finished ekranlarında items-start justify-center + my-auto + safe-area alt boşluğu kullanılmalıdır"
+  );
+
+  assert.ok(
+    swipeSrc.includes(
+      "flex-1 min-h-0 w-full overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+    ) &&
+      swipeSrc.includes("my-auto w-full max-w-xl flex flex-col items-center"),
+    "VisualSwipeSprintGame ready ekranında items-start justify-center + my-auto + safe-area alt boşluğu kullanılmalıdır"
+  );
+
+  // 2) BalloonSafariGame mobil üst başlık kompaktlığı ve başlatma kartı sıkı boşlukları
+  assert.ok(
+    balloonSrc.includes("pt-[max(0.5rem,env(safe-area-inset-top))] px-3 sm:px-6 py-2") &&
+      balloonSrc.includes("Görsel Kelime") &&
+      balloonSrc.includes('<span className="sm:hidden">✕ Çıkış</span>') &&
+      balloonSrc.includes('<span className="hidden sm:inline">✕ Çıkış / Listeye Dön</span>') &&
+      balloonSrc.includes("p-3 sm:p-6 shadow-xl space-y-3 sm:space-y-5") &&
+      balloonSrc.includes("p-2.5 sm:p-3.5 rounded-2xl") &&
+      balloonSrc.includes("mb-1 rounded-2xl bg-[#087F5B]"),
+    "BalloonSafariGame mobil üst başlığı kısa '✕ Çıkış' / '🖼️ 998 Görsel Kelime' etiketlerini ve kompakt başlatma kartı aralıklarını içermelidir"
+  );
+});
+
 
 

@@ -1039,18 +1039,18 @@ export default function MemoryFlipGame({
         {howToModalNode}
 
         {/* ÜST BAR: Her Zaman Net "✕ Çıkış / Listeye Dön" Butonu */}
-        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 pt-[max(0.5rem,env(safe-area-inset-top))] px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0">
               <BookOpen size={18} />
             </div>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-nowrap">
+              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
                 Hafızanı Yokla
               </span>
               <span
                 dir="rtl"
-                className="arabic text-base sm:text-lg font-bold text-[#0F766E] dark:text-teal-300 shrink-0"
+                className="arabic text-sm sm:text-lg font-bold text-[#0F766E] dark:text-teal-300 whitespace-nowrap shrink-0"
               >
                 لُعْبَةُ الذَّاكِرَةِ
               </span>
@@ -1060,16 +1060,17 @@ export default function MemoryFlipGame({
           <button
             type="button"
             onClick={handleExitToList}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+            className="min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
           >
-            <span>✕ Çıkış / Listeye Dön</span>
+            <span className="sm:hidden">✕ Çıkış</span>
+            <span className="hidden sm:inline">✕ Çıkış / Listeye Dön</span>
           </button>
         </header>
 
         {/* ORTA ALAN: 2 Sütunlu Mod ve Seviye Kartı */}
-        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-3 sm:p-6">
-          <div className="w-full max-w-5xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 shadow-xl overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 p-4 sm:p-7 items-stretch">
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="my-auto w-full max-w-5xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 shadow-xl overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6 p-3.5 sm:p-7 items-stretch">
               {/* SOL SÜTUN: Kitap/Dalga İkonu + Büyük "Hafızanı Yokla" Başlığı + Seçili Havuz Bilgisi */}
               <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-[#0F766E] via-[#0E7490] to-[#134E4A] text-white p-5 sm:p-7 flex flex-col justify-between gap-6 shadow-md">
                 <div className="space-y-4">
@@ -1343,8 +1344,8 @@ export default function MemoryFlipGame({
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
-        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 pt-[max(0.5rem,env(safe-area-inset-top))] px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-[#1F6E50] text-white flex items-center justify-center shrink-0">
               <Trophy size={18} />
             </div>
@@ -1353,7 +1354,7 @@ export default function MemoryFlipGame({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -1362,22 +1363,24 @@ export default function MemoryFlipGame({
                 stopAllAudio();
                 setPhase("menu");
               }}
-              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 cursor-pointer whitespace-nowrap"
+              className="min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 cursor-pointer whitespace-nowrap"
             >
-              Mod Seçimi
+              <span className="sm:hidden">Mod</span>
+              <span className="hidden sm:inline">Mod Seçimi</span>
             </button>
             <button
               type="button"
               onClick={handleExitToList}
-              className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <span>✕ Çıkış / Listeye Dön</span>
+              <span className="sm:hidden">✕ Çıkış</span>
+              <span className="hidden sm:inline">✕ Çıkış / Listeye Dön</span>
             </button>
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
-          <div className="w-full max-w-4xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 p-4 sm:p-6 shadow-lg space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-2.5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="my-auto w-full max-w-4xl rounded-3xl border-2 border-[#D8CBB0] dark:border-slate-700 bg-[#FBF6EA] dark:bg-slate-900 p-3.5 sm:p-6 shadow-lg space-y-4 sm:space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6D7BE] dark:border-slate-800 pb-4">
               <div>
                 <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">

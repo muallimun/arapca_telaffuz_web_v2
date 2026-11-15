@@ -3693,7 +3693,7 @@ function SeviyeTespitContent() {
               <div
                 role="group"
                 aria-label="CEFR Kur Filtresi"
-                className="flex flex-wrap items-center gap-1.5"
+                className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 pb-1 justify-start px-0.5 scroll-px-2 md:flex-wrap md:overflow-visible md:pb-0 items-center"
               >
                 {(["ALL", "A1", "A2", "B1", "B2"] as const).map((lvl) => {
                   const isActive = topicLevelFilter === lvl;
@@ -3707,17 +3707,20 @@ function SeviyeTespitContent() {
                         playClick();
                         setTopicLevelFilter(lvl);
                       }}
-                      className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold whitespace-nowrap cursor-pointer transition-all tabular-nums inline-flex items-center gap-1.5 ${
+                      className={`shrink-0 min-h-[36px] md:min-h-[38px] px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold whitespace-nowrap cursor-pointer transition-all tabular-nums inline-flex items-center gap-1.5 ${
                         isActive
-                          ? "bg-[#087F5B] border-[#065F46] text-white"
+                          ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
                       }`}
                     >
-                      <span>
+                      <span className="md:hidden">
+                        {labelPrefix} ({stats.questionCount})
+                      </span>
+                      <span className="hidden md:inline">
                         {labelPrefix} ({stats.topicCount} Konu)
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                        className={`hidden md:inline-flex px-1.5 py-0.5 rounded-md text-[10px] font-black ${
                           isActive
                             ? "bg-white/20 text-white"
                             : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-300"

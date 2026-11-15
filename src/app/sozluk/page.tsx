@@ -217,9 +217,127 @@ const SmartPaginationBar = memo(function SmartPaginationBar({
 
   if (compactTop) {
     return (
-      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs font-bold text-[var(--muted)] tabular-nums">
-          Gösterilen:{" "}
+      <>
+        {/* MOBİL TEK SATIR İNCE SAYFALAMA BARI (< 640px) */}
+        <div className="sm:hidden bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] h-10 flex items-center justify-between px-3 gap-2">
+          <div className="text-xs font-bold text-[var(--muted)] tabular-nums truncate">
+            <strong className="text-[var(--foreground)] font-extrabold">
+              {shownStart.toLocaleString("tr-TR")}–
+              {shownEnd.toLocaleString("tr-TR")}
+            </strong>{" "}
+            /{" "}
+            <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
+              {totalItems.toLocaleString("tr-TR")}
+            </strong>{" "}
+            kayıt
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0 tabular-nums">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+              aria-label="Önceki Sayfa"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-[var(--foreground)] inline-flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <ChevronLeft size={14} strokeWidth={2.5} />
+            </button>
+            <span className="text-xs font-extrabold text-[var(--foreground)] min-w-[44px] text-center">
+              {currentPage} / {Math.max(1, totalPages)}
+            </span>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              aria-label="Sonraki Sayfa"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-[var(--foreground)] inline-flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <ChevronRight size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+
+        {/* MASAÜSTÜ ÜST SAYFALAMA VE SAYFA BAŞINA GÖSTER PANELİ (>= 640px) */}
+        <div className="hidden sm:flex bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] px-3 py-2 flex-wrap items-center justify-between gap-2">
+          <div className="text-xs font-bold text-[var(--muted)] tabular-nums">
+            Gösterilen:{" "}
+            <strong className="text-[var(--foreground)] font-extrabold">
+              {shownStart.toLocaleString("tr-TR")}–
+              {shownEnd.toLocaleString("tr-TR")}
+            </strong>{" "}
+            /{" "}
+            <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
+              {totalItems.toLocaleString("tr-TR")}
+            </strong>{" "}
+            kayıt
+            {totalPages > 1 && (
+              <span className="ml-1.5 text-[var(--muted)]">
+                • Sayfa {currentPage} / {totalPages}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Sayfa Başına Göster Seçicisi */}
+            <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+              <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
+                Sayfa Başına Göster:
+              </span>
+              {ITEMS_PER_PAGE_OPTIONS.map((opt) => {
+                const active = itemsPerPage === opt.value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => onItemsPerPageChange(opt.value)}
+                    className={`min-w-[34px] h-7 px-2 rounded-lg text-xs transition-all cursor-pointer tabular-nums ${
+                      active
+                        ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] hover:bg-[#F7EFE1]/70 dark:hover:bg-[var(--surface)]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Üst Hızlı İleri/Geri Sayfa Geçişi */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => onPageChange(currentPage - 1)}
+                  aria-label="Önceki Sayfa"
+                  className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <ChevronLeft size={14} />
+                  <span className="hidden sm:inline">Önceki</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => onPageChange(currentPage + 1)}
+                  aria-label="Sonraki Sayfa"
+                  className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="hidden sm:inline">Sonraki</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <nav aria-label="Sözlük Sayfalama Paneli">
+      {/* MOBİL ALT TEK SATIR İNCE SAYFALAMA BARI (< 640px) */}
+      <div className="sm:hidden bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] h-10 flex items-center justify-between px-3 gap-2">
+        <div className="text-xs font-bold text-[var(--muted)] tabular-nums truncate">
           <strong className="text-[var(--foreground)] font-extrabold">
             {shownStart.toLocaleString("tr-TR")}–
             {shownEnd.toLocaleString("tr-TR")}
@@ -229,144 +347,107 @@ const SmartPaginationBar = memo(function SmartPaginationBar({
             {totalItems.toLocaleString("tr-TR")}
           </strong>{" "}
           kayıt
-          {totalPages > 1 && (
-            <span className="ml-1.5 text-[var(--muted)]">
-              • Sayfa {currentPage} / {totalPages}
-            </span>
-          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Sayfa Başına Göster Seçicisi */}
-          <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-[var(--background)] p-1 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-            <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
-              Sayfa Başına Göster:
-            </span>
-            {ITEMS_PER_PAGE_OPTIONS.map((opt) => {
-              const active = itemsPerPage === opt.value;
-              return (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  onClick={() => onItemsPerPageChange(opt.value)}
-                  className={`min-w-[34px] h-7 px-2 rounded-lg text-xs transition-all cursor-pointer tabular-nums ${
-                    active
-                      ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
-                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)] hover:bg-[#F7EFE1]/70 dark:hover:bg-[var(--surface)]"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Üst Hızlı İleri/Geri Sayfa Geçişi */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={currentPage <= 1}
-                onClick={() => onPageChange(currentPage - 1)}
-                aria-label="Önceki Sayfa"
-                className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <ChevronLeft size={14} />
-                <span className="hidden sm:inline">Önceki</span>
-              </button>
-              <button
-                type="button"
-                disabled={currentPage >= totalPages}
-                onClick={() => onPageChange(currentPage + 1)}
-                aria-label="Sonraki Sayfa"
-                className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <span className="hidden sm:inline">Sonraki</span>
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <nav
-      aria-label="Sözlük Sayfalama Paneli"
-      className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3"
-    >
-      <div className="text-xs font-bold text-[var(--muted)] tabular-nums text-center sm:text-left">
-        Toplam{" "}
-        <strong className="text-[var(--foreground)] font-extrabold">
-          {totalItems.toLocaleString("tr-TR")}
-        </strong>{" "}
-        kayıttan{" "}
-        <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
-          {shownStart.toLocaleString("tr-TR")}–
-          {shownEnd.toLocaleString("tr-TR")}
-        </strong>{" "}
-        arası gösteriliyor
-        {totalPages > 1 && (
-          <span>
-            {" "}
-            (Sayfa {currentPage} / {totalPages})
-          </span>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full">
+        <div className="flex items-center gap-1.5 shrink-0 tabular-nums">
           <button
             type="button"
             disabled={currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
-            className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+            aria-label="Önceki Sayfa"
+            className="w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-[var(--foreground)] inline-flex items-center justify-center cursor-pointer transition-colors"
           >
-            <span>« Önceki</span>
+            <ChevronLeft size={14} strokeWidth={2.5} />
           </button>
-
-          {tokens.map((token, idx) => {
-            if (token === "ellipsis-left" || token === "ellipsis-right") {
-              return (
-                <span
-                  key={`${token}_${idx}`}
-                  aria-hidden="true"
-                  className="px-1.5 text-xs font-black text-[var(--muted)] select-none"
-                >
-                  …
-                </span>
-              );
-            }
-
-            const isCurrent = token === currentPage;
-            return (
-              <button
-                key={token}
-                type="button"
-                aria-current={isCurrent ? "page" : undefined}
-                onClick={() => onPageChange(token)}
-                className={`min-w-[38px] min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold tabular-nums transition-all cursor-pointer ${
-                  isCurrent
-                    ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
-                }`}
-              >
-                {token}
-              </button>
-            );
-          })}
-
+          <span className="text-xs font-extrabold text-[var(--foreground)] min-w-[44px] text-center">
+            {currentPage} / {Math.max(1, totalPages)}
+          </span>
           <button
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
-            className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+            aria-label="Sonraki Sayfa"
+            className="w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] disabled:opacity-40 disabled:pointer-events-none text-[var(--foreground)] inline-flex items-center justify-center cursor-pointer transition-colors"
           >
-            <span>Sonraki »</span>
+            <ChevronRight size={14} strokeWidth={2.5} />
           </button>
         </div>
-      )}
+      </div>
+
+      {/* MASAÜSTÜ ALT NUMARALI SAYFALAMA PANELİ (>= 640px) */}
+      <div className="hidden sm:flex bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-3.5 flex-row items-center justify-between gap-3">
+        <div className="text-xs font-bold text-[var(--muted)] tabular-nums text-left">
+          Toplam{" "}
+          <strong className="text-[var(--foreground)] font-extrabold">
+            {totalItems.toLocaleString("tr-TR")}
+          </strong>{" "}
+          kayıttan{" "}
+          <strong className="text-[#087F5B] dark:text-emerald-400 font-extrabold">
+            {shownStart.toLocaleString("tr-TR")}–
+            {shownEnd.toLocaleString("tr-TR")}
+          </strong>{" "}
+          arası gösteriliyor
+          {totalPages > 1 && (
+            <span>
+              {" "}
+              (Sayfa {currentPage} / {totalPages})
+            </span>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <span>« Önceki</span>
+            </button>
+
+            {tokens.map((token, idx) => {
+              if (token === "ellipsis-left" || token === "ellipsis-right") {
+                return (
+                  <span
+                    key={`${token}_${idx}`}
+                    aria-hidden="true"
+                    className="px-1.5 text-xs font-black text-[var(--muted)] select-none"
+                  >
+                    …
+                  </span>
+                );
+              }
+
+              const isCurrent = token === currentPage;
+              return (
+                <button
+                  key={token}
+                  type="button"
+                  aria-current={isCurrent ? "page" : undefined}
+                  onClick={() => onPageChange(token)}
+                  className={`min-w-[38px] min-h-[38px] px-2.5 py-1.5 rounded-xl border-2 border-b-3 text-xs font-extrabold tabular-nums transition-all cursor-pointer ${
+                    isCurrent
+                      ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                  }`}
+                >
+                  {token}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 hover:border-[#087F5B] disabled:opacity-45 disabled:pointer-events-none text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <span>Sonraki »</span>
+            </button>
+          </div>
+        )}
+      </div>
     </nav>
   );
 });
@@ -1381,7 +1462,7 @@ export default function DictionaryPage() {
 
         {/* 4. Mobil Uyumlu Kategori ve Hızlı Alt Sekmeler (Her sekme kendi verisi üzerinde bağımsız sayfalanır) */}
         <div className="relative">
-          <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1 pr-6 sm:pr-0">
+          <div className="flex justify-start overflow-x-auto no-scrollbar whitespace-nowrap sm:flex-wrap gap-1.5 sm:gap-2 items-center py-1 px-1 scroll-px-2 pr-7 sm:px-0 sm:pr-0">
           {(
             [
               {
@@ -1568,7 +1649,7 @@ export default function DictionaryPage() {
               </select>
             </div>
 
-            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+            <div className="flex justify-start overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5 px-1 scroll-px-2">
               {(
                 [
                   { id: "all", label: "Tümü" },
@@ -1607,6 +1688,32 @@ export default function DictionaryPage() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Sayfa Başına Göster Seçicisi (Mobilde Filtreler Çekmecesi İçinde) */}
+            <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 py-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2">
+              <span className="text-[11px] font-extrabold text-[var(--muted)] shrink-0">
+                Sayfa Başına:
+              </span>
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {ITEMS_PER_PAGE_OPTIONS.map((opt) => {
+                  const active = itemsPerPage === opt.value;
+                  return (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => handleItemsPerPageChange(opt.value)}
+                      className={`min-w-[34px] h-7 px-2 rounded-lg text-xs transition-all cursor-pointer tabular-nums shrink-0 ${
+                        active
+                          ? "bg-[#087F5B] text-white font-extrabold shadow-2xs"
+                          : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

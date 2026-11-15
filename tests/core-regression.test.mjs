@@ -7012,4 +7012,79 @@ test("59) BalloonSafariGame Dikey Mobil (540x860 + xMidYMid slice) Tam Ekran Sah
   );
 });
 
+test("60) Ana Sayfalar (diyalog, metin, sozluk, seviye-tespit, Header ve ScrollToTopButton) Mobil Mağaza Ergonomisi Doğrulaması", () => {
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const sozlukCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "sozluk", "page.tsx"),
+    "utf8"
+  );
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  const headerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const scrollTopCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ScrollToTopButton.tsx"),
+    "utf8"
+  );
 
+  // 1. Diyalog & Metin Mobil Üst Panel Sadeleştirmesi (w-11 h-11 kapak, 3'lü mod, tek satır oynatıcı ve Mobil Araç Çekmecesi)
+  assert.equal(
+    diyalogCode.includes("w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16") &&
+      diyalogCode.includes("📖 İncele") &&
+      diyalogCode.includes("🎭 Rol") &&
+      diyalogCode.includes("Tümünü Dinle") &&
+      diyalogCode.includes("🧰 Ders Araçları") &&
+      diyalogCode.includes("isMobileToolsSheetOpen") &&
+      diyalogCode.includes('useEscapeKey(\n    () => setIsMobileToolsSheetOpen(false)') &&
+      metinCode.includes("w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16") &&
+      metinCode.includes("📖 İncele") &&
+      metinCode.includes("Tümünü Dinle") &&
+      metinCode.includes("🧰 Ders Araçları") &&
+      metinCode.includes("isMobileToolsSheetOpen") &&
+      metinCode.includes('useEscapeKey(\n    () => setIsMobileToolsSheetOpen(false)'),
+    true,
+    "Diyalog ve Metin sayfaları mobilde 2 satırlık kompakt başlık, w-11 h-11 kapak, 3'lü mod sekmesi ve Mobil Ders Araçları Çekmecesine sahip olmalıdır"
+  );
+
+  // 2. Sözlük Sol Kenar Kesilme Onarımı (justify-start px-1 scroll-px-2) ve İnce Mobil Sayfalama Barı (h-10)
+  assert.equal(
+    sozlukCode.includes("justify-start overflow-x-auto no-scrollbar whitespace-nowrap") &&
+      sozlukCode.includes("px-1 scroll-px-2") &&
+      sozlukCode.includes("sm:hidden bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)] h-10 flex items-center justify-between px-3") &&
+      sozlukCode.includes("Sayfa Başına:"),
+    true,
+    "Sözlük sayfasında yatay çipler sol kenardan kesilmemeli, mobilde h-10 tek satır sayfalama barı kullanılmalı ve Sayfa Başına seçicisi Filtreler çekmecesinde yer almalıdır"
+  );
+
+  // 3. Seviye Tespit / Konu Tarama Mobil Tek Satır Yatay Kaydırılabilir Filtre Şeridi
+  assert.equal(
+    seviyeCode.includes("flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 pb-1") &&
+      seviyeCode.includes("{labelPrefix} ({stats.questionCount})") &&
+      seviyeCode.includes("{labelPrefix} ({stats.topicCount} Konu)"),
+    true,
+    "Seviye Tespit ve Konu Tarama sayfasında kur filtreleri mobilde tek satır yatay kaydırılabilir hap şeridi olmalı ve masaüstü rozetleri korunmalıdır"
+  );
+
+  // 4. Header Mobil İkon Hizası & ScrollToTopButton Ergonomisi (scrollY > 600, opacity-80, tam ekran gizleme)
+  assert.equal(
+    headerCode.includes("h-11 sm:h-12 lg:h-14") &&
+      headerCode.includes("w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10") &&
+      scrollTopCode.includes("scrollY > 600") &&
+      scrollTopCode.includes("opacity-80 hover:opacity-100") &&
+      scrollTopCode.includes("isFullscreenOverlayOpen") &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Header mobilde kompakt buton hizasına sahip olmalı, ScrollToTopButton yalnızca scrollY > 600 iken opacity-80 ile görünmeli ve tam ekran oyun/modal açıkken gizlenmelidir"
+  );
+});

@@ -417,29 +417,29 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 print:hidden w-full h-12 lg:h-14 py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
-        <div className="w-full max-w-7xl mx-auto px-1.5 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-4 min-w-0 overflow-visible">
+      <header className="fixed top-0 left-0 right-0 z-50 print:hidden w-full h-11 sm:h-12 lg:h-14 py-0.5 sm:py-1 pt-[env(safe-area-inset-top)] bg-[#FDFBF7]/95 dark:bg-[var(--background)]/95 backdrop-blur-md border-b-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-xs flex items-center overflow-visible">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-3 xl:px-6 h-full flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-4 min-w-0 overflow-visible">
           {/* =============================================================== */}
           {/* 1. BÖLGE (SOL): Logo + Muallimun Arapça (Sıfır Çakışma)         */}
           {/* =============================================================== */}
-          <div className="shrink-0 flex items-center">
+          <div className="min-w-0 flex items-center">
             <Link
               href="/"
               onClick={() => playClick()}
-              className="flex items-center gap-1 sm:gap-2 group shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 group min-w-0"
               data-tooltip="Muallimun Arapça — Ana Sayfa"
               data-tooltip-pos="bottom"
               data-tooltip-align="left"
               aria-label="Muallimun Arapça Ana Sayfa"
             >
-              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center shrink-0 group-active:translate-y-0.5 transition-transform p-0.5">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center shrink-0 group-active:translate-y-0.5 transition-transform p-0.5">
                 <img
                   src="/icons/android-chrome-192x192.png"
                   alt="Muallimun Arapça Logo"
-                  className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-lg"
+                  className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-md sm:rounded-lg"
                 />
               </div>
-              <span className="text-[12px] sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] whitespace-nowrap shrink-0 leading-none">
+              <span className="text-[11.5px] sm:text-sm font-extrabold tracking-tight text-[var(--foreground)] truncate leading-none">
                 Muallimun Arapça
               </span>
             </Link>
@@ -507,7 +507,7 @@ export default function Header() {
               data-tooltip={harekeTooltipText}
               data-tooltip-pos="bottom"
               aria-label={harekeTooltipText}
-              className={`relative w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`relative w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 activeHarekeMode === "full"
                   ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                   : activeHarekeMode === "irab-only"
@@ -518,11 +518,11 @@ export default function Header() {
               <Sparkles
                 size={20}
                 strokeWidth={2.2}
-                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 shrink-0"
               />
               <span
                 aria-hidden="true"
-                className={`absolute bottom-1 right-1 w-2 h-2 rounded-full border border-white dark:border-slate-900 ${
+                className={`absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full border border-white dark:border-slate-900 ${
                   activeHarekeMode === "full"
                     ? "bg-[#087F5B]"
                     : activeHarekeMode === "irab-only"
@@ -545,7 +545,7 @@ export default function Header() {
                 data-tooltip-pos="bottom"
                 aria-label="Arapça Font ve Yazı Boyutu"
                 aria-expanded={fontMenuOpen}
-                className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                   fontMenuOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
@@ -554,7 +554,7 @@ export default function Header() {
                 <Type
                   size={20}
                   strokeWidth={2.3}
-                  className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 shrink-0"
                 />
               </button>
 
@@ -692,7 +692,7 @@ export default function Header() {
               data-tooltip-pos="bottom"
               aria-label="Tahta Çizim ve Sınıf Araçları"
               aria-pressed={smartboardOpen}
-              className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 smartboardOpen
                   ? "bg-[#087F5B] border-[#065F46] text-white"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
@@ -701,7 +701,7 @@ export default function Header() {
               <PenTool
                 size={20}
                 strokeWidth={2.2}
-                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 shrink-0"
               />
             </button>
 
@@ -718,7 +718,7 @@ export default function Header() {
               data-tooltip-pos="bottom"
               aria-label="Ders Sayacı ve Sınıf Kurası"
               aria-pressed={timerOpen || pickerOpen}
-              className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                 timerOpen || pickerOpen
                   ? "bg-[#6741D9] border-[#5230B5] text-white"
                   : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
@@ -727,7 +727,7 @@ export default function Header() {
               <Timer
                 size={20}
                 strokeWidth={2.2}
-                className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 shrink-0"
               />
             </button>
 
@@ -745,7 +745,7 @@ export default function Header() {
                 data-tooltip-align="right"
                 aria-label="Diğer Araçlar ve Yardım"
                 aria-expanded={moreMenuOpen}
-                className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl border-2 border-b-3 flex items-center justify-center active:border-b-1 active:translate-y-0.5 transition-all cursor-pointer shrink-0 ${
                   moreMenuOpen
                     ? "bg-[#087F5B] border-[#065F46] text-white"
                     : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:bg-[#EFE3CE] dark:hover:bg-slate-800"
@@ -754,7 +754,7 @@ export default function Header() {
                 <MoreHorizontal
                   size={20}
                   strokeWidth={2.4}
-                  className="w-4 h-4 lg:w-5 lg:h-5 shrink-0"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 shrink-0"
                 />
               </button>
 

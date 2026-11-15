@@ -29,6 +29,7 @@ import {
   Download,
   GraduationCap,
   ClipboardCheck,
+  ChevronDown,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -142,6 +143,7 @@ import {
   releaseWakeLock,
   releaseAllWakeLocks,
 } from "@/lib/wakeLock";
+import { useEscapeKey } from "@/lib/modalStack";
 
 type StudyMode = "listen" | "shadowing" | "roleplay" | "vocabulary" | "gramer";
 type FlowMode = "single" | "sequential";
@@ -277,6 +279,13 @@ export default function DialogueDetailPage({
   const [isHwQuizModalOpen, setIsHwQuizModalOpen] = useState<boolean>(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState<boolean>(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+  const [isMobileToolsSheetOpen, setIsMobileToolsSheetOpen] =
+    useState<boolean>(false);
+  useEscapeKey(
+    () => setIsMobileToolsSheetOpen(false),
+    isMobileToolsSheetOpen,
+    "dialogue_mobile_tools_sheet"
+  );
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const linkedYoutubeVideos = dialogue
     ? getYoutubeRecommendationsByContentId(dialogue.id)
@@ -2495,18 +2504,18 @@ export default function DialogueDetailPage({
         </div>
       )}
 
-      {/* KOMPAKT 3 SATIRLIK DİYALOG BİLGİ VE KONTROL KARTI (Relative - Sabit Değil) */}
+      {/* KOMPAKT DİYALOG BİLGİ VE KONTROL KARTI (Mobilde 2 Satır + Araç Çekmecesi, Masaüstünde Tam Panel) */}
       <section className="relative bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-sm p-2 sm:p-3 space-y-1.5">
         {/* 1. SATIR: Kompakt Başlık ve Görsel Satırı */}
         <div className="flex items-center justify-between gap-2 py-0.5">
-          <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <Link
               href="/kutuphane"
               onClick={() => playClick()}
               data-tooltip="Kütüphaneye Dön"
               data-tooltip-align="left"
               aria-label="Kütüphaneye Dön"
-              className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:border-[#087F5B] shrink-0 transition-all mt-0.5 sm:mt-0"
+              className="w-8 h-8 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:border-[#087F5B] shrink-0 transition-all"
             >
               <ChevronLeft size={16} strokeWidth={2.5} />
             </Link>
@@ -2516,12 +2525,12 @@ export default function DialogueDetailPage({
                 <span className="px-2 py-0.5 rounded-md bg-emerald-600 dark:bg-emerald-600 text-white font-extrabold text-[10px] tabular-nums shrink-0">
                   Diyalog #{String(rawNum).padStart(2, "0")} • {dialogue.seviye}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
+                <span className="hidden sm:inline text-[10px] sm:text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
                   {dialogue.satirlar.length} Cümle • {dialogueVocabEntries.length} Kelime
                 </span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 sm:flex-wrap leading-snug">
-                <h1 className="text-xs sm:text-base font-extrabold text-[var(--foreground)] line-clamp-2">
+              <div className="flex items-baseline gap-1.5 flex-wrap leading-snug">
+                <h1 className="text-xs sm:text-base font-extrabold text-[var(--foreground)] line-clamp-1 sm:line-clamp-2">
                   {dialogue.baslik_tr}
                 </h1>
                 <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-bold">
@@ -2529,7 +2538,7 @@ export default function DialogueDetailPage({
                 </span>
                 <span
                   dir="rtl"
-                  className="arabic text-base sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-[1.85] py-0.5 line-clamp-1"
+                  className="hidden sm:inline arabic text-base sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 leading-[1.85] py-0.5 line-clamp-1"
                 >
                   {getDisplayText(dialogue.baslik_ar)}
                 </span>
@@ -2537,7 +2546,7 @@ export default function DialogueDetailPage({
             </div>
           </div>
 
-          {/* Sağdaki Küçük Diyalog Görseli (Tıklanınca Büyür) */}
+          {/* Sağdaki Küçük Diyalog Görseli (Mobilde w-11 h-11, Tıklanınca Büyür) */}
           <button
             type="button"
             onClick={() => {
@@ -2547,7 +2556,7 @@ export default function DialogueDetailPage({
             data-tooltip="Görseli Büyüt"
             data-tooltip-align="right"
             aria-label="Diyalog Kapak Görselini Büyüt"
-            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl object-cover shrink-0 shadow-xs overflow-hidden border-2 border-white/80 dark:border-slate-700 relative group cursor-pointer"
+            className="w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl object-cover shrink-0 shadow-xs overflow-hidden border-2 border-white/80 dark:border-slate-700 relative group cursor-pointer"
           >
             <img
               src={imagePath}
@@ -2555,13 +2564,231 @@ export default function DialogueDetailPage({
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            <span className="absolute bottom-0.5 right-0.5 p-1 rounded-md bg-black/65 text-white flex items-center justify-center">
+            <span className="absolute bottom-0.5 right-0.5 p-0.5 sm:p-1 rounded-md bg-black/65 text-white flex items-center justify-center">
               <Maximize2 size={9} />
             </span>
           </button>
         </div>
 
-        {/* 2. SATIR: Mobilde Tek Satır Yatay Kaydırılabilir (+ Sağ Görsel Kaydırma İpucu), Masaüstünde 5 Sütunlu Mod Sekmeleri */}
+        {/* =================================================================== */}
+        {/* MOBİL (< 768px) KOMPAKT 2. SATIR: 3'LÜ MOD + TEK SATIR OYNATICI/ARAÇ */}
+        {/* =================================================================== */}
+        <div className="md:hidden space-y-1.5">
+          {/* 3'lü Mobil Mod Sekmesi: İncele | Telaffuz | Rol */}
+          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100/85 dark:bg-slate-800/85 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            {(
+              [
+                { id: "listen" as StudyMode, label: "📖 İncele" },
+                { id: "shadowing" as StudyMode, label: "🎙️ Telaffuz" },
+                { id: "roleplay" as StudyMode, label: "🎭 Rol" },
+              ]
+            ).map((mTab) => {
+              const isSelected = activeTabId === mTab.id;
+              return (
+                <button
+                  key={mTab.id}
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (mTab.id !== "roleplay" && isRoleplayRunning) {
+                      playToken.current += 1;
+                      stop();
+                      cleanupRoleplayMic();
+                      setIsRoleplayRunning(false);
+                      setRoleplayActiveLine(null);
+                      setRoleplaySpeakingLine(null);
+                    }
+                    setStudyMode(mTab.id);
+                  }}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all text-center cursor-pointer ${
+                    isSelected
+                      ? "bg-[#6741D9] text-white shadow-2xs"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)] bg-white/60 dark:bg-transparent"
+                  }`}
+                >
+                  {mTab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tek Satır Mobil Oynatıcı + Hız + Hareke + Ders Araçları Çekmecesi Butonu */}
+          <div className="flex items-center justify-between gap-1">
+            {studyMode === "roleplay" ? (
+              <button
+                type="button"
+                onClick={handleToggleRoleplay}
+                className={`h-8.5 px-2.5 rounded-xl font-extrabold text-[11px] border-b-2 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+                  isRoleplayRunning
+                    ? "bg-red-600 text-white border-red-800"
+                    : "bg-emerald-600 text-white border-emerald-800"
+                }`}
+              >
+                {isRoleplayRunning ? (
+                  <>
+                    <Square size={10} fill="currentColor" />
+                    <span>Bitir</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={10} fill="currentColor" />
+                    <span>Canlandır</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleTogglePlayAll}
+                className={`h-8.5 px-2.5 rounded-xl font-extrabold text-[11px] border-b-2 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+                  isPlayingAll
+                    ? "bg-red-600 text-white border-red-800"
+                    : "bg-emerald-600 text-white border-emerald-800"
+                }`}
+              >
+                {isPlayingAll ? (
+                  <Square size={10} fill="currentColor" />
+                ) : (
+                  <Play size={10} fill="currentColor" />
+                )}
+                <span>{isPlayingAll ? "Durdur" : "Tümünü Dinle"}</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 min-w-0">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  const rates: SpeechRate[] = [0.5, 0.75, 1, 1.25, 1.5];
+                  const idx = rates.findIndex((r) => r === speechRate);
+                  const nextRate = rates[(idx + 1) % rates.length];
+                  setSpeechRate(nextRate);
+                  setPlaybackRate(nextRate);
+                }}
+                aria-label="Okuma Hızı"
+                className={`h-8.5 px-2 rounded-xl border text-[11px] font-bold tabular-nums transition-all cursor-pointer shrink-0 ${
+                  mounted && speechRate !== 1
+                    ? "bg-[#087F5B] border-[#087F5B] text-white"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                }`}
+              >
+                {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  toggleHareke();
+                }}
+                aria-label="Hareke Görünümünü Değiştir"
+                className={`h-8.5 px-2 rounded-xl border flex items-center gap-1 text-[11px] font-extrabold transition-all cursor-pointer shrink-0 ${
+                  !mounted || harekeMode === "full"
+                    ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                    : harekeMode === "irab-only"
+                    ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                }`}
+              >
+                <Sparkles size={11} className="shrink-0" />
+                <span>
+                  {!mounted || harekeMode === "full"
+                    ? "Hareke"
+                    : harekeMode === "irab-only"
+                    ? "İ'rab"
+                    : "Sade"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsMobileToolsSheetOpen(true);
+                }}
+                aria-label="Mobil Ders Araçları Çekmecesini Aç"
+                className="h-8.5 px-2.5 rounded-xl border border-[#6741D9]/50 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff] text-[11px] font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <span>🧰 Ders Araçları</span>
+                <ChevronDown size={12} className="shrink-0" />
+              </button>
+            </div>
+          </div>
+
+          {/* Rol Yapma Aktifken Kompakt Konuşmacı Seçici (Yalnızca Rol Sekmesinde) */}
+          {studyMode === "roleplay" && (
+            <div className="flex items-center justify-between gap-1.5 pt-0.5">
+              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-0.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-0.5 overflow-x-auto no-scrollbar">
+                {speakers.map((sp, idx) => (
+                  <button
+                    key={sp}
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      if (isRoleplayRunning) {
+                        playToken.current += 1;
+                        stop();
+                        cleanupRoleplayMic();
+                        setIsRoleplayRunning(false);
+                        setRoleplayActiveLine(null);
+                        setRoleplaySpeakingLine(null);
+                      }
+                      setSelectedRoleSpeaker(sp);
+                    }}
+                    className={`px-2 py-1 text-[11px] rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                      selectedRoleSpeaker === sp
+                        ? "bg-[#087F5B] text-white font-bold"
+                        : "text-[var(--muted)] font-medium"
+                    }`}
+                  >
+                    {idx === 0 ? "A" : "B"}: {sp}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setHideRoleplayUserText((v) => !v);
+                }}
+                className={`px-2 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 shrink-0 cursor-pointer ${
+                  hideRoleplayUserText
+                    ? "bg-[#6741D9] border-[#5230B5] text-white"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                }`}
+              >
+                <Eye size={11} />
+                <span>{hideRoleplayUserText ? "Gizli" : "Açık"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Mobil Araç Çekmecesinden Sözlük veya Gramer Seçildiğinde Hızlı Dönüş Şeridi */}
+          {(activeTabId === "vocabulary" || activeTabId === "gramer") && (
+            <div className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/40 text-[11px] font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
+              <span>
+                {activeTabId === "vocabulary"
+                  ? `📚 Ders Sözlüğü (${dialogueVocabEntries.length})`
+                  : "📌 Odak Gramer Notu"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStudyMode("listen");
+                }}
+                className="px-2 py-0.5 rounded-lg bg-[#6741D9] text-white text-[10px] font-extrabold cursor-pointer"
+              >
+                ← Diyaloğa Dön
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* MASAÜSTÜ (>= 768px) 2., 3. VE 4. SATIRLAR (Tam Masaüstü Deneyimi Korunur) */}
+        <div className="hidden md:block space-y-1.5">
+        {/* 2. SATIR: Masaüstünde 5 Sütunlu Mod Sekmeleri */}
         <div className="relative w-full">
           <div className="w-full flex overflow-x-auto no-scrollbar whitespace-nowrap md:grid md:grid-cols-5 gap-1.5 p-1 pr-7 md:pr-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
             {(
@@ -3359,6 +3586,319 @@ export default function DialogueDetailPage({
               </button>
             </div>
           </div>
+          </div>
+        </div>
+
+        {/* =================================================================== */}
+        {/* MOBİL ARAÇ ÇEKMECESİ (Bottom Sheet — Yalnızca < 768px Açılır)       */}
+        {/* =================================================================== */}
+        {isMobileToolsSheetOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobil Ders Araçları Çekmecesi"
+            className="md:hidden fixed inset-0 z-[95] bg-black/55 backdrop-blur-[2px] flex items-end"
+            onClick={() => setIsMobileToolsSheetOpen(false)}
+          >
+            <div
+              className="w-full max-h-[82dvh] overflow-y-auto rounded-t-3xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-t-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl space-y-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-10 h-1 rounded-full bg-[#D8C7A8] dark:bg-slate-700 mx-auto" />
+              <div className="flex items-center justify-between pb-1.5 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <div>
+                  <h2 className="text-sm font-extrabold text-[var(--foreground)]">
+                    🧰 Ders Araçları &amp; Etkinlikler
+                  </h2>
+                  <p className="text-[11px] font-semibold text-[var(--muted)]">
+                    Diyalog #{String(rawNum).padStart(2, "0")} • {dialogue.satirlar.length} Cümle • {dialogueVocabEntries.length} Kelime
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileToolsSheetOpen(false)}
+                  aria-label="Araç Çekmecesini Kapat"
+                  className="w-8 h-8 rounded-xl bg-[#F7EFE1] dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 flex items-center justify-center text-[var(--foreground)] cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Hızlı Ders Etkinlikleri Izgarası */}
+              <div className="grid grid-cols-2 gap-2">
+                {linkedYoutubeVideos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsMobileToolsSheetOpen(false);
+                      playToken.current += 1;
+                      stop();
+                      stopAllAudio();
+                      setIsPlayingAll(false);
+                      setLoopingLineSira(null);
+                      setIsYoutubeModalOpen(true);
+                    }}
+                    className="col-span-2 min-h-[42px] px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <span>🎬 Tavsiye Videoyu / Listeyi İzle</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsMobileToolsSheetOpen(false);
+                    setIsInfoGapModalOpen(true);
+                  }}
+                  className="min-h-[42px] px-2.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/45 border border-rose-300 dark:border-rose-700/70 text-rose-900 dark:text-rose-200 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>👥 İkili Kart (A/B)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setBlurArabic((v) => !v);
+                    setRevealedArabicLines({});
+                    setIsMobileToolsSheetOpen(false);
+                  }}
+                  className={`min-h-[42px] px-2.5 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer ${
+                    blurArabic
+                      ? "bg-amber-600 border-amber-800 text-white"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+                  }`}
+                >
+                  <span>👁️ Kör Dinleme {blurArabic ? "(Açık)" : ""}</span>
+                </button>
+
+                {grammarNote && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsMobileToolsSheetOpen(false);
+                      if (isGrammarSplitOpen) {
+                        stopAllAudio();
+                        setGrammarSplitOpen(false);
+                      }
+                      setStudyMode("gramer");
+                    }}
+                    className="min-h-[42px] px-2.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/45 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>📐 Gramer Notu</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsMobileToolsSheetOpen(false);
+                    setStudyMode("vocabulary");
+                  }}
+                  className="min-h-[42px] px-2.5 py-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>📚 Sözlük ({dialogueVocabEntries.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsMobileToolsSheetOpen(false);
+                    setPdfInitialDocMode("handout");
+                    setIsPdfModalOpen(true);
+                  }}
+                  className="min-h-[42px] px-2.5 py-2 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>📄 Hızlı PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsMobileToolsSheetOpen(false);
+                    setIsTeacherHwModalOpen(true);
+                  }}
+                  className="min-h-[42px] px-2.5 py-2 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border border-[#6741D9]/45 text-[#4C28B5] dark:text-[#d0bfff] text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>🎯 Ödev &amp; Paylaş</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsMobileToolsSheetOpen(false);
+                    setShareCardTarget({
+                      type: "dialogue",
+                      arabicText:
+                        dialogue.satirlar[0]?.arapca || dialogue.baslik_ar,
+                      titleAr: dialogue.baslik_ar,
+                      titleTr: dialogue.baslik_tr,
+                      turkishText:
+                        dialogue.satirlar[0]?.turkce || dialogue.baslik_tr,
+                      excerptLines: dialogue.satirlar.slice(0, 3).map((l) => ({
+                        speakerAr: l.konusmaci_ar,
+                        speakerTr: l.konusmaci,
+                        arapca: l.arapca,
+                        turkce: l.turkce,
+                      })),
+                      level: dialogue.seviye,
+                      category: dialogue.tema,
+                      imageUrl:
+                        dialogue.gorsel || getDialogueCoverUrl(dialogue.id),
+                      deepLink: `https://app.muallimun.net/diyalog/${dialogue.id}`,
+                      initialShowTranslation:
+                        currentViewMode !== "arabic-only" && !isClickRevealActive,
+                    });
+                  }}
+                  className="min-h-[42px] px-2.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/45 border border-emerald-400/60 text-[#065F46] dark:text-emerald-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>🖼️ Görsel Kart</span>
+                </button>
+              </div>
+
+              {/* Çeviri Görünümü Hızlı Seçici */}
+              <div className="space-y-1 pt-1 border-t border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                <span className="text-[10px] font-extrabold uppercase text-[var(--muted)] block">
+                  Çeviri Görünümü
+                </span>
+                <div className="grid grid-cols-4 gap-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)]">
+                  {(
+                    [
+                      { id: "stacked" as ViewMode, label: "Alt Alta" },
+                      { id: "arabic-only" as ViewMode, label: "Arapça" },
+                      { id: "turkish-only" as ViewMode, label: "Türkçe" },
+                    ]
+                  ).map((opt) => {
+                    const active = !isClickRevealActive && currentViewMode === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setClickToRevealTr(false);
+                          setViewMode(opt.id);
+                          setRevealedTrLines({});
+                          setRevealedArLines({});
+                        }}
+                        className={`py-1.5 px-1 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                          active
+                            ? "bg-[#087F5B] text-white"
+                            : "text-[var(--muted)]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setClickToRevealTr(true);
+                      setViewMode("click-reveal");
+                      setRevealedTrLines({});
+                    }}
+                    className={`py-1.5 px-1 rounded-lg text-[11px] font-extrabold cursor-pointer ${
+                      isClickRevealActive
+                        ? "bg-[#087F5B] text-white"
+                        : "text-[var(--muted)]"
+                    }`}
+                  >
+                    Tıkla-Gör
+                  </button>
+                </div>
+              </div>
+
+              {/* Alt Durum Satırı: Döngü, İndir, Favori, Tamamla */}
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    cycleDialogueLoopCount();
+                    playClick();
+                  }}
+                  className={`py-2 px-1.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer ${
+                    mounted && dialogueLoopCount !== 1
+                      ? "bg-[#6741D9] border-[#5230B5] text-white"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                  }`}
+                >
+                  <Repeat size={12} />
+                  <span>
+                    {!mounted
+                      ? "1x"
+                      : dialogueLoopCount === "infinite"
+                      ? "∞"
+                      : `${dialogueLoopCount}x`}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isDownloadingOffline}
+                  onClick={() => {
+                    if (isOfflineReady) {
+                      playClick();
+                      setShowOfflineNotice((v) => !v);
+                    } else {
+                      void handleDownloadOfflineDialogue();
+                    }
+                  }}
+                  className={`py-2 px-1.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer ${
+                    isOfflineReady
+                      ? "bg-emerald-600 border-emerald-800 text-white"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                  }`}
+                >
+                  <Download size={12} />
+                  <span>{isOfflineReady ? "Hazır" : "İndir"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    toggleFavoriteDialogue(dialogue.id);
+                  }}
+                  className={`py-2 px-1.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer ${
+                    isFav
+                      ? "bg-red-50 border-red-300 text-red-600"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                  }`}
+                >
+                  <Heart size={12} fill={isFav ? "currentColor" : "none"} />
+                  <span>Favori</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    toggleCompletedDialogue(dialogue.id);
+                  }}
+                  className={`py-2 px-1.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 cursor-pointer ${
+                    isCompleted
+                      ? "bg-[#F3F0FF] border-[#6741D9] text-[#6741D9]"
+                      : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                  }`}
+                >
+                  <CheckCircle2 size={12} />
+                  <span>{isCompleted ? "Bitti" : "Bitir"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1.5 empty:hidden">
 
           {/* Çevrimdışı Hazır Bilgi Rozeti (İndirildiğinde veya tıklandığında görünür) */}
           {(showOfflineNotice || isOfflineReady) && (

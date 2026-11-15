@@ -62,6 +62,7 @@ import {
   getDynamicContentStats,
   getMainVisualCategory,
   getVisualSubGroupNo,
+  CONTENT_INVENTORY,
 } from "@/lib/data";
 import {
   Level,
@@ -3857,12 +3858,19 @@ export default function LibraryPage() {
                 </div>
                 <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
                   A1–B2 seviyelerine göre seçilmiş{" "}
-                  <strong>{contentStats.youtubeCount} video ve oynatma listesini</strong>{" "}
-                  (çizgi diziler, kıssalar, tarihî diziler, ilmî dersler ve Al Jazeera/BBC belgeselleri) sıfır gecikmeli uygulama içi oynatıcı ve izleme metodolojisiyle keşfedin.
+                  <strong>
+                    {CONTENT_INVENTORY.youtubeVideosCount} video ve oynatma listesini
+                  </strong>{" "}
+                  ({CONTENT_INVENTORY.youtubeSingleVideosCount} tekil video +{" "}
+                  {CONTENT_INVENTORY.youtubePlaylistsCount} bölüm seçicili oynatma
+                  listesi; çizgi diziler, kıssalar, tarihî diziler, ilmî dersler ve
+                  Al Jazeera/BBC belgeselleri) sıfır gecikmeli uygulama içi oynatıcı
+                  ve izleme metodolojisiyle keşfedin.
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] font-extrabold">
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-rose-300 text-rose-900 dark:text-rose-200">
-                    6 Tematik Kategori • A1–B2
+                    {CONTENT_INVENTORY.youtubeSingleVideosCount} Tekil Video +{" "}
+                    {CONTENT_INVENTORY.youtubePlaylistsCount} Oynatma Listesi • A1–B2
                   </span>
                   <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-[#065F46] dark:text-emerald-400">
                     {EXTERNAL_WATCH_PLATFORM_GROUPS.reduce(
@@ -3958,18 +3966,21 @@ export default function LibraryPage() {
                   📊 Toplam Kütüphane Özeti
                 </span>
                 <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                  {contentStats.dialogueCount} Diyalog •{" "}
-                  {contentStats.readingCount} Metin •{" "}
+                  {CONTENT_INVENTORY.dialoguesCount} Diyalog •{" "}
+                  {CONTENT_INVENTORY.readingsCount} Metin •{" "}
                   {contentStats.totalLibraryCards.toLocaleString("tr-TR")} Eğitim
-                  Kartı
+                  Kartı • {CONTENT_INVENTORY.youtubeVideosCount} Video
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted)]">
                 {contentStats.dialogueSentenceCount} diyalog cümlesi,{" "}
                 {contentStats.readingQuestionCount} okuma anlama sorusu,{" "}
-                {contentStats.sentenceCount} günlük kalıp cümle,{" "}
-                {contentStats.proverbCount} atasözü ve{" "}
-                {contentStats.visualWordCount} resimli kelime kartı
+                {CONTENT_INVENTORY.sentencesCount} günlük kalıp cümle,{" "}
+                {CONTENT_INVENTORY.proverbsCount} atasözü,{" "}
+                {CONTENT_INVENTORY.visualWordsCount} resimli kelime ve{" "}
+                {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+                birleşik sözlük ({CONTENT_INVENTORY.coreDictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+                ana sözlük + {CONTENT_INVENTORY.visualWordsCount} görsel kelime + ek sözlük)
               </p>
             </div>
 
@@ -3980,7 +3991,9 @@ export default function LibraryPage() {
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#065F46] text-xs font-extrabold transition-all whitespace-nowrap"
               >
                 <Gamepad2 size={15} />
-                <span>Kütüphane Havuzuyla Alıştırma Yap</span>
+                <span>
+                  {CONTENT_INVENTORY.exerciseModulesCount} Modülle Alıştırma Yap
+                </span>
               </Link>
 
               <Link
@@ -3990,8 +4003,8 @@ export default function LibraryPage() {
               >
                 <BookOpen size={15} />
                 <span>
-                  İnteraktif Kök Sözlüğü (
-                  {contentStats.dictionaryWordCount.toLocaleString("tr-TR")}{" "}
+                  Birleşik Kök Sözlüğü (
+                  {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
                   Kelime)
                 </span>
               </Link>
@@ -6995,7 +7008,7 @@ export default function LibraryPage() {
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />
 
-      {/* 8. SEKME: 🎬 VİDEO & İZLEME REHBERİ (55 KAYIT + METODOLOJİ + 14 HARİCİ PLATFORM) */}
+      {/* 8. SEKME: 🎬 VİDEO & İZLEME REHBERİ (60 KAYIT: 20 TEKİL VİDEO + 40 OYNATMA LİSTESİ + METODOLOJİ + 14 HARİCİ PLATFORM) */}
       {activeSection === "videolar" && (
         <section
           aria-label="Arapça Video ve İzleme Rehberi"

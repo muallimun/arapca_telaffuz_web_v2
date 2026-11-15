@@ -7736,7 +7736,10 @@ test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_IN
         src.includes("Bu Nedir?") &&
         src.includes("3–3.5 cm") &&
         src.includes("Karma Aralık (Range)") &&
-        src.includes("40 oynatma listesinde") &&
+        (src.includes("40 oynatma listesinde") ||
+          src.includes(
+            "{CONTENT_INVENTORY.youtubePlaylistsCount} oynatma listesinde"
+          )) &&
         src.includes("CEFR Kazanım Isı Haritası") &&
         src.includes("4 sekmeli"),
       true,
@@ -9192,4 +9195,148 @@ test("77. [Denetim 6/6] PWA Service Worker (public/sw.js v2.2 + offlineManager u
     "İnternet yokken önbellekte bulunmayan sayfa navigasyonu /offline sayfasına düşmelidir"
   );
 });
+
+test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter), Sözlük/Video Envanter Tutarlılığı (1895 vs 3225, 60=20+40) ve Ters Karma Aralık (start > end) Koruması", async () => {
+  const { pathToFileURL } = await import("node:url");
+
+  // 1) IrabColorPainter ve ReadingEvidenceHunter 360px dar ekran kontrolleri
+  const irabSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "IrabColorPainter.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    irabSrc.includes("flex flex-wrap gap-1.5") &&
+      irabSrc.includes("px-2.5 py-1.5"),
+    "IrabColorPainter 5 renkli fırça çubuğu ve üst barı 360px ekranlar için flex-wrap gap-1.5 ve px-2.5 py-1.5 kompakt boşluk içermelidir"
+  );
+
+  const evidenceSrc = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "exercises",
+      "ReadingEvidenceHunter.tsx"
+    ),
+    "utf8"
+  );
+  assert.ok(
+    evidenceSrc.includes("w-6 h-6 shrink-0") &&
+      evidenceSrc.includes("w-8 h-8 shrink-0") &&
+      evidenceSrc.includes("flex flex-wrap items-center gap-1.5") &&
+      evidenceSrc.includes("flex-1 min-w-0 break-words"),
+    "ReadingEvidenceHunter satır numarası (w-6 h-6 shrink-0), ses butonu (w-8 h-8 shrink-0) ve üst barı (flex-wrap gap-1.5) 360px uyumlu olmalıdır"
+  );
+
+  // 2) contentInventory.ts, kutuphane/page.tsx, GuideAndInfoModalBody.tsx ve OnboardingTourModal.tsx tutarlılığı
+  const { CONTENT_INVENTORY } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
+  );
+  assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1895);
+  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3225);
+  assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
+  assert.equal(CONTENT_INVENTORY.youtubeSingleVideosCount, 20);
+  assert.equal(CONTENT_INVENTORY.youtubePlaylistsCount, 40);
+  assert.equal(
+    CONTENT_INVENTORY.youtubeSingleVideosCount +
+      CONTENT_INVENTORY.youtubePlaylistsCount,
+    CONTENT_INVENTORY.youtubeVideosCount
+  );
+  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 18);
+
+  const kutuphaneSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const guideSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    "utf8"
+  );
+  const tourSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+
+  assert.equal(
+    kutuphaneSrc.includes("55 KAYIT"),
+    false,
+    "kutuphane/page.tsx içinde eski '55 KAYIT' ifadesi kalmamalıdır"
+  );
+  for (const [label, src] of [
+    ["kutuphane/page.tsx", kutuphaneSrc],
+    ["GuideAndInfoModalBody.tsx", guideSrc],
+    ["OnboardingTourModal.tsx", tourSrc],
+  ]) {
+    assert.ok(
+      src.includes("CONTENT_INVENTORY.coreDictionaryWordsCount") &&
+        src.includes("CONTENT_INVENTORY.dictionaryWordsCount") &&
+        src.includes("CONTENT_INVENTORY.youtubeVideosCount") &&
+        src.includes("CONTENT_INVENTORY.youtubeSingleVideosCount") &&
+        src.includes("CONTENT_INVENTORY.youtubePlaylistsCount") &&
+        src.includes("CONTENT_INVENTORY.exerciseModulesCount"),
+      `${label} sözlük (1895 vs 3225), YouTube (60 = 20 + 40) ve 18 modül sayılarını CONTENT_INVENTORY üzerinden dinamik okumalıdır`
+    );
+  }
+
+  // 3) a4ExamStudioEngine.ts ters aralık (start > end) koruması
+  const {
+    clampStudioRangeBounds,
+    resolveStudioMaterialBundle,
+    buildSixSectionExamData,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "a4ExamStudioEngine.ts"))
+      .href
+  );
+
+  assert.deepEqual(clampStudioRangeBounds(120, 15, 5), { start: 5, end: 15 });
+  assert.deepEqual(clampStudioRangeBounds(60, 999, -4), { start: 1, end: 60 });
+
+  for (const sourceId of [
+    "diyaloglar",
+    "metinler",
+    "gorsel_kelimeler",
+    "cumleler_1111",
+    "atasozleri",
+    "es_zit_anlamlilar",
+  ]) {
+    const reversedBundle = resolveStudioMaterialBundle({
+      sourceId,
+      levelFilter: "all",
+      packId: "range::18::6",
+      selectionMode: "range",
+      rangeStart: 18,
+      rangeEnd: 6,
+    });
+    assert.ok(
+      reversedBundle.vocabCandidates.length > 0 &&
+        reversedBundle.dialogue.satirlar.length > 0,
+      `${sourceId} için start > end (18 > 6) girildiğinde boş materyal/soru listesi oluşmamalıdır`
+    );
+
+    const examData = buildSixSectionExamData({
+      bundle: reversedBundle,
+      counts: {
+        sec1ArToTr: 5,
+        sec2TrToAr: 5,
+        sec3FillBlank: 5,
+        sec4MultipleChoice: 5,
+        sec5Matching: 5,
+        sec6Morphology: 5,
+      },
+      bookletGroup: "A",
+    });
+    const totalQuestions =
+      examData.sec1ArToTr.length +
+      examData.sec2TrToAr.length +
+      examData.sec3FillBlank.length +
+      examData.sec4MultipleChoice.length +
+      examData.sec5Matching.length +
+      examData.sec6Morphology.length;
+    assert.ok(
+      totalQuestions > 0,
+      `${sourceId} ters aralıkta (18 > 6) sıfırdan büyük soru üretmelidir`
+    );
+  }
+});
+
 

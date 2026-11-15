@@ -258,7 +258,7 @@ export default function GuideAndInfoModalBody({
                       </strong>{" "}
                       ile 2 saniyede kurulum;{" "}
                       <strong className="text-[var(--foreground)]">
-                        Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman),
+                        Görsel Hız Seansı, Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman),
                         Bu Nedir?
                       </strong>{" "}
                       görsel oyunları, Çoktan Seçmeli, Ok Çizimli Eşleştirme,
@@ -302,7 +302,8 @@ export default function GuideAndInfoModalBody({
                     4 temel dilbilimsel alanda{" "}
                     {CONTENT_INVENTORY.grammarNotesCount} hap gramer kartı (
                     {CONTENT_INVENTORY.dialoguesCount} diyalog +{" "}
-                    {CONTENT_INVENTORY.readingsCount} metin + 15 temel/ileri
+                    {CONTENT_INVENTORY.readingsCount} metin +{" "}
+                    {CONTENT_INVENTORY.standaloneGrammarNotesCount} temel/ileri
                     müstakil gramer), Sade/Akademik anlatım geçişi ve kart
                     içinden doğrudan alıştırma ve konu tarama testi köprüsü.
                   </p>
@@ -378,9 +379,9 @@ export default function GuideAndInfoModalBody({
                     <strong className="text-[var(--foreground)]">
                       {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
                     </strong>
-                    ; 20 tekil video ve{" "}
+                    ; {CONTENT_INVENTORY.youtubeSingleVideosCount} tekil video ve{" "}
                     <strong className="text-[var(--foreground)]">
-                      40 oynatma listesinde uygulama içi bölüm seçimi
+                      {CONTENT_INVENTORY.youtubePlaylistsCount} oynatma listesinde uygulama içi bölüm seçimi
                     </strong>{" "}
                     (yan yana Split-Cinema), kaldığı bölümü hatırlama ve bölüm
                     bazlı izlendi takibi.
@@ -627,11 +628,16 @@ export default function GuideAndInfoModalBody({
                     {CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye
                     Tespit ve Konu Tarama Merkezi,{" "}
                     {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp;
-                    İzleme Rehberi (40 oynatma listesi bölüm seçicili),{" "}
+                    İzleme Rehberi ({CONTENT_INVENTORY.youtubeSingleVideosCount}{" "}
+                    tekil video + {CONTENT_INVENTORY.youtubePlaylistsCount}{" "}
+                    oynatma listesi bölüm seçicili),{" "}
                     {CONTENT_INVENTORY.synonymsAntonymsCount} maddelik Eş &amp; Zıt
                     Anlamlılar (المرادفات والأضداد) atlası ve{" "}
                     {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
-                    kayıtlı morfolojik sözlük (Türkçeyle Ortak Kelimeler &amp;
+                    kayıtlı Birleşik Morfolojik Sözlük (
+                    {CONTENT_INVENTORY.coreDictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+                    ana sözlük + {CONTENT_INVENTORY.visualWordsCount} görsel
+                    kelime + ek sözlük; Türkçeyle Ortak Kelimeler &amp;
                     Kur&apos;ân Köprüsü).
                   </p>
                 </div>

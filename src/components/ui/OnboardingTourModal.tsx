@@ -81,15 +81,14 @@ export default function OnboardingTourModal() {
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
             <span className="text-base sm:text-lg font-black text-[#6741D9] dark:text-[#d0bfff] leading-tight block">
-              {(
-                Math.floor(CONTENT_INVENTORY.dictionaryWordsCount / 100) * 100
-              ).toLocaleString("tr-TR")}
-              + Sözlük &amp; {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
+              {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+              Birleşik Sözlük &amp; {CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt
             </span>
             <p className="text-[11px] font-semibold text-[var(--muted)] leading-snug">
-              5 kademeli morfolojik çözümleyici, kök analizi ve{" "}
-              {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
-              Sözlüğü
+              {CONTENT_INVENTORY.coreDictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+              ana sözlük + {CONTENT_INVENTORY.visualWordsCount} görsel kelime +
+              ek sözlük, kök analizi ve {CONTENT_INVENTORY.synonymsAntonymsCount}{" "}
+              Eş &amp; Zıt Anlamlılar
             </p>
           </div>
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] space-y-1">
@@ -386,10 +385,10 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Görsel Oyunlar: Balon Safari &amp; Hafızanı Yokla
+                Görsel Oyunlar: Hız Seansı &amp; Balon Safari
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman) ve Bu Nedir? oyunları
+                Görsel Hız Seansı, Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman) ve Bu Nedir? oyunları
               </span>
             </div>
           </div>
@@ -474,7 +473,8 @@ export default function OnboardingTourModal() {
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
                 {CONTENT_INVENTORY.dialoguesCount} diyalog,{" "}
-                {CONTENT_INVENTORY.readingsCount} metin ve 15 müstakil gramer
+                {CONTENT_INVENTORY.readingsCount} metin ve{" "}
+                {CONTENT_INVENTORY.standaloneGrammarNotesCount} müstakil gramer
                 kartından oluşan bütüncül atlas; Sade/Akademik anlatım, i&apos;rab
                 tahlili ve tek tıkla konu tarama testi bağlantısı.
               </p>
@@ -487,10 +487,13 @@ export default function OnboardingTourModal() {
             </div>
             <div className="min-w-0 space-y-0.5">
               <span className="block text-xs font-extrabold text-rose-900 dark:text-rose-200">
-                🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi (40 Oynatma Listesi)
+                🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi ({CONTENT_INVENTORY.youtubePlaylistsCount} Oynatma Listesi)
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
-                20 tekil video ve <strong>40 oynatma listesinde uygulama içi bölüm seçici</strong>{" "}
+                {CONTENT_INVENTORY.youtubeSingleVideosCount} tekil video ve{" "}
+                <strong>
+                  {CONTENT_INVENTORY.youtubePlaylistsCount} oynatma listesinde uygulama içi bölüm seçici
+                </strong>{" "}
                 (yan yana Split-Cinema), <strong>kaldığı bölümü hatırlama</strong>{" "}
                 ve <strong>bölüm bazlı izlendi takibi</strong>.
               </p>

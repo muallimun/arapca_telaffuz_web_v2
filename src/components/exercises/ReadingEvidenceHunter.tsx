@@ -621,8 +621,8 @@ export default function ReadingEvidenceHunter({
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       {/* Üst Bilgi Barı */}
-      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-extrabold text-[var(--foreground)] min-w-0">
           <Search size={17} className="text-[#087F5B] shrink-0" />
           <span>Metin Kanıt Dedektifi</span>
           <span aria-hidden="true" className="text-[var(--muted)]">·</span>
@@ -635,7 +635,7 @@ export default function ReadingEvidenceHunter({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
           {remainingSeconds !== null && (
             <span className="inline-flex items-center gap-1 text-xs font-black tabular-nums text-[var(--foreground)]">
               <Timer size={14} />
@@ -648,9 +648,9 @@ export default function ReadingEvidenceHunter({
               playClick();
               setShowTurkishHelp((v) => !v);
             }}
-            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <Eye size={14} className="text-[#6741D9]" />
+            <Eye size={14} className="text-[#6741D9] shrink-0" />
             <span>{showTurkishHelp ? "Türkçeyi Gizle" : "Türkçe Yardım"}</span>
           </button>
         </div>
@@ -714,7 +714,7 @@ export default function ReadingEvidenceHunter({
                       void handleSelectEvidenceLine(idx);
                     }
                   }}
-                  className={`min-h-[52px] rounded-2xl border-2 p-3 sm:p-3.5 transition-all ${
+                  className={`min-h-[52px] rounded-2xl border-2 p-2.5 sm:p-3.5 transition-all ${
                     isEvidenceHighlighted
                       ? "bg-amber-100/90 dark:bg-emerald-950/55 border-emerald-500 shadow-xs"
                       : step === "evidence"
@@ -725,8 +725,8 @@ export default function ReadingEvidenceHunter({
                   }`}
                 >
                   <div dir="rtl" className="flex items-start gap-2.5">
-                    <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                      <span className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-black tabular-nums text-[var(--muted)] flex items-center justify-center">
+                    <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pt-0.5">
+                      <span className="w-6 h-6 shrink-0 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-black tabular-nums text-[var(--muted)] flex items-center justify-center">
                         {line.sira}
                       </span>
                       <button
@@ -737,20 +737,20 @@ export default function ReadingEvidenceHunter({
                           void playReadingLine(currentItem.reading, line);
                         }}
                         title="Satırı sesli dinle"
-                        className={`w-9 h-9 rounded-xl border flex items-center justify-center cursor-pointer ${
+                        className={`w-8 h-8 shrink-0 rounded-xl border flex items-center justify-center cursor-pointer ${
                           playingLineSira === line.sira
                             ? "bg-[#087F5B] text-white border-[#065F46]"
                             : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[#087F5B] dark:text-emerald-400"
                         }`}
                       >
-                        <Volume2 size={15} />
+                        <Volume2 size={14} />
                       </button>
                     </div>
 
                     <p
                       dir="rtl"
                       lang="ar"
-                      className="arabic font-arabic text-2xl sm:text-3xl font-bold text-[var(--foreground)] text-right leading-[1.95] flex-1 break-words"
+                      className="arabic font-arabic text-xl sm:text-3xl font-bold text-[var(--foreground)] text-right leading-[1.95] flex-1 min-w-0 break-words"
                     >
                       {fixArabicTypography(line.arapca, arabicFont)}
                     </p>

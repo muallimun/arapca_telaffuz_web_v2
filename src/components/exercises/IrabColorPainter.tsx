@@ -827,8 +827,8 @@ export default function IrabColorPainter({
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       {/* Üst Bilgi Barı */}
-      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
+      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-extrabold text-[var(--foreground)] min-w-0">
           <Paintbrush size={17} className="text-[#6741D9] shrink-0" />
           <span>Cümleyi İ&apos;rab Renkleriyle Boya</span>
           <span aria-hidden="true" className="text-[var(--muted)]">·</span>
@@ -839,7 +839,7 @@ export default function IrabColorPainter({
           <span className="text-[var(--muted)]">Seviye {currentItem.level}</span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-extrabold">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-extrabold shrink-0">
           <span className="tabular-nums text-[var(--muted)]">
             Boyanan: {paintedSegmentsList.length}/{currentItem.paintableCount}
           </span>
@@ -945,7 +945,7 @@ export default function IrabColorPainter({
               1. Aşağıdan bir İ&apos;rab Fırçası seçin · 2. Üstteki cümlede o göreve sahip kelime/öbeğe dokunarak boyayın:
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="flex flex-wrap gap-1.5 sm:grid sm:grid-cols-2 sm:gap-2.5">
               {currentItem.activeBrushes.map(({ brush, rolesInSentence }) => {
                 const isSelected = effectiveBrush === brush.key;
                 const remainingCount = currentItem.segments.filter(
@@ -964,7 +964,7 @@ export default function IrabColorPainter({
                       playClick();
                       setSelectedBrush(brush.key);
                     }}
-                    className={`min-h-[54px] px-4 py-2.5 rounded-2xl border-2 text-left flex items-center justify-between gap-2.5 transition-all ${
+                    className={`min-h-[44px] sm:min-h-[54px] px-2.5 py-1.5 sm:px-4 sm:py-2.5 text-xs rounded-xl sm:rounded-2xl border-2 text-left flex items-center justify-between gap-1.5 sm:gap-2.5 flex-1 min-w-[148px] sm:min-w-0 transition-all ${
                       remainingCount === 0
                         ? "opacity-40 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-800 cursor-default"
                         : isSelected

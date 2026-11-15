@@ -764,19 +764,23 @@ export function clampStudioRangeBounds(
   rawEnd?: number
 ): { start: number; end: number } {
   const maxLen = Math.max(1, Math.floor(poolLength));
-  const parsedA =
+  const parsedStart =
     typeof rawStart === "number" && Number.isFinite(rawStart)
       ? Math.floor(rawStart)
       : 1;
-  const parsedB =
+  const parsedEnd =
     typeof rawEnd === "number" && Number.isFinite(rawEnd)
       ? Math.floor(rawEnd)
       : Math.min(10, maxLen);
-  const clampedA = Math.max(1, Math.min(maxLen, parsedA));
-  const clampedB = Math.max(1, Math.min(maxLen, parsedB));
+  const [orderedStart, orderedEnd] = [
+    Math.min(parsedStart, parsedEnd),
+    Math.max(parsedStart, parsedEnd),
+  ];
+  const clampedStart = Math.max(1, Math.min(maxLen, orderedStart));
+  const clampedEnd = Math.max(1, Math.min(maxLen, orderedEnd));
   return {
-    start: Math.min(clampedA, clampedB),
-    end: Math.max(clampedA, clampedB),
+    start: Math.min(clampedStart, clampedEnd),
+    end: Math.max(clampedStart, clampedEnd),
   };
 }
 
@@ -937,17 +941,27 @@ export function resolveStudioMaterialBundle(params: {
   };
 }): StudioMaterialBundle {
   const { sourceId, levelFilter, packId, initialProps } = params;
-  const encodedRangeMatch = packId.match(/^range::(\d+)::(\d+)$/);
+  const encodedRangeMatch = packId.match(/^range::(-?\d+)::(-?\d+)$/);
   const effectiveSelectionMode: StudioSelectionMode =
     params.selectionMode === "range" || Boolean(encodedRangeMatch)
       ? "range"
       : "single";
-  const requestedRangeStart = encodedRangeMatch
+  const rawRequestedStart = encodedRangeMatch
     ? parseInt(encodedRangeMatch[1], 10)
     : params.rangeStart;
-  const requestedRangeEnd = encodedRangeMatch
+  const rawRequestedEnd = encodedRangeMatch
     ? parseInt(encodedRangeMatch[2], 10)
     : params.rangeEnd;
+  const [requestedRangeStart, requestedRangeEnd] =
+    typeof rawRequestedStart === "number" &&
+    Number.isFinite(rawRequestedStart) &&
+    typeof rawRequestedEnd === "number" &&
+    Number.isFinite(rawRequestedEnd)
+      ? [
+          Math.min(rawRequestedStart, rawRequestedEnd),
+          Math.max(rawRequestedStart, rawRequestedEnd),
+        ]
+      : [rawRequestedStart, rawRequestedEnd];
 
   const fallbackDlg = diyaloglar[0];
   const targetLvl: Level = levelFilter === "all" ? "A1" : levelFilter;

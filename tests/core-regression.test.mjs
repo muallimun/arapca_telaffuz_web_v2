@@ -5912,10 +5912,10 @@ test("51. UTF-8/CESU-8 Kesin Doğrulaması, Tüm Alıştırma Modüllerinde Gör
   assert.equal(
     multipleChoiceCode.includes("lookupVisualWordGorsel") &&
       multipleChoiceCode.includes("resolveImageUrl") &&
-      multipleChoiceCode.includes("h-28 sm:h-36") &&
+      multipleChoiceCode.includes("h-20 sm:h-36") &&
       multipleChoiceCode.includes("object-contain rounded-2xl"),
     true,
-    "MultipleChoice.tsx Görsel Kelime sorularında h-28 sm:h-36 object-contain rounded-2xl resmi soru metninin üzerinde göstermelidir"
+    "MultipleChoice.tsx Görsel Kelime sorularında h-20 sm:h-36 object-contain rounded-2xl resmi soru metninin üzerinde göstermelidir"
   );
   assert.equal(
     matchingCode.includes("lookupVisualWordGorsel") &&
@@ -6752,5 +6752,130 @@ test("56. Resmi A4 Sınav ve Ders Föyü Anteti (Maks. 3-3.5 cm, Sıfır Renkli 
   );
 });
 
+test("57. ErrorHunter Şık Tıklanabilirliği, Slash (/) Çoklu Örnek Eşleştirmesi, Med Harfi Hareke Kalkanı ve Mobil Alıştırma Tam Odak Modu Doğrulaması", async () => {
+  const errorHunterCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "ErrorHunter.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const multipleChoiceCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
 
+  // 1. ErrorHunter handleSelectRepairOption effectiveStage !== "repair" kontrolü ve stage senkronizasyonu
+  assert.equal(
+    errorHunterCode.includes('effectiveStage !== "repair"') &&
+      !errorHunterCode.includes('if (!currentItem || stage !== "repair") return;') &&
+      errorHunterCode.includes("!currentItem.hasSingleSpanDiff"),
+    true,
+    "ErrorHunter.tsx içinde handleSelectRepairOption effectiveStage !== 'repair' kontrolü yapmalı ve !hasSingleSpanDiff durumunda tıklamaları kabul etmelidir"
+  );
 
+  const {
+    buildErrorHunterCatalog,
+    buildRealisticArabicMutations,
+  } = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, "src", "components", "exercises", "ErrorHunter.tsx")
+    ).href
+  );
+
+  // 2. Slash (/) ile ayrılmış çoklu örneklerin simetrik eşleştirilmesi ve / kalıntısı kalmaması
+  const catalog = buildErrorHunterCatalog();
+  assert.ok(catalog.length >= 195, "ErrorHunter kataloğu zengin örnekler üretmelidir");
+
+  for (const item of catalog) {
+    assert.equal(
+      item.wrongSentenceAr.includes("/") ||
+        item.correctSentenceAr.includes("/") ||
+        item.wrongSpanText.includes("/") ||
+        item.correctSpanText.includes("/"),
+      false,
+      `${item.id} kaydında '/' ile birleştirilmiş ham çoklu örnek kalıntısı bulunmamalıdır (Y: ${item.wrongSentenceAr} | D: ${item.correctSentenceAr})`
+    );
+  }
+
+  const allamaniItem = catalog.find(
+    (it) => it.wrongSentenceAr.includes("عَلَّمَي") && it.correctSentenceAr.includes("عَلَّمَنِي")
+  );
+  const iyyakaItem = catalog.find(
+    (it) =>
+      it.wrongSentenceAr.includes("إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ") &&
+      it.correctSentenceAr.includes("إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ")
+  );
+  assert.ok(allamaniItem, "عَلَّمَي -> عَلَّمَنِي örneği müstakil soru olarak eşleşmelidir");
+  assert.ok(
+    iyyakaItem,
+    "إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ -> إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ örneği müstakil soru olarak eşleşmelidir"
+  );
+
+  // 3. Med harfleri (ا / و / ي / ى) ve نون الوقاية (ـنِي) üzerinde geçersiz hareke/tenvin/sükûn yasağı
+  const maddWords = ["عَلَّمَنِي", "كِتَابِي", "يَكْتُبُوا", "رَمَى", "يَدْعُو", "مَدْرَسَتُنَا"];
+  const invalidFinalMaddRegex = /[اويى][\u064B-\u0652](?:[^\p{L}\u064B-\u0652]|$)/u;
+  for (const w of maddWords) {
+    const muts = buildRealisticArabicMutations(w, new Set([w]), []);
+    assert.ok(muts.length >= 2, `${w} için en az 2 gerçekçi çeldirici üretilmelidir`);
+    for (const m of muts) {
+      assert.equal(
+        invalidFinalMaddRegex.test(m),
+        false,
+        `${w} kelimesinden üretilen '${m}' çeldiricisinde med harfi üzerinde hareke/sükûn bulunmamalıdır`
+      );
+    }
+  }
+  const allamaniMuts = buildRealisticArabicMutations(
+    "عَلَّمَنِي",
+    new Set(["عَلَّمَنِي"]),
+    []
+  );
+  assert.equal(
+    allamaniMuts.some((m) => ["عَلَّمَي", "عَلَّمُنِي", "عَلَّمْنِي"].includes(m)),
+    true,
+    "عَلَّمَنِي için نون الوقاية düşmesi veya zamir öncesi hareke hatası üretilmelidir"
+  );
+
+  const allamaniTarget = allamaniItem.hasSingleSpanDiff
+    ? allamaniItem.correctSpanText
+    : allamaniItem.correctSentenceAr;
+  const allamaniGeneratedOptions = [
+    allamaniTarget,
+    ...buildRealisticArabicMutations(
+      allamaniTarget,
+      new Set([allamaniTarget, allamaniItem.wrongSpanText]),
+      []
+    ),
+  ];
+  for (const optText of allamaniGeneratedOptions) {
+    assert.equal(
+      invalidFinalMaddRegex.test(optText),
+      false,
+      `عَلَّمَنِي şıklarında ('${optText}') imlâ dışı harekeli med harfi bulunmamalıdır`
+    );
+  }
+
+  // 4. Mobil Alıştırma "Tam Odak Modu" (alistirmalar/page.tsx + MultipleChoice.tsx)
+  assert.equal(
+    alistirmalarCode.includes("max-md:fixed max-md:inset-0 max-md:z-[90]") &&
+      alistirmalarCode.includes("h-11 min-h-[44px] max-h-[44px]") &&
+      alistirmalarCode.includes("← Çık") &&
+      alistirmalarCode.includes("Doğru:") &&
+      alistirmalarCode.includes("hidden md:flex"),
+    true,
+    "alistirmalar/page.tsx isPlaying aktifken mobilde (<768px) Header/MobileNav'ı gizleyen tam ekran odak moduna ve 44px tek satır üst şeride geçmelidir"
+  );
+
+  assert.equal(
+    multipleChoiceCode.includes("sm:hidden w-full h-2 rounded-full") &&
+      multipleChoiceCode.includes("hidden sm:flex sm:flex-wrap") &&
+      multipleChoiceCode.includes("p-3 sm:p-6") &&
+      multipleChoiceCode.includes("h-20 sm:h-36") &&
+      multipleChoiceCode.includes("py-1 sm:py-2") &&
+      multipleChoiceCode.includes("text-2xl sm:text-4xl"),
+    true,
+    "MultipleChoice.tsx mobilde (<640px) 1..10 kutuları yerine ince ilerleme çubuğu göstermeli ve p-3 sm:p-6 / h-20 sm:h-36 / text-2xl sm:text-4xl kompakt ölçülerini kullanmalıdır"
+  );
+});

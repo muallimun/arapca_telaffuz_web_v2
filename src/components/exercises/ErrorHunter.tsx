@@ -48,6 +48,11 @@ export interface ErrorHunterProps {
   grammarFilter?: string;
   questionCount?: 10 | 20 | 30;
   timeLimit?: number | null;
+  onProgressChange?: (info: {
+    current: number;
+    total: number;
+    correct: number;
+  }) => void;
   onClose?: () => void;
 }
 
@@ -195,6 +200,25 @@ function computeSpanDiff(
   };
 }
 
+function hasInvalidArabicMaddHaraka(text: string): boolean {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  for (const rawTok of words) {
+    const { core } = stripPunctuationEdge(rawTok);
+    if (!core) continue;
+    // ـنِي (mütekellim yâ'sı + nûn-u vikâye) sonunda asla hareke/sükun/tenvin bulunamaz
+    if (/ن\u0650?ي[\u064B-\u0650\u0652]$/u.test(core)) return true;
+    // Elif (ا) veya elif-i maksûre (ى) üzerinde kısa hareke veya sükun bulunamaz (tenvin fetha ًا hariç)
+    if (/[اى][\u064E\u064F\u0650\u0652]$/u.test(core)) return true;
+    // Dammeden sonra med vâv'ı (ـُو) üzerinde hareke/sükun/tenvin bulunamaz
+    if (/\u064Fو[\u064B-\u0650\u0652]$/u.test(core)) return true;
+    // Kesradan sonra med yâ'sı (ـِي) üzerinde damme, kesra, sükun veya tenvin bulunamaz
+    if (/\u0650ي[\u064B\u064C\u064D\u064F\u0650\u0652]$/u.test(core)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Doğru onarım formundan türetilmiş gerçekçi hareke / sarf çeldiricileri üretir.
  */
@@ -209,7 +233,8 @@ export function buildRealisticArabicMutations(
     if (
       cleaned &&
       !forbiddenSet.has(cleaned) &&
-      !candidates.includes(cleaned)
+      !candidates.includes(cleaned) &&
+      !hasInvalidArabicMaddHaraka(cleaned)
     ) {
       candidates.push(cleaned);
     }
@@ -221,7 +246,7 @@ export function buildRealisticArabicMutations(
     const { leading, core, trailing } = stripPunctuationEdge(tokens[lastIdx]);
 
     if (core.length >= 2) {
-      // 1. Son hareke / tenvin varyasyonları (muzâri fiil ve muttasıl zamir korumalı)
+      // 1. Son hareke / tenvin varyasyonları (muzâri fiil, muttasıl zamir ve med harfi korumalı)
       const stemNoFinalMark = core
         .replace(/ًا$/u, "")
         .replace(/[\u064B-\u0650\u0652]+$/u, "");
@@ -232,7 +257,9 @@ export function buildRealisticArabicMutations(
       );
       const hasOriginalTanwin = /[\u064B\u064C\u064D]|ًا$/u.test(core);
       const hasDefiniteArticle =
-        /^(?:[وفبكل][\u064E\u0650\u064F]?)?(?:ال|اَل)/u.test(stemNoFinalMark);
+        /^(?:[وفبكل][\u064E\u0650\u0652\u064F]?)?(?:ال|اَل)/u.test(
+          stemNoFinalMark
+        );
 
       // Muzâri fiil tespiti (ي / ت / أ / ن öneki ile başlayan, harf-i tarifsiz, tenvinsiz ve ة'siz fiil kalıpları)
       const isMuzariVerb =
@@ -243,7 +270,7 @@ export function buildRealisticArabicMutations(
         (/^(?:[وف]\u064E?)?(?:س\u064E?)?[يتأن][\u064E\u064F]/u.test(core) ||
           (/^(?:[وف]?(?:س)?)?[يتأن]/u.test(bareWord) && bareWord.length >= 3));
 
-      // Muttasıl zamir tespiti (ـهُ / ـهَا / ـهُمْ / ـكَ / ـنَا ve kardeş zamir ekleri)
+      // Muttasıl zamir tespiti (ـهُ / ـهَا / ـهُمْ / ـكَ / ـنَا / ـنِي / ـِي ve kardeş zamir ekleri)
       const hasLongOrPluralPronoun =
         !hasOriginalTanwin &&
         bareWord.length >= 3 &&
@@ -262,16 +289,140 @@ export function buildRealisticArabicMutations(
       const forbidTanwin =
         hasDefiniteArticle || isMuzariVerb || hasAttachedPronoun;
 
-      // Uzun ünlülü muttasıl zamirle (ـهَا / ـنَا) biten kelimelerde elif üzerine hareke koymak yerine zamirden önceki i'rab harekesini değiştir
+      // A) Muttasıl mütekellim yâ'sı + nûn-u vikâye (ـنِي, örn. عَلَّمَنِي / يُعْجِبُنِي / أَكْرَمَنِي):
+      // Yâ üzerine asla hareke koyma; nûn-u vikâyesiz formu (عَلَّمَي) ve zamir öncesi harf harekesini değiştir (عَلَّمُنِي / عَلَّمْنِي / عَلَّمِنِي)
+      const niPronounMatch =
+        !hasOriginalTanwin && bareWord.length >= 4
+          ? stemNoFinalMark.match(
+              /^(.+?)([\u064E\u064F\u0650\u0652]?)(ن\u0650?ي)$/u
+            )
+          : null;
+
+      // B) Uzun elifli muttasıl zamirle (ـهَا / ـنَا) biten kelimeler
       const longPronounMatch = stemNoFinalMark.match(
         /^(.+?)([\u064E\u064F\u0650\u0652]?)(ه\u064E?ا|ن\u064E?ا)$/u
       );
-      if (hasAttachedPronoun && longPronounMatch) {
+
+      // C) Med harfiyle (ا / ى / şeddesiz ve sükun sonrası olmayan و / ي) biten kelimeler (örn. كِتَابِي، القَاضِي، يَدْعُو، يَكْتُبُوا)
+      const endsWithMaddLetter =
+        /[اى]$/u.test(stemNoFinalMark) ||
+        (/[وي]$/u.test(stemNoFinalMark) &&
+          !/\u0652[وي]$/u.test(stemNoFinalMark));
+
+      if (niPronounMatch) {
+        const hostBase = niPronounMatch[1];
+        // 1) Nûn-u vikâyenin düşürüldüğü tipik öğrenci hatası (örn. عَلَّمَي)
+        pushUnique(
+          [...tokens.slice(0, lastIdx), `${leading}${hostBase}\u064Eي${trailing}`].join(
+            " "
+          )
+        );
+        // 2) Zamirden önceki harfin harekesinin değiştirilmesi (örn. عَلَّمُنِي، عَلَّمْنِي، عَلَّمِنِي)
+        for (const hostMark of ["\u064F", "\u0652", "\u0650", "\u064E"]) {
+          const mutatedHostWord = `${leading}${hostBase}${hostMark}ن\u0650ي${trailing}`;
+          pushUnique([...tokens.slice(0, lastIdx), mutatedHostWord].join(" "));
+        }
+      } else if (hasAttachedPronoun && longPronounMatch) {
         const hostBase = longPronounMatch[1];
         const pronSuffix = longPronounMatch[3];
         for (const hostMark of ["\u064F", "\u064E", "\u0650", "\u0652"]) {
           const mutatedHostWord = `${leading}${hostBase}${hostMark}${pronSuffix}${trailing}`;
           pushUnique([...tokens.slice(0, lastIdx), mutatedHostWord].join(" "));
+        }
+      } else if (endsWithMaddLetter) {
+        // Med harfi üzerine hareke koymadan gerçekçi sarf/nahiv çeldiricileri üret:
+        // 1) Cemî vâv + elif-i fârika (ـُوا -> ـُونَ / ـُو)
+        if (/ُوا$/u.test(stemNoFinalMark)) {
+          const baseWithoutAlif = stemNoFinalMark.slice(0, -1);
+          pushUnique(
+            [
+              ...tokens.slice(0, lastIdx),
+              `${leading}${baseWithoutAlif}ن\u064E${trailing}`,
+            ].join(" ")
+          );
+          pushUnique(
+            [
+              ...tokens.slice(0, lastIdx),
+              `${leading}${baseWithoutAlif}${trailing}`,
+            ].join(" ")
+          );
+        }
+        // 2) İlletli muzâri / emir düşürme veya zamir değişimi (örn. يَدْعُو -> يَدْعُ, كِتَابِي -> كِتَابُهُ / كِتَابَكَ / كِتَابِكَ)
+        if (/\u064Fو$/u.test(stemNoFinalMark)) {
+          pushUnique(
+            [
+              ...tokens.slice(0, lastIdx),
+              `${leading}${stemNoFinalMark.slice(0, -1)}${trailing}`,
+            ].join(" ")
+          );
+        } else if (/\u0650ي$/u.test(stemNoFinalMark)) {
+          const hostBeforeYa = stemNoFinalMark.replace(/\u0650ي$/u, "");
+          if (hostBeforeYa.length >= 2) {
+            if (isMuzariVerb) {
+              pushUnique(
+                [
+                  ...tokens.slice(0, lastIdx),
+                  `${leading}${hostBeforeYa}\u0650${trailing}`,
+                ].join(" ")
+              );
+              pushUnique(
+                [
+                  ...tokens.slice(0, lastIdx),
+                  `${leading}${stemNoFinalMark}\u064E${trailing}`,
+                ].join(" ")
+              );
+            } else if (hasDefiniteArticle) {
+              // Mankûs isim (القَاضِي -> القَاضِيَ / القَاضٍ benzeri)
+              pushUnique(
+                [
+                  ...tokens.slice(0, lastIdx),
+                  `${leading}${stemNoFinalMark}\u064E${trailing}`,
+                ].join(" ")
+              );
+              const strippedAl = hostBeforeYa.replace(/^(?:ال|اَل)/u, "");
+              if (strippedAl.length >= 2) {
+                pushUnique(
+                  [
+                    ...tokens.slice(0, lastIdx),
+                    `${leading}${strippedAl}\u064D${trailing}`,
+                  ].join(" ")
+                );
+              }
+            } else {
+              // İsim + mütekellim yâ'sı (كِتَابِي / أَبِي -> كِتَابُهُ / كِتَابَكَ / كِتَابُكَ)
+              for (const altSuffix of ["\u064Fهُ", "\u064Fكَ", "\u064Eكَ"]) {
+                pushUnique(
+                  [
+                    ...tokens.slice(0, lastIdx),
+                    `${leading}${hostBeforeYa}${altSuffix}${trailing}`,
+                  ].join(" ")
+                );
+              }
+            }
+          }
+        }
+        // 3) Kelime içi önceki bir kısa harekeyi değiştirerek med harfini koru
+        const internalVowelMatches = [
+          ...stemNoFinalMark
+            .slice(0, -2)
+            .matchAll(/[\u064E\u064F\u0650]/gu),
+        ];
+        if (internalVowelMatches.length > 0) {
+          const targetMatch =
+            internalVowelMatches[internalVowelMatches.length - 1];
+          const vIdx = targetMatch.index ?? 0;
+          for (const altMark of ["\u064E", "\u064F", "\u0650", "\u0652"]) {
+            const mutatedInternal =
+              stemNoFinalMark.slice(0, vIdx) +
+              altMark +
+              stemNoFinalMark.slice(vIdx + 1);
+            pushUnique(
+              [
+                ...tokens.slice(0, lastIdx),
+                `${leading}${mutatedInternal}${trailing}`,
+              ].join(" ")
+            );
+          }
         }
       } else {
         // Çoğul zamirlerde (ـهُمْ / ـكُمْ) zamirden önceki i'rab harekesini de gerçekçi çeldirici olarak üret
@@ -347,11 +498,14 @@ export function buildRealisticArabicMutations(
       }
     }
 
-    // Birden fazla kelimeli öbek/cümle ise ilk kelimenin de harekesini/öneğini değiştir
+    // Birden fazla kelimeli öbek/cümle ise ilk kelimenin de harekesini/öneğini değiştir (med harfi korumalı)
     if (tokens.length >= 2 && candidates.length < 4) {
       const firstParts = stripPunctuationEdge(tokens[0]);
       const firstStem = firstParts.core.replace(/[\u064B-\u0650\u0652]+$/u, "");
-      if (firstStem.length >= 2) {
+      const firstEndsWithMadd =
+        /[اى]$/u.test(firstStem) ||
+        (/[وي]$/u.test(firstStem) && !/\u0652[وي]$/u.test(firstStem));
+      if (firstStem.length >= 2 && !firstEndsWithMadd) {
         for (const mark of ["\u064E", "\u064F", "\u0650", "\u0652"]) {
           const rebuiltFirst = [
             `${firstParts.leading}${firstStem}${mark}${firstParts.trailing}`,
@@ -371,7 +525,23 @@ export function buildRealisticArabicMutations(
   return candidates.slice(0, 3);
 }
 
-function buildErrorHunterCatalog(): Omit<ErrorHunterItem, "repairOptions">[] {
+function splitSlashExamplesCleanly(rawText: string): string[] {
+  // Önce içinde Türkçe/Latin açıklama geçen parantezleri (örn. "(Nasb/Cezm halinde...)") temizle ki parantez içi '/' cümleyi bölmesin
+  const withoutTurkishParens = rawText.replace(
+    /\([^)]*[a-zA-ZçğıöşüÇĞİÖŞÜâîûÂÎÛ][^)]*\)/gu,
+    " "
+  );
+  return withoutTurkishParens
+    .split("/")
+    .map((part) => splitArabicSentenceWithTurkishNote(part).arabicPart.trim())
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+export function buildErrorHunterCatalog(): Omit<
+  ErrorHunterItem,
+  "repairOptions"
+>[] {
   const dlgMap = new Map(diyaloglar.map((d) => [d.id, d]));
   const metinMap = new Map(metinler.map((m) => [m.id, m]));
 
@@ -417,27 +587,65 @@ function buildErrorHunterCatalog(): Omit<ErrorHunterItem, "repairOptions">[] {
     const dsh = note.ayrintili_anlatim?.dikkat_sik_hata;
     if (!dsh?.yanlis || !dsh?.dogru) continue;
 
-    // Soru anında parantez içi Türkçe açıklama ipucunu gizle
-    const cleanWrong = splitArabicSentenceWithTurkishNote(dsh.yanlis).arabicPart.trim();
-    const rawPrimaryDogru = dsh.dogru.split("/")[0]?.trim() || dsh.dogru.trim();
-    const cleanCorrect = splitArabicSentenceWithTurkishNote(
-      rawPrimaryDogru
-    ).arabicPart.trim();
+    const yanlisParts = splitSlashExamplesCleanly(dsh.yanlis);
+    const dogruParts = splitSlashExamplesCleanly(dsh.dogru);
+    if (yanlisParts.length === 0 || dogruParts.length === 0) continue;
 
-    if (!cleanWrong || !cleanCorrect || cleanWrong === cleanCorrect) continue;
+    const matchedPairs: Array<{ wrongAr: string; correctAr: string }> = [];
 
-    const spanDiff = computeSpanDiff(cleanWrong, cleanCorrect);
-    out.push({
-      id: `errhunt_${note.bagli_id}`,
-      sourceId: note.bagli_id,
-      level,
-      sourceTitleTr,
-      konuBasligi: note.konu_basligi,
-      hapKural: note.hap_kural,
-      wrongSentenceAr: cleanWrong,
-      correctSentenceAr: cleanCorrect,
-      nedenTr: dsh.neden,
-      ...spanDiff,
+    if (yanlisParts.length === dogruParts.length) {
+      for (let i = 0; i < yanlisParts.length; i++) {
+        const w = yanlisParts[i];
+        const c = dogruParts[i];
+        if (w && c && w !== c) {
+          matchedPairs.push({ wrongAr: w, correctAr: c });
+        }
+      }
+    } else {
+      let primaryWrong = yanlisParts[0];
+      const primaryCorrect = dogruParts[0];
+
+      // Cümle ortasında "نَسْعَى رَغْبَةٌ / رَغْبَةٍ فِي حِمَايَةِ البِيئَةِ." gibi alternatif kelime yazılmışsa cümlenin ortak kuyruğunu koru
+      if (dogruParts.length === 1 && yanlisParts.length >= 2) {
+        const w0Toks = primaryWrong.split(/\s+/).filter(Boolean);
+        const w1Toks = yanlisParts[1].split(/\s+/).filter(Boolean);
+        const d0Toks = primaryCorrect.split(/\s+/).filter(Boolean);
+        if (
+          w0Toks.length < d0Toks.length &&
+          w1Toks.length > 1 &&
+          w0Toks.length + (w1Toks.length - 1) === d0Toks.length &&
+          stripPunctuationEdge(w1Toks[w1Toks.length - 1]).core ===
+            stripPunctuationEdge(d0Toks[d0Toks.length - 1]).core
+        ) {
+          primaryWrong = [...w0Toks, ...w1Toks.slice(1)].join(" ");
+        }
+      }
+
+      if (primaryWrong && primaryCorrect && primaryWrong !== primaryCorrect) {
+        matchedPairs.push({
+          wrongAr: primaryWrong,
+          correctAr: primaryCorrect,
+        });
+      }
+    }
+
+    matchedPairs.forEach((pair, pairIdx) => {
+      const spanDiff = computeSpanDiff(pair.wrongAr, pair.correctAr);
+      out.push({
+        id:
+          pairIdx === 0
+            ? `errhunt_${note.bagli_id}`
+            : `errhunt_${note.bagli_id}_${pairIdx + 1}`,
+        sourceId: note.bagli_id,
+        level,
+        sourceTitleTr,
+        konuBasligi: note.konu_basligi,
+        hapKural: note.hap_kural,
+        wrongSentenceAr: pair.wrongAr,
+        correctSentenceAr: pair.correctAr,
+        nedenTr: dsh.neden,
+        ...spanDiff,
+      });
     });
   }
 
@@ -449,6 +657,7 @@ export default function ErrorHunter({
   grammarFilter = "all",
   questionCount = 10,
   timeLimit = null,
+  onProgressChange,
   onClose,
 }: ErrorHunterProps) {
   const { arabicFont, speechRate, grammarDepthMode } = useSettings();
@@ -569,6 +778,38 @@ export default function ErrorHunter({
 
   const currentItem = sessionQuestions[currentIndex] || null;
 
+  // İlk yüklemede ve soru değiştiğinde !item.hasSingleSpanDiff ise stage doğrudan "repair" olur
+  const effectiveStage: "spot" | "repair" | "repaired" =
+    stage === "spot" && currentItem && !currentItem.hasSingleSpanDiff
+      ? "repair"
+      : stage;
+
+  const currentItemId = currentItem?.id ?? "";
+  const currentHasSingleSpan = currentItem?.hasSingleSpanDiff ?? true;
+
+  useEffect(() => {
+    if (!currentItemId || currentHasSingleSpan) return;
+    const raf = requestAnimationFrame(() => {
+      setStage((prev) => (prev === "spot" ? "repair" : prev));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [currentItemId, currentHasSingleSpan]);
+
+  const totalSessionQuestions = sessionQuestions.length;
+  useEffect(() => {
+    if (!onProgressChange || totalSessionQuestions === 0) return;
+    onProgressChange({
+      current: Math.min(currentIndex + 1, totalSessionQuestions),
+      total: totalSessionQuestions,
+      correct: correctFirstTryCount,
+    });
+  }, [
+    onProgressChange,
+    currentIndex,
+    totalSessionQuestions,
+    correctFirstTryCount,
+  ]);
+
   const resetForQuestion = useCallback((item: ErrorHunterItem | null) => {
     if (audioDelayTimerRef.current) {
       clearTimeout(audioDelayTimerRef.current);
@@ -581,7 +822,7 @@ export default function ErrorHunter({
     setHadAnyMistakeOnCurrent(false);
     setIsGrammarRuleModalOpen(false);
     setIsPlayingAudio(false);
-    setStage(item?.hasSingleSpanDiff ? "spot" : "repair");
+    setStage(item && !item.hasSingleSpanDiff ? "repair" : "spot");
     setRemainingSeconds(timeLimit);
   }, [timeLimit]);
 
@@ -682,7 +923,7 @@ export default function ErrorHunter({
   };
 
   const handleSelectRepairOption = async (optionText: string) => {
-    if (!currentItem || stage !== "repair") return;
+    if (!currentItem || effectiveStage !== "repair") return;
 
     const expected = currentItem.hasSingleSpanDiff
       ? currentItem.correctSpanText.trim()
@@ -754,20 +995,14 @@ export default function ErrorHunter({
     setStreak(0);
     setIsCompleted(false);
     setTimeout(() => {
-      setStage("spot");
       setSpotWrongIndices([]);
       setWrongRepairChoices([]);
       setSelectedRepair(null);
       setHadAnyMistakeOnCurrent(false);
+      setStage("spot");
       setRemainingSeconds(timeLimit);
     }, 0);
   };
-
-  // İlk soru yüklendiğinde stage senkronizasyonu
-  const effectiveStage =
-    stage === "spot" && currentItem && !currentItem.hasSingleSpanDiff
-      ? "repair"
-      : stage;
 
   const formatExplanation = (txt: string) =>
     grammarDepthMode === "simple" ? simplifyGrammarTerminology(txt) : txt;

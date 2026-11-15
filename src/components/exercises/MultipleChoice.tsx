@@ -108,6 +108,11 @@ interface Props {
   isMistakesMode?: boolean;
   grammarFilter?: string;
   onClose?: () => void;
+  onProgressChange?: (info: {
+    current: number;
+    total: number;
+    correct: number;
+  }) => void;
 }
 
 export default function MultipleChoice({
@@ -124,6 +129,7 @@ export default function MultipleChoice({
   isMistakesMode: _isMistakesMode = false,
   grammarFilter = "all",
   onClose,
+  onProgressChange,
 }: Props) {
   const fanfarePlayedRef = useRef(false);
   const wrongAttemptedQuestionsRef = useRef<Set<string>>(new Set());
@@ -537,19 +543,35 @@ export default function MultipleChoice({
     };
   }, [clearAutoAdvanceTimer]);
 
+  const correctCount = useMemo(
+    () => Object.values(userAnswers).filter((a) => a.isCorrect).length,
+    [userAnswers]
+  );
+
+  useEffect(() => {
+    if (questions.length > 0 && onProgressChange) {
+      onProgressChange({
+        current: Math.min(currentIndex + 1, questions.length),
+        total: questions.length,
+        correct: correctCount,
+      });
+    }
+  }, [onProgressChange, currentIndex, questions.length, correctCount]);
+
   useEffect(() => {
     if (isFinished && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       addStudyMinutes(3);
-      const cCount = Object.values(userAnswers).filter((a) => a.isCorrect).length;
       const pctScore =
-        questions.length > 0 ? Math.round((cCount / questions.length) * 100) : 100;
+        questions.length > 0
+          ? Math.round((correctCount / questions.length) * 100)
+          : 100;
       playFanfare(pctScore);
     } else if (isTimeUp && !fanfarePlayedRef.current) {
       fanfarePlayedRef.current = true;
       playWrong();
     }
-  }, [isFinished, isTimeUp, addStudyMinutes, userAnswers, questions.length]);
+  }, [isFinished, isTimeUp, addStudyMinutes, correctCount, questions.length]);
 
   if (questions.length < 1) {
     return (
@@ -581,10 +603,6 @@ export default function MultipleChoice({
   const currentQuestionImageUrl = rawQuestionImage
     ? resolveImageUrl(rawQuestionImage)
     : "";
-
-  const correctCount = Object.values(userAnswers).filter(
-    (a) => a.isCorrect
-  ).length;
 
   const handleListenQuestion = (qTarget: QuizQuestionItem = currentQuestion) => {
     playClick();
@@ -1204,16 +1222,20 @@ export default function MultipleChoice({
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-3.5">
+    <div className="max-w-2xl mx-auto space-y-2 sm:space-y-3.5">
       {/* ÜST DURUM, SÜRE VE SORU GEZGİNİ (1..N) ÇUBUĞU */}
-      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-4 py-2.5 space-y-2.5">
+      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 px-3 py-1.5 sm:px-4 sm:py-2.5 space-y-1.5 sm:space-y-2.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] tabular-nums">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className={`${
+                onProgressChange ? "hidden md:inline" : ""
+              } text-xs sm:text-sm font-extrabold text-[var(--foreground)] tabular-nums shrink-0`}
+            >
               Soru {currentIndex + 1} / {questions.length}
             </span>
             <span
-              className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold inline-flex items-center gap-1 ${
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold inline-flex items-center gap-1 truncate ${
                 currentQuestion.topBadge?.includes("Zıt")
                   ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-400/70"
                   : currentQuestion.kind === "sentence" ||
@@ -1223,7 +1245,7 @@ export default function MultipleChoice({
               }`}
             >
               {currentQuestion.topBadge ? (
-                <span>{currentQuestion.topBadge}</span>
+                <span className="truncate">{currentQuestion.topBadge}</span>
               ) : currentQuestion.kind === "sentence" ? (
                 <span>💬 Diyalog Cümlesi</span>
               ) : currentQuestion.kind === "idiom" ? (
@@ -1248,26 +1270,45 @@ export default function MultipleChoice({
 
           {timeLeft !== null && (
             <div
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs sm:text-sm font-black tabular-nums ${
+              className={`flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl border text-xs sm:text-sm font-black tabular-nums shrink-0 ${
                 timeLeft <= 5
                   ? "bg-red-100 border-red-300 text-red-700 animate-pulse"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-amber-700"
               }`}
             >
-              <Timer size={16} />
+              <Timer size={15} />
               <span>{timeLeft} sn</span>
             </div>
           )}
 
-          <span className="text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-400 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] px-3 py-1 rounded-xl tabular-nums">
+          <span
+            className={`${
+              onProgressChange && feedbackMode === "instant"
+                ? "hidden md:inline-flex"
+                : "inline-flex"
+            } text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-400 bg-white dark:bg-[var(--background)] border border-[#E6D7BE] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl tabular-nums shrink-0`}
+          >
             {feedbackMode === "instant"
               ? `Doğru: ${correctCount}`
               : `Yanıtlanan: ${Object.keys(userAnswers).length}/${questions.length}`}
           </span>
         </div>
 
-        {/* Numaralı Soru Gezgini (1..N) */}
-        <div className="grid grid-cols-10 gap-1 md:flex md:flex-wrap items-center justify-center md:gap-1.5 pt-1 border-t border-dashed border-[#E2D3B8]">
+        {/* Mobil İnce İlerleme Çubuğu (< 640px) */}
+        <div className="sm:hidden w-full h-2 rounded-full bg-[#E6D7BE]/80 dark:bg-slate-800 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-[#087F5B] transition-all duration-300"
+            style={{
+              width: `${Math.min(
+                100,
+                Math.round(((currentIndex + 1) / Math.max(1, questions.length)) * 100)
+              )}%`,
+            }}
+          />
+        </div>
+
+        {/* Numaralı Soru Gezgini (1..N) — Masaüstü/Tablet (>= 640px) */}
+        <div className="hidden sm:flex sm:flex-wrap items-center justify-center sm:gap-1.5 pt-1 border-t border-dashed border-[#E2D3B8]">
           {questions.map((_, idx) => {
             const isActive = idx === currentIndex;
             const isAnswered = Boolean(userAnswers[idx]);
@@ -1280,7 +1321,7 @@ export default function MultipleChoice({
                   playClick();
                   setCurrentIndex(idx);
                 }}
-                className={`h-7 w-full md:w-8 md:h-8 rounded-lg border text-xs font-bold tabular-nums transition-all cursor-pointer flex items-center justify-center ${
+                className={`w-8 h-8 rounded-lg border text-xs font-bold tabular-nums transition-all cursor-pointer flex items-center justify-center ${
                   isActive
                     ? "ring-2 ring-emerald-600 bg-emerald-600 text-white font-bold scale-105 border-emerald-700"
                     : isAnswered
@@ -1297,13 +1338,13 @@ export default function MultipleChoice({
       </div>
 
       {/* SORU KARTI */}
-      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 text-center space-y-3">
-        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 border-b border-dashed border-[#E2D3B8] pb-3">
-          <span className="text-left text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-relaxed min-w-0 flex-1 break-words">
+      <div className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-3 sm:p-6 text-center space-y-1.5 sm:space-y-3">
+        <div className="flex items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] pb-1.5 sm:pb-3">
+          <span className="text-left text-xs sm:text-base font-extrabold text-[var(--foreground)] leading-snug sm:leading-relaxed min-w-0 flex-1 break-words">
             {currentQuestion.promptQuestionTr ? (
               <MixedText
                 text={currentQuestion.promptQuestionTr}
-                arabicClassName="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 mx-1 inline-block leading-relaxed"
+                arabicClassName="arabic font-arabic text-lg sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 mx-1 inline-block leading-relaxed"
               />
             ) : currentQuestion.kind === "sentence" ? (
               "Aşağıdaki Arapça diyalog cümlesinin doğru Türkçe çevirisi hangisidir?"
@@ -1316,15 +1357,15 @@ export default function MultipleChoice({
           <button
             type="button"
             onClick={() => handleListenQuestion(currentQuestion)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-[#087F5B] text-white text-xs sm:text-sm font-bold border-b-2 border-[#087F5B] shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-2 min-h-[34px] sm:min-h-[40px] rounded-xl bg-[#087F5B] text-white text-xs sm:text-sm font-bold border-b-2 border-[#087F5B] shrink-0 cursor-pointer"
           >
-            <Volume2 size={15} />
+            <Volume2 size={14} />
             <span>Sesli Dinle</span>
           </button>
         </div>
 
         {currentQuestionImageUrl && !failedImages[currentQuestionImageUrl] && (
-          <div className="mx-auto w-fit max-w-full rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-2 shadow-2xs">
+          <div className="mx-auto w-fit max-w-full rounded-2xl bg-white dark:bg-slate-900/85 border border-[#E6D7BE] dark:border-slate-700 p-1 sm:p-2 shadow-2xs">
             <img
               src={currentQuestionImageUrl}
               alt={currentQuestion.turkish}
@@ -1336,19 +1377,19 @@ export default function MultipleChoice({
                   [currentQuestionImageUrl]: true,
                 }))
               }
-              className="h-28 sm:h-36 w-auto object-contain rounded-2xl mx-auto select-none"
+              className="h-20 sm:h-36 w-auto object-contain rounded-2xl mx-auto select-none"
             />
           </div>
         )}
 
         <h3
           dir="rtl"
-          className={`arabic font-bold text-[#065F46] dark:text-emerald-400 py-2 break-words ${
+          className={`arabic font-bold text-[#065F46] dark:text-emerald-400 py-1 sm:py-2 break-words ${
             currentQuestion.kind === "sentence"
-              ? "text-3xl sm:text-4xl leading-relaxed"
+              ? "text-2xl sm:text-4xl leading-relaxed"
               : currentQuestion.kind === "idiom"
-              ? "text-3xl sm:text-5xl leading-relaxed"
-              : "text-4xl sm:text-6xl"
+              ? "text-2xl sm:text-5xl leading-relaxed"
+              : "text-2xl sm:text-4xl md:text-6xl"
           }`}
         >
           {displayArabic}
@@ -1357,14 +1398,14 @@ export default function MultipleChoice({
         <p
           dir="ltr"
           lang="tr"
-          className="font-sans text-xs sm:text-sm font-bold text-[var(--muted)]"
+          className="font-sans text-[11px] sm:text-sm font-bold text-[var(--muted)]"
         >
           <MixedText text={currentQuestion.metaLabel} />
         </p>
       </div>
 
       {/* ŞIKLAR */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
         {currentQuestion.options.map((opt, idx) => {
           const isChosen = selected === opt.text;
           const showCorrect =
@@ -1390,7 +1431,7 @@ export default function MultipleChoice({
               disabled={
                 (feedbackMode === "instant" && Boolean(selected)) || isTimeUp
               }
-              className={`min-h-[60px] p-3.5 sm:p-4 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-between gap-2.5 cursor-pointer min-w-0 ${
+              className={`min-h-[46px] sm:min-h-[60px] py-2 px-3 sm:p-4 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-between gap-2.5 cursor-pointer min-w-0 ${
                 isPureArabicOption
                   ? "font-bold text-center"
                   : "text-left font-bold text-sm sm:text-base leading-snug"
@@ -1503,12 +1544,12 @@ export default function MultipleChoice({
         )}
 
       {/* ÖNCEKİ SORU / SONRAKİ SORU (VEYA TESTİ BİTİR) NAVİGASYON BAR */}
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-3 pt-0.5 sm:pt-1">
         <button
           type="button"
           onClick={prevQuestion}
           disabled={currentIndex === 0}
-          className="px-4 py-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 disabled:opacity-40 font-extrabold text-xs sm:text-sm text-[var(--foreground)] hover:border-[#6741D9] flex items-center gap-1.5 transition-all cursor-pointer"
+          className="px-3.5 py-2 sm:px-4 sm:py-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 disabled:opacity-40 font-extrabold text-xs sm:text-sm text-[var(--foreground)] hover:border-[#6741D9] flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <ArrowLeft size={16} />
           <span>Önceki Soru</span>
@@ -1517,7 +1558,7 @@ export default function MultipleChoice({
         <button
           type="button"
           onClick={nextQuestion}
-          className="flex-1 py-3 px-5 bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-[#087F5B] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="flex-1 py-2 px-4 sm:py-3 sm:px-5 bg-[#087F5B] hover:bg-[#065F46] text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-[#087F5B] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>
             {currentIndex === questions.length - 1

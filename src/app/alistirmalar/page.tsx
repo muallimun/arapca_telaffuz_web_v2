@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -472,6 +472,24 @@ function ExercisesPageContent() {
   const [exerciseCategoryFilter, setExerciseCategoryFilter] =
     useState<ExerciseCategoryTab>("all");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [mobileProgress, setMobileProgress] = useState<{
+    current: number;
+    total: number;
+    correct: number;
+  } | null>(null);
+  const handleMobileProgressChange = useCallback(
+    (info: { current: number; total: number; correct: number }) => {
+      setMobileProgress((prev) =>
+        prev &&
+        prev.current === info.current &&
+        prev.total === info.total &&
+        prev.correct === info.correct
+          ? prev
+          : info
+      );
+    },
+    []
+  );
   const [frozenPools, setFrozenPools] = useState<{
     vocabulary: DictionaryItem[];
     idioms: ArabicIdiom[];
@@ -1960,11 +1978,13 @@ function ExercisesPageContent() {
         rangePreset === "mistakes" || rangePreset === "srs_due",
       isVisualWordsMode: rangePreset === "visual_words",
     });
+    setMobileProgress(null);
     setIsPlaying(true);
   };
 
   const handleCloseExercise = () => {
     setIsPlaying(false);
+    setMobileProgress(null);
     setFrozenPools(null);
   };
 
@@ -2293,15 +2313,61 @@ function ExercisesPageContent() {
     <div
       className={
         isPlaying
-          ? "tr-scale space-y-1.5 sm:space-y-2 pb-20 md:pb-4"
-          : "tr-scale space-y-2 sm:space-y-2.5 pb-16 md:pb-2"
+          ? "tr-scale max-md:fixed max-md:inset-0 max-md:z-[90] max-md:bg-[#FAF4E8] max-md:dark:bg-[var(--background)] max-md:flex max-md:flex-col max-md:overflow-y-auto md:space-y-2 md:pb-4"
+          : "tr-scale space-y-2 sm:space-y-2.5 pb-20 md:pb-4"
       }
     >
-      {/* ÜST BAŞLIK (Mobilde Görsel-Sesli Eşleştirme aktifken kendi iç Çık butonu olduğu için gizlenir, diğer aktif alıştırmalarda büyük başlık gizlenip tek satır kompakt bar gösterilir) */}
+      {/* MOBİL (< 768px) TAM ODAK MODU 44px TEK SATIR ÜST ŞERİDİ */}
+      {isPlaying &&
+        selectedType !== "visual-rosetta" &&
+        selectedType !== "balloon-safari" &&
+        selectedType !== "memory-flip" && (
+          <div className="md:hidden h-11 min-h-[44px] max-h-[44px] px-2.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 sticky top-0 z-10 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                handleCloseExercise();
+              }}
+              className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] active:scale-95 cursor-pointer shrink-0"
+            >
+              <ChevronLeft size={15} />
+              <span>← Çık</span>
+            </button>
+
+            <div className="flex-1 min-w-0 flex items-center justify-center gap-2 px-1">
+              <div className="w-16 sm:w-24 h-2 rounded-full bg-[#E6D7BE]/80 dark:bg-slate-800 overflow-hidden shrink-0">
+                <div
+                  className="h-full rounded-full bg-[#087F5B] transition-all duration-300"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round(
+                        ((mobileProgress?.current ?? 1) /
+                          Math.max(1, mobileProgress?.total ?? questionCount)) *
+                          100
+                      )
+                    )}%`,
+                  }}
+                />
+              </div>
+              <span className="text-xs font-extrabold text-[var(--foreground)] tabular-nums whitespace-nowrap">
+                Soru {mobileProgress?.current ?? 1}/
+                {mobileProgress?.total ?? questionCount}
+              </span>
+            </div>
+
+            <span className="h-7 px-2 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] inline-flex items-center text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0">
+              Doğru: {mobileProgress?.correct ?? 0}
+            </span>
+          </div>
+        )}
+
+      {/* ÜST BAŞLIK (Masaüstünde aktifken ve alıştırma vitrininde gösterilir) */}
       <div
         className={
-          isPlaying && selectedType === "visual-rosetta"
-            ? "hidden sm:flex items-center justify-between gap-2"
+          isPlaying
+            ? "hidden md:flex items-center justify-between gap-2"
             : "flex items-center justify-between gap-2"
         }
       >
@@ -3365,7 +3431,7 @@ function ExercisesPageContent() {
         </>
       ) : (
         /* AKTİF ALIŞTIRMA EKRANI */
-        <div className="space-y-4">
+        <div className="max-md:flex-1 max-md:px-2.5 max-md:pt-1.5 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] space-y-4">
           {selectedType === "flashcard" && (
             <Flashcard
               vocabulary={frozenPools?.vocabulary ?? combinedVocabulary}
@@ -3406,6 +3472,7 @@ function ExercisesPageContent() {
               }
               grammarFilter={grammarFilter}
               onClose={handleCloseExercise}
+              onProgressChange={handleMobileProgressChange}
             />
           )}
           {selectedType === "fill-in-blanks" && (
@@ -3511,6 +3578,7 @@ function ExercisesPageContent() {
               questionCount={questionCount}
               timeLimit={timeLimit}
               onClose={handleCloseExercise}
+              onProgressChange={handleMobileProgressChange}
             />
           )}
           {selectedType === "blind-dictation" && (

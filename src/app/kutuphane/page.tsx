@@ -1307,6 +1307,25 @@ export default function LibraryPage() {
     activeSection === "atasozleri" ||
     activeSection === "gorsel-kelimeler";
 
+  const tabsScrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) return;
+    const container = tabsScrollContainerRef.current;
+    if (!container) return;
+    const activeTabEl = container.querySelector<HTMLElement>(
+      `[data-kutuphane-tab="${activeSection}"]`
+    );
+    if (activeTabEl) {
+      activeTabEl.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [activeSection, mounted]);
+
   const favoriteIdsSet = useMemo(() => {
     return new Set(favoriteWords.map((w) => w.id));
   }, [favoriteWords]);
@@ -2929,69 +2948,78 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
             {/* Çift Cinsiyetli Seslendirici Seçici (Günlük Cümle, Atasözü ve Görsel Kelimeler için) */}
             {isDualGenderSection && (
-              <div className="flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] px-2.5 py-1.5 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
-                <UserCheck size={14} className="text-[#087F5B] shrink-0" />
-                <span className="text-[11px] font-extrabold text-[var(--foreground)]">
-                  Seslendirici:
-                </span>
-                {(
-                  [
-                    { id: "erkek", label: "👨 Erkek" },
-                    { id: "kadin", label: "👩 Kadın" },
-                  ] as { id: VoiceGender; label: string }[]
-                ).map((g) => {
-                  const active =
-                    (mounted ? preferredVoiceGender : "erkek") === g.id;
-                  return (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setPreferredVoiceGender(g.id);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                        active
-                          ? "bg-[#087F5B] text-white shadow-2xs"
-                          : "bg-white dark:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)]"
-                      }`}
-                    >
-                      {g.label}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] px-2.5 py-1.5 rounded-xl border-2 border-[#E6D7BE] dark:border-[var(--border)]">
+                <div className="flex items-center gap-1.5">
+                  <UserCheck size={14} className="text-[#087F5B] shrink-0" />
+                  <span className="text-[11px] font-extrabold text-[var(--foreground)]">
+                    Seslendirici:
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {(
+                    [
+                      { id: "erkek", label: "👨 Erkek" },
+                      { id: "kadin", label: "👩 Kadın" },
+                    ] as { id: VoiceGender; label: string }[]
+                  ).map((g) => {
+                    const active =
+                      (mounted ? preferredVoiceGender : "erkek") === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setPreferredVoiceGender(g.id);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                          active
+                            ? "bg-[#087F5B] text-white shadow-2xs"
+                            : "bg-white dark:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => handleOpenLibraryPdfModal()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer"
-            >
-              <Printer size={14} />
-              <span>🖨️ A4 Sınav &amp; Ders Notu</span>
-            </button>
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => handleOpenLibraryPdfModal()}
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl bg-[#6741D9] hover:bg-[#5230B5] text-white text-xs font-extrabold border-b-3 border-[#3d2191] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Printer size={14} className="shrink-0" />
+                <span>A4 Sınav &amp; Not</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setIsStatsBadgesOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer"
-            >
-              <Trophy size={14} />
-              <span>🏆 İstatistik &amp; Rozetler</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsStatsBadgesOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-3 border-[#065F46] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Trophy size={14} className="shrink-0" />
+                <span>İstatistik &amp; Rozet</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Modül Sekmeleri (Mobilde Yatay Kaydırılabilir + Sağ Görsel İpucu, Masaüstünde Dengeli Flex-Wrap) */}
-        <div className="relative max-w-full">
-          <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 pr-8 lg:pr-2 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto lg:overflow-visible no-scrollbar whitespace-nowrap lg:whitespace-normal lg:flex-wrap items-center gap-1.5 max-w-full">
+        {/* Modül Sekmeleri (Mobilde Temiz Yatay Kaydırma + Aktif Sekme Otomatik Hizalama, Masaüstünde Dengeli Flex-Wrap) */}
+        <div className="max-w-full">
+          <div
+            ref={tabsScrollContainerRef}
+            className="bg-white dark:bg-[var(--background)] rounded-xl px-2 py-1.5 border-2 border-[#E6D7BE] dark:border-[var(--border)] flex overflow-x-auto lg:overflow-visible no-scrollbar scroll-smooth whitespace-nowrap lg:whitespace-normal lg:flex-wrap items-center gap-1.5 max-w-full"
+          >
             {(
               [
                 {
@@ -3037,6 +3065,7 @@ export default function LibraryPage() {
                 <button
                   key={tab.id}
                   type="button"
+                  data-kutuphane-tab={tab.id}
                   onClick={() => handleSwitchSection(tab.id)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                     active
@@ -3091,6 +3120,7 @@ export default function LibraryPage() {
                   <button
                     key={tab.id}
                     type="button"
+                    data-kutuphane-tab={tab.id}
                     onClick={() => handleSwitchSection(tab.id)}
                     className={`px-2.5 py-1.5 rounded-lg border text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                       active ? tab.activeClass : tab.idleClass
@@ -3102,12 +3132,6 @@ export default function LibraryPage() {
               })}
             </div>
           </div>
-          <span
-            aria-hidden="true"
-            className="lg:hidden pointer-events-none absolute inset-y-0.5 right-0.5 w-7 rounded-r-xl bg-gradient-to-l from-white via-white/90 to-transparent dark:from-[#1e1e1e] dark:via-[#1e1e1e]/90 flex items-center justify-end pr-1 text-[var(--muted)]"
-          >
-            <ChevronRight size={13} className="opacity-80" />
-          </span>
         </div>
       </div>
 
@@ -3133,8 +3157,8 @@ export default function LibraryPage() {
               className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
             >
               <div className="space-y-3">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
                     <img
                       src={
                         diyaloglar[0]?.gorsel || getDialogueCoverUrl("dlg_001")
@@ -3148,20 +3172,20 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
+                      className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 self-start leading-[1.65]"
                     >
                       {getDisplayArabic("الحِوَارَاتُ اليَوْمِيَّة")}
                     </div>
                     <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
                       💬 Konuşma Diyalogları
                     </h2>
-                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                    <p className="text-xs font-medium text-[var(--muted)] leading-snug">
                       Gerçek hayat senaryoları, rol yapma modu, kelime-kelime
-                      ses takibi ve odak gramer notları
+                      ses takibi ve odak gramer notları.
                     </p>
                   </div>
                 </div>
@@ -3239,8 +3263,8 @@ export default function LibraryPage() {
               className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#6741D9] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
             >
               <div className="space-y-3">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
                     <img
                       src={
                         metinler[0]?.gorsel ||
@@ -3255,20 +3279,20 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#6741D9] dark:text-[#d0bfff] text-right leading-[1.85] py-0.5"
+                      className="arabic text-lg sm:text-xl font-bold text-[#6741D9] dark:text-[#d0bfff] self-start leading-[1.65]"
                     >
                       {getDisplayArabic("نُصُوصُ القِرَاءَة")}
                     </div>
                     <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#6741D9] transition-colors leading-snug">
                       📖 Okuma Metinleri
                     </h2>
-                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                    <p className="text-xs font-medium text-[var(--muted)] leading-snug">
                       Cümle ve paragraf görünümü, okuduğunu anlama soruları,
-                      sesli takip ve odak gramer analizi
+                      sesli takip ve odak gramer analizi.
                     </p>
                   </div>
                 </div>
@@ -3346,8 +3370,8 @@ export default function LibraryPage() {
               className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
             >
               <div className="space-y-3">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
                     <img
                       src={
                         gorselKelimeler[0]?.gorsel ||
@@ -3362,20 +3386,20 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
+                      className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 self-start leading-[1.65]"
                     >
                       {getDisplayArabic("المُفْرَدَاتُ المُصَوَّرَة")}
                     </div>
                     <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
                       🖼️ Görsel Kelime Kartları
                     </h2>
-                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
-                      Kare illüstrasyonlar, müfret-cemî/masdar çekimleri,
-                      harekeli örnek cümleler ve çift cinsiyetli seslendirme
+                    <p className="text-xs font-medium text-[var(--muted)] leading-snug">
+                      Kare illüstrasyonlar, müfret-cemî çekimleri, harekeli
+                      örnek cümleler ve çift cinsiyetli seslendirme.
                     </p>
                   </div>
                 </div>
@@ -3441,12 +3465,12 @@ export default function LibraryPage() {
               className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-[#087F5B] p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
             >
               <div className="space-y-3">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-emerald-950/60 dark:via-slate-900 dark:to-indigo-950/50 shadow-2xs flex flex-col items-center justify-center p-2 text-center relative">
-                    <span className="text-2xl mb-0.5">🗣️</span>
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-emerald-950/60 dark:via-slate-900 dark:to-indigo-950/50 shadow-2xs flex flex-col items-center justify-center p-2 text-center relative">
+                    <span className="text-xl sm:text-2xl mb-0.5">🗣️</span>
                     <span
                       dir="rtl"
-                      className="arabic text-base sm:text-lg font-bold text-[#065F46] dark:text-emerald-300 leading-tight"
+                      className="arabic text-sm sm:text-base font-bold text-[#065F46] dark:text-emerald-300 leading-tight"
                     >
                       {getDisplayArabic("كَلَامٌ يَوْمِيّ")}
                     </span>
@@ -3455,20 +3479,20 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400 text-right leading-[1.85] py-0.5"
+                      className="arabic text-lg sm:text-xl font-bold text-[#065F46] dark:text-emerald-400 self-start leading-[1.65]"
                     >
                       {getDisplayArabic("الجُمَلُ اليَوْمِيَّة")}
                     </div>
                     <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-[#087F5B] transition-colors leading-snug">
                       🗣️ Günlük Kalıp Cümleler
                     </h2>
-                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
-                      Günlük hayatta en çok kullanılan cümle kalıpları, gramer
-                      yapısı etiketleri ve kadın/erkek stüdyo sesleri
+                    <p className="text-xs font-medium text-[var(--muted)] leading-snug">
+                      Günlük hayatta en sık kullanılan cümle kalıpları, gramer
+                      etiketleri ve kadın/erkek stüdyo sesleri.
                     </p>
                   </div>
                 </div>
@@ -3533,8 +3557,8 @@ export default function LibraryPage() {
               className="group rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#F7EFE1] dark:bg-[var(--surface)] hover:border-amber-600 p-4 flex flex-col justify-between gap-3.5 transition-all hover:-translate-y-0.5 cursor-pointer shadow-xs"
             >
               <div className="space-y-3">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 border-[#E6D7BE] bg-white shadow-2xs flex items-center justify-center relative">
                     <img
                       src={
                         atasozleri[0]?.gorsel ||
@@ -3549,20 +3573,20 @@ export default function LibraryPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
                     <div
                       lang="ar"
                       dir="rtl"
-                      className="arabic text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300 text-right leading-[1.85] py-0.5"
+                      className="arabic text-lg sm:text-xl font-bold text-amber-800 dark:text-amber-300 self-start leading-[1.65]"
                     >
                       {getDisplayArabic("الأَمْثَالُ وَالحِكَم")}
                     </div>
                     <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)] group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors leading-snug">
-                      📜 Arapça Atasözleri & Hikmetler
+                      📜 Arapça Atasözleri &amp; Hikmetler
                     </h2>
-                    <p className="text-xs font-medium text-[var(--muted)] leading-relaxed line-clamp-3">
+                    <p className="text-xs font-medium text-[var(--muted)] leading-snug">
                       Klasik ve modern Arap dünyasından seçkin atasözleri, lafzî
-                      çevirileri, Türkçe karşılıkları ve kullanım bağlamları
+                      çeviriler ve kullanım bağlamları.
                     </p>
                   </div>
                 </div>
@@ -4030,7 +4054,7 @@ export default function LibraryPage() {
 
           {/* Alt Durum veya Tema/Kategori Filtre Şeridi */}
           {(activeSection === "dialogues" || activeSection === "metinler") && (
-            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5 pr-4">
               {(
                 [
                   {
@@ -4080,7 +4104,7 @@ export default function LibraryPage() {
           {/* Gramer Atlası Dil Bilimsel Alan Sekmeleri (Seçenek A: 4 Temel Alan) + Toplu PDF Kitapçık Butonu */}
           {activeSection === "gramer" && (
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-0.5">
-              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5 pr-4">
                 {(
                   [
                     {
@@ -4143,7 +4167,7 @@ export default function LibraryPage() {
           {/* Eş & Zıt Anlamlılar Kelime Türü Sekmeleri + Alıştırma Kısayolu */}
           {activeSection === "es-zit" && (
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-0.5">
-              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5 pr-4">
                 {(
                   [
                     {
@@ -6176,9 +6200,10 @@ export default function LibraryPage() {
                     playClick();
                     setIsStatsBadgesOpen(true);
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold border-b-4 border-amber-800 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold border-b-4 border-amber-800 cursor-pointer"
                 >
-                  <span>🏆 İstatistikler, Rozetler &amp; Öğretmen Raporu</span>
+                  <Trophy size={14} className="shrink-0" />
+                  <span>İstatistikler, Rozetler &amp; Öğretmen Raporu</span>
                 </button>
               </div>
             </div>
@@ -6215,7 +6240,8 @@ export default function LibraryPage() {
                       }}
                       className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs border-b-3 border-amber-800 flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      <span>🏆 İstatistikler &amp; Rozetler</span>
+                      <Trophy size={14} className="shrink-0" />
+                      <span>İstatistikler &amp; Rozetler</span>
                     </button>
 
                     <button

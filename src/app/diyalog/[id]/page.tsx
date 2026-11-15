@@ -30,6 +30,7 @@ import {
   GraduationCap,
   ClipboardCheck,
   ChevronDown,
+  Trophy,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -2613,12 +2614,12 @@ export default function DialogueDetailPage({
           </div>
 
           {/* Tek Satır Mobil Oynatıcı + Hız + Hareke + Ders Araçları Çekmecesi Butonu */}
-          <div className="flex items-center justify-between gap-1">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0">
             {studyMode === "roleplay" ? (
               <button
                 type="button"
                 onClick={handleToggleRoleplay}
-                className={`h-8.5 px-2.5 rounded-xl font-extrabold text-[11px] border-b-2 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+                className={`w-full min-w-0 px-2.5 h-9 rounded-xl font-extrabold text-xs whitespace-nowrap border-b-2 transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
                   isRoleplayRunning
                     ? "bg-red-600 text-white border-red-800"
                     : "bg-emerald-600 text-white border-emerald-800"
@@ -2626,12 +2627,12 @@ export default function DialogueDetailPage({
               >
                 {isRoleplayRunning ? (
                   <>
-                    <Square size={10} fill="currentColor" />
+                    <Square size={11} fill="currentColor" className="shrink-0" />
                     <span>Bitir</span>
                   </>
                 ) : (
                   <>
-                    <Play size={10} fill="currentColor" />
+                    <Play size={11} fill="currentColor" className="shrink-0" />
                     <span>Canlandır</span>
                   </>
                 )}
@@ -2640,80 +2641,82 @@ export default function DialogueDetailPage({
               <button
                 type="button"
                 onClick={handleTogglePlayAll}
-                className={`h-8.5 px-2.5 rounded-xl font-extrabold text-[11px] border-b-2 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+                className={`w-full min-w-0 px-2.5 h-9 rounded-xl font-extrabold text-xs whitespace-nowrap border-b-2 transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
                   isPlayingAll
                     ? "bg-red-600 text-white border-red-800"
                     : "bg-emerald-600 text-white border-emerald-800"
                 }`}
               >
                 {isPlayingAll ? (
-                  <Square size={10} fill="currentColor" />
+                  <>
+                    <Square size={11} fill="currentColor" className="shrink-0" />
+                    <span>Durdur</span>
+                  </>
                 ) : (
-                  <Play size={10} fill="currentColor" />
+                  <>
+                    <Play size={11} fill="currentColor" className="shrink-0" />
+                    <span>Dinle</span>
+                  </>
                 )}
-                <span>{isPlayingAll ? "Durdur" : "Tümünü Dinle"}</span>
               </button>
             )}
 
-            <div className="flex items-center gap-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  const rates: SpeechRate[] = [0.5, 0.75, 1, 1.25, 1.5];
-                  const idx = rates.findIndex((r) => r === speechRate);
-                  const nextRate = rates[(idx + 1) % rates.length];
-                  setSpeechRate(nextRate);
-                  setPlaybackRate(nextRate);
-                }}
-                aria-label="Okuma Hızı"
-                className={`h-8.5 px-2 rounded-xl border text-[11px] font-bold tabular-nums transition-all cursor-pointer shrink-0 ${
-                  mounted && speechRate !== 1
-                    ? "bg-[#087F5B] border-[#087F5B] text-white"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
-                }`}
-              >
-                {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                const rates: SpeechRate[] = [0.5, 0.75, 1, 1.25, 1.5];
+                const idx = rates.findIndex((r) => r === speechRate);
+                const nextRate = rates[(idx + 1) % rates.length];
+                setSpeechRate(nextRate);
+                setPlaybackRate(nextRate);
+              }}
+              aria-label="Okuma Hızı"
+              className={`px-2.5 h-9 rounded-xl border text-xs font-extrabold tabular-nums whitespace-nowrap transition-all inline-flex items-center justify-center cursor-pointer ${
+                mounted && speechRate !== 1
+                  ? "bg-[#087F5B] border-[#087F5B] text-white"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+              }`}
+            >
+              {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleHareke();
-                }}
-                aria-label="Hareke Görünümünü Değiştir"
-                className={`h-8.5 px-2 rounded-xl border flex items-center gap-1 text-[11px] font-extrabold transition-all cursor-pointer shrink-0 ${
-                  !mounted || harekeMode === "full"
-                    ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
-                    : harekeMode === "irab-only"
-                    ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
-                }`}
-              >
-                <Sparkles size={11} className="shrink-0" />
-                <span>
-                  {!mounted || harekeMode === "full"
-                    ? "Hareke"
-                    : harekeMode === "irab-only"
-                    ? "İ'rab"
-                    : "Sade"}
-                </span>
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                toggleHareke();
+              }}
+              aria-label="Hareke Görünümünü Değiştir"
+              className={`px-2.5 h-9 rounded-xl border inline-flex items-center justify-center gap-1 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                !mounted || harekeMode === "full"
+                  ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                  : harekeMode === "irab-only"
+                  ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+              }`}
+            >
+              <span>
+                {!mounted || harekeMode === "full"
+                  ? "Hareke"
+                  : harekeMode === "irab-only"
+                  ? "İ'rab"
+                  : "Sade"}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsMobileToolsSheetOpen(true);
-                }}
-                aria-label="Mobil Ders Araçları Çekmecesini Aç"
-                className="h-8.5 px-2.5 rounded-xl border border-[#6741D9]/50 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff] text-[11px] font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0"
-              >
-                <span>🧰 Ders Araçları</span>
-                <ChevronDown size={12} className="shrink-0" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsMobileToolsSheetOpen(true);
+              }}
+              aria-label="Mobil Ders Araçları Çekmecesini Aç"
+              className="px-2.5 h-9 rounded-xl border border-[#6741D9]/50 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff] text-xs font-extrabold whitespace-nowrap inline-flex items-center justify-center gap-1 cursor-pointer"
+            >
+              <span>🧰 Araçlar</span>
+              <ChevronDown size={12} className="shrink-0" />
+            </button>
           </div>
 
           {/* Rol Yapma Aktifken Kompakt Konuşmacı Seçici (Yalnızca Rol Sekmesinde) */}
@@ -4035,7 +4038,7 @@ export default function DialogueDetailPage({
                         className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold border-b-2 border-amber-700 cursor-pointer flex items-center gap-1"
                       >
                         <Share2 size={13} />
-                        <span>🏆 Rol Yapma Başarı Kartını Paylaş</span>
+                        <span>Rol Yapma Başarı Kartını Paylaş</span>
                       </button>
                       <button
                         type="button"
@@ -4808,11 +4811,11 @@ export default function DialogueDetailPage({
                   </div>
                 )}
 
-                {/* Üst Satır: Konuşmacı Rozeti + Kademeli İpucu & İkon Aksiyon Butonları */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-1.5 mb-1.5">
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                {/* Üst Satır: Konuşmacı Rozeti + İkon Aksiyon Butonları (Mobilde Tek Satır, Sıfır Katlanma) */}
+                <div className="flex items-center justify-between gap-1.5 sm:gap-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-1.5 mb-1.5 min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1 overflow-hidden">
                     <span
-                      className={`px-2.5 py-0.5 rounded-xl text-xs font-extrabold border-b-2 ${
+                      className={`px-2 sm:px-2.5 py-0.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-extrabold border-b-2 shrink-0 max-w-[100px] sm:max-w-none truncate ${
                         speakerIdx % 2 === 0
                           ? "bg-[#087F5B] text-white border-[#087F5B]"
                           : "bg-[#6741D9] text-white border-[#5230B5]"
@@ -4822,18 +4825,18 @@ export default function DialogueDetailPage({
                     </span>
                     <span
                       dir="rtl"
-                      className="arabic text-base font-bold text-[var(--muted)]"
+                      className="arabic text-sm sm:text-base font-bold text-[var(--muted)] truncate"
                     >
                       ({line.konusmaci_ar})
                     </span>
                     {isUserRoleTurn && (
-                      <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+                      <span className="hidden sm:inline text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400 shrink-0">
                         · Sizin Rolünüz
                       </span>
                     )}
                     {lineRoleplayScore !== undefined && (
                       <span
-                        className={`px-2 py-0.5 rounded-lg border text-[11px] font-extrabold tabular-nums ${
+                        className={`hidden sm:inline-flex px-2 py-0.5 rounded-lg border text-[11px] font-extrabold tabular-nums shrink-0 ${
                           lineRoleplayScore >= 70
                             ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
                             : lineRoleplayScore > 0
@@ -4849,14 +4852,14 @@ export default function DialogueDetailPage({
                     )}
                   </div>
 
-                  {/* Aksiyon Kontrolleri + Rol Yapma Kademeli İpucu (💡 İpucu) Butonu */}
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  {/* Aksiyon Kontrolleri (Mobilde w-8 h-8 rounded-lg ile konuşmacının sağında aynı satırda) */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                     {isUserRoleTurn && hideRoleplayUserText && !isLineCompletedInRoleplay && (
                       <button
                         type="button"
                         onClick={() => cycleRoleplayHintLevel(line.sira)}
                         title="Kademeli İpucu: 1. Tık İlk Kelime -> 2. Tık Silik Metin -> 3. Tık Tam Açık"
-                        className={`text-xs px-2 py-1 rounded-xl border-2 border-b-3 font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer ${
+                        className={`hidden sm:inline-flex text-xs px-2 py-1 rounded-xl border-2 border-b-3 font-extrabold items-center gap-1 transition-all cursor-pointer ${
                           rawHintLevel > 0
                             ? "bg-amber-100 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200"
                             : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[#6741D9] hover:border-[#6741D9]"
@@ -4877,7 +4880,7 @@ export default function DialogueDetailPage({
                           ? handlePlayRoleplayModelAudio(line)
                           : handlePlayLine(line)
                       }
-                      className={`group relative w-9 h-9 rounded-xl border-2 border-b-3 inline-flex items-center justify-center transition-all cursor-pointer ${
+                      className={`group relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border-2 border-b-3 inline-flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                         isPlaying && !isLooping
                           ? "bg-[#087F5B] border-[#087F5B] text-white animate-pulse"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
@@ -4899,7 +4902,7 @@ export default function DialogueDetailPage({
                     <button
                       type="button"
                       onClick={() => handleToggleLoopLine(line)}
-                      className={`group relative h-9 min-w-9 px-2 rounded-xl border-2 border-b-3 inline-flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      className={`group relative h-8 min-w-8 px-1.5 sm:h-9 sm:min-w-9 sm:px-2 rounded-lg sm:rounded-xl border-2 border-b-3 inline-flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0 ${
                         isLooping
                           ? "bg-[#6741D9] border-[#5230B5] text-white"
                           : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)] hover:text-[#6741D9] hover:border-[#6741D9]"
@@ -4979,12 +4982,57 @@ export default function DialogueDetailPage({
                       }}
                       data-tooltip="Bu cümleyi görsel kart olarak paylaş"
                       aria-label="Bu cümleyi görsel kart olarak paylaş"
-                      className="w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] border-b-3 text-[#065F46] dark:text-emerald-400 inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
                     >
                       <Share2 size={15} />
                     </button>
                   </div>
                 </div>
+
+                {/* Mobil Rol Yapma Durum & Kademeli İpucu Şeridi (Yalnızca Rol Modunda ve Mobilde Görünür) */}
+                {studyMode === "roleplay" &&
+                  (isUserRoleTurn || lineRoleplayScore !== undefined) && (
+                    <div className="sm:hidden flex items-center justify-between gap-1.5 mb-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {isUserRoleTurn && (
+                          <span className="text-[11px] font-extrabold text-[#065F46] dark:text-emerald-400">
+                            🎭 Sizin Rolünüz
+                          </span>
+                        )}
+                        {lineRoleplayScore !== undefined && (
+                          <span
+                            className={`px-1.5 py-0.5 rounded-md border text-[10px] font-extrabold tabular-nums ${
+                              lineRoleplayScore >= 70
+                                ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                                : lineRoleplayScore > 0
+                                ? "bg-amber-100 dark:bg-amber-950/60 border-amber-400 text-amber-800 dark:text-amber-200"
+                                : "bg-rose-100 dark:bg-rose-950/60 border-rose-400 text-rose-800 dark:text-rose-200"
+                            }`}
+                          >
+                            %{lineRoleplayScore}
+                          </span>
+                        )}
+                      </div>
+                      {isUserRoleTurn &&
+                        hideRoleplayUserText &&
+                        !isLineCompletedInRoleplay && (
+                          <button
+                            type="button"
+                            onClick={() => cycleRoleplayHintLevel(line.sira)}
+                            className={`text-[11px] px-2 py-0.5 rounded-lg border font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0 ${
+                              rawHintLevel > 0
+                                ? "bg-amber-100 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200"
+                                : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[#6741D9]"
+                            }`}
+                          >
+                            <span>
+                              💡 İpucu
+                              {rawHintLevel > 0 ? ` (${rawHintLevel}/3)` : ""}
+                            </span>
+                          </button>
+                        )}
+                    </div>
+                  )}
 
                 {/* CÜMLE İÇERİĞİ (Sıkılaştırılmış Dikey Boşluklar py-1.5; Sınıf Modunda Gerçek Inline Font Çarpanı) */}
                 {currentViewMode === "columns" && !isClickRevealActive ? (
@@ -5597,22 +5645,22 @@ export default function DialogueDetailPage({
       )}
 
       {/* BÖLÜM 5: ALT TAMAMLAMA CTA, BAŞARI KARTI PAYLAŞIMI VE ÖNCEKİ/SONRAKİ DİYALOG GEÇİŞİ */}
-      <section className="space-y-3 pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <section className="space-y-2.5 pt-2">
+        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-3 gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={handleCompleteAndContinue}
-            className="sm:col-span-2 py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white font-bold text-sm sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2.5 shadow-sm cursor-pointer"
+            className="sm:col-span-2 py-2.5 sm:py-3.5 px-3.5 sm:px-5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white font-extrabold text-xs sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-sm cursor-pointer min-w-0"
           >
-            <CheckCircle2 size={20} className="shrink-0 w-5 h-5" />
-            <span>
+            <CheckCircle2 size={18} className="shrink-0" />
+            <span className="truncate">
               {isCompleted
                 ? nextDialogue
-                  ? `Sonraki Diyaloğa Geç (${nextDialogue.baslik_tr})`
-                  : "Diyalog Kütüphanesine Dön"
+                  ? "Sonraki Diyaloğa Geç"
+                  : "Kütüphaneye Dön"
                 : nextDialogue
-                ? `Diyaloğu Tamamla ve Sonrakine Geç (${nextDialogue.baslik_tr})`
-                : "Diyaloğu Tamamlandı Olarak İşaretle"}
+                ? "Tamamla ve Sonrakine Geç"
+                : "Diyaloğu Tamamla"}
             </span>
           </button>
 
@@ -5625,48 +5673,49 @@ export default function DialogueDetailPage({
               }
               setIsShareModalOpen(true);
             }}
-            className="py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            className="py-2.5 sm:py-3.5 px-3 sm:px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
           >
-            <Share2 size={17} className="shrink-0" />
-            <span>🏆 Başarı Kartını Paylaş / İndir</span>
+            <Trophy size={16} className="shrink-0" />
+            <span className="sm:hidden">Başarı Kartı</span>
+            <span className="hidden sm:inline">Başarı Kartını Paylaş / İndir</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {prevDialogue ? (
             <Link
               href={`/diyalog/${prevDialogue.id}`}
               onClick={() => playClick()}
-              className="w-full p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-2.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all"
+              className="w-full p-2.5 sm:p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-2 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all min-w-0"
             >
-              <ChevronLeft size={18} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
+              <ChevronLeft size={16} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
               <div className="min-w-0 flex-1">
                 <span className="block text-[10px] text-slate-600 dark:text-slate-300 uppercase">
-                  Önceki Diyalog
+                  Önceki
                 </span>
                 <span className="truncate block">{prevDialogue.baslik_tr}</span>
               </div>
             </Link>
           ) : (
-            <div className="hidden sm:block" />
+            <div />
           )}
 
           {nextDialogue ? (
             <Link
               href={`/diyalog/${nextDialogue.id}`}
               onClick={() => playClick()}
-              className="w-full p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-end gap-2.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all text-right"
+              className="w-full p-2.5 sm:p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-end gap-2 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all text-right min-w-0"
             >
               <div className="min-w-0 flex-1">
                 <span className="block text-[10px] text-slate-600 dark:text-slate-300 uppercase">
-                  Sonraki Diyalog
+                  Sonraki
                 </span>
                 <span className="truncate block">{nextDialogue.baslik_tr}</span>
               </div>
-              <ChevronRight size={18} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
+              <ChevronRight size={16} className="text-[#065F46] dark:text-emerald-400 shrink-0" />
             </Link>
           ) : (
-            <div className="hidden sm:block" />
+            <div />
           )}
         </div>
       </section>

@@ -232,13 +232,13 @@ export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props
           {errorMsg}
         </div>
       )}
-      <div className="inline-flex items-center gap-1.5">
+      <div className="inline-flex items-center gap-1 sm:gap-1.5">
         {/* 🎤 Sesimi Kaydet (16kHz) */}
         {!isRecording && !audioUrl && (
           <button
             type="button"
             onClick={startRecording}
-            className="group relative w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-[var(--foreground)] hover:border-[#087F5B] active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center cursor-pointer"
+            className="group relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 text-[var(--foreground)] hover:border-[#087F5B] active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center cursor-pointer"
             data-tooltip="Sesimi Kaydet (16kHz)"
             aria-label="Sesimi Kaydet (16kHz)"
           >
@@ -251,7 +251,7 @@ export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props
           <button
             type="button"
             onClick={stopRecording}
-            className="group relative w-9 h-9 rounded-xl bg-red-600 text-white border-b-3 border-red-800 animate-pulse inline-flex items-center justify-center cursor-pointer"
+            className="group relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-red-600 text-white border-b-3 border-red-800 animate-pulse inline-flex items-center justify-center cursor-pointer"
             data-tooltip="Kaydı Durdur"
             aria-label="Kaydı Durdur"
           >
@@ -265,7 +265,7 @@ export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props
             <button
               type="button"
               onClick={playRecording}
-              className={`group relative w-9 h-9 rounded-xl border-2 border-b-3 inline-flex items-center justify-center transition-all cursor-pointer ${
+              className={`group relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border-2 border-b-3 inline-flex items-center justify-center transition-all cursor-pointer ${
                 isPlaying
                   ? "bg-[#087F5B] border-[#065F46] text-white"
                   : "bg-white dark:bg-[var(--background)] border-[#087F5B] text-[#065F46] dark:text-emerald-400"
@@ -283,7 +283,7 @@ export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props
             <button
               type="button"
               onClick={resetRecording}
-              className="group relative w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+              className="group relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] border-b-3 flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
               data-tooltip="Yeniden Kaydet"
               aria-label="Yeniden Kaydet"
             >
@@ -300,7 +300,7 @@ export default function ShadowingButton({ text, onOpenCoach, onRecorded }: Props
               playClick();
               onOpenCoach();
             }}
-            className="group relative h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center gap-1 cursor-pointer"
+            className="group relative w-8 h-8 sm:w-auto sm:h-9 sm:px-2.5 rounded-lg sm:rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 active:border-b-1 active:translate-y-0.5 transition-all inline-flex items-center justify-center gap-1 cursor-pointer"
             data-tooltip="Yapay Zeka Telaffuz & Mahreç Koçu"
             data-tooltip-align="right"
             aria-label="Yapay Zeka Telaffuz & Mahreç Koçu"

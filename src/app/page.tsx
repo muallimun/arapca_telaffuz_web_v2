@@ -26,6 +26,7 @@ import {
   GraduationCap,
   Film,
   Printer,
+  Trophy,
 } from "lucide-react";
 import {
   diyaloglar,
@@ -540,33 +541,38 @@ export default function HomePage() {
 
       {/* BÖLÜM 1: ÜSTTE 4'LÜ DOĞRUDAN NAVİGASYON KARTLARI */}
       <section aria-label="Çalışma Modülleri" className="space-y-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight">
+        <div className="space-y-0.5 px-1">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight truncate">
               Çalışma Modülleri
             </h1>
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              Başlamak istediğiniz Arapça eğitim modülüne tıklayın
-            </p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-2.5 ml-auto">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setStatsModalTab("badges");
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-[#F7EFE1] dark:from-amber-950/50 dark:to-[var(--surface)] border-2 border-amber-400/80 dark:border-amber-600/70 border-b-3 hover:border-[#087F5B] text-xs font-extrabold text-amber-950 dark:text-amber-200 shadow-2xs active:translate-y-0.5 transition-all cursor-pointer"
-            >
-              <span>🏆 Başarılarım ve Rütbem</span>
-              <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-500/15 dark:bg-amber-400/15 text-[10px] font-black text-amber-900 dark:text-amber-200">
-                {rankMedalEmoji} {learnerRank.shortTitle}
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setStatsModalTab("badges");
+                }}
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-[#F7EFE1] dark:from-amber-950/50 dark:to-[var(--surface)] border-2 border-amber-400/80 dark:border-amber-600/70 border-b-3 hover:border-[#087F5B] text-xs font-extrabold text-amber-950 dark:text-amber-200 shadow-2xs active:translate-y-0.5 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Trophy
+                  size={14}
+                  className="text-amber-600 dark:text-amber-400 shrink-0"
+                />
+                <span className="sm:hidden">Rütbem</span>
+                <span className="hidden sm:inline">Başarılarım ve Rütbem</span>
+                <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-500/15 dark:bg-amber-400/15 text-[10px] font-black text-amber-900 dark:text-amber-200">
+                  {rankMedalEmoji} {learnerRank.shortTitle}
+                </span>
+              </button>
+              <span className="hidden sm:inline arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400">
+                أَهْلًا وَسَهْلًا
               </span>
-            </button>
-            <span className="hidden sm:inline arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-400">
-              أَهْلًا وَسَهْلًا
-            </span>
+            </div>
           </div>
+          <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            Başlamak istediğiniz Arapça eğitim modülüne tıklayın
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

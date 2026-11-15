@@ -5751,13 +5751,14 @@ test("50. Başarılarım ve Rütbem Hızlı Erişim Butonları, Tam Adlı 6 A4 S
 
   // 1. 🏆 Başarılarım ve Rütbem tek tıkla açılış butonları (Ana sayfa üst şerit, Header Hızlı Menü ve Ayarlar)
   assert.equal(
-    homeCode.includes("🏆 Başarılarım ve Rütbem") &&
+    homeCode.includes("Başarılarım ve Rütbem") &&
+      homeCode.includes("<Trophy") &&
       homeCode.includes("computeLearnerRank") &&
       headerCode.includes("🏆 Başarılarım ve Rütbem") &&
       headerCode.includes('import("@/components/ui/StatsAndBadgesModal")') &&
       ayarlarCode.includes("🏆 Başarılarım ve Rütbem"),
     true,
-    "Ana sayfa üst şeridinde, Header Hızlı Menüde ve Ayarlar sayfasında '🏆 Başarılarım ve Rütbem' tek tıkla açılış butonu yer almalıdır"
+    "Ana sayfa üst şeridinde, Header Hızlı Menüde ve Ayarlar sayfasında 'Başarılarım ve Rütbem' tek tıkla açılış butonu yer almalıdır"
   );
 
   // 2. 🖨️ A4 Sınav Üretici 6 bölümün tam ve kesintisiz etiketleri
@@ -5814,11 +5815,11 @@ test("50. Başarılarım ve Rütbem Hızlı Erişim Butonları, Tam Adlı 6 A4 S
   assert.equal(
     alistirmalarCode.includes('import("@/components/exercises/WhatIsThisGame")') &&
       alistirmalarCode.includes('id: "what-is-this"') &&
-      alistirmalarCode.includes("🖼️ Bu Nedir?") &&
+      alistirmalarCode.includes('title: "Bu Nedir?"') &&
       alistirmalarCode.includes("صُورَةٌ وَكَلِمَةٌ") &&
       alistirmalarCode.includes("<WhatIsThisGame"),
     true,
-    "alistirmalar/page.tsx '🖼️ Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' modülünü vitrinde ve aktif oyun ekranında barındırmalıdır"
+    "alistirmalar/page.tsx 'Bu Nedir? (صُورَةٌ وَكَلِمَةٌ)' modülünü vitrinde ve aktif oyun ekranında barındırmalıdır"
   );
 });
 
@@ -6888,13 +6889,15 @@ test("58) Alıştırmalar Sayfası (alistirmalar/page.tsx) 2 Aşamalı Sade Vitr
 
   // 1. Sadeleştirilmiş Üst Başlık ve Tek Satırlık Hızlı Tekrar Bandı
   assert.equal(
-    alistirmalarCode.includes("İnteraktif Alıştırma & Oyun Merkezi") &&
+    (alistirmalarCode.includes("İnteraktif Alıştırma & Oyun Merkezi") ||
+      alistirmalarCode.includes("İnteraktif Alıştırma &amp; Oyun Merkezi")) &&
+      alistirmalarCode.includes("Alıştırma &amp; Oyunlar") &&
       alistirmalarCode.includes("Mahreç Haritam") &&
       alistirmalarCode.includes("Hızlı Tekrar:") &&
       alistirmalarCode.includes("Hemen Çalış →") &&
       alistirmalarCode.includes("handleQuickReviewBannerStart"),
     true,
-    "Vitrin üst başlığı 'İnteraktif Alıştırma & Oyun Merkezi', sağda 'Mahreç Haritam' butonu ve tek satırlık '⚡ Hızlı Tekrar ... Hemen Çalış →' bandı içermelidir"
+    "Vitrin üst başlığı masaüstünde 'İnteraktif Alıştırma & Oyun Merkezi' / mobilde 'Alıştırma & Oyunlar', sağda 'Mahreç Haritam' butonu ve tek satırlık '⚡ Hızlı Tekrar' bandı içermelidir"
   );
 
   // 2. Yatay kaydırılabilir 5 net kategori sekmesi (Tümü 17 = 4 + 4 + 4 + 5) ve kırpılmayan tam kart başlıkları
@@ -7038,23 +7041,23 @@ test("60) Ana Sayfalar (diyalog, metin, sozluk, seviye-tespit, Header ve ScrollT
     "utf8"
   );
 
-  // 1. Diyalog & Metin Mobil Üst Panel Sadeleştirmesi (w-11 h-11 kapak, 3'lü mod, tek satır oynatıcı ve Mobil Araç Çekmecesi)
+  // 1. Diyalog & Metin Mobil Üst Panel Sadeleştirmesi (w-11 h-11 kapak, 3'lü mod, taşmayan 4 sütunlu oynatıcı ve Mobil Araç Çekmecesi)
   assert.equal(
     diyalogCode.includes("w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16") &&
       diyalogCode.includes("📖 İncele") &&
       diyalogCode.includes("🎭 Rol") &&
-      diyalogCode.includes("Tümünü Dinle") &&
-      diyalogCode.includes("🧰 Ders Araçları") &&
+      diyalogCode.includes("grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0") &&
+      diyalogCode.includes("🧰 Araçlar") &&
       diyalogCode.includes("isMobileToolsSheetOpen") &&
       diyalogCode.includes('useEscapeKey(\n    () => setIsMobileToolsSheetOpen(false)') &&
       metinCode.includes("w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16") &&
       metinCode.includes("📖 İncele") &&
-      metinCode.includes("Tümünü Dinle") &&
-      metinCode.includes("🧰 Ders Araçları") &&
+      metinCode.includes("grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0") &&
+      metinCode.includes("🧰 Araçlar") &&
       metinCode.includes("isMobileToolsSheetOpen") &&
       metinCode.includes('useEscapeKey(\n    () => setIsMobileToolsSheetOpen(false)'),
     true,
-    "Diyalog ve Metin sayfaları mobilde 2 satırlık kompakt başlık, w-11 h-11 kapak, 3'lü mod sekmesi ve Mobil Ders Araçları Çekmecesine sahip olmalıdır"
+    "Diyalog ve Metin sayfaları mobilde 2 satırlık kompakt başlık, w-11 h-11 kapak, 3'lü mod sekmesi, taşmayan 4 sütunlu kontrol satırı ve Mobil Ders Araçları Çekmecesine sahip olmalıdır"
   );
 
   // 2. Sözlük Sol Kenar Kesilme Onarımı (justify-start px-1 scroll-px-2) ve İnce Mobil Sayfalama Barı (h-10)
@@ -7373,5 +7376,90 @@ test("63) Oynatma Listesi Split-Cinema Yan Yana Dikey Bölüm Listesi, Satır İ
   );
 });
 
+test("64) Mobil Mağaza Ergonomisi — 360px Taşmasız Üst Kontroller, Tek Satır Diyalog Kart Başlığı, Kütüphane Çift İkon/Sekme Kesilme Onarımı, Tutarlı Oyun Başlıkları ve Koşullu Mobil Footer", () => {
+  const diyalogCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "diyalog", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const shadowingBtnCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShadowingButton.tsx"),
+    "utf8"
+  );
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+  const homeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+  const layoutCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+  const conditionalFooterCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "ConditionalFooter.tsx"),
+    "utf8"
+  );
 
+  // 1. Diyalog & Metin: 360px taşmasız grid-cols-[1fr_auto_auto_auto], tek satır diyalog kart başlığı (w-8 h-8 rounded-lg) ve yan yana 2 sütunlu Önceki/Sonraki kartlar
+  assert.equal(
+    diyalogCode.includes("grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0") &&
+      metinCode.includes("grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0") &&
+      shadowingBtnCode.includes("w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl") &&
+      diyalogCode.includes("grid grid-cols-2 gap-2 sm:gap-3") &&
+      metinCode.includes("grid grid-cols-2 gap-2 sm:gap-3") &&
+      !diyalogCode.includes("🏆 Başarı Kartını Paylaş") &&
+      !metinCode.includes("🏆 Başarı Kartını Paylaş"),
+    true,
+    "Diyalog ve Metin sayfaları taşmasız 4 sütunlu mobil kontrol satırı, tek satır konuşmacı+ikon başlığı, emojisiz Başarı Kartı ve 2 sütunlu Önceki/Sonraki kartlarına sahip olmalıdır"
+  );
 
+  // 2. Kütüphane: Çift ikon (🖨️ / 🏆) temizliği, mobilde 2 sütunlu üst butonlar, ChevronRight kesilme onarımı + scrollIntoView(center) ve pr-4 durum filtresi
+  assert.equal(
+    !kutuphaneCode.includes("🖨️ A4 Sınav") &&
+      !kutuphaneCode.includes("🏆 İstatistik") &&
+      kutuphaneCode.includes("grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto") &&
+      kutuphaneCode.includes("A4 Sınav &amp; Not") &&
+      kutuphaneCode.includes("İstatistik &amp; Rozet") &&
+      kutuphaneCode.includes("data-kutuphane-tab={tab.id}") &&
+      kutuphaneCode.includes('inline: "center"') &&
+      kutuphaneCode.includes("flex overflow-x-auto no-scrollbar whitespace-nowrap items-center gap-1.5 py-0.5 pr-4"),
+    true,
+    "Kütüphane sayfasında çift ikonlar kaldırılmalı, üst butonlar mobilde 2 eşit sütunda durmalı, sekme çubuğu otomatik ortalanmalı ve durum filtresinde pr-4 bulunmalıdır"
+  );
+
+  // 3. Alıştırmalar & Ana Sayfa: Görsel oyun başlıklarında çift emoji olmaması, 'Alıştırma & Oyunlar' mobil başlığı, tek satır Hızlı Tekrar ve hizalı Rütbem butonu
+  assert.equal(
+    alistirmalarCode.includes('title: "Balon Safari"') &&
+      alistirmalarCode.includes('title: "Hafızanı Yokla"') &&
+      alistirmalarCode.includes('title: "Bu Nedir?"') &&
+      !alistirmalarCode.includes('title: "🎈 Balon Safari"') &&
+      !alistirmalarCode.includes('title: "🃏 Hafızanı Yokla"') &&
+      !alistirmalarCode.includes('title: "🖼️ Bu Nedir?"') &&
+      alistirmalarCode.includes("Alıştırma &amp; Oyunlar") &&
+      alistirmalarCode.includes(">Çalış →<") &&
+      homeCode.includes(">Rütbem<") &&
+      !homeCode.includes("🏆 Başarılarım ve Rütbem"),
+    true,
+    "Alıştırmalar görsel oyun başlıklarında emoji tekrarı olmamalı, mobil başlık 'Alıştırma & Oyunlar' olmalı ve Ana Sayfa Rütbem butonu başlık karşısında tek satırda hizalanmalıdır"
+  );
+
+  // 4. İç Çalışma ve Oyun Sayfalarında Mobil Global Web Footer'ın Gizlenmesi (ConditionalFooter)
+  assert.equal(
+    layoutCode.includes("<ConditionalFooter") &&
+      conditionalFooterCode.includes('cleanPath === "/" || cleanPath === "/ayarlar"') &&
+      conditionalFooterCode.includes('showFooterOnMobile ? "block" : "hidden lg:block"') &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Global footer masaüstünde tüm sayfalarda korunmalı, mobilde (< 1024px) yalnızca '/' ve '/ayarlar' sayfalarında gösterilmelidir"
+  );
+});

@@ -1569,7 +1569,7 @@ function ExercisesPageContent() {
     {
       id: "balloon-safari",
       category: "visual_games",
-      title: "🎈 Balon Safari",
+      title: "Balon Safari",
       arabicBadge: "سَفَارِي البَالُونَات",
       subtitle:
         "Süzülen balonlardaki resimli ve harekeli Arapça kelimeleri sesinden yakalayın",
@@ -1578,7 +1578,7 @@ function ExercisesPageContent() {
     {
       id: "memory-flip",
       category: "visual_games",
-      title: "🃏 Hafızanı Yokla",
+      title: "Hafızanı Yokla",
       arabicBadge: "لُعْبَةُ الذَّاكِرَةِ",
       subtitle:
         "Tek kişilik, iki kişilik veya bilgisayara karşı görsel ve Arapça kart eşleştirme",
@@ -1587,7 +1587,7 @@ function ExercisesPageContent() {
     {
       id: "what-is-this",
       category: "visual_games",
-      title: "🖼️ Bu Nedir?",
+      title: "Bu Nedir?",
       arabicBadge: "صُورَةٌ وَكَلِمَةٌ",
       subtitle:
         "Büyük kelime görseline bakarak 4 harekeli şık arasından doğru Arapçayı bulun",
@@ -2553,10 +2553,17 @@ function ExercisesPageContent() {
           )}
 
           <h1 className="text-base sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight leading-snug truncate">
-            {isPlaying
-              ? exerciseCards.find((c) => c.id === selectedType)?.title ||
-                "İnteraktif Alıştırma & Oyun Merkezi"
-              : "İnteraktif Alıştırma & Oyun Merkezi"}
+            {isPlaying ? (
+              exerciseCards.find((c) => c.id === selectedType)?.title ||
+              "İnteraktif Alıştırma & Oyun Merkezi"
+            ) : (
+              <>
+                <span className="sm:hidden">Alıştırma &amp; Oyunlar</span>
+                <span className="hidden sm:inline">
+                  İnteraktif Alıştırma &amp; Oyun Merkezi
+                </span>
+              </>
+            )}
           </h1>
         </div>
 
@@ -2598,7 +2605,7 @@ function ExercisesPageContent() {
                 playClick();
                 setShowPhonemeHeatmap(true);
               }}
-              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] border-b-3 px-3 py-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:opacity-95 shrink-0 cursor-pointer whitespace-nowrap"
+              className="min-h-[36px] inline-flex items-center gap-1.5 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] border-b-3 px-2.5 sm:px-3 py-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:opacity-95 shrink-0 cursor-pointer whitespace-nowrap"
             >
               <span>🎙️</span>
               <span>Mahreç Haritam</span>
@@ -2609,34 +2616,50 @@ function ExercisesPageContent() {
 
       {!isPlaying ? (
         <>
-          {/* HIZLI TEKRAR BANDI (Yalnızca Hata Defteri veya SRS kuyruğunda öğe varsa görünür) */}
+          {/* HIZLI TEKRAR BANDI (Mobilde Tek Satırlık Kompakt Şerit, Masaüstünde Tam Açıklama) */}
           {(mistakeIds.length > 0 ||
             dailyPackage.dueReviewPool.totalDueCount > 0) && (
-            <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[var(--foreground)] min-w-0">
+            <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] px-3 py-2.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--foreground)] min-w-0 flex-1">
                 <span className="shrink-0">⚡</span>
-                <span className="leading-snug">
+                <span className="truncate">
                   {mistakeIds.length > 0 ? (
                     <>
                       <strong className="font-extrabold text-amber-800 dark:text-amber-300">
                         Hızlı Tekrar:
                       </strong>{" "}
-                      Hata Defterinde{" "}
-                      <strong className="tabular-nums">
-                        {mistakeIds.length}
-                      </strong>{" "}
-                      öğe seni bekliyor
+                      <span className="sm:hidden">
+                        <strong className="tabular-nums">
+                          {mistakeIds.length}
+                        </strong>{" "}
+                        hata bekliyor
+                      </span>
+                      <span className="hidden sm:inline">
+                        Hata Defterinde{" "}
+                        <strong className="tabular-nums">
+                          {mistakeIds.length}
+                        </strong>{" "}
+                        öğe seni bekliyor
+                      </span>
                     </>
                   ) : (
                     <>
                       <strong className="font-extrabold text-[#6741D9] dark:text-indigo-300">
                         Hızlı Tekrar:
                       </strong>{" "}
-                      SRS Tekrar listesinde{" "}
-                      <strong className="tabular-nums">
-                        {dailyPackage.dueReviewPool.totalDueCount}
-                      </strong>{" "}
-                      öğe seni bekliyor
+                      <span className="sm:hidden">
+                        <strong className="tabular-nums">
+                          {dailyPackage.dueReviewPool.totalDueCount}
+                        </strong>{" "}
+                        SRS öğesi
+                      </span>
+                      <span className="hidden sm:inline">
+                        SRS Tekrar listesinde{" "}
+                        <strong className="tabular-nums">
+                          {dailyPackage.dueReviewPool.totalDueCount}
+                        </strong>{" "}
+                        öğe seni bekliyor
+                      </span>
                     </>
                   )}
                 </span>
@@ -2644,9 +2667,10 @@ function ExercisesPageContent() {
               <button
                 type="button"
                 onClick={handleQuickReviewBannerStart}
-                className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] active:translate-y-0.5 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                className="min-h-[34px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] active:translate-y-0.5 transition-all shrink-0 cursor-pointer whitespace-nowrap"
               >
-                Hemen Çalış →
+                <span className="sm:hidden">Çalış →</span>
+                <span className="hidden sm:inline">Hemen Çalış →</span>
               </button>
             </div>
           )}

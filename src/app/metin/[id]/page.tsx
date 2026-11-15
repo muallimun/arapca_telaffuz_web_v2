@@ -34,6 +34,7 @@ import {
   RotateCcw,
   ChevronDown,
   XCircle,
+  Trophy,
 } from "lucide-react";
 import {
   metinler,
@@ -2003,77 +2004,79 @@ export default function ReadingTextDetailPage({
           </div>
 
           {/* Tek Satır Mobil Oynatıcı + Hız + Hareke + Ders Araçları Çekmecesi Butonu */}
-          <div className="flex items-center justify-between gap-1">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 w-full min-w-0">
             <button
               type="button"
               onClick={handleTogglePlayAll}
-              className={`h-8.5 px-2.5 rounded-xl font-extrabold text-[11px] border-b-2 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+              className={`w-full min-w-0 px-2.5 h-9 rounded-xl font-extrabold text-xs whitespace-nowrap border-b-2 transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
                 isPlayingAll
                   ? "bg-red-600 text-white border-red-800"
                   : "bg-emerald-600 text-white border-emerald-800"
               }`}
             >
               {isPlayingAll ? (
-                <Square size={10} fill="currentColor" />
+                <>
+                  <Square size={11} fill="currentColor" className="shrink-0" />
+                  <span>Durdur</span>
+                </>
               ) : (
-                <Play size={10} fill="currentColor" />
+                <>
+                  <Play size={11} fill="currentColor" className="shrink-0" />
+                  <span>Dinle</span>
+                </>
               )}
-              <span>{isPlayingAll ? "Durdur" : "Tümünü Dinle"}</span>
             </button>
 
-            <div className="flex items-center gap-1 min-w-0">
-              <button
-                type="button"
-                onClick={cycleSpeechSpeed}
-                aria-label="Okuma Hızı"
-                className={`h-8.5 px-2 rounded-xl border text-[11px] font-bold tabular-nums transition-all cursor-pointer shrink-0 ${
-                  mounted && speechRate !== 1
-                    ? "bg-[#087F5B] border-[#087F5B] text-white"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
-                }`}
-              >
-                {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
-              </button>
+            <button
+              type="button"
+              onClick={cycleSpeechSpeed}
+              aria-label="Okuma Hızı"
+              className={`px-2.5 h-9 rounded-xl border text-xs font-extrabold tabular-nums whitespace-nowrap transition-all inline-flex items-center justify-center cursor-pointer ${
+                mounted && speechRate !== 1
+                  ? "bg-[#087F5B] border-[#087F5B] text-white"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]"
+              }`}
+            >
+              {mounted ? (speechRate === 1 ? "1.0x" : `${speechRate}x`) : "1.0x"}
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleHareke();
-                  setLineHarekeOverrides({});
-                }}
-                aria-label="Hareke Görünümünü Değiştir"
-                className={`h-8.5 px-2 rounded-xl border flex items-center gap-1 text-[11px] font-extrabold transition-all cursor-pointer shrink-0 ${
-                  !mounted || harekeMode === "full"
-                    ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
-                    : harekeMode === "irab-only"
-                    ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
-                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
-                }`}
-              >
-                <Sparkles size={11} className="shrink-0" />
-                <span>
-                  {!mounted || harekeMode === "full"
-                    ? "Hareke"
-                    : harekeMode === "irab-only"
-                    ? "İ'rab"
-                    : "Sade"}
-                </span>
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                toggleHareke();
+                setLineHarekeOverrides({});
+              }}
+              aria-label="Hareke Görünümünü Değiştir"
+              className={`px-2.5 h-9 rounded-xl border inline-flex items-center justify-center gap-1 text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                !mounted || harekeMode === "full"
+                  ? "bg-[#087F5B]/15 border-[#087F5B] text-[#065F46] dark:text-emerald-400"
+                  : harekeMode === "irab-only"
+                  ? "bg-amber-500/15 border-amber-500 text-amber-800 dark:text-amber-300"
+                  : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+              }`}
+            >
+              <span>
+                {!mounted || harekeMode === "full"
+                  ? "Hareke"
+                  : harekeMode === "irab-only"
+                  ? "İ'rab"
+                  : "Sade"}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsMobileToolsSheetOpen(true);
-                }}
-                aria-label="Mobil Ders Araçları Çekmecesini Aç"
-                className="h-8.5 px-2.5 rounded-xl border border-[#6741D9]/50 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff] text-[11px] font-extrabold inline-flex items-center gap-1 cursor-pointer shrink-0"
-              >
-                <span>🧰 Ders Araçları</span>
-                <ChevronDown size={12} className="shrink-0" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsMobileToolsSheetOpen(true);
+              }}
+              aria-label="Mobil Ders Araçları Çekmecesini Aç"
+              className="px-2.5 h-9 rounded-xl border border-[#6741D9]/50 bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] text-[#4C28B5] dark:text-[#d0bfff] text-xs font-extrabold whitespace-nowrap inline-flex items-center justify-center gap-1 cursor-pointer"
+            >
+              <span>🧰 Araçlar</span>
+              <ChevronDown size={12} className="shrink-0" />
+            </button>
           </div>
 
           {/* Mobil Araç Çekmecesinden Sözlük veya Gramer Seçildiğinde Hızlı Dönüş Şeridi */}
@@ -4967,22 +4970,22 @@ export default function ReadingTextDetailPage({
         )}
 
       {/* BÖLÜM 5: ALT TAMAMLAMA CTA, BAŞARI KARTI PAYLAŞIMI VE ÖNCEKİ/SONRAKİ METİN GEÇİŞİ */}
-      <section className="space-y-3 pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <section className="space-y-2.5 pt-2">
+        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-3 gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={handleCompleteAndContinue}
-            className="sm:col-span-2 py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white font-bold text-sm sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2.5 shadow-sm cursor-pointer"
+            className="sm:col-span-2 py-2.5 sm:py-3.5 px-3.5 sm:px-5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 text-white font-extrabold text-xs sm:text-base rounded-2xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-sm cursor-pointer min-w-0"
           >
-            <CheckCircle2 size={20} className="shrink-0 w-5 h-5" />
-            <span>
+            <CheckCircle2 size={18} className="shrink-0" />
+            <span className="truncate">
               {isCompleted
                 ? nextReadingText
-                  ? `Sonraki Metne Geç (${nextReadingText.baslik_tr})`
-                  : "Metin Kütüphanesine Dön"
+                  ? "Sonraki Metne Geç"
+                  : "Kütüphaneye Dön"
                 : nextReadingText
-                  ? `Metni Tamamla ve Sonrakine Geç (${nextReadingText.baslik_tr})`
-                  : "Metni Tamamlandı Olarak İşaretle"}
+                  ? "Tamamla ve Sonrakine Geç"
+                  : "Metni Tamamla"}
             </span>
           </button>
 
@@ -4995,27 +4998,28 @@ export default function ReadingTextDetailPage({
               }
               setIsShareModalOpen(true);
             }}
-            className="py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            className="py-2.5 sm:py-3.5 px-3 sm:px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
           >
-            <Share2 size={17} className="shrink-0" />
-            <span>🏆 Başarı Kartını Paylaş / İndir</span>
+            <Trophy size={16} className="shrink-0" />
+            <span className="sm:hidden">Başarı Kartı</span>
+            <span className="hidden sm:inline">Başarı Kartını Paylaş / İndir</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {prevReadingText ? (
             <Link
               href={`/metin/${prevReadingText.id}`}
               onClick={() => playClick()}
-              className="w-full p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-2.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all"
+              className="w-full p-2.5 sm:p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center gap-2 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all min-w-0"
             >
               <ChevronLeft
-                size={18}
+                size={16}
                 className="text-[#065F46] dark:text-emerald-400 shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <span className="block text-[10px] text-slate-600 dark:text-slate-300 uppercase">
-                  Önceki Metin
+                  Önceki
                 </span>
                 <span className="truncate block">
                   {prevReadingText.baslik_tr}
@@ -5023,30 +5027,30 @@ export default function ReadingTextDetailPage({
               </div>
             </Link>
           ) : (
-            <div className="hidden sm:block" />
+            <div />
           )}
 
           {nextReadingText ? (
             <Link
               href={`/metin/${nextReadingText.id}`}
               onClick={() => playClick()}
-              className="w-full p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-end gap-2.5 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all text-right"
+              className="w-full p-2.5 sm:p-3 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 flex items-center justify-end gap-2 text-xs font-extrabold text-[var(--foreground)] hover:border-[#087F5B] transition-all text-right min-w-0"
             >
               <div className="min-w-0 flex-1">
                 <span className="block text-[10px] text-slate-600 dark:text-slate-300 uppercase">
-                  Sonraki Metin
+                  Sonraki
                 </span>
                 <span className="truncate block">
                   {nextReadingText.baslik_tr}
                 </span>
               </div>
               <ChevronRight
-                size={18}
+                size={16}
                 className="text-[#065F46] dark:text-emerald-400 shrink-0"
               />
             </Link>
           ) : (
-            <div className="hidden sm:block" />
+            <div />
           )}
         </div>
       </section>

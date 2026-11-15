@@ -19,6 +19,7 @@ import {
   Award,
   CheckCircle2,
   Home,
+  ChevronLeft,
 } from "lucide-react";
 import {
   ResimliKelime,
@@ -111,6 +112,8 @@ export interface BalloonSafariGameProps {
 
 const STAGE_W = 1120;
 const STAGE_H = 620;
+const PORTRAIT_STAGE_W = 540;
+const PORTRAIT_STAGE_H = 860;
 const HS_NORMAL_KEY = "muallimun_balloon_safari_hs_normal";
 const HS_TIME_KEY = "muallimun_balloon_safari_hs_time";
 
@@ -249,6 +252,7 @@ export default function BalloonSafariGame({
   const [difficulty, setDifficulty] = useState<SafariDifficulty>("medium");
   const [gameMode, setGameMode] = useState<SafariGameMode>("normal");
   const [isMuted, setIsMuted] = useState(false);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   // Opsiyonel yerel public/images/background.png ve public/images/balon.png algılama (kırık görsel üretmeden)
   const [hasCustomBg, setHasCustomBg] = useState(false);
@@ -316,6 +320,50 @@ export default function BalloonSafariGame({
   const correctPopsRef = useRef<number>(0);
   const wrongPopsRef = useRef<number>(0);
   const isMutedRef = useRef<boolean>(false);
+  const isPortraitMobileRef = useRef<boolean>(false);
+
+  const activeStageW = isPortraitMobile ? PORTRAIT_STAGE_W : STAGE_W;
+  const activeStageH = isPortraitMobile ? PORTRAIT_STAGE_H : STAGE_H;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncViewportOrientation = () => {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const isPortrait = windowWidth < 640 && windowHeight > windowWidth;
+      const prevPortrait = isPortraitMobileRef.current;
+      isPortraitMobileRef.current = isPortrait;
+      setIsPortraitMobile(isPortrait);
+
+      if (prevPortrait !== isPortrait && balloonsRef.current.length > 0) {
+        const nextW = isPortrait ? PORTRAIT_STAGE_W : STAGE_W;
+        const nextMinY = isPortrait ? 190 : 175;
+        const nextMaxY = isPortrait ? PORTRAIT_STAGE_H - 165 : STAGE_H - 185;
+        const remapped = balloonsRef.current.map((b, idx, arr) => {
+          const laneRatio =
+            arr.length > 1 ? idx / Math.max(1, arr.length - 1) : 0.5;
+          const clampedBaseY = nextMinY + laneRatio * (nextMaxY - nextMinY);
+          const clampedX = Math.min(nextW + 180, Math.max(80, b.x));
+          return {
+            ...b,
+            x: clampedX,
+            baseY: clampedBaseY,
+            y: clampedBaseY,
+          };
+        });
+        balloonsRef.current = remapped;
+        setBalloons(remapped);
+      }
+    };
+
+    syncViewportOrientation();
+    window.addEventListener("resize", syncViewportOrientation);
+    window.addEventListener("orientationchange", syncViewportOrientation);
+    return () => {
+      window.removeEventListener("resize", syncViewportOrientation);
+      window.removeEventListener("orientationchange", syncViewportOrientation);
+    };
+  }, []);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -507,9 +555,15 @@ export default function BalloonSafariGame({
       const distractors = distractorCandidates.slice(0, Math.max(1, count - 1));
       const waveWords = shuffleArray([pickedTarget, ...distractors]);
 
-      // Sıcak hava balonları (kubbe + hasır sepet + alt Arapça etiket) taşmayacak şekilde şeritlere dağıtılır
-      const minY = 175;
-      const maxY = STAGE_H - 185;
+      // Dikey mobil (540x860) ve masaüstü (1120x620) sahne yüksekliğine göre uçuş şeritlerini dengeli dağıt
+      const portraitNow = isPortraitMobileRef.current;
+      const curStageW = portraitNow ? PORTRAIT_STAGE_W : STAGE_W;
+      const curStageH = portraitNow ? PORTRAIT_STAGE_H : STAGE_H;
+      const minY = portraitNow ? 190 : 175;
+      const maxY = portraitNow ? curStageH - 165 : curStageH - 185;
+      const speedScale = portraitNow ? 0.78 : 1;
+      const horizontalSpacing = portraitNow ? 172 : 195;
+
       const laneStep =
         waveWords.length > 1 ? (maxY - minY) / (waveWords.length - 1) : 0;
       const shuffledLanes = shuffleArray(
@@ -519,8 +573,9 @@ export default function BalloonSafariGame({
       );
 
       const created: ActiveBalloon[] = waveWords.map((w, idx) => {
-        const startX = STAGE_W + 95 + idx * 195 + (idx % 2) * 32;
-        const baseY = shuffledLanes[idx] ?? 290;
+        const startX =
+          curStageW + 85 + idx * horizontalSpacing + (idx % 2) * 26;
+        const baseY = shuffledLanes[idx] ?? (minY + maxY) / 2;
         return {
           uid: `b_${nextRoundNum}_${idx}_${w.id}`,
           kind: "word",
@@ -529,10 +584,10 @@ export default function BalloonSafariGame({
           x: startX,
           y: baseY,
           baseY,
-          speedX: baseSpeed * (0.92 + (idx % 3) * 0.09),
+          speedX: baseSpeed * speedScale * (0.92 + (idx % 3) * 0.09),
           wobblePhase: idx * 1.35,
           wobbleSpeed: 2.0 + (idx % 3) * 0.32,
-          wobbleAmp: 12 + (idx % 2) * 6,
+          wobbleAmp: portraitNow ? 14 + (idx % 2) * 6 : 12 + (idx % 2) * 6,
           paletteIndex: (nextRoundNum + idx) % HOT_AIR_PALETTES.length,
           popped: false,
         };
@@ -542,14 +597,15 @@ export default function BalloonSafariGame({
       if (nextRoundNum % 3 === 0) {
         const powerKind: BalloonKind =
           nextRoundNum % 6 === 0 ? "freeze" : "hint";
+        const pwrY = portraitNow ? minY + 35 : 195;
         created.push({
           uid: `pwr_${nextRoundNum}_${powerKind}`,
           kind: powerKind,
           isTarget: false,
-          x: STAGE_W + 250,
-          y: 195,
-          baseY: 195,
-          speedX: baseSpeed * 1.12,
+          x: curStageW + 220,
+          y: pwrY,
+          baseY: pwrY,
+          speedX: baseSpeed * speedScale * 1.12,
           wobblePhase: 0.7,
           wobbleSpeed: 2.6,
           wobbleAmp: 14,
@@ -559,14 +615,15 @@ export default function BalloonSafariGame({
       }
 
       if (nextRoundNum % 4 === 0) {
+        const goldY = portraitNow ? maxY - 25 : curStageH - 195;
         created.push({
           uid: `gold_${nextRoundNum}`,
           kind: "golden",
           isTarget: false,
-          x: STAGE_W + 390,
-          y: STAGE_H - 195,
-          baseY: STAGE_H - 195,
-          speedX: baseSpeed * 1.45,
+          x: curStageW + 340,
+          y: goldY,
+          baseY: goldY,
+          speedX: baseSpeed * speedScale * 1.42,
           wobblePhase: 1.9,
           wobbleSpeed: 3.1,
           wobbleAmp: 16,
@@ -626,6 +683,9 @@ export default function BalloonSafariGame({
       setFreezeRemainingMs(frozenLeft > 50 ? frozenLeft : 0);
       const isFrozen = frozenLeft > 0;
 
+      const curStageW = isPortraitMobileRef.current
+        ? PORTRAIT_STAGE_W
+        : STAGE_W;
       const nextBalloons: ActiveBalloon[] = [];
       for (const b of balloonsRef.current) {
         if (b.popped) continue;
@@ -636,7 +696,7 @@ export default function BalloonSafariGame({
 
         if (nextX < -125) {
           if (b.kind === "word") {
-            nextX = STAGE_W + 115;
+            nextX = curStageW + 110;
           } else {
             continue;
           }
@@ -711,9 +771,12 @@ export default function BalloonSafariGame({
 
   const pushFloatingBadge = useCallback(
     (x: number, y: number, text: string, tone: FloatingBadge["tone"]) => {
+      const curStageW = isPortraitMobileRef.current
+        ? PORTRAIT_STAGE_W
+        : STAGE_W;
       const badge: FloatingBadge = {
         id: `fb_${Date.now()}_${Math.random()}`,
-        x: Math.max(105, Math.min(STAGE_W - 105, x)),
+        x: Math.max(92, Math.min(curStageW - 92, x)),
         y: Math.max(92, y),
         text,
         tone,
@@ -1830,8 +1893,101 @@ export default function BalloonSafariGame({
       }`}
     >
       <div className="relative flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-b from-[#46A5ED] via-[#8ED1FC] to-[#2D6A4F]">
-        {/* C) ÜST YÜZER HAP (PILL) HUD TASARIMI + NET "✕ Çıkış / Listeye Dön" BUTONU */}
-        <div className="relative sm:absolute sm:top-3 sm:inset-x-4 z-20 px-2.5 pt-2.5 pb-1 sm:p-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none shrink-0">
+        {/* C-1) MOBİL (< 640px) TEK SATIR KOMPAKT HUD: Sol [← Çık + 🔊 إِعَادَة + 🔇] | Sağ [⭐ Puan · Lv.X · ❤️❤️❤️/⏳ + 🏆 Karne] */}
+        <div className="sm:hidden absolute top-2 inset-x-2 z-20 h-10 flex items-center justify-between gap-1 flex-nowrap pointer-events-none">
+          {/* Sol Kompakt Grup */}
+          <div className="flex items-center gap-1 shrink-0 pointer-events-auto">
+            <button
+              type="button"
+              onClick={handleExitToList}
+              className="h-9 px-2 rounded-full bg-slate-900/85 text-white border border-white/85 shadow-sm flex items-center gap-0.5 text-[11px] font-extrabold cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+              aria-label="Oyundan Çık"
+            >
+              <ChevronLeft size={14} strokeWidth={2.6} />
+              <span>Çık</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (isMuted) {
+                  setIsMuted(false);
+                  isMutedRef.current = false;
+                }
+                speakSafariWord(targetWord);
+              }}
+              className="h-9 px-2.5 rounded-full bg-[#FACC15] active:bg-[#EAB308] text-slate-900 border border-white shadow-sm flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+              title="Hedef Kelime Sesini Tekrar Dinle"
+            >
+              <Volume2 size={14} className="shrink-0" />
+              <span dir="rtl" className="arabic text-xs font-bold">
+                إِعَادَة
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                const next = !isMuted;
+                setIsMuted(next);
+                isMutedRef.current = next;
+                if (next) {
+                  stopAllAudio();
+                  sfx.stopAllSfx();
+                }
+              }}
+              className="h-9 w-9 rounded-full bg-white/95 text-slate-900 border border-white shadow-sm flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+              aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
+            >
+              {isMuted ? (
+                <VolumeX size={15} className="text-rose-600" />
+              ) : (
+                <Volume2 size={15} className="text-slate-800" />
+              )}
+            </button>
+          </div>
+
+          {/* Sağ Kompakt Durum Kapsülü + Karne */}
+          <div className="flex items-center gap-1 min-w-0 pointer-events-auto">
+            <div
+              className={`h-9 px-2 rounded-full border shadow-sm flex items-center gap-1 text-[11px] font-black tabular-nums whitespace-nowrap shrink-0 ${
+                gameMode === "time" && timeLeft <= 10
+                  ? "bg-rose-600 text-white border-white"
+                  : "bg-white/95 text-slate-900 border-white"
+              }`}
+            >
+              <span className="text-amber-600">⭐{score}</span>
+              <span className="opacity-45">·</span>
+              <span className="text-[#065F46]">Lv.{currentLevel}</span>
+              <span className="opacity-45">·</span>
+              {gameMode === "normal" ? (
+                <span
+                  className="text-[10px] tracking-tighter"
+                  aria-label={`${lives} can`}
+                >
+                  {"❤️".repeat(Math.min(3, lives))}
+                  {lives > 3 ? `+${lives - 3}` : ""}
+                </span>
+              ) : (
+                <span>{timeLeft}s⏳</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => finishGame(scoreRef.current, gameMode)}
+              className="h-9 px-2 rounded-full bg-amber-500 active:bg-amber-600 text-white border border-white shadow-sm flex items-center gap-1 text-[11px] font-extrabold cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+              title="Oyunu Tamamla ve Karne Ekranını Aç"
+            >
+              <Trophy size={13} className="shrink-0" />
+              <span className="hidden min-[380px]:inline">Karne</span>
+            </button>
+          </div>
+        </div>
+
+        {/* C-2) MASAÜSTÜ (sm: ve üzeri) YÜZER HAP HUD TASARIMI + NET "✕ Çıkış / Listeye Dön" BUTONU */}
+        <div className="hidden sm:flex sm:absolute sm:top-3 sm:inset-x-4 z-20 items-center justify-between gap-2 pointer-events-none shrink-0">
           {/* EN SOLDA: Sarı renkli 🔊 ve 🔊 إِعَادَة الصَّوْت (Sesi Tekrar Dinle) hap butonları */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
@@ -1975,12 +2131,12 @@ export default function BalloonSafariGame({
           </div>
         </div>
 
-        {/* Aktif Güçlendirici / Kombo Yüzer Bildirimi */}
+        {/* Aktif Güçlendirici / Kombo Yüzer Bildirimi (Sahne alanını daraltmadan üstte yüzer) */}
         {(freezeRemainingMs > 0 ||
           hintActive ||
           comboMilestoneBanner ||
           practiceSubset) && (
-          <div className="relative sm:absolute sm:top-14 sm:inset-x-4 z-20 px-2 pb-1 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold pointer-events-none shrink-0">
+          <div className="absolute top-13 sm:top-14 inset-x-2 sm:inset-x-4 z-20 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-extrabold pointer-events-none">
             {practiceSubset && (
               <span className="px-3 py-0.5 rounded-full bg-white/95 text-purple-800 shadow-sm">
                 Hatalarımla Pratik ({practiceSubset.length} kelime)
@@ -2013,8 +2169,8 @@ export default function BalloonSafariGame({
 
         {/* A) PANORAMİK DOĞA & SAFARİ MANZARASI + B) GERÇEK SICAK HAVA BALONLARI (60FPS TAM EKRAN SVG) */}
         <svg
-          viewBox={`0 0 ${STAGE_W} ${STAGE_H}`}
-          preserveAspectRatio="xMidYMid meet"
+          viewBox={`0 0 ${activeStageW} ${activeStageH}`}
+          preserveAspectRatio="xMidYMid slice"
           className="flex-1 min-h-0 w-full h-full block touch-manipulation"
           role="application"
           aria-label="Balon Safari Oyun Alanı"
@@ -2049,12 +2205,12 @@ export default function BalloonSafariGame({
             </clipPath>
           </defs>
 
-          {/* 1. Gökyüzü Katmanı */}
+          {/* 1. Gökyüzü Katmanı (Dikey veya yatay tüm ekranı boşluksuz kaplar) */}
           <rect
             x="0"
             y="0"
-            width={STAGE_W}
-            height={STAGE_H}
+            width={activeStageW}
+            height={activeStageH}
             fill="url(#safariSkyGrad)"
           />
 
@@ -2064,14 +2220,31 @@ export default function BalloonSafariGame({
               href="/images/background.png"
               x="0"
               y="0"
-              width={STAGE_W}
-              height={STAGE_H}
+              width={activeStageW}
+              height={activeStageH}
               preserveAspectRatio="xMidYMid slice"
             />
           )}
 
+          {/* Dikey mobil (540x860) üst gökyüzü ek bulut kümeleri */}
+          {!hasCustomBg && isPortraitMobile && (
+            <g opacity="0.88" fill="#FFFFFF" aria-hidden="true">
+              <ellipse cx="115" cy="130" rx="54" ry="18" />
+              <ellipse cx="152" cy="122" rx="40" ry="19" />
+              <ellipse cx="408" cy="195" rx="60" ry="19" />
+              <ellipse cx="446" cy="188" rx="42" ry="17" />
+              <ellipse cx="165" cy="290" rx="52" ry="17" />
+              <ellipse cx="204" cy="284" rx="38" ry="16" />
+            </g>
+          )}
+
           {!hasCustomBg && (
-            <g aria-hidden="true">
+            <g
+              aria-hidden="true"
+              transform={
+                isPortraitMobile ? "translate(-290, 240)" : undefined
+              }
+            >
               {/* Yumuşak Bulut Kümeleri */}
               <g opacity="0.88" fill="#FFFFFF">
                 <ellipse cx="185" cy="96" rx="58" ry="20" />
@@ -2369,11 +2542,12 @@ export default function BalloonSafariGame({
             // Pedagojik Kademe: Seviye 1 tam boy, Seviye 2 biraz küçük, Seviye 3 ve 4 etiket gizli!
             const showArabicLabel = b.kind === "word" && currentLevel <= 2;
             const labelScale = currentLevel === 2 ? 0.8 : 1;
+            const balloonScale = isPortraitMobile ? 1.06 : 1;
 
             return (
               <g
                 key={b.uid}
-                transform={`translate(${b.x.toFixed(1)}, ${b.y.toFixed(1)})`}
+                transform={`translate(${b.x.toFixed(1)}, ${b.y.toFixed(1)}) scale(${balloonScale})`}
                 opacity={isDimmedByHint ? 0.25 : 1}
                 onPointerDown={(e) => {
                   e.preventDefault();

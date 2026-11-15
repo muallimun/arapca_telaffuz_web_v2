@@ -24,6 +24,8 @@ import {
   BarChart3,
   Shell,
   User,
+  ChevronLeft,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   ResimliKelime,
@@ -1538,35 +1540,61 @@ export default function MemoryFlipGame({
         : "Sıra 2. Oyuncuda: iki kart çevir."
       : "Sıra sende: iki kart çevir.";
 
-  // 8, 12 ve 16 kartın tamamı masaüstünde 4 sütunlu ızgarada kaydırmasız sığar
+  // 8 (2x4), 12 (3x4) ve 16 (4x4) kartın tamamı mobilde 4 eşit satırda, masaüstünde (lg:) 4 sütunda sıfır kaydırma ve sıfır çakışmayla sığar
   const boardGridClass =
     difficulty === "easy"
-      ? "grid-cols-2 sm:grid-cols-4"
+      ? "grid-cols-2 lg:grid-cols-4"
       : difficulty === "medium"
-      ? "grid-cols-2 min-[430px]:grid-cols-3 sm:grid-cols-4"
-      : "grid-cols-2 min-[480px]:grid-cols-4";
+      ? "grid-cols-3 lg:grid-cols-4"
+      : "grid-cols-4";
+
+  const arabicCardFontClass =
+    difficulty === "hard"
+      ? "text-base sm:text-3xl font-bold"
+      : difficulty === "medium"
+      ? "text-xl sm:text-3xl font-bold"
+      : "text-2xl sm:text-3xl font-bold";
+
+  const turkishCardFontClass =
+    difficulty === "hard"
+      ? "text-[11px] sm:text-base md:text-lg font-extrabold"
+      : difficulty === "medium"
+      ? "text-xs sm:text-base md:text-lg font-extrabold"
+      : "text-sm sm:text-base md:text-lg font-extrabold";
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#FAF4E8] dark:bg-[var(--surface)] flex flex-col overflow-hidden h-[100dvh] select-none">
       {howToModalNode}
 
-      {/* Üst Kompakt Bar (shrink-0) — Her Zaman Net "✕ Çıkış / Listeye Dön" */}
-      <header className="shrink-0 bg-[#F3E9D6]/90 dark:bg-slate-950/80 border-b border-[#E6D7BE] dark:border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0">
+      {/* Üst Kompakt Bar (shrink-0, mobilde kesin tek satır 48px, masaüstünde tam kontrol barı) */}
+      <header className="shrink-0 z-20 h-12 min-h-[48px] max-h-[48px] sm:h-auto sm:max-h-none bg-[#F3E9D6]/95 dark:bg-slate-950/90 border-b border-[#E6D7BE] dark:border-slate-800 px-2.5 sm:px-5 sm:py-2 flex items-center justify-between gap-1.5 sm:gap-2 flex-nowrap">
+        {/* SOL GRUP: Mobilde [← Çık] + Hafızanı Yokla | Masaüstünde İkon + Başlık + Arapça + Seviye Özeti */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={handleExitToList}
+            className="sm:hidden h-8 px-2 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-0.5 cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+            aria-label="Oyundan Çık"
+          >
+            <ChevronLeft size={15} strokeWidth={2.5} />
+            <span>Çık</span>
+          </button>
+
+          <div className="hidden sm:flex w-8 h-8 rounded-xl bg-[#0F766E] text-white items-center justify-center shrink-0">
             <BookOpen size={16} />
           </div>
-          <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
+
+          <div className="min-w-0 flex items-center gap-x-2 flex-nowrap">
+            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate whitespace-nowrap">
               Hafızanı Yokla
             </h2>
             <span
               dir="rtl"
-              className="arabic text-sm sm:text-base font-bold text-[#0F766E] dark:text-teal-300"
+              className="hidden sm:inline arabic text-sm sm:text-base font-bold text-[#0F766E] dark:text-teal-300 shrink-0"
             >
               لُعْبَةُ الذَّاكِرَةِ
             </span>
-            <span className="hidden md:inline text-xs text-slate-500 dark:text-slate-400 font-bold">
+            <span className="hidden md:inline text-xs text-slate-500 dark:text-slate-400 font-bold truncate">
               · {cfg.labelTr} ({cfg.summaryChip}) ·{" "}
               {playMode === "ai"
                 ? "Yapay zekâya karşı"
@@ -1577,20 +1605,21 @@ export default function MemoryFlipGame({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* SAĞ GRUP: Mobilde tek satır kompakt ikon butonlar ([👁️ 2] [🔊] [🔄] [⚙️ Mod]) | Masaüstünde tam butonlar */}
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
           {playMode === "practice" && (
             <button
               type="button"
               onClick={handlePeekCards}
               disabled={isPeeking || peeksLeft <= 0}
-              className="min-h-[34px] px-2.5 py-1 rounded-xl bg-[#1F6E50] hover:bg-[#16533C] disabled:opacity-45 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              className="h-8 sm:min-h-[34px] px-2 sm:px-2.5 rounded-xl bg-[#1F6E50] hover:bg-[#16533C] disabled:opacity-45 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               title="Kartları 1.5 Saniye Göster"
             >
-              <Eye size={14} />
+              <Eye size={14} className="shrink-0" />
               <span className="hidden sm:inline">
                 Kartları 1.5 Saniye Göster ({peeksLeft})
               </span>
-              <span className="sm:hidden">İpucu ({peeksLeft})</span>
+              <span className="sm:hidden tabular-nums">{peeksLeft}</span>
             </button>
           )}
 
@@ -1600,7 +1629,7 @@ export default function MemoryFlipGame({
               playClick();
               setShowHowToModal(true);
             }}
-            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="hidden sm:flex min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 items-center justify-center cursor-pointer shrink-0"
             aria-label="Nasıl oynanır?"
             title="Nasıl oynanır?"
           >
@@ -1613,7 +1642,7 @@ export default function MemoryFlipGame({
               playClick();
               toggleTheme();
             }}
-            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="hidden sm:flex min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 items-center justify-center cursor-pointer shrink-0"
             aria-label="Tema değiştir"
             title="Tema değiştir"
           >
@@ -1623,7 +1652,7 @@ export default function MemoryFlipGame({
           <button
             type="button"
             onClick={handleToggleMute}
-            className="min-h-[34px] min-w-[34px] p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer"
+            className="h-8 w-8 sm:min-h-[34px] sm:min-w-[34px] sm:p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center cursor-pointer shrink-0"
             aria-label={isMuted ? "Sesi Aç" : "Sesi Kapat"}
             title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
           >
@@ -1637,10 +1666,11 @@ export default function MemoryFlipGame({
           <button
             type="button"
             onClick={() => startGameSession(playMode, difficulty, null)}
-            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+            className="h-8 w-8 sm:w-auto sm:min-h-[34px] sm:px-2.5 sm:py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+            aria-label="Desteyi Yenile"
             title="Desteyi Yenile"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={14} />
             <span className="hidden sm:inline">Yenile</span>
           </button>
 
@@ -1652,27 +1682,124 @@ export default function MemoryFlipGame({
               stopAllAudio();
               setPhase("menu");
             }}
-            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#0F766E] cursor-pointer whitespace-nowrap shrink-0"
+            className="h-8 px-2 sm:min-h-[34px] sm:px-2.5 sm:py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#D8CBB0] dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#0F766E] flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+            title="Oyun Modu ve Zorluk Seçimi"
           >
-            Modlar
+            <SlidersHorizontal size={13} className="sm:hidden shrink-0" />
+            <span className="sm:hidden">Mod</span>
+            <span className="hidden sm:inline">Modlar</span>
           </button>
 
           <button
             type="button"
             onClick={handleExitToList}
-            className="min-h-[34px] px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+            className="hidden sm:flex min-h-[34px] px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border-2 border-[#D8CBB0] dark:border-slate-700 hover:border-rose-500 text-xs font-extrabold text-slate-800 dark:text-slate-100 items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
           >
             <span>✕ Çıkış / Listeye Dön</span>
           </button>
         </div>
       </header>
 
-      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol %78+ Kaydırmasız Kart Masası + Sağ Kompakt lg:w-60 xl:w-64 Yan Panel */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5 sm:gap-3 p-2 sm:p-3.5 overflow-y-auto lg:overflow-hidden">
-        {/* SOL KART IZGARASI: Masaüstünde ekranın >%75'i, 8/12/16 kartın tamamı sıfır kaydırmayla sığar */}
-        <div className="order-2 lg:order-1 flex-1 min-w-0 min-h-0 lg:h-full rounded-3xl p-2 sm:p-3.5 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner flex flex-col justify-center lg:overflow-hidden">
+      {/* MOBİL & TABLET (< lg:) TEK SATIR SKOR & SÜRE BARI (shrink-0 z-20 h-11 — Kartların üstüne asla binmez) */}
+      <div className="lg:hidden shrink-0 z-20 h-11 min-h-[44px] max-h-[44px] px-2.5 bg-[#FAF4E8] dark:bg-slate-900 border-b border-[#E6D7BE] dark:border-slate-800 flex items-center justify-between gap-1.5 flex-nowrap">
+        {playMode === "practice" ? (
+          <div className="w-full flex items-center justify-between gap-2 text-xs font-extrabold text-slate-800 dark:text-slate-100 tabular-nums whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-[#E2D5BC] dark:border-slate-700">
+              <Timer size={13} className="text-[#0F766E] dark:text-teal-400" />
+              <span>{formatSeconds(elapsedSec)}</span>
+            </span>
+            <span className="text-slate-600 dark:text-slate-300">
+              Hamle:{" "}
+              <strong className="text-slate-900 dark:text-white">{moves}</strong>
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300/70 dark:border-emerald-800 text-[#1F6E50] dark:text-emerald-300">
+              <span>
+                Eşleşen: {matchedPairIds.length}/{activePairs.length}
+              </span>
+            </span>
+          </div>
+        ) : (
+          <>
+            <div
+              className={`h-8 px-2.5 rounded-xl border-2 flex items-center gap-1 text-xs font-black tabular-nums whitespace-nowrap shrink-0 ${
+                isP1Active
+                  ? "border-[#EA580C] bg-orange-50 dark:bg-orange-950/50 text-slate-900 dark:text-white"
+                  : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+              }`}
+            >
+              <User
+                size={13}
+                className={
+                  isP1Active
+                    ? "text-[#EA580C]"
+                    : "text-slate-500 dark:text-slate-400"
+                }
+              />
+              <span>
+                {playMode === "two_player" ? "P1" : "Sen"}: {p1Score}
+              </span>
+            </div>
+
+            <div
+              className={`h-8 px-2.5 rounded-xl border flex items-center gap-1.5 text-xs font-extrabold tabular-nums whitespace-nowrap min-w-0 ${
+                turnSecLeft <= 4
+                  ? "bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-700 dark:text-rose-300"
+                  : "bg-white dark:bg-slate-800 border-[#E2D5BC] dark:border-slate-700 text-slate-800 dark:text-slate-100"
+              }`}
+            >
+              <Timer
+                size={13}
+                className={
+                  turnSecLeft <= 4
+                    ? "text-rose-600 shrink-0"
+                    : "text-[#0D9488] shrink-0"
+                }
+              />
+              <span>{turnSecLeft}s</span>
+              <span className="opacity-45">·</span>
+              <span className="truncate">Hamle: {moves}</span>
+            </div>
+
+            <div
+              className={`h-8 px-2.5 rounded-xl border-2 flex items-center gap-1 text-xs font-black tabular-nums whitespace-nowrap shrink-0 ${
+                isOpponentActive
+                  ? "border-[#EA580C] bg-orange-50 dark:bg-orange-950/50 text-slate-900 dark:text-white"
+                  : "border-[#E2D5BC] dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+              }`}
+            >
+              {playMode === "ai" ? (
+                <Bot
+                  size={13}
+                  className={
+                    isOpponentActive
+                      ? "text-[#EA580C]"
+                      : "text-slate-500 dark:text-slate-400"
+                  }
+                />
+              ) : (
+                <Users
+                  size={13}
+                  className={
+                    isOpponentActive
+                      ? "text-[#EA580C]"
+                      : "text-slate-500 dark:text-slate-400"
+                  }
+                />
+              )}
+              <span>
+                {playMode === "ai" ? "YZ" : "P2"}: {p2Score}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ANA 2 BÖLMELİ OYUN DÜZENİ: Sol Kaydırmasız & Çakışmasız Kart Masası + Masaüstü Sağ lg:w-60 xl:w-64 Yan Panel */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-3 p-2 sm:p-3.5 overflow-hidden lg:overflow-hidden">
+        {/* SOL KART IZGARASI: Mobilde overflow-hidden relative z-10 flex-1 min-h-0 + auto-rows-fr; Masaüstünde >%75 genişlik */}
+        <div className="overflow-hidden relative z-10 flex-1 min-w-0 min-h-0 lg:order-1 lg:h-full rounded-2xl sm:rounded-3xl p-1.5 sm:p-3.5 bg-gradient-to-br from-[#0E7490] via-[#0D9488] to-[#115E59] dark:from-[#083344] dark:via-[#115E59] dark:to-[#0F172A] border-2 border-[#0F766E]/70 shadow-inner flex flex-col justify-center lg:overflow-hidden">
           <div
-            className={`flex-1 min-h-0 grid ${boardGridClass} content-center gap-2 sm:gap-2.5 md:gap-3 w-full`}
+            className={`flex-1 min-h-0 grid ${boardGridClass} auto-rows-fr lg:auto-rows-auto lg:content-center gap-1.5 sm:gap-2.5 md:gap-3 w-full overflow-hidden`}
           >
             {deck.map((card, idx) => {
               const isMatched = matchedPairIds.includes(card.pairId);
@@ -1687,7 +1814,7 @@ export default function MemoryFlipGame({
               return (
                 <div
                   key={card.uid}
-                  className="relative h-[clamp(5.2rem,17vh,8.8rem)] [perspective:1000px]"
+                  className="relative h-full min-h-0 lg:h-[clamp(5.2rem,17vh,8.8rem)] [perspective:1000px]"
                 >
                   <div
                     role="button"
@@ -1705,22 +1832,22 @@ export default function MemoryFlipGame({
                     }`}
                   >
                     {/* KAPALI KART: Sıcak krem/kum (#EFE3C8) + mercan kırmızısı deniz kabuğu (#E05A47) */}
-                    <div className="absolute inset-0 rounded-2xl bg-[#EFE3C8] hover:bg-[#F5EAD2] border-2 border-[#D4C19C] border-b-[5px] border-b-[#B59B6D] shadow-md flex items-center justify-center gap-2 p-2 [backface-visibility:hidden] transition-colors">
-                      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs shrink-0">
+                    <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-[#EFE3C8] hover:bg-[#F5EAD2] border-2 border-[#D4C19C] border-b-4 sm:border-b-[5px] border-b-[#B59B6D] shadow-md flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2 [backface-visibility:hidden] transition-colors">
+                      <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#E8D7B4]/75 border border-[#D4C19C] flex items-center justify-center shadow-2xs shrink-0">
                         <Shell
-                          size={24}
+                          size={20}
                           strokeWidth={2.2}
-                          className="text-[#E05A47]"
+                          className="text-[#E05A47] sm:scale-115"
                         />
                       </div>
-                      <span className="text-xs font-extrabold text-[#8C734B] tabular-nums">
+                      <span className="text-[11px] sm:text-xs font-extrabold text-[#8C734B] tabular-nums leading-none">
                         #{idx + 1}
                       </span>
                     </div>
 
-                    {/* AÇIK / EŞLEŞMİŞ KART: Ortalı kırpılmaz görsel + büyük tipografi */}
+                    {/* AÇIK / EŞLEŞMİŞ KART: Mobilde dikey istif (Görsel üstte, metin altta), Masaüstünde yatay ortalı */}
                     <div
-                      className={`absolute inset-0 rounded-2xl border-2 border-b-[5px] px-2 py-1 sm:px-2.5 sm:py-1.5 flex flex-col justify-between shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
+                      className={`absolute inset-0 rounded-xl sm:rounded-2xl border-2 border-b-4 sm:border-b-[5px] px-1.5 py-1 sm:px-2.5 sm:py-1.5 flex flex-col justify-between shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden ${
                         isMatched
                           ? "bg-[#1F6E50] border-[#34D399] border-b-[#134733] text-white"
                           : isMismatch
@@ -1730,9 +1857,9 @@ export default function MemoryFlipGame({
                     >
                       {/* Üst İnce Etiket Şeridi */}
                       <div className="w-full flex items-center justify-between gap-1 shrink-0 leading-none">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-0">
                           <span
-                            className={`text-[9px] sm:text-[10px] font-black ${
+                            className={`text-[8px] sm:text-[10px] font-black truncate ${
                               isMatched
                                 ? "text-emerald-100"
                                 : card.side === "A"
@@ -1743,7 +1870,7 @@ export default function MemoryFlipGame({
                             {card.side === "A" ? "عَرَبِيّ" : "TÜRKÇE"}
                           </span>
                           {isMatched && ownerTag && (
-                            <span className="px-1.5 py-0.5 rounded bg-black/25 text-[9px] font-black text-emerald-50">
+                            <span className="px-1 py-0.5 rounded bg-black/25 text-[8px] sm:text-[9px] font-black text-emerald-50 shrink-0">
                               {ownerTag}
                             </span>
                           )}
@@ -1751,7 +1878,7 @@ export default function MemoryFlipGame({
 
                         {isMatched ? (
                           <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400/30 border border-emerald-200 text-white flex items-center justify-center shrink-0">
-                            <Check size={11} strokeWidth={3} />
+                            <Check size={10} strokeWidth={3} />
                           </span>
                         ) : (
                           card.side === "A" && (
@@ -1764,20 +1891,26 @@ export default function MemoryFlipGame({
                                   card.source
                                 );
                               }}
-                              className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-900/70 text-[#0F766E] dark:text-teal-200 flex items-center justify-center shrink-0 cursor-pointer"
+                              className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-teal-100 dark:bg-teal-900/70 text-[#0F766E] dark:text-teal-200 flex items-center justify-center shrink-0 cursor-pointer"
                               aria-label="Kelimeyi seslendir"
                             >
-                              <Volume2 size={11} />
+                              <Volume2 size={10} />
                             </button>
                           )
                         )}
                       </div>
 
-                      {/* Kart Gövdesi: Ortalı object-contain görsel + Büyük Okunaklı Arapça / Türkçe */}
-                      <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-2 sm:gap-2.5">
+                      {/* Kart Gövdesi: Mobilde dikey (flex-col), sm+ ekranlarda yatay (sm:flex-row) */}
+                      <div className="flex-1 min-h-0 w-full flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2.5 overflow-hidden">
                         {hasValidImage ? (
                           <div
-                            className={`w-10 h-10 sm:w-13 sm:h-13 md:w-15 md:h-15 aspect-square rounded-xl overflow-hidden border p-0.5 flex items-center justify-center shrink-0 ${
+                            className={`${
+                              difficulty === "hard"
+                                ? "w-8 h-8"
+                                : difficulty === "medium"
+                                ? "w-9 h-9"
+                                : "w-11 h-11"
+                            } sm:w-13 sm:h-13 md:w-15 md:h-15 aspect-square rounded-lg sm:rounded-xl overflow-hidden border p-0.5 flex items-center justify-center shrink-0 ${
                               isMatched
                                 ? "border-emerald-300/60 bg-white"
                                 : "border-slate-200 dark:border-slate-600 bg-white"
@@ -1798,25 +1931,25 @@ export default function MemoryFlipGame({
                           </div>
                         ) : (
                           <div
-                            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                            className={`w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
                               isMatched
                                 ? "bg-white/15 text-emerald-100"
                                 : "bg-amber-100/80 dark:bg-slate-700 text-[#0F766E] dark:text-teal-300"
                             }`}
                           >
                             {card.side === "A" ? (
-                              <Volume2 size={17} />
+                              <Volume2 size={15} />
                             ) : (
-                              <BookOpen size={17} />
+                              <BookOpen size={15} />
                             )}
                           </div>
                         )}
 
-                        <div className="flex-1 min-w-0 flex items-center justify-center text-center">
+                        <div className="w-full sm:flex-1 min-w-0 flex items-center justify-center text-center">
                           {card.side === "A" ? (
                             <div
                               dir="rtl"
-                              className={`arabic text-2xl sm:text-3xl font-bold leading-snug truncate max-w-full ${
+                              className={`arabic ${arabicCardFontClass} leading-tight sm:leading-snug truncate max-w-full ${
                                 isMatched
                                   ? "text-white"
                                   : "text-slate-900 dark:text-white"
@@ -1826,7 +1959,7 @@ export default function MemoryFlipGame({
                             </div>
                           ) : (
                             <span
-                              className={`text-sm sm:text-base md:text-lg font-extrabold leading-snug line-clamp-2 break-words ${
+                              className={`${turkishCardFontClass} leading-tight sm:leading-snug line-clamp-2 break-words ${
                                 isMatched
                                   ? "text-white"
                                   : "text-slate-900 dark:text-white"
@@ -1845,8 +1978,8 @@ export default function MemoryFlipGame({
           </div>
         </div>
 
-        {/* SAĞ KOMPAKT YAN PANEL (w-full lg:w-60 xl:w-64): Skorlar + Dairesel Süre & Hamle + Bilgi Notu (Kök & Örnek Cümle) */}
-        <aside className="order-1 lg:order-2 w-full lg:w-60 xl:w-64 shrink-0 lg:h-full min-h-0 flex flex-col gap-2 overflow-hidden">
+        {/* MASAÜSTÜ SAĞ KOMPAKT YAN PANEL (hidden lg:flex w-full lg:w-60 xl:w-64): Skorlar + Dairesel Süre & Hamle + Bilgi Notu */}
+        <aside className="hidden lg:flex lg:order-2 w-full lg:w-60 xl:w-64 shrink-0 lg:h-full min-h-0 flex-col gap-2 overflow-hidden">
           {/* 1. Oyuncu Skor Kartları (Kompakt) */}
           <div
             className={`shrink-0 grid gap-1.5 ${
@@ -2105,6 +2238,55 @@ export default function MemoryFlipGame({
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* MOBİL & TABLET (< lg:) ALT KOMPAKT TEK SATIR BİLGİ NOTU ŞERİDİ (shrink-0 z-20) */}
+      <div className="lg:hidden shrink-0 z-20 h-10 min-h-[40px] max-h-[40px] px-3 pb-[env(safe-area-inset-bottom)] bg-[#F3E9D6]/95 dark:bg-slate-950/95 border-t border-[#E6D7BE] dark:border-slate-800 flex items-center justify-between gap-2">
+        {lastMatchedSource ? (
+          <>
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
+              <Lightbulb size={14} className="text-amber-500 shrink-0" />
+              <span
+                dir="rtl"
+                className="arabic text-base font-bold text-[#1F6E50] dark:text-emerald-300 shrink-0"
+              >
+                {lastMatchedSource.cardAAr}
+              </span>
+              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate">
+                — {lastMatchedSource.fullMeaningTr}
+              </span>
+              {lastMatchedSource.kok && (
+                <span className="hidden min-[400px]:inline text-[11px] font-bold text-amber-800 dark:text-amber-300 shrink-0">
+                  · Kök:{" "}
+                  <span dir="rtl" className="arabic">
+                    {lastMatchedSource.kok}
+                  </span>
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                speakArabicItem(lastMatchedSource.cardAAr, lastMatchedSource)
+              }
+              className="h-7 px-2 rounded-lg bg-[#0F766E] text-white text-[11px] font-extrabold flex items-center gap-1 cursor-pointer shrink-0"
+              aria-label="Eşleşen kelimeyi dinle"
+            >
+              <Volume2 size={12} />
+              <span>Dinle</span>
+            </button>
+          </>
+        ) : (
+          <div className="w-full flex items-center justify-between gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap overflow-hidden">
+            <span className="inline-flex items-center gap-1 truncate">
+              <Lightbulb size={13} className="text-amber-500 shrink-0" />
+              <span className="truncate">{turnStatusText}</span>
+            </span>
+            <span className="text-[#0F766E] dark:text-teal-300 font-extrabold shrink-0 tabular-nums">
+              {matchedPairIds.length}/{activePairs.length} Çift
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

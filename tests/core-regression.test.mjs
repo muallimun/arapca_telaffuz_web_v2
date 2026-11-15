@@ -6971,3 +6971,45 @@ test("58) Alıştırmalar Sayfası (alistirmalar/page.tsx) 2 Aşamalı Sade Vitr
   );
 });
 
+test("59) BalloonSafariGame Dikey Mobil (540x860 + xMidYMid slice) Tam Ekran Sahne & Tek Satır HUD ve MemoryFlipGame Mobil Sıfır Çakışma / auto-rows-fr Tek Ekran Onarımı", () => {
+  const balloonCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+  const memoryCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MemoryFlipGame.tsx"),
+    "utf8"
+  );
+
+  // 1. BalloonSafariGame: Dikey mobil algılama (windowWidth < 640 && windowHeight > windowWidth), 540x860 dikey koordinatlar, preserveAspectRatio="xMidYMid slice" ve tek satır mobil HUD
+  assert.equal(
+    balloonCode.includes("const PORTRAIT_STAGE_W = 540;") &&
+      balloonCode.includes("const PORTRAIT_STAGE_H = 860;") &&
+      balloonCode.includes("windowWidth < 640 && windowHeight > windowWidth") &&
+      balloonCode.includes('preserveAspectRatio="xMidYMid slice"') &&
+      balloonCode.includes("const balloonScale = isPortraitMobile ? 1.06 : 1;") &&
+      balloonCode.includes("sm:hidden absolute top-2 inset-x-2 z-20 h-10") &&
+      balloonCode.includes("hidden sm:flex sm:absolute sm:top-3") &&
+      !balloonCode.includes("style={{"),
+    true,
+    "BalloonSafariGame dikey mobilde 540x860 tam ekran sahneye, xMidYMid slice ölçeklemesine ve tek satır mobil HUD barına sahip olmalıdır"
+  );
+
+  // 2. MemoryFlipGame: Tek satır 48px mobil başlık, h-11 mobil skor/süre şeridi, overflow-hidden + auto-rows-fr + grid-cols-2 / grid-cols-3 / grid-cols-4 ve h-full min-h-0 kart yüksekliği
+  assert.equal(
+    memoryCode.includes("h-12 min-h-[48px] max-h-[48px]") &&
+      memoryCode.includes("lg:hidden shrink-0 z-20 h-11") &&
+      memoryCode.includes("hidden lg:flex lg:order-2 w-full lg:w-60 xl:w-64") &&
+      memoryCode.includes("overflow-hidden relative z-10 flex-1 min-w-0 min-h-0") &&
+      memoryCode.includes("grid-cols-2 lg:grid-cols-4") &&
+      memoryCode.includes("grid-cols-3 lg:grid-cols-4") &&
+      memoryCode.includes('"grid-cols-4"') &&
+      memoryCode.includes("auto-rows-fr lg:auto-rows-auto lg:content-center") &&
+      memoryCode.includes("h-full min-h-0 lg:h-[clamp(5.2rem,17vh,8.8rem)]") &&
+      !memoryCode.includes("style={{"),
+    true,
+    "MemoryFlipGame mobilde tek satır 48px başlığa, h-11 skor/süre şeridine, sıfır çakışmalı auto-rows-fr 2/3/4 sütunlu ızgaraya ve alt Bilgi Notu bandına sahip olmalıdır"
+  );
+});
+
+

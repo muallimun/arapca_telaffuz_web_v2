@@ -3881,10 +3881,10 @@ test("36. Global Punto Senkronizasyonu, Çok Büyük Etiketi, Büyütülmüş Al
   );
   assert.equal(
     mcCode.includes("isPureArabicOption") &&
-      mcCode.includes("text-2xl sm:text-3xl font-bold leading-relaxed text-center") &&
+      mcCode.includes("text-2xl sm:text-3xl font-bold leading-relaxed text-right") &&
       mcCode.includes("text-left font-bold text-sm sm:text-base leading-snug"),
     true,
-    "MultipleChoice.tsx içinde saf Arapça şıklar text-2xl sm:text-3xl ve Türkçe şıklar text-sm sm:text-base boyutunda ferah gösterilmelidir"
+    "MultipleChoice.tsx içinde saf Arapça şıklar text-2xl sm:text-3xl text-right ve Türkçe şıklar text-sm sm:text-base boyutunda ferah gösterilmelidir"
   );
 
   const alistirmalarCode = fs.readFileSync(
@@ -7226,4 +7226,101 @@ test("61) Oynatma Listeleri İçin Uygulama İçi Bölüm Seçici, Kaldığı B�
     "LiteYoutubeCard ve YoutubePlayerModal oynatma listeleri için Bölüm Kontrol Çubuğu, Kaldığı Bölümden Devam Et ve Bölüm Bazlı İzlendi kontrollerini eksiksiz içermelidir"
   );
 });
+
+test("62) Arapça (RTL — Sağdan Sola) Okuma Ergonomisi, İkili Sütun Yönü ve Akıllı Şık Hizalama Standartlaştırması", () => {
+  const evidenceCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "ReadingEvidenceHunter.tsx"),
+    "utf8"
+  );
+  const morphCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MorphologyAndContextQuiz.tsx"),
+    "utf8"
+  );
+  const errorHunterCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "ErrorHunter.tsx"),
+    "utf8"
+  );
+  const clozeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "ClozeDialogueRoleplay.tsx"),
+    "utf8"
+  );
+  const whatIsThisCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "WhatIsThisGame.tsx"),
+    "utf8"
+  );
+  const mcCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "MultipleChoice.tsx"),
+    "utf8"
+  );
+  const seviyeCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "seviye-tespit", "page.tsx"),
+    "utf8"
+  );
+  const metinCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "metin", "[id]", "page.tsx"),
+    "utf8"
+  );
+  const genderCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "GenderSortingGame.tsx"),
+    "utf8"
+  );
+
+  // 1. ReadingEvidenceHunter: Masaüstünde metin sağda (lg:order-2), soru solda yapışkan (lg:order-1 lg:sticky lg:top-4), mobilde kanıt adımında scrollIntoView + üst uyarı şeridi, satır ve şıklar RTL
+  assert.equal(
+    evidenceCode.includes("order-1 lg:order-2 lg:col-span-7") &&
+      evidenceCode.includes("order-2 lg:order-1 lg:col-span-5 lg:sticky lg:top-4") &&
+      evidenceCode.includes("readingPanelRef.current?.scrollIntoView") &&
+      evidenceCode.includes("🖍️ Şimdi cevabın kanıtı olan cümleye dokunun!") &&
+      evidenceCode.includes('<div dir="rtl" className="flex items-start gap-2.5">') &&
+      evidenceCode.includes('w-full text-right pb-3 border-b') &&
+      !evidenceCode.includes("style={{"),
+    true,
+    "ReadingEvidenceHunter RTL iki sütun yerleşimini, mobil otomatik odak kaydırmasını ve sağ baş satır/şık rozetlerini içermelidir"
+  );
+
+  // 2. MorphologyAndContextQuiz: Masaüstünde hedef kart sağda (lg:order-2), 4 şık solda (lg:order-1), Arapça şık üst satırı RTL, Sarf Çekim Şeması sağdan sola (⬅)
+  assert.equal(
+    morphCode.includes("order-1 lg:order-2 lg:col-span-5") &&
+      morphCode.includes("order-2 lg:order-1 lg:col-span-7") &&
+      morphCode.includes('dir={isTurkishGrammarOption ? "ltr" : "rtl"}') &&
+      morphCode.includes("⬅"),
+    true,
+    "MorphologyAndContextQuiz masaüstünde hedef kartı sağda, şıkları solda, Arapça şık başlıklarını RTL ve Sarf Çekim Şemasını sağdan sola (⬅) göstermelidir"
+  );
+
+  // 3. ErrorHunter, ClozeDialogueRoleplay ve WhatIsThisGame: Arapça şık butonlarında dir="rtl", konuşma balonlarında konuşmacı sağ başta / ses butonu sol sonda
+  assert.equal(
+    errorHunterCode.includes('dir="rtl"') &&
+      clozeCode.includes('<div dir="rtl" className="flex items-center justify-between gap-2">') &&
+      clozeCode.includes('type="button"\n                  dir="rtl"') &&
+      whatIsThisCode.includes('type="button"\n                dir="rtl"') &&
+      !whatIsThisCode.includes("style={{"),
+    true,
+    "ErrorHunter, ClozeDialogueRoleplay ve WhatIsThisGame Arapça şık ve replik balonlarında RTL hizalamayı eksiksiz uygulamalıdır"
+  );
+
+  // 4. MultipleChoice & seviye-tespit: Saf Arapça / Türkçe şık yönünü otomatik algılayan akıllı dir={... ? 'rtl' : 'ltr'}
+  assert.equal(
+    mcCode.includes('dir={isPureArabicOption ? "rtl" : "ltr"}') &&
+      mcCode.includes('dir={isReviewPureArabic ? "rtl" : "ltr"}') &&
+      seviyeCode.includes("function isPureArabicAssessmentOption(") &&
+      seviyeCode.includes('dir={isArOpt ? "rtl" : "ltr"}'),
+    true,
+    "MultipleChoice ve seviye-tespit/page.tsx şık dilini algılayarak Arapça şıklarda dir='rtl', Türkçe şıklarda dir='ltr' uygulamalıdır"
+  );
+
+  // 5. metin/[id] Sorular sekmesi (A-D sağ başta, soru sağa yaslı) ve GenderSortingGame (masaüstünde هَذَا sağda sm:order-2, هَذِهِ solda sm:order-1)
+  assert.equal(
+    metinCode.includes("{optLetter}") &&
+      metinCode.includes('dir="rtl"') &&
+      genderCode.includes("order-1 sm:order-2") &&
+      genderCode.includes("order-2 sm:order-1") &&
+      genderCode.includes("Sağ Ok (→)") &&
+      genderCode.includes("Sol Ok (←)") &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "metin/[id] Sorular sekmesi sağ baş A-D rozetlerini göstermeli ve GenderSortingGame masaüstünde هَذَا sepetini sağda, هَذِهِ sepetini solda konumlandırmalıdır"
+  );
+});
+
 

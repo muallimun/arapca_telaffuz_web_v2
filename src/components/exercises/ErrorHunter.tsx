@@ -1275,6 +1275,7 @@ export default function ErrorHunter({
                   <button
                     key={`${opt}-${idx}`}
                     type="button"
+                    dir="rtl"
                     disabled={isEliminated}
                     onClick={() => void handleSelectRepairOption(opt)}
                     className={`min-h-[56px] px-4 py-3 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${
@@ -1295,6 +1296,9 @@ export default function ErrorHunter({
                     >
                       {fixArabicTypography(opt, arabicFont)}
                     </span>
+                    {isSelectedRight && (
+                      <CheckCircle2 size={18} className="text-[#087F5B] shrink-0" />
+                    )}
                     {isEliminated && (
                       <XCircle size={18} className="text-rose-600 shrink-0" />
                     )}

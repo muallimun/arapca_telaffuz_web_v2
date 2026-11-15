@@ -33,6 +33,7 @@ import {
   LayoutList,
   RotateCcw,
   ChevronDown,
+  XCircle,
 } from "lucide-react";
 import {
   metinler,
@@ -3777,34 +3778,26 @@ export default function ReadingTextDetailPage({
                 key={qIdx}
                 className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 space-y-3"
               >
-                <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-xl bg-[#6741D9] text-white text-xs font-extrabold">
+                <div
+                  dir="rtl"
+                  className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)] pb-2.5"
+                >
+                  <div
+                    dir="rtl"
+                    lang="ar"
+                    className="flex items-start gap-2.5 text-right flex-1 min-w-0"
+                  >
+                    <span
+                      dir="ltr"
+                      className="px-2.5 py-1 rounded-xl bg-[#6741D9] text-white text-xs font-extrabold shrink-0 mt-0.5"
+                    >
                       Soru #{qIdx + 1}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        void speakHybrid({
-                          text: q.soru_ar,
-                          rate: speechRate,
-                          voice: getNarratorVoice(),
-                        });
-                      }}
-                      className="h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] flex items-center gap-1 cursor-pointer"
-                    >
-                      <Volume2 size={13} className="text-[#065F46]" />
-                      <span>Soruyu Dinle</span>
-                    </button>
-                  </div>
-
-                  <div dir="rtl" className="text-right flex-1">
                     <div
                       style={{
                         fontSize: `calc(${arabicFontSize}px * 0.9 * var(--font-arabic-optical-scale, 1))`,
                       }}
-                      className="arabic font-bold text-[var(--foreground)]"
+                      className="arabic font-bold text-[var(--foreground)] text-right flex-1 min-w-0 break-words"
                     >
                       <WordTooltip
                         text={q.soru_ar}
@@ -3812,9 +3805,30 @@ export default function ReadingTextDetailPage({
                       />
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    dir="ltr"
+                    onClick={() => {
+                      playClick();
+                      void speakHybrid({
+                        text: q.soru_ar,
+                        rate: speechRate,
+                        voice: getNarratorVoice(),
+                      });
+                    }}
+                    className="self-end sm:self-start h-8 px-2.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] hover:border-[#087F5B] text-xs font-extrabold text-[var(--foreground)] inline-flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Volume2 size={13} className="text-[#065F46]" />
+                    <span>Soruyu Dinle</span>
+                  </button>
                 </div>
 
-                <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300">
+                <p
+                  dir="ltr"
+                  lang="tr"
+                  className="text-left text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300"
+                >
                   🇹🇷 {q.soru_tr}
                 </p>
 
@@ -3823,6 +3837,8 @@ export default function ReadingTextDetailPage({
                     const isThisChosen = chosenIdx === optIdx;
                     const isThisCorrect =
                       cleanArabicText(opt) === cleanArabicText(q.cevap_ar);
+                    const optLetter =
+                      ["A", "B", "C", "D"][optIdx] || String(optIdx + 1);
 
                     let optStyle =
                       "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#6741D9]";
@@ -3854,9 +3870,24 @@ export default function ReadingTextDetailPage({
                           }
                         }}
                         dir="rtl"
-                        className={`p-3 rounded-xl border-2 border-b-3 text-right transition-all flex items-center justify-between gap-2 cursor-pointer ${optStyle}`}
+                        className={`p-3 rounded-xl border-2 border-b-3 text-right transition-all flex items-center justify-between gap-2.5 cursor-pointer ${optStyle}`}
                       >
-                        <span className="arabic text-xl sm:text-2xl font-bold leading-snug">
+                        <span
+                          className={`w-7 h-7 rounded-lg border text-xs font-black flex items-center justify-center shrink-0 ${
+                            (isAnswered || showQuizResults) && isThisCorrect
+                              ? "bg-emerald-600 border-emerald-700 text-white"
+                              : (isAnswered || showQuizResults) && isThisChosen
+                              ? "bg-rose-600 border-rose-700 text-white"
+                              : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                          }`}
+                        >
+                          {optLetter}
+                        </span>
+                        <span
+                          dir="rtl"
+                          lang="ar"
+                          className="arabic text-xl sm:text-2xl font-bold leading-snug text-right flex-1 min-w-0 break-words"
+                        >
                           {getDisplayText(opt)}
                         </span>
                         {(isAnswered || showQuizResults) && isThisCorrect && (
@@ -3865,6 +3896,14 @@ export default function ReadingTextDetailPage({
                             className="text-emerald-600 shrink-0"
                           />
                         )}
+                        {(isAnswered || showQuizResults) &&
+                          isThisChosen &&
+                          !isThisCorrect && (
+                            <XCircle
+                              size={18}
+                              className="text-rose-600 shrink-0"
+                            />
+                          )}
                       </button>
                     );
                   })}

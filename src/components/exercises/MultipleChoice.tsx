@@ -1011,9 +1011,14 @@ export default function MultipleChoice({
               {reviewQ.options.map((opt, oIdx) => {
                 const isUserChoice = reviewAns?.chosen === opt.text;
                 const isRight = opt.isCorrect;
+                const isReviewPureArabic =
+                  hasArabicCharacters(opt.text) && !hasLatinCharacters(opt.text);
+                const reviewOptionLetter =
+                  ["A", "B", "C", "D"][oIdx] || String(oIdx + 1);
                 return (
                   <div
                     key={oIdx}
+                    dir={isReviewPureArabic ? "rtl" : "ltr"}
                     className={`p-3 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-2 ${
                       isRight
                         ? "bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -1022,17 +1027,50 @@ export default function MultipleChoice({
                         : "bg-[#F7EFE1]/50 dark:bg-[var(--surface)] border-[#E6D7BE] text-[var(--muted)] opacity-75"
                     }`}
                   >
-                    <span dir="ltr" lang="tr" className="font-sans text-left">
-                      <MixedText text={opt.text} />
+                    <span
+                      className={`w-6 h-6 rounded-md border text-[11px] font-black flex items-center justify-center shrink-0 ${
+                        isRight
+                          ? "bg-emerald-600 border-emerald-700 text-white"
+                          : isUserChoice
+                          ? "bg-rose-600 border-rose-700 text-white"
+                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--foreground)]"
+                      }`}
+                    >
+                      {reviewOptionLetter}
                     </span>
+
+                    {isReviewPureArabic ? (
+                      <span
+                        dir="rtl"
+                        lang="ar"
+                        className="arabic font-arabic text-xl sm:text-2xl font-bold leading-relaxed text-right flex-1 min-w-0 break-words"
+                      >
+                        {formatArabicText(opt.text, showHareke, arabicFont)}
+                      </span>
+                    ) : (
+                      <span
+                        dir="ltr"
+                        lang="tr"
+                        className="font-sans text-left flex-1 min-w-0 break-words"
+                      >
+                        <MixedText text={opt.text} />
+                      </span>
+                    )}
+
                     {isRight && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 shrink-0">
+                      <span
+                        dir="ltr"
+                        className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 shrink-0"
+                      >
                         <CheckCircle2 size={15} />
                         <span>Doğru</span>
                       </span>
                     )}
                     {!isRight && isUserChoice && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-700 shrink-0">
+                      <span
+                        dir="ltr"
+                        className="inline-flex items-center gap-1 text-[10px] font-black text-rose-700 shrink-0"
+                      >
                         <XCircle size={15} />
                         <span>Seçiminiz</span>
                       </span>
@@ -1404,7 +1442,7 @@ export default function MultipleChoice({
         </p>
       </div>
 
-      {/* ŞIKLAR */}
+      {/* ŞIKLAR (Akıllı Otomatik RTL / LTR Yönlendirmesi) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
         {currentQuestion.options.map((opt, idx) => {
           const isChosen = selected === opt.text;
@@ -1422,18 +1460,20 @@ export default function MultipleChoice({
           const isPureArabicOption =
             hasArabicCharacters(displayOptionText) &&
             !hasLatinCharacters(displayOptionText);
+          const optionLetter = ["A", "B", "C", "D"][idx] || String(idx + 1);
 
           return (
             <button
               key={idx}
               type="button"
+              dir={isPureArabicOption ? "rtl" : "ltr"}
               onClick={() => handleSelect(opt.text, opt.isCorrect)}
               disabled={
                 (feedbackMode === "instant" && Boolean(selected)) || isTimeUp
               }
               className={`min-h-[46px] sm:min-h-[60px] py-2 px-3 sm:p-4 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-between gap-2.5 cursor-pointer min-w-0 ${
                 isPureArabicOption
-                  ? "font-bold text-center"
+                  ? "font-bold text-right"
                   : "text-left font-bold text-sm sm:text-base leading-snug"
               } ${
                 !selected
@@ -1447,11 +1487,25 @@ export default function MultipleChoice({
                   : "bg-[#F7EFE1]/50 border-[#E6D7BE] text-[var(--muted)] opacity-65"
               }`}
             >
+              <span
+                className={`w-7 h-7 rounded-lg border text-xs font-black flex items-center justify-center shrink-0 ${
+                  showCorrect
+                    ? "bg-[#087F5B] border-[#065F46] text-white"
+                    : showWrong
+                    ? "bg-rose-600 border-rose-700 text-white"
+                    : showNeutralSelected
+                    ? "bg-[#6741D9] border-[#4C28B5] text-white"
+                    : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--muted)]"
+                }`}
+              >
+                {optionLetter}
+              </span>
+
               {isPureArabicOption ? (
                 <span
                   dir="rtl"
                   lang="ar"
-                  className="arabic font-arabic text-2xl sm:text-3xl font-bold leading-relaxed text-center flex-1 min-w-0 break-words"
+                  className="arabic font-arabic text-2xl sm:text-3xl font-bold leading-relaxed text-right flex-1 min-w-0 break-words"
                 >
                   {formatArabicText(displayOptionText, showHareke, arabicFont)}
                 </span>
@@ -1471,7 +1525,10 @@ export default function MultipleChoice({
                 <XCircle size={20} className="text-rose-600 shrink-0" />
               )}
               {showNeutralSelected && (
-                <span className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[11px] font-extrabold shrink-0">
+                <span
+                  dir="ltr"
+                  className="px-2 py-0.5 rounded-md bg-[#6741D9] text-white text-[11px] font-extrabold shrink-0"
+                >
                   Seçildi
                 </span>
               )}

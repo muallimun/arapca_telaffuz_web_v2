@@ -250,6 +250,7 @@ export default function ReadingEvidenceHunter({
   );
 
   const audioDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readingPanelRef = useRef<HTMLDivElement | null>(null);
 
   const sessionItems: EvidenceQuestionItem[] = useMemo(() => {
     void roundSeed;
@@ -366,6 +367,19 @@ export default function ReadingEvidenceHunter({
       stopAllAudio();
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      step === "evidence" &&
+      typeof window !== "undefined" &&
+      window.innerWidth < 1024
+    ) {
+      readingPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [step]);
 
   // İsteğe bağlı zamanlayıcı
   useEffect(() => {
@@ -642,30 +656,35 @@ export default function ReadingEvidenceHunter({
         </div>
       </div>
 
-      {/* 2 Sütunlu Sahne: Sol/Üst Okuma Metni + Sağ/Alt Soru & Kanıt Yönergesi */}
+      {/* 2 Sütunlu RTL Göz Akışı Sahnesi: Masaüstünde Sağ Okuma Metni + Sol Yapışkan Soru & Kanıt; Mobilde Üst Metin + Alt Soru */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* SOL / ÜST PANEL: NUMARALI OKUMA METNİ SATIRLARI */}
-        <div className="lg:col-span-7 rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E6D7BE]/70 dark:border-[var(--border)]">
-            <div>
-              <p
-                dir="rtl"
-                lang="ar"
-                className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 leading-[1.8]"
-              >
-                {fixArabicTypography(currentItem.reading.baslik_ar, arabicFont)}
-              </p>
-              <h2 className="text-xs sm:text-sm font-extrabold text-[var(--foreground)]">
-                {currentItem.reading.baslik_tr}
-              </h2>
+        {/* SAĞ (MASAÜSTÜ) / ÜST (MOBİL) PANEL: NUMARALI OKUMA METNİ SATIRLARI */}
+        <div
+          ref={readingPanelRef}
+          className="order-1 lg:order-2 lg:col-span-7 scroll-mt-16 rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 space-y-4"
+        >
+          {step === "evidence" && (
+            <div className="sticky top-2 z-10 rounded-2xl bg-amber-100 dark:bg-amber-950/90 border-2 border-amber-400 dark:border-amber-600 px-3.5 py-2.5 flex items-center gap-2 text-amber-950 dark:text-amber-100 text-xs sm:text-sm font-black shadow-xs animate-in fade-in duration-150">
+              <Highlighter size={16} className="shrink-0 text-amber-700 dark:text-amber-300" />
+              <span>🖍️ Şimdi cevabın kanıtı olan cümleye dokunun!</span>
             </div>
+          )}
 
-            {step === "evidence" && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 dark:bg-amber-950/70 border border-amber-400 text-amber-900 dark:text-amber-200 text-xs font-black">
-                <Highlighter size={14} />
-                <span>Kanıt cümlesine dokunun!</span>
-              </span>
-            )}
+          <div className="w-full text-right pb-3 border-b border-[#E6D7BE]/70 dark:border-[var(--border)] space-y-0.5">
+            <p
+              dir="rtl"
+              lang="ar"
+              className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 text-right leading-[1.8]"
+            >
+              {fixArabicTypography(currentItem.reading.baslik_ar, arabicFont)}
+            </p>
+            <h2
+              dir="ltr"
+              lang="tr"
+              className="text-xs sm:text-sm font-extrabold text-[var(--foreground)] text-right"
+            >
+              {currentItem.reading.baslik_tr}
+            </h2>
           </div>
 
           <div className="space-y-2.5">
@@ -705,8 +724,8 @@ export default function ReadingEvidenceHunter({
                       : "bg-white dark:bg-[var(--background)] border-[#E6D7BE]/80 dark:border-[var(--border)]"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-1.5 shrink-0">
+                  <div dir="rtl" className="flex items-start gap-2.5">
+                    <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
                       <span className="w-6 h-6 rounded-lg bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-black tabular-nums text-[var(--muted)] flex items-center justify-center">
                         {line.sira}
                       </span>
@@ -738,7 +757,11 @@ export default function ReadingEvidenceHunter({
                   </div>
 
                   {(showTurkishHelp || isEvidenceHighlighted) && (
-                    <p className="text-sm sm:text-base font-semibold text-[var(--muted)] mt-2 pt-1.5 border-t border-[#E6D7BE]/50 dark:border-[var(--border)]">
+                    <p
+                      dir="ltr"
+                      lang="tr"
+                      className="text-left text-sm sm:text-base font-semibold text-[var(--muted)] mt-2 pt-1.5 border-t border-[#E6D7BE]/50 dark:border-[var(--border)]"
+                    >
                       {line.turkce}
                     </p>
                   )}
@@ -748,8 +771,8 @@ export default function ReadingEvidenceHunter({
           </div>
         </div>
 
-        {/* SAĞ / ALT PANEL: ANLAMA SORUSU VE 2 ADIMLI AKIŞ */}
-        <div className="lg:col-span-5 rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 space-y-4">
+        {/* SOL (MASAÜSTÜ YAPIŞKAN) / ALT (MOBİL) PANEL: ANLAMA SORUSU VE 2 ADIMLI AKIŞ */}
+        <div className="order-2 lg:order-1 lg:col-span-5 lg:sticky lg:top-4 rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 space-y-4">
           <div className="flex items-center gap-2 text-xs font-black text-[#6741D9] dark:text-indigo-300">
             <BookOpen size={15} />
             <span>
@@ -771,13 +794,17 @@ export default function ReadingEvidenceHunter({
               {fixArabicTypography(currentItem.soruAr, arabicFont)}
             </p>
             {(showTurkishHelp || step !== "answer") && (
-              <p className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 pt-1.5 border-t border-[#6741D9]/20">
+              <p
+                dir="ltr"
+                lang="tr"
+                className="text-left text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 pt-1.5 border-t border-[#6741D9]/20"
+              >
                 “{currentItem.soruTr}”
               </p>
             )}
           </div>
 
-          {/* ADIM 1: 4 CEVAP SEÇENEĞİ */}
+          {/* ADIM 1: 4 ARAPÇA CEVAP SEÇENEĞİ (RTL) */}
           {step === "answer" && (
             <div className="space-y-2.5">
               {currentItem.answerOptions.map((opt, idx) => {
@@ -786,6 +813,7 @@ export default function ReadingEvidenceHunter({
                   <button
                     key={`${opt}-${idx}`}
                     type="button"
+                    dir="rtl"
                     disabled={isEliminated}
                     onClick={() => void handleSelectAnswer(opt)}
                     className={`w-full min-h-[54px] px-4 py-3 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${

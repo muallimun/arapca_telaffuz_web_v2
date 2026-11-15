@@ -71,6 +71,8 @@ import {
 } from "@/lib/sfxManager";
 import {
   formatArabicByHarekeMode,
+  hasArabicCharacters,
+  hasLatinCharacters,
   simplifyGrammarTerminology,
 } from "@/lib/arabicTextUtils";
 import { useSettings } from "@/store/settings";
@@ -82,6 +84,14 @@ import {
   mulberry32,
   seededShuffle,
 } from "@/lib/pdfDeterministicUtils";
+
+function isPureArabicAssessmentOption(
+  text: string,
+  secenekDili?: string
+): boolean {
+  if (secenekDili === "ar") return true;
+  return hasArabicCharacters(text) && !hasLatinCharacters(text);
+}
 
 type AssessmentCenterTab = "cat" | "topic" | "exam";
 
@@ -2882,9 +2892,13 @@ function SeviyeTespitContent() {
                       />
                     </div>
 
-                    {/* 4 SEÇENEĞİN KOMPAKT 2×2 İNCELEME IZGARASI */}
+                    {/* 4 SEÇENEĞİN KOMPAKT 2×2 İNCELEME IZGARASI (Otomatik RTL / LTR) */}
                     <div className={`grid ${reviewGridColsCls} gap-2`}>
                       {rec.preparedOptions.map((opt) => {
+                        const isArOpt = isPureArabicAssessmentOption(
+                          opt.metin,
+                          rec.question.secenek_dili
+                        );
                         const isRightOpt =
                           opt.origHarf === rec.question.dogru_secenek;
                         const isUserChoice =
@@ -2906,6 +2920,7 @@ function SeviyeTespitContent() {
                         return (
                           <div
                             key={opt.displayHarf}
+                            dir={isArOpt ? "rtl" : "ltr"}
                             className={`px-2.5 py-2 rounded-xl flex items-center justify-between gap-2 min-w-0 ${cellCls}`}
                           >
                             <span
@@ -2915,15 +2930,15 @@ function SeviyeTespitContent() {
                             </span>
 
                             <span
-                              dir={isArOpts ? "rtl" : "ltr"}
-                              lang={isArOpts ? "ar" : "tr"}
+                              dir={isArOpt ? "rtl" : "ltr"}
+                              lang={isArOpt ? "ar" : "tr"}
                               className={`min-w-0 flex-1 break-words [unicode-bidi:isolate] ${
-                                isArOpts
+                                isArOpt
                                   ? "arabic font-arabic text-lg sm:text-xl font-bold leading-[1.75] text-right"
                                   : "text-xs font-bold leading-snug text-left"
                               }`}
                             >
-                              {isArOpts ? displayArabic(opt.metin) : opt.metin}
+                              {isArOpt ? displayArabic(opt.metin) : opt.metin}
                             </span>
 
                             {isRightOpt && (
@@ -3308,10 +3323,13 @@ function SeviyeTespitContent() {
             </div>
           )}
 
-          {/* ŞIKLAR: Mobilde tek sütun (grid-cols-1), masaüstünde 2 sütun (md:grid-cols-2), min-h-[52px] */}
+          {/* ŞIKLAR: Mobilde tek sütun (grid-cols-1), masaüstünde 2 sütun (md:grid-cols-2), min-h-[52px], Akıllı Otomatik RTL/LTR */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {currentRecord.preparedOptions.map((opt) => {
-              const isArOpt = q.secenek_dili === "ar";
+              const isArOpt = isPureArabicAssessmentOption(
+                opt.metin,
+                q.secenek_dili
+              );
               const isSelected =
                 currentRecord.selectedDisplayHarf === opt.displayHarf;
               const isRightOpt = opt.origHarf === q.dogru_secenek;
@@ -3343,6 +3361,7 @@ function SeviyeTespitContent() {
                 <button
                   key={opt.displayHarf}
                   type="button"
+                  dir={isArOpt ? "rtl" : "ltr"}
                   disabled={isOptionLocked}
                   onClick={() => handleAnswerOrSkip(opt, false)}
                   className={`min-h-[56px] px-3.5 py-2.5 rounded-2xl border-2 border-b-3 transition-all flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default min-w-0 ${btnStyle}`}

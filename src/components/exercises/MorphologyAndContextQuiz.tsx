@@ -1370,10 +1370,10 @@ export default function MorphologyAndContextQuiz({
         </div>
       </div>
 
-      {/* 2. ORTA ANA ALAN (ZERO-SCROLL SPLIT): Sol/Üst Hedef Soru & Görsel Kartı + Sağ/Alt 4 Seçenek */}
+      {/* 2. ORTA ANA ALAN (ZERO-SCROLL RTL SPLIT): Masaüstünde Sağ Hedef Kök/Görsel/Bağlam Kartı + Sol 4 Seçenek; Mobilde Üst Hedef + Alt Seçenekler */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-        {/* SOL KART: Hedef Kök / Görsel / Soru Kalıbı / Bağlam (5 Sütun) */}
-        <div className="lg:col-span-5 bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
+        {/* SAĞ (MASAÜSTÜ) / ÜST (MOBİL) KART: Hedef Kök / Görsel / Soru Kalıbı / Bağlam (5 Sütun) */}
+        <div className="order-1 lg:order-2 lg:col-span-5 bg-white dark:bg-[var(--background)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-3 flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between gap-2">
             <span className="px-2.5 py-0.5 rounded-lg bg-[#F3F0FF] dark:bg-indigo-950/70 border border-[#6741D9]/30 text-[11px] font-extrabold text-[#6741D9] dark:text-indigo-300">
               {currentQuestion.badgeTitle}
@@ -1516,7 +1516,7 @@ export default function MorphologyAndContextQuiz({
                   </div>
                 )}
 
-              {/* Mod 2: Sarf Dönüşüm Şeması */}
+              {/* Mod 2: Sarf Dönüşüm Şeması (Arapça Sağdan Sola Akış: Müfret ⬅ Cemî / Mâzî ⬅ Muzâri ⬅ Masdar) */}
               {currentQuestion.subMode === "morphology_transform" &&
                 currentQuestion.morphChain && (
                   <div className="space-y-1">
@@ -1527,19 +1527,20 @@ export default function MorphologyAndContextQuiz({
                         ):
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div
+                      dir="rtl"
+                      className="flex flex-wrap items-center justify-start gap-1.5"
+                    >
                       {currentQuestion.morphChain.steps.map((st, i) => (
                         <React.Fragment key={st.label}>
                           <button
                             type="button"
+                            dir="rtl"
                             onClick={() =>
                               playQuestionAudio({ text: st.arabic })
                             }
                             className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] text-xs inline-flex items-center gap-1.5 cursor-pointer"
                           >
-                            <span className="text-[11px] font-bold text-[var(--muted)]">
-                              {st.label}:
-                            </span>
                             <span
                               dir="rtl"
                               lang="ar"
@@ -1547,11 +1548,21 @@ export default function MorphologyAndContextQuiz({
                             >
                               {st.arabic}
                             </span>
+                            <span
+                              dir="ltr"
+                              lang="tr"
+                              className="text-[11px] font-bold text-[var(--muted)]"
+                            >
+                              ({st.label})
+                            </span>
                             <Volume2 size={12} className="text-[#087F5B]" />
                           </button>
                           {i < currentQuestion.morphChain!.steps.length - 1 && (
-                            <span className="text-xs font-black text-[var(--muted)]">
-                              ➔
+                            <span
+                              aria-hidden="true"
+                              className="text-xs font-black text-[var(--muted)]"
+                            >
+                              ⬅
                             </span>
                           )}
                         </React.Fragment>
@@ -1655,8 +1666,8 @@ export default function MorphologyAndContextQuiz({
           )}
         </div>
 
-        {/* SAĞ KART: 4 Seçenek Kartı (7 Sütun) */}
-        <div className="lg:col-span-7 flex flex-col justify-between gap-2.5">
+        {/* SOL (MASAÜSTÜ) / ALT (MOBİL) KART: 4 Seçenek Kartı (7 Sütun) */}
+        <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col justify-between gap-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 flex-1">
             {currentQuestion.options.map((opt, idx) => {
               const isSelected = selectedOptionId === opt.id;
@@ -1695,11 +1706,16 @@ export default function MorphologyAndContextQuiz({
                       void handleOptionSelect(opt);
                     }
                   }}
-                  className={`rounded-2xl border-2 border-b-4 p-3 transition-all flex flex-col justify-between gap-2 text-left ${cardStyle} ${
+                  className={`rounded-2xl border-2 border-b-4 p-3 transition-all flex flex-col justify-between gap-2 ${
+                    isTurkishGrammarOption ? "text-left" : "text-right"
+                  } ${cardStyle} ${
                     isAnswered ? "cursor-default" : "cursor-pointer active:translate-y-0.5"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div
+                    dir={isTurkishGrammarOption ? "ltr" : "rtl"}
+                    className="flex items-center justify-between gap-2"
+                  >
                     <span
                       className={`w-6 h-6 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${
                         isAnswered && opt.isCorrect
@@ -1712,7 +1728,7 @@ export default function MorphologyAndContextQuiz({
                       {optionLetter}
                     </span>
 
-                    <div className="flex items-center gap-1.5">
+                    <div dir="ltr" className="flex items-center gap-1.5">
                       {opt.morphBadge && (
                         <span
                           dir="ltr"
@@ -1826,7 +1842,12 @@ export default function MorphologyAndContextQuiz({
                       )}
                     </div>
                   ) : (
-                    <div className="text-[11px] font-semibold text-[var(--muted)]">
+                    <div
+                      dir="ltr"
+                      className={`text-[11px] font-semibold text-[var(--muted)] ${
+                        isTurkishGrammarOption ? "text-left" : "text-right"
+                      }`}
+                    >
                       Seçmek için tıklayın
                     </div>
                   )}

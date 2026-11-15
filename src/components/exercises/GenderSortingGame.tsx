@@ -291,7 +291,7 @@ export default function GenderSortingGame({
     timeLimit,
   ]);
 
-  // Klavye kısayolları: Sol Ok -> هَذَا (Eril), Sağ Ok -> هَذِهِ (Dişil), Enter/Space -> Sonraki
+  // Klavye kısayolları: Sağ Ok (→) -> Sağdaki هَذَا (Eril), Sol Ok (←) -> Soldaki هَذِهِ (Dişil), Enter/Space -> Sonraki
   useEffect(() => {
     if (isCompleted || !currentItem) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -303,10 +303,10 @@ export default function GenderSortingGame({
         return;
       }
       if (selectedBasket === null) {
-        if (e.key === "ArrowLeft") {
+        if (e.key === "ArrowRight") {
           e.preventDefault();
           void handleChooseBasket("masculine");
-        } else if (e.key === "ArrowRight") {
+        } else if (e.key === "ArrowLeft") {
           e.preventDefault();
           void handleChooseBasket("feminine");
         }
@@ -534,14 +534,15 @@ export default function GenderSortingGame({
           </div>
         </div>
 
-        {/* İKİ BÜYÜK SEPET BUTONU (Dokunmatik + Sol/Sağ Ok Kısayollu) */}
+        {/* İKİ BÜYÜK SEPET BUTONU (Masaüstünde Sağda هَذَا Müzekker, Solda هَذِهِ Müennes — RTL Göz Akışı) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {/* Mavi Müzekker Sepeti */}
+          {/* Mavi Müzekker Sepeti — Masaüstünde SAĞDA (sm:order-2), Mobilde ÜSTTE (order-1) */}
           <button
             type="button"
+            dir="rtl"
             disabled={isAnswered}
             onClick={() => void handleChooseBasket("masculine")}
-            className={`min-h-[68px] px-4 py-3.5 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${
+            className={`order-1 sm:order-2 min-h-[68px] px-4 py-3.5 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${
               isAnswered
                 ? currentItem.expectedGender === "masculine"
                   ? "bg-sky-100 dark:bg-sky-950/70 border-sky-500 text-sky-950 dark:text-sky-100"
@@ -551,14 +552,6 @@ export default function GenderSortingGame({
                 : "bg-sky-50/90 dark:bg-sky-950/35 border-sky-300 dark:border-sky-700 hover:border-sky-500 text-sky-950 dark:text-sky-100 active:translate-y-0.5 cursor-pointer"
             }`}
           >
-            <div className="text-left space-y-0.5">
-              <span className="text-xs font-black block">
-                🟦 Müzekker (Eril)
-              </span>
-              <span className="hidden sm:block text-[11px] font-semibold opacity-75">
-                Sol Ok (←)
-              </span>
-            </div>
             <span
               dir="rtl"
               lang="ar"
@@ -566,14 +559,23 @@ export default function GenderSortingGame({
             >
               هَذَا
             </span>
+            <div dir="ltr" className="text-left space-y-0.5">
+              <span className="text-xs font-black block">
+                🟦 Müzekker (Eril)
+              </span>
+              <span className="hidden sm:block text-[11px] font-semibold opacity-75">
+                Sağ Ok (→)
+              </span>
+            </div>
           </button>
 
-          {/* Pembe Müennes Sepeti */}
+          {/* Pembe Müennes Sepeti — Masaüstünde SOLDA (sm:order-1), Mobilde ALTTA (order-2) */}
           <button
             type="button"
+            dir="rtl"
             disabled={isAnswered}
             onClick={() => void handleChooseBasket("feminine")}
-            className={`min-h-[68px] px-4 py-3.5 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${
+            className={`order-2 sm:order-1 min-h-[68px] px-4 py-3.5 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${
               isAnswered
                 ? currentItem.expectedGender === "feminine"
                   ? "bg-pink-100 dark:bg-pink-950/70 border-pink-500 text-pink-950 dark:text-pink-100"
@@ -583,14 +585,6 @@ export default function GenderSortingGame({
                 : "bg-pink-50/90 dark:bg-pink-950/35 border-pink-300 dark:border-pink-700 hover:border-pink-500 text-pink-950 dark:text-pink-100 active:translate-y-0.5 cursor-pointer"
             }`}
           >
-            <div className="text-left space-y-0.5">
-              <span className="text-xs font-black block">
-                🩷 Müennes (Dişil)
-              </span>
-              <span className="hidden sm:block text-[11px] font-semibold opacity-75">
-                Sağ Ok (→)
-              </span>
-            </div>
             <span
               dir="rtl"
               lang="ar"
@@ -598,6 +592,14 @@ export default function GenderSortingGame({
             >
               هَذِهِ
             </span>
+            <div dir="ltr" className="text-left space-y-0.5">
+              <span className="text-xs font-black block">
+                🩷 Müennes (Dişil)
+              </span>
+              <span className="hidden sm:block text-[11px] font-semibold opacity-75">
+                Sol Ok (←)
+              </span>
+            </div>
           </button>
         </div>
 

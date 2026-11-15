@@ -670,6 +670,7 @@ export default function WhatIsThisGame({
               <button
                 key={opt.id}
                 type="button"
+                dir="rtl"
                 disabled={isAnswered}
                 onClick={() => handleSelectOption(opt)}
                 className={`min-h-[62px] sm:min-h-[70px] px-3.5 py-2.5 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-2.5 transition-all ${
@@ -690,16 +691,20 @@ export default function WhatIsThisGame({
                   {idx + 1}
                 </span>
 
-                <div className="flex-1 min-w-0 text-center">
+                <div className="flex-1 min-w-0 text-right">
                   <span
                     dir="rtl"
                     lang="ar"
-                    className="arabic text-2xl sm:text-3xl font-bold block leading-relaxed truncate"
+                    className="arabic text-2xl sm:text-3xl font-bold block leading-relaxed text-right truncate"
                   >
                     {formatAr(opt.arapca)}
                   </span>
                   {isAnswered && (
-                    <span className="block text-[11px] font-bold text-[var(--muted)] truncate">
+                    <span
+                      dir="ltr"
+                      lang="tr"
+                      className="block text-[11px] font-bold text-[var(--muted)] text-right truncate"
+                    >
                       {opt.turkce}
                     </span>
                   )}

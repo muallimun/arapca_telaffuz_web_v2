@@ -499,8 +499,11 @@ export default function ClozeDialogueRoleplay({
 
       {/* Ana Diyalog Sahnesi */}
       <div className="rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 bg-[#FDFBF7] dark:bg-[var(--surface)] p-4 sm:p-6 space-y-5 shadow-xs">
-        {/* Diyalog Başlığı ve Kapak Görseli */}
-        <div className="flex items-center gap-3.5 pb-3 border-b border-[#E6D7BE]/70 dark:border-[var(--border)]">
+        {/* Diyalog Başlığı ve Kapak Görseli (RTL Dengeli Yerleşim) */}
+        <div
+          dir="rtl"
+          className="flex items-center gap-3.5 pb-3 border-b border-[#E6D7BE]/70 dark:border-[var(--border)]"
+        >
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-[#E6D7BE] dark:border-[var(--border)] bg-gradient-to-br from-emerald-800 to-teal-950 shrink-0 flex items-center justify-center">
             {!coverFailed && currentQuestion.coverUrl ? (
               <img
@@ -515,15 +518,19 @@ export default function ClozeDialogueRoleplay({
             )}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="min-w-0 flex-1 text-right space-y-0.5">
             <p
               dir="rtl"
               lang="ar"
-              className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 leading-[1.8]"
+              className="arabic font-arabic text-xl sm:text-2xl font-bold text-[#065F46] dark:text-emerald-300 text-right leading-[1.8]"
             >
               {fixArabicTypography(currentQuestion.dialogueTitleAr, arabicFont)}
             </p>
-            <h2 className="text-sm sm:text-base font-extrabold text-[var(--foreground)]">
+            <h2
+              dir="ltr"
+              lang="tr"
+              className="text-sm sm:text-base font-extrabold text-[var(--foreground)] text-right"
+            >
               {currentQuestion.dialogueTitleTr}
             </h2>
           </div>
@@ -533,7 +540,7 @@ export default function ClozeDialogueRoleplay({
         <div className="space-y-3.5">
           {/* 1. Konuşmacının Repliği */}
           <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
+            <div dir="rtl" className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-extrabold text-[var(--foreground)]">
                 <span
                   dir="rtl"
@@ -542,13 +549,14 @@ export default function ClozeDialogueRoleplay({
                 >
                   {currentQuestion.promptLine.konusmaci_ar}
                 </span>
-                <span className="text-[var(--muted)]">
+                <span dir="ltr" className="text-[var(--muted)]">
                   ({currentQuestion.promptLine.konusmaci})
                 </span>
               </div>
 
               <button
                 type="button"
+                dir="ltr"
                 onClick={() => {
                   playClick();
                   void playDialogueTurn(
@@ -577,7 +585,11 @@ export default function ClozeDialogueRoleplay({
             </p>
 
             {(showTranslations || isSolved) && (
-              <p className="text-xs sm:text-sm font-medium text-[var(--muted)] pt-1 border-t border-[#E6D7BE]/60 dark:border-[var(--border)]">
+              <p
+                dir="ltr"
+                lang="tr"
+                className="text-left text-xs sm:text-sm font-medium text-[var(--muted)] pt-1 border-t border-[#E6D7BE]/60 dark:border-[var(--border)]"
+              >
                 “{currentQuestion.promptLine.turkce}”
               </p>
             )}
@@ -591,7 +603,10 @@ export default function ClozeDialogueRoleplay({
                 : "bg-[#F3F0FF]/70 dark:bg-indigo-950/30 border-dashed border-[#6741D9]"
             }`}
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div
+              dir="rtl"
+              className="flex flex-wrap items-center justify-between gap-2"
+            >
               <div className="flex items-center gap-2 text-xs font-extrabold">
                 <span
                   dir="rtl"
@@ -600,14 +615,14 @@ export default function ClozeDialogueRoleplay({
                 >
                   {currentQuestion.replyLine.konusmaci_ar}
                 </span>
-                <span className="text-[var(--muted)]">
+                <span dir="ltr" className="text-[var(--muted)]">
                   ({currentQuestion.replyLine.konusmaci} ·{" "}
                   {currentQuestion.replyLine.cinsiyet === "K" ? "Kadın" : "Erkek"})
                 </span>
               </div>
 
               {isSolved && (
-                <div className="flex flex-wrap items-center gap-2">
+                <div dir="ltr" className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -652,15 +667,19 @@ export default function ClozeDialogueRoleplay({
                     arabicFont
                   )}
                 </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 pt-1 border-t border-emerald-200/70 dark:border-emerald-800/60">
+                <p
+                  dir="ltr"
+                  lang="tr"
+                  className="text-left text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 pt-1 border-t border-emerald-200/70 dark:border-emerald-800/60"
+                >
                   “{currentQuestion.replyLine.turkce}”
                 </p>
               </>
             ) : (
-              <div className="py-2 flex items-center justify-between gap-3">
-                <span className="text-xs font-bold text-[#4C28B5] dark:text-indigo-200">
-                  Akışa en uygun cevabı aşağıdan seçin:
-                </span>
+              <div
+                dir="rtl"
+                className="py-2 flex flex-wrap items-center justify-between gap-3"
+              >
                 <span
                   dir="rtl"
                   lang="ar"
@@ -668,12 +687,19 @@ export default function ClozeDialogueRoleplay({
                 >
                   ____________
                 </span>
+                <span
+                  dir="ltr"
+                  lang="tr"
+                  className="text-xs font-bold text-[#4C28B5] dark:text-indigo-200"
+                >
+                  Akışa en uygun cevabı aşağıdan seçin:
+                </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* 4 ARAPÇA REPLİK SEÇENEĞİ */}
+        {/* 4 ARAPÇA REPLİK SEÇENEĞİ (RTL: A-D Sağ Başta, Arapça Yanında, İkon Sol Sonda) */}
         {!isSolved ? (
           <div className="grid grid-cols-1 gap-2.5 pt-1">
             {currentQuestion.options.map((opt, idx) => {
@@ -683,6 +709,7 @@ export default function ClozeDialogueRoleplay({
                 <button
                   key={`${optNorm}-${idx}`}
                   type="button"
+                  dir="rtl"
                   disabled={isEliminated}
                   onClick={() => void handleSelectOption(opt)}
                   className={`min-h-[56px] px-4 py-3 rounded-2xl border-2 border-b-4 flex items-center justify-between gap-3 transition-all ${

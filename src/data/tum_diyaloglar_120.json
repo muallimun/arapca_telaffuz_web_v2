@@ -46,7 +46,7 @@
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
         "odak_kalip": "Nereli Olduğunu Sorma (مِنْ أَيْنَ أَنْتِ؟)",
-        "arapca": "مِنْ أَيْنَ أَنْتِ يا لَيْلَى؟",
+        "arapca": "مِنْ أَيْنَ أَنْتِ يَا لَيْلَى؟",
         "turkce": "Nerelisin Leyla?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_001/satir_03_E.mp3"
       },
@@ -301,8 +301,8 @@
         "konusmaci": "Yasemin",
         "konusmaci_ar": "يَاسَمِينُ",
         "cinsiyet": "K",
-        "odak_kalip": "Övgü (أُنْقُرَةُ مَدِينَةٌ جَمِيلَةٌ)",
-        "arapca": "أُنْقُرَةُ مَدِينَةٌ جَمِيلَةٌ جِدّاً.",
+        "odak_kalip": "Övgü (أَنْقَرَةُ مَدِينَةٌ جَمِيلَةٌ)",
+        "arapca": "أَنْقَرَةُ مَدِينَةٌ جَمِيلَةٌ جِدّاً.",
         "turkce": "Ankara çok güzel bir şehirdir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_003/satir_08_K.mp3"
       },
@@ -334,7 +334,7 @@
     "seviye": "A1",
     "tema": "Seyahat_ve_Ulasim",
     "odak_gramer": "Zarf-ı Mekan, Var/Yok (عِنْدَ / يُوجَدُ) Kalıpları",
-    "baslik_ar": "هَلْ تُوجَدُ غُرْفَةٌ فارِغَةٌ؟",
+    "baslik_ar": "هَلْ تُوجَدُ غُرْفَةٌ فَارِغَةٌ؟",
     "baslik_tr": "Boş Odanız Var mı?",
     "konusmacilar": [
       {
@@ -355,7 +355,7 @@
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
         "odak_kalip": "Selamlaşma ve Soru (هَلْ تُوجَدُ غُرْفَةٌ؟)",
-        "arapca": "اَلسَّلَامُ عَلَيْكُمْ، هَلْ تُوجَدُ غُرْفَةٌ فارِغَةٌ؟",
+        "arapca": "اَلسَّلَامُ عَلَيْكُمْ، هَلْ تُوجَدُ غُرْفَةٌ فَارِغَةٌ؟",
         "turkce": "Selamün aleyküm, boş odanız var mı?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_004/satir_01_E.mp3"
       },
@@ -374,8 +374,8 @@
         "konusmaci": "Yusuf",
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
-        "odak_kalip": "Kişi Sayısı (لِشَخْصٍ واحِدٍ)",
-        "arapca": "لِشَخْصٍ واحِدٍ لِلَيْلَتَيْنِ.",
+        "odak_kalip": "Kişi Sayısı (لِشَخْصٍ وَاحِدٍ)",
+        "arapca": "لِشَخْصٍ وَاحِدٍ لِلَيْلَتَيْنِ.",
         "turkce": "İki gece için tek kişilik.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_004/satir_03_E.mp3"
       },
@@ -889,8 +889,8 @@
         "konusmaci": "Murat",
         "konusmaci_ar": "مُرَادٌ",
         "cinsiyet": "E",
-        "odak_kalip": "Hedef Şehir (إِلَى بُورْصَة)",
-        "arapca": "إِلَى مَدِينَةِ بُورْصَة هَذَا الْمَسَاءَ.",
+        "odak_kalip": "Hedef Şehir (إِلَى بُورْصَةَ)",
+        "arapca": "إِلَى مَدِينَةِ بُورْصَةَ هَذَا الْمَسَاءَ.",
         "turkce": "Bu akşam Bursa şehrine.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_009/satir_03_E.mp3"
       },
@@ -1475,7 +1475,7 @@
         "konusmaci_ar": "طَارِقٌ",
         "cinsiyet": "E",
         "odak_kalip": "Cevap (نَعَمْ، تُوجَدُ لَافِتَةٌ)",
-        "arapca": "نَعَمْ، تُوجَدُ لَافِتَةٌ زَرْقَاءُ واضِحَةٌ.",
+        "arapca": "نَعَمْ، تُوجَدُ لَافِتَةٌ زَرْقَاءُ وَاضِحَةٌ.",
         "turkce": "Evet, net mavi bir tabela var.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_017/satir_06_E.mp3"
       },
@@ -1511,7 +1511,7 @@
     "baslik_tr": "Uçakta",
     "konusmacilar": [
       {
-        "ad_ar": "حَالِدٌ",
+        "ad_ar": "خَالِدٌ",
         "ad_tr": "Halit",
         "cinsiyet": "E"
       },
@@ -1525,7 +1525,7 @@
       {
         "sira": 1,
         "konusmaci": "Halit",
-        "konusmaci_ar": "حَالِدٌ",
+        "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Rica (عَفْواً، أُرِيدُ مَاءً)",
         "arapca": "عَفْواً يَا سَيِّدَتِي، أُرِيدُ مَاءً.",
@@ -1545,7 +1545,7 @@
       {
         "sira": 3,
         "konusmaci": "Halit",
-        "konusmaci_ar": "حَالِدٌ",
+        "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "İçecek Tercihi (أُرِيدُ عَصِيرَ البُرْتُقَالِ)",
         "arapca": "أُرِيدُ عَصِيرَ البُرْتُقَالِ مِنْ فَضْلِكِ.",
@@ -1565,7 +1565,7 @@
       {
         "sira": 5,
         "konusmaci": "Halit",
-        "konusmaci_ar": "حَالِدٌ",
+        "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Teşekkür (شُكْراً جَزِيلاً لَكَ)",
         "arapca": "شُكْراً جَزِيلاً لَكِ عَلَى الخِدْمَةِ.",
@@ -1734,7 +1734,7 @@
         "konusmaci_ar": "حُمَيْرَاءُ",
         "cinsiyet": "K",
         "odak_kalip": "Nereli Sorma (مِنْ أَيْنَ أَنْتِ؟)",
-        "arapca": "مِنْ أَيِّ مَدِينَةٍ أَنْتِ يا لَيْلَى؟",
+        "arapca": "مِنْ أَيِّ مَدِينَةٍ أَنْتِ يَا لَيْلَى؟",
         "turkce": "Hangi şehirdensin Leyla?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_053/satir_03_K.mp3"
       },
@@ -2031,7 +2031,7 @@
         "cinsiyet": "E"
       },
       {
-        "ad_ar": "جُون",
+        "ad_ar": "جُونُ",
         "ad_tr": "John",
         "cinsiyet": "E"
       }
@@ -2050,10 +2050,10 @@
       {
         "sira": 2,
         "konusmaci": "John",
-        "konusmaci_ar": "جُون",
+        "konusmaci_ar": "جُونُ",
         "cinsiyet": "E",
-        "odak_kalip": "Karşılama (أَهْلاً، أَنَا جُون)",
-        "arapca": "أَهْلاً بِكَ، أَنَا جُون زَمِيلُكَ.",
+        "odak_kalip": "Karşılama (أَهْلاً، أَنَا جُونُ)",
+        "arapca": "أَهْلاً بِكَ، أَنَا جُونُ زَمِيلُكَ.",
         "turkce": "Hoş geldin, ben John senin sınıf arkadaşın.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_062/satir_02_E.mp3"
       },
@@ -2063,24 +2063,24 @@
         "konusmaci_ar": "أَحْمَدُ",
         "cinsiyet": "E",
         "odak_kalip": "Nereli Olduğunu Sorma (مِنْ أَيْنَ أَنْتَ؟)",
-        "arapca": "مِنْ أَيْنَ أَنْتَ يَا جُون؟",
+        "arapca": "مِنْ أَيْنَ أَنْتَ يَا جُونُ؟",
         "turkce": "Nerelisin John?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_062/satir_03_E.mp3"
       },
       {
         "sira": 4,
         "konusmaci": "John",
-        "konusmaci_ar": "جُون",
+        "konusmaci_ar": "جُونُ",
         "cinsiyet": "E",
         "odak_kalip": "Milliyet Bildirme (أَنَا بَرِيطَانِيٌّ)",
-        "arapca": "أَنَا مِنْ لَنْدَن، أَنَا بَرِيطَانِيٌّ.",
+        "arapca": "أَنَا مِنْ لَنْدَنَ، أَنَا بَرِيطَانِيٌّ.",
         "turkce": "Ben Londra'danım, Britanyalıyım.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_062/satir_04_E.mp3"
       },
       {
         "sira": 5,
         "konusmaci": "John",
-        "konusmaci_ar": "جُون",
+        "konusmaci_ar": "جُونُ",
         "cinsiyet": "E",
         "odak_kalip": "Milliyet Sorma (وَهَلْ أَنْتَ تُرْكِيٌّ؟)",
         "arapca": "وَهَلْ أَنْتَ طَالِبٌ تُرْكِيٌّ أَيْضاً؟",
@@ -2100,7 +2100,7 @@
       {
         "sira": 7,
         "konusmaci": "John",
-        "konusmaci_ar": "جُون",
+        "konusmaci_ar": "جُونُ",
         "cinsiyet": "E",
         "odak_kalip": "Dil Dersini Sorma (هَلْ تَدْرُسُ الْعَرَبِيَّةَ؟)",
         "arapca": "هَلْ تَدْرُسُ اللُّغَةَ الْعَرَبِيَّةَ هُنَا؟",
@@ -3625,7 +3625,7 @@
         "konusmaci_ar": "طَارِقٌ",
         "cinsiyet": "E",
         "odak_kalip": "Gitmeyi İstemek (سَأَزُورُهُ غَداً)",
-        "arapca": "أَنَا أَيْضاً سَأَزُورُهُ غَداً إنْ شَاءَ اللَّهُ.",
+        "arapca": "أَنَا أَيْضاً سَأَزُورُهُ غَداً إِنْ شَاءَ اللَّهُ.",
         "turkce": "Ben de inşallah yarın ziyaret edeceğim.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_018/satir_07_E.mp3"
       },
@@ -4632,7 +4632,7 @@
         "konusmaci_ar": "السَّيِّدَةُ خَدِيجَةُ",
         "cinsiyet": "K",
         "odak_kalip": "Onaylama (نَعَمْ، كُلُّ شَيْءٍ مَعَنَا)",
-        "arapca": "نَعَمْ، كُلُّ شَيْءٍ مَعَنَا فِي الْحَقِيبةِ.",
+        "arapca": "نَعَمْ، كُلُّ شَيْءٍ مَعَنَا فِي الْحَقِيبَةِ.",
         "turkce": "Evet, her şey çantada yanımızda.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_038/satir_06_K.mp3"
       },
@@ -5752,7 +5752,7 @@
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
         "odak_kalip": "Sara Nakıs Fiil (صَارَ المَكَانُ مُزْدَحِماً)",
-        "arapca": "وَلكِنْ صَارَ الْمَكَانُ مُزْدَحِماً بِالزُّوَّارِ سَرِيعاً.",
+        "arapca": "وَلَكِنْ صَارَ الْمَكَانُ مُزْدَحِماً بِالزُّوَّارِ سَرِيعاً.",
         "turkce": "Fakat mekan hızlıca ziyaretçilerle kalabalıklaştı.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_076/satir_03_E.mp3"
       },
@@ -7214,8 +7214,8 @@
         "konusmaci": "Yasemin",
         "konusmaci_ar": "يَاسَمِينُ",
         "cinsiyet": "K",
-        "odak_kalip": "Merak Etme (خَيْراً إنْ شَاءَ اللَّهُ)",
-        "arapca": "خَيْراً إنْ شَاءَ اللَّهُ، مَا هُوَ؟",
+        "odak_kalip": "Merak Etme (خَيْراً إِنْ شَاءَ اللَّهُ)",
+        "arapca": "خَيْراً إِنْ شَاءَ اللَّهُ، مَا هُوَ؟",
         "turkce": "Hayırdır inşallah, nedir o?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_031/satir_06_K.mp3"
       },
@@ -7786,8 +7786,8 @@
         "konusmaci": "Ressam",
         "konusmaci_ar": "الرَّسَّامُ",
         "cinsiyet": "E",
-        "odak_kalip": "Anlam Açıklama (إنَّهَا تُعَبِّرُ عَنِ)",
-        "arapca": "إنَّهَا تُعَبِّرُ عَنِ الطَّبِيعَةِ فِي الْخَرِيفِ.",
+        "odak_kalip": "Anlam Açıklama (إِنَّهَا تُعَبِّرُ عَنِ)",
+        "arapca": "إِنَّهَا تُعَبِّرُ عَنِ الطَّبِيعَةِ فِي الْخَرِيفِ.",
         "turkce": "Sonbahardaki doğayı ifade ediyor.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_035/satir_02_E.mp3"
       },
@@ -7980,7 +7980,7 @@
         "konusmaci_ar": "سَامِي",
         "cinsiyet": "E",
         "odak_kalip": "Rezervasyon Sorma (هَلْ حَجَزْتَ الغُرْفَةَ؟)",
-        "arapca": "هَلْ حَجَزْتَ الغُرْفَةَ عَبْرَ الإنْتَرْنِتِ؟",
+        "arapca": "هَلْ حَجَزْتَ الغُرْفَةَ عَبْرَ الْإِنْتَرْنِتِ؟",
         "turkce": "Odayı internetten ayırttın mı?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_036/satir_07_E.mp3"
       },
@@ -8389,7 +8389,7 @@
         "konusmaci_ar": "السَّائِحُ",
         "cinsiyet": "E",
         "odak_kalip": "Kapsam Sorma (هَلْ يَشْمَلُ زِيَارَةَ؟)",
-        "arapca": "هَلْ يَشْمَلُ الْبَرْنَامَجُ زِيَارَةَ أُوزُونْغُول؟",
+        "arapca": "هَلْ يَشْمَلُ الْبَرْنَامَجُ زِيَارَةَ أُوزُونْغُولَ؟",
         "turkce": "Program Uzungöl ziyaretini kapsıyor mu?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_046/satir_05_E.mp3"
       },
@@ -8398,8 +8398,8 @@
         "konusmaci": "Görevli",
         "konusmaci_ar": "الْمُوَظَّفُ",
         "cinsiyet": "E",
-        "odak_kalip": "Detay Verme (يَشْمَلُ أُوزُونْغُول وَآيْدَرْ)",
-        "arapca": "نَعَمْ، يَشْمَلُ أُوزُونْغُول وَآيْدَرْ أَيْضاً.",
+        "odak_kalip": "Detay Verme (يَشْمَلُ أُوزُونْغُولَ وَآيْدَرْ)",
+        "arapca": "نَعَمْ، يَشْمَلُ أُوزُونْغُولَ وَآيْدَرْ أَيْضاً.",
         "turkce": "Evet, Uzungöl ve Ayder'i de kapsıyor.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_046/satir_06_E.mp3"
       },
@@ -8878,7 +8878,7 @@
         "konusmaci_ar": "رَابِعَةُ",
         "cinsiyet": "K",
         "odak_kalip": "Tarih Bildirme (سَأُسَلِّمُهَا يَوْمَ الْاِثْنَيْنِ)",
-        "arapca": "سَأُسَلِّمُهَا يَوْمَ الْاِثْنَيْنِ الْقَادِمِ إنْ شَاءَ اللَّهُ.",
+        "arapca": "سَأُسَلِّمُهَا يَوْمَ الْاِثْنَيْنِ الْقَادِمِ إِنْ شَاءَ اللَّهُ.",
         "turkce": "Önümüzdeki pazartesi günü teslim edeceğim inşallah.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_055/satir_11_K.mp3"
       },
@@ -8921,7 +8921,7 @@
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
         "odak_kalip": "Meçhul Mazi (تُقَامُ الرِّيَاضَاتُ)",
-        "arapca": "هَلْ تُقَامُ الرِّيَاضَاتُ الشَّتَوِيَّةُ المُمْتِعَةُ فِي جَبَلِ أُولُودَاغ كُلَّ عَامٍ؟",
+        "arapca": "هَلْ تُقَامُ الرِّيَاضَاتُ الشَّتَوِيَّةُ المُمْتِعَةُ فِي جَبَلِ أُولُودَاغَ كُلَّ عَامٍ؟",
         "turkce": "Uludağ'da her yıl eğlenceli kış sporları düzenlenir mi?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_084/satir_01_E.mp3"
       },
@@ -9031,7 +9031,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Meçhul Muzari (يُحَبُّ الشِّتَاءُ)",
-        "arapca": "بالتَّأْكِيدِ، يُحَبُّ فَصْلُ الشِّتَاءِ الجَمِيلُ بِسَبَبِ هَذِهِ الرِّيَاضَاتِ.",
+        "arapca": "بِالتَّأْكِيدِ، يُحَبُّ فَصْلُ الشِّتَاءِ الجَمِيلُ بِسَبَبِ هَذِهِ الرِّيَاضَاتِ.",
         "turkce": "Kesinlikle, bu sporlar sebebiyle güzel kış mevsimi sevilir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_084/satir_12_E.mp3"
       }
@@ -9879,7 +9879,7 @@
         "konusmaci_ar": "أَحْمَدُ",
         "cinsiyet": "E",
         "odak_kalip": "Salim Fiil (فَتَحَ المُشْرِفُ البَابَ)",
-        "arapca": "إِذَنْ فَتَحَ المُشْرِفُ البَابَ لِكُلِّ الشَّبَابِ الراغِبِينَ فِي النَّشَاطِ.",
+        "arapca": "إِذَنْ فَتَحَ المُشْرِفُ البَابَ لِكُلِّ الشَّبَابِ الرَّاغِبِينَ فِي النَّشَاطِ.",
         "turkce": "Öyleyse süpervizör etkinlik isteyen tüm gençler için kapıyı açtı.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_090/satir_11_E.mp3"
       },
@@ -10564,7 +10564,7 @@
         "konusmaci_ar": "مُصْطَفَى",
         "cinsiyet": "E",
         "odak_kalip": "Mufa'ale Babi (قَابَلْنَا المُخْتَرِعِينَ)",
-        "arapca": "وقَابَلْنَا المُخْتَرِعِينَ المَاهِرِينَ وَتَكَلَّمْنَا مَعَهُمْ كَثِيراً هُنَا اليَوْمَ.",
+        "arapca": "وَقَابَلْنَا المُخْتَرِعِينَ المَاهِرِينَ وَتَكَلَّمْنَا مَعَهُمْ كَثِيراً هُنَا اليَوْمَ.",
         "turkce": "Ve mahir mucitlerle karşılaştık ve onlarla bugün burada çok konuştuk.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_095/satir_08_E.mp3"
       },
@@ -10747,7 +10747,7 @@
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Nasihat (الصِّحَّةُ تَاجٌ)",
-        "arapca": "بالتَّأْكِيدِ، فَالصِّحَّةُ تَاجٌ عَلَى رُؤُوسِ الأَصِحَّاءِ دَائِماً.",
+        "arapca": "بِالتَّأْكِيدِ، فَالصِّحَّةُ تَاجٌ عَلَى رُؤُوسِ الأَصِحَّاءِ دَائِماً.",
         "turkce": "Kesinlikle, zira sağlık daima sağlıklıların başlarında bir taçtır.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_096/satir_12_E.mp3"
       }
@@ -11033,7 +11033,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Başarı (المُعْجَمُ كَنْزٌ)",
-        "arapca": "بالتَّأْكِيدِ، فَالمُعْجَمُ كَنْزٌ لِكُلِّ طَالِبِ عِلْمٍ فِي المَدْرَسَةِ.",
+        "arapca": "بِالتَّأْكِيدِ، فَالمُعْجَمُ كَنْزٌ لِكُلِّ طَالِبِ عِلْمٍ فِي المَدْرَسَةِ.",
         "turkce": "Kesinlikle, zira sözlük okulda her ilim öğrencisi için bir hazinedir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_098/satir_12_E.mp3"
       }
@@ -11096,7 +11096,7 @@
         "konusmaci_ar": "الْمُسِنُّ",
         "cinsiyet": "E",
         "odak_kalip": "İkinci Şikayet (لَا أَمْلِكُ شَهِيَّةً)",
-        "arapca": "إِضَافَةً إِلَى ذَلِك، لَا أَمْلِكُ شَهِيَّةً لِلطَّعَامِ.",
+        "arapca": "إِضَافَةً إِلَى ذَلِكَ، لَا أَمْلِكُ شَهِيَّةً لِلطَّعَامِ.",
         "turkce": "Bunun yanı sıra iştahım da yok.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_041/satir_04_E.mp3"
       },
@@ -11106,7 +11106,7 @@
         "konusmaci_ar": "الطَّبِيبُ",
         "cinsiyet": "E",
         "odak_kalip": "Açıklama Yapma (الْمَعِدَةُ تَعْمَلُ بِبُطْءٍ)",
-        "arapca": "فِي الشَّيْخُوخَةِ، الْمَعِدَةُ تَعْمَلُ بِبُطْءٍ شدِيدٍ.",
+        "arapca": "فِي الشَّيْخُوخَةِ، الْمَعِدَةُ تَعْمَلُ بِبُطْءٍ شَدِيدٍ.",
         "turkce": "Yaşlılıkta mide çok yavaş çalışır.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_041/satir_05_E.mp3"
       },
@@ -11462,7 +11462,7 @@
         "konusmaci_ar": "لَيْلَى",
         "cinsiyet": "K",
         "odak_kalip": "Saat Sorma (فِي أَيِّ سَاعَةٍ نَلْتَقِي؟)",
-        "arapca": "فِي أَيِّ سَاعَةٍ نَلْتَقِي هُنَاك؟",
+        "arapca": "فِي أَيِّ سَاعَةٍ نَلْتَقِي هُنَاكَ؟",
         "turkce": "Orada saat kaçta buluşacağız?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_048/satir_08_K.mp3"
       },
@@ -12480,7 +12480,7 @@
         "konusmaci_ar": "سَلِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Tef'il Masdarı (تَعْزِيزُ السَّلَامِ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ تَعْزِيزَ السَّلَامِ يَمْنَحُ الشُّعُوبَ الأَمَلَ وَالأَمَانَ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ تَعْزِيزَ السَّلَامِ يَمْنَحُ الشُّعُوبَ الأَمَلَ وَالأَمَانَ.",
         "turkce": "Kesinlikle, zira barışın güçlendirilmesi halklara umut ve güvenlik verir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_099/satir_12_E.mp3"
       }
@@ -12623,7 +12623,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Tefa'ul Muzari (يَتَضَاعَفُ الإِنْتَاجُ)",
-        "arapca": "بالتَّأْكِيدِ، فَسَوْفَ يَتَضَاعَفُ الإِنْتَاجُ الزِّرَاعِيُّ بِهَذِهِ الأَسَالِيبِ.",
+        "arapca": "بِالتَّأْكِيدِ، فَسَوْفَ يَتَضَاعَفُ الإِنْتَاجُ الزِّرَاعِيُّ بِهَذِهِ الأَسَالِيبِ.",
         "turkce": "Kesinlikle, zira tarımsal üretim bu yöntemlerle katlanacaktır.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_100/satir_12_E.mp3"
       }
@@ -12766,7 +12766,7 @@
         "konusmaci_ar": "أَحْمَدُ",
         "cinsiyet": "E",
         "odak_kalip": "İstifal Muzari (يَسْتَحِقُّونَ التَّقْدِيرَ)",
-        "arapca": "بالتَّأْكِيدِ، فَهُمْ يَسْتَحِقُّونَ كُلَّ التَّقْدِيرِ وَالثَّنَاءِ دَائِماً.",
+        "arapca": "بِالتَّأْكِيدِ، فَهُمْ يَسْتَحِقُّونَ كُلَّ التَّقْدِيرِ وَالثَّنَاءِ دَائِماً.",
         "turkce": "Kesinlikle, zira onlar daima her türlü takdir ve övgüyü hak ediyorlar.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_101/satir_12_E.mp3"
       }
@@ -12909,7 +12909,7 @@
         "konusmaci_ar": "زَيْدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Meçhul Muzari (يُشْكَرُ المُنْفِقُونَ)",
-        "arapca": "بالتَّأْكِيدِ، فَيُشْكَرُ المُنْفِقُونَ عَلَى هَذِهِ الأَعْمَالِ الصَّالِحَةِ.",
+        "arapca": "بِالتَّأْكِيدِ، فَيُشْكَرُ المُنْفِقُونَ عَلَى هَذِهِ الأَعْمَالِ الصَّالِحَةِ.",
         "turkce": "Kesinlikle, zira infak edenlere bu salih amellerinden dolayı teşekkür edilir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_102/satir_12_E.mp3"
       }
@@ -12992,7 +12992,7 @@
         "konusmaci_ar": "عَلِيٌّ",
         "cinsiyet": "E",
         "odak_kalip": "Şuru' Fiili (شرَعَتِ المُنَظَّمَاتُ)",
-        "arapca": "لِذٰلِكَ شَرَعَتِ المُنَظَّمَاتُ تَنْشُرُ الوَعْيَ البيئِيَّ بَيْنَ النَّاسِ.",
+        "arapca": "لِذٰلِكَ شَرَعَتِ المُنَظَّمَاتُ تَنْشُرُ الوَعْيَ الْبِيئِيَّ بَيْنَ النَّاسِ.",
         "turkce": "Bu yüzden kuruluşlar insanlar arasında çevre bilincini yaymaya başladı.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_103/satir_06_E.mp3"
       },
@@ -13195,7 +13195,7 @@
         "konusmaci_ar": "كَرِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Memdud İsim (بَيْنَا سَمَاءٌ وَأَرْضٌ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ العَدَالَةَ حَقٌّ لِكُلِّ إِنْسَانٍ تَحْتَ السَّمَاءِ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ العَدَالَةَ حَقٌّ لِكُلِّ إِنْسَانٍ تَحْتَ السَّمَاءِ.",
         "turkce": "Kesinlikle, zira adalet gökyüzü altındaki her insan için bir haktır.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_104/satir_12_E.mp3"
       }
@@ -13338,7 +13338,7 @@
         "konusmaci_ar": "مُصْطَفَى",
         "cinsiyet": "E",
         "odak_kalip": "Sınaî Masdar (الشَّفَافِيَّةُ العَالِيَةُ)",
-        "arapca": "بالتَّأْكِيدِ، فَالشَّفَافِيَّةُ الإِعْلَامِيَّةُ تَبْنِي الثِّقَةَ بَيْنَ الجَمِيعِ.",
+        "arapca": "بِالتَّأْكِيدِ، فَالشَّفَافِيَّةُ الإِعْلَامِيَّةُ تَبْنِي الثِّقَةَ بَيْنَ الجَمِيعِ.",
         "turkce": "Kesinlikle, zira medyatik şeffaflık herkes arasında güven inşa eder.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_105/satir_12_E.mp3"
       }
@@ -13481,7 +13481,7 @@
         "konusmaci_ar": "سَلِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Dua (جَزَاهُمُ اللَّهُ)",
-        "arapca": "بالتَّأْكِيدِ، جَزَاهُمُ اللَّهُ خَيْراً عَلَى هَذِهِ الأَعْمَالِ النَّبِيلَةِ.",
+        "arapca": "بِالتَّأْكِيدِ، جَزَاهُمُ اللَّهُ خَيْراً عَلَى هَذِهِ الأَعْمَالِ النَّبِيلَةِ.",
         "turkce": "Kesinlikle, bu soylu amellerinden dolayı Allah onları hayırla mükafatlandırsın.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_106/satir_12_E.mp3"
       }
@@ -13829,8 +13829,8 @@
         "konusmaci": "Ali",
         "konusmaci_ar": "عَلِيٌّ",
         "cinsiyet": "E",
-        "odak_kalip": "Gayr-ı Munsarif (فِي مَنَاطِقَ واسِعَةٍ)",
-        "arapca": "نَعَمْ، زُرْتُهَا وَهِيَ تَقَعُ فِي مَنَاطِقَ واسِعَةٍ جَمِيلَةٍ.",
+        "odak_kalip": "Gayr-ı Munsarif (فِي مَنَاطِقَ وَاسِعَةٍ)",
+        "arapca": "نَعَمْ، زُرْتُهَا وَهِيَ تَقَعُ فِي مَنَاطِقَ وَاسِعَةٍ جَمِيلَةٍ.",
         "turkce": "Evet, onları ziyaret ettim ve onlar geniş güzel bölgelerde yer alıyor.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_109/satir_04_E.mp3"
       },
@@ -13910,7 +13910,7 @@
         "konusmaci_ar": "عَلِيٌّ",
         "cinsiyet": "E",
         "odak_kalip": "Gayr-ı Munsarif (لِقَوَاعِدَ ثَابِتَةٍ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ العِمَارَةَ الإِسْلَامِيَّةَ تَسْتَنِدُ إِلَى قَوَاعِدَ ثَابِتَةٍ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ العِمَارَةَ الإِسْلَامِيَّةَ تَسْتَنِدُ إِلَى قَوَاعِدَ ثَابِتَةٍ.",
         "turkce": "Kesinlikle, zira İslam mimarisi sabit kurallara dayanır.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_109/satir_12_E.mp3"
       }
@@ -14053,7 +14053,7 @@
         "konusmaci_ar": "حَسَنٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Temyiz (أَكْثَرُ خَيْراً)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ الطَّاقَةَ النَّظِيفَةَ أَكْثَرُ خَيْرًا لِلْبَشَرِيَّةِ دَائِماً.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ الطَّاقَةَ النَّظِيفَةَ أَكْثَرُ خَيْرًا لِلْبَشَرِيَّةِ دَائِماً.",
         "turkce": "Kesinlikle, zira temiz enerji insanlık için daima hayır bakımından daha çoktur.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_110/satir_12_E.mp3"
       }
@@ -14196,7 +14196,7 @@
         "konusmaci_ar": "سَلِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Hal (فَالصِّدْقُ يَهْدِي)",
-        "arapca": "بالتَّأْكِيدِ، فَالتَّاجِرُ الصَّدُوقُ يُحْشَرُ مَعَ النَّبِيِّينَ وَالصَّالِحِينَ.",
+        "arapca": "بِالتَّأْكِيدِ، فَالتَّاجِرُ الصَّدُوقُ يُحْشَرُ مَعَ النَّبِيِّينَ وَالصَّالِحِينَ.",
         "turkce": "Kesinlikle, zira dürüst tüccar peygamberler ve salihlerle haşrolunur.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_111/satir_12_E.mp3"
       }
@@ -14339,7 +14339,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Temenni (وفَّقَكَ اللَّهُ)",
-        "arapca": "بالتَّأْكِيدِ، وَفَّقَنَا اللَّهُ جَمِيعاً لِاخْتِيَارِ الأَفْضَلِ فِي الحَيَاةِ.",
+        "arapca": "بِالتَّأْكِيدِ، وَفَّقَنَا اللَّهُ جَمِيعاً لِاخْتِيَارِ الأَفْضَلِ فِي الحَيَاةِ.",
         "turkce": "Kesinlikle, Allah hayatta en iyisini seçmede hepimizi başarılı kılsın.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_112/satir_12_E.mp3"
       }
@@ -14402,7 +14402,7 @@
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
         "odak_kalip": "Manevi Tekid (كِلَاهُمَا أَنْهَيَا)",
-        "arapca": "نَعَمْ، فَعَلا كِلَاهُمَا ذَلِكَ بِكُلِّ دِقَّةٍ وَأَمَانَةٍ عَالِيَةٍ.",
+        "arapca": "نَعَمْ، فَعَلَا كِلَاهُمَا ذَلِكَ بِكُلِّ دِقَّةٍ وَأَمَانَةٍ عَالِيَةٍ.",
         "turkce": "Evet, ikisi de bunu tam bir hassasiyet ve yüksek emanetle yaptı.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_113/satir_04_E.mp3"
       },
@@ -14482,7 +14482,7 @@
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Nasihat (اللَّهُ يُحِبُّ الإِتْقَانَ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ اللَّهَ يُحِبُّ إِذَا عَمِلَ أَحَدُكُمْ عَمَلاً أَنْ يُتْقِنَهُ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ اللَّهَ يُحِبُّ إِذَا عَمِلَ أَحَدُكُمْ عَمَلاً أَنْ يُتْقِنَهُ.",
         "turkce": "Kesinlikle, zira Allah sizden biri bir iş yaptığında onu sağlam yapmasını sever.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_113/satir_12_E.mp3"
       }
@@ -14625,7 +14625,7 @@
         "konusmaci_ar": "سَالِمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Dua (بَارَكَ اللَّهُ)",
-        "arapca": "بالتَّأْكِيدِ، بَارَكَ اللَّهُ فِي أَمْوَالِ المُنْفِقِينَ وَأَعْمَالِهِمْ دَائِماً.",
+        "arapca": "بِالتَّأْكِيدِ، بَارَكَ اللَّهُ فِي أَمْوَالِ المُنْفِقِينَ وَأَعْمَالِهِمْ دَائِماً.",
         "turkce": "Kesinlikle, Allah infak edenlerin mallarını ve amellerini daima mübarek kılsın.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_114/satir_12_E.mp3"
       }
@@ -14758,7 +14758,7 @@
         "konusmaci_ar": "كَرِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Medih Fiili (نِعْمَ العَمَلُ)",
-        "arapca": "إِذَنْ نِعْمَ العَمَلُ التَّوَازُنُ بَيْنَ التَّكْنُولُوجِيَا وَالحَيَاةِ الحَقِيقِيَّةِ.",
+        "arapca": "إِذَنْ نِعْمَ العَمَلُ التَّوَازُنُ بَيْنَ التِّكْنُولُوجِيَا وَالحَيَاةِ الحَقِيقِيَّةِ.",
         "turkce": "Öyleyse teknoloji ile gerçek hayat arasındaki denge ne güzel bir iştir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_115/satir_11_E.mp3"
       },
@@ -14768,7 +14768,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Nasihat (حَفِظَ اللَّهُ صِحَّتَنَا)",
-        "arapca": "بالتَّأْكِيدِ، حَفِظَ اللَّهُ عُقُولَنَا وَأَوْقَاتَنَا مِنْ كُلِّ إِدْمَانٍ ضَارٍّ.",
+        "arapca": "بِالتَّأْكِيدِ، حَفِظَ اللَّهُ عُقُولَنَا وَأَوْقَاتَنَا مِنْ كُلِّ إِدْمَانٍ ضَارٍّ.",
         "turkce": "Kesinlikle, Allah akıllarımızı ve vakitlerimizi her zararlı bağımlılıktan korusun.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_115/satir_12_E.mp3"
       }
@@ -14851,7 +14851,7 @@
         "konusmaci_ar": "مُصْطَفَى",
         "cinsiyet": "E",
         "odak_kalip": "İstisna Khala (خَلَا الصَّفْحَةِ الأَخِيرَةِ)",
-        "arapca": "قَرَأْتُهَا خَلا الصَّفْحَةِ الأَخِيرَةِ الَّتِي تَتَعَلَّقُ بِالتَّكَالِيفِ المَالِيَّةِ.",
+        "arapca": "قَرَأْتُهَا خَلَا الصَّفْحَةِ الأَخِيرَةِ الَّتِي تَتَعَلَّقُ بِالتَّكَالِيفِ المَالِيَّةِ.",
         "turkce": "Mali maliyetlerle ilgili olan son sayfa hariç onları okudum.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_116/satir_06_E.mp3"
       },
@@ -14911,7 +14911,7 @@
         "konusmaci_ar": "مُصْطَفَى",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve İstisna (إِلَّا بِالْعِلْمِ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ المُسْتَقْبَلَ لَا يَرْحَمُ المُتَكَبِّرِينَ إِلَّا المُمَيَّزِينَ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ المُسْتَقْبَلَ لَا يَرْحَمُ المُتَكَبِّرِينَ إِلَّا المُمَيَّزِينَ.",
         "turkce": "Kesinlikle, zira gelecek seçkinler hariç kibirlilere merhamet etmez.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_116/satir_12_E.mp3"
       }
@@ -15054,7 +15054,7 @@
         "konusmaci_ar": "زَيْدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Taaccüb (سُبْحَانَ الخَالِقِ)",
-        "arapca": "بالتَّأْكِيدِ، فَسُبْحَانَ مَنْ خَلَقَ هَذَا الكَوْنَ بِإِتْقَانٍ وَعَظَمَةٍ!",
+        "arapca": "بِالتَّأْكِيدِ، فَسُبْحَانَ مَنْ خَلَقَ هَذَا الكَوْنَ بِإِتْقَانٍ وَعَظَمَةٍ!",
         "turkce": "Kesinlikle, zira bu evreni sağlamlık ve azametle yaratan ne yücedir!",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_117/satir_12_E.mp3"
       }
@@ -15197,7 +15197,7 @@
         "konusmaci_ar": "عَلِيٌّ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Sıfat (لُغَةٌ تَسْتَحِقُّ)",
-        "arapca": "بالتَّأْكِيدِ، فَهِيَ لُغَةٌ تَسْتَحِقُّ الْاِهْتِمَامَ وَالدِّرَاسَةَ الدَّائِمَةَ.",
+        "arapca": "بِالتَّأْكِيدِ، فَهِيَ لُغَةٌ تَسْتَحِقُّ الْاِهْتِمَامَ وَالدِّرَاسَةَ الدَّائِمَةَ.",
         "turkce": "Kesinlikle, zira o ilgiyi ve daimi çalışmayı hak eden bir dildir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_118/satir_12_E.mp3"
       }
@@ -15340,7 +15340,7 @@
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Övgü (رَحِمَ اللَّهُ العُلَمَاءَ)",
-        "arapca": "بالتَّأْكِيدِ، رَحِمَ اللَّهُ عُلَمَاءَنَا الَّذِينَ خَدَمُوا البَشَرِيَّةَ بِإِخْلَاصٍ.",
+        "arapca": "بِالتَّأْكِيدِ، رَحِمَ اللَّهُ عُلَمَاءَنَا الَّذِينَ خَدَمُوا البَشَرِيَّةَ بِإِخْلَاصٍ.",
         "turkce": "Kesinlikle, insanlığa samimiyetle hizmet eden alimlerimize Allah rahmet eylesin.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_119/satir_12_E.mp3"
       }
@@ -15483,7 +15483,7 @@
         "konusmaci_ar": "سَلِيمٌ",
         "cinsiyet": "E",
         "odak_kalip": "Kapanış ve Başarı (بِإِذْنِ اللَّهِ)",
-        "arapca": "بالتَّأْكِيدِ، فَإِنَّ الرِّيَادَةَ الْاِقْتِصَادِيَّةَ تَضْمَنُ المُسْتَقْبَلَ المَشْرِقَ.",
+        "arapca": "بِالتَّأْكِيدِ، فَإِنَّ الرِّيَادَةَ الْاِقْتِصَادِيَّةَ تَضْمَنُ المُسْتَقْبَلَ المَشْرِقَ.",
         "turkce": "Kesinlikle, zira ekonomik girişimcilik parlak geleceği garanti eder.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_120/satir_12_E.mp3"
       }

@@ -1273,7 +1273,7 @@
     ],
     "sorular": [
       {
-        "soru_ar": "إِلَى أَيْن سَافَرَ مَعَ عَائِلَتِهِ فِي الصَّيْفِ؟",
+        "soru_ar": "إِلَى أَيْنَ سَافَرَ مَعَ عَائِلَتِهِ فِي الصَّيْفِ؟",
         "soru_tr": "Yazın ailesiyle nereye seyahat etti?",
         "cevap_ar": "سَافَرَ إِلَى مَدِينَةِ أَنْطَالْيَا.",
         "cevap_tr": "Antalya şehrine seyahat etti."
@@ -1773,7 +1773,7 @@
     "satirlar": [
       {
         "sira": 1,
-        "arapca": "تَمْتَازُ المَأْكُولاتُ التُّرْكِيَّةُ بِالتَّنَوُّعِ وَالطَّعْمِ اللَّذِيذِ فِي كُلِّ المَنَاطِقِ.",
+        "arapca": "تَمْتَازُ المَأْكُولَاتُ التُّرْكِيَّةُ بِالتَّنَوُّعِ وَالطَّعْمِ اللَّذِيذِ فِي كُلِّ المَنَاطِقِ.",
         "turkce": "Türk yemekleri tüm bölgelerde çeşitlilik ve lezzetli tat ile öne çıkar.",
         "ses_dosyasi": "/sesler/metinler/metin_29/satir_01.mp3"
       },
@@ -2534,7 +2534,7 @@
       },
       {
         "sira": 5,
-        "arapca": "أَكَلْنَا إِسْكَنْدَرْ كَبَابَ المَشْهُورَ فِي مَطْعَمٍ تَقْلِيدِيٍّ جَمِيلٍ.",
+        "arapca": "أَكَلْنَا إِسْكَنْدَرَ كَبَابَ المَشْهُورَ فِي مَطْعَمٍ تَقْلِيدِيٍّ جَمِيلٍ.",
         "turkce": "Güzel geleneksel bir restoranda meşhur İskender kebabı yedik.",
         "ses_dosyasi": "/sesler/metinler/metin_40/satir_05.mp3"
       },
@@ -2561,7 +2561,7 @@
       {
         "soru_ar": "مَاذَا أَكَلُوا فِي المَطْعَمِ؟",
         "soru_tr": "Restoranda ne yediler?",
-        "cevap_ar": "أَكَلُوا إِسْكَنْدَرْ كَبَابَ.",
+        "cevap_ar": "أَكَلُوا إِسْكَنْدَرَ كَبَابَ.",
         "cevap_tr": "İskender kebap yediler."
       }
     ]
@@ -3343,7 +3343,7 @@
       },
       {
         "sira": 7,
-        "arapca": "تُقَامُ الْمُؤْتَمَرَاتُ العَالَمِيَّةُ لِبَحْثِ الكَوَارِثِ البِيئِيَّةِ وَلكِنَّ النَّتَائِجَ لَا تَزَالُ دُونَ المُسْتَوَى المَطْلُوبِ شَعْبِيّاً فِي البُلْدَانِ.",
+        "arapca": "تُقَامُ الْمُؤْتَمَرَاتُ العَالَمِيَّةُ لِبَحْثِ الكَوَارِثِ البِيئِيَّةِ وَلَكِنَّ النَّتَائِجَ لَا تَزَالُ دُونَ المُسْتَوَى المَطْلُوبِ شَعْبِيّاً فِي البُلْدَانِ.",
         "turkce": "Ülkelerde çevresel felaketleri araştırmak için uluslararası konferanslar düzenlenmektedir fakat sonuçlar halk nezdinde istenen seviyenin altında kalmaya devam etmektedir.",
         "ses_dosyasi": "/sesler/metinler/metin_51/satir_07.mp3"
       },
@@ -3446,7 +3446,7 @@
       },
       {
         "sira": 10,
-        "arapca": "إِنَّ التَّكَنُولُوجِيَا خَادِمٌ مُفِيدٌ لِلإِنْسَانِ شَرِيطَةَ أَنْ تُسْتَخْدَمَ فِي إِطَارٍ أَخْلَاقِيٍّ سَلِيمٍ وَمَسْؤُولٍ فِي المُجْتَمَعِ.",
+        "arapca": "إِنَّ التِّكْنُولُوجِيَا خَادِمٌ مُفِيدٌ لِلإِنْسَانِ شَرِيطَةَ أَنْ تُسْتَخْدَمَ فِي إِطَارٍ أَخْلَاقِيٍّ سَلِيمٍ وَمَسْؤُولٍ فِي المُجْتَمَعِ.",
         "turkce": "Teknoloji, toplumda sağlıklı ve sorumlu bir ahlaki çerçevede kullanılması şartıyla insan için faydalı bir hizmetkardır.",
         "ses_dosyasi": "/sesler/metinler/metin_52/satir_10.mp3"
       }
@@ -3489,7 +3489,7 @@
       },
       {
         "sira": 3,
-        "arapca": "تُشْرَحُ الأَمْرَاضُ المَعْدِيَةُ دَقِيقَةً فِي كُتُبِهِ رَغْمَ نَقْصِ الأَدَوَاتِ التِّكْنُولُوجِيَّةِ فِي ذلِكَ الزَّمَنِ القَدِيمِ.",
+        "arapca": "تُشْرَحُ الأَمْرَاضُ المَعْدِيَةُ دَقِيقَةً فِي كُتُبِهِ رَغْمَ نَقْصِ الأَدَوَاتِ التِّكْنُولُوجِيَّةِ فِي ذَلِكَ الزَّمَنِ القَدِيمِ.",
         "turkce": "O eski zamandaki teknolojik araç eksikliğine rağmen bulaşıcı hastalıklar onun kitaplarında detaylıca açıklanmaktadır.",
         "ses_dosyasi": "/sesler/metinler/metin_53/satir_03.mp3"
       },
@@ -3659,7 +3659,7 @@
       },
       {
         "sira": 3,
-        "arapca": "تُدَارُ طَواحِينُ الرِّيَاحِ سَرِيعَةً عَلَى التِّلَالِ رَغْمَ أَنَّ تَكَالِيفَ الإنْشَاءِ لَا تَزَالُ مُرْتَفِعَةً جِدًّا.",
+        "arapca": "تُدَارُ طَوَاحِينُ الرِّيَاحِ سَرِيعَةً عَلَى التِّلَالِ رَغْمَ أَنَّ تَكَالِيفَ الإِنْشَاءِ لَا تَزَالُ مُرْتَفِعَةً جِدًّا.",
         "turkce": "İnşaat maliyetleri halen çok yüksek olmasına rağmen tepelerde rüzgar değirmenleri hızla döndürülür.",
         "ses_dosyasi": "/sesler/metinler/metin_55/satir_03.mp3"
       },
@@ -3768,7 +3768,7 @@
       },
       {
         "sira": 7,
-        "arapca": "تُسْتَخْدَمُ بَيَانَاتُ الأَقْمَارِ فِي التَّنَبُّؤِ بِالأَحْوَالِ الجَوِّيَّةِ لِكَيْ تُحْمَى المَنَاطِقُ مِنَ العَواصِفِ الشَّدِيدَةِ.",
+        "arapca": "تُسْتَخْدَمُ بَيَانَاتُ الأَقْمَارِ فِي التَّنَبُّؤِ بِالأَحْوَالِ الجَوِّيَّةِ لِكَيْ تُحْمَى المَنَاطِقُ مِنَ العَوَاصِفِ الشَّدِيدَةِ.",
         "turkce": "Şiddetli fırtınalardan bölgeler korunsun diye uydu verileri hava durumunu tahmin etmede kullanılır.",
         "ses_dosyasi": "/sesler/metinler/metin_56/satir_07.mp3"
       },

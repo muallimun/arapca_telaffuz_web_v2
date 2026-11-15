@@ -9236,7 +9236,7 @@ test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
   );
   assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1895);
-  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3225);
+  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3224);
   assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   assert.equal(CONTENT_INVENTORY.youtubeSingleVideosCount, 20);
   assert.equal(CONTENT_INVENTORY.youtubePlaylistsCount, 40);
@@ -9667,6 +9667,155 @@ test("82. Spark-TTS Öncesi 26 İnce Şemsî Şedde, İsm-i Mevsûl (الَّت�
       gorselRaw.includes("الص\u0651\u064Eحَفِي\u0651\u064F") &&
       gorselRaw.includes("الص\u0651\u064Eحِيحُ"),
     "gorselKelimeler_guncel.json içindeki 3 örnek cümlede şemsî şeddeler eklenmiş olmalıdır"
+  );
+});
+
+test("83. 6 Seslendirme JSON Veri Tabanında Özel İsimler (Ankara, Bursa, Konya, İstanbul, Uludağ, Uzungöl, Londra, John, İskender, Teknoloji) ve İç Hareke Düzeltmeleri Doğrulaması", () => {
+  const diyalogRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "tum_diyaloglar_120.json"),
+    "utf8"
+  );
+  const metinRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "tum_metinler_60.json"),
+    "utf8"
+  );
+  const cumleRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "1111_cumle.json"),
+    "utf8"
+  );
+  const ataRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "atasozleri.json"),
+    "utf8"
+  );
+  const gorselRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "gorselKelimeler_guncel.json"),
+    "utf8"
+  );
+  const sozlukRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "yeni_tum_sozluk.json"),
+    "utf8"
+  );
+
+  // 1) Özel isimler ve teknoloji yazımlarında hiçbir eski hatalı biçim kalmamalı
+  for (const [name, raw] of [
+    ["tum_diyaloglar_120.json", diyalogRaw],
+    ["tum_metinler_60.json", metinRaw],
+    ["1111_cumle.json", cumleRaw],
+    ["atasozleri.json", ataRaw],
+    ["gorselKelimeler_guncel.json", gorselRaw],
+    ["yeni_tum_sozluk.json", sozlukRaw],
+  ]) {
+    for (const forbidden of [
+      "أُنْقُرَة",
+      "أَنْقَرِوِي",
+      "بَوْرَصَة",
+      "قُونِيَة",
+      "اِسْطَنْبُول",
+      "الت\u0651\u064Eكَنُولُوجِيَا",
+      "الت\u0651\u064Eكْنُولُوجْيَا",
+      "الت\u0651\u064Eكْنُولُوجِيَا",
+      "بالت\u0651\u064Eأْكِيدِ",
+      "شَتَرَيْتُن\u0651\u064E",
+      "اِذْطِلَاء",
+      "مَثَاحِفُ",
+      "حَالِدٌ",
+      "إِسْكَنْدَرْ كَبَابَ",
+      "البيئِي\u0651\u064E",
+      "الراغِبِينَ",
+    ]) {
+      assert.equal(
+        raw.includes(forbidden),
+        false,
+        `${name} içinde '${forbidden}' kalmamalıdır`
+      );
+    }
+  }
+
+  // 2) Doğru özel isim ve iç hareke biçimlerinin varlık kontrolü
+  assert.ok(
+    diyalogRaw.includes("أَنْقَرَةُ مَدِينَةٌ") &&
+      diyalogRaw.includes("إِلَى مَدِينَةِ بُورْصَةَ هَذَا") &&
+      diyalogRaw.includes("جَبَلِ أُولُودَاغَ ") &&
+      diyalogRaw.includes("زِيَارَةَ أُوزُونْغُولَ؟") &&
+      diyalogRaw.includes("أَنَا جُونُ زَمِيلُكَ") &&
+      diyalogRaw.includes("يَا جُونُ؟") &&
+      diyalogRaw.includes("مِنْ لَنْدَنَ،") &&
+      diyalogRaw.includes("بِالت\u0651\u064Eأْكِيدِ،") &&
+      diyalogRaw.includes("الْبِيئِي\u0651\u064E") &&
+      diyalogRaw.includes("الر\u0651\u064Eاغِبِينَ") &&
+      diyalogRaw.includes("يَا لَيْلَى") &&
+      diyalogRaw.includes("فَارِغَةٌ") &&
+      diyalogRaw.includes("وَاحِدٍ") &&
+      diyalogRaw.includes("وَاضِحَةٌ") &&
+      diyalogRaw.includes("وَاسِعَةٍ") &&
+      diyalogRaw.includes("الْحَقِيبَةِ") &&
+      diyalogRaw.includes("ذَلِكَ،") &&
+      diyalogRaw.includes("شَدِيدٍ") &&
+      diyalogRaw.includes("هُنَاكَ؟") &&
+      diyalogRaw.includes("وَلَكِنْ") &&
+      diyalogRaw.includes("وَقَابَلْنَا") &&
+      diyalogRaw.includes("فَعَلَا ") &&
+      diyalogRaw.includes("خَلَا ") &&
+      diyalogRaw.includes("إِنْ شَاءَ") &&
+      diyalogRaw.includes("إِن\u0651\u064Eهَا") &&
+      diyalogRaw.includes("الْإِنْتَرْنِتِ"),
+    "tum_diyaloglar_120.json özel isim ve iç hareke düzeltmelerini eksiksiz içermelidir"
+  );
+
+  assert.ok(
+    metinRaw.includes("إِسْكَنْدَرَ كَبَابَ") &&
+      metinRaw.includes("إِلَى أَيْنَ سَافَرَ") &&
+      metinRaw.includes("المَأْكُولَاتُ") &&
+      metinRaw.includes("وَلَكِن\u0651\u064E") &&
+      metinRaw.includes("طَوَاحِينُ") &&
+      metinRaw.includes("الإِنْشَاءِ") &&
+      metinRaw.includes("العَوَاصِفِ") &&
+      !metinRaw.includes("ذلِكَ"),
+    "tum_metinler_60.json özel isim ve iç hareke düzeltmelerini eksiksiz içermelidir"
+  );
+
+  assert.ok(
+    cumleRaw.includes("أَنْقَرَوِي") &&
+      cumleRaw.includes("مِنْ قُونْيَةَ") &&
+      cumleRaw.includes("مِنْ أَيْنَ اشْتَرَيْتُن\u0651\u064E") &&
+      cumleRaw.includes("لَكِنْ فَاطِمَةُ.") &&
+      cumleRaw.includes("أَيْنَ دَرَسْتَ") &&
+      cumleRaw.includes("لَا يَنَامُ") &&
+      cumleRaw.includes("إِنَاءٍ") &&
+      cumleRaw.includes("تُمَاثِلُ") &&
+      cumleRaw.includes("فِي أَثْنَاءِ") &&
+      cumleRaw.includes("الْإِنْتَرْنِتِ "),
+    "1111_cumle.json özel isim ve iç hareke düzeltmelerini eksiksiz içermelidir"
+  );
+
+  assert.ok(
+    ataRaw.includes("الش\u0651\u064Eر\u0651\u064F قَدِيمٌ.") &&
+      ataRaw.includes("إِنَاءٍ") &&
+      ataRaw.includes("كَيْفَمَا") &&
+      ataRaw.includes("بِدَايَةٍ") &&
+      ataRaw.includes("بِلَا") &&
+      ataRaw.includes("المَرَارَةِ.") &&
+      ataRaw.includes("لَا يَنَامُ.") &&
+      ataRaw.includes("وَلَا تَمُوتُ"),
+    "atasozleri.json iç hareke düzeltmelerini eksiksiz içermelidir"
+  );
+
+  assert.ok(
+    gorselRaw.includes("جَامِعَةِ إِسْطَنْبُولَ") &&
+      gorselRaw.includes("إِسْطَنْبُولُ مَدِينَةٌ") &&
+      gorselRaw.includes("الت\u0651\u0650كْنُولُوجِيَا"),
+    "gorselKelimeler_guncel.json İstanbul ve Teknoloji düzeltmelerini içermelidir"
+  );
+
+  assert.ok(
+    sozlukRaw.includes("أَنْقَرَوِي\u0651\u064C") &&
+      sozlukRaw.includes('"أُوزُونْغُولُ"') &&
+      sozlukRaw.includes("بُورْصَةُ") &&
+      sozlukRaw.includes("قُونْيَةُ") &&
+      sozlukRaw.includes("خَالِدٌ") &&
+      sozlukRaw.includes('"مَتَاحِفُ"') &&
+      sozlukRaw.includes("اِنْطِلَاءٌ (عَلَى)"),
+    "yeni_tum_sozluk.json özel isim ve masdar/ çoğul düzeltmelerini içermelidir"
   );
 });
 

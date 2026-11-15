@@ -1017,7 +1017,7 @@
     "seviye": "A1",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Soru İsimleri (أَيْنَ) + Mâzî Fiil",
-    "arapca": "أَيْن دَرَسْتَ اللُّغَةَ الإِنْجِلِيزِيَّةَ؟",
+    "arapca": "أَيْنَ دَرَسْتَ اللُّغَةَ الإِنْجِلِيزِيَّةَ؟",
     "turkce": "İngilizceyi nerede öğrendin?",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0093.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0093.mp3"
@@ -1831,7 +1831,7 @@
     "seviye": "A1",
     "tema": "Gunluk_Hayat",
     "odak_kalip": "Nefiy Muzâri (لَا) + Cemi Müzekker Sâlim Fâil",
-    "arapca": "لا يَنَامُ الْمُجْتَهِدُونَ نَهَارًا.",
+    "arapca": "لَا يَنَامُ الْمُجْتَهِدُونَ نَهَارًا.",
     "turkce": "Çalışkanlar gündüz uyumazlar.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0167.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0167.mp3"
@@ -3051,8 +3051,8 @@
     "sira": 278,
     "seviye": "A2",
     "tema": "Alisveris_ve_Yemek",
-    "odak_kalip": "Soru (مِنْ أَيْن) + Mâzî (تُنَّ) + Tahkik (لَقَدْ) + Nûn-u Vikaye",
-    "arapca": "مِنْ أَيْن شَتَرَيْتُنَّ حَقَائِبَكُنَّ؟ لَقَدْ أَعْجَبَتْنِي.",
+    "odak_kalip": "Soru (مِنْ أَيْنَ) + Mâzî (تُنَّ) + Tahkik (لَقَدْ) + Nûn-u Vikaye",
+    "arapca": "مِنْ أَيْنَ اشْتَرَيْتُنَّ حَقَائِبَكُنَّ؟ لَقَدْ أَعْجَبَتْنِي.",
     "turkce": "Siz (bayanlar) çantalarınızı nereden satın aldınız? Hoşuma gittiler.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0278.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0278.mp3"
@@ -6506,7 +6506,7 @@
     "seviye": "B1",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Istidrak Atfı (لَكِنْ) Meczum Fiil Sonrası",
-    "arapca": "لَمْ تَنْجَحْ زَيْنَبُ فِي الْاِمْتِحَانِ لَكِنِ فَاطِمَةُ.",
+    "arapca": "لَمْ تَنْجَحْ زَيْنَبُ فِي الْاِمْتِحَانِ لَكِنْ فَاطِمَةُ.",
     "turkce": "Zeynep sınavda başarılı olmadı ama Fatma başarılı oldu.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0592.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0592.mp3"
@@ -7859,7 +7859,7 @@
     "seviye": "B1",
     "tema": "Gunluk_Hayat",
     "odak_kalip": "Nefer Mecrûrdan Sonra Şibh-i Cümle Sıfatı",
-    "arapca": "وَضَعْتُ وَرْدَةً فِي إِناءٍ عَلَى الطَّاوِلَةِ.",
+    "arapca": "وَضَعْتُ وَرْدَةً فِي إِنَاءٍ عَلَى الطَّاوِلَةِ.",
     "turkce": "Masanın üzerindeki bir vazoya bir gül koydum.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0715.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0715.mp3"
@@ -8068,7 +8068,7 @@
     "seviye": "B1",
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "Mukârebe Fiilleri / يَكَادُ",
-    "arapca": "عُثِرَ عَلَى جَزِيرَةٍ جَدِيدَةٍ تَكَادُ تُماثِلُ الْجَنَّةَ.",
+    "arapca": "عُثِرَ عَلَى جَزِيرَةٍ جَدِيدَةٍ تَكَادُ تُمَاثِلُ الْجَنَّةَ.",
     "turkce": "Neredeyse cennetin aynısı yeni bir ada bulundu.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0734.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0734.mp3"
@@ -9828,7 +9828,7 @@
     "seviye": "B2",
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Bedel-i Küll min Küll Marfu",
-    "arapca": "قَدْ تَعِبَتْ عَمَّتُكَ زَيْنَبُ الْيَوْمَ فِي أثْنَاءِ التَّسَوُّقِ.",
+    "arapca": "قَدْ تَعِبَتْ عَمَّتُكَ زَيْنَبُ الْيَوْمَ فِي أَثْنَاءِ التَّسَوُّقِ.",
     "turkce": "Halan Zeynep bugün alışveriş esnasında çok yorulmuş.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0894.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0894.mp3"
@@ -10488,7 +10488,7 @@
     "seviye": "B2",
     "tema": "Seyahat_ve_Ulasim",
     "odak_kalip": "Kâne + Çekinme/Aykırılık Zarfı (مَعَ أَنَّهُ...) + كَثِيرًا مَا",
-    "arapca": "كَانَ الْمُوَظَّفُ، مَعَ أَنَّهُ أَنْقَرِوِيُّ الدَّارِ، كَثِيرًا مَا يَتَرَدَّدُ إِلَى إِسْطَنْبُولَ.",
+    "arapca": "كَانَ الْمُوَظَّفُ، مَعَ أَنَّهُ أَنْقَرَوِيُّ الدَّارِ، كَثِيرًا مَا يَتَرَدَّدُ إِلَى إِسْطَنْبُولَ.",
     "turkce": "Memur Ankaralı olmasına rağmen, İstanbul'a çok gidip geliyordu.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0954.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0954.mp3"
@@ -11049,7 +11049,7 @@
     "seviye": "B1",
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "İsm-i Mevsûl (الَّتِي) + Zarf İzafeti (خِلَالَ)",
-    "arapca": "وَصَلَتِ الْكُتُبُ الَّتِي طَلَبْتُهَا عَبْرَ الْإِنْتَرْنِت بِالشَّحْنِ خِلَالَ يَوْمَيْنِ.",
+    "arapca": "وَصَلَتِ الْكُتُبُ الَّتِي طَلَبْتُهَا عَبْرَ الْإِنْتَرْنِتِ بِالشَّحْنِ خِلَالَ يَوْمَيْنِ.",
     "turkce": "İnternet üzerinden sipariş ettiğim kitaplar iki gün içinde kargoyla ulaştı.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_1005.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_1005.mp3"
@@ -11159,7 +11159,7 @@
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
     "odak_kalip": "Mâzî (وَصَلْنَا بِ) + Şibh-i Cümle Zarf",
-    "arapca": "وَصَلْنَا بِالْقِطَارِ السَّرِيعِ مِنْ قُونِيَةَ إِلَى أَنْقَرَةَ فِي أَقَلَّ مِنْ سَاعَتَيْنِ.",
+    "arapca": "وَصَلْنَا بِالْقِطَارِ السَّرِيعِ مِنْ قُونْيَةَ إِلَى أَنْقَرَةَ فِي أَقَلَّ مِنْ سَاعَتَيْنِ.",
     "turkce": "Hızlı trenle Konya'dan Ankara'ya iki saatten az sürede ulaştık.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_1015.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_1015.mp3"

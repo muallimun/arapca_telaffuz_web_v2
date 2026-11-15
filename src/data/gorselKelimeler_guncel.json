@@ -1489,7 +1489,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A freestanding 3D miniature architectural model of a classical university campus building, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0065_03_universite.webp",
-    "ornek_ar": "يَدْرُسُ أَخِي فِي جَامِعَةِ اِسْطَنْبُولَ.",
+    "ornek_ar": "يَدْرُسُ أَخِي فِي جَامِعَةِ إِسْطَنْبُولَ.",
     "gorsel_betimleme_en_eski": "Historic university campus building with students",
     "ses_erkek": "/sesler/kelimeler/erkek/0065_03_universite.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0065_03_universite.mp3"
@@ -2915,7 +2915,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A freestanding 3D seminar stage platform with three armchairs and microphones, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0127_03_seminer.webp",
-    "ornek_ar": "حَضَرْنَا نَدْوَةً عَنْ التَّكْنُولُوجْيَا.",
+    "ornek_ar": "حَضَرْنَا نَدْوَةً عَنْ التِّكْنُولُوجِيَا.",
     "gorsel_betimleme_en_eski": "Panel discussion seminar stage",
     "ses_erkek": "/sesler/kelimeler/erkek/0127_03_seminer.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0127_03_seminer.mp3"
@@ -18808,7 +18808,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D historic ancient castle structure, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0819_17_koklu.webp",
-    "ornek_ar": "اِسْطَنْبُولُ مَدِينَةٌ عَرِيقَةٌ وَجَمِيلَةٌ.",
+    "ornek_ar": "إِسْطَنْبُولُ مَدِينَةٌ عَرِيقَةٌ وَجَمِيلَةٌ.",
     "gorsel_betimleme_en_eski": "Historic ancient castle structure",
     "ses_erkek": "/sesler/kelimeler/erkek/0819_17_koklu.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0819_17_koklu.mp3"

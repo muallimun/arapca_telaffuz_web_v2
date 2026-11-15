@@ -207,6 +207,7 @@ export interface ResolvedGrammarData {
   linkedLessonUrl: string | null;
   linkedLessonTitle: string | null;
   linkedLevel: Level | null;
+  matchedCanonicalTitle?: string | null;
 }
 
 const ALL_CANONICAL_GRAMMAR_NOTES: GramerHapBilgi[] = [
@@ -214,6 +215,152 @@ const ALL_CANONICAL_GRAMMAR_NOTES: GramerHapBilgi[] = [
   ...diyalogGramerNotlari,
   ...metinGramerNotlari,
 ];
+
+function normalizeGrammarTopicSearch(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[âā]/g, "a")
+    .replace(/[îī]/g, "i")
+    .replace(/[ûū]/g, "u")
+    .replace(/[ê]/g, "e")
+    .replace(/[ô]/g, "o")
+    .replace(/['’‘`´]/g, "")
+    .replace(/[-–—/+&,.:;()[\]{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const GRAMMAR_TOPIC_STOP_WORDS = new Set([
+  "ve",
+  "ile",
+  "veya",
+  "icin",
+  "olan",
+  "bir",
+  "bu",
+  "da",
+  "de",
+  "gore",
+]);
+
+function findBestCanonicalGrammarNoteByTopic(
+  rawTopic: string
+): GramerHapBilgi | null {
+  const rawTrimmed = rawTopic.trim();
+  if (!rawTrimmed) return null;
+
+  const strippedParens = rawTrimmed
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const trOnlyBase = strippedParens
+    .replace(
+      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const normFull = normalizeGrammarTopicSearch(rawTrimmed);
+  const normBase = normalizeGrammarTopicSearch(trOnlyBase || strippedParens);
+  const compactBase = normBase
+    .replace(/\b(ve|ile|veya)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const baseTokens = normBase
+    .split(" ")
+    .filter((w) => w.length >= 3 && !GRAMMAR_TOPIC_STOP_WORDS.has(w));
+  const subPhrases = (trOnlyBase || strippedParens)
+    .split(/[\/+]/)
+    .map((p) => normalizeGrammarTopicSearch(p))
+    .filter((p) => p.length >= 4);
+  const arTokens = extractArabicKeyTokens(rawTrimmed);
+
+  let bestNote: GramerHapBilgi | null = null;
+  let bestScore = 0;
+
+  for (const g of ALL_CANONICAL_GRAMMAR_NOTES) {
+    const titleNorm = normalizeGrammarTopicSearch(g.konu_basligi);
+    const kttNorm = normalizeGrammarTopicSearch(g.ktt_ust_konu || "");
+    const compactTitle = titleNorm
+      .replace(/\b(ve|ile|veya)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const compactKtt = kttNorm
+      .replace(/\b(ve|ile|veya)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const headerNorm = `${titleNorm} ${kttNorm}`.trim();
+    const compactHeader = `${compactTitle} ${compactKtt}`.trim();
+    const ruleNorm = normalizeGrammarTopicSearch(g.hap_kural || "");
+
+    let score = 0;
+
+    if (normFull && (titleNorm === normFull || kttNorm === normFull)) {
+      score += 160;
+    } else if (
+      normBase &&
+      (titleNorm === normBase ||
+        kttNorm === normBase ||
+        compactTitle === compactBase ||
+        compactKtt === compactBase)
+    ) {
+      score += 130;
+    }
+
+    if (
+      normBase.length >= 4 &&
+      (headerNorm.includes(normBase) || normBase.includes(titleNorm))
+    ) {
+      score += 65;
+    } else if (compactBase.length >= 4 && compactHeader.includes(compactBase)) {
+      score += 60;
+    }
+
+    for (const sp of subPhrases) {
+      if (headerNorm.includes(sp)) {
+        score += 28;
+      }
+    }
+
+    let matchedHeaderTokens = 0;
+    let matchedRuleTokens = 0;
+    for (const tok of baseTokens) {
+      if (headerNorm.includes(tok)) matchedHeaderTokens += 1;
+      if (ruleNorm.includes(tok)) matchedRuleTokens += 1;
+    }
+    score += matchedHeaderTokens * 14 + matchedRuleTokens * 4;
+    if (baseTokens.length > 0 && matchedHeaderTokens === baseTokens.length) {
+      score += 30;
+    }
+
+    let matchedArTokens = 0;
+    for (const arTok of arTokens) {
+      if (cleanArabicText(g.konu_basligi).includes(arTok)) {
+        score += 14;
+        matchedArTokens += 1;
+      } else if (
+        cleanArabicText(g.metinden_ornek?.arapca || "").includes(arTok)
+      ) {
+        score += 5;
+        matchedArTokens += 1;
+      }
+    }
+
+    if (score > 0 && g.ayrintili_anlatim?.irab_tahlili?.length) {
+      score += 5;
+    }
+
+    const hasMeaningfulAnchor = matchedHeaderTokens >= 1 || matchedArTokens >= 1;
+    if (hasMeaningfulAnchor && score >= 24 && score > bestScore) {
+      bestScore = score;
+      bestNote = g;
+    }
+  }
+
+  return bestNote;
+}
 
 function enrichNoteWithCanonicalDetail(note: GramerHapBilgi): GramerHapBilgi {
   if (note.ayrintili_anlatim && note.ayrintili_anlatim.dikkat_sik_hata) {
@@ -282,16 +429,18 @@ export function resolveGrammarNoteAndSentences(params: {
   }
 
   if (!resolvedNote && grammarTopic) {
-    const q = grammarTopic.trim().toLowerCase();
-    resolvedNote =
-      ALL_CANONICAL_GRAMMAR_NOTES.find(
-        (g) =>
-          g.konu_basligi.toLowerCase() === q ||
-          g.ktt_ust_konu?.toLowerCase() === q ||
-          g.konu_basligi.toLowerCase().includes(q) ||
-          g.ktt_ust_konu?.toLowerCase().includes(q) ||
-          q.includes(g.konu_basligi.toLowerCase())
-      ) || null;
+    const matchedCanonical = findBestCanonicalGrammarNoteByTopic(grammarTopic);
+    if (matchedCanonical) {
+      const clickedTitle = grammarTopic.trim();
+      resolvedNote =
+        clickedTitle.toLocaleLowerCase("tr-TR") !==
+        matchedCanonical.konu_basligi.trim().toLocaleLowerCase("tr-TR")
+          ? {
+              ...matchedCanonical,
+              konu_basligi: clickedTitle,
+            }
+          : matchedCanonical;
+    }
   }
 
   const matchingSentences = findMatching1111Sentences(
@@ -299,7 +448,7 @@ export function resolveGrammarNoteAndSentences(params: {
     grammarTopic
   );
 
-  // Eğer sadece 1111_cumle odak_kalip etiketi ile açıldıysa ve 180 ana ders notunda birebir başlık yoksa sentetik bir GramerHapBilgi oluştur
+  // Eğer sadece 1111_cumle odak_kalip etiketi ile açıldıysa ve 195 ana ders notunda karşılığı yoksa sentetik bir GramerHapBilgi oluştur
   if (!resolvedNote && grammarTopic) {
     const firstSent = matchingSentences[0];
     const extraSents = matchingSentences.slice(1, 3);
@@ -334,6 +483,19 @@ export function resolveGrammarNoteAndSentences(params: {
   if (resolvedNote) {
     resolvedNote = enrichNoteWithCanonicalDetail(resolvedNote);
   }
+
+  const canonicalByBagliId = resolvedNote?.bagli_id
+    ? ALL_CANONICAL_GRAMMAR_NOTES.find(
+        (g) => g.bagli_id === resolvedNote?.bagli_id
+      ) || null
+    : null;
+  const matchedCanonicalTitle =
+    canonicalByBagliId &&
+    resolvedNote &&
+    canonicalByBagliId.konu_basligi.trim().toLocaleLowerCase("tr-TR") !==
+      resolvedNote.konu_basligi.trim().toLocaleLowerCase("tr-TR")
+      ? canonicalByBagliId.konu_basligi.trim()
+      : null;
 
   const finalId = resolvedNote?.bagli_id || targetId || "";
   let linkedLessonUrl: string | null = null;
@@ -380,6 +542,7 @@ export function resolveGrammarNoteAndSentences(params: {
     linkedLessonUrl,
     linkedLessonTitle,
     linkedLevel,
+    matchedCanonicalTitle,
   };
 }
 
@@ -1996,7 +2159,7 @@ export function GrammarDeepDiveModal({
                 className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-[#065F46] dark:text-emerald-300 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 cursor-pointer min-w-0"
               >
                 <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span className="truncate">🖨️ A4 Ders Föyü (PDF)</span>
+                <span className="truncate">A4 Ders Föyü (PDF)</span>
               </button>
               <a
                 href={buildGrammarWhatsAppShareUrl(
@@ -2012,7 +2175,7 @@ export function GrammarDeepDiveModal({
                 className="min-h-[36px] sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border-2 border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 text-[11px] sm:text-xs font-black inline-flex items-center justify-center gap-1.5 min-w-0"
               >
                 <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1da851] shrink-0" />
-                <span className="truncate">📲 WhatsApp&apos;ta Paylaş</span>
+                <span className="truncate">WhatsApp&apos;ta Paylaş</span>
               </a>
               <Link
                 href={`/alistirmalar?pool=sentences_1111${
@@ -2116,6 +2279,7 @@ export function GrammarHapBilgiPanel({
     linkedLessonUrl,
     linkedLessonTitle,
     linkedLevel,
+    matchedCanonicalTitle,
   } = useMemo(
     () =>
       resolveGrammarNoteAndSentences({
@@ -2238,12 +2402,12 @@ export function GrammarHapBilgiPanel({
 
   return (
     <div className="w-full max-w-full min-w-0 space-y-3.5 sm:space-y-5 animate-in fade-in duration-300 overflow-x-hidden">
-      {/* 0. A1 BAŞLANGIÇ İPUCU (SEZDİRME) KATMANI — A1 KARTLARININ EN ÜSTÜNDE */}
-      {isA1Level && (
+      {/* 0. A1 BAŞLANGIÇ İPUCU (SEZDİRME) KATMANI — YALNIZCA A1 VE SADE ANLATIM MODUNDA */}
+      {isA1Level && isSimpleMode && (
         <div
           dir="ltr"
           lang="tr"
-          className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50/90 dark:bg-emerald-950/45 p-3.5 sm:p-5 space-y-2 text-left"
+          className="w-full max-w-full min-w-0 box-border rounded-2xl sm:rounded-3xl border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50/90 dark:bg-emerald-950/45 p-3 sm:p-4 space-y-1.5 text-left"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-sans text-xs sm:text-sm font-black text-[#065F46] dark:text-emerald-300">
@@ -2254,13 +2418,8 @@ export function GrammarHapBilgiPanel({
             </span>
           </div>
           <p className="font-sans text-xs sm:text-sm font-semibold text-emerald-950 dark:text-emerald-100 leading-relaxed">
-            Bu ders A1 (Başlangıç) düzeyindedir. Şu aşamada derin sarf, nahiv veya i&apos;rab terimlerini ezberlemenize hiç gerek yoktur; aşağıdaki cümle kalıbını anlamı ve sesiyle tanımanız fazlasıyla yeterlidir.
+            Bu ders A1 (Başlangıç) düzeyindedir. Derin sarf ve nahiv terimlerini ezberlemenize gerek yoktur; aşağıdaki kuralı ve sesli örnek kalıbı anlamıyla tanımanız yeterlidir.
           </p>
-          <div className="rounded-xl bg-white/95 dark:bg-[var(--background)] border border-emerald-300 dark:border-emerald-700 p-3 font-sans text-xs sm:text-sm font-bold text-[var(--foreground)] leading-relaxed">
-            {renderTurkishWithIsolatedArabic(
-              simplifyGrammarTerminology(activeNote.hap_kural)
-            )}
-          </div>
         </div>
       )}
 
@@ -2310,7 +2469,7 @@ export function GrammarHapBilgiPanel({
                     className="min-h-[34px] px-2.5 py-1 rounded-xl bg-white dark:bg-[var(--background)] border border-[#087F5B]/60 hover:border-[#087F5B] text-[#065F46] dark:text-emerald-300 font-extrabold text-[11px] inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Printer className="w-3.5 h-3.5 shrink-0" />
-                    <span>🖨️ A4 Ders Föyü (PDF)</span>
+                    <span>A4 Ders Föyü (PDF)</span>
                   </button>
                   <a
                     href={buildGrammarWhatsAppShareUrl(
@@ -2327,7 +2486,7 @@ export function GrammarHapBilgiPanel({
                     className="min-h-[34px] px-2.5 py-1 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 font-extrabold text-[11px] inline-flex items-center gap-1.5 transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5 text-[#1da851] shrink-0" />
-                    <span>📲 WhatsApp&apos;ta Paylaş</span>
+                    <span>WhatsApp&apos;ta Paylaş</span>
                   </a>
                   {onOpenSplitView && (
                     <button
@@ -2375,7 +2534,7 @@ export function GrammarHapBilgiPanel({
                 className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#087F5B]/60 hover:border-[#087F5B] text-[#065F46] dark:text-emerald-300 font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Printer className="w-3.5 h-3.5 shrink-0" />
-                <span>🖨️ A4 Ders Föyü (PDF)</span>
+                <span>A4 Ders Föyü (PDF)</span>
               </button>
               <a
                 href={buildGrammarWhatsAppShareUrl(
@@ -2392,9 +2551,24 @@ export function GrammarHapBilgiPanel({
                 className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#1da851]/50 text-emerald-950 dark:text-emerald-200 font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-colors"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-[#1da851] shrink-0" />
-                <span>📲 WhatsApp&apos;ta Paylaş</span>
+                <span>WhatsApp&apos;ta Paylaş</span>
               </a>
             </div>
+          </div>
+        )}
+
+        {matchedCanonicalTitle && (
+          <div
+            dir="ltr"
+            lang="tr"
+            className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-[11px] font-bold text-[#065F46] dark:text-emerald-300"
+          >
+            <span>Ana Gramer Konusu:</span>
+            <strong className="font-extrabold">
+              {renderTurkishWithIsolatedArabic(
+                formatByDepth(matchedCanonicalTitle)
+              )}
+            </strong>
           </div>
         )}
 
@@ -3321,6 +3495,11 @@ export interface GrammarHapBilgiModalProps {
   grammarTopic?: string;
   initialViewMode?: GrammarWindowViewMode;
   initialInteractivePracticeOpen?: boolean;
+  elevatedOverModal?: boolean;
+  onStateChange?: (state: {
+    viewMode: GrammarWindowViewMode;
+    side: "left" | "right";
+  }) => void;
   onOpenShadowing?: (arabicText: string, turkishText?: string) => void;
 }
 
@@ -3334,12 +3513,23 @@ export function GrammarHapBilgiModal({
   grammarTopic,
   initialViewMode = "drawer",
   initialInteractivePracticeOpen = false,
+  elevatedOverModal = false,
+  onStateChange,
   onOpenShadowing,
 }: GrammarHapBilgiModalProps) {
   const { grammarDepthMode, setGrammarDepthMode } = useSettings();
   const [viewMode, setViewMode] =
     useState<GrammarWindowViewMode>(initialViewMode);
   const [drawerSide, setDrawerSide] = useState<"left" | "right">("right");
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    onStateChangeRef.current?.({ viewMode, side: drawerSide });
+  }, [isOpen, viewMode, drawerSide]);
 
   useEscapeKey(() => {
     stopAllAudio();
@@ -3366,8 +3556,12 @@ export function GrammarHapBilgiModal({
     <div
       className={
         isSmartboard
-          ? "fixed inset-0 z-[90] bg-black/70 backdrop-blur-xs flex items-center justify-center p-0 lg:p-4 overflow-hidden animate-in fade-in duration-200"
-          : `fixed inset-0 lg:top-[var(--header-height,56px)] z-[85] lg:z-[45] lg:pointer-events-none flex items-end lg:items-stretch ${
+          ? `fixed inset-0 ${
+              elevatedOverModal ? "z-[95]" : "z-[90]"
+            } bg-black/70 backdrop-blur-xs flex items-center justify-center p-0 lg:p-4 overflow-hidden animate-in fade-in duration-200`
+          : `fixed inset-0 lg:top-[var(--header-height,56px)] z-[85] ${
+              elevatedOverModal ? "lg:z-[95]" : "lg:z-[45]"
+            } lg:pointer-events-none flex items-end lg:items-stretch ${
               drawerSide === "left" ? "lg:justify-start" : "lg:justify-end"
             } overflow-hidden`
       }

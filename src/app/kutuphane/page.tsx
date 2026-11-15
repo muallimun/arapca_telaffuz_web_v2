@@ -269,6 +269,15 @@ export default function LibraryPage() {
     grammarTopic?: string;
     initialInteractivePracticeOpen?: boolean;
   } | null>(null);
+  const [grammarModalUiState, setGrammarModalUiState] = useState<{
+    viewMode: "drawer" | "smartboard";
+    side: "left" | "right";
+  }>({ viewMode: "drawer", side: "right" });
+  const hasActiveGrammarModal = Boolean(activeGrammarModal);
+  const isGrammarDrawerActive =
+    hasActiveGrammarModal && grammarModalUiState.viewMode === "drawer";
+  const isDesktopGrammarDrawerDocked =
+    isGrammarDrawerActive && selectedCardIndex === null;
 
   const [youtubeCategoryFilter, setYoutubeCategoryFilter] = useState<
     YoutubeCategory | "all"
@@ -1192,6 +1201,7 @@ export default function LibraryPage() {
   useEffect(() => {
     if (selectedCardIndex === null || activeModalListLength === 0) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeGrammarModal) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         playClick();
@@ -1244,6 +1254,7 @@ export default function LibraryPage() {
     filteredProverbs,
     filteredSentences,
     lightboxImage,
+    activeGrammarModal,
   ]);
 
   const handleToggleSequentialPlay = async (
@@ -1772,7 +1783,15 @@ export default function LibraryPage() {
   };
 
   return (
-    <div className="tr-scale space-y-3 sm:space-y-4">
+    <div
+      className={`tr-scale space-y-3 sm:space-y-4 transition-[padding] duration-200 ${
+        isDesktopGrammarDrawerDocked
+          ? grammarModalUiState.side === "left"
+            ? "lg:pl-[422px]"
+            : "lg:pr-[422px]"
+          : ""
+      }`}
+    >
       {/* GÖLGELEME MODALI */}
       {shadowingTarget && (
         <ShadowingModal
@@ -2091,7 +2110,13 @@ export default function LibraryPage() {
               onClick={() => setSelectedCardIndex(null)}
             >
               <div
-                className="relative w-[95vw] max-h-[92vh] rounded-2xl sm:w-[90vw] lg:w-[85vw] max-w-[1500px] sm:h-[85vh] sm:max-h-[88vh] sm:rounded-3xl flex flex-col justify-between overflow-hidden shadow-2xl border-2 border-[#E2D4B7] bg-[#FDFBF7] dark:bg-[var(--surface)] dark:border-[var(--border)]"
+                className={`relative w-[95vw] max-h-[92vh] rounded-2xl sm:w-[90vw] ${
+                  isGrammarDrawerActive
+                    ? grammarModalUiState.side === "left"
+                      ? "lg:ml-[420px] lg:w-[calc(95vw-440px)] lg:max-w-[calc(95vw-440px)]"
+                      : "lg:mr-[420px] lg:w-[calc(95vw-440px)] lg:max-w-[calc(95vw-440px)]"
+                    : "lg:w-[85vw] max-w-[1500px]"
+                } sm:h-[85vh] sm:max-h-[88vh] sm:rounded-3xl flex flex-col justify-between overflow-hidden shadow-2xl border-2 border-[#E2D4B7] bg-[#FDFBF7] dark:bg-[var(--surface)] dark:border-[var(--border)] transition-all duration-200`}
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => {
                   touchStartXRef.current = e.touches[0]?.clientX ?? null;
@@ -4566,7 +4591,13 @@ export default function LibraryPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 ${
+                isDesktopGrammarDrawerDocked
+                  ? "lg:grid-cols-2"
+                  : "lg:grid-cols-3"
+              } gap-4`}
+            >
               {filteredDialogues.map((dlg) => {
                 const dlgNo = String(
                   dlg.sira || parseInt(dlg.id.replace("dlg_", ""), 10) || 1
@@ -4674,7 +4705,7 @@ export default function LibraryPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <button
                           type="button"
                           onClick={() => {
@@ -4750,19 +4781,19 @@ export default function LibraryPage() {
                           href={`/alistirmalar?pool=all_dialogues&dialogueId=${dlg.id}`}
                           onClick={() => playClick()}
                           title="Bu Diyalogla Alıştırma Yap"
-                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0"
+                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
                         >
                           <Gamepad2 size={14} />
-                          <span className="hidden sm:inline">Alıştırma</span>
+                          <span className="hidden xl:inline">Alıştırma</span>
                         </Link>
 
                         <Link
                           href={`/diyalog/${dlg.id}`}
                           onClick={() => playClick()}
-                          className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
+                          className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                         >
                           <span>Diyaloğu Aç</span>
-                          <ArrowRight size={14} />
+                          <ArrowRight size={14} className="shrink-0" />
                         </Link>
                       </div>
 
@@ -4803,8 +4834,8 @@ export default function LibraryPage() {
                                 </>
                               ) : (
                                 <>
-                                  <Download size={12} className="text-[#065F46]" />
-                                  <span>📥 Çevrimdışı İndir (~{estMb} MB)</span>
+                                  <Download size={12} className="text-[#065F46] shrink-0" />
+                                  <span>Çevrimdışı İndir (~{estMb} MB)</span>
                                 </>
                               )}
                             </button>
@@ -4830,7 +4861,13 @@ export default function LibraryPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 ${
+                isDesktopGrammarDrawerDocked
+                  ? "lg:grid-cols-2"
+                  : "lg:grid-cols-3"
+              } gap-4`}
+            >
               {filteredTexts.map((txt) => {
                 const txtNo = txt.id.replace("metin_", "");
                 const imagePath = txt.gorsel || getReadingTextCoverUrl(txt.id);
@@ -4991,19 +5028,19 @@ export default function LibraryPage() {
                           href={`/alistirmalar?pool=reading_texts&readingId=${txt.id}`}
                           onClick={() => playClick()}
                           title="Bu Metinle Alıştırma Yap"
-                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0"
+                          className="h-9 px-2.5 rounded-xl bg-[#F3F0FF] dark:bg-indigo-950/70 border-2 border-[#6741D9] border-b-3 text-xs font-extrabold text-[#6741D9] dark:text-indigo-200 flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
                         >
                           <Gamepad2 size={14} />
-                          <span className="hidden sm:inline">Alıştırma</span>
+                          <span className="hidden xl:inline">Alıştırma</span>
                         </Link>
 
                         <Link
                           href={`/metin/${txt.id}`}
                           onClick={() => playClick()}
-                          className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5"
+                          className="flex-1 h-9 px-3 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white font-bold text-xs border-b-3 border-[#065F46] flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                         >
                           <span>Metni Oku</span>
-                          <ArrowRight size={14} />
+                          <ArrowRight size={14} className="shrink-0" />
                         </Link>
                       </div>
                     </div>
@@ -5088,7 +5125,13 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              isDesktopGrammarDrawerDocked
+                ? "lg:grid-cols-1 xl:grid-cols-2"
+                : ""
+            } gap-3.5`}
+          >
             {filteredSentences.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const itemLevel = item.seviye || item.cefr || "A1";
@@ -5417,7 +5460,11 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              isDesktopGrammarDrawerDocked ? "lg:grid-cols-2" : ""
+            } gap-4`}
+          >
             {filteredProverbs.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const imgUrl = item.gorsel || getProverbCoverUrl(item.id);
@@ -5763,7 +5810,11 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              isDesktopGrammarDrawerDocked ? "lg:grid-cols-2" : ""
+            } gap-4`}
+          >
             {filteredVisualWords.slice(0, visibleCount).map((item, idx) => {
               const isPlaying = playingItemId === item.id;
               const imgUrl = item.gorsel || getVisualWordCoverUrl(item);
@@ -6633,7 +6684,11 @@ export default function LibraryPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 ${
+                  isDesktopGrammarDrawerDocked ? "lg:grid-cols-2" : ""
+                } gap-4`}
+              >
                 {filteredGrammarAtlasItems.slice(0, visibleCount).map((gItem) => {
                   const isHighlighted =
                     highlightedGrammarCardId === gItem.bagliId;
@@ -6935,6 +6990,8 @@ export default function LibraryPage() {
         initialInteractivePracticeOpen={Boolean(
           activeGrammarModal?.initialInteractivePracticeOpen
         )}
+        elevatedOverModal={selectedCardIndex !== null}
+        onStateChange={setGrammarModalUiState}
         onOpenShadowing={(ar) => setShadowingTarget({ text: ar })}
       />
 
@@ -7305,7 +7362,13 @@ export default function LibraryPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 ${
+                  isDesktopGrammarDrawerDocked
+                    ? "lg:grid-cols-2"
+                    : "lg:grid-cols-3"
+                } gap-4`}
+              >
                 {filteredYoutubeItems.slice(0, visibleCount).map((ytItem) => (
                   <LiteYoutubeCard
                     key={ytItem.id}
@@ -7392,7 +7455,11 @@ export default function LibraryPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 ${
+                  isDesktopGrammarDrawerDocked ? "lg:grid-cols-2" : ""
+                } gap-4`}
+              >
                 {filteredSynonymsAntonyms
                   .slice(0, visibleCount)
                   .map((entry) => {

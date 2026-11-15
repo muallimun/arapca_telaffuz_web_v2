@@ -7941,4 +7941,105 @@ test("67. ⚡ Görsel Hız Seansı (VisualSwipeSprintGame — سِبَاقُ ا�
   );
 });
 
+test("68. Kütüphane ve Gramer Yan Paneli: Büyük Kart Modalı Z-Katmanı & Esc Önceliği, Split Push Düzeni, A1 Özet Tekilleştirmesi, Terim Parantez Tekrarı Temizliği ve Akıllı Odak Kalıp Eşleşmesi", async () => {
+  const kutuphaneCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  const grammarPanelCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GrammarHapBilgiPanel.tsx"),
+    "utf8"
+  );
+
+  // 1. Büyük kart modalı üzerinde açılan gramer penceresinin katman ve Esc sırası
+  assert.equal(
+    grammarPanelCode.includes("elevatedOverModal?: boolean") &&
+      grammarPanelCode.includes('elevatedOverModal ? "lg:z-[95]" : "lg:z-[45]"') &&
+      kutuphaneCode.includes("elevatedOverModal={selectedCardIndex !== null}") &&
+      kutuphaneCode.includes("if (activeGrammarModal) return;") &&
+      kutuphaneCode.includes("lg:mr-[420px] lg:w-[calc(95vw-440px)]"),
+    true,
+    "Büyük kart modalı açıkken GrammarHapBilgiModal lg:z-[95] katmanına çıkmalı, yan yana hizalanmalı ve Esc tuşu önce gramer penceresini kapatmalıdır"
+  );
+
+  // 2. Kütüphane masaüstü Split Push düzeni
+  assert.equal(
+    grammarPanelCode.includes("onStateChange?:") &&
+      kutuphaneCode.includes("isDesktopGrammarDrawerDocked") &&
+      kutuphaneCode.includes("lg:pr-[422px]") &&
+      kutuphaneCode.includes("lg:pl-[422px]") &&
+      kutuphaneCode.includes("lg:grid-cols-1 xl:grid-cols-2"),
+    true,
+    "Kütüphane sayfası gramer çekmecesi açıkken sağdan/soldan 422px push boşluğu bırakmalı ve kart ızgaralarını daraltmalıdır"
+  );
+
+  // 3. A1 Başlangıç Özeti yalnızca sade modda ve mükerrer hap_kural kutusu olmadan görünmeli
+  assert.equal(
+    grammarPanelCode.includes("{isA1Level && isSimpleMode && (") &&
+      !grammarPanelCode.includes(
+        "simplifyGrammarTerminology(activeNote.hap_kural)"
+      ),
+    true,
+    "A1 Başlangıç Özeti yalnızca Sade Anlatım modunda görünmeli ve içindeki mükerrer hap_kural beyaz kutusu kaldırılmış olmalıdır"
+  );
+
+  // 4. simplifyGrammarTerminology parantez içi mükerrer terim temizliği
+  const { simplifyGrammarTerminology } = await import(
+    "../src/lib/arabicTextUtils.ts"
+  );
+  assert.equal(
+    simplifyGrammarTerminology(
+      "Cümlede etkilenen nesne (Mef'ûlün Bih) daima üstünlüdür."
+    ),
+    "Cümlede etkilenen nesne daima üstünlüdür.",
+    "simplifyGrammarTerminology 'etkilenen nesne (Etkilenen Nesne)' tekrarını tekilleştirmelidir"
+  );
+  assert.equal(
+    simplifyGrammarTerminology("tamlayan isim (Muzâfun İleyh)"),
+    "tamlayan isim",
+    "simplifyGrammarTerminology 'tamlayan isim (Tamlayan İsim)' tekrarını tekilleştirmelidir"
+  );
+
+  // 5. 1111 Cümle odak_kalip -> Ana gramer kartı akıllı kanonik eşleştirme
+  const { resolveGrammarNoteAndSentences } = await import(
+    "../src/components/ui/GrammarHapBilgiPanel.tsx"
+  );
+  const resolvedMubteda = resolveGrammarNoteAndSentences({
+    grammarTopic: "Mübteda ve Haber (Müennes)",
+  });
+  assert.ok(resolvedMubteda.resolvedNote, "Mübteda ve Haber (Müennes) çözümlenmelidir");
+  assert.equal(
+    resolvedMubteda.resolvedNote.konu_basligi,
+    "Mübteda ve Haber (Müennes)",
+    "Üst başlıkta tıklanan özel odak_kalip korunmalıdır"
+  );
+  assert.ok(
+    resolvedMubteda.matchedCanonicalTitle &&
+      resolvedMubteda.matchedCanonicalTitle.length > 0,
+    "Eşleşen ana gramer kartının başlığı matchedCanonicalTitle olarak döndürülmelidir"
+  );
+  assert.equal(
+    resolvedMubteda.resolvedNote.hap_kural.includes(
+      "Arapçada cümle kurarken kelimeler arasındaki görev"
+    ),
+    false,
+    "Parantezli odak_kalip jenerik şablon yerine gerçek kanonik hap_kural metnini yüklemelidir"
+  );
+  assert.ok(
+    (resolvedMubteda.resolvedNote.ayrintili_anlatim?.irab_tahlili?.length || 0) > 0,
+    "Eşleşen kanonik gramer kartının gerçek i'rab tahlili yüklenmelidir"
+  );
+
+  // 6. Çift ikon temizliği ve tek satır Diyaloğu Aç butonu
+  assert.equal(
+    !grammarPanelCode.includes("🖨️ A4 Ders Föyü (PDF)") &&
+      !grammarPanelCode.includes("📲 WhatsApp") &&
+      !kutuphaneCode.includes("📥 Çevrimdışı İndir") &&
+      kutuphaneCode.includes("whitespace-nowrap shrink-0"),
+    true,
+    "GrammarHapBilgiPanel ve Diyalog kartlarındaki çift ikon (SVG + emoji) tekrarları temizlenmiş ve Diyaloğu Aç butonu tek satıra sabitlenmiş olmalıdır"
+  );
+});
+
+
 

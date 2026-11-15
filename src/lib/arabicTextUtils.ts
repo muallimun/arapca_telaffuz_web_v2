@@ -973,6 +973,20 @@ export function simplifyGrammarTerminology(text: string): string {
   for (const [pattern, replacement] of SIMPLE_TERMINOLOGY_RULES) {
     out = out.replace(pattern, replacement);
   }
+  out = out.replace(
+    /([\p{L}]+(?:\s+[\p{L}]+){0,4})\s*\(\s*([\p{L}]+(?:\s+[\p{L}]+){0,4})\s*\)/gu,
+    (fullMatch, beforeRaw: string, insideRaw: string) => {
+      const insideWords = insideRaw.trim().split(/\s+/);
+      const beforeWords = beforeRaw.trim().split(/\s+/);
+      if (beforeWords.length < insideWords.length) return fullMatch;
+      const tailWords = beforeWords.slice(
+        beforeWords.length - insideWords.length
+      );
+      const tailNorm = tailWords.join(" ").toLocaleLowerCase("tr-TR");
+      const insideNorm = insideWords.join(" ").toLocaleLowerCase("tr-TR");
+      return tailNorm === insideNorm ? beforeRaw : fullMatch;
+    }
+  );
   return out;
 }
 

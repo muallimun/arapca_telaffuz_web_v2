@@ -1321,7 +1321,7 @@
       },
       {
         "sira": 5,
-        "arapca": "تَجَوَّلْنَا فِي السُّوقِ المَسْقُوفِ الكَبِيرِ لِشِرَاءِ الهَدَايَا التِذْكَارِيَّةِ لِلأَهْلِ.",
+        "arapca": "تَجَوَّلْنَا فِي السُّوقِ المَسْقُوفِ الكَبِيرِ لِشِرَاءِ الهَدَايَا التِّذْكَارِيَّةِ لِلأَهْلِ.",
         "turkce": "Aileye hediyelik eşyalar satın almak için büyük Kapalıçarşı'da dolaştık.",
         "ses_dosyasi": "/sesler/metinler/metin_22/satir_05.mp3"
       },
@@ -1348,7 +1348,7 @@
       {
         "soru_ar": "لِمَاذَا تَجَوَّلُوا فِي السُّوقِ المَسْقُوفِ؟",
         "soru_tr": "Niçin Kapalıçarşı'da dolaştılar?",
-        "cevap_ar": "لِشِرَاءِ الهَدَايَا التِذْكَارِيَّةِ.",
+        "cevap_ar": "لِشِرَاءِ الهَدَايَا التِّذْكَارِيَّةِ.",
         "cevap_tr": "Hediyelik eşyalar satın almak için."
       }
     ]
@@ -2010,7 +2010,7 @@
       },
       {
         "sira": 7,
-        "arapca": "الرِّيَاضَةُ تَمْنَحُ الجِسْمَ القُوَّةَ وَتَزِيدُ الصَدَاقَةَ بَيْنَ الشَبَابِ.",
+        "arapca": "الرِّيَاضَةُ تَمْنَحُ الجِسْمَ القُوَّةَ وَتَزِيدُ الصَّدَاقَةَ بَيْنَ الشَّبَابِ.",
         "turkce": "Spor bedene güç verir ve gençler arasında dostluğu artırır.",
         "ses_dosyasi": "/sesler/metinler/metin_32/satir_07.mp3"
       }
@@ -2522,7 +2522,7 @@
       },
       {
         "sira": 3,
-        "arapca": "صَعِدْنَا إِلَى جَبَلِ أُولُودَاغَ الكَبِيرِ بِالْتَلَفَرِيكِ السَّرِيعِ المُمْتِعِ.",
+        "arapca": "صَعِدْنَا إِلَى جَبَلِ أُولُودَاغَ الكَبِيرِ بِالتَّلَفَرِيكِ السَّرِيعِ المُمْتِعِ.",
         "turkce": "Eğlenceli hızlı teleferikle büyük Uludağ'a çıktık.",
         "ses_dosyasi": "/sesler/metinler/metin_40/satir_03.mp3"
       },
@@ -2555,7 +2555,7 @@
       {
         "soru_ar": "كَيْفَ صَعِدُوا إِلَى جَبَلِ أُولُودَاغَ؟",
         "soru_tr": "Uludağ'a nasıl çıktılar?",
-        "cevap_ar": "صَعِدُوا بِالْتَلَفَرِيكِ.",
+        "cevap_ar": "صَعِدُوا بِالتَّلَفَرِيكِ.",
         "cevap_tr": "Teleferikle çıktılar."
       },
       {
@@ -2802,7 +2802,7 @@
       },
       {
         "sira": 2,
-        "arapca": "تُجْمَعُ النِّفَايَاتُ البْلَاسْتِيكِيَّةُ وَالوَرَقِيَّةُ الَّتِي تُرْمَى فِي الصَنَادِيقِ المُنَظَّمَةِ لِتَصْنِيعِهَا.",
+        "arapca": "تُجْمَعُ النِّفَايَاتُ البْلَاسْتِيكِيَّةُ وَالوَرَقِيَّةُ الَّتِي تُرْمَى فِي الصَّنَادِيقِ المُنَظَّمَةِ لِتَصْنِيعِهَا.",
         "turkce": "Düzenli kutulara atılan plastik ve kağıt atıklar yeniden üretilmek üzere toplanır.",
         "ses_dosyasi": "/sesler/metinler/metin_44/satir_02.mp3"
       },
@@ -2954,7 +2954,7 @@
       },
       {
         "sira": 3,
-        "arapca": "إِذَا عَمِلَ المَوْظَّفُ بِإِتْقَانٍ وَأَمَانَةٍ فَسَوْفَ يَنَالُ احْتِرَامَ الجَمِيعِ فِي الشَرِكَةِ.",
+        "arapca": "إِذَا عَمِلَ المَوْظَّفُ بِإِتْقَانٍ وَأَمَانَةٍ فَسَوْفَ يَنَالُ احْتِرَامَ الجَمِيعِ فِي الشَّرِكَةِ.",
         "turkce": "Eğer çalışan sağlamlık ve dürüstlükle çalışırsa şirkette herkesin saygısını kazanır.",
         "ses_dosyasi": "/sesler/metinler/metin_46/satir_03.mp3"
       },
@@ -3057,7 +3057,7 @@
       },
       {
         "sira": 8,
-        "arapca": "الوِقَايَةُ وَالحَذَرُ الشَّدِيدُ كِلَاهُمَا الأَسَاسُ الصَحِيحُ لِلْحِفَاظِ عَلَى السَّلَامَةِ العَامَّةِ.",
+        "arapca": "الوِقَايَةُ وَالحَذَرُ الشَّدِيدُ كِلَاهُمَا الأَسَاسُ الصَّحِيحُ لِلْحِفَاظِ عَلَى السَّلَامَةِ العَامَّةِ.",
         "turkce": "Korunma ve aşırı dikkat ikisi de genel güvenliği korumanın doğru esasıdır.",
         "ses_dosyasi": "/sesler/metinler/metin_47/satir_08.mp3"
       }
@@ -3349,7 +3349,7 @@
       },
       {
         "sira": 8,
-        "arapca": "تُشَجَّعُ المَشَارِيعُ الخَضْرَاءُ التِي تَهْدِفُ إِلَى اسْتِخْدَامِ الطَّاقَةِ النَّظِيفَةِ لِلتَّقْلِيلِ مِنَ الانْبِعَاثَاتِ الكَرْبُونِيَّةِ الضَّارَّةِ صِحِيّاً.",
+        "arapca": "تُشَجَّعُ المَشَارِيعُ الخَضْرَاءُ الَّتِي تَهْدِفُ إِلَى اسْتِخْدَامِ الطَّاقَةِ النَّظِيفَةِ لِلتَّقْلِيلِ مِنَ الانْبِعَاثَاتِ الكَرْبُونِيَّةِ الضَّارَّةِ صِحِيّاً.",
         "turkce": "Sağlığa zararlı karbon emisyonlarını azaltmak için temiz enerji kullanmayı hedefleyen yeşil projeler teşvik edilmektedir.",
         "ses_dosyasi": "/sesler/metinler/metin_51/satir_08.mp3"
       },
@@ -3428,13 +3428,13 @@
       },
       {
         "sira": 7,
-        "arapca": "تُفَضَّلُ المِهَنُ التِي تَعْتَمِدُ عَلَى الإِبْدَاعِ وَالتَّفْكِيرِ النَّاقِدِ إِذْ لَا يَسْتَطِيعُ الحَاسُوبُ اسْتِبْدَالَهَا بِالسُّهُولَةِ فِي العَمَلِ.",
+        "arapca": "تُفَضَّلُ المِهَنُ الَّتِي تَعْتَمِدُ عَلَى الإِبْدَاعِ وَالتَّفْكِيرِ النَّاقِدِ إِذْ لَا يَسْتَطِيعُ الحَاسُوبُ اسْتِبْدَالَهَا بِالسُّهُولَةِ فِي العَمَلِ.",
         "turkce": "İşte bilgisayar kolaylıkla onları değiştiremediği için yaratıcılık ve eleştirel düşünceye dayanan meslekler tercih edilir.",
         "ses_dosyasi": "/sesler/metinler/metin_52/satir_07.mp3"
       },
       {
         "sira": 8,
-        "arapca": "يَنْبَغِي لِلْمُتَعَلِّمِينَ اكْتِسَابُ المَعَارِفِ الحَدِيثَةِ لِكَيْ يُوَاكِبُوا التَّغَيُّرَاتِ التِكْنُولُوجِيَّةَ المُمْتَدَّةَ فِي المَسَارَاتِ المِهْنِيَّةِ.",
+        "arapca": "يَنْبَغِي لِلْمُتَعَلِّمِينَ اكْتِسَابُ المَعَارِفِ الحَدِيثَةِ لِكَيْ يُوَاكِبُوا التَّغَيُّرَاتِ التِّكْنُولُوجِيَّةَ المُمْتَدَّةَ فِي المَسَارَاتِ المِهْنِيَّةِ.",
         "turkce": "Öğrenicilerin mesleki kulvarlarda uzayıp giden teknolojik değişimlere ayak uydurabilmeleri için modern bilgileri edinmeleri gerekir.",
         "ses_dosyasi": "/sesler/metinler/metin_52/satir_08.mp3"
       },
@@ -3489,7 +3489,7 @@
       },
       {
         "sira": 3,
-        "arapca": "تُشْرَحُ الأَمْرَاضُ المَعْدِيَةُ دَقِيقَةً فِي كُتُبِهِ رَغْمَ نَقْصِ الأَدَوَاتِ التِكْنُولُوجِيَّةِ فِي ذلِكَ الزَّمَنِ القَدِيمِ.",
+        "arapca": "تُشْرَحُ الأَمْرَاضُ المَعْدِيَةُ دَقِيقَةً فِي كُتُبِهِ رَغْمَ نَقْصِ الأَدَوَاتِ التِّكْنُولُوجِيَّةِ فِي ذلِكَ الزَّمَنِ القَدِيمِ.",
         "turkce": "O eski zamandaki teknolojik araç eksikliğine rağmen bulaşıcı hastalıklar onun kitaplarında detaylıca açıklanmaktadır.",
         "ses_dosyasi": "/sesler/metinler/metin_53/satir_03.mp3"
       },
@@ -3677,7 +3677,7 @@
       },
       {
         "sira": 6,
-        "arapca": "تُسْتَخْدَمُ التِكْنُولُوجِيَا الحَدِيثَةُ لِتَخْزِينِ الطَّاقَةِ المَوْلَدَةِ لِكَيْ تُسْتَهْلَكَ فِي الأَوْقَاتِ المَظْلِمَةِ فِي المَدِينَةِ.",
+        "arapca": "تُسْتَخْدَمُ التِّكْنُولُوجِيَا الحَدِيثَةُ لِتَخْزِينِ الطَّاقَةِ المَوْلَدَةِ لِكَيْ تُسْتَهْلَكَ فِي الأَوْقَاتِ المَظْلِمَةِ فِي المَدِينَةِ.",
         "turkce": "Şehirde karanlık vakitlerde tüketilsin diye üretilen enerjiyi depolamak için modern teknoloji kullanılır.",
         "ses_dosyasi": "/sesler/metinler/metin_55/satir_06.mp3"
       },
@@ -3689,7 +3689,7 @@
       },
       {
         "sira": 8,
-        "arapca": "تُشَجَّعُ الأَبْحَاثُ العِلْمِيَّةُ التِي تَهْدِفُ إِلَى تَطْوِيرِ كَفَاءَةِ الأَلْوَاحِ الشَّمْسِيَّةِ فِي المَعَاهِدِ العَلِيَا.",
+        "arapca": "تُشَجَّعُ الأَبْحَاثُ العِلْمِيَّةُ الَّتِي تَهْدِفُ إِلَى تَطْوِيرِ كَفَاءَةِ الأَلْوَاحِ الشَّمْسِيَّةِ فِي المَعَاهِدِ العَلِيَا.",
         "turkce": "Yüksek enstitülerde güneş panellerinin verimliliğini geliştirmeyi hedefleyen bilimsel araştırmalar teşvik edilir.",
         "ses_dosyasi": "/sesler/metinler/metin_55/satir_08.mp3"
       },
@@ -3714,7 +3714,7 @@
         "cevap_tr": "Çöllerde kurulur."
       },
       {
-        "soru_ar": "لِمَاذَا تُسْتَخْدَمُ التِكْنُولُوجِيَا فِي التَّخْزِينِ؟",
+        "soru_ar": "لِمَاذَا تُسْتَخْدَمُ التِّكْنُولُوجِيَا فِي التَّخْزِينِ؟",
         "soru_tr": "Teknoloji depolamada niçin kullanılır?",
         "cevap_ar": "لِكَيْ تُسْتَهْلَكَ فِي الأَوْقَاتِ المَظْلِمَةِ.",
         "cevap_tr": "Karanlık vakitlerde tüketilsin diye."
@@ -3750,7 +3750,7 @@
       },
       {
         "sira": 4,
-        "arapca": "تُكَلِّفُ المَهَامُ الفَضَائِيَّةُ أَمْوَالاً هَائِلَةً بَيْدَ أَنَّ الفَوَائِدَ التِكْنُولُوجِيَّةَ المُكْتَسَبَةَ عَظِيمَةٌ جِدًّا لِلْمُجْتَمَعِ.",
+        "arapca": "تُكَلِّفُ المَهَامُ الفَضَائِيَّةُ أَمْوَالاً هَائِلَةً بَيْدَ أَنَّ الفَوَائِدَ التِّكْنُولُوجِيَّةَ المُكْتَسَبَةَ عَظِيمَةٌ جِدًّا لِلْمُجْتَمَعِ.",
         "turkce": "Uzay görevleri devasa paralara mal olur, ne var ki toplum için elde edilen teknolojik faydalar çok büyüktür.",
         "ses_dosyasi": "/sesler/metinler/metin_56/satir_04.mp3"
       },
@@ -3859,7 +3859,7 @@
       },
       {
         "sira": 8,
-        "arapca": "تُفَضَّلُ الأَوْقَافُ التِي تَهْدِفُ إِلَى عِلَاجِ المَرْضَى وَتَوْفِيرِ الرَّعَايَةِ الصِّحِيَّةِ لِلْكِبَارِ فِي البَيْتِ.",
+        "arapca": "تُفَضَّلُ الأَوْقَافُ الَّتِي تَهْدِفُ إِلَى عِلَاجِ المَرْضَى وَتَوْفِيرِ الرَّعَايَةِ الصِّحِيَّةِ لِلْكِبَارِ فِي البَيْتِ.",
         "turkce": "Evde yaşlılara sağlık bakımını sağlamayı ve hastaları tedavi etmeyi hedefleyen vakıflar tercih edilir.",
         "ses_dosyasi": "/sesler/metinler/metin_57/satir_08.mp3"
       },
@@ -3914,7 +3914,7 @@
       },
       {
         "sira": 3,
-        "arapca": "تُحْتَرَمُ المَصَادِرُ الصِّحَفِيَّةُ سِرِّيَّةً رَغْمَ الضُّغُوطَاتِ السِّيَاسِيَّةِ التِي قَدْ يَتَعَرَّضُ لَهَا الصِّحَفِيُّ.",
+        "arapca": "تُحْتَرَمُ المَصَادِرُ الصِّحَفِيَّةُ سِرِّيَّةً رَغْمَ الضُّغُوطَاتِ السِّيَاسِيَّةِ الَّتِي قَدْ يَتَعَرَّضُ لَهَا الصِّحَفِيُّ.",
         "turkce": "Gazetecinin maruz kalabileceği siyasi baskılara rağmen gazetecilik kaynakları gizli olarak saygı görür.",
         "ses_dosyasi": "/sesler/metinler/metin_58/satir_03.mp3"
       },
@@ -4017,7 +4017,7 @@
       },
       {
         "sira": 6,
-        "arapca": "تُسْتَخْدَمُ التِكْنُولُوجِيَا الرَّقْمِيَّةُ فِي التَّسْوِيقِ لِكَيْ تَصِلَ المُنْتَجَاتُ إِلَى الأَسْوَاقِ العَالَمِيَّةِ الكَبِيرَةِ.",
+        "arapca": "تُسْتَخْدَمُ التِّكْنُولُوجِيَا الرَّقْمِيَّةُ فِي التَّسْوِيقِ لِكَيْ تَصِلَ المُنْتَجَاتُ إِلَى الأَسْوَاقِ العَالَمِيَّةِ الكَبِيرَةِ.",
         "turkce": "Ürünler büyük uluslararası piyasalara ulaşsın diye pazarlamada dijital teknoloji kullanılır.",
         "ses_dosyasi": "/sesler/metinler/metin_59/satir_06.mp3"
       },
@@ -4035,7 +4035,7 @@
       },
       {
         "sira": 9,
-        "arapca": "يَجِبُ تَدْرِيبُ الشَّبَابِ عَلَى الإِدَارَةِ المَالِيَّةِ لِكَيْ يَضْمَنُوا نَجَاحَ مَشَارِيعِهِمْ الصَغِيرَةِ فِي المَقَامِ الأَوَّلِ.",
+        "arapca": "يَجِبُ تَدْرِيبُ الشَّبَابِ عَلَى الإِدَارَةِ المَالِيَّةِ لِكَيْ يَضْمَنُوا نَجَاحَ مَشَارِيعِهِمْ الصَّغِيرَةِ فِي المَقَامِ الأَوَّلِ.",
         "turkce": "İlk sırada küçük projelerinin başarısını garanti etsinler diye gençlerin mali yönetim üzerinde eğitilmesi gerekir.",
         "ses_dosyasi": "/sesler/metinler/metin_59/satir_09.mp3"
       },
@@ -4054,7 +4054,7 @@
         "cevap_tr": "Genç girişimciliktir."
       },
       {
-        "soru_ar": "لِمَاذَا تُسْتَخْدَمُ التِكْنُولُوجِيَا فِي التَّسْوِيقِ؟",
+        "soru_ar": "لِمَاذَا تُسْتَخْدَمُ التِّكْنُولُوجِيَا فِي التَّسْوِيقِ؟",
         "soru_tr": "Teknoloji pazarlamada niçin kullanılır?",
         "cevap_ar": "لِكَيْ تَصِلَ المُنْتَجَاتُ إِلَى الأَسْوَاقِ.",
         "cevap_tr": "Ürünler piyasalara ulaşsın diye."

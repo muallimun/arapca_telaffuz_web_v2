@@ -9556,5 +9556,119 @@ test("81. Premium 2 Sütunlu Bento OpenGraph Kartı (v2.5 Satori Uyumluluğu) ve
   );
 });
 
+test("82. Spark-TTS Öncesi 26 İnce Şemsî Şedde, İsm-i Mevsûl (الَّتِي) ve Şemsî Lâm Sükûnu Fonetik Düzeltmeleri Doğrulaması", () => {
+  const diyalogRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "tum_diyaloglar_120.json"),
+    "utf8"
+  );
+  const metinRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "tum_metinler_60.json"),
+    "utf8"
+  );
+  const ataRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "atasozleri.json"),
+    "utf8"
+  );
+  const cumleRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "1111_cumle.json"),
+    "utf8"
+  );
+  const gorselRaw = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "data", "gorselKelimeler_guncel.json"),
+    "utf8"
+  );
+
+  // 1) tum_diyaloglar_120.json (5 kayıt)
+  for (const oldForm of [
+    "وَالر\u064Fوحِ",
+    "الت\u064Fرْكِي\u0651\u0650",
+    "الش\u064Fجَاعُ",
+    "الش\u064Eرِكَةُ",
+    "الز\u064Fبُونَ",
+    "الش\u064Fرَكَاءُ",
+    "الش\u064Eرِكَةِ",
+  ]) {
+    assert.equal(
+      diyalogRaw.includes(oldForm),
+      false,
+      `tum_diyaloglar_120.json içinde şeddesiz '${oldForm}' kalmamalıdır`
+    );
+  }
+  assert.ok(
+    diyalogRaw.includes("وَالر\u0651\u064Fوحِ") &&
+      diyalogRaw.includes("الت\u0651\u064Fرْكِي\u0651\u0650") &&
+      diyalogRaw.includes("الش\u0651\u064Fجَاعُ") &&
+      diyalogRaw.includes("الش\u0651\u064Eرِكَةُ") &&
+      diyalogRaw.includes("الز\u0651\u064Fبُونَ") &&
+      diyalogRaw.includes("الش\u0651\u064Fرَكَاءُ") &&
+      diyalogRaw.includes("الش\u0651\u064Eرِكَةِ"),
+    "tum_diyaloglar_120.json içindeki 5 diyalog kaydında şemsî şeddeler standart dizilimle yer almalıdır"
+  );
+
+  // 2) tum_metinler_60.json (15 kayıt)
+  for (const oldForm of [
+    "الت\u0650ذْكَارِي\u0651\u064Eةِ",
+    "الص\u064Eدَاقَةَ",
+    "الش\u064Eبَابِ",
+    "بِال\u0652ت\u064Eلَفَرِيكِ",
+    "الص\u064Eنَادِيقِ",
+    "الش\u064Eرِكَةِ",
+    "الص\u064Eحِيحُ",
+    " الت\u0650ي ",
+    "الت\u0650كْنُولُوجِيَا",
+    "الت\u0650كْنُولُوجِي\u0651\u064Eةَ",
+    "الت\u0650كْنُولُوجِي\u0651\u064Eةِ",
+    "الص\u064Eغِيرَةِ",
+  ]) {
+    assert.equal(
+      metinRaw.includes(oldForm),
+      false,
+      `tum_metinler_60.json içinde hatalı '${oldForm}' kalmamalıdır`
+    );
+  }
+  assert.ok(
+    metinRaw.includes("الت\u0651\u0650ذْكَارِي\u0651\u064Eةِ") &&
+      metinRaw.includes("بِالت\u0651\u064Eلَفَرِيكِ") &&
+      metinRaw.includes("الت\u0651\u0650كْنُولُوجِيَا") &&
+      metinRaw.includes("الت\u0651\u0650كْنُولُوجِي\u0651\u064Eةَ") &&
+      metinRaw.includes("الت\u0651\u0650كْنُولُوجِي\u0651\u064Eةِ") &&
+      metinRaw.includes("الص\u0651\u064Eغِيرَةِ"),
+    "tum_metinler_60.json içindeki şemsî şedde, بِالتَّلَفَرِيكِ ve الَّتِي düzeltmeleri eksiksiz uygulanmalıdır"
+  );
+
+  // 3) atasozleri.json, 1111_cumle.json ve gorselKelimeler_guncel.json (6 kayıt)
+  assert.equal(ataRaw.includes("فَال\u0652س\u0651\u064Fكُوتُ"), false);
+  assert.equal(ataRaw.includes("كَال\u0652س\u0651\u064Eيْفِ"), false);
+  assert.ok(
+    ataRaw.includes("فَالس\u0651\u064Fكُوتُ") &&
+      ataRaw.includes("كَالس\u0651\u064Eيْفِ"),
+    "ata_0051 ve ata_0475 kayıtlarında şemsî lâm sükûnu kaldırılmış olmalıdır"
+  );
+
+  assert.equal(cumleRaw.includes("(ال\u0652ن\u0651\u064Eاقِصُ"), false);
+  assert.ok(
+    cumleRaw.includes("(الن\u0651\u064Eاقِصُ"),
+    "cumle_0870 odak_kalip alanında şemsî lâm sükûnu kaldırılmış olmalıdır"
+  );
+
+  for (const oldForm of [
+    "الص\u064Eالُونِ",
+    "الص\u064Eحَفِي\u0651\u064F",
+    "الص\u064Eحِيحُ",
+  ]) {
+    assert.equal(
+      gorselRaw.includes(oldForm),
+      false,
+      `gorselKelimeler_guncel.json içinde şeddesiz '${oldForm}' kalmamalıdır`
+    );
+  }
+  assert.ok(
+    gorselRaw.includes("الص\u0651\u064Eالُونِ") &&
+      gorselRaw.includes("الص\u0651\u064Eحَفِي\u0651\u064F") &&
+      gorselRaw.includes("الص\u0651\u064Eحِيحُ"),
+    "gorselKelimeler_guncel.json içindeki 3 örnek cümlede şemsî şeddeler eklenmiş olmalıdır"
+  );
+});
+
 
 

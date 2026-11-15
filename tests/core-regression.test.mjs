@@ -1065,11 +1065,11 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
     );
   }
 
-  // Kategori filtre sekmeleri
-  assert.equal(alistirmalarCode.includes("Kelime & Görsel"), true);
+  // Kategori filtre sekmeleri (5 sekmeli yeni vitrin mimarisi)
+  assert.equal(alistirmalarCode.includes("Görsel Oyunlar"), true);
+  assert.equal(alistirmalarCode.includes("Kelime & Kartlar"), true);
   assert.equal(alistirmalarCode.includes("Gramer & İ'rab"), true);
-  assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Okuma"), true);
-  assert.equal(alistirmalarCode.includes("Sınıf Yarışması"), true);
+  assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Sınıf"), true);
 
   // CONTENT_INVENTORY.exerciseModulesCount === 17
   const dataTsCode = fs.readFileSync(
@@ -6879,3 +6879,95 @@ test("57. ErrorHunter Şık Tıklanabilirliği, Slash (/) Çoklu Örnek Eşleşt
     "MultipleChoice.tsx mobilde (<640px) 1..10 kutuları yerine ince ilerleme çubuğu göstermeli ve p-3 sm:p-6 / h-20 sm:h-36 / text-2xl sm:text-4xl kompakt ölçülerini kullanmalıdır"
   );
 });
+
+test("58) Alıştırmalar Sayfası (alistirmalar/page.tsx) 2 Aşamalı Sade Vitrin + Hızlı Başlatma Çekmecesi Mimarisi", () => {
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. Sadeleştirilmiş Üst Başlık ve Tek Satırlık Hızlı Tekrar Bandı
+  assert.equal(
+    alistirmalarCode.includes("İnteraktif Alıştırma & Oyun Merkezi") &&
+      alistirmalarCode.includes("Mahreç Haritam") &&
+      alistirmalarCode.includes("Hızlı Tekrar:") &&
+      alistirmalarCode.includes("Hemen Çalış →") &&
+      alistirmalarCode.includes("handleQuickReviewBannerStart"),
+    true,
+    "Vitrin üst başlığı 'İnteraktif Alıştırma & Oyun Merkezi', sağda 'Mahreç Haritam' butonu ve tek satırlık '⚡ Hızlı Tekrar ... Hemen Çalış →' bandı içermelidir"
+  );
+
+  // 2. Yatay kaydırılabilir 5 net kategori sekmesi (Tümü 17 = 4 + 4 + 4 + 5) ve kırpılmayan tam kart başlıkları
+  assert.equal(
+    alistirmalarCode.includes("flex overflow-x-auto no-scrollbar") &&
+      alistirmalarCode.includes("🌟 Tümü") &&
+      alistirmalarCode.includes("🎮 Görsel Oyunlar") &&
+      alistirmalarCode.includes("📖 Kelime & Kartlar") &&
+      alistirmalarCode.includes("📐 Gramer & İ'rab") &&
+      alistirmalarCode.includes("🎧 Dinleme, Diyalog & Sınıf"),
+    true,
+    "5 kategori sekmesi yatay kaydırılabilir (flex overflow-x-auto no-scrollbar) olmalı ve yeni etiketleri taşımalıdır"
+  );
+
+  const visualGameMatches =
+    alistirmalarCode.match(/category:\s*"visual_games"/g) || [];
+  const vocabCardMatches =
+    alistirmalarCode.match(/category:\s*"vocab_cards"/g) || [];
+  const grammarIrabMatches =
+    alistirmalarCode.match(/category:\s*"grammar_irab"/g) || [];
+  const listenClassMatches =
+    alistirmalarCode.match(/category:\s*"listen_dialogue_class"/g) || [];
+
+  assert.equal(visualGameMatches.length, 4, "Görsel Oyunlar kategorisinde 4 modül olmalıdır");
+  assert.equal(vocabCardMatches.length, 4, "Kelime & Kartlar kategorisinde 4 modül olmalıdır");
+  assert.equal(grammarIrabMatches.length, 4, "Gramer & İ'rab kategorisinde 4 modül olmalıdır");
+  assert.equal(
+    listenClassMatches.length,
+    5,
+    "Dinleme, Diyalog & Sınıf kategorisinde 5 modül olmalıdır"
+  );
+
+  // Kart başlığı (card.title) üzerinde line-clamp-1 veya truncate bulunmamalıdır
+  const cardTitleBlockMatch = alistirmalarCode.match(
+    /<h2[^>]*>\s*\{card\.title\}\s*<\/h2>/
+  );
+  assert.ok(cardTitleBlockMatch, "Modül kartında {card.title} h2 etiketi bulunmalıdır");
+  assert.equal(
+    cardTitleBlockMatch[0].includes("truncate") ||
+      cardTitleBlockMatch[0].includes("line-clamp-1"),
+    false,
+    "Modül kartı başlıkları (card.title) kırpılmadan tam okunmalıdır"
+  );
+
+  // 3. Ana sayfa altında kalıcı ayar yığını ve çift başlatma butonu kalmamalı; tek başlatma butonu kurulum çekmecesinde olmalıdır
+  const startBtnOccurrences =
+    alistirmalarCode.match(/onClick=\{handleStartExercise\}/g) || [];
+  assert.equal(
+    startBtnOccurrences.length,
+    1,
+    "Sayfada mükerrer başlatma butonu olmamalı, yalnızca Hızlı Başlatma Çekmecesi içinde 1 adet birincil başlatma butonu bulunmalıdır"
+  );
+  assert.equal(
+    alistirmalarCode.includes("Alıştırma Kapsamı ve Veri Havuzu"),
+    false,
+    "Eski sayfa altı sabit ayar yığını ('Alıştırma Kapsamı ve Veri Havuzu') tamamen kaldırılmış olmalıdır"
+  );
+
+  // 4. Hızlı Başlatma Çekmecesi (Mobilde Bottom Sheet rounded-t-3xl max-h-[85dvh], Masaüstünde sm:max-w-lg sm:rounded-3xl) ve Grup A / B / C akıllı filtreleme
+  assert.equal(
+    alistirmalarCode.includes("isSetupDrawerOpen") &&
+      alistirmalarCode.includes("useEscapeKey") &&
+      alistirmalarCode.includes("rounded-t-3xl sm:rounded-3xl") &&
+      alistirmalarCode.includes("max-h-[85dvh]") &&
+      alistirmalarCode.includes("sm:max-w-lg") &&
+      alistirmalarCode.includes("isVisualWordsOnlyGame") &&
+      alistirmalarCode.includes("isSelfContainedCorpusModule") &&
+      alistirmalarCode.includes("compatibleDrawerPools") &&
+      alistirmalarCode.includes("Oyunu Başlat (") &&
+      alistirmalarCode.includes("Alıştırmayı Başlat (") &&
+      alistirmalarCode.includes('autostartParam === "1"'),
+    true,
+    "Hızlı Başlatma Çekmecesi mobil Bottom Sheet / masaüstü Modal mimarisine, Grup A/B/C uyumlu ayar süzgecine ve autostart=1 doğrudan başlatma desteğine sahip olmalıdır"
+  );
+});
+

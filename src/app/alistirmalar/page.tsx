@@ -6,20 +6,17 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
-  Check,
   Play,
   BookOpen,
   CheckSquare,
   PenTool,
   Link2,
-  Info,
   Timer,
   ListOrdered,
   Image as ImageIcon,
   FolderOpen,
   GitBranch,
   Trophy,
-  Compass,
   ShieldAlert,
   Headphones,
   MessageSquare,
@@ -82,6 +79,7 @@ import {
 } from "@/lib/quiz";
 import { formatTurkishCategory } from "@/lib/arabicTextUtils";
 import { MixedText } from "@/components/ui/MixedText";
+import { useEscapeKey } from "@/lib/modalStack";
 
 import type {
   FeedbackMode,
@@ -253,10 +251,10 @@ type ExerciseType =
 
 type ExerciseCategoryTab =
   | "all"
-  | "vocab_visual"
+  | "visual_games"
+  | "vocab_cards"
   | "grammar_irab"
-  | "listen_dialogue_read"
-  | "classroom";
+  | "listen_dialogue_class";
 
 export type PoolSourceId =
   | "full_dict"
@@ -471,6 +469,7 @@ function ExercisesPageContent() {
   const [selectedType, setSelectedType] = useState<ExerciseType>("flashcard");
   const [exerciseCategoryFilter, setExerciseCategoryFilter] =
     useState<ExerciseCategoryTab>("all");
+  const [isSetupDrawerOpen, setIsSetupDrawerOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [mobileProgress, setMobileProgress] = useState<{
     current: number;
@@ -534,6 +533,12 @@ function ExercisesPageContent() {
   const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>("instant");
   const [fillSubMode, setFillSubMode] = useState<FillSubMode>("choices");
   const [showPhonemeHeatmap, setShowPhonemeHeatmap] = useState(false);
+
+  useEscapeKey(
+    () => setIsSetupDrawerOpen(false),
+    isSetupDrawerOpen && !isPlaying,
+    "alistirmalar_setup_drawer"
+  );
 
   const dailyPackage = useMemo(
     () =>
@@ -621,6 +626,7 @@ function ExercisesPageContent() {
           isMistakesMode: true,
           isVisualWordsMode: false,
         });
+        setIsSetupDrawerOpen(false);
         setIsPlaying(true);
         return;
       }
@@ -670,6 +676,7 @@ function ExercisesPageContent() {
           isMistakesMode: true,
           isVisualWordsMode: false,
         });
+        setIsSetupDrawerOpen(false);
         setIsPlaying(true);
         return;
       }
@@ -792,8 +799,16 @@ function ExercisesPageContent() {
           setRangePreset("visual_words");
         }
         if (autostartParam === "1") {
+          setIsSetupDrawerOpen(false);
           setIsPlaying(true);
+        } else {
+          setIsSetupDrawerOpen(true);
         }
+      } else if (
+        autostartParam !== "1" &&
+        Boolean(poolParam || grammarParam || dlgParam || readingParam)
+      ) {
+        setIsSetupDrawerOpen(true);
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -1258,8 +1273,8 @@ function ExercisesPageContent() {
     mistakesResolved.idioms,
   ]);
 
-  // Seçili havuza göre Kelime (DictionaryItem[]) havuzu ve bilgi mesajı
-  const { combinedVocabulary, poolNotice } = useMemo(() => {
+  // Seçili havuza göre Kelime (DictionaryItem[]) havuzu
+  const { combinedVocabulary } = useMemo(() => {
     const nonProperSozluk = sozluk.filter((w) => !isProperNounItem(w));
 
     if (rangePreset === "srs_due") {
@@ -1552,8 +1567,44 @@ function ExercisesPageContent() {
     icon: typeof BookOpen;
   }[] = [
     {
+      id: "balloon-safari",
+      category: "visual_games",
+      title: "🎈 Balon Safari",
+      arabicBadge: "سَفَارِي البَالُونَات",
+      subtitle:
+        "Süzülen balonlardaki resimli ve harekeli Arapça kelimeleri sesinden yakalayın",
+      icon: Sparkles,
+    },
+    {
+      id: "memory-flip",
+      category: "visual_games",
+      title: "🃏 Hafızanı Yokla",
+      arabicBadge: "لُعْبَةُ الذَّاكِرَةِ",
+      subtitle:
+        "Tek kişilik, iki kişilik veya bilgisayara karşı görsel ve Arapça kart eşleştirme",
+      icon: Layers,
+    },
+    {
+      id: "what-is-this",
+      category: "visual_games",
+      title: "🖼️ Bu Nedir?",
+      arabicBadge: "صُورَةٌ وَكَلِمَةٌ",
+      subtitle:
+        "Büyük kelime görseline bakarak 4 harekeli şık arasından doğru Arapçayı bulun",
+      icon: HelpCircle,
+    },
+    {
+      id: "visual-rosetta",
+      category: "visual_games",
+      title: "Görsel & Sesli Eşleştirme",
+      arabicBadge: "الصُّوَرُ وَالتَّلَفُّظ",
+      subtitle:
+        "Kare görseller, çift cinsiyetli ses ve canlı telaffuz ile görsel-işitsel eşleştirme",
+      icon: ImageIcon,
+    },
+    {
       id: "flashcard",
-      category: "vocab_visual",
+      category: "vocab_cards",
       title: "Kelime & Cümle Kartları",
       arabicBadge: "البِطَاقَات",
       subtitle:
@@ -1562,7 +1613,7 @@ function ExercisesPageContent() {
     },
     {
       id: "multiple-choice",
-      category: "vocab_visual",
+      category: "vocab_cards",
       title: "Çoktan Seçmeli Test",
       arabicBadge: "الاخْتِبَار",
       subtitle:
@@ -1570,16 +1621,8 @@ function ExercisesPageContent() {
       icon: CheckSquare,
     },
     {
-      id: "fill-in-blanks",
-      category: "listen_dialogue_read",
-      title: "Boşluk Doldurma & İmla",
-      arabicBadge: "الفَرَاغَات",
-      subtitle: "Seçmeli yerleştirme veya dinleyip klavyeyle yazma",
-      icon: PenTool,
-    },
-    {
       id: "matching",
-      category: "vocab_visual",
+      category: "vocab_cards",
       title: "Ok Çizerek Eşleştirme",
       arabicBadge: "المُطَابَقَة",
       subtitle:
@@ -1587,57 +1630,12 @@ function ExercisesPageContent() {
       icon: Link2,
     },
     {
-      id: "sentence-builder",
-      category: "grammar_irab",
-      title: "Cümle Kurma (Kelime Sıralama)",
-      arabicBadge: "تَرْتِيبُ الْجُمَل",
-      subtitle:
-        "Dinlediğiniz cümle, atasözü veya örnek cümlenin kelimelerini sıralayın",
-      icon: ListOrdered,
-    },
-    {
-      id: "visual-rosetta",
-      category: "vocab_visual",
-      title: "Görsel & Sesli Eşleştirme",
-      arabicBadge: "الصُّوَرُ وَالتَّلَفُّظ",
-      subtitle:
-        "Kare görseller, çift cinsiyetli ses ve canlı telaffuz ile görsel-işitsel eşleştirme",
-      icon: ImageIcon,
-    },
-    {
-      id: "what-is-this",
-      category: "vocab_visual",
-      title: "🖼️ Bu Nedir?",
-      arabicBadge: "صُورَةٌ وَكَلِمَةٌ",
-      subtitle:
-        "Büyük kelime görseline bakarak 4 harekeli şık arasından doğru Arapçayı bulun",
-      icon: HelpCircle,
-    },
-    {
-      id: "balloon-safari",
-      category: "vocab_visual",
-      title: "🎈 Balon Safari",
-      arabicBadge: "سَفَارِي البَالُونَات",
-      subtitle:
-        "Canlı safari manzarasında süzülen sıcak hava balonlarındaki görsel ve Arapça kelimeleri sesinden yakalayın",
-      icon: Sparkles,
-    },
-    {
-      id: "memory-flip",
-      category: "vocab_visual",
-      title: "🃏 Hafızanı Yokla",
-      arabicBadge: "لُعْبَةُ الذَّاكِرَةِ",
-      subtitle:
-        "Yapay zekâya karşı, iki kişilik veya antrenman modunda deniz kabuğu kartlarla büyük görsel ve Arapça eşleştirme",
-      icon: Layers,
-    },
-    {
       id: "gender-sorting",
-      category: "vocab_visual",
+      category: "vocab_cards",
       title: "Müzekker / Müennes Sepeti",
       arabicBadge: "هَذَا وَهَذِهِ",
       subtitle:
-        "998 görsel kelime havuzundan isimleri tek dokunuşla هَذَا ve هَذِهِ sepetlerine ayırın, semâî ipuçlarını görün",
+        "998 görsel kelime havuzundan isimleri هَذَا ve هَذِهِ sepetlerine ayırın",
       icon: Scale,
     },
     {
@@ -1649,7 +1647,7 @@ function ExercisesPageContent() {
         ekGramerNotlari.length +
         diyalogGramerNotlari.length +
         metinGramerNotlari.length
-      } gramer notundan iki aşamalı hatalı kelimeyi bulma ve doğru hareke/formla onarma`,
+      } gramer notundan hatalı kelimeyi bulma ve doğru harekeyle onarma`,
       icon: ShieldAlert,
     },
     {
@@ -1662,8 +1660,34 @@ function ExercisesPageContent() {
       icon: Paintbrush,
     },
     {
+      id: "morphology-context",
+      category: "grammar_irab",
+      title: "Sarf, Kök & Bağlam Atölyesi",
+      arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
+      subtitle:
+        "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam pratiği",
+      icon: GitBranch,
+    },
+    {
+      id: "sentence-builder",
+      category: "grammar_irab",
+      title: "Cümle Kurma (Kelime Sıralama)",
+      arabicBadge: "تَرْتِيبُ الْجُمَل",
+      subtitle:
+        "Dinlediğiniz cümle, atasözü veya örnek cümlenin kelimelerini sıralayın",
+      icon: ListOrdered,
+    },
+    {
+      id: "fill-in-blanks",
+      category: "listen_dialogue_class",
+      title: "Boşluk Doldurma & İmla",
+      arabicBadge: "الفَرَاغَات",
+      subtitle: "Seçmeli yerleştirme veya dinleyip klavyeyle yazma",
+      icon: PenTool,
+    },
+    {
       id: "blind-dictation",
-      category: "listen_dialogue_read",
+      category: "listen_dialogue_class",
       title: "Kör Dikte & Harekeleme Atölyesi",
       arabicBadge: "الْإِمْلَاءُ وَالتَّشْكِيل",
       subtitle:
@@ -1672,7 +1696,7 @@ function ExercisesPageContent() {
     },
     {
       id: "cloze-roleplay",
-      category: "listen_dialogue_read",
+      category: "listen_dialogue_class",
       title: "Diyalog Boş Replik Tamamlama",
       arabicBadge: "إِكْمَالُ الْحِوَار",
       subtitle:
@@ -1681,7 +1705,7 @@ function ExercisesPageContent() {
     },
     {
       id: "evidence-hunter",
-      category: "listen_dialogue_read",
+      category: "listen_dialogue_class",
       title: "Metin Kanıt Dedektifi",
       arabicBadge: "دَلِيلُ النَّصّ",
       subtitle:
@@ -1689,17 +1713,8 @@ function ExercisesPageContent() {
       icon: Search,
     },
     {
-      id: "morphology-context",
-      category: "grammar_irab",
-      title: "Sarf, Kök & Bağlam Atölyesi",
-      arabicBadge: "الصَّرْفُ وَالاِشْتِقَاق",
-      subtitle:
-        "Kök ağacı, müfret-cemî, mâzî-muzâri, soru kalıbı ve bağlam",
-      icon: GitBranch,
-    },
-    {
       id: "classroom-battle",
-      category: "classroom",
+      category: "listen_dialogue_class",
       title: "Sınıf & Tahta Yarışması",
       arabicBadge: "المُسَابَقَةُ الصَّفِّيَّة",
       subtitle:
@@ -1713,27 +1728,27 @@ function ExercisesPageContent() {
     label: string;
     count: number;
   }[] = [
-    { id: "all", label: "Tümü", count: exerciseCards.length },
+    { id: "all", label: "🌟 Tümü", count: exerciseCards.length },
     {
-      id: "vocab_visual",
-      label: "Kelime & Görsel",
-      count: exerciseCards.filter((c) => c.category === "vocab_visual").length,
+      id: "visual_games",
+      label: "🎮 Görsel Oyunlar",
+      count: exerciseCards.filter((c) => c.category === "visual_games").length,
+    },
+    {
+      id: "vocab_cards",
+      label: "📖 Kelime & Kartlar",
+      count: exerciseCards.filter((c) => c.category === "vocab_cards").length,
     },
     {
       id: "grammar_irab",
-      label: "Gramer & İ'rab",
+      label: "📐 Gramer & İ'rab",
       count: exerciseCards.filter((c) => c.category === "grammar_irab").length,
     },
     {
-      id: "listen_dialogue_read",
-      label: "Dinleme, Diyalog & Okuma",
-      count: exerciseCards.filter((c) => c.category === "listen_dialogue_read")
+      id: "listen_dialogue_class",
+      label: "🎧 Dinleme, Diyalog & Sınıf",
+      count: exerciseCards.filter((c) => c.category === "listen_dialogue_class")
         .length,
-    },
-    {
-      id: "classroom",
-      label: "Sınıf Yarışması",
-      count: exerciseCards.filter((c) => c.category === "classroom").length,
     },
   ];
 
@@ -1828,9 +1843,6 @@ function ExercisesPageContent() {
     selectedType === "gender-sorting" ||
     selectedType === "evidence-hunter" ||
     selectedType === "irab-painter";
-
-  const isGrammarCorpusLockedMode =
-    selectedType === "error-hunter" || selectedType === "irab-painter";
 
   const isPoolCompatibleWithSelectedMode = (poolId: PoolSourceId): boolean => {
     if (selectedType === "error-hunter" || selectedType === "irab-painter") {
@@ -1978,8 +1990,153 @@ function ExercisesPageContent() {
         rangePreset === "mistakes" || rangePreset === "srs_due",
       isVisualWordsMode: rangePreset === "visual_words",
     });
+    setIsSetupDrawerOpen(false);
     setMobileProgress(null);
     setIsPlaying(true);
+  };
+
+  const handleQuickReviewBannerStart = () => {
+    playStart();
+    const useMistakes = mistakeIds.length > 0;
+    const nonProperSozluk = sozluk.filter((w) => !isProperNounItem(w));
+    if (useMistakes) {
+      const cleanMistakeWords = mistakesResolved.words.filter(
+        (w) => !isProperNounItem(w)
+      );
+      const vocab =
+        cleanMistakeWords.length >= 4
+          ? cleanMistakeWords
+          : [
+              ...cleanMistakeWords,
+              ...nonProperSozluk
+                .filter((w) => !cleanMistakeWords.some((mw) => mw.id === w.id))
+                .slice(0, Math.max(4, 8 - cleanMistakeWords.length)),
+            ];
+      setRangePreset("mistakes");
+      setContentType(
+        mistakesResolved.idioms.length > 0 ||
+          mistakesResolved.dialogues.length > 0
+          ? "mixed"
+          : "words"
+      );
+      setSelectedType("multiple-choice");
+      setFrozenPools({
+        vocabulary: vocab,
+        idioms:
+          mistakesResolved.idioms.length > 0
+            ? mistakesResolved.idioms
+            : getCombinedIdiomsCatalog().slice(0, 4),
+        dialogues:
+          mistakesResolved.dialogues.length > 0
+            ? mistakesResolved.dialogues
+            : [dailyPackage.dailyDialogue.dialogue],
+        visualPool: gorselKelimeler,
+        synonymEntries: [],
+        isSynonymsAntonymsMode: false,
+        isMistakesMode: true,
+        isVisualWordsMode: false,
+      });
+    } else {
+      const dueWords = dailyPackage.dueReviewPool.words.filter(
+        (w) => !isProperNounItem(w)
+      );
+      const vocab =
+        dueWords.length >= 4
+          ? dueWords
+          : [
+              ...dueWords,
+              ...nonProperSozluk
+                .filter((w) => !dueWords.some((dw) => dw.id === w.id))
+                .slice(0, Math.max(4, 8 - dueWords.length)),
+            ];
+      setRangePreset("srs_due");
+      setContentType(
+        dailyPackage.dueReviewPool.idioms.length > 0 ||
+          dailyPackage.dueReviewPool.dialogues.length > 0
+          ? "mixed"
+          : "words"
+      );
+      setSelectedType("multiple-choice");
+      setFrozenPools({
+        vocabulary: vocab,
+        idioms:
+          dailyPackage.dueReviewPool.idioms.length > 0
+            ? dailyPackage.dueReviewPool.idioms
+            : getCombinedIdiomsCatalog().slice(0, 4),
+        dialogues:
+          dailyPackage.dueReviewPool.dialogues.length > 0
+            ? dailyPackage.dueReviewPool.dialogues
+            : [dailyPackage.dailyDialogue.dialogue],
+        visualPool: gorselKelimeler,
+        synonymEntries: [],
+        isSynonymsAntonymsMode: false,
+        isMistakesMode: true,
+        isVisualWordsMode: false,
+      });
+    }
+    setIsSetupDrawerOpen(false);
+    setMobileProgress(null);
+    setIsPlaying(true);
+  };
+
+  const handleSelectCardAndOpenDrawer = (cardId: ExerciseType) => {
+    playClick();
+    setFrozenPools(null);
+    setSelectedType(cardId);
+
+    const isEmptyPersonalPool =
+      (rangePreset === "favorites" && favoriteWords.length === 0) ||
+      (rangePreset === "weak-words" && weakWords.length === 0) ||
+      (rangePreset === "mistakes" && mistakeIds.length === 0) ||
+      (rangePreset === "srs_due" &&
+        dailyPackage.dueReviewPool.totalDueCount === 0);
+
+    if (
+      cardId === "balloon-safari" ||
+      cardId === "memory-flip" ||
+      cardId === "what-is-this" ||
+      cardId === "gender-sorting"
+    ) {
+      setRangePreset("visual_words");
+      setContentType("words");
+    } else if (cardId === "cloze-roleplay") {
+      setRangePreset("all_dialogues");
+    } else if (cardId === "evidence-hunter") {
+      setRangePreset("reading_texts");
+    } else if (cardId === "sentence-builder") {
+      setContentType("sentences");
+      if (rangePreset === "full_dict" || isEmptyPersonalPool) {
+        setRangePreset("sentences_1111");
+      }
+    } else if (cardId === "fill-in-blanks") {
+      setContentType("sentences");
+      if (isEmptyPersonalPool) {
+        setRangePreset("sentences_1111");
+      }
+    } else if (cardId === "visual-rosetta") {
+      if (
+        rangePreset !== "visual_words" &&
+        rangePreset !== "proverbs_508" &&
+        rangePreset !== "all_dialogues" &&
+        rangePreset !== "reading_texts"
+      ) {
+        setRangePreset("visual_words");
+      }
+      setContentType("words");
+    } else if (cardId === "blind-dictation") {
+      if (
+        rangePreset !== "all_dialogues" &&
+        rangePreset !== "sentences_1111" &&
+        rangePreset !== "reading_texts"
+      ) {
+        setRangePreset("sentences_1111");
+      }
+    } else if (isEmptyPersonalPool) {
+      setRangePreset("full_dict");
+      setContentType("words");
+    }
+
+    setIsSetupDrawerOpen(true);
   };
 
   const handleCloseExercise = () => {
@@ -2363,15 +2520,15 @@ function ExercisesPageContent() {
           </div>
         )}
 
-      {/* ÜST BAŞLIK (Masaüstünde aktifken ve alıştırma vitrininde gösterilir) */}
+      {/* ÜST BAŞLIK (Sadeleştirilmiş Vitrin Başlığı + Sağda Mahreç Haritam) */}
       <div
         className={
           isPlaying
             ? "hidden md:flex items-center justify-between gap-2"
-            : "flex items-center justify-between gap-2"
+            : "flex items-center justify-between gap-2.5"
         }
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           {isPlaying ? (
             <button
               type="button"
@@ -2379,52 +2536,31 @@ function ExercisesPageContent() {
                 playClick();
                 handleCloseExercise();
               }}
-              className="h-7 sm:h-8 px-2 sm:px-2.5 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
+              className="h-8 px-3 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
             >
               <ChevronLeft size={15} />
-              <span className="sm:hidden">Çık</span>
-              <span className="hidden sm:inline">Ayarlara Dön</span>
+              <span>Listeye Dön</span>
             </button>
           ) : (
             <Link
               href="/"
               onClick={() => playClick()}
-              className="w-8 h-8 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] shrink-0"
+              className="w-9 h-9 rounded-xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] shrink-0"
               aria-label="Ana Sayfaya Dön"
             >
-              <ChevronLeft size={16} strokeWidth={2.5} />
+              <ChevronLeft size={17} strokeWidth={2.5} />
             </Link>
           )}
 
-          <div className="min-w-0">
-            <h1
-              className={
-                isPlaying
-                  ? "hidden sm:block text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate"
-                  : "text-sm sm:text-lg font-extrabold text-[var(--foreground)] tracking-tight leading-tight truncate"
-              }
-            >
-              İnteraktif Alıştırma Merkezi
-            </h1>
-            {isPlaying && (
-              <span className="sm:hidden text-xs font-extrabold text-[#4C28B5] dark:text-indigo-300 truncate block">
-                {exerciseCards.find((c) => c.id === selectedType)?.title ||
-                  "Alıştırma"}
-              </span>
-            )}
-            <p
-              className={
-                isPlaying
-                  ? "hidden sm:block text-[11px] font-medium text-[var(--muted)] truncate"
-                  : "text-[10px] sm:text-[11px] font-medium text-[var(--muted)] truncate"
-              }
-            >
-              {contentStats.dialogueCount} Diyalog • {contentStats.readingCount} Metin • {contentStats.sentenceCount} Cümle • {contentStats.proverbCount} Atasözü • {contentStats.visualWordCount} Görsel Kelime • {contentStats.dictionaryWordCount} Sözlük Kelimesi
-            </p>
-          </div>
+          <h1 className="text-base sm:text-xl font-extrabold text-[var(--foreground)] tracking-tight leading-snug truncate">
+            {isPlaying
+              ? exerciseCards.find((c) => c.id === selectedType)?.title ||
+                "İnteraktif Alıştırma & Oyun Merkezi"
+              : "İnteraktif Alıştırma & Oyun Merkezi"}
+          </h1>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {isPlaying &&
             (rangePreset === "sentences_1111" ||
               selectedType === "error-hunter" ||
@@ -2434,7 +2570,7 @@ function ExercisesPageContent() {
               <div
                 dir="ltr"
                 lang="tr"
-                className="font-sans flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 rounded-xl px-2 py-1 text-[11px] font-extrabold text-amber-900 dark:text-amber-200 max-w-[210px] sm:max-w-xs"
+                className="font-sans flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 rounded-xl px-2.5 py-1 text-[11px] font-extrabold text-amber-900 dark:text-amber-200 max-w-xs"
               >
                 <span className="truncate">
                   📌 Odak Kalıp: <MixedText text={grammarFilter} />
@@ -2449,213 +2585,152 @@ function ExercisesPageContent() {
                   className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[10px] font-black shrink-0 cursor-pointer"
                 >
                   <X size={11} />
-                  <span className="hidden sm:inline">Filtreyi Kaldır</span>
+                  <span>Kaldır</span>
                 </button>
               </div>
             )}
 
           {!isPlaying && (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setShowPhonemeHeatmap(true);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:opacity-95 shrink-0 cursor-pointer"
-              >
-                <span>🗣️</span>
-                <span className="hidden md:inline">28 Harf Mahreç Haritam</span>
-                <span className="md:hidden">Mahreç</span>
-              </button>
-
-              <Link
-                href="/seviye-tespit"
-                onClick={() => playClick()}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-2 border-[#6741D9] border-b-3 px-2.5 py-1 text-xs font-extrabold text-[#6741D9] dark:text-[#d0bfff] hover:opacity-95 shrink-0"
-              >
-                <Compass size={13} className="shrink-0" />
-                <span className="hidden md:inline">Seviye &amp; Konu Tarama</span>
-                <span className="md:hidden">Tarama</span>
-              </Link>
-            </>
+            <button
+              type="button"
+              title="28 Harf Mahreç Haritam"
+              onClick={() => {
+                playClick();
+                setShowPhonemeHeatmap(true);
+              }}
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] border-b-3 px-3 py-1.5 text-xs font-extrabold text-[#065F46] dark:text-emerald-300 hover:opacity-95 shrink-0 cursor-pointer whitespace-nowrap"
+            >
+              <span>🎙️</span>
+              <span>Mahreç Haritam</span>
+            </button>
           )}
-
-          <div
-            data-tooltip={`${contentStats.dialogueCount} Diyalog • ${contentStats.readingCount} Metin • ${contentStats.sentenceCount} Cümle • ${contentStats.proverbCount} Atasözü • ${contentStats.visualWordCount} Görsel Kelime • ${contentStats.dictionaryWordCount} Sözlük Kelimesi`}
-            data-tooltip-pos="bottom"
-            data-tooltip-align="right"
-            className="hidden sm:flex items-center gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-3 rounded-xl px-2.5 py-1 text-xs font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0"
-          >
-            <span>{activePoolCountLabel}</span>
-            <Info size={12} className="opacity-75 shrink-0" />
-          </div>
         </div>
       </div>
 
       {!isPlaying ? (
         <>
-          {/* 1. 14 MODÜLLÜ KATEGORİ SEKMELİ ALIŞTIRMA TÜRÜ SEÇİM IZGARASI */}
-          <section aria-label="Alıştırma Türü Seçimi" className="space-y-2">
-            {/* Kategori Filtre Çubuğu + İlk Açılışta Doğrudan Görünür Hızlı Başlat Butonu */}
+          {/* HIZLI TEKRAR BANDI (Yalnızca Hata Defteri veya SRS kuyruğunda öğe varsa görünür) */}
+          {(mistakeIds.length > 0 ||
+            dailyPackage.dueReviewPool.totalDueCount > 0) && (
+            <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[var(--foreground)] min-w-0">
+                <span className="shrink-0">⚡</span>
+                <span className="leading-snug">
+                  {mistakeIds.length > 0 ? (
+                    <>
+                      <strong className="font-extrabold text-amber-800 dark:text-amber-300">
+                        Hızlı Tekrar:
+                      </strong>{" "}
+                      Hata Defterinde{" "}
+                      <strong className="tabular-nums">
+                        {mistakeIds.length}
+                      </strong>{" "}
+                      öğe seni bekliyor
+                    </>
+                  ) : (
+                    <>
+                      <strong className="font-extrabold text-[#6741D9] dark:text-indigo-300">
+                        Hızlı Tekrar:
+                      </strong>{" "}
+                      SRS Tekrar listesinde{" "}
+                      <strong className="tabular-nums">
+                        {dailyPackage.dueReviewPool.totalDueCount}
+                      </strong>{" "}
+                      öğe seni bekliyor
+                    </>
+                  )}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleQuickReviewBannerStart}
+                className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold border-b-2 border-[#065F46] active:translate-y-0.5 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+              >
+                Hemen Çalış →
+              </button>
+            </div>
+          )}
+
+          {/* ADIM 1 — NET VE TARANABİLİR 17 MODÜLLÜ VİTRİN */}
+          <section aria-label="Alıştırma ve Oyun Vitrini" className="space-y-3">
+            {/* Yatay Kaydırılabilir 5 Kategori Sekmesi */}
             <div
               role="tablist"
               aria-label="Alıştırma Kategorileri"
-              className="flex flex-wrap items-center justify-between gap-1.5 bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] p-1.5"
+              className="flex overflow-x-auto no-scrollbar items-center gap-2 pb-0.5"
             >
-              <div className="flex flex-wrap items-center gap-1.5">
-                {exerciseCategoryTabs.map((tab) => {
-                  const active = exerciseCategoryFilter === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => {
-                        playClick();
-                        setExerciseCategoryFilter(tab.id);
-                      }}
-                      className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+              {exerciseCategoryTabs.map((tab) => {
+                const active = exerciseCategoryFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      playClick();
+                      setExerciseCategoryFilter(tab.id);
+                    }}
+                    className={`min-h-[42px] px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border-2 ${
+                      active
+                        ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
+                        : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[var(--foreground)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[11px] font-black tabular-nums ${
                         active
-                          ? "bg-[#6741D9] text-white shadow-2xs"
-                          : "bg-white/80 dark:bg-[var(--background)] text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
+                          ? "text-white/90"
+                          : "text-[#6741D9] dark:text-indigo-300"
                       }`}
                     >
-                      <span>{tab.label}</span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tabular-nums ${
-                          active
-                            ? "bg-white/20 text-white"
-                            : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#6741D9] dark:text-indigo-300"
-                        }`}
-                      >
-                        {tab.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleStartExercise}
-                disabled={
-                  isMistakesEmpty ||
-                  (!isSelfSourcedSpecialMode &&
-                    combinedVocabulary.length < 4 &&
-                    sentenceCountInPool < 2 &&
-                    idiomsPool.length < 1 &&
-                    filteredVisualWordsPool.length < 4)
-                }
-                className="hidden lg:inline-flex min-h-[40px] px-3.5 py-1.5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
-              >
-                <Play size={13} fill="currentColor" className="shrink-0" />
-                <span className="truncate">
-                  Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe)
-                </span>
-              </button>
+                      ({tab.count})
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
+            {/* Ferah Modül Kartları Izgarası (Tam Başlık + Arapça Rozet + 1 Satır Açıklama) */}
             <div className="flex flex-wrap justify-center items-stretch gap-3.5">
               {visibleExerciseCards.map((card) => {
-                const isSelected = selectedType === card.id;
                 const Icon = card.icon;
+                const isSelected =
+                  isSetupDrawerOpen && selectedType === card.id;
 
                 return (
                   <button
                     key={card.id}
                     type="button"
-                    onClick={() => {
-                      playClick();
-                      setFrozenPools(null);
-                      setSelectedType(card.id);
-                      if (card.id === "sentence-builder") {
-                        setContentType("sentences");
-                        if (rangePreset === "full_dict") {
-                          setRangePreset("sentences_1111");
-                        }
-                      } else if (card.id === "fill-in-blanks") {
-                        setContentType("sentences");
-                      } else if (card.id === "visual-rosetta") {
-                        if (
-                          rangePreset !== "visual_words" &&
-                          rangePreset !== "proverbs_508" &&
-                          rangePreset !== "all_dialogues" &&
-                          rangePreset !== "reading_texts"
-                        ) {
-                          setRangePreset("visual_words");
-                        }
-                        setContentType("words");
-                      } else if (card.id === "gender-sorting") {
-                        setRangePreset("visual_words");
-                      } else if (card.id === "cloze-roleplay") {
-                        setRangePreset("all_dialogues");
-                      } else if (card.id === "evidence-hunter") {
-                        setRangePreset("reading_texts");
-                      } else if (
-                        card.id === "blind-dictation" &&
-                        rangePreset !== "all_dialogues" &&
-                        rangePreset !== "sentences_1111" &&
-                        rangePreset !== "reading_texts"
-                      ) {
-                        setRangePreset("sentences_1111");
-                      } else if (
-                        card.id === "balloon-safari" ||
-                        card.id === "memory-flip" ||
-                        card.id === "what-is-this"
-                      ) {
-                        setRangePreset("visual_words");
-                        setCategoryFilter("all");
-                        setContentType("words");
-                      }
-                    }}
-                    className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[58px] sm:min-h-[76px] text-left px-2.5 py-2 sm:p-2.5 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between cursor-pointer ${
+                    onClick={() => handleSelectCardAndOpenDrawer(card.id)}
+                    className={`w-full sm:w-[calc(50%-0.4375rem)] lg:w-[calc(25%-0.65625rem)] min-h-[96px] text-left p-3.5 sm:p-4 rounded-2xl border-2 border-b-4 transition-all flex flex-col justify-between gap-2 cursor-pointer group ${
                       isSelected
                         ? "bg-[#F3F0FF] dark:bg-[var(--lavender-bg)] border-[#6741D9] -translate-y-0.5 shadow-xs"
-                        : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#cbb692]"
+                        : "bg-[#F7EFE1] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B] hover:-translate-y-0.5"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full gap-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div
-                          className={`w-7 h-7 rounded-xl border-2 border-b-3 flex items-center justify-center shrink-0 ${
-                            isSelected
-                              ? "bg-[#6741D9] border-[#5230B5] text-white"
-                              : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] text-[#065F46] dark:text-emerald-400"
-                          }`}
-                        >
-                          <Icon size={14} strokeWidth={2.3} />
+                    <div className="flex items-start justify-between w-full gap-2">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] group-hover:border-[#087F5B] text-[#065F46] dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                          <Icon size={17} strokeWidth={2.3} />
                         </div>
 
-                        <h2
-                          className={`font-extrabold text-xs sm:text-sm leading-tight truncate ${
-                            isSelected
-                              ? "text-[#4C28B5] dark:text-[#d0bfff]"
-                              : "text-[var(--foreground)]"
-                          }`}
-                        >
+                        <h2 className="font-extrabold text-sm sm:text-[15px] leading-snug text-[var(--foreground)] break-words">
                           {card.title}
                         </h2>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span
-                          lang="ar"
-                          dir="rtl"
-                          className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-75 leading-none"
-                        >
-                          {card.arabicBadge}
-                        </span>
-                        {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-[#6741D9] text-white flex items-center justify-center shrink-0">
-                            <Check size={10} strokeWidth={3} />
-                          </span>
-                        )}
-                      </div>
+                      <span
+                        lang="ar"
+                        dir="rtl"
+                        className="arabic text-xs sm:text-sm font-bold text-[var(--muted)] opacity-85 leading-relaxed shrink-0"
+                      >
+                        {card.arabicBadge}
+                      </span>
                     </div>
 
-                    <p className="text-[11px] text-[var(--muted)] leading-snug line-clamp-1 mt-1">
+                    <p className="text-xs text-[var(--muted)] leading-relaxed line-clamp-1">
                       {card.subtitle}
                     </p>
                   </button>
@@ -2664,770 +2739,753 @@ function ExercisesPageContent() {
             </div>
           </section>
 
-          {/* 2. KOMPAKT AYAR PANELİ + TÜM EĞİTİM HAVUZLARI + BAŞLAT BUTONU */}
-          <section className="bg-[#F7EFE1] dark:bg-[var(--surface)] rounded-2xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-2.5 sm:p-3 space-y-2">
-            {/* Hata Avcısı & İ'rab Boyama için doğrudan Gramer Külliyatı bilgi şeridi; diğerleri için 8 Havuz Izgarası */}
-            {isGrammarCorpusLockedMode ? (
-              <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/40 border-2 border-[#087F5B]/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#065F46] dark:text-emerald-300">
-                <span className="inline-flex items-center gap-1.5">
-                  <span>📚 Özel Veri Kaynağı:</span>
-                  <strong className="font-extrabold">
-                    {selectedType === "error-hunter"
-                      ? "120 Diyalog + 60 Okuma Metni Doğrulanmış Gramer Notları"
-                      : "120 Diyalog + 60 Okuma Metni İ'rab Tahlilli Örnek Cümleler"}
-                  </strong>
-                </span>
-                <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black tabular-nums">
-                  {activePoolCountLabel}
-                </span>
-              </div>
-            ) : selectedType === "balloon-safari" ||
-              selectedType === "memory-flip" ||
-              selectedType === "what-is-this" ? (
-              <div className="space-y-2 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-300">
-                  <span>
-                    🖼️ Sadece Görsel Kelimeler ({gorselKelimeler.length} Resimli
-                    Kelime) — Kategori Seçin:
-                  </span>
-                  <span className="px-2 py-0.5 rounded-lg bg-[#087F5B] text-white text-[11px] font-black tabular-nums">
-                    {strictVisualWordsOnlyPool.length} Görsel Kelime Hazır
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setFrozenPools(null);
-                      setRangePreset("visual_words");
-                      setCategoryFilter("all");
-                    }}
-                    className={`min-h-[34px] px-2.5 py-1 rounded-xl border-2 text-xs font-extrabold transition-all cursor-pointer ${
-                      categoryFilter === "all"
-                        ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
-                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
-                    }`}
+          {/* ADIM 2 — HIZLI BAŞLATMA ÇEKMECESİ (Mobilde Bottom Sheet, Masaüstünde Kompakt Modal) */}
+          {isSetupDrawerOpen &&
+            (() => {
+              const activeCard =
+                exerciseCards.find((c) => c.id === selectedType) ||
+                exerciseCards[0];
+              const ActiveIcon = activeCard.icon;
+
+              // A) Sadece Görsel Kelimelerle Çalışan Oyunlar
+              const isVisualWordsOnlyGame =
+                selectedType === "balloon-safari" ||
+                selectedType === "memory-flip" ||
+                selectedType === "what-is-this" ||
+                selectedType === "gender-sorting";
+
+              // B) Kendinden Veri Havuzlu Özel Modüller
+              const isSelfContainedCorpusModule =
+                selectedType === "error-hunter" ||
+                selectedType === "irab-painter" ||
+                selectedType === "cloze-roleplay" ||
+                selectedType === "evidence-hunter";
+
+              const supportsQuestionCount =
+                selectedType !== "balloon-safari" &&
+                selectedType !== "memory-flip";
+
+              const supportsTimeLimit =
+                selectedType !== "balloon-safari" &&
+                selectedType !== "flashcard" &&
+                selectedType !== "visual-rosetta";
+
+              const supportsFeedbackToggle =
+                selectedType === "multiple-choice" ||
+                selectedType === "fill-in-blanks" ||
+                selectedType === "matching" ||
+                selectedType === "sentence-builder";
+
+              const isGameActionLabel =
+                selectedType === "balloon-safari" ||
+                selectedType === "memory-flip" ||
+                selectedType === "what-is-this" ||
+                selectedType === "gender-sorting" ||
+                selectedType === "classroom-battle";
+
+              // C) Çoklu Havuz Destekleyen Modüller için Uyumlu ve Boş Olmayan Kaynaklar
+              const compatibleDrawerPools = quickPoolPills.filter((pill) => {
+                if (!isPoolCompatibleWithSelectedMode(pill.id)) return false;
+                if (
+                  pill.id === "favorites" &&
+                  favoriteWords.length === 0 &&
+                  rangePreset !== "favorites"
+                ) {
+                  return false;
+                }
+                if (
+                  pill.id === "weak-words" &&
+                  weakWords.length === 0 &&
+                  rangePreset !== "weak-words"
+                ) {
+                  return false;
+                }
+                if (
+                  pill.id === "mistakes" &&
+                  mistakeIds.length === 0 &&
+                  rangePreset !== "mistakes"
+                ) {
+                  return false;
+                }
+                if (
+                  pill.id === "srs_due" &&
+                  dailyPackage.dueReviewPool.totalDueCount === 0 &&
+                  rangePreset !== "srs_due"
+                ) {
+                  return false;
+                }
+                return true;
+              });
+
+              const visualTotalForLevel =
+                cefrFilter === "all"
+                  ? gorselKelimeler.length
+                  : gorselKelimeler.filter((w) => w.cefr === cefrFilter).length;
+
+              return (
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={`${activeCard.title} Kurulum Penceresi`}
+                  onClick={() => setIsSetupDrawerOpen(false)}
+                  className="fixed inset-0 z-[95] bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4"
+                >
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full sm:max-w-lg max-h-[85dvh] sm:max-h-[88dvh] rounded-t-3xl sm:rounded-3xl bg-[#FAF4E8] dark:bg-[var(--surface)] border-t-2 border-x-2 sm:border-2 border-[#E6D7BE] dark:border-[var(--border)] shadow-2xl flex flex-col overflow-hidden"
                   >
-                    Tümü (
-                    {cefrFilter === "all"
-                      ? gorselKelimeler.length
-                      : gorselKelimeler.filter((w) => w.cefr === cefrFilter)
-                          .length}
-                    )
-                  </button>
-                  {visualWordsOnlyCategories.map((cat) => {
-                    const activeCat = categoryFilter === cat.category;
-                    return (
+                    {/* Mobil Sürükleme Çubuğu Tutamacı */}
+                    <div className="sm:hidden w-10 h-1.5 rounded-full bg-[#D5C3A3] dark:bg-slate-600 mx-auto mt-2.5 mb-0.5 shrink-0" />
+
+                    {/* Çekmece Üst Başlığı */}
+                    <div className="px-4 py-3 border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-3 shrink-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] dark:border-[var(--border)] text-[#065F46] dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <ActiveIcon size={19} strokeWidth={2.3} />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="font-extrabold text-sm sm:text-base text-[var(--foreground)] leading-snug break-words">
+                            {activeCard.title}
+                          </h2>
+                          <p className="text-xs text-[var(--muted)] leading-snug truncate">
+                            <span
+                              lang="ar"
+                              dir="rtl"
+                              className="arabic font-bold text-[#065F46] dark:text-emerald-400"
+                            >
+                              {activeCard.arabicBadge}
+                            </span>
+                            <span className="mx-1.5">·</span>
+                            <span>{activePoolCountLabel}</span>
+                          </p>
+                        </div>
+                      </div>
+
                       <button
-                        key={cat.category}
                         type="button"
                         onClick={() => {
                           playClick();
-                          setFrozenPools(null);
-                          setRangePreset("visual_words");
-                          setCategoryFilter(cat.category);
+                          setIsSetupDrawerOpen(false);
                         }}
-                        className={`min-h-[34px] px-2.5 py-1 rounded-xl border-2 text-xs font-extrabold transition-all cursor-pointer ${
-                          activeCat
-                            ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
-                            : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
-                        }`}
+                        aria-label="Kurulum penceresini kapat"
+                        className="w-10 h-10 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-center text-[var(--foreground)] hover:bg-[#EFE3CE] cursor-pointer shrink-0"
                       >
-                        {cat.label} ({cat.count})
+                        <X size={18} />
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 pb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
-                {quickPoolPills.map((pill) => {
-                  const isActive = rangePreset === pill.id;
-                  const isCompatible = isPoolCompatibleWithSelectedMode(
-                    pill.id
-                  );
-                  const incompatibilityHint = !isCompatible
-                    ? selectedType === "visual-rosetta"
-                      ? "Bu modül görselli havuzlarla (Görsel Kelimeler, Atasözleri, Diyaloglar, Metinler) çalışır"
-                      : selectedType === "sentence-builder"
-                      ? "Bu modül cümle içeren havuzlarla çalışır"
-                      : selectedType === "gender-sorting"
-                      ? "Müzekker / Müennes Sepeti 998 görsel kelime havuzuyla çalışır"
-                      : selectedType === "cloze-roleplay"
-                      ? "Diyalog Boş Replik Tamamlama 120 Diyalog havuzuyla çalışır"
-                      : selectedType === "evidence-hunter"
-                      ? "Metin Kanıt Dedektifi 60 Okuma Metni havuzuyla çalışır"
-                      : selectedType === "blind-dictation"
-                      ? "Kör Dikte sesli cümle havuzlarıyla (Günlük Cümleler, Diyaloglar, Metinler) çalışır"
-                      : undefined
-                    : undefined;
+                    </div>
 
-                  const activeStyle =
-                    pill.id === "srs_due"
-                      ? "bg-[#6741D9] border-[#5230B5] text-white shadow-2xs"
-                      : pill.id === "mistakes"
-                      ? "bg-amber-600 border-amber-700 text-white shadow-2xs"
-                      : pill.id === "favorites"
-                      ? "bg-rose-600 border-rose-700 text-white shadow-2xs"
-                      : pill.id === "weak-words"
-                      ? "bg-teal-700 border-teal-800 text-white shadow-2xs"
-                      : "bg-[#087F5B] border-[#065F46] text-white shadow-2xs";
+                    {/* Çekmece Gövdesi: Yalnızca Seçili Modülle Uyumlu 2-3 Sade Ayar */}
+                    <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3.5">
+                      {/* Odak Gramer Kalıbı URL ile geldiyse bilgi çubuğu */}
+                      {(rangePreset === "sentences_1111" ||
+                        selectedType === "error-hunter" ||
+                        selectedType === "irab-painter" ||
+                        selectedType === "blind-dictation") &&
+                        grammarFilter !== "all" && (
+                          <div
+                            dir="ltr"
+                            lang="tr"
+                            className="font-sans flex items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/60 rounded-xl px-3 py-2 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200"
+                          >
+                            <span className="truncate">
+                              📌 Odak Kalıp: <MixedText text={grammarFilter} />
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                clearGrammarFilterAndUrl();
+                              }}
+                              className="px-2 py-1 rounded-lg bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-100 text-[11px] font-black inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              <X size={12} />
+                              <span>Kaldır</span>
+                            </button>
+                          </div>
+                        )}
 
-                  const badgeStyle = isActive
-                    ? "bg-white/20 text-white border-white/30"
-                    : pill.id === "srs_due"
-                    ? "bg-[#F3F0FF] dark:bg-indigo-950/60 text-[#6741D9] dark:text-indigo-300 border-[#6741D9]/30"
-                    : pill.id === "mistakes"
-                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"
-                    : pill.id === "favorites"
-                    ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300"
-                    : pill.id === "weak-words"
-                    ? "bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border-teal-300"
-                    : "bg-[#F7EFE1] dark:bg-[var(--surface)] text-[#065F46] dark:text-emerald-400 border-[#E6D7BE]";
+                      {/* GRUP A: SADECE GÖRSEL KELİMELERLE ÇALIŞAN OYUNLAR (Tek Temiz Kategori Seçici) */}
+                      {isVisualWordsOnlyGame && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-extrabold text-[var(--foreground)]">
+                            <span>Kategori Seçimi</span>
+                            <span className="text-[11px] font-bold text-[#065F46] dark:text-emerald-400 tabular-nums">
+                              998 Görsel Kelime · {activePoolCountLabel}
+                            </span>
+                          </div>
+                          <div className="max-h-44 overflow-y-auto grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)]">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setFrozenPools(null);
+                                setRangePreset("visual_words");
+                                setCategoryFilter("all");
+                              }}
+                              className={`min-h-[38px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all cursor-pointer ${
+                                categoryFilter === "all"
+                                  ? "bg-[#087F5B] border-[#065F46] text-white"
+                                  : "bg-[#F7EFE1]/70 dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                              }`}
+                            >
+                              <span className="truncate">Tüm Kategoriler</span>
+                              <span className="text-[11px] tabular-nums opacity-90 shrink-0">
+                                {visualTotalForLevel}
+                              </span>
+                            </button>
 
-                  return (
-                    <button
-                      key={pill.id}
-                      type="button"
-                      title={incompatibilityHint}
-                      data-tooltip={incompatibilityHint}
-                      onClick={() => handlePoolSelectChange(pill.id)}
-                      className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all min-w-0 ${
-                        !isCompatible
-                          ? "opacity-45 bg-white/60 dark:bg-[var(--background)] border-[#E6D7BE] text-[var(--muted)] cursor-not-allowed"
-                          : isActive
-                          ? `${activeStyle} cursor-pointer`
-                          : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B] cursor-pointer"
-                      }`}
-                    >
-                      <span className="leading-snug truncate">{pill.title}</span>
-                      <span
-                        className={`px-1.5 sm:px-2 py-0.5 rounded-lg border text-[11px] font-black tabular-nums shrink-0 ${badgeStyle}`}
+                            {visualWordsOnlyCategories.map((cat) => {
+                              const activeCat = categoryFilter === cat.category;
+                              return (
+                                <button
+                                  key={cat.category}
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    setFrozenPools(null);
+                                    setRangePreset("visual_words");
+                                    setCategoryFilter(cat.category);
+                                  }}
+                                  className={`min-h-[38px] px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all cursor-pointer ${
+                                    activeCat
+                                      ? "bg-[#087F5B] border-[#065F46] text-white"
+                                      : "bg-[#F7EFE1]/70 dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                                  }`}
+                                >
+                                  <span className="truncate">{cat.label}</span>
+                                  <span className="text-[11px] tabular-nums opacity-85 shrink-0">
+                                    {cat.count}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* GRUP B: KENDİNDEN VERİ HAVUZLU ÖZEL MODÜLLER (Kaynak seçici gösterilmez) */}
+                      {isSelfContainedCorpusModule && (
+                        <div className="text-xs font-semibold text-[var(--muted)] flex items-center justify-between gap-2 px-1">
+                          <span>
+                            {selectedType === "error-hunter"
+                              ? "120 Diyalog + 60 Metin Doğrulanmış Gramer Notları"
+                              : selectedType === "irab-painter"
+                              ? "120 Diyalog + 60 Metin İ'rab Tahlilli Cümleler"
+                              : selectedType === "cloze-roleplay"
+                              ? "120 Günlük Diyalog Bağlamsal Replikleri"
+                              : "60 Okuma Metni Kanıt Soruları"}
+                          </span>
+                          <span className="font-extrabold text-[#065F46] dark:text-emerald-400 tabular-nums shrink-0">
+                            {activePoolCountLabel}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* GRUP C: ÇOKLU HAVUZ DESTEKLEYEN GENEL ALIŞTIRMALAR (2 Sütunlu Uyumlu Kaynak Kartları + Tekil Alt Filtre) */}
+                      {!isVisualWordsOnlyGame && !isSelfContainedCorpusModule && (
+                        <div className="space-y-2.5">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs font-extrabold text-[var(--foreground)]">
+                              <span>Çalışma Kaynağı</span>
+                              {rangePreset === "mistakes" &&
+                                mistakeIds.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      clearMistakes();
+                                      handlePoolSelectChange("full_dict");
+                                    }}
+                                    className="text-[11px] font-bold text-amber-800 dark:text-amber-300 underline cursor-pointer"
+                                  >
+                                    Hata Defterini Temizle
+                                  </button>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              {compatibleDrawerPools.map((pill) => {
+                                const isActive = rangePreset === pill.id;
+                                return (
+                                  <button
+                                    key={pill.id}
+                                    type="button"
+                                    onClick={() =>
+                                      handlePoolSelectChange(pill.id)
+                                    }
+                                    className={`min-h-[42px] px-3 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center justify-between gap-1.5 text-left transition-all cursor-pointer min-w-0 ${
+                                      isActive
+                                        ? "bg-[#087F5B] border-[#065F46] text-white shadow-2xs"
+                                        : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] hover:border-[#087F5B]"
+                                    }`}
+                                  >
+                                    <span className="truncate">
+                                      {pill.title}
+                                    </span>
+                                    <span
+                                      className={`text-[11px] font-black tabular-nums shrink-0 ${
+                                        isActive
+                                          ? "text-white/90"
+                                          : "text-[#065F46] dark:text-emerald-400"
+                                      }`}
+                                    >
+                                      {pill.countBadge}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Seçili Kaynağın Tekil Alt Filtresi */}
+                          {rangePreset === "all_dialogues" && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl px-3 min-h-[40px] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-2">
+                              <FolderOpen
+                                size={14}
+                                className="text-[#6741D9] shrink-0"
+                              />
+                              <span className="text-xs font-bold text-[var(--muted)] whitespace-nowrap">
+                                Diyalog:
+                              </span>
+                              <select
+                                value={singleDialogueId}
+                                onChange={(e) =>
+                                  handleDialogueSubSelectChange(e.target.value)
+                                }
+                                aria-label="Diyalog Seçimi"
+                                className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                              >
+                                <option value="all">
+                                  Tüm Diyaloglar ({diyaloglar.length})
+                                </option>
+                                <option value="range:1-30">
+                                  Başlangıç Kuru (Diyalog 1–30)
+                                </option>
+                                <option value="range:31-75">
+                                  Orta Kur (Diyalog 31–75)
+                                </option>
+                                <option value="range:76-120">
+                                  İleri Kur (Diyalog 76–{diyaloglar.length})
+                                </option>
+                                {diyaloglar.map((dlg) => {
+                                  const num = dlg.id.replace("dlg_", "");
+                                  return (
+                                    <option key={dlg.id} value={dlg.id}>
+                                      #{num} — {dlg.baslik_tr} ({dlg.seviye})
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          )}
+
+                          {rangePreset === "reading_texts" && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl px-3 min-h-[40px] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-2">
+                              <FolderOpen
+                                size={14}
+                                className="text-[#6741D9] shrink-0"
+                              />
+                              <span className="text-xs font-bold text-[var(--muted)] whitespace-nowrap">
+                                Metin:
+                              </span>
+                              <select
+                                value={singleReadingId}
+                                onChange={(e) => {
+                                  playClick();
+                                  setFrozenPools(null);
+                                  setSingleReadingId(e.target.value);
+                                }}
+                                aria-label="Okuma Metni Seçimi"
+                                className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                              >
+                                <option value="all">
+                                  Tüm Okuma Metinleri ({metinler.length})
+                                </option>
+                                {metinler.map((m, idx) => {
+                                  const num = String(
+                                    m.sira || idx + 1
+                                  ).padStart(2, "0");
+                                  return (
+                                    <option key={m.id} value={m.id}>
+                                      #{num} — {m.baslik_tr} ({m.seviye})
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          )}
+
+                          {(rangePreset === "sentences_1111" ||
+                            rangePreset === "proverbs_508" ||
+                            rangePreset === "visual_words") && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl px-3 min-h-[40px] border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-2">
+                              <FolderOpen
+                                size={14}
+                                className="text-[#6741D9] shrink-0"
+                              />
+                              <span className="text-xs font-bold text-[var(--muted)] whitespace-nowrap">
+                                Kategori:
+                              </span>
+                              <select
+                                value={categoryFilter}
+                                onChange={(e) => {
+                                  playClick();
+                                  setFrozenPools(null);
+                                  setCategoryFilter(e.target.value);
+                                }}
+                                aria-label="Kategori Seçimi"
+                                className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
+                              >
+                                <option value="all">
+                                  Tüm Kategoriler ({activeModuleCategories.length}{" "}
+                                  kategori)
+                                </option>
+                                {activeModuleCategories.map((cat) => (
+                                  <option
+                                    key={cat.category}
+                                    value={cat.category}
+                                  >
+                                    {cat.label} ({cat.count})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {rangePreset === "full_dict" &&
+                            !isSentencesOnlyMode && (
+                              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-4 gap-1">
+                                {(
+                                  [
+                                    { id: "all", label: "Tümü" },
+                                    { id: "isim", label: "İsimler" },
+                                    { id: "fiil", label: "Fiiller" },
+                                    { id: "edat", label: "Edatlar" },
+                                  ] as {
+                                    id: "all" | "isim" | "fiil" | "edat";
+                                    label: string;
+                                  }[]
+                                ).map((posItem) => {
+                                  const active = wordPosFilter === posItem.id;
+                                  return (
+                                    <button
+                                      key={posItem.id}
+                                      type="button"
+                                      onClick={() => {
+                                        playClick();
+                                        setFrozenPools(null);
+                                        setWordPosFilter(posItem.id);
+                                      }}
+                                      className={`min-h-[34px] px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                                        active
+                                          ? "bg-[#6741D9] text-white font-extrabold"
+                                          : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                                      }`}
+                                    >
+                                      {posItem.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                          {rangePreset === "synonyms_antonyms" && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-5 gap-1">
+                              {(
+                                [
+                                  { id: "all", label: "Tümü" },
+                                  { id: "isim", label: "İsim" },
+                                  { id: "fiil", label: "Fiil" },
+                                  { id: "sifat", label: "Sıfat" },
+                                  { id: "zarf", label: "Zarf" },
+                                ] as {
+                                  id: "all" | SynonymAntonymWordTur;
+                                  label: string;
+                                }[]
+                              ).map((turItem) => {
+                                const active = synTurFilter === turItem.id;
+                                return (
+                                  <button
+                                    key={turItem.id}
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      setFrozenPools(null);
+                                      setSynTurFilter(turItem.id);
+                                    }}
+                                    className={`min-h-[34px] px-1.5 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                                      active
+                                        ? "bg-[#087F5B] text-white font-extrabold"
+                                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {turItem.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {showSmartContentTypeSelector && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 sm:grid-cols-3 gap-1">
+                              {(rangePreset === "visual_words"
+                                ? ([
+                                    { id: "words", label: "🖼️ Kelimeler" },
+                                    {
+                                      id: "sentences",
+                                      label: "💬 Örnek Cümleler",
+                                    },
+                                  ] as {
+                                    id: QuizContentType;
+                                    label: string;
+                                  }[])
+                                : ([
+                                    { id: "words", label: "🔤 Kelimeler" },
+                                    { id: "sentences", label: "💬 Cümleler" },
+                                    { id: "mixed", label: "🔀 Karışık" },
+                                  ] as {
+                                    id: QuizContentType;
+                                    label: string;
+                                  }[])
+                              ).map((item) => {
+                                const active = effectiveContentType === item.id;
+                                return (
+                                  <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      setFrozenPools(null);
+                                      setContentType(item.id);
+                                    }}
+                                    className={`min-h-[34px] px-2.5 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                                      active
+                                        ? "bg-[#6741D9] text-white font-extrabold"
+                                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {selectedType === "fill-in-blanks" && (
+                            <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-2 gap-1">
+                              {(
+                                [
+                                  {
+                                    id: "choices",
+                                    label: "🧩 Seçmeli / Sürükle",
+                                  },
+                                  {
+                                    id: "dictation",
+                                    label: "🎧 Dinle & Yaz (İmla)",
+                                  },
+                                ] as { id: FillSubMode; label: string }[]
+                              ).map((m) => {
+                                const active = fillSubMode === m.id;
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      setFillSubMode(m.id);
+                                    }}
+                                    className={`min-h-[36px] px-2.5 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
+                                      active
+                                        ? "bg-[#6741D9] text-white font-extrabold"
+                                        : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {m.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ORTAK SADE AYAR 1: Seviye (Tümü | A1 | A2 | B1 | B2) */}
+                      <div className="space-y-1.5">
+                        <span className="block text-xs font-extrabold text-[var(--foreground)]">
+                          Seviye
+                        </span>
+                        <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-5 gap-1">
+                          {(
+                            [
+                              { id: "all", label: "Tümü" },
+                              { id: "A1", label: "A1" },
+                              { id: "A2", label: "A2" },
+                              { id: "B1", label: "B1" },
+                              { id: "B2", label: "B2" },
+                            ] as { id: "all" | Level; label: string }[]
+                          ).map((lvl) => {
+                            const active = cefrFilter === lvl.id;
+                            return (
+                              <button
+                                key={lvl.id}
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setFrozenPools(null);
+                                  setCefrFilter(lvl.id);
+                                }}
+                                className={`min-h-[38px] rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                  active
+                                    ? "bg-[#6741D9] text-white shadow-2xs"
+                                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                                }`}
+                              >
+                                {lvl.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* ORTAK SADE AYAR 2: Soru Sayısı & Süre (Sadece destekleyen modüllerde görünür) */}
+                      {(supportsQuestionCount || supportsTimeLimit) && (
+                        <div
+                          className={`grid gap-2.5 ${
+                            supportsQuestionCount && supportsTimeLimit
+                              ? "grid-cols-1 sm:grid-cols-2"
+                              : "grid-cols-1"
+                          }`}
+                        >
+                          {supportsQuestionCount && (
+                            <div className="space-y-1.5">
+                              <span className="block text-xs font-extrabold text-[var(--foreground)]">
+                                Soru Sayısı
+                              </span>
+                              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-3 gap-1">
+                                {([10, 20, 30] as (10 | 20 | 30)[]).map(
+                                  (cnt) => (
+                                    <button
+                                      key={cnt}
+                                      type="button"
+                                      onClick={() => {
+                                        playClick();
+                                        setQuestionCount(cnt);
+                                      }}
+                                      className={`min-h-[36px] rounded-lg text-xs font-extrabold tabular-nums transition-all cursor-pointer ${
+                                        questionCount === cnt
+                                          ? "bg-[#087F5B] text-white"
+                                          : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                                      }`}
+                                    >
+                                      {cnt}
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {supportsTimeLimit && (
+                            <div className="space-y-1.5">
+                              <span className="inline-flex items-center gap-1 text-xs font-extrabold text-[var(--foreground)]">
+                                <Timer size={13} className="text-[#6741D9]" />
+                                <span>Süre</span>
+                              </span>
+                              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 border border-[#E6D7BE] dark:border-[var(--border)] grid grid-cols-3 gap-1">
+                                {[
+                                  { val: null, label: "Süresiz" },
+                                  { val: 60, label: "60s" },
+                                  { val: 30, label: "30s" },
+                                ].map((t) => (
+                                  <button
+                                    key={String(t.val)}
+                                    type="button"
+                                    onClick={() => {
+                                      playClick();
+                                      setTimeLimit(t.val);
+                                    }}
+                                    className={`min-h-[36px] rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                      timeLimit === t.val
+                                        ? "bg-[#087F5B] text-white"
+                                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {t.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {supportsFeedbackToggle && (
+                        <div className="flex items-center justify-between gap-2 bg-white dark:bg-[var(--background)] rounded-xl px-3 py-1.5 border border-[#E6D7BE] dark:border-[var(--border)]">
+                          <span className="text-xs font-bold text-[var(--muted)]">
+                            Sonuç Gösterimi
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {(
+                              [
+                                { id: "instant", label: "⚡ Hemen" },
+                                { id: "end", label: "🏁 Bitince" },
+                              ] as { id: FeedbackMode; label: string }[]
+                            ).map((fb) => {
+                              const active = feedbackMode === fb.id;
+                              return (
+                                <button
+                                  key={fb.id}
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    setFeedbackMode(fb.id);
+                                  }}
+                                  className={`min-h-[32px] px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer ${
+                                    active
+                                      ? "bg-[#087F5B] text-white font-extrabold"
+                                      : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
+                                  }`}
+                                >
+                                  {fb.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sabit Alt Başlatma Çubuğu (Tek Büyük Birincil Buton) */}
+                    <div className="px-4 pt-2.5 pb-[max(0.85rem,env(safe-area-inset-bottom))] bg-[#F7EFE1] dark:bg-[var(--surface)] border-t border-[#E6D7BE] dark:border-[var(--border)] shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleStartExercise}
+                        disabled={
+                          isMistakesEmpty ||
+                          (!isSelfSourcedSpecialMode &&
+                            combinedVocabulary.length < 4 &&
+                            sentenceCountInPool < 2 &&
+                            idiomsPool.length < 1 &&
+                            filteredVisualWordsPool.length < 4)
+                        }
+                        className="w-full min-h-[50px] px-5 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-sm sm:text-base rounded-2xl border-b-4 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap"
                       >
-                        {pill.countBadge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Kütüphane Defterim veya Mahreç Tekrarı URL'sinden gelindiyse aktif kaynak göstergesi */}
-            {(rangePreset === "favorites" || rangePreset === "weak-words") && (
-              <div className="flex items-center justify-between gap-2 bg-white/90 dark:bg-[var(--background)] rounded-xl px-3 py-1.5 border border-[#6741D9]/50 text-xs font-extrabold text-[#6741D9] dark:text-indigo-300">
-                <span>
-                  {rangePreset === "favorites"
-                    ? `❤️ Kişisel Çalışma Defterim (${favoriteWords.length} kayıt) seçili`
-                    : `🎯 Mahreç Tekrarı (${weakWords.length} kelime) seçili`}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handlePoolSelectChange("full_dict")}
-                  className="text-[11px] font-bold underline cursor-pointer"
-                >
-                  Tüm Sözlüğe Dön
-                </button>
-              </div>
-            )}
-
-            {/* Gramer Kalıbı filtresi aktifse belirgin üst rozet */}
-            {(rangePreset === "sentences_1111" ||
-              selectedType === "error-hunter" ||
-              selectedType === "irab-painter" ||
-              selectedType === "blind-dictation") &&
-              grammarFilter !== "all" && (
-              <div
-                dir="ltr"
-                lang="tr"
-                className="font-sans flex flex-wrap items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/60 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700 text-xs font-extrabold text-amber-900 dark:text-amber-200"
-              >
-                <span className="inline-flex flex-wrap items-center gap-1">
-                  <span>📌 Odak Kalıp:</span>
-                  <strong className="text-amber-950 dark:text-amber-100">
-                    <MixedText text={grammarFilter} />
-                  </strong>
-                  {rangePreset === "sentences_1111" &&
-                    !isSelfSourcedSpecialMode && (
-                      <span className="text-amber-700 dark:text-amber-300 font-bold">
-                        ({active1111SentencesWordItems.length} cümle)
-                      </span>
-                    )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    clearGrammarFilterAndUrl();
-                  }}
-                  className="px-2 py-0.5 rounded-lg bg-amber-200/80 dark:bg-amber-900 hover:bg-amber-300 text-amber-950 dark:text-amber-100 text-[11px] font-black inline-flex items-center gap-1 cursor-pointer shrink-0"
-                >
-                  <X size={12} />
-                  <span>Filtreyi Kaldır</span>
-                </button>
-              </div>
-            )}
-
-            {/* Bağlama Duyarlı Çalışma Türü Seçicisi: SADECE Çoklu-Tür Kaynaklarında (120 Diyalog, 60 Metin, 998 Görsel Kelime) görünür */}
-            {showSmartContentTypeSelector && (
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="text-[11px] font-extrabold text-[var(--muted)] px-1.5 whitespace-nowrap">
-                  Çalışma Türü:
-                </span>
-                {rangePreset === "visual_words" ? (
-                  <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:min-w-[340px]">
-                    {(
-                      [
-                        {
-                          id: "words",
-                          label: `🖼️ Kelimeler (${filteredVisualWordsPool.length})`,
-                        },
-                        {
-                          id: "sentences",
-                          label: `💬 Örnek Cümleler (${filteredVisualWordsPool.filter((w) => Boolean(w.ornek_ar)).length})`,
-                        },
-                      ] as { id: QuizContentType; label: string }[]
-                    ).map((item) => {
-                      const active = effectiveContentType === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFrozenPools(null);
-                            setContentType(item.id);
-                          }}
-                          className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:min-w-[340px]">
-                    {(
-                      [
-                        { id: "words", label: "🔤 Kelimeler" },
-                        { id: "sentences", label: "💬 Cümleler" },
-                        { id: "mixed", label: "🔀 Karışık" },
-                      ] as { id: QuizContentType; label: string }[]
-                    ).map((item) => {
-                      const active = effectiveContentType === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFrozenPools(null);
-                            setContentType(item.id);
-                          }}
-                          className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#6741D9] text-white font-extrabold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tek Kompakt Filtre ve Ayar Barı: Kategori/Konu + Seviye + Soru/Süre/Sonuç + Başlat Butonu */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-1.5 sm:gap-2">
-              {/* 1. Dinamik Alt Filtre (Sadece 120 Diyalog, 60 Metin, 998 Görsel Kelime, 1111 Cümle veya 508 Atasözü seçiliyse görünür) */}
-              {rangePreset === "all_dialogues" && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
-                  <FolderOpen
-                    size={13}
-                    className="text-[#6741D9] shrink-0"
-                  />
-                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                    Diyalog:
-                  </span>
-                  <select
-                    value={singleDialogueId}
-                    onChange={(e) =>
-                      handleDialogueSubSelectChange(e.target.value)
-                    }
-                    aria-label="Diyalog Seçimi"
-                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
-                  >
-                    <option value="all">
-                      Tüm Diyaloglar ({diyaloglar.length})
-                    </option>
-                    <option value="range:1-30">
-                      Başlangıç Kuru (Diyalog 1–30)
-                    </option>
-                    <option value="range:31-75">
-                      Orta Kur (Diyalog 31–75)
-                    </option>
-                    <option value="range:76-120">
-                      İleri Kur (Diyalog 76–{diyaloglar.length})
-                    </option>
-                    {diyaloglar.map((dlg) => {
-                      const num = dlg.id.replace("dlg_", "");
-                      return (
-                        <option key={dlg.id} value={dlg.id}>
-                          #{num} — {dlg.baslik_tr} ({dlg.seviye})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              )}
-
-              {rangePreset === "reading_texts" && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
-                  <FolderOpen
-                    size={13}
-                    className="text-[#6741D9] shrink-0"
-                  />
-                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                    Metin:
-                  </span>
-                  <select
-                    value={singleReadingId}
-                    onChange={(e) => {
-                      playClick();
-                      setFrozenPools(null);
-                      setSingleReadingId(e.target.value);
-                    }}
-                    aria-label="Okuma Metni Seçimi"
-                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
-                  >
-                    <option value="all">
-                      Tüm Okuma Metinleri ({metinler.length})
-                    </option>
-                    {metinler.map((m, idx) => {
-                      const num = String(m.sira || idx + 1).padStart(2, "0");
-                      return (
-                        <option key={m.id} value={m.id}>
-                          #{num} — {m.baslik_tr} ({m.seviye})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              )}
-
-              {(rangePreset === "sentences_1111" ||
-                rangePreset === "proverbs_508" ||
-                rangePreset === "visual_words") && (
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0 lg:min-w-[220px]">
-                  <FolderOpen
-                    size={13}
-                    className="text-[#6741D9] shrink-0"
-                  />
-                  <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                    Kategori:
-                  </span>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => {
-                      playClick();
-                      setFrozenPools(null);
-                      setCategoryFilter(e.target.value);
-                    }}
-                    aria-label="Kategori Seçimi"
-                    className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
-                  >
-                    <option value="all">
-                      Tüm Kategoriler ({activeModuleCategories.length} kategori)
-                    </option>
-                    {activeModuleCategories.map((cat) => (
-                      <option key={cat.category} value={cat.category}>
-                        {cat.label} ({cat.count})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Kural C: 📚 Tüm Sözlük Seçildiğinde Kelime Türü Filtresi ([Tümü] [İsimler] [Fiiller] [Edat & Kalıplar]) */}
-              {!isSelfSourcedSpecialMode &&
-                rangePreset === "full_dict" &&
-                !isSentencesOnlyMode && (
-                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
-                    Kelime Türü:
-                  </span>
-                  <div className="grid grid-cols-2 sm:flex items-center gap-1 w-full sm:w-auto">
-                    {(
-                      [
-                        { id: "all", label: "Tümü" },
-                        { id: "isim", label: "İsimler" },
-                        { id: "fiil", label: "Fiiller" },
-                        { id: "edat", label: "Edat & Kalıplar" },
-                      ] as {
-                        id: "all" | "isim" | "fiil" | "edat";
-                        label: string;
-                      }[]
-                    ).map((posItem) => {
-                      const active = wordPosFilter === posItem.id;
-                      return (
-                        <button
-                          key={posItem.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFrozenPools(null);
-                            setWordPosFilter(posItem.id);
-                          }}
-                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#6741D9] text-white font-bold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {posItem.label}
-                        </button>
-                      );
-                    })}
+                        <Play
+                          size={16}
+                          fill="currentColor"
+                          className="shrink-0"
+                        />
+                        <span className="truncate">
+                          {isGameActionLabel
+                            ? `Oyunu Başlat (${activeItemCount.toLocaleString("tr-TR")} Öğe)`
+                            : `Alıştırmayı Başlat (${activeItemCount.toLocaleString("tr-TR")} Öğe)`}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* 🔄 Eş & Zıt Anlamlılar Seçildiğinde Kelime Türü Filtresi ([Tümü] [İsim] [Fiil] [Sıfat] [Zarf]) */}
-              {!isSelfSourcedSpecialMode &&
-                rangePreset === "synonyms_antonyms" && (
-                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1.5 whitespace-nowrap">
-                    Kelime Türü:
-                  </span>
-                  <div className="grid grid-cols-3 sm:flex items-center gap-1 w-full sm:w-auto">
-                    {(
-                      [
-                        { id: "all", label: "Tümü" },
-                        { id: "isim", label: "📘 İsim" },
-                        { id: "fiil", label: "⚡ Fiil" },
-                        { id: "sifat", label: "🎨 Sıfat" },
-                        { id: "zarf", label: "⏱️ Zarf" },
-                      ] as {
-                        id: "all" | SynonymAntonymWordTur;
-                        label: string;
-                      }[]
-                    ).map((turItem) => {
-                      const active = synTurFilter === turItem.id;
-                      return (
-                        <button
-                          key={turItem.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFrozenPools(null);
-                            setSynTurFilter(turItem.id);
-                          }}
-                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#087F5B] text-white font-bold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {turItem.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. CEFR Seviye Filtresi (Tüm Seviyeler | A1 | A2 | B1 | B2) */}
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 h-9 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-bold text-[var(--muted)] whitespace-nowrap">
-                  Seviye:
-                </span>
-                <select
-                  value={cefrFilter}
-                  onChange={(e) => {
-                    playClick();
-                    setFrozenPools(null);
-                    setCefrFilter(e.target.value as "all" | Level);
-                  }}
-                  aria-label="CEFR Seviye Filtresi"
-                  className="bg-transparent text-xs font-extrabold text-[var(--foreground)] focus:outline-none cursor-pointer w-full truncate"
-                >
-                  <option value="all">Tüm Seviyeler (A1–B2)</option>
-                  <option value="A1">Seviye A1 (Başlangıç)</option>
-                  <option value="A2">Seviye A2 (Temel)</option>
-                  <option value="B1">Seviye B1 (Orta)</option>
-                  <option value="B2">Seviye B2 (İleri)</option>
-                </select>
-              </div>
-
-              {/* Boşluk Doldurma Alt Mod Seçicisi */}
-              {selectedType === "fill-in-blanks" && (
-                <div className="sm:col-span-2 lg:col-span-1 py-1 px-1.5 bg-white dark:bg-[var(--background)] rounded-xl h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                    Mod:
-                  </span>
-                  <div className="grid grid-cols-2 sm:flex items-center gap-1 w-full sm:w-auto">
-                    {(
-                      [
-                        { id: "choices", label: "🧩 Seçmeli / Sürükle" },
-                        { id: "dictation", label: "🎧 Dinle & Yaz (İmla)" },
-                      ] as { id: FillSubMode; label: string }[]
-                    ).map((m) => {
-                      const active = fillSubMode === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFillSubMode(m.id);
-                          }}
-                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#6741D9] text-white font-bold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Değerlendirme Zamanı Seçicisi (⚡ Hemen | 🏁 Bitince) */}
-              {!isSelfSourcedSpecialMode &&
-                selectedType !== "flashcard" &&
-                selectedType !== "visual-rosetta" &&
-                selectedType !== "balloon-safari" &&
-                selectedType !== "memory-flip" &&
-                selectedType !== "morphology-context" &&
-                selectedType !== "classroom-battle" && (
-                <div className="sm:col-span-2 lg:col-span-1 bg-white dark:bg-[var(--background)] rounded-xl p-1 h-auto border border-[#E6D7BE] dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                    Sonuç:
-                  </span>
-                  <div className="grid grid-cols-2 sm:flex items-center gap-1 w-full sm:w-auto">
-                    {(
-                      [
-                        { id: "instant", label: "⚡ Hemen" },
-                        { id: "end", label: "🏁 Bitince" },
-                      ] as { id: FeedbackMode; label: string }[]
-                    ).map((fb) => {
-                      const active = feedbackMode === fb.id;
-                      return (
-                        <button
-                          key={fb.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setFeedbackMode(fb.id);
-                          }}
-                          className={`px-2 py-1 text-xs rounded-lg transition-all whitespace-nowrap text-center cursor-pointer ${
-                            active
-                              ? "bg-[#087F5B] text-white font-bold shadow-2xs"
-                              : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                          }`}
-                        >
-                          {fb.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 4 & 5. Soru Sayısı (10 | 20 | 30) ve Süre (Süresiz | 60s | 30s) */}
-              <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-2 gap-1.5 w-full lg:w-auto">
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-8.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
-                  <span className="text-[11px] font-bold text-[var(--muted)] px-1 whitespace-nowrap">
-                    Soru:
-                  </span>
-                  {([10, 20, 30] as (10 | 20 | 30)[]).map((cnt) => (
-                    <button
-                      key={cnt}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setQuestionCount(cnt);
-                      }}
-                      className={`flex-1 px-2 py-0.5 text-xs tabular-nums rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                        questionCount === cnt
-                          ? "bg-[#087F5B] text-white font-bold"
-                          : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                      }`}
-                    >
-                      {cnt}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="bg-white dark:bg-[var(--background)] rounded-xl p-1 h-8.5 border border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-1">
-                  <Timer
-                    size={12}
-                    className="text-[#6741D9] ml-1 shrink-0"
-                  />
-                  {[
-                    { val: null, label: "Süresiz" },
-                    { val: 60, label: "60s" },
-                    { val: 30, label: "30s" },
-                  ].map((t) => (
-                    <button
-                      key={String(t.val)}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setTimeLimit(t.val);
-                      }}
-                      className={`flex-1 px-1.5 py-0.5 text-xs rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                        timeLimit === t.val
-                          ? "bg-[#087F5B] text-white font-bold"
-                          : "text-[var(--muted)] font-semibold hover:text-[var(--foreground)]"
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 6. Sağ Uç / Mobil Tam Genişlik: Vurgulu [▶ Alıştırmayı Başlat (X Öğe)] Butonu (Tek ▶ ikonu) */}
-              <button
-                type="button"
-                onClick={handleStartExercise}
-                disabled={
-                  isMistakesEmpty ||
-                  (!isSelfSourcedSpecialMode &&
-                    combinedVocabulary.length < 4 &&
-                    sentenceCountInPool < 2 &&
-                    idiomsPool.length < 1 &&
-                    filteredVisualWordsPool.length < 4)
-                }
-                className="sm:col-span-2 lg:col-span-1 lg:ml-auto w-full lg:w-auto min-h-[48px] sm:min-h-[40px] px-4 bg-[#087F5B] hover:bg-[#065F46] disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl border-b-3 border-[#065F46] active:border-b-0 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
-              >
-                <Play size={14} fill="currentColor" className="shrink-0" />
-                <span className="truncate">
-                  Alıştırmayı Başlat ({activeItemCount.toLocaleString("tr-TR")} Öğe)
-                </span>
-              </button>
-            </div>
-
-            {/* Seçili Alıştırma Özeti Şeridi (Tek Satırlık Net Pedagojik Özet Rozeti) */}
-            <div className="rounded-xl bg-white/90 dark:bg-[var(--background)] px-3 py-1.5 border border-[#E6D7BE] dark:border-[var(--border)] flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-bold text-[var(--foreground)]">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="text-[#065F46] dark:text-emerald-400 font-extrabold">
-                  🎯 Seçili:{" "}
-                  {exerciseCards.find((c) => c.id === selectedType)?.title}
-                </span>
-                <span className="text-[var(--muted)]">•</span>
-                <span>
-                  Kaynak:{" "}
-                  <strong className="text-[#6741D9] dark:text-indigo-300">
-                    {selectedType === "error-hunter"
-                      ? `${
-                          ekGramerNotlari.length +
-                          diyalogGramerNotlari.length +
-                          metinGramerNotlari.length
-                        } Gramer Notu (${activePoolCountLabel})`
-                      : selectedType === "irab-painter"
-                      ? `Gramer İ'rab Külliyatı (${activePoolCountLabel})`
-                      : selectedType === "gender-sorting"
-                      ? `Görsel İsim Havuzu (${activePoolCountLabel})`
-                      : selectedType === "cloze-roleplay"
-                      ? `120 Diyalog (${activePoolCountLabel})`
-                      : selectedType === "evidence-hunter"
-                      ? `60 Okuma Metni (${activePoolCountLabel})`
-                      : selectedType === "blind-dictation"
-                      ? `${
-                          rangePreset === "all_dialogues"
-                            ? "120 Diyalog"
-                            : rangePreset === "reading_texts"
-                            ? "60 Okuma Metni"
-                            : "Sesli Cümle & Gramer Havuzu"
-                        } (${activePoolCountLabel})`
-                      : `${
-                          poolOptions
-                            .find((p) => p.id === rangePreset)
-                            ?.title.replace(/^[^\s]+\s/, "") || "Tüm Sözlük"
-                        } (${activePoolCountLabel})`}
-                  </strong>
-                </span>
-                <span className="text-[var(--muted)]">•</span>
-                <span>
-                  Seviye:{" "}
-                  <strong>
-                    {cefrFilter === "all"
-                      ? "Tüm Seviyeler"
-                      : `Seviye ${cefrFilter}`}
-                  </strong>
-                </span>
-                <span className="text-[var(--muted)]">•</span>
-                <span>
-                  <strong>{questionCount} Soru</strong> (
-                  {timeLimit ? `${timeLimit}s Süreli` : "Süresiz"})
-                </span>
-              </div>
-            </div>
-
-            {isMistakesEmpty && (
-              <div className="bg-emerald-50 dark:bg-emerald-950/50 rounded-xl px-3.5 py-2 border-2 border-[#087F5B]/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-extrabold text-[#065F46] dark:text-emerald-400">
-                <div className="flex items-center gap-2 text-center sm:text-left">
-                  <Check
-                    size={15}
-                    className="shrink-0 text-[#065F46] dark:text-emerald-400"
-                  />
-                  <span>
-                    Harika! Şu an Hata Defterim listenizde zorlandığınız bir kelime
-                    veya cümle bulunmuyor.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handlePoolSelectChange("full_dict")}
-                  className="px-3 py-1 rounded-lg bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold shrink-0 cursor-pointer"
-                >
-                  Tüm Sözlüğe Geç
-                </button>
-              </div>
-            )}
-
-            {!isMistakesEmpty &&
-              rangePreset === "mistakes" &&
-              mistakeIds.length > 0 && (
-                <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl px-3 py-1.5 border border-amber-300 dark:border-amber-700/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-amber-900 dark:text-amber-200">
-                  <span>
-                    ⚡ Hata Defterim&apos;de{" "}
-                    <strong>{mistakeIds.length}</strong> öğe kayıtlı. Farklı
-                    günlerde 3 kez ipucusuz doğru cevapladığınız (Kademe 3/5)
-                    sorular uzun süreli hafızaya alınarak listeden otomatik
-                    mezun edilir.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      clearMistakes();
-                    }}
-                    className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-amber-400 text-[11px] font-extrabold text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer shrink-0"
-                  >
-                    Defteri Temizle
-                  </button>
-                </div>
-              )}
-
-            {poolNotice && !isMistakesEmpty && (
-              <div className="bg-white dark:bg-[var(--background)] rounded-xl px-2.5 py-1 border border-[#E6D7BE] flex items-center gap-1.5 text-[11px] font-semibold text-[#6741D9] dark:text-[#d0bfff]">
-                <Info size={13} className="shrink-0" />
-                <span className="truncate">{poolNotice}</span>
-              </div>
-            )}
-          </section>
+              );
+            })()}
         </>
       ) : (
         /* AKTİF ALIŞTIRMA EKRANI */

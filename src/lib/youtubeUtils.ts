@@ -395,13 +395,13 @@ export function resolveYoutubeIds(
 /**
  * Standart YouTube gömülü oynatıcı (https://www.youtube.com/embed/...) URL'sini üretir:
  * - playlistId varsa ve playlistIndex > 1 seçilmişse (0-tabanlı index = playlistIndex - 1):
- *   https://www.youtube.com/embed/videoseries?list=${playlistId}&index=${playlistIndex - 1}&rel=0&modestbranding=1&autoplay=1
+ *   https://www.youtube.com/embed/videoseries?list=${playlistId}&index=${playlistIndex - 1}&rel=0&modestbranding=1&autoplay=1&enablejsapi=1
  * - Hem videoId hem playlistId varsa (varsayılan 1. bölüm):
- *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
+ *   https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&modestbranding=1&autoplay=1&enablejsapi=1
  * - Sadece playlistId varsa (!videoId):
- *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1&autoplay=1
+ *   https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1&autoplay=1&enablejsapi=1
  * - Sadece videoId varsa:
- *   https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1(&start=...)
+ *   https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1(&start=...)&enablejsapi=1
  */
 export function buildYoutubeEmbedUrl(
   item: Pick<
@@ -428,7 +428,7 @@ export function buildYoutubeEmbedUrl(
     const zeroBasedIndex = normalizedEpisode - 1;
     return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
       playlistId
-    )}&index=${zeroBasedIndex}&rel=0&modestbranding=1${autoplayParam}`;
+    )}&index=${zeroBasedIndex}&rel=0&modestbranding=1${autoplayParam}&enablejsapi=1`;
   }
 
   if (videoId && playlistId) {
@@ -436,19 +436,19 @@ export function buildYoutubeEmbedUrl(
       videoId
     )}?list=${encodeURIComponent(
       playlistId
-    )}&rel=0&modestbranding=1${autoplayParam}${startParam}`;
+    )}&rel=0&modestbranding=1${autoplayParam}${startParam}&enablejsapi=1`;
   }
 
   if (!videoId && playlistId) {
     return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(
       playlistId
-    )}&rel=0&modestbranding=1${autoplayParam}`;
+    )}&rel=0&modestbranding=1${autoplayParam}&enablejsapi=1`;
   }
 
   if (videoId) {
     return `https://www.youtube.com/embed/${encodeURIComponent(
       videoId
-    )}?rel=0&modestbranding=1${autoplayParam}${startParam}`;
+    )}?rel=0&modestbranding=1${autoplayParam}${startParam}&enablejsapi=1`;
   }
 
   return "";

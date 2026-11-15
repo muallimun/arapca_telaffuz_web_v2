@@ -3440,7 +3440,7 @@ test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     playlistOnlyEmbed,
-    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1"
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1&enablejsapi=1"
   );
 
   const dualEmbed = buildYoutubeEmbedUrl({
@@ -3450,7 +3450,7 @@ test("33. YouTube Video & İzleme Rehberi (45 Gerçek Kayıt), CSP, Zero-Lag Lit
   });
   assert.equal(
     dualEmbed,
-    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1&enablejsapi=1"
   );
 
   const thumbs = getYoutubeThumbnailUrls("dQw4w9WgXcQ");
@@ -3745,7 +3745,7 @@ test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane
   );
   assert.equal(
     plOnly,
-    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1",
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1&enablejsapi=1",
     "Sadece playlist_id içeren kayıtlar youtube.com/embed/videoseries adresini üretmeli ve undefined içermemelidir"
   );
   assert.equal(plOnly.includes("undefined"), false);
@@ -3757,8 +3757,8 @@ test("35. YouTube Standart Embed + Çakışmasız Playlist Kapağı, Kütüphane
   });
   assert.equal(
     singleVid,
-    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&autoplay=1&start=30",
-    "Tekil videolar youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&start=... adresini üretmelidir"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&autoplay=1&start=30&enablejsapi=1",
+    "Tekil videolar youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&start=...&enablejsapi=1 adresini üretmelidir"
   );
 
   const liteCardCode = fs.readFileSync(
@@ -3995,7 +3995,7 @@ test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 60 Kayıtt
   });
   assert.equal(
     regexFallbackUrl,
-    "https://www.youtube.com/embed/N6kslYvDUDE?list=PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp&rel=0&modestbranding=1&autoplay=1"
+    "https://www.youtube.com/embed/N6kslYvDUDE?list=PLt_luoZum2FEQdmjzu72c_ENdoHZ28rGp&rel=0&modestbranding=1&autoplay=1&enablejsapi=1"
   );
 
   // 3. LiteYoutubeCard ve YoutubePlayerModal iframe & mobil ergonomi kontrolü
@@ -4013,11 +4013,11 @@ test("37. YouTube Iframe COEP/COOP Blok Kaldırma, CSP Tam İzinleri, 60 Kayıtt
         'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
       ) &&
       liteCardCode.includes('referrerPolicy="strict-origin-when-cross-origin"') &&
-      liteCardCode.includes("w-[95vw] max-w-4xl") &&
+      liteCardCode.includes("w-[95vw] max-w-5xl") &&
       liteCardCode.includes("✕ Kapat") &&
       liteCardCode.includes("YouTube&apos;da Aç ↗"),
     true,
-    "LiteYoutubeCard ilk yüklemede iframe basmamalı, imageError gradyan yedeği kullanmalı, sandbox içermemeli ve Sinema Modu mobil uyumlu olmalıdır"
+    "LiteYoutubeCard ilk yüklemede iframe basmamalı, imageError gradyan yedeği kullanmalı, sandbox içermemeli ve Sinema Modu mobil/masaüstü uyumlu olmalıdır"
   );
 });
 
@@ -7112,23 +7112,23 @@ test("61) Oynatma Listeleri İçin Uygulama İçi Bölüm Seçici, Kaldığı B�
   };
   assert.equal(
     buildYoutubeEmbedUrl(plWithVideo, { autoplay: true, playlistIndex: 1 }),
-    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1",
-    "playlistIndex === 1 olduğunda mevcut 1. bölüm URL davranışı korunmalıdır"
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&rel=0&modestbranding=1&autoplay=1&enablejsapi=1",
+    "playlistIndex === 1 olduğunda mevcut 1. bölüm URL davranışı ve enablejsapi=1 korunmalıdır"
   );
   assert.equal(
     buildYoutubeEmbedUrl(plWithVideo, { autoplay: true, playlistIndex: 4 }),
-    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&index=3&rel=0&modestbranding=1&autoplay=1",
-    "playlistIndex === 4 olduğunda videoId atlanarak doğrudan videoseries?list=...&index=3 (0-tabanlı) üretilmelidir"
+    "https://www.youtube.com/embed/videoseries?list=PLEM4OKFQO5J02EA68cT2o6ZQrN35JKEJx&index=3&rel=0&modestbranding=1&autoplay=1&enablejsapi=1",
+    "playlistIndex === 4 olduğunda videoId atlanarak doğrudan videoseries?list=...&index=3&...&enablejsapi=1 (0-tabanlı) üretilmelidir"
   );
 
-  // 40 oynatma listesinin tamamında 7. bölüm URL'si index=6 içermeli
+  // 40 oynatma listesinin tamamında 7. bölüm URL'si index=6 ve enablejsapi=1 içermeli
   for (const pl of playlistItems) {
     const ep7Url = buildYoutubeEmbedUrl(pl, { autoplay: true, playlistIndex: 7 });
     assert.equal(
       ep7Url.startsWith("https://www.youtube.com/embed/videoseries?list=") &&
-        ep7Url.includes("&index=6&rel=0&modestbranding=1&autoplay=1"),
+        ep7Url.includes("&index=6&rel=0&modestbranding=1&autoplay=1&enablejsapi=1"),
       true,
-      `${pl.id} oynatma listesinde 7. bölüm seçildiğinde videoseries ve &index=6 üretilmelidir`
+      `${pl.id} oynatma listesinde 7. bölüm seçildiğinde videoseries, &index=6 ve &enablejsapi=1 üretilmelidir`
     );
   }
 
@@ -7205,25 +7205,20 @@ test("61) Oynatma Listeleri İçin Uygulama İçi Bölüm Seçici, Kaldığı B�
     path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
     "utf8"
   );
-  const selectorUsages =
-    liteCardCode.match(/<PlaylistEpisodeSelectorBar/g) || [];
   assert.equal(
-    selectorUsages.length >= 2 &&
-      liteCardCode.includes("⏮ Önceki") &&
-      liteCardCode.includes("Sonraki ⏭") &&
-      liteCardCode.includes("+ Daha Fazla Bölüm") &&
-      liteCardCode.includes("Tüm Seriyi Tamamladım") &&
+    liteCardCode.includes('aria-label="Oynatma Listesi Bölüm Seçici"') &&
+      liteCardCode.includes("📑 Bölümler (") &&
+      liteCardCode.includes("Tüm Seri") &&
       liteCardCode.includes(". Bölümden Devam Et") &&
       liteCardCode.includes(". Bölümü İzledim") &&
       liteCardCode.includes(". Bölüm İzlendi") &&
-      liteCardCode.includes("Bölüm İzlendi") &&
-      liteCardCode.includes("playlistIndex: isPlaylistItem ? activeEpisode : undefined") &&
-      liteCardCode.includes("playlistIndex: activeIsPlaylist ? activeEpisode : undefined") &&
+      liteCardCode.includes("playlistIndex: isPlaylistItem ? effectiveSrcEpisode : undefined") &&
+      liteCardCode.includes("playlistIndex: activeIsPlaylist ? effectiveSrcEpisode : undefined") &&
       !liteCardCode.includes("style={{") &&
       !liteCardCode.includes("sandbox=") &&
       fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
     true,
-    "LiteYoutubeCard ve YoutubePlayerModal oynatma listeleri için Bölüm Kontrol Çubuğu, Kaldığı Bölümden Devam Et ve Bölüm Bazlı İzlendi kontrollerini eksiksiz içermelidir"
+    "LiteYoutubeCard ve YoutubePlayerModal oynatma listeleri için Bölüm Seçici, Kaldığı Bölümden Devam Et ve Bölüm Bazlı İzlendi kontrollerini eksiksiz içermelidir"
   );
 });
 
@@ -7322,5 +7317,61 @@ test("62) Arapça (RTL — Sağdan Sola) Okuma Ergonomisi, İkili Sütun Yönü 
     "metin/[id] Sorular sekmesi sağ baş A-D rozetlerini göstermeli ve GenderSortingGame masaüstünde هَذَا sepetini sağda, هَذِهِ sepetini solda konumlandırmalıdır"
   );
 });
+
+test("63) Oynatma Listesi Split-Cinema Yan Yana Dikey Bölüm Listesi, Satır İçi <select> Bölüm Barı ve YouTube enablejsapi=1 postMessage Senkronizasyonu", () => {
+  const liteCardCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "LiteYoutubeCard.tsx"),
+    "utf8"
+  );
+  const ytUtilsCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "youtubeUtils.ts"),
+    "utf8"
+  );
+
+  // 1. Split-Cinema masaüstü 2 sütun (max-w-5xl, lg:grid-cols-[1fr_280px], max-h-[58dvh]) + fare tekerleğiyle kaydırılan dikey bölüm listesi
+  assert.equal(
+    liteCardCode.includes("max-w-5xl max-h-[94dvh]") &&
+      liteCardCode.includes(
+        "flex flex-col lg:grid lg:grid-cols-[1fr_280px] flex-1 min-h-0 overflow-hidden"
+      ) &&
+      liteCardCode.includes("w-full aspect-video max-h-[58dvh] bg-black shrink-0") &&
+      liteCardCode.includes("data-cinema-episode={ep}") &&
+      liteCardCode.includes('rowEl.scrollIntoView({ block: "nearest" })') &&
+      liteCardCode.includes("flex-1 overflow-y-auto p-2 space-y-1 max-h-[220px] lg:max-h-none"),
+    true,
+    "YoutubePlayerModal masaüstünde max-w-5xl ve lg:grid-cols-[1fr_280px] Split-Cinema düzeni ile fare tekerleğiyle kayan dikey bölüm listesi sunmalıdır"
+  );
+
+  // 2. Satır içi oynatıcıda video başlığını kapatan top-2 right-2 butonların kaldırılması, <select> açılır bölüm seçici ve taşmayan tek satır kart alt aksiyon barı
+  assert.equal(
+    !liteCardCode.includes("absolute top-2 right-2") &&
+      liteCardCode.includes("<select") &&
+      liteCardCode.includes('aria-label="Oynatma Listesi Bölüm Seçici"') &&
+      liteCardCode.includes('aria-label="Satır İçi Oynatıcı Kontrol Şeridi"') &&
+      liteCardCode.includes(
+        "flex items-center gap-1.5 min-w-0"
+      ) &&
+      liteCardCode.includes('title="Sinema Modu"') &&
+      liteCardCode.includes('title="YouTube\'da Aç"'),
+    true,
+    "LiteYoutubeCard video başlığını kapatan üst butonları kaldırmalı, satır içinde <select> bölüm seçici ve altta tek satır kompakt aksiyon barı kullanmalıdır"
+  );
+
+  // 3. YouTube enablejsapi=1 gerçek bölüm sayısı (info.playlist.length), otomatik bölüm takibi (info.playlistIndex) ve playVideoAt komutu
+  assert.equal(
+    ytUtilsCode.includes("&enablejsapi=1") &&
+      liteCardCode.includes('event: "listening"') &&
+      liteCardCode.includes('data.event === "infoDelivery"') &&
+      liteCardCode.includes("data.info?.playlist") &&
+      liteCardCode.includes("data.info?.playlistIndex") &&
+      liteCardCode.includes('func: "playVideoAt"') &&
+      !liteCardCode.includes("style={{") &&
+      !liteCardCode.includes("sandbox=") &&
+      fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "youtubeUtils.ts &enablejsapi=1 üretmeli ve LiteYoutubeCard infoDelivery üzerinden gerçek bölüm sayısı ile playVideoAt senkronizasyonu sağlamalıdır"
+  );
+});
+
 
 

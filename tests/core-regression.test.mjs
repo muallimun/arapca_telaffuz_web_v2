@@ -8689,3 +8689,507 @@ test("71. Saf ASCII Kaçış Yaması & ignoreBuildErrors: false, normalizeArabic
     );
   }
 });
+
+// ============================================================================
+// DENETİM PAKETİ: 6 ÇEKİRDEK DOĞRULAMA TESTİ (Sıfır Dış Bağımlılık)
+// ============================================================================
+
+test("72. [Denetim 1/6] UTF-8 Bütünlük Testi: src/ ve src/data/ altındaki tüm .ts, .tsx, .json, .css dosyaları Buffer.toString('utf8') ve surrogate kontrolünden sıfır hatayla geçmelidir", () => {
+  function collectSourceFiles(dirPath, acc = []) {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        collectSourceFiles(fullPath, acc);
+      } else if (/\.(ts|tsx|json|css)$/.test(entry.name)) {
+        acc.push(fullPath);
+      }
+    }
+    return acc;
+  }
+
+  const srcDir = path.join(ROOT_DIR, "src");
+  const allFiles = collectSourceFiles(srcDir);
+  const assessmentPath = path.join(srcDir, "types", "assessment.ts");
+  assert.ok(
+    allFiles.includes(assessmentPath),
+    "src/types/assessment.ts taranan dosyalar arasında yer almalıdır"
+  );
+  assert.ok(
+    allFiles.length >= 120,
+    "src/ ve src/data/ altındaki tüm kaynak ve veri dosyaları taranmalıdır"
+  );
+
+  const utf8Errors = [];
+  for (const filePath of allFiles) {
+    const rawBuf = fs.readFileSync(filePath);
+    const decoded = rawBuf.toString("utf8");
+    const relPath = path.relative(ROOT_DIR, filePath);
+
+    if (decoded.includes("\uFFFD")) {
+      utf8Errors.push(`${relPath}: U+FFFD replacement karakteri tespit edildi`);
+    }
+    if (!Buffer.from(decoded, "utf8").equals(rawBuf)) {
+      utf8Errors.push(`${relPath}: Geçersiz CESU-8 / UTF-8 bayt dizisi tespit edildi`);
+    }
+    for (let i = 0; i < decoded.length; i++) {
+      const code = decoded.charCodeAt(i);
+      if (code >= 0xd800 && code <= 0xdbff) {
+        const next = decoded.charCodeAt(i + 1);
+        if (!(next >= 0xdc00 && next <= 0xdfff)) {
+          utf8Errors.push(`${relPath}: Eşleşmemiş high surrogate (index ${i})`);
+        } else {
+          i++;
+        }
+      } else if (code >= 0xdc00 && code <= 0xdfff) {
+        utf8Errors.push(`${relPath}: Eşleşmemiş low surrogate (index ${i})`);
+      }
+    }
+  }
+
+  assert.deepEqual(
+    utf8Errors,
+    [],
+    `UTF-8 veya surrogate hatası bulunmamalıdır: ${utf8Errors.join(" | ")}`
+  );
+});
+
+test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 diyalog, 60 metin, 1111 cümle, 508 atasözü, 998 görsel kelime, 400 eş-zıt, 1895 sözlük, 550 sınav sorusu, 195 gramer notu, 60 YouTube)", () => {
+  const expectedDatasets = [
+    { file: "tum_diyaloglar_120.json", count: 120, idKey: "id" },
+    { file: "tum_metinler_60.json", count: 60, idKey: "id" },
+    { file: "1111_cumle.json", count: 1111, idKey: "id" },
+    { file: "atasozleri.json", count: 508, idKey: "id" },
+    { file: "gorselKelimeler_guncel.json", count: 998, idKey: "id" },
+    { file: "es_zit_anlamlilar.json", count: 400, idKey: "id" },
+    { file: "yeni_tum_sozluk.json", count: 1895, idKey: "id" },
+    { file: "seviye_tespit_sorulari.json", count: 550, idKey: "id" },
+    { file: "diyaloglar_gramer_hap_bilgi.json", count: 120, idKey: "bagli_id" },
+    { file: "metinler_gramer_hap_bilgi.json", count: 60, idKey: "bagli_id" },
+    { file: "ek_gramer_hap_bilgi.json", count: 15, idKey: "bagli_id" },
+    { file: "youtube_tavsiyeleri.json", count: 60, idKey: "id" },
+  ];
+
+  const actualJsonFiles = fs
+    .readdirSync(DATA_DIR)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  assert.equal(
+    actualJsonFiles.length,
+    12,
+    "src/data/ altında tam 12 JSON veri tabanı bulunmalıdır"
+  );
+
+  const loadedMap = new Map();
+  for (const spec of expectedDatasets) {
+    const { parsed } = readDataJson(spec.file);
+    loadedMap.set(spec.file, parsed);
+    assert.equal(
+      parsed.length,
+      spec.count,
+      `${spec.file} tam ${spec.count} kayıt içermelidir`
+    );
+
+    const idSet = new Set();
+    for (const item of parsed) {
+      const idVal = item[spec.idKey];
+      assert.ok(
+        typeof idVal === "string" && idVal.trim().length > 0,
+        `${spec.file} içindeki her kaydın dolu '${spec.idKey}' alanı olmalıdır`
+      );
+      assert.equal(
+        idSet.has(idVal),
+        false,
+        `${spec.file} içinde mükerrer ID bulunmamalıdır: ${idVal}`
+      );
+      idSet.add(idVal);
+    }
+  }
+
+  // 195 gramer notunun (120 + 60 + 15) birleşik tekil ID kontrolü
+  const combinedGrammar = [
+    ...loadedMap.get("diyaloglar_gramer_hap_bilgi.json"),
+    ...loadedMap.get("metinler_gramer_hap_bilgi.json"),
+    ...loadedMap.get("ek_gramer_hap_bilgi.json"),
+  ];
+  assert.equal(
+    combinedGrammar.length,
+    195,
+    "Toplam gramer notu sayısı 195 (120+60+15) olmalıdır"
+  );
+  assert.equal(
+    new Set(combinedGrammar.map((g) => g.bagli_id)).size,
+    195,
+    "195 gramer notunun tamamı birleşik havuzda benzersiz bagli_id taşımalıdır"
+  );
+
+  // 120 diyalogda A1 -> A2 -> B1 -> B2 monotonik seviye ve sira (1..120) kontrolü
+  const cefrOrder = { A1: 1, A2: 2, B1: 3, B2: 4 };
+  const dialogues = loadedMap.get("tum_diyaloglar_120.json");
+  for (let i = 0; i < dialogues.length; i++) {
+    const d = dialogues[i];
+    assert.equal(
+      d.sira,
+      i + 1,
+      `tum_diyaloglar_120.json ${d.id} sira değeri ${i + 1} olmalıdır`
+    );
+    assert.ok(
+      cefrOrder[d.seviye] !== undefined,
+      `${d.id} geçerli bir CEFR seviyesine (A1-B2) sahip olmalıdır`
+    );
+    if (i > 0) {
+      assert.ok(
+        cefrOrder[d.seviye] >= cefrOrder[dialogues[i - 1].seviye],
+        `Diyalog CEFR seviyeleri A1->B2 monotonik ilerlemelidir (${dialogues[i - 1].id}:${dialogues[i - 1].seviye} -> ${d.id}:${d.seviye})`
+      );
+    }
+  }
+
+  // 60 okuma metninde odak_gramer tamlığı
+  const readings = loadedMap.get("tum_metinler_60.json");
+  for (const m of readings) {
+    assert.ok(
+      typeof m.odak_gramer === "string" && m.odak_gramer.trim().length > 0,
+      `${m.id} okuma metninde odak_gramer alanı dolu olmalıdır`
+    );
+  }
+});
+
+test("74. [Denetim 3/6] Diyalog Cinsiyet & Ses Uzantısı Testi: 120 diyaloğun tüm satırlarında E/_E.mp3 ve K/_K.mp3 uyumu ile dolu arapca/turkce metinler", () => {
+  const { parsed: dialogues } = readDataJson("tum_diyaloglar_120.json");
+  assert.equal(dialogues.length, 120);
+
+  for (const dlg of dialogues) {
+    assert.ok(
+      Array.isArray(dlg.satirlar) && dlg.satirlar.length > 0,
+      `${dlg.id} en az 1 satır içermelidir`
+    );
+    for (const line of dlg.satirlar) {
+      assert.ok(
+        line.cinsiyet === "E" || line.cinsiyet === "K",
+        `${dlg.id}#${line.sira} satırında cinsiyet 'E' veya 'K' olmalıdır`
+      );
+      const expectedSuffix = line.cinsiyet === "E" ? "_E.mp3" : "_K.mp3";
+      assert.ok(
+        typeof line.ses_dosyasi === "string" &&
+          line.ses_dosyasi.endsWith(expectedSuffix),
+        `${dlg.id}#${line.sira} ses_dosyasi (${line.ses_dosyasi}) cinsiyet (${line.cinsiyet}) ile uyumlu '${expectedSuffix}' uzantısıyla bitmelidir`
+      );
+      assert.ok(
+        typeof line.arapca === "string" && line.arapca.trim().length > 0,
+        `${dlg.id}#${line.sira} arapca alanı boş olmamalıdır`
+      );
+      assert.ok(
+        typeof line.turkce === "string" && line.turkce.trim().length > 0,
+        `${dlg.id}#${line.sira} turkce alanı boş olmamalıdır`
+      );
+    }
+  }
+});
+
+test("75. [Denetim 4/6] 550 Sınav Sorusu Yapısal Testi: Tüm sorularda 4 benzersiz şık (A, B, C, D) ve geçerli dogru_secenek", () => {
+  const { parsed: questions } = readDataJson("seviye_tespit_sorulari.json");
+  assert.equal(questions.length, 550);
+
+  const validLetters = ["A", "B", "C", "D"];
+  for (const q of questions) {
+    assert.ok(
+      Array.isArray(q.secenekler) && q.secenekler.length === 4,
+      `${q.id} tam 4 seçenek içermelidir`
+    );
+    const letters = q.secenekler.map((opt) => opt.harf);
+    assert.deepEqual(
+      letters,
+      validLetters,
+      `${q.id} şıkları sırasıyla A, B, C, D olmalıdır`
+    );
+    const optionTexts = q.secenekler.map((opt) => String(opt.metin ?? "").trim());
+    assert.ok(
+      optionTexts.every((t) => t.length > 0),
+      `${q.id} içinde boş şık metni bulunmamalıdır`
+    );
+    assert.equal(
+      new Set(optionTexts).size,
+      4,
+      `${q.id} içindeki 4 şık metni birbirinden benzersiz olmalıdır`
+    );
+    assert.ok(
+      validLetters.includes(q.dogru_secenek),
+      `${q.id} dogru_secenek değeri A, B, C veya D olmalıdır`
+    );
+  }
+});
+
+test("76. [Denetim 5/6] Arapça TTS/NLP Fonetik Hijyen Testi: كَاَدَتْ ve اِشْهَدْنِ kalıntılarının yokluğu ve 12 JSON'da sıfır çift hareke", () => {
+  const { raw: dlgRaw } = readDataJson("tum_diyaloglar_120.json");
+  assert.equal(
+    dlgRaw.includes("كَاَدَتْ"),
+    false,
+    "tum_diyaloglar_120.json içinde hatalı med elifi harekesi (كَاَدَتْ) bulunmamalıdır"
+  );
+
+  const { raw: cumleRaw } = readDataJson("1111_cumle.json");
+  assert.equal(
+    cumleRaw.includes("اِشْهَدْنِ"),
+    false,
+    "1111_cumle.json içinde eksik yâ yazılışı (اِشْهَدْنِ) bulunmamalıdır"
+  );
+
+  const stackedHarakaRegex = /([\u064B-\u0650\u0652])\1/;
+  const all12JsonFiles = fs
+    .readdirSync(DATA_DIR)
+    .filter((f) => f.endsWith(".json"));
+  assert.equal(all12JsonFiles.length, 12);
+
+  for (const fileName of all12JsonFiles) {
+    const { raw } = readDataJson(fileName);
+    assert.equal(
+      stackedHarakaRegex.test(raw),
+      false,
+      `${fileName} içinde üst üste binmiş aynı hareke (([\\u064B-\\u0650\\u0652])\\1) bulunmamalıdır`
+    );
+  }
+});
+
+test("77. [Denetim 6/6] PWA Service Worker (public/sw.js v2.2 + offlineManager uyumu) ve Envanter (exerciseModulesCount: 18) Varlık Testi", async () => {
+  const vm = await import("node:vm");
+  const { pathToFileURL } = await import("node:url");
+
+  const swPath = path.join(ROOT_DIR, "public", "sw.js");
+  assert.equal(fs.existsSync(swPath), true, "public/sw.js dosyası mevcut olmalıdır");
+  const swSource = fs.readFileSync(swPath, "utf8");
+
+  assert.ok(
+    swSource.includes('const CACHE_NAME = "muallimun-arapca-pwa-v2.2";'),
+    'public/sw.js içinde CACHE_NAME = "muallimun-arapca-pwa-v2.2" tanımlı olmalıdır'
+  );
+  assert.ok(
+    swSource.includes('"muallimun-offline-audio-v1"') &&
+      swSource.includes('"transformers-cache"') &&
+      swSource.includes("PROTECTED_CACHES") &&
+      swSource.includes("Promise.allSettled"),
+    "public/sw.js PROTECTED_CACHES ve Promise.allSettled korumalarını içermelidir"
+  );
+
+  const offlineManagerCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "lib", "offlineManager.ts"),
+    "utf8"
+  );
+  assert.ok(
+    offlineManagerCode.includes(
+      'export const OFFLINE_PWA_CACHE_NAME = "muallimun-arapca-pwa-v2.2";'
+    ) &&
+      offlineManagerCode.includes(
+        'export const OFFLINE_AUDIO_CACHE_NAME = "muallimun-offline-audio-v1";'
+      ),
+    "offlineManager.ts önbellek adları public/sw.js ile %100 senkronize olmalıdır"
+  );
+
+  // Content Inventory doğrulaması
+  const { CONTENT_INVENTORY } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
+  );
+  assert.equal(
+    CONTENT_INVENTORY.exerciseModulesCount,
+    18,
+    "CONTENT_INVENTORY.exerciseModulesCount değeri 18 olmalıdır"
+  );
+
+  // public/sw.js çalışma zamanı (install / activate / fetch) simülasyonu
+  const listeners = new Map();
+  const storeByCacheName = new Map();
+  let skipWaitingCalled = false;
+  let clientsClaimCalled = false;
+  const networkCalls = [];
+
+  function makeCacheBucket(name) {
+    if (!storeByCacheName.has(name)) {
+      storeByCacheName.set(name, new Map());
+    }
+    const bucket = storeByCacheName.get(name);
+    return {
+      async add(assetUrl) {
+        const key = assetUrl.startsWith("http")
+          ? new URL(assetUrl).pathname
+          : assetUrl;
+        bucket.set(
+          key,
+          new Response(`precached:${key}`, { status: 200 })
+        );
+      },
+      async put(reqOrUrl, res) {
+        const key =
+          typeof reqOrUrl === "string"
+            ? reqOrUrl
+            : new URL(reqOrUrl.url).pathname;
+        bucket.set(key, res);
+      },
+      async match(reqOrUrl) {
+        const key =
+          typeof reqOrUrl === "string"
+            ? reqOrUrl
+            : new URL(reqOrUrl.url).pathname;
+        return bucket.get(key);
+      },
+    };
+  }
+
+  const mockCaches = {
+    async open(name) {
+      return makeCacheBucket(name);
+    },
+    async keys() {
+      return Array.from(storeByCacheName.keys());
+    },
+    async delete(name) {
+      return storeByCacheName.delete(name);
+    },
+    async match(reqOrUrl) {
+      for (const bucket of storeByCacheName.values()) {
+        const key =
+          typeof reqOrUrl === "string"
+            ? reqOrUrl
+            : new URL(reqOrUrl.url).pathname;
+        if (bucket.has(key)) return bucket.get(key);
+      }
+      return undefined;
+    },
+  };
+
+  let simulateOffline = false;
+  const mockFetch = async (req) => {
+    const reqUrl = typeof req === "string" ? req : req.url;
+    networkCalls.push(reqUrl);
+    if (simulateOffline) {
+      throw new Error("Network offline");
+    }
+    return new Response(`network:${reqUrl}`, { status: 200 });
+  };
+
+  const sandbox = {
+    URL,
+    Response,
+    Promise,
+    caches: mockCaches,
+    fetch: mockFetch,
+    self: {
+      location: { origin: "https://app.muallimun.net" },
+      addEventListener(type, fn) {
+        listeners.set(type, fn);
+      },
+      skipWaiting() {
+        skipWaitingCalled = true;
+        return Promise.resolve();
+      },
+      clients: {
+        claim() {
+          clientsClaimCalled = true;
+          return Promise.resolve();
+        },
+      },
+    },
+  };
+  vm.runInNewContext(swSource, sandbox);
+
+  // 1) install olayı testi
+  let installPromise;
+  listeners.get("install")({
+    waitUntil(p) {
+      installPromise = p;
+    },
+  });
+  await installPromise;
+  assert.equal(skipWaitingCalled, true, "install sonunda self.skipWaiting() çağrılmalıdır");
+  const shellBucket = storeByCacheName.get("muallimun-arapca-pwa-v2.2");
+  for (const requiredRoute of [
+    "/",
+    "/offline",
+    "/kutuphane",
+    "/alistirmalar",
+    "/sozluk",
+    "/seviye-tespit",
+    "/ayarlar",
+    "/fonts/Arakom.ttf",
+  ]) {
+    assert.equal(
+      shellBucket.has(requiredRoute),
+      true,
+      `install aşamasında ${requiredRoute} önbelleğe alınmalıdır`
+    );
+  }
+
+  // 2) activate olayı: eski önbelleği silmeli, PROTECTED_CACHES önbelleklerine ASLA dokunmamalı
+  await mockCaches.open("muallimun-arapca-pwa-v2.1");
+  const audioCache = await mockCaches.open("muallimun-offline-audio-v1");
+  await audioCache.put(
+    "/sesler/diyaloglar/dlg_001/satir_01_E.mp3",
+    new Response("cached-mp3-bytes", { status: 200 })
+  );
+  await mockCaches.open("transformers-cache");
+
+  let activatePromise;
+  listeners.get("activate")({
+    waitUntil(p) {
+      activatePromise = p;
+    },
+  });
+  await activatePromise;
+  assert.equal(clientsClaimCalled, true, "activate sonunda self.clients.claim() çağrılmalıdır");
+  assert.equal(
+    storeByCacheName.has("muallimun-arapca-pwa-v2.1"),
+    false,
+    "Eski PWA kabuk önbelleği activate sırasında silinmelidir"
+  );
+  assert.equal(
+    storeByCacheName.has("muallimun-offline-audio-v1") &&
+      storeByCacheName.has("transformers-cache"),
+    true,
+    "PROTECTED_CACHES (muallimun-offline-audio-v1 ve transformers-cache) kesinlikle korunmalıdır"
+  );
+
+  // 3) fetch olayı testleri (/api/* bypass, /sesler/* cache-first, navigate offline fallback)
+  async function dispatchFetch(urlStr, opts = {}) {
+    let responded = null;
+    listeners.get("fetch")({
+      request: {
+        url: urlStr,
+        method: opts.method || "GET",
+        mode: opts.mode || "cors",
+        headers: { get: () => null },
+      },
+      respondWith(p) {
+        responded = p;
+      },
+    });
+    return responded ? await responded : null;
+  }
+
+  networkCalls.length = 0;
+  const apiRes = await dispatchFetch("https://app.muallimun.net/api/tts", {
+    method: "POST",
+  });
+  assert.equal(await apiRes.text(), "network:https://app.muallimun.net/api/tts");
+  assert.equal(networkCalls.length, 1, "/api/tts POST isteği doğrudan ağa yönlendirilmelidir");
+
+  networkCalls.length = 0;
+  const cachedAudioRes = await dispatchFetch(
+    "https://app.muallimun.net/sesler/diyaloglar/dlg_001/satir_01_E.mp3"
+  );
+  assert.equal(await cachedAudioRes.text(), "cached-mp3-bytes");
+  assert.equal(
+    networkCalls.length,
+    0,
+    "/sesler/* isteği muallimun-offline-audio-v1 içinde varsa ağa çıkmadan cache-first dönmelidir"
+  );
+
+  simulateOffline = true;
+  const offlineNavRes = await dispatchFetch(
+    "https://app.muallimun.net/diyalog/dlg_999",
+    { mode: "navigate" }
+  );
+  assert.equal(
+    await offlineNavRes.text(),
+    "precached:/offline",
+    "İnternet yokken önbellekte bulunmayan sayfa navigasyonu /offline sayfasına düşmelidir"
+  );
+});
+

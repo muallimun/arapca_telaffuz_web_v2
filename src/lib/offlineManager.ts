@@ -10,7 +10,7 @@ import {
 import { getMp3Path, toCanonicalAudioCacheKey } from "@/lib/audio";
 
 export const OFFLINE_AUDIO_CACHE_NAME = "muallimun-offline-audio-v1";
-export const OFFLINE_PWA_CACHE_NAME = "muallimun-arapca-pwa-v2.1";
+export const OFFLINE_PWA_CACHE_NAME = "muallimun-arapca-pwa-v2.2";
 const OFFLINE_STORAGE_KEY = "muallimun-offline-dialogues-v1";
 
 // Ortalama bir diyalog cümlesi MP3 boyutu (~145 KB)

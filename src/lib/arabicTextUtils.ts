@@ -976,7 +976,124 @@ export function simplifyGrammarTerminology(text: string): string {
   return out;
 }
 
+const SYLLABLE_COMBINING_MARKS_REGEX = /[\u064B-\u065F\u0670\u06D6-\u06ED]/u;
+const SYLLABLE_SUKUN_REGEX = /\u0652/u;
 
+function splitSingleArabicWordIntoAtomicClusters(word: string): string[] {
+  const cleaned = word
+    .normalize("NFC")
+    .replace(/[؟?!.,،؛:"'«»()[\]{}\-]/gu, "")
+    .trim();
+  if (!cleaned) return [];
 
+  const clusters: string[] = [];
+  for (const ch of Array.from(cleaned)) {
+    if (SYLLABLE_COMBINING_MARKS_REGEX.test(ch) && clusters.length > 0) {
+      clusters[clusters.length - 1] += ch;
+    } else {
+      clusters.push(ch);
+    }
+  }
+  return clusters;
+}
 
+function isUnvocalizedMaddCluster(cluster: string): boolean {
+  return (
+    cluster === "ا" || cluster === "و" || cluster === "ي" || cluster === "ى"
+  );
+}
 
+/**
+ * Harekeli Arapça kelimeyi harf-hareke bütünlüğünü bozmadan 2–4 pedagojik
+ * hece/parça baloncuğuna (sağdan sola okuma sırasıyla) ayırır.
+ */
+export function splitArabicWordIntoSyllableChunks(arabicText: string): {
+  chunks: string[];
+  hasWordSpaces: boolean;
+} {
+  const normalized = (arabicText || "").normalize("NFC").trim();
+  const spaceParts = normalized
+    .split(/\s+/u)
+    .map((p) => p.replace(/[؟?!.,،؛:"'«»()[\]{}]/gu, "").trim())
+    .filter(Boolean);
+
+  if (spaceParts.length >= 2) {
+    const merged = [...spaceParts];
+    while (merged.length > 4) {
+      let minIdx = 0;
+      let minLen = Infinity;
+      for (let i = 0; i < merged.length - 1; i++) {
+        const combinedLen = merged[i].length + merged[i + 1].length;
+        if (combinedLen < minLen) {
+          minLen = combinedLen;
+          minIdx = i;
+        }
+      }
+      merged.splice(minIdx, 2, `${merged[minIdx]} ${merged[minIdx + 1]}`);
+    }
+    return { chunks: merged, hasWordSpaces: true };
+  }
+
+  const singleWord = spaceParts[0] || normalized;
+  const clusters = splitSingleArabicWordIntoAtomicClusters(singleWord);
+
+  if (clusters.length <= 1) {
+    return {
+      chunks: clusters.length === 1 ? [clusters[0]] : [normalized],
+      hasWordSpaces: false,
+    };
+  }
+
+  if (clusters.length === 2) {
+    return { chunks: [clusters[0], clusters[1]], hasWordSpaces: false };
+  }
+
+  // Arapça fonetik heceleme: Sükûn (ْ) ve harekesiz med harfleri (ا / و / ي / ى) önceki harfe bağlanır
+  const rawSyllables: string[] = [];
+  let buffer = "";
+
+  for (let i = 0; i < clusters.length; i++) {
+    const cluster = clusters[i];
+    if (!buffer) {
+      buffer = cluster;
+      continue;
+    }
+
+    if (SYLLABLE_SUKUN_REGEX.test(cluster) || isUnvocalizedMaddCluster(cluster)) {
+      buffer += cluster;
+      rawSyllables.push(buffer);
+      buffer = "";
+    } else {
+      rawSyllables.push(buffer);
+      buffer = cluster;
+    }
+  }
+  if (buffer) {
+    rawSyllables.push(buffer);
+  }
+
+  const balanced = [...rawSyllables];
+
+  if (balanced.length === 1) {
+    const mid = Math.max(1, Math.ceil(clusters.length / 2));
+    return {
+      chunks: [clusters.slice(0, mid).join(""), clusters.slice(mid).join("")],
+      hasWordSpaces: false,
+    };
+  }
+
+  while (balanced.length > 4) {
+    let minIdx = 0;
+    let minScore = Infinity;
+    for (let i = 0; i < balanced.length - 1; i++) {
+      const lenScore = balanced[i].length + balanced[i + 1].length;
+      if (lenScore < minScore) {
+        minScore = lenScore;
+        minIdx = i;
+      }
+    }
+    balanced.splice(minIdx, 2, balanced[minIdx] + balanced[minIdx + 1]);
+  }
+
+  return { chunks: balanced, hasWordSpaces: false };
+}

@@ -302,10 +302,10 @@ export default function HomePage() {
         title: "Kelime Alıştırmaları",
         arabicBadge: "التَّدْرِيبَات",
         subtitle:
-          "Kartlar, bu nedir?, balon safari, 3B hafıza kartları, i'rab boyama ve 17 interaktif oyun",
-        meta: "17 Farklı Modül • Görsel & Sesli",
+          "Görsel hız seansı, kartlar, bu nedir?, balon safari, 3B hafıza kartları ve 18 interaktif oyun",
+        meta: "18 Farklı Modül • Görsel & Sesli",
         tooltip:
-          "17 farklı interaktif kelime, bu nedir?, balon safari, 3B hafıza kartları, cümle ve okuma oyunu",
+          "18 farklı interaktif görsel hız seansı, bu nedir?, balon safari, 3B hafıza kartları, cümle ve okuma oyunu",
         icon: Gamepad2,
         targetHref: "/alistirmalar",
         accentColor: "emerald",

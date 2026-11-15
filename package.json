@@ -1,7 +1,7 @@
 {
   "name": "arapca-platform",
   "version": "2.0.0",
-  "description": "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi — 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü ve akıllı A4 PDF çalışma kağıdı üreticisi.",
+  "description": "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi — 1111 kalıp cümle, 998 görsel kelime, 38 çiftlik Mahreç Koçu, morfolojik kök sözlüğü ve akıllı A4 PDF çalışma kağıdı üreticisi.",
   "private": true,
   "scripts": {
     "dev": "next dev",

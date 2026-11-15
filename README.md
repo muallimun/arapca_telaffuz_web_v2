@@ -7,7 +7,7 @@
 ![Whisper AI](https://img.shields.io/badge/AI-Whisper_WebGPU_%26_WASM-0CA678?style=for-the-badge)
 ![CEFR](https://img.shields.io/badge/CEFR-A1--B2_(120_Diyalog)-D97706?style=for-the-badge)
 
-**Muallimun Arapça (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu **120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi**, 60 Seçkin Video & İzleme Rehberi (40 Oynatma Listesi Bölüm Seçicili), 400 Eş ve Zıt Anlamlı Kelime Ağı, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, 998 Görsel Kelime, 1111 Kalıp Cümle, 550 soruluk Seviye Tespit ve Konu Tarama Merkezi ve 2 Sütunlu Akıllı A4 Sınav & Çalışma Kağıdı Stüdyosu içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
+**Muallimun Arapça (`app.muallimun.net`)** — CEFR (A1–B2) uyumlu **120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi**, 60 Seçkin Video & İzleme Rehberi (40 Oynatma Listesi Bölüm Seçicili), 400 Eş ve Zıt Anlamlı Kelime Ağı, 16kHz DSP + Yapay Zeka (Whisper & Web Speech) destekli 38 Çiftlik Mahreç Koçu, Morfolojik Kök Çözümleyici, 998 Görsel Kelime, 1111 Kalıp Cümle, 550 soruluk Seviye Tespit ve Konu Tarama Merkezi ve 2 Sütunlu Akıllı A4 Sınav & Çalışma Kağıdı Stüdyosu içeren yeni nesil Progressive Web App (PWA) eğitim platformudur.
 
 🌐 **Canlı Uygulama:** [https://app.muallimun.net](https://app.muallimun.net)  
 🏛️ **Ana Portal:** [https://muallimun.net](https://muallimun.net)
@@ -37,14 +37,14 @@
 - **Morfolojik Kök ve Kalıp Analizi (`WordTooltip`):** Diyalog içindeki herhangi bir Arapça kelimeye tıklandığında açılan bilgi kartında sülâsî kök (misal, ecvef ve istif'âl bâbı dahil), kelime türü (*İsim / Fiil / Edat / Özel İsim*), müfret-cemî veya mâzî-muzâri-emir çekimleri ile önek-kök-sonek ayrıştırması.
 - **✨ Kalıp İfadeler ve Deyimler (التعبيرات الاصطلاحية):** Diyaloglarda geçen deyim ve kalıp ifadeler için harfiyen anlam, deyimsel anlam, pedagojik kullanım notu, sesli dinleme ve telaffuz pratiği.
 
-### 5. 🎮 17 Modüllü 2 Aşamalı Alıştırma ve Oyun Merkezi
+### 5. 🎮 18 Modüllü 2 Aşamalı Alıştırma ve Oyun Merkezi
 - **2 Aşamalı Sade Vitrin + Hızlı Başlatma Çekmecesi:** `120 Diyalog`, `60 Okuma Metni`, `998 Görsel Kelime`, `1111 Kalıp Cümle`, `508 Atasözü`, `400 Eş & Zıt Anlamlılar`, `✨ Kalıp İfadeler`, `❤️ Favorilerim`, `📅 Günlük Tekrar (SRS)` ve `⚡ Zorlandıklarım (Akıllı Hata Defteri)` havuzlarıyla 2 saniyede kurulum.
-- **17 Pedagojik Alıştırma ve Görsel Oyun Modülü:**
+- **18 Pedagojik Alıştırma ve Görsel Oyun Modülü:**
   1. **3B Kelime & Kalıp İfade Kartları (`Flashcard`):** Sesli, örnek cümleli ve morfolojik detaylı çevrilebilir kartlar.
   2. **Çoktan Seçmeli Test (`MultipleChoice`):** Arapça ↔ Türkçe çift yönlü, sesli ve ipucu destekli test.
   3. **Ok Çizerek Eşleştirme (`MatchingGame`):** Sağ sütunda Arapça, sol sütunda Türkçe anlamların yer aldığı, SVG ok çizimli pedagojik eşleştirme oyunu.
   4. **Boşluk Doldurma & Sanal Klavyeli İmla (`FillInBlanks` + `ArabicVirtualKeyboard`):** Dinleyerek cümledeki eksik kelimeyi yazma, hareke/hemze toleransı ve mobil çift klavye çakışmasını önleyen dahili Arapça sanal klavye.
-  5. **🎈 Balon Safari, 🧠 Hafızanı Yokla (YZ / 2 Kişilik / Antrenman), 🖼️ Bu Nedir?, 🧩 Dinle ve Sırala, Kelime Avı, Kök Ailesi, Hata Avcısı, Kör Dikte, Metin Kanıt Dedektifi, İ'rab Boyama & Sınıf Takım Oyunları:** 17 farklı etkileşimli öğrenme ve yarışma modülüyle kapsamlı pratik.
+  5. **⚡ Görsel Hız Seansı, 🎈 Balon Safari, 🧠 Hafızanı Yokla (YZ / 2 Kişilik / Antrenman), 🖼️ Bu Nedir?, 🧩 Dinle ve Sırala, Kelime Avı, Kök Ailesi, Hata Avcısı, Kör Dikte, Metin Kanıt Dedektifi, İ'rab Boyama & Sınıf Takım Oyunları:** 18 farklı etkileşimli öğrenme ve yarışma modülüyle kapsamlı pratik.
 
 ### 6. ⚡ Zorlandıklarım (Akıllı Hata Defteri & Aralıklı Tekrar)
 - **Spaced Repetition (Aralıklı Tekrar) Mantığı:** Alıştırmalarda yanlış cevaplanan veya telaffuz stüdyosunda `%70`'in altında kalınan kelime, kalıp ifade ve cümleleri otomatik olarak **Zorlandıklarım** havuzuna kaydeder.

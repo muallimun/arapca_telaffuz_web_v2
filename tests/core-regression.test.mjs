@@ -1071,7 +1071,7 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   assert.equal(alistirmalarCode.includes("Gramer & İ'rab"), true);
   assert.equal(alistirmalarCode.includes("Dinleme, Diyalog & Sınıf"), true);
 
-  // CONTENT_INVENTORY.exerciseModulesCount === 17
+  // CONTENT_INVENTORY.exerciseModulesCount === 18
   const dataTsCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "lib", "data.ts"),
     "utf8"
@@ -1082,10 +1082,10 @@ test("15. FAZ 4B — 6 Yeni İnteraktif Alıştırma & Oyun Modülü, next/dynam
   );
   assert.equal(
     (dataTsCode.includes("CONTENT_INVENTORY") &&
-      contentInvCode.includes("exerciseModulesCount: 17")) ||
-      dataTsCode.includes("exerciseModulesCount: 17"),
+      contentInvCode.includes("exerciseModulesCount: 18")) ||
+      dataTsCode.includes("exerciseModulesCount: 18"),
     true,
-    "CONTENT_INVENTORY.exerciseModulesCount 17 olarak güncellenmelidir"
+    "CONTENT_INVENTORY.exerciseModulesCount 18 olarak güncellenmelidir"
   );
 
   // GrammarHapBilgiPanel kısayol bağlantıları
@@ -1574,7 +1574,7 @@ test("17. FAZ 5B: Klasik/Kur'ân Kök Köprüsü, Ortak Kelimeler, 28 Harf Mahre
   assert.equal(CONTENT_INVENTORY.dialoguesCount, 120);
   assert.equal(CONTENT_INVENTORY.readingsCount, 60);
   assert.equal(CONTENT_INVENTORY.assessmentQuestionsCount, 550);
-  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 17);
+  assert.equal(CONTENT_INVENTORY.exerciseModulesCount, 18);
 
   const layoutSrc = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "layout.tsx"),
@@ -1613,15 +1613,15 @@ test("18. CANLI TEST ONARIMLARI — 3 Bölgeli Header, Yaprak Test Türkçe Font
     "Header.tsx 3 esnek bölgeye, Muallimun Arapça markasına ve kompakt Diğer Araçlar menüsüne sahip olmalıdır"
   );
 
-  // Ana sayfa 17 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
+  // Ana sayfa 18 Farklı Modül ve Günün 6 Kelimesi tam genişlik Arapça satır
   const homeCode = fs.readFileSync(
     path.join(ROOT_DIR, "src", "app", "page.tsx"),
     "utf8"
   );
   assert.equal(
-    homeCode.includes("17 Farklı Modül • Görsel & Sesli"),
+    homeCode.includes("18 Farklı Modül • Görsel & Sesli"),
     true,
-    "Ana sayfa Kelime Alıştırmaları kartı '17 Farklı Modül • Görsel & Sesli' göstermelidir"
+    "Ana sayfa Kelime Alıştırmaları kartı '18 Farklı Modül • Görsel & Sesli' göstermelidir"
   );
   assert.equal(
     /(?<![0-9])6 Farklı Modül • Görsel & Sesli/.test(homeCode),
@@ -2848,7 +2848,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   assert.deepEqual(metadataJson.requestFramePermissions, ["microphone"]);
   assert.equal(
     metadataJson.description.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -2883,7 +2883,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   );
   assert.equal(
     pkgJson.description.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -2921,7 +2921,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   const readmeCode = fs.readFileSync(path.join(ROOT_DIR, "README.md"), "utf8");
   assert.equal(
     readmeCode.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 18 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -6428,12 +6428,12 @@ test("53. Merkezi Modal/Escape Yığını (modalStack), Mobil safe-area-inset-bo
   assert.equal(synAnt400.length, 400, "400 eş ve zıt anlamlı kaydı bulunmalıdır");
   assert.equal(youtube60.length, 60, "60 YouTube tavsiyesi kaydı bulunmalıdır");
 
-  // 4C. 17 Alıştırma Modülü + 6 Bölümlü A4 Sınav & Karma Aralık (Range) Motoru Doğrulaması
+  // 4C. 18 Alıştırma Modülü + 6 Bölümlü A4 Sınav & Karma Aralık (Range) Motoru Doğrulaması
   const { CONTENT_INVENTORY } = await import("../src/lib/contentInventory.ts");
   assert.equal(
     CONTENT_INVENTORY.exerciseModulesCount,
-    17,
-    "CONTENT_INVENTORY.exerciseModulesCount 17 olmalıdır"
+    18,
+    "CONTENT_INVENTORY.exerciseModulesCount 18 olmalıdır"
   );
 
   const {
@@ -6922,7 +6922,7 @@ test("58) Alıştırmalar Sayfası (alistirmalar/page.tsx) 2 Aşamalı Sade Vitr
   const listenClassMatches =
     alistirmalarCode.match(/category:\s*"listen_dialogue_class"/g) || [];
 
-  assert.equal(visualGameMatches.length, 4, "Görsel Oyunlar kategorisinde 4 modül olmalıdır");
+  assert.equal(visualGameMatches.length, 5, "Görsel Oyunlar kategorisinde 5 modül olmalıdır");
   assert.equal(vocabCardMatches.length, 4, "Kelime & Kartlar kategorisinde 4 modül olmalıdır");
   assert.equal(grammarIrabMatches.length, 4, "Gramer & İ'rab kategorisinde 4 modül olmalıdır");
   assert.equal(
@@ -7627,10 +7627,10 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
   );
 });
 
-test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_INVENTORY Uyumu, Yedekleme/Sıfırlama (Playlist & Sınav/Alıştırma Özeti) ve 17 Modül Meta Senkronizasyonu", async () => {
+test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_INVENTORY Uyumu, Yedekleme/Sıfırlama (Playlist & Sınav/Alıştırma Özeti) ve 18 Modül Meta Senkronizasyonu", async () => {
   const { pathToFileURL } = await import("node:url");
 
-  // 0. Kök dizinde metadata.json ve tsconfig.json kesinlikle mevcut olmalı ve 17 Modül içermeli
+  // 0. Kök dizinde metadata.json ve tsconfig.json kesinlikle mevcut olmalı ve 18 Modül içermeli
   const metadataPath = path.join(ROOT_DIR, "metadata.json");
   const tsconfigPath = path.join(ROOT_DIR, "tsconfig.json");
   assert.equal(fs.existsSync(metadataPath), true, "metadata.json silinmemelidir");
@@ -7639,16 +7639,16 @@ test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_IN
   const metadataJson = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
   const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8"));
   assert.equal(
-    metadataJson.description.includes("17 Modüllü Alıştırma Merkezi") &&
+    metadataJson.description.includes("18 Modüllü Alıştırma Merkezi") &&
       !metadataJson.description.includes("14 Modüllü"),
     true,
-    "metadata.json güncel 17 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
+    "metadata.json güncel 18 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
   );
   assert.equal(
-    pkgJson.description.includes("17 Modüllü Alıştırma Merkezi") &&
+    pkgJson.description.includes("18 Modüllü Alıştırma Merkezi") &&
       !pkgJson.description.includes("14 Modüllü"),
     true,
-    "package.json güncel 17 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
+    "package.json güncel 18 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
   );
 
   // 1. Hiçbir arayüz/meta dosyasında eski sabit "14 modül" / "14 Etkileşimli Modül" kalmamalıdır
@@ -7809,4 +7809,136 @@ test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_IN
 
   useUserStore.getState().resetProgress();
 });
+
+test("67. ⚡ Görsel Hız Seansı (VisualSwipeSprintGame — سِبَاقُ الصُّوَرِ): 998 Resimli Kelime, 4 Mikro-Etkileşim, 60 FPS Kaydırma/Klavye, SRS Hata Döngüsü ve 18. Modül Entegrasyonu", async () => {
+  const { pathToFileURL } = await import("node:url");
+
+  const sprintPath = path.join(
+    ROOT_DIR,
+    "src",
+    "components",
+    "exercises",
+    "VisualSwipeSprintGame.tsx"
+  );
+  assert.equal(
+    fs.existsSync(sprintPath),
+    true,
+    "VisualSwipeSprintGame.tsx bileşeni oluşturulmuş olmalıdır"
+  );
+
+  const sprintCode = fs.readFileSync(sprintPath, "utf8");
+  const alistirmalarCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "alistirmalar", "page.tsx"),
+    "utf8"
+  );
+
+  // 1. Tam ekran responsive sahne, sıfır satır-içi JSX style={{ ve hem pointer kaydırma hem ok tuşu desteği
+  assert.equal(
+    sprintCode.includes("fixed inset-0 z-[9999]") &&
+      sprintCode.includes("h-[100dvh]") &&
+      sprintCode.includes("overflow-hidden") &&
+      !sprintCode.includes("style={{"),
+    true,
+    "VisualSwipeSprintGame fixed inset-0 z-[9999] h-[100dvh] overflow-hidden tam ekran olmalı ve JSX inline style={{ içermemelidir"
+  );
+
+  assert.equal(
+    sprintCode.includes("onPointerDown") &&
+      sprintCode.includes("onPointerMove") &&
+      sprintCode.includes("onPointerUp") &&
+      sprintCode.includes('"ArrowUp"') &&
+      sprintCode.includes('"ArrowDown"') &&
+      sprintCode.includes('"ArrowLeft"') &&
+      sprintCode.includes('"ArrowRight"'),
+    true,
+    "VisualSwipeSprintGame hem dokunmatik/fare kaydırma (onPointerDown/Move/Up) hem masaüstü ok tuşları (ArrowUp/Down/Left/Right) ile çalışmalıdır"
+  );
+
+  // 2. Üst HUD, 2 Dk / 5 Dk seans seçimi ve yalnızca görseli olan gorselKelimeler_guncel.json filtresi
+  assert.equal(
+    sprintCode.includes("2 Dk Hızlı Seans") &&
+      sprintCode.includes("5 Dk Tam Seans") &&
+      sprintCode.includes("Kombo x") &&
+      sprintCode.includes("Tekrar Dinle") &&
+      sprintCode.includes("Boolean(item.gorsel") &&
+      sprintCode.includes("playDualGenderAudio"),
+    true,
+    "Üst HUD ve başlangıç ekranı 2 Dk / 5 Dk seans seçimi, Kombo xN, Tekrar Dinle, görsel doğrulaması ve otomatik seslendirme içermelidir"
+  );
+
+  // 3. 4 klavyesiz mikro-etkileşim türü + SRS & Hata Defteri + Seans Sonu Hız Karnesi
+  assert.equal(
+    sprintCode.includes('"drop_intro"') &&
+      sprintCode.includes('"up_down_tf"') &&
+      sprintCode.includes('"left_right_pick"') &&
+      sprintCode.includes('"syllable_tap"') &&
+      sprintCode.includes('recordItemAttempt(target.id, "word", isCorrect)') &&
+      sprintCode.includes('recordSkillAttempt("kelime", isCorrect)') &&
+      sprintCode.includes("addMistake(target.id)") &&
+      sprintCode.includes("dueAtStep") &&
+      sprintCode.includes("Kelime / Dk") &&
+      sprintCode.includes("Zorlandığım Kelimelerle 1 Dk Tekrar Yap"),
+    true,
+    "4 mikro-etkileşim (drop_intro, up_down_tf, left_right_pick, syllable_tap), SRS kaydı, yeniden kuyruklama ve Hız Karnesi eksiksiz olmalıdır"
+  );
+
+  // 4. splitArabicWordIntoSyllableChunks fonksiyonel doğrulaması (998 görsel kelime üzerinde hareke bütünlüğü ve 1-4 parça sınırı)
+  const { splitArabicWordIntoSyllableChunks } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicTextUtils.ts")).href
+  );
+  const { parsed: visualWords } = readDataJson("gorselKelimeler_guncel.json");
+  assert.equal(visualWords.length, 998);
+
+  const leadingMarkRegex = /^[\u064B-\u065F\u0670\u06D6-\u06ED]/u;
+  let multiSyllableCount = 0;
+
+  for (const item of visualWords) {
+    assert.ok(item.gorsel, `${item.id} kaydının görseli bulunmalıdır`);
+    const { chunks, hasWordSpaces } = splitArabicWordIntoSyllableChunks(
+      item.arapca
+    );
+    assert.ok(
+      chunks.length >= 1 && chunks.length <= 4,
+      `${item.id} (${item.arapca}) hece sayısı 1..4 aralığında olmalıdır, üretilen: ${chunks.length}`
+    );
+    if (chunks.length >= 2) {
+      multiSyllableCount += 1;
+    }
+    for (const chunk of chunks) {
+      assert.equal(
+        leadingMarkRegex.test(chunk),
+        false,
+        `${item.id} (${item.arapca}) içinde kopuk başlangıç harekesi olmamalıdır: "${chunk}"`
+      );
+    }
+    const rejoined = chunks.join(hasWordSpaces ? " " : "");
+    const expectedClean = item.arapca
+      .normalize("NFC")
+      .split(/\s+/u)
+      .map((p) => p.replace(/[؟?!.,،؛:"'«»()[\]{}\-]/gu, "").trim())
+      .filter(Boolean)
+      .join(hasWordSpaces ? " " : "");
+    assert.equal(
+      rejoined,
+      expectedClean,
+      `${item.id} sağdan sola heceler birleştiğinde orijinal harekeli kelimeyi vermelidir`
+    );
+  }
+  assert.ok(
+    multiSyllableCount >= 950,
+    "998 görsel kelimenin ezici çoğunluğu en az 2 hece baloncuğuna ayrılmalıdır"
+  );
+
+  // 5. /alistirmalar sayfası entegrasyonu (yeni ana menü açmadan mevcut Hızlı Başlatma Çekmecesi ile çalışma)
+  assert.equal(
+    alistirmalarCode.includes('id: "visual-swipe-sprint"') &&
+      alistirmalarCode.includes("Görsel Hız Seansı") &&
+      alistirmalarCode.includes("سِبَاقُ الصُّوَرِ") &&
+      alistirmalarCode.includes("<VisualSwipeSprintGame") &&
+      alistirmalarCode.includes('selectedType === "visual-swipe-sprint"'),
+    true,
+    "alistirmalar/page.tsx içinde Görsel Hız Seansı (visual-swipe-sprint) Görsel Oyunlar kategorisine ve Hızlı Başlatma Çekmecesine entegre edilmiş olmalıdır"
+  );
+});
+
 

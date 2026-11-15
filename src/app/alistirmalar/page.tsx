@@ -26,6 +26,7 @@ import {
   Sparkles,
   Layers,
   HelpCircle,
+  Zap,
   X,
 } from "lucide-react";
 import { playClick, playStart } from "@/lib/sfxManager";
@@ -225,6 +226,13 @@ const WhatIsThisGame = dynamic(
     loading: () => <ExerciseModuleLoadingSkeleton />,
   }
 );
+const VisualSwipeSprintGame = dynamic(
+  () => import("@/components/exercises/VisualSwipeSprintGame"),
+  {
+    ssr: false,
+    loading: () => <ExerciseModuleLoadingSkeleton />,
+  }
+);
 const PhonemeHeatmapModal = dynamic(
   () => import("@/components/ui/PhonemeHeatmapModal"),
   { ssr: false }
@@ -247,7 +255,8 @@ type ExerciseType =
   | "irab-painter"
   | "balloon-safari"
   | "memory-flip"
-  | "what-is-this";
+  | "what-is-this"
+  | "visual-swipe-sprint";
 
 type ExerciseCategoryTab =
   | "all"
@@ -458,6 +467,15 @@ function normalizeModeParam(raw?: string | null): ExerciseType | null {
     val === "bunedir"
   ) {
     return "what-is-this";
+  }
+  if (
+    val === "visual-swipe-sprint" ||
+    val === "swipe-sprint" ||
+    val === "hiz-seansi" ||
+    val === "gorsel-hiz-seansi" ||
+    val === "drops"
+  ) {
+    return "visual-swipe-sprint";
   }
   return null;
 }
@@ -794,7 +812,8 @@ function ExercisesPageContent() {
           resolvedMode === "gender-sorting" ||
           resolvedMode === "balloon-safari" ||
           resolvedMode === "memory-flip" ||
-          resolvedMode === "what-is-this"
+          resolvedMode === "what-is-this" ||
+          resolvedMode === "visual-swipe-sprint"
         ) {
           setRangePreset("visual_words");
         }
@@ -1567,6 +1586,15 @@ function ExercisesPageContent() {
     icon: typeof BookOpen;
   }[] = [
     {
+      id: "visual-swipe-sprint",
+      category: "visual_games",
+      title: "Görsel Hız Seansı",
+      arabicBadge: "سِبَاقُ الصُّوَرِ",
+      subtitle:
+        "998 resimli kelimeyle klavyesiz, kaydırarak ve dinleyerek 2/5 dakikalık refleks seansı",
+      icon: Zap,
+    },
+    {
       id: "balloon-safari",
       category: "visual_games",
       title: "Balon Safari",
@@ -1878,7 +1906,8 @@ function ExercisesPageContent() {
     if (
       selectedType === "balloon-safari" ||
       selectedType === "memory-flip" ||
-      selectedType === "what-is-this"
+      selectedType === "what-is-this" ||
+      selectedType === "visual-swipe-sprint"
     ) {
       return poolId === "visual_words";
     }
@@ -2095,6 +2124,7 @@ function ExercisesPageContent() {
       cardId === "balloon-safari" ||
       cardId === "memory-flip" ||
       cardId === "what-is-this" ||
+      cardId === "visual-swipe-sprint" ||
       cardId === "gender-sorting"
     ) {
       setRangePreset("visual_words");
@@ -2155,6 +2185,7 @@ function ExercisesPageContent() {
     selectedType !== "balloon-safari" &&
     selectedType !== "memory-flip" &&
     selectedType !== "what-is-this" &&
+    selectedType !== "visual-swipe-sprint" &&
     selectedType !== "morphology-context" &&
     selectedType !== "classroom-battle" &&
     (rangePreset === "all_dialogues" ||
@@ -2286,7 +2317,8 @@ function ExercisesPageContent() {
     if (
       selectedType === "balloon-safari" ||
       selectedType === "memory-flip" ||
-      selectedType === "what-is-this"
+      selectedType === "what-is-this" ||
+      selectedType === "visual-swipe-sprint"
     ) {
       const cnt = strictVisualWordsOnlyPool.length;
       return {
@@ -2478,7 +2510,8 @@ function ExercisesPageContent() {
       {isPlaying &&
         selectedType !== "visual-rosetta" &&
         selectedType !== "balloon-safari" &&
-        selectedType !== "memory-flip" && (
+        selectedType !== "memory-flip" &&
+        selectedType !== "visual-swipe-sprint" && (
           <div className="md:hidden h-11 min-h-[44px] max-h-[44px] px-2.5 bg-[#F7EFE1] dark:bg-[var(--surface)] border-b border-[#E6D7BE] dark:border-[var(--border)] flex items-center justify-between gap-2 sticky top-0 z-10 shrink-0">
             <button
               type="button"
@@ -2776,6 +2809,7 @@ function ExercisesPageContent() {
                 selectedType === "balloon-safari" ||
                 selectedType === "memory-flip" ||
                 selectedType === "what-is-this" ||
+                selectedType === "visual-swipe-sprint" ||
                 selectedType === "gender-sorting";
 
               // B) Kendinden Veri Havuzlu Özel Modüller
@@ -2787,10 +2821,12 @@ function ExercisesPageContent() {
 
               const supportsQuestionCount =
                 selectedType !== "balloon-safari" &&
-                selectedType !== "memory-flip";
+                selectedType !== "memory-flip" &&
+                selectedType !== "visual-swipe-sprint";
 
               const supportsTimeLimit =
                 selectedType !== "balloon-safari" &&
+                selectedType !== "visual-swipe-sprint" &&
                 selectedType !== "flashcard" &&
                 selectedType !== "visual-rosetta";
 
@@ -2804,6 +2840,7 @@ function ExercisesPageContent() {
                 selectedType === "balloon-safari" ||
                 selectedType === "memory-flip" ||
                 selectedType === "what-is-this" ||
+                selectedType === "visual-swipe-sprint" ||
                 selectedType === "gender-sorting" ||
                 selectedType === "classroom-battle";
 
@@ -3729,6 +3766,13 @@ function ExercisesPageContent() {
               cefrFilter={cefrFilter}
               questionCount={questionCount}
               timeLimit={timeLimit}
+              onClose={handleCloseExercise}
+            />
+          )}
+          {selectedType === "visual-swipe-sprint" && (
+            <VisualSwipeSprintGame
+              visualPool={strictVisualWordsOnlyPool}
+              cefrFilter={cefrFilter}
               onClose={handleCloseExercise}
             />
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { sozluk, CONTENT_INVENTORY } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 import {
   X,
   BookOpen,
@@ -56,6 +56,8 @@ export default function GuideAndInfoModalBody({
   onClose,
 }: GuideAndInfoModalBodyProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const totalOfflineLessons =
+    CONTENT_INVENTORY.dialoguesCount + CONTENT_INVENTORY.readingsCount;
 
   useEffect(() => {
     void refreshVisitorStatsLive();
@@ -116,7 +118,7 @@ export default function GuideAndInfoModalBody({
     >
       <div
         ref={modalRef}
-        className="w-[95vw] max-w-3xl lg:max-w-4xl max-h-[88vh] flex flex-col bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-[95vw] max-w-3xl lg:max-w-4xl max-h-[88dvh] flex flex-col bg-[#FDFBF7] dark:bg-[var(--surface)] rounded-3xl border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* MODAL ÜST BAŞLIK */}
@@ -211,14 +213,15 @@ export default function GuideAndInfoModalBody({
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-400">
-                      1. Diyalog Kütüphanesi (120 Diyalog & 60 Metin)
+                      1. Diyalog Kütüphanesi ({CONTENT_INVENTORY.dialoguesCount} Diyalog &amp; {CONTENT_INVENTORY.readingsCount} Metin)
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      Başlangıç (A1-A2), Orta (B1) ve İleri (B2) kurlarında 120
-                      özel görselli günlük konuşma diyaloğu ve 60 okuma metni.
-                      Kur filtreleme, anahtar kelime arama, favorilere ekleme,
-                      tamamlama takibi ve cümle bazlı ses hızı kontrolüyle
-                      kademeli öğrenim.
+                      Başlangıç (A1-A2), Orta (B1) ve İleri (B2) kurlarında{" "}
+                      {CONTENT_INVENTORY.dialoguesCount} özel görselli günlük
+                      konuşma diyaloğu ve {CONTENT_INVENTORY.readingsCount} okuma
+                      metni. Kur filtreleme, anahtar kelime arama, favorilere
+                      ekleme, tamamlama takibi ve cümle bazlı ses hızı
+                      kontrolüyle kademeli öğrenim.
                     </p>
                   </div>
                 </div>
@@ -246,17 +249,21 @@ export default function GuideAndInfoModalBody({
                 <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE]">
                   <div className="space-y-1.5">
                     <h3 className="text-xs sm:text-sm font-extrabold text-amber-700">
-                      3. İnteraktif Alıştırma Merkezi ({CONTENT_INVENTORY.exerciseModulesCount} Modül)
+                      3. 2 Aşamalı Sade Alıştırma &amp; Oyun Merkezi ({CONTENT_INVENTORY.exerciseModulesCount} Modül)
                     </h3>
                     <p className="text-xs text-[var(--muted)] leading-relaxed">
-                      3B Kartlar, Çoktan Seçmeli, Ok Çizimli Eşleştirme,
-                      Sürükle-Bırak, Dinle-Yaz İmla, Dinle-Sırala, Görsel
-                      Eşleştirme,{" "}
+                      Sade kategori vitrini ve modül kartına tıklayınca açılan{" "}
                       <strong className="text-[var(--foreground)]">
-                        Hata Avcısı, Kör Dikte, Diyalog Tamamlama, Müzekker/Müennes
-                        Tasnifi, Metin Kanıt Dedektifi, İ&apos;rab Renk Boyama
+                        Hızlı Başlatma Çekmecesi
                       </strong>{" "}
-                      ve{" "}
+                      ile 2 saniyede kurulum;{" "}
+                      <strong className="text-[var(--foreground)]">
+                        Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman),
+                        Bu Nedir?
+                      </strong>{" "}
+                      görsel oyunları, Çoktan Seçmeli, Ok Çizimli Eşleştirme,
+                      Hata Avcısı, Kör Dikte, Metin Kanıt Dedektifi, İ&apos;rab
+                      Boyama ve{" "}
                       <strong className="text-[var(--foreground)]">
                         🏆 Sınıf Takım Yarışması
                       </strong>
@@ -289,14 +296,15 @@ export default function GuideAndInfoModalBody({
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-300">
-                    5. 📌 195 Kartlık Gramer Atlası &amp; KTT Köprüsü
+                    5. 📌 {CONTENT_INVENTORY.grammarNotesCount} Kartlık Gramer Atlası &amp; KTT Köprüsü
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     4 temel dilbilimsel alanda{" "}
-                    {CONTENT_INVENTORY.grammarNotesCount} hap gramer kartı (120
-                    diyalog + 60 metin + 15 temel/ileri müstakil gramer),
-                    Sade/Akademik anlatım geçişi ve kart içinden doğrudan konu
-                    tarama testi.
+                    {CONTENT_INVENTORY.grammarNotesCount} hap gramer kartı (
+                    {CONTENT_INVENTORY.dialoguesCount} diyalog +{" "}
+                    {CONTENT_INVENTORY.readingsCount} metin + 15 temel/ileri
+                    müstakil gramer), Sade/Akademik anlatım geçişi ve kart
+                    içinden doğrudan alıştırma ve konu tarama testi köprüsü.
                   </p>
                 </div>
 
@@ -327,18 +335,29 @@ export default function GuideAndInfoModalBody({
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300">
-                    7. 🎓 QR Ödev Sistemi, A4 PDF Quiz &amp; Başarı Kartı
+                    7. 📄 2 Sütunlu A4 Sınav &amp; Ders Notu Stüdyosu + QR Ödev
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    Karekodlu öğretmen ödev linki, A/B kitapçıklı ve Maarif
-                    rubrikli A4 Çalışma/Quiz kağıdı, PNG başarı kartı ve
-                    5 aşamalı (1–30 gün) Aralıklı Tekrar (SRS) hafıza sistemi.
+                    Sol ayar paneli + sağ canlı A4 önizleme,{" "}
+                    <strong className="text-[var(--foreground)]">
+                      3–3.5 cm resmi sınav anteti
+                    </strong>
+                    ,{" "}
+                    <strong className="text-[var(--foreground)]">
+                      6 bölümlü A/B kitapçıklı yazılı sınav
+                    </strong>
+                    ,{" "}
+                    <strong className="text-[var(--foreground)]">
+                      Karma Aralık (Range)
+                    </strong>{" "}
+                    seçimi (örn. 5. ile 15. diyalog arası harmanlanmış sınav) ve
+                    karekodlu öğretmen ödev linki.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-sky-700 dark:text-sky-300">
-                    8. 🖊️ Akıllı Tahta Araçları &amp; 180 Çevrimdışı Ders Paketi
+                    8. 🖊️ Akıllı Tahta Araçları &amp; {totalOfflineLessons} Çevrimdışı Ders Paketi
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     Kalem, fosforlu kalem, geometrik şekiller, silgi, tahta
@@ -346,22 +365,43 @@ export default function GuideAndInfoModalBody({
                     <strong className="text-[var(--foreground)]">
                       👁️ Kör Dinleme
                     </strong>{" "}
-                    ve 180 çevrimdışı ses paketi.
+                    ve {totalOfflineLessons} çevrimdışı ses paketi.
                   </p>
                 </div>
 
-                <div className="sm:col-span-2 p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
+                <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <h3 className="text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300">
-                    9. 🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
+                    9. 🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi (Bölüm Seçicili)
                   </h3>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    CEFR (A1–B2) seviyelerine ve 6 tematik kategoriye ayrılmış{" "}
+                    CEFR (A1–B2) seviyelerine ayrılmış{" "}
                     <strong className="text-[var(--foreground)]">
                       {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
                     </strong>
-                    ; tekil YouTube videoları ve oynatma listeleri, uygulama içi
-                    Sinema Modu, pedagojik izleme notları, tıklanabilir odak
-                    kelimeler ve doğrudan ilişkili diyalog/metin bağlantıları.
+                    ; 20 tekil video ve{" "}
+                    <strong className="text-[var(--foreground)]">
+                      40 oynatma listesinde uygulama içi bölüm seçimi
+                    </strong>{" "}
+                    (yan yana Split-Cinema), kaldığı bölümü hatırlama ve bölüm
+                    bazlı izlendi takibi.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-[#065F46] dark:text-emerald-300">
+                    10. 🏆 İstatistikler, Başarı Rozetleri &amp; CEFR Kazanım Isı Haritası
+                  </h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    4 kademeli rütbe sistemi (<em>Bronz Talebe → Fasih Üstad</em>
+                    ), 8 başarı rozeti,{" "}
+                    <strong className="text-[var(--foreground)]">
+                      CEFR Kazanım Isı Haritası
+                    </strong>
+                    ,{" "}
+                    <strong className="text-[var(--foreground)]">
+                      4 sekmeli öğrenci/öğretmen gelişim raporu
+                    </strong>{" "}
+                    ve 5 aşamalı (1–30 gün) SRS hafıza sistemi.
                   </p>
                 </div>
               </div>
@@ -458,8 +498,8 @@ export default function GuideAndInfoModalBody({
                     },
                     {
                       icon: FileText,
-                      label: "📄 A4 PDF Ders Notu & Sınav",
-                      desc: "Diyaloğu, kelime tablosunu ve A/B kitapçıklı sınav kağıdını A4 yazdırır.",
+                      label: "📄 2 Sütunlu A4 Sınav & Ders Notu Stüdyosu",
+                      desc: "3–3.5 cm resmi antetli, 6 bölümlü A/B kitapçıklı ve Karma Aralık (Range) seçmeli A4 sınav/ders föyü üretir.",
                     },
                     {
                       icon: Keyboard,
@@ -474,7 +514,7 @@ export default function GuideAndInfoModalBody({
                     {
                       icon: CheckCircle2,
                       label: "✅ Tamamlandı / Öğrendim",
-                      desc: "Diyaloğu, metni veya kelimeyi öğrenildi olarak işaretler.",
+                      desc: "Diyaloğu, metni, oynatma listesi bölümünü veya kelimeyi öğrenildi olarak işaretler.",
                     },
                     {
                       icon: Maximize2,
@@ -488,8 +528,8 @@ export default function GuideAndInfoModalBody({
                     },
                     {
                       icon: Trophy,
-                      label: "🏆 Başarı Kartı Paylaş",
-                      desc: "Diyalog ve alıştırma sonunda başarı kartınızı PNG olarak indirir/paylaşır.",
+                      label: "🏆 İstatistikler, Rütbe & Başarı Kartı",
+                      desc: "Rütbe sistemi, CEFR Kazanım Isı Haritası, 4 sekmeli gelişim raporu ve PNG başarı kartı sunar.",
                     },
                   ].map((item, i) => {
                     const Icon = item.icon;
@@ -547,8 +587,8 @@ export default function GuideAndInfoModalBody({
                 },
                 {
                   step: "5",
-                  title: "İnteraktif Alıştırma & A4 PDF ile Pekiştirin",
-                  desc: "Alıştırma Merkezi'nde Ok Çizimli Eşleştirme ve Dinle-Yaz İmla testlerini çözün; Dinle ve Sırala (Cümle Kurma) ile Arapça kelime dizilimini pekiştirin ve Başarı Kartınızı oluşturun; ayrıca diyaloğun A4 PDF çıktısını alıp kağıt üzerinde kelime testiyle öğreniminizi kalıcı hale getirin.",
+                  title: "2 Aşamalı Alıştırma/Oyun Merkezi & A4 Sınav Stüdyosuyla Pekiştirin",
+                  desc: "Alıştırma Merkezi'nde istediğiniz karta tıklayıp Hızlı Başlatma Çekmecesinden Balon Safari, Hafızanı Yokla, Bu Nedir?, Eşleştirme veya Dinle-Yaz İmla modüllerini başlatın; ayrıca 2 Sütunlu A4 Sınav & Ders Notu Stüdyosundan resmi antetli tekli veya Karma Aralık (Range) yazılı kağıdı alıp öğreniminizi kalıcı hale getirin.",
                 },
               ].map((item) => (
                 <div
@@ -580,16 +620,19 @@ export default function GuideAndInfoModalBody({
                     <span>Dilbilimsel Veri Tabanı</span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    CEFR (A1–B2) standartlarına uyumlu 120 özgün diyalog, 60
-                    okuma metni, 195 kartlık Gramer Atlası,{" "}
+                    CEFR (A1–B2) standartlarına uyumlu{" "}
+                    {CONTENT_INVENTORY.dialoguesCount} özgün diyalog,{" "}
+                    {CONTENT_INVENTORY.readingsCount} okuma metni,{" "}
+                    {CONTENT_INVENTORY.grammarNotesCount} kartlık Gramer Atlası,{" "}
                     {CONTENT_INVENTORY.assessmentQuestionsCount} soruluk Seviye
                     Tespit ve Konu Tarama Merkezi,{" "}
                     {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp;
-                    İzleme Rehberi,{" "}
+                    İzleme Rehberi (40 oynatma listesi bölüm seçicili),{" "}
                     {CONTENT_INVENTORY.synonymsAntonymsCount} maddelik Eş &amp; Zıt
                     Anlamlılar (المرادفات والأضداد) atlası ve{" "}
-                    {sozluk.length.toLocaleString("tr-TR")} kayıtlı morfolojik
-                    sözlük (Türkçeyle Ortak Kelimeler &amp; Kur&apos;ân Köprüsü).
+                    {CONTENT_INVENTORY.dictionaryWordsCount.toLocaleString("tr-TR")}{" "}
+                    kayıtlı morfolojik sözlük (Türkçeyle Ortak Kelimeler &amp;
+                    Kur&apos;ân Köprüsü).
                   </p>
                 </div>
 
@@ -600,32 +643,38 @@ export default function GuideAndInfoModalBody({
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     Web Audio API tabanlı 16kHz ses zarfı analizi, Whisper AI /
-                    cihaz içi çevrimdışı STT seçeneği, 28 Harf Mahreç Haritası ve
-                    38 Arapça mahreç çifti teşhis motoru.
+                    cihaz içi çevrimdışı STT seçeneği, 28 Harf Mahreç Haritası,
+                    38 Arapça mahreç çifti teşhis motoru ve CEFR Kazanım Isı
+                    Haritası.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-extrabold text-amber-700">
                     <Sparkles size={15} />
-                    <span>3 Kademeli Hareke &amp; 14 Alıştırma Modülü</span>
+                    <span>
+                      3 Kademeli Hareke &amp; {CONTENT_INVENTORY.exerciseModulesCount} Alıştırma ve Oyun Modülü
+                    </span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
                     Lafzatullah ve şedde/hareke çakışmalarını önleyen tipografi
-                    motoru, 3 kademeli Hareke Solması (İ&apos;rab), 14 etkileşimli
-                    alıştırma modülü ve çift cinsiyet ses mimarisi.
+                    motoru, 3 kademeli Hareke Solması (İ&apos;rab), Hızlı
+                    Başlatma Çekmeceli {CONTENT_INVENTORY.exerciseModulesCount}{" "}
+                    etkileşimli alıştırma/oyun modülü ve 2 Sütunlu A4 Sınav
+                    Stüdyosu.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-extrabold text-sky-700">
                     <Smartphone size={15} />
-                    <span>180 Çevrimdışı Ders Paketi &amp; PWA</span>
+                    <span>{totalOfflineLessons} Çevrimdışı Ders Paketi &amp; PWA</span>
                   </div>
                   <p className="text-xs text-[var(--muted)] leading-relaxed">
-                    120 diyalog ve 60 okuma metninin tamamı için çevrimdışı ses
-                    önbelleği, cihaz içi JSON yedekleme ve çevrimdışı PWA
-                    kurulum desteği sunar.
+                    {CONTENT_INVENTORY.dialoguesCount} diyalog ve{" "}
+                    {CONTENT_INVENTORY.readingsCount} okuma metninin tamamı için
+                    çevrimdışı ses önbelleği, tam kapsamlı cihaz içi JSON
+                    yedekleme ve çevrimdışı PWA kurulum desteği sunar.
                   </p>
                 </div>
               </div>

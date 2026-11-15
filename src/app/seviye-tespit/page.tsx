@@ -1844,6 +1844,7 @@ function SeviyeTespitContent() {
     recordTopicAttempt,
     recordSkillAttempt,
     markLevelExamCompleted,
+    setLastExamSummary,
     addStudyMinutes,
   } = useUserStore();
 
@@ -2258,6 +2259,24 @@ function SeviyeTespitContent() {
           ? Math.round((correctTotal / normalizedRecords.length) * 100)
           : 0;
 
+      if (normalizedRecords.length > 0) {
+        setLastExamSummary({
+          mode: sessionMode,
+          title:
+            sessionMode === "cat"
+              ? "Adaptif Seviye Tespit (CAT)"
+              : sessionMode === "exam"
+              ? `${sessionExamLevel || ""} Kur Bitirme Sınavı`.trim()
+              : "Konu Tarama Testi (KTT)",
+          level: sessionExamLevel || detectedCefrLevel || null,
+          solved: normalizedRecords.length,
+          correct: correctTotal,
+          wrong: Math.max(0, normalizedRecords.length - correctTotal),
+          accuracyPercent: pct,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
       if (sessionMode === "exam" && sessionExamLevel && pct >= 75) {
         markLevelExamCompleted(sessionExamLevel);
       }
@@ -2266,11 +2285,13 @@ function SeviyeTespitContent() {
     [
       addStudyMinutes,
       clearPendingAdvance,
+      detectedCefrLevel,
       markLevelExamCompleted,
       recordSkillAttempt,
       recordTopicAttempt,
       sessionExamLevel,
       sessionMode,
+      setLastExamSummary,
     ]
   );
 

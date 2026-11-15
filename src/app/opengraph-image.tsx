@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 export const alt =
   "Muallimun Arapça — İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu";
@@ -123,8 +124,7 @@ export default function OpenGraphImage() {
             width: "100%",
           }}
         >
-          120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma
-          Merkezi
+          {`${CONTENT_INVENTORY.dialoguesCount} Diyalog, ${CONTENT_INVENTORY.readingsCount} Okuma Metni, ${CONTENT_INVENTORY.grammarNotesCount} Gramer Notu ve ${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi`}
         </div>
       </div>
     ),

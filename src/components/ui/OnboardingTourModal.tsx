@@ -6,7 +6,6 @@ import {
   X,
   Sparkles,
   Repeat,
-  BookOpen,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -285,7 +284,7 @@ export default function OnboardingTourModal() {
     },
     {
       badgeTopic: "MORFOLOJİK SÖZLÜK",
-      title: "Tıklanabilir Kök Analizi & 400 Eş/Zıt Anlamlılar",
+      title: `Tıklanabilir Kök Analizi & ${CONTENT_INVENTORY.synonymsAntonymsCount} Eş/Zıt Anlamlılar`,
       subtitle:
         "Cümle içindeki herhangi bir Arapça kelimeye tıkladığınızda morfolojik ayrıştırma, tür rengi ve nüans rehberi açılır:",
       visual: (
@@ -361,50 +360,50 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badgeTopic: "ALIŞTIRMA MERKEZİ & SRS HAFIZA SİSTEMİ",
-      title: `${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi & Aralıklı Tekrar (SRS)`,
+      badgeTopic: "2 AŞAMALI ALIŞTIRMA & OYUN MERKEZİ",
+      title: `${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma & Oyun Merkezi + SRS`,
       subtitle:
-        "🎯 'Bugün Ne Çalışmalıyım?' günlük 12 dk kişisel çalışma paketi ve 5 aşamalı (1, 3, 7, 14, 30 gün) akıllı hafıza sistemi:",
+        "Sade kategori vitrininden modül kartına tıklayın, Hızlı Başlatma Çekmecesiyle saniyeler içinde oyuna veya teste başlayın:",
       visual: (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] flex items-start gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#087F5B]/15 text-[#065F46] dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <BookOpen size={16} />
+              <Sparkles size={16} />
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                3B Kelime &amp; Kısa Cümle Kartları
+                2 Aşamalı Vitrin + Hızlı Başlatma Çekmecesi
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Sesli ön/arka yüz çevirmeli kelime ve kalıp cümle kartları
+                Temiz sekmelerden modül seçin; seviye, soru sayısı ve havuzu çekmeceden ayarlayın
               </span>
             </div>
           </div>
 
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] flex items-start gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#6741D9]/15 text-[#6741D9] flex items-center justify-center shrink-0">
-              <CheckSquare size={16} />
+              <Trophy size={16} />
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Çoktan Seçmeli Test
+                Görsel Oyunlar: Balon Safari &amp; Hafızanı Yokla
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Eş anlamlı çakışmasını önleyen akıllı çeldiricili testler
+                Balon Safari, Hafızanı Yokla (YZ / 2 Kişilik / Antrenman) ve Bu Nedir? oyunları
               </span>
             </div>
           </div>
 
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#E6D7BE] flex items-start gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-              <PenTool size={16} />
+              <CheckSquare size={16} />
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Sürükle-Bırak &amp; Dinle-Yaz İmla
+                Çoktan Seçmeli, Eşleştirme &amp; Dinle-Yaz İmla
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Kelimeyi boşluğa sürükleyin veya sanal Arapça klavyeyle yazın
+                Akıllı çeldiricili testler, ok çizimli eşleştirme ve sanal klavyeli dikte
               </span>
             </div>
           </div>
@@ -415,10 +414,10 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                Ok Çizimli Eşleştirme
+                Hata Avcısı, Kanıt Dedektifi &amp; İ&apos;rab Boyama
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
-                Soketlerden sürükleyip ok çizerek Türkçe-Arapça eşleştirme
+                Sarf/nahiv hata bulma, metin kanıt dedektifi ve sınıf takım yarışması
               </span>
             </div>
           </div>
@@ -429,14 +428,13 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-[#4C28B5] dark:text-[#d0bfff]">
-                🧩 14 Etkileşimli Modül + 🔄{" "}
+                🧩 {CONTENT_INVENTORY.exerciseModulesCount} Etkileşimli Modül + 🔄{" "}
                 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Havuzu + 🎯 SRS
               </span>
               <span className="block text-[11px] text-[var(--muted)]">
                 🔄 {CONTENT_INVENTORY.synonymsAntonymsCount} Eş &amp; Zıt Anlamlılar
                 özel soru havuzu, {CONTENT_INVENTORY.visualWordsCount} görsel kelime
-                Müzekker/Müennes Tasnifi, Hata Avcısı, Kör Dikte, İ&apos;rab Boyama
-                ve 5 aşamalı SRS tekrar sistemi.
+                Müzekker/Müennes Tasnifi ve 5 aşamalı (1–30 gün) SRS hafıza sistemi.
               </span>
             </div>
           </div>
@@ -444,10 +442,10 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badgeTopic: "SINAV, GRAMER ATLASI & VİDEO REHBERİ",
+      badgeTopic: "SINAV, GRAMER ATLASI & BÖLÜM SEÇİCİLİ VİDEO REHBERİ",
       title: "Seviye Tespit (CAT/KTT), Gramer Atlası & Video Rehberi",
       subtitle:
-        "Seviyenizi bilimsel olarak ölçün, kuralları haritalandırın ve özgün Arapça videolarla dinleme pratiği yapın:",
+        "Seviyenizi bilimsel olarak ölçün, kuralları haritalandırın ve bölüm takipli oynatma listeleriyle dinleme pratiği yapın:",
       visual: (
         <div className="space-y-2.5">
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#6741D9] flex items-start gap-3">
@@ -475,9 +473,10 @@ export default function OnboardingTourModal() {
                 📌 {CONTENT_INVENTORY.grammarNotesCount} Kartlık Gramer Atlası &amp; KTT Köprüsü
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
-                120 diyalog, 60 metin ve 15 müstakil gramer kartından oluşan
-                bütüncül atlas; Sade/Akademik anlatım, i&apos;rab tahlili ve tek
-                tıkla konu tarama testi bağlantısı.
+                {CONTENT_INVENTORY.dialoguesCount} diyalog,{" "}
+                {CONTENT_INVENTORY.readingsCount} metin ve 15 müstakil gramer
+                kartından oluşan bütüncül atlas; Sade/Akademik anlatım, i&apos;rab
+                tahlili ve tek tıkla konu tarama testi bağlantısı.
               </p>
             </div>
           </div>
@@ -488,12 +487,12 @@ export default function OnboardingTourModal() {
             </div>
             <div className="min-w-0 space-y-0.5">
               <span className="block text-xs font-extrabold text-rose-900 dark:text-rose-200">
-                🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi
+                🎬 {CONTENT_INVENTORY.youtubeVideosCount} Seçkin Video &amp; İzleme Rehberi (40 Oynatma Listesi)
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
-                CEFR A1–B2 seviyelerine ve 6 kategoriye ayrılmış tekil videolar
-                ve oynatma listeleri; uygulama içi Sinema Modu, pedagojik notlar
-                ve tıklanabilir odak kelimeler.
+                20 tekil video ve <strong>40 oynatma listesinde uygulama içi bölüm seçici</strong>{" "}
+                (yan yana Split-Cinema), <strong>kaldığı bölümü hatırlama</strong>{" "}
+                ve <strong>bölüm bazlı izlendi takibi</strong>.
               </p>
             </div>
           </div>
@@ -501,10 +500,10 @@ export default function OnboardingTourModal() {
       ),
     },
     {
-      badgeTopic: "ÖDEV SİSTEMİ, A4 QUİZ, ÇEVRİMDIŞI & TAHTA MODU",
-      title: "QR Ödev Sistemi, A4 Quiz, Çevrimdışı & Akıllı Tahta",
+      badgeTopic: "A4 SINAV STÜDYOSU, RÜTBE & GELİŞİM RAPORU",
+      title: "2 Sütunlu A4 Sınav Stüdyosu, Rozetler & Çevrimdışı Mod",
       subtitle:
-        "Sınıf içi ve bireysel çalışmalarda öğretmen ve öğrenciler için tam donanımlı araçlar:",
+        "Resmi sınav kağıtları üretin, CEFR kazanım ısı haritanızı takip edin ve tüm cihazlarda çevrimdışı çalışın:",
       visual: (
         <div className="space-y-2.5">
           <div className="p-3 rounded-2xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B] flex items-start gap-3">
@@ -513,12 +512,13 @@ export default function OnboardingTourModal() {
             </div>
             <div className="space-y-0.5">
               <span className="block text-xs font-extrabold text-[var(--foreground)]">
-                🎓 Öğretmen Ödev &amp; QR Sistemi + A4 Quiz Üretici
+                📄 2 Sütunlu A4 Sınav &amp; Ders Notu Stüdyosu + QR Ödev
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
-                Öğretmenler için karekodlu ödev linki, öğrenciler için doğrulama
-                kodlu ödev karnesi ve cevap anahtarlı tek sayfa A4 Çalışma/Quiz
-                kağıdı.
+                <strong>3–3.5 cm resmi sınav anteti</strong>,{" "}
+                <strong>6 bölümlü A/B kitapçıklı yazılı sınav</strong> ve{" "}
+                <strong>Karma Aralık (Range)</strong> seçimi (örn. 5. ile 15.
+                diyalog arası harmanlanmış sınav) + karekodlu ödev linki.
               </p>
             </div>
           </div>
@@ -529,13 +529,14 @@ export default function OnboardingTourModal() {
             </div>
             <div>
               <span className="block text-xs font-extrabold text-amber-900 dark:text-amber-200">
-                📥 Çevrimdışı Ders Paketleri &amp; Kör Dinleme / Akıllı Tahta Modu
+                🏆 İstatistikler, Başarı Rozetleri &amp; CEFR Kazanım Isı Haritası
               </span>
               <p className="text-[11px] font-medium text-[var(--muted)] leading-snug">
-                İnternetsiz ses indirme, bulanık metinle{" "}
-                <strong>👁️ Kör Dinleme</strong>, sınıfta{" "}
-                <strong>🖥️ Akıllı Tahta Sunum Modu</strong> ve PNG Başarı
-                Karnesi paylaşımı.
+                Rütbe sistemi (<em>Bronz Talebe → Fasih Üstad</em>),{" "}
+                <strong>4 sekmeli öğrenci/öğretmen gelişim raporu</strong>,{" "}
+                {CONTENT_INVENTORY.dialoguesCount + CONTENT_INVENTORY.readingsCount}{" "}
+                çevrimdışı ders paketi, <strong>👁️ Kör Dinleme</strong> ve{" "}
+                <strong>🖥️ Akıllı Tahta</strong>.
               </p>
             </div>
           </div>

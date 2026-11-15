@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 const INTRO_SESSION_KEY = "muallimun_intro_shown";
 
@@ -103,6 +104,12 @@ export default function AppIntroSplash() {
           </h1>
           <p className="text-xs sm:text-sm font-medium text-emerald-200/85">
             İnteraktif Arapça Kütüphane, Sözlük, Oyun ve Sınav Platformu
+          </p>
+          <p className="text-[11px] sm:text-xs font-semibold text-emerald-300/90 leading-relaxed pt-0.5">
+            {CONTENT_INVENTORY.dialoguesCount} Diyalog •{" "}
+            {CONTENT_INVENTORY.readingsCount} Metin •{" "}
+            {CONTENT_INVENTORY.exerciseModulesCount} Oyun &amp; Alıştırma • A4
+            Sınav Stüdyosu
           </p>
         </div>
 

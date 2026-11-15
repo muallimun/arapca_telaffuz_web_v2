@@ -52,6 +52,7 @@ import { usePwaInstall } from "@/lib/usePwaInstall";
 import { playClick, playSuccess } from "@/lib/sfxManager";
 import { playTTS, loadAudioManifest } from "@/lib/audio";
 import { diyaloglar, metinler } from "@/lib/data";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 import {
   getDownloadedDialogueIds,
   downloadAllDialoguesOffline,
@@ -132,8 +133,15 @@ export default function SettingsPage() {
     setDailyGoalMinutes,
     detectedCefrLevel,
     setDetectedCefrLevel,
-    exportProgress,
-    importProgress,
+    learnedWords,
+    srsRecords,
+    skillStats,
+    playlistWatchedEpisodes,
+    playlistLastEpisode,
+    lastExerciseSummary,
+    lastExamSummary,
+    exportUserData,
+    importUserData,
     restoreLastAutoBackup,
     resetProgress,
   } = useUserStore();
@@ -197,7 +205,7 @@ export default function SettingsPage() {
   const handleExportBackup = () => {
     playClick();
     try {
-      const jsonStr = exportProgress();
+      const jsonStr = exportUserData();
       const blob = new Blob([jsonStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const dateStr = new Date().toISOString().slice(0, 10);
@@ -210,7 +218,7 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url);
       setDataMessage({
         type: "success",
-        text: "İlerleme verileriniz .json dosyası olarak başarıyla indirildi.",
+        text: "Kelimeleriniz, beceri istatistikleriniz, oynatma listesi bölüm takibiniz ve son sınav/alıştırma özetleriniz .json olarak indirildi.",
       });
     } catch {
       setDataMessage({
@@ -234,7 +242,7 @@ export default function SettingsPage() {
     const reader = new FileReader();
     reader.onload = () => {
       const content = typeof reader.result === "string" ? reader.result : "";
-      const ok = importProgress(content, importMode);
+      const ok = importUserData(content, importMode);
       if (ok) {
         playClick();
         setHasAutoBackup(true);
@@ -242,7 +250,7 @@ export default function SettingsPage() {
           type: "success",
           text:
             importMode === "merge"
-              ? "Yedek dosyası mevcut ilerlemenizle güvenli biçimde birleştirildi!"
+              ? "Yedek dosyası (kelime, SRS, beceri, oynatma listesi ve sınav/alıştırma geçmişi) mevcut ilerlemenizle güvenli biçimde birleştirildi!"
               : "Yedek dosyası başarıyla yüklendi ve tüm ilerlemeniz geri getirildi!",
         });
       } else {
@@ -278,7 +286,7 @@ export default function SettingsPage() {
     setConfirmReset(false);
     setDataMessage({
       type: "success",
-      text: "Tüm çalışma geçmişiniz ve kelime ilerlemeniz sıfırlandı.",
+      text: "Kelime, SRS, 6 beceri istatistiği, oynatma listesi bölüm takibi ve son sınav/alıştırma özetleri dahil tüm çalışma geçmişiniz sıfırlandı.",
     });
   };
 
@@ -1820,7 +1828,7 @@ export default function SettingsPage() {
                     </span>
                   </div>
                   <span className="block text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                    İndirilen 120 diyalog ve 60 okuma metninin (180 ders) cümle sesleri, sözlük/morfoloji verileri ve 14 alıştırma modülü uçakta, metroda veya internetin olmadığı sınıflarda tamamen çevrimdışı çalışır.
+                    İndirilen {CONTENT_INVENTORY.dialoguesCount} diyalog ve {CONTENT_INVENTORY.readingsCount} okuma metninin ({totalOfflineLessons} ders) cümle sesleri, sözlük/morfoloji verileri ve {CONTENT_INVENTORY.exerciseModulesCount} alıştırma/oyun modülü uçakta, metroda veya internetin olmadığı sınıflarda tamamen çevrimdışı çalışır.
                   </span>
                 </div>
               </div>
@@ -1921,9 +1929,22 @@ export default function SettingsPage() {
                     Veri Yönetimi ve Yedekleme
                   </span>
                   <span className="block text-[11px] text-[var(--muted)]">
-                    Öğrendiğiniz kelimeleri, telaffuz puanlarınızı ve serinizi
-                    .json olarak yedekleyin veya geri yükleyin
+                    Kelimeler, SRS tekrarları, 6 beceri istatistiği, oynatma listesi bölüm takibi ve son sınav/alıştırma özetlerini .json olarak yedekleyin veya geri yükleyin
                   </span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] tabular-nums">
+                      📚 {learnedWords.length} kelime · {Object.keys(srsRecords).length} SRS
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] tabular-nums">
+                      🎯 {Object.values(skillStats).reduce((acc, s) => acc + (s?.total ?? 0), 0)} beceri kaydı
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)] tabular-nums">
+                      🎬 {Object.values(playlistWatchedEpisodes).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0)} izlenen bölüm ({Object.keys(playlistLastEpisode).length} liste hafızası)
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F7EFE1] dark:bg-[var(--surface)] border border-[#E6D7BE] dark:border-[var(--border)] text-[var(--foreground)]">
+                      🧭 Son özetler: {lastExamSummary ? `${lastExamSummary.mode.toUpperCase()} %${lastExamSummary.accuracyPercent}` : "Sınav yok"} · {lastExerciseSummary ? `%${lastExerciseSummary.accuracyPercent ?? 0} alıştırma` : "Alıştırma yok"}
+                    </span>
+                  </div>
                 </div>
               </div>
 

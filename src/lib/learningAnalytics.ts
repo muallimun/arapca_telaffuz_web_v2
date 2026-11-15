@@ -21,6 +21,7 @@ import {
   SkillStatRecord,
   SrsItemRecord,
   TopicMasteryRecord,
+  useUserStore,
 } from "@/store/userStore";
 import {
   normalizeToCanonicalMistakeId,
@@ -209,23 +210,42 @@ export function saveLastExerciseSummary(summary: {
   correct: number;
   wrong: number;
 }): void {
+  const solved = Math.max(0, Math.floor(summary.solved || 0));
+  if (solved <= 0) return;
+  const correct = Math.max(0, Math.min(solved, Math.floor(summary.correct || 0)));
+  const wrong = Math.max(
+    0,
+    Math.floor(summary.wrong ?? Math.max(0, solved - correct))
+  );
+  const accuracyPercent = Math.round((correct / solved) * 100);
+  const updatedAt = new Date().toISOString();
+  const normalizedModuleName = (summary.moduleName || "Alıştırma").slice(0, 80);
+
+  try {
+    useUserStore.getState().setLastExerciseSummary({
+      moduleName: normalizedModuleName,
+      solved,
+      correct,
+      wrong,
+      accuracyPercent,
+      updatedAt,
+    });
+  } catch {
+    // Store erişimi yoksa localStorage yedek yazımına devam et
+  }
+
   if (typeof window === "undefined") return;
   try {
-    const solved = Math.max(0, Math.floor(summary.solved || 0));
-    const correct = Math.max(0, Math.min(solved, Math.floor(summary.correct || 0)));
-    const wrong = Math.max(0, Math.floor(summary.wrong ?? Math.max(0, solved - correct)));
-    const accuracyPercent =
-      solved > 0 ? Math.round((correct / solved) * 100) : null;
     localStorage.setItem(
       LAST_EXERCISE_STORAGE_KEY,
       JSON.stringify({
-        hasData: solved > 0,
-        moduleName: (summary.moduleName || "Alıştırma").slice(0, 80),
+        hasData: true,
+        moduleName: normalizedModuleName,
         solved,
         correct,
         wrong,
         accuracyPercent,
-        updatedAt: new Date().toISOString(),
+        updatedAt,
       })
     );
   } catch {
@@ -234,6 +254,24 @@ export function saveLastExerciseSummary(summary: {
 }
 
 export function readStoredLastExerciseSummary(): Partial<LastExerciseResultInfo> | null {
+  try {
+    const fromStore = useUserStore.getState().lastExerciseSummary;
+    if (fromStore && fromStore.solved > 0) {
+      return {
+        hasData: true,
+        moduleName: fromStore.moduleName || "Son Alıştırma",
+        solved: fromStore.solved,
+        correct: fromStore.correct,
+        wrong: fromStore.wrong,
+        accuracyPercent:
+          fromStore.accuracyPercent ??
+          Math.round((fromStore.correct / fromStore.solved) * 100),
+      };
+    }
+  } catch {
+    // Store henüz hazır değilse localStorage üzerinden oku
+  }
+
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(LAST_EXERCISE_STORAGE_KEY);

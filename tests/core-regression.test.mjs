@@ -2848,7 +2848,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   assert.deepEqual(metadataJson.requestFramePermissions, ["microphone"]);
   assert.equal(
     metadataJson.description.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -2883,7 +2883,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   );
   assert.equal(
     pkgJson.description.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -2913,7 +2913,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
     .replace(/\s+/g, " ");
   assert.equal(
     ogCode.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+      "${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -2921,7 +2921,7 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   const readmeCode = fs.readFileSync(path.join(ROOT_DIR, "README.md"), "utf8");
   assert.equal(
     readmeCode.includes(
-      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 14 Modüllü Alıştırma Merkezi"
+      "120 Diyalog, 60 Okuma Metni, 195 Gramer Notu ve 17 Modüllü Alıştırma Merkezi"
     ),
     true
   );
@@ -3198,11 +3198,11 @@ test("31. Header, Genel Ayarlar, Diyalog/Metin, Admin, PWA ve Kılavuz Modallar�
 
   // 6. OnboardingTourModal ve GuideAndInfoModalBody güncellemeleri
   assert.equal(
-    onboardingCode.includes("14 Etkileşimli Modül") &&
+    onboardingCode.includes("{CONTENT_INVENTORY.exerciseModulesCount} Etkileşimli Modül") &&
       onboardingCode.includes("Tıkla-Gör") &&
       guideModalCode.includes("Özel İsim (علم) — Turkuaz") &&
-      guideModalCode.includes("195 Kartlık Gramer Atlası") &&
-      guideModalCode.includes("180 Çevrimdışı Ders Paketi"),
+      guideModalCode.includes("{CONTENT_INVENTORY.grammarNotesCount} Kartlık Gramer Atlası") &&
+      guideModalCode.includes("{totalOfflineLessons} Çevrimdışı Ders Paketi"),
     true,
     "OnboardingTourModal ve GuideAndInfoModalBody güncel özellikleri eksiksiz yansıtmalıdır"
   );
@@ -4348,10 +4348,11 @@ test("40. Veri Envanteri (550 Soru, 14 Modül, 998 Görsel Kelime), Arapça Peda
     "utf8"
   );
   assert.equal(
-    shareAchCode.includes("14 Modül Alıştırma") &&
+    shareAchCode.includes("${CONTENT_INVENTORY.exerciseModulesCount} Modül Alıştırma") &&
+      !shareAchCode.includes("14 Modül Alıştırma") &&
       !shareAchCode.includes("8 Modül Alıştırma"),
     true,
-    "ShareAchievementModal '14 Modül Alıştırma' göstermelidir"
+    "ShareAchievementModal dinamik modül sayısını (CONTENT_INVENTORY.exerciseModulesCount) göstermelidir"
   );
 
   const alistirmalarCode = fs.readFileSync(
@@ -4507,7 +4508,7 @@ test("40. Veri Envanteri (550 Soru, 14 Modül, 998 Görsel Kelime), Arapça Peda
     guideSrc.includes("10, 15 veya 20 soruluk adaptif CAT") &&
       !guideSrc.includes("12 soruluk adaptif") &&
       guideSrc.includes("soruluk Seviye Tespit ve Konu Tarama Merkezi") &&
-      guideSrc.includes("195 Kartlık Gramer Atlası") &&
+      guideSrc.includes("{CONTENT_INVENTORY.grammarNotesCount} Kartlık Gramer Atlası") &&
       guideSrc.includes("28 Harf Kişisel Mahreç Isı Haritası") &&
       guideSrc.includes("Eş &amp; Zıt Anlamlılar") &&
       guideSrc.includes("Seçkin Video &amp; İzleme Rehberi"),
@@ -7625,3 +7626,187 @@ test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam
     "kelime_1540 müfret alanı vasl hemzeli اِثْنَيْنِ olmalıdır"
   );
 });
+
+test("66. Kullanım Kılavuzu, Tanıtım Turu, AppIntroSplash Dinamik CONTENT_INVENTORY Uyumu, Yedekleme/Sıfırlama (Playlist & Sınav/Alıştırma Özeti) ve 17 Modül Meta Senkronizasyonu", async () => {
+  const { pathToFileURL } = await import("node:url");
+
+  // 0. Kök dizinde metadata.json ve tsconfig.json kesinlikle mevcut olmalı ve 17 Modül içermeli
+  const metadataPath = path.join(ROOT_DIR, "metadata.json");
+  const tsconfigPath = path.join(ROOT_DIR, "tsconfig.json");
+  assert.equal(fs.existsSync(metadataPath), true, "metadata.json silinmemelidir");
+  assert.equal(fs.existsSync(tsconfigPath), true, "tsconfig.json silinmemelidir");
+
+  const metadataJson = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+  const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "package.json"), "utf8"));
+  assert.equal(
+    metadataJson.description.includes("17 Modüllü Alıştırma Merkezi") &&
+      !metadataJson.description.includes("14 Modüllü"),
+    true,
+    "metadata.json güncel 17 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
+  );
+  assert.equal(
+    pkgJson.description.includes("17 Modüllü Alıştırma Merkezi") &&
+      !pkgJson.description.includes("14 Modüllü"),
+    true,
+    "package.json güncel 17 Modüllü Alıştırma Merkezi açıklamasını içermelidir"
+  );
+
+  // 1. Hiçbir arayüz/meta dosyasında eski sabit "14 modül" / "14 Etkileşimli Modül" kalmamalıdır
+  const targetFiles = [
+    "src/components/ui/GuideAndInfoModalBody.tsx",
+    "src/components/ui/OnboardingTourModal.tsx",
+    "src/components/ui/AppIntroSplash.tsx",
+    "src/components/ui/ShareAchievementModal.tsx",
+    "src/app/ayarlar/page.tsx",
+    "src/app/opengraph-image.tsx",
+    "metadata.json",
+    "package.json",
+    "README.md",
+  ];
+  for (const rel of targetFiles) {
+    const content = fs.readFileSync(path.join(ROOT_DIR, rel), "utf8");
+    assert.equal(
+      /14\s*(modül|etkileşimli|alıştırma|pedagojik)/iu.test(content),
+      false,
+      `${rel} içinde eski sabit '14 modül' ifadesi kalmamalıdır`
+    );
+  }
+
+  // 2. GuideAndInfoModalBody, OnboardingTourModal ve AppIntroSplash CONTENT_INVENTORY ve 4 yeni özellik sütununu içermelidir
+  const guideCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    "utf8"
+  );
+  const tourCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "OnboardingTourModal.tsx"),
+    "utf8"
+  );
+  const splashCode = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "AppIntroSplash.tsx"),
+    "utf8"
+  );
+
+  for (const [name, src] of [
+    ["GuideAndInfoModalBody.tsx", guideCode],
+    ["OnboardingTourModal.tsx", tourCode],
+    ["AppIntroSplash.tsx", splashCode],
+  ]) {
+    assert.equal(
+      src.includes('@/lib/contentInventory') && src.includes("CONTENT_INVENTORY"),
+      true,
+      `${name} doğrudan hafif CONTENT_INVENTORY sabitini kullanmalıdır`
+    );
+  }
+
+  // 4 ana güncel özelliğin hem Kullanım Kılavuzunda hem Tanıtım Turunda yer alması
+  for (const [name, src] of [
+    ["GuideAndInfoModalBody.tsx", guideCode],
+    ["OnboardingTourModal.tsx", tourCode],
+  ]) {
+    assert.equal(
+      src.includes("Hızlı Başlatma Çekmecesi") &&
+        src.includes("Balon Safari") &&
+        src.includes("Hafızanı Yokla") &&
+        src.includes("Bu Nedir?") &&
+        src.includes("3–3.5 cm") &&
+        src.includes("Karma Aralık (Range)") &&
+        src.includes("40 oynatma listesinde") &&
+        src.includes("CEFR Kazanım Isı Haritası") &&
+        src.includes("4 sekmeli"),
+      true,
+      `${name} 2 Aşamalı Oyun Vitrini, 2 Sütunlu A4 Sınav Stüdyosu (Karma Aralık), 40 Oynatma Listesi Bölüm Seçici ve CEFR Kazanım Isı Haritası özelliklerini anlatmalıdır`
+    );
+  }
+
+  // 3. userStore.ts yedekleme (exportUserData / importUserData) ve sıfırlama (resetProgress) fonksiyonel doğrulaması
+  const { useUserStore } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "store", "userStore.ts")).href
+  );
+
+  useUserStore.getState().resetProgress();
+
+  // Playlist bölüm hafızası, izlenen bölümler, beceri istatistikleri ve son sınav/alıştırma özetlerini doldur
+  useUserStore.getState().setPlaylistLastEpisode("yt_pl_01", 7);
+  useUserStore.getState().togglePlaylistEpisodeWatched("yt_pl_01", 3);
+  useUserStore.getState().togglePlaylistEpisodeWatched("yt_pl_01", 7);
+  useUserStore.getState().recordSkillAttempt("kelime", true);
+  useUserStore.getState().recordSkillAttempt("gramer", false);
+  useUserStore.getState().setLastExerciseSummary({
+    moduleName: "Balon Safari",
+    solved: 8,
+    correct: 7,
+    wrong: 1,
+    accuracyPercent: 88,
+    updatedAt: "2026-10-10T10:00:00.000Z",
+  });
+  useUserStore.getState().setLastExamSummary({
+    mode: "cat",
+    title: "Adaptif Seviye Tespit (CAT)",
+    level: "B1",
+    solved: 10,
+    correct: 9,
+    wrong: 1,
+    accuracyPercent: 90,
+    updatedAt: "2026-10-10T10:05:00.000Z",
+  });
+
+  const backupJson = useUserStore.getState().exportUserData();
+  const parsedBackup = JSON.parse(backupJson);
+  assert.deepEqual(parsedBackup.playlistLastEpisode, { yt_pl_01: 7 });
+  assert.deepEqual(parsedBackup.playlistWatchedEpisodes, { yt_pl_01: [3, 7] });
+  assert.equal(parsedBackup.skillStats.kelime.correct, 1);
+  assert.equal(parsedBackup.lastExerciseSummary?.moduleName, "Balon Safari");
+  assert.equal(parsedBackup.lastExamSummary?.level, "B1");
+
+  // Sıfırlama (resetProgress) tüm bu alanları tertemiz sıfırlamalıdır
+  useUserStore.getState().resetProgress();
+  const afterReset = useUserStore.getState();
+  assert.deepEqual(afterReset.playlistLastEpisode, {});
+  assert.deepEqual(afterReset.playlistWatchedEpisodes, {});
+  assert.equal(afterReset.skillStats.kelime.total, 0);
+  assert.equal(afterReset.lastExerciseSummary, null);
+  assert.equal(afterReset.lastExamSummary, null);
+
+  // Overwrite ile geri yükleme
+  const overwriteOk = useUserStore.getState().importUserData(backupJson, "overwrite");
+  assert.equal(overwriteOk, true, "importUserData overwrite başarılı olmalıdır");
+  const afterOverwrite = useUserStore.getState();
+  assert.deepEqual(afterOverwrite.playlistLastEpisode, { yt_pl_01: 7 });
+  assert.deepEqual(afterOverwrite.playlistWatchedEpisodes, { yt_pl_01: [3, 7] });
+  assert.equal(afterOverwrite.skillStats.kelime.correct, 1);
+  assert.equal(afterOverwrite.skillStats.gramer.total, 1);
+  assert.equal(afterOverwrite.lastExerciseSummary?.accuracyPercent, 88);
+  assert.equal(afterOverwrite.lastExamSummary?.mode, "cat");
+
+  // Merge ile birleştirme (farklı oynatma listesi + daha yeni alıştırma özeti korunmalı)
+  useUserStore.getState().resetProgress();
+  useUserStore.getState().setPlaylistLastEpisode("yt_pl_02", 4);
+  useUserStore.getState().togglePlaylistEpisodeWatched("yt_pl_01", 1);
+  useUserStore.getState().setLastExerciseSummary({
+    moduleName: "Hafızanı Yokla",
+    solved: 20,
+    correct: 19,
+    wrong: 1,
+    accuracyPercent: 95,
+    updatedAt: "2026-10-12T12:00:00.000Z",
+  });
+
+  const mergeOk = useUserStore.getState().importUserData(backupJson, "merge");
+  assert.equal(mergeOk, true, "importUserData merge başarılı olmalıdır");
+  const afterMerge = useUserStore.getState();
+  assert.deepEqual(afterMerge.playlistLastEpisode, { yt_pl_02: 4, yt_pl_01: 7 });
+  assert.deepEqual(afterMerge.playlistWatchedEpisodes.yt_pl_01, [1, 3, 7]);
+  assert.equal(
+    afterMerge.lastExerciseSummary?.moduleName,
+    "Hafızanı Yokla",
+    "Merge modunda zaman damgası daha yeni olan alıştırma özeti korunmalıdır"
+  );
+  assert.equal(
+    afterMerge.lastExamSummary?.level,
+    "B1",
+    "Merge modunda mevcut sınav özeti yoksa yedekteki sınav özeti alınmalıdır"
+  );
+
+  useUserStore.getState().resetProgress();
+});
+

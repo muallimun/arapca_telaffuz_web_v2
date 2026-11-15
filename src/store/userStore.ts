@@ -673,6 +673,140 @@ function sanitizePlaylistLastEpisode(raw: unknown): Record<string, number> {
   return { ...safeMap };
 }
 
+export const USER_LAST_EXERCISE_STORAGE_KEY =
+  "muallimun_last_exercise_summary_v1";
+
+export interface LastExerciseSummaryRecord {
+  moduleName: string;
+  solved: number;
+  correct: number;
+  wrong: number;
+  accuracyPercent: number | null;
+  updatedAt: string;
+}
+
+export interface LastExamSummaryRecord {
+  mode: "cat" | "topic" | "practice" | "exam";
+  title: string;
+  level: Level | null;
+  solved: number;
+  correct: number;
+  wrong: number;
+  accuracyPercent: number;
+  updatedAt: string;
+}
+
+function sanitizeLastExerciseSummary(
+  raw: unknown
+): LastExerciseSummaryRecord | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const rec = raw as Record<string, unknown>;
+  const rawSolved = Number(rec.solved);
+  if (!Number.isFinite(rawSolved) || rawSolved <= 0) return null;
+  const solved = Math.max(1, Math.min(10000, Math.floor(rawSolved)));
+  const rawCorrect = Number(rec.correct);
+  const correct = Number.isFinite(rawCorrect)
+    ? Math.max(0, Math.min(solved, Math.floor(rawCorrect)))
+    : 0;
+  const rawWrong = Number(rec.wrong);
+  const wrong = Number.isFinite(rawWrong)
+    ? Math.max(0, Math.min(10000, Math.floor(rawWrong)))
+    : Math.max(0, solved - correct);
+  const moduleName =
+    typeof rec.moduleName === "string" && rec.moduleName.trim().length > 0
+      ? rec.moduleName.trim().slice(0, 80)
+      : "Son Alıştırma";
+  const updatedAt = isValidIsoOrDateString(rec.updatedAt)
+    ? String(rec.updatedAt).trim()
+    : new Date(0).toISOString();
+  return {
+    moduleName,
+    solved,
+    correct,
+    wrong,
+    accuracyPercent: Math.round((correct / solved) * 100),
+    updatedAt,
+  };
+}
+
+function sanitizeLastExamSummary(raw: unknown): LastExamSummaryRecord | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const rec = raw as Record<string, unknown>;
+  const rawSolved = Number(rec.solved);
+  if (!Number.isFinite(rawSolved) || rawSolved <= 0) return null;
+  const solved = Math.max(1, Math.min(10000, Math.floor(rawSolved)));
+  const rawCorrect = Number(rec.correct);
+  const correct = Number.isFinite(rawCorrect)
+    ? Math.max(0, Math.min(solved, Math.floor(rawCorrect)))
+    : 0;
+  const rawWrong = Number(rec.wrong);
+  const wrong = Number.isFinite(rawWrong)
+    ? Math.max(0, Math.min(10000, Math.floor(rawWrong)))
+    : Math.max(0, solved - correct);
+  const mode: "cat" | "topic" | "practice" | "exam" =
+    rec.mode === "cat" || rec.mode === "exam" || rec.mode === "topic"
+      ? rec.mode
+      : "practice";
+  const title =
+    typeof rec.title === "string" && rec.title.trim().length > 0
+      ? rec.title.trim().slice(0, 120)
+      : mode === "cat"
+      ? "Adaptif Seviye Tespit (CAT)"
+      : mode === "exam"
+      ? "Kur Bitirme Sınavı"
+      : "Konu Tarama Testi (KTT)";
+  const level = sanitizeCefrLevel(rec.level);
+  const updatedAt = isValidIsoOrDateString(rec.updatedAt)
+    ? String(rec.updatedAt).trim()
+    : new Date(0).toISOString();
+  return {
+    mode,
+    title,
+    level,
+    solved,
+    correct,
+    wrong,
+    accuracyPercent: Math.round((correct / solved) * 100),
+    updatedAt,
+  };
+}
+
+function readBrowserLastExerciseSummary(): LastExerciseSummaryRecord | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(USER_LAST_EXERCISE_STORAGE_KEY);
+    if (!raw) return null;
+    return sanitizeLastExerciseSummary(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function syncBrowserLastExerciseSummary(
+  summary: LastExerciseSummaryRecord | null
+): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    if (!summary) {
+      window.localStorage.removeItem(USER_LAST_EXERCISE_STORAGE_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      USER_LAST_EXERCISE_STORAGE_KEY,
+      JSON.stringify({
+        hasData: summary.solved > 0,
+        ...summary,
+      })
+    );
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
 interface UserState {
   favoriteDialogues: string[];
   completedDialogues: string[];
@@ -699,12 +833,16 @@ interface UserState {
   watchedVideos: string[];
   playlistWatchedEpisodes: Record<string, number[]>;
   playlistLastEpisode: Record<string, number>;
+  lastExerciseSummary: LastExerciseSummaryRecord | null;
+  lastExamSummary: LastExamSummaryRecord | null;
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
   toggleWatchedVideo: (id: string) => void;
   togglePlaylistEpisodeWatched: (itemId: string, episodeNum: number) => void;
   setPlaylistLastEpisode: (itemId: string, episodeNum: number) => void;
+  setLastExerciseSummary: (summary: LastExerciseSummaryRecord | null) => void;
+  setLastExamSummary: (summary: LastExamSummaryRecord | null) => void;
   toggleFavoriteWord: (word: DictionaryItem) => void;
   toggleLearnedWord: (id: string) => void;
   addWeakWord: (word: DictionaryItem) => void;
@@ -742,6 +880,8 @@ interface UserState {
 
   exportProgress: () => string;
   importProgress: (jsonData: string, mode?: "merge" | "overwrite") => boolean;
+  exportUserData: () => string;
+  importUserData: (jsonData: string, mode?: "merge" | "overwrite") => boolean;
   restoreLastAutoBackup: () => boolean;
   resetProgress: () => void;
 
@@ -780,6 +920,8 @@ export const useUserStore = create<UserState>()(
       watchedVideos: [],
       playlistWatchedEpisodes: {},
       playlistLastEpisode: {},
+      lastExerciseSummary: null,
+      lastExamSummary: null,
 
       toggleFavoriteDialogue: (id) =>
         set((state) => ({
@@ -864,6 +1006,18 @@ export const useUserStore = create<UserState>()(
             },
           };
         }),
+
+      setLastExerciseSummary: (summary) =>
+        set(() => {
+          const clean = sanitizeLastExerciseSummary(summary);
+          syncBrowserLastExerciseSummary(clean);
+          return { lastExerciseSummary: clean };
+        }),
+
+      setLastExamSummary: (summary) =>
+        set(() => ({
+          lastExamSummary: sanitizeLastExamSummary(summary),
+        })),
 
       toggleCompletedDialogue: (id) =>
         set((state) => {
@@ -1544,9 +1698,15 @@ export const useUserStore = create<UserState>()(
           playlistLastEpisode: sanitizePlaylistLastEpisode(
             state.playlistLastEpisode
           ),
+          lastExerciseSummary:
+            sanitizeLastExerciseSummary(state.lastExerciseSummary) ??
+            readBrowserLastExerciseSummary(),
+          lastExamSummary: sanitizeLastExamSummary(state.lastExamSummary),
         };
         return JSON.stringify(payload, null, 2);
       },
+
+      exportUserData: () => get().exportProgress(),
 
       importProgress: (jsonData: string, mode: "merge" | "overwrite" = "merge") => {
         try {
@@ -1610,6 +1770,8 @@ export const useUserStore = create<UserState>()(
             "watchedVideos",
             "playlistWatchedEpisodes",
             "playlistLastEpisode",
+            "lastExerciseSummary",
+            "lastExamSummary",
           ];
           if (!knownKeys.some((k) => k in data)) {
             return false;
@@ -1817,6 +1979,12 @@ export const useUserStore = create<UserState>()(
           const importedPlaylistLastEpisode = sanitizePlaylistLastEpisode(
             data.playlistLastEpisode
           );
+          const importedLastExerciseSummary = sanitizeLastExerciseSummary(
+            data.lastExerciseSummary
+          );
+          const importedLastExamSummary = sanitizeLastExamSummary(
+            data.lastExamSummary
+          );
           const autoCompletedFromEpisodes = Object.entries(
             importedPlaylistWatchedEpisodes
           )
@@ -1828,6 +1996,7 @@ export const useUserStore = create<UserState>()(
           ]);
 
           if (mode === "overwrite") {
+            syncBrowserLastExerciseSummary(importedLastExerciseSummary);
             set({
               favoriteDialogues: importedFavoriteDialogues,
               completedDialogues: importedCompletedDialogues,
@@ -1857,6 +2026,8 @@ export const useUserStore = create<UserState>()(
               watchedVideos: importedWatchedVideos,
               playlistWatchedEpisodes: importedPlaylistWatchedEpisodes,
               playlistLastEpisode: importedPlaylistLastEpisode,
+              lastExerciseSummary: importedLastExerciseSummary,
+              lastExamSummary: importedLastExamSummary,
             });
             return true;
           }
@@ -2122,12 +2293,38 @@ export const useUserStore = create<UserState>()(
               }
               return mergedLast;
             })(),
+            lastExerciseSummary: (() => {
+              const curEx =
+                sanitizeLastExerciseSummary(current.lastExerciseSummary) ??
+                readBrowserLastExerciseSummary();
+              if (!importedLastExerciseSummary) return curEx;
+              if (!curEx) {
+                syncBrowserLastExerciseSummary(importedLastExerciseSummary);
+                return importedLastExerciseSummary;
+              }
+              const incTs = Date.parse(importedLastExerciseSummary.updatedAt) || 0;
+              const curTs = Date.parse(curEx.updatedAt) || 0;
+              const chosen = incTs >= curTs ? importedLastExerciseSummary : curEx;
+              syncBrowserLastExerciseSummary(chosen);
+              return chosen;
+            })(),
+            lastExamSummary: (() => {
+              const curExam = sanitizeLastExamSummary(current.lastExamSummary);
+              if (!importedLastExamSummary) return curExam;
+              if (!curExam) return importedLastExamSummary;
+              const incTs = Date.parse(importedLastExamSummary.updatedAt) || 0;
+              const curTs = Date.parse(curExam.updatedAt) || 0;
+              return incTs >= curTs ? importedLastExamSummary : curExam;
+            })(),
           });
           return true;
         } catch {
           return false;
         }
       },
+
+      importUserData: (jsonData: string, mode: "merge" | "overwrite" = "merge") =>
+        get().importProgress(jsonData, mode),
 
       restoreLastAutoBackup: () => {
         if (typeof window === "undefined") return false;
@@ -2140,7 +2337,16 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      resetProgress: () =>
+      resetProgress: () => {
+        syncBrowserLastExerciseSummary(null);
+        if (typeof window !== "undefined" && window.localStorage) {
+          try {
+            window.localStorage.removeItem("muallimun_balloon_hs_normal");
+            window.localStorage.removeItem("muallimun_balloon_hs_time");
+          } catch {
+            // ignore storage errors
+          }
+        }
         set({
           favoriteDialogues: [],
           completedDialogues: [],
@@ -2167,7 +2373,10 @@ export const useUserStore = create<UserState>()(
           watchedVideos: [],
           playlistWatchedEpisodes: {},
           playlistLastEpisode: {},
-        }),
+          lastExerciseSummary: null,
+          lastExamSummary: null,
+        });
+      },
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
       isDialogueCompleted: (id) => get().completedDialogues.includes(id),
@@ -2267,6 +2476,10 @@ export const useUserStore = create<UserState>()(
           playlistLastEpisode: sanitizePlaylistLastEpisode(
             raw.playlistLastEpisode
           ),
+          lastExerciseSummary:
+            sanitizeLastExerciseSummary(raw.lastExerciseSummary) ??
+            readBrowserLastExerciseSummary(),
+          lastExamSummary: sanitizeLastExamSummary(raw.lastExamSummary),
         };
       },
     }

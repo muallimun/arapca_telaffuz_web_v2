@@ -24,6 +24,7 @@ import {
   buildHomeworkUrl,
   clearStudentDeviceData,
 } from "@/lib/homeworkContract";
+import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 
 export interface HomeworkWeakWordItem {
   arabic: string;
@@ -1043,7 +1044,7 @@ export default function ShareAchievementModal({
       ctx.fillStyle = "#D3F9D8";
       ctx.font = "700 21px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        "120 Sesli Diyalog • 60 Okuma Metni • 1111 Kalıp Cümle • 14 Modül Alıştırma",
+        `${CONTENT_INVENTORY.dialoguesCount} Sesli Diyalog • ${CONTENT_INVENTORY.readingsCount} Okuma Metni • ${CONTENT_INVENTORY.sentencesCount} Kalıp Cümle • ${CONTENT_INVENTORY.exerciseModulesCount} Modül Alıştırma`,
         W / 2,
         962
       );

@@ -3838,7 +3838,7 @@
     "konu_basligi": "Etkinlik ve Kültür İfadeleri (Nehiy / Olumsuz Emir Yapısı)",
     "hap_kural": "Arapçada muhatabı bir eylemden caydırmak/yasaklamak için nehiy 'لَا' sı (لَا النَّاهِيَة) kullanılır. Nehiy edatı muzâri fiili mezcum (cezmli) yapar.",
     "metinden_ornek": {
-      "arapca": "لاَ تَتَأَخَّرِي كَيْ نَجِدَ مَقَاعِدَ.",
+      "arapca": "لَا تَتَأَخَّرِي كَيْ نَجِدَ مَقَاعِدَ.",
       "turkce": "Koltuk bulabilmemiz için geç kalma.",
       "aciklama": "Nehiy edatı 'لَا', kadın muhataba yönelik 'تَتَأَخَّرِينَ' fiilinin sonundaki nûn'u düşürerek cezmetmiştir ('لَا تَتَأَخَّرِي')."
     },
@@ -4493,7 +4493,7 @@
         "turkce": "Teşekkürler, komşulukta ne kadar naziksiniz!"
       },
       {
-        "arapca": "بِالْهَنَاءِ وَالشِّفَاءِ، لاَ يُوجَدُ تَعَبٌ.",
+        "arapca": "بِالْهَنَاءِ وَالشِّفَاءِ، لَا يُوجَدُ تَعَبٌ.",
         "turkce": "Afiyet olsun, zahmet olur mu hiç."
       }
     ],
@@ -6297,7 +6297,7 @@
         "turkce": "İki öğrenci dersi yazdı."
       },
       {
-        "arapca": "اللاَّعِبُونَ يَلْعَبُونَ فِي الْمَلْعَبِ.",
+        "arapca": "اللَّاعِبُونَ يَلْعَبُونَ فِي الْمَلْعَبِ.",
         "turkce": "Oyuncular sahada oynuyorlar."
       }
     ],
@@ -6362,8 +6362,8 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "اللاَّعِبُونَ يَلْعَبُ فِي الْمَلْعَبِ (Özne çoğul iken haber fiil tekil bırakılırsa).",
-        "dogru": "اللاَّعِبُونَ يَلْعَبُونَ فِي الْمَلْعَبِ.",
+        "yanlis": "اللَّاعِبُونَ يَلْعَبُ فِي الْمَلْعَبِ (Özne çoğul iken haber fiil tekil bırakılırsa).",
+        "dogru": "اللَّاعِبُونَ يَلْعَبُونَ فِي الْمَلْعَبِ.",
         "neden": "İsim cümlesinde özne çoğul olarak cümle başında yer aldığında, takip eden haber fiil de çoğul çekimlenmelidir."
       }
     }
@@ -7011,7 +7011,7 @@
         "turkce": "Öğretmen sınıftadır (Şibh-i Cümle Haber)."
       },
       {
-        "arapca": "الْكِتَابُ غِلاَفُهُ جَمِيلٌ.",
+        "arapca": "الْكِتَابُ غِلَافُهُ جَمِيلٌ.",
         "turkce": "Kitabın kapağı güzeldir (İsim Cümlesi Haber)."
       }
     ],
@@ -7057,7 +7057,7 @@
           [
             "İsim Cümlesi",
             "الْكِتَابُ",
-            "غِلاَفُهُ جَمِيلٌ",
+            "غِلَافُهُ جَمِيلٌ",
             "Mahallen Merfû",
             "Kitabın kapağı güzeldir."
           ]
@@ -7336,7 +7336,7 @@
     "konu_basligi": "İlletli Fiiller (Misal, Ecvef, Nakıs) ve Çekim Özellikleri",
     "hap_kural": "Kök harflerinden biri veya ikisi illet harfi (و، ا، ي) olan fiillere İlletli (Mu'tel) Fiil denir. Misal (ilk harfi), Ecvef (orta harfi), Nakıs (son harfi) illetli fiillerdir.",
     "metinden_ornek": {
-      "arapca": "نَعَمْ، دَعَا إِلَى الخَيْرِ وَسَعَى لِنَشْرِ السَّلاَمِ فِي العَالَمِ.",
+      "arapca": "نَعَمْ، دَعَا إِلَى الخَيْرِ وَسَعَى لِنَشْرِ السَّلَامِ فِي العَالَمِ.",
       "turkce": "Evet, hayra çağırdı ve dünyada selamı yaymak için çalıştı.",
       "aciklama": "'دَعَا' (و asıllı) ve 'سَعَى' (ي asıllı) son harfi illetli nakıs mâzî fiiller olup elif üzerinde takdîrî fetha ile mebnidir."
     },
@@ -7767,7 +7767,7 @@
         "turkce": "Evet, ve yeterli miktarda temiz su içmemiz yakışır."
       },
       {
-        "arapca": "نَعَمْ، يَنْبَغِي أَنْ نَتْرُكَهَا كَيْ لاَ نَمْرَضَ فِي المُسْتَقْبَلِ.",
+        "arapca": "نَعَمْ، يَنْبَغِي أَنْ نَتْرُكَهَا كَيْ لَا نَمْرَضَ فِي المُسْتَقْبَلِ.",
         "turkce": "Evet, gelecekte hasta olmamamız için onları bırakmamız yakışır."
       }
     ],
@@ -9413,7 +9413,7 @@
     "konu_basligi": "İstisna Üslubu ve Edatları (إِلَّا / غَيْرَ / سِوَى / عَدَا)",
     "hap_kural": "Genel kuraldan bir ögeyi dışarı çıkarmaya İstisna denir. 'إِلَّا' sonrası kelimeye Müstesna denir. 'غَيْرَ' ve 'سِوَى' edatlarından sonra gelen kelime ise dâima mecrur (muzafun ileyh) olur.",
     "metinden_ornek": {
-      "arapca": "هَلْ حَضَرَ جَمِيعُ المُهَنْدِسِينَ الْمُؤْتَمَرَ إِلاَّ خَالِدًا اليَوْمَ؟",
+      "arapca": "هَلْ حَضَرَ جَمِيعُ المُهَنْدِسِينَ الْمُؤْتَمَرَ إِلَّا خَالِدًا اليَوْمَ؟",
       "turkce": "Mühendislerin hepsi bugün konferansa Halid hariç katıldı mı?",
       "aciklama": "Olumlu ve müstesnâ minhusu ('جَمِيعُ المُهَنْدِسِينَ') zikredilmiş tam cümlede 'إِلَّا'dan sonra gelen 'خَالِدًا' vâcib olarak mansûb okunmuştur."
     },
@@ -9795,7 +9795,7 @@
           [
             "بَيْدَ أَنَّ...",
             "Düzeltme (Fakat)",
-            "هُوَ ذَكِيٌّ بَيْدَ أَنَّهُ كَسْلاَنُ.",
+            "هُوَ ذَكِيٌّ بَيْدَ أَنَّهُ كَسْلَانُ.",
             "Zekidir ne var ki tembeldir."
           ],
           [

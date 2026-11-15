@@ -7463,3 +7463,165 @@ test("64) Mobil Mağaza Ergonomisi — 360px Taşmasız Üst Kontroller, Tek Sat
     "Global footer masaüstünde tüm sayfalarda korunmalı, mobilde (< 1024px) yalnızca '/' ve '/ayarlar' sayfalarında gösterilmelidir"
   );
 });
+
+test("65) TTS Öncesi UTF-8 Derleme Koruması ve JSON Arapça Fonetik/Hareke/Lam-Elif İmlâ Doğrulaması", () => {
+  // 1. src/types/assessment.ts saf UTF-8 bayt dizisi ve tsconfig.json / metadata.json varlığı
+  const assessmentPath = path.join(ROOT_DIR, "src", "types", "assessment.ts");
+  const assessmentBytes = fs.readFileSync(assessmentPath);
+  for (let i = 0; i < assessmentBytes.length - 2; i++) {
+    assert.equal(
+      assessmentBytes[i] === 0xed &&
+        assessmentBytes[i + 1] >= 0xa0 &&
+        assessmentBytes[i + 1] <= 0xbf,
+      false,
+      `assessment.ts içinde CESU-8 / vekil bayt dizisi bulunmamalıdır (offset: ${i})`
+    );
+  }
+  const strictUtf8 = new TextDecoder("utf-8", { fatal: true });
+  const assessmentText = strictUtf8.decode(assessmentBytes);
+  const line539 = assessmentText.split(/\r?\n/)[538]?.trim();
+  assert.equal(
+    line539,
+    'icon: known?.icon || "🏛️",',
+    "src/types/assessment.ts 539. satırda temiz standart UTF-8 '🏛️' bulunmalıdır"
+  );
+  assert.equal(
+    Buffer.from("🏛️", "utf8").toString("hex"),
+    "f09f8f9befb88f",
+    "🏛️ ikonu standart 4+3 baytlık UTF-8 dizisi olmalıdır"
+  );
+
+  const tsconfigPath = path.join(ROOT_DIR, "tsconfig.json");
+  assert.equal(fs.existsSync(tsconfigPath), true, "Kök dizinde tsconfig.json bulunmalıdır");
+  const tsconfigJson = JSON.parse(fs.readFileSync(tsconfigPath, "utf8"));
+  assert.deepEqual(
+    tsconfigJson?.compilerOptions?.paths?.["@/*"],
+    ["./src/*"],
+    "tsconfig.json içinde '@/*': ['./src/*'] path alias tanımı korunmalıdır"
+  );
+  assert.equal(
+    fs.existsSync(path.join(ROOT_DIR, "metadata.json")),
+    true,
+    "Kök dizinde metadata.json korunmalıdır"
+  );
+
+  // 2. atasozleri.json çift hareke, i'rab ve şemsî lam onarımları
+  const atasozleri = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "atasozleri.json"), "utf8")
+  );
+  const byAtaId = new Map(atasozleri.map((x) => [x.id, x]));
+  const dupHarakatRegex = /([\u064B-\u0652])\1/;
+  for (const item of atasozleri) {
+    assert.equal(
+      dupHarakatRegex.test(item.arapca),
+      false,
+      `${item.id} kaydında üst üste binmiş çift hareke bulunmamalıdır: ${item.arapca}`
+    );
+  }
+  assert.equal(byAtaId.get("ata_0062")?.arapca.includes("الطُّرُقِ"), true);
+  assert.equal(byAtaId.get("ata_0102")?.arapca.includes("الطُّيُورَ"), true);
+  assert.equal(byAtaId.get("ata_0137")?.arapca.includes("السُّفُنُ"), true);
+  assert.equal(byAtaId.get("ata_0185")?.arapca.includes("يُحِبُّهُ"), true);
+  assert.equal(byAtaId.get("ata_0186")?.arapca.includes("يَدُلُّكَ"), true);
+  assert.equal(byAtaId.get("ata_0348")?.arapca.includes("الرُّتَبُ"), true);
+  assert.equal(byAtaId.get("ata_0369")?.arapca.includes("بِالصُّرَعَةِ"), true);
+  assert.equal(
+    byAtaId.get("ata_0370")?.arapca.includes("مَنْ يَكْفِيكَ"),
+    true,
+    "ata_0370 kaydında مَنْ يَكْفِيكَ imlâsı bulunmalıdır"
+  );
+  assert.equal(
+    byAtaId.get("ata_0480")?.arapca.includes("لِلطَّفَّافِينَ"),
+    true,
+    "ata_0480 kaydında şemsî harf öncesi sükûnsuz لِلطَّفَّافِينَ bulunmalıdır"
+  );
+
+  // 3. 1111_cumle.json şemsî lam ve vasl hemzesi onarımları
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "1111_cumle.json"), "utf8")
+  );
+  const byCumleId = new Map(cumleler.map((x) => [x.id, x]));
+  assert.equal(
+    byCumleId.get("cumle_0395")?.arapca.includes("الطَّائِرُ") &&
+      !byCumleId.get("cumle_0395")?.arapca.includes("اَلْطَّائِرُ"),
+    true,
+    "cumle_0395 kaydında اَلْطَّائِرُ -> الطَّائِرُ olarak düzeltilmelidir"
+  );
+  assert.equal(
+    byCumleId.get("cumle_1038")?.arapca.includes("اللَّازِمَةَ") &&
+      !byCumleId.get("cumle_1038")?.arapca.includes("الْلَّازِمَةَ"),
+    true,
+    "cumle_1038 kaydında الْلَّازِمَةَ -> اللَّازِمَةَ olarak düzeltilmelidir"
+  );
+
+  // 4. Lam-Elif (لا) ligatüründe med elifi (ا) üzerine kaymış fetha/şedde kalmaması
+  const badLamAlifRegex = /\u0644[\u064B-\u065F]*\u0627[\u064E\u0651]+/;
+  const targetDataFiles = [
+    "tum_diyaloglar_120.json",
+    "tum_metinler_60.json",
+    "gorselKelimeler_guncel.json",
+    "es_zit_anlamlilar.json",
+    "yeni_tum_sozluk.json",
+    "diyaloglar_gramer_hap_bilgi.json",
+    "metinler_gramer_hap_bilgi.json",
+    "seviye_tespit_sorulari.json",
+  ];
+  for (const fileName of targetDataFiles) {
+    const raw = fs.readFileSync(path.join(ROOT_DIR, "src", "data", fileName), "utf8");
+    assert.equal(
+      badLamAlifRegex.test(raw),
+      false,
+      `${fileName} içinde med elifi (ا) üzerine kaymış لاَ / لاَّ harekesi kalmamalıdır`
+    );
+  }
+
+  // 5. Vasl hemzesi, şedde ve tekil bağlam onarımları
+  const diyaloglar = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "tum_diyaloglar_120.json"), "utf8")
+  );
+  const dlg119 = diyaloglar.find((d) => d.id === "dlg_119");
+  assert.equal(
+    dlg119?.baslik_ar.includes("وَابْنُ سِينَا") &&
+      !dlg119?.baslik_ar.includes("وَإِبْنُ سِينَا"),
+    true,
+    "dlg_119 başlığında vasl hemzeli وَابْنُ سِينَا yer almalıdır"
+  );
+
+  const metinler = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "tum_metinler_60.json"), "utf8")
+  );
+  const metin32 = metinler.find((m) => m.id === "metin_32");
+  const metin51 = metinler.find((m) => m.id === "metin_51");
+  assert.equal(
+    JSON.stringify(metin32).includes("النَّشِيطُ") &&
+      !JSON.stringify(metin32).includes("النشِيطُ"),
+    true,
+    "metin_32 içinde النَّشِيطُ şeddeli olmalıdır"
+  );
+  assert.equal(
+    JSON.stringify(metin51).includes("الْمُؤْتَمَرَاتُ") &&
+      !JSON.stringify(metin51).includes("المؤْتَمَرَاتُ"),
+    true,
+    "metin_51 içinde الْمُؤْتَمَرَاتُ harekeli olmalıdır"
+  );
+
+  const gorselKelimeler = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "gorselKelimeler_guncel.json"), "utf8")
+  );
+  const lakapItem = gorselKelimeler.find((g) => g.id === "0005_01_lakap");
+  assert.equal(
+    lakapItem?.ornek_ar,
+    "مَا لَقَبُ عَائِلَتِكَ يَا صَدِيقِي؟",
+    "0005_01_lakap örnek cümlesi tekil عَائِلَتِكَ ile kurulmalıdır"
+  );
+
+  const sozluk = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, "src", "data", "yeni_tum_sozluk.json"), "utf8")
+  );
+  const kelime1540 = sozluk.find((k) => k.id === "kelime_1540");
+  assert.equal(
+    kelime1540?.mufret,
+    "اِثْنَيْنِ",
+    "kelime_1540 müfret alanı vasl hemzeli اِثْنَيْنِ olmalıdır"
+  );
+});

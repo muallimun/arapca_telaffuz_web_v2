@@ -1018,7 +1018,7 @@
         "nuans_tr": "Ayın ondördüncü gecesinde tamamlanmış ve yuvarlak halini anlatır."
       },
       {
-        "ar": "هِلاَلٌ",
+        "ar": "هِلَالٌ",
         "harekesiz": "هلال",
         "tr": "hilal, yeni ay",
         "nuans_tr": "Ayın gökyüzünde ilk göründüğü yay şeklindeki başlangıç evresini belirtir."
@@ -1174,12 +1174,12 @@
     ],
     "zit_anlamlilar": [
       {
-        "ar": "ظَلاَمٌ",
+        "ar": "ظَلَامٌ",
         "harekesiz": "ظلام",
         "tr": "karanlık"
       }
     ],
-    "ornek_cumle_ar": "يَطْرُدُ النُّورُ الظَّلاَمَ كُلَّمَا أَشْرَقَ الصَّبَاحُ.",
+    "ornek_cumle_ar": "يَطْرُدُ النُّورُ الظَّلَامَ كُلَّمَا أَشْرَقَ الصَّبَاحُ.",
     "ornek_cumle_tr": "Her sabah doğduğunda nur karanlığı kovar."
   },
   {
@@ -1187,7 +1187,7 @@
     "sira": 41,
     "cefr": "A1",
     "tur": "isim",
-    "kelime_ar": "ظَلاَمٌ",
+    "kelime_ar": "ظَلَامٌ",
     "kelime_harekesiz": "ظلام",
     "anlam_tr": "karanlık",
     "es_anlamlilar": [
@@ -1211,7 +1211,7 @@
         "tr": "ışık, nur"
       }
     ],
-    "ornek_cumle_ar": "نُشْعِلُ الْمِصْبَاحَ لِتَبْدِيدِ الظَّلاَمِ وَنَشْرِ النُّورِ فِي الْغُرْفَةِ.",
+    "ornek_cumle_ar": "نُشْعِلُ الْمِصْبَاحَ لِتَبْدِيدِ الظَّلَامِ وَنَشْرِ النُّورِ فِي الْغُرْفَةِ.",
     "ornek_cumle_tr": "Karanlığı dağıtmak ve odada nuru yaymak için lambayı yakarız."
   },
   {
@@ -1532,7 +1532,7 @@
         "tr": "gitti"
       }
     ],
-    "ornek_cumle_ar": "جَاءَ الْمُعَلِّمُ إِلَى الْفَصْلِ بَعْدَ أَنْ ذَهَبَ الطُّلاَّبُ إِلَيْهِ.",
+    "ornek_cumle_ar": "جَاءَ الْمُعَلِّمُ إِلَى الْفَصْلِ بَعْدَ أَنْ ذَهَبَ الطُّلَّابُ إِلَيْهِ.",
     "ornek_cumle_tr": "Öğrenciler sınıfa gittikten sonra öğretmen geldi."
   },
   {
@@ -5530,7 +5530,7 @@
         "nuans_tr": "Ufukta veya uzakta ilk kez görünür hale gelmeyi anlatır."
       },
       {
-        "ar": "لاَحَ",
+        "ar": "لَاحَ",
         "harekesiz": "لاح",
         "tr": "parıldayıp göründü, belirdi",
         "nuans_tr": "Işık gibi uzaktan aniden parlayarak kendini göstermeyi belirtir."
@@ -8491,7 +8491,7 @@
         "tr": "cahil bıraktı / cahil saydı"
       }
     ],
-    "ornek_cumle_ar": "عَلَّمَ الْأُسْتَاذُ الطُّلاَّبَ قَوَاعِدَ اللُّغَةِ حَتَّى تَعَلَّمُوهَا جَيِّدًا.",
+    "ornek_cumle_ar": "عَلَّمَ الْأُسْتَاذُ الطُّلَّابَ قَوَاعِدَ اللُّغَةِ حَتَّى تَعَلَّمُوهَا جَيِّدًا.",
     "ornek_cumle_tr": "Hoca öğrencilere dil kurallarını öğretti, nihayet onlar da iyice öğrendiler."
   },
   {
@@ -9657,7 +9657,7 @@
     "anlam_tr": "gerekli, zorunlu, elzem",
     "es_anlamlilar": [
       {
-        "ar": "لاَزِمٌ",
+        "ar": "لَازِمٌ",
         "harekesiz": "لازم",
         "tr": "lazım, kaçınılmaz",
         "nuans_tr": "Bir işin gerçekleşmesi için bulunması şart olan unsuru belirtir."

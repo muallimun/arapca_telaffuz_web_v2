@@ -2920,7 +2920,10 @@ test("29. Depo Hijyeni: Mükerrer varlık/paket temizliği, metadata.json korunu
   assert.equal(
     ogCode.includes(
       "${CONTENT_INVENTORY.exerciseModulesCount} Modüllü Alıştırma Merkezi"
-    ),
+    ) ||
+      ogCode.includes(
+        "${CONTENT_INVENTORY.exerciseModulesCount} İnteraktif Oyun & Alıştırma"
+      ),
     true
   );
 
@@ -9491,6 +9494,65 @@ test("80. Görsel Oyunlar (BalloonSafariGame, MemoryFlipGame, VisualSwipeSprintG
       balloonSrc.includes("p-2.5 sm:p-3.5 rounded-2xl") &&
       balloonSrc.includes("mb-1 rounded-2xl bg-[#087F5B]"),
     "BalloonSafariGame mobil üst başlığı kısa '✕ Çıkış' / '🖼️ 998 Görsel Kelime' etiketlerini ve kompakt başlatma kartı aralıklarını içermelidir"
+  );
+});
+
+test("81. Premium 2 Sütunlu Bento OpenGraph Kartı (v2.5 Satori Uyumluluğu) ve WhatsApp/Telegram Önbellek Kırıcı (/opengraph-image?v=2.5) Doğrulaması", () => {
+  const ogSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "opengraph-image.tsx"),
+    "utf8"
+  );
+  const layoutSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "layout.tsx"),
+    "utf8"
+  );
+
+  // 1) Satori kuralları: CSS Grid kesinlikle bulunmamalı ve her <div ...> elemanında display: "flex" yer almalı
+  assert.equal(
+    /display\s*:\s*["']grid["']|gridTemplateColumns/u.test(ogSrc),
+    false,
+    "opengraph-image.tsx içinde Satori'nin desteklemediği CSS Grid kullanılmamalıdır"
+  );
+  const divBlocks = ogSrc.match(/<div[\s\S]*?>/gu) || [];
+  assert.ok(divBlocks.length >= 12, "Bento OG kartı çoklu flex kapsayıcıları içermelidir");
+  for (const tag of divBlocks) {
+    assert.ok(
+      /display\s*:\s*["']flex["']/u.test(tag),
+      `Her <div> etiketi Satori kuralı gereği display: "flex" içermelidir: ${tag}`
+    );
+  }
+
+  // 2) Bento Vitrin içeriği, renkleri, CONTENT_INVENTORY bağlantıları ve alt/üst şerit metinleri
+  assert.ok(
+    ogSrc.includes("linear-gradient(135deg, #042F2E 0%, #064E3B 48%, #1E1B4B 100%)") &&
+      ogSrc.includes("linear-gradient(135deg, #FDFBF7 0%, #F7EFE1 65%, #ECFDF5 100%)") &&
+      ogSrc.includes("MUALLİMUN ARAPÇA EĞİTİM PLATFORMU") &&
+      ogSrc.includes("🌐 app.muallimun.net") &&
+      ogSrc.includes("CEFR A1 • A2 • B1 • B2") &&
+      ogSrc.includes("✨ v2.5 Tam Sürüm") &&
+      ogSrc.includes("İnteraktif Dil, Telaffuz, Oyun &amp; Sınav Stüdyosu") &&
+      ogSrc.includes("🎙️ Canlı Gölgeleme & STT Analizi") &&
+      ogSrc.includes("İnteraktif Oyun & Alıştırma") &&
+      ogSrc.includes("🖨️ 2 Sütunlu A4 PDF Sınav Stüdyosu") &&
+      ogSrc.includes("Seçkin Video & İzleme Rehberi") &&
+      ogSrc.includes("Sesli Diyalog") &&
+      ogSrc.includes("Okuma Metni") &&
+      ogSrc.includes("Kalıp Cümle") &&
+      ogSrc.includes("Gramer Atlası") &&
+      ogSrc.includes("Görsel Kelime") &&
+      ogSrc.includes("Sınav Sorusu") &&
+      ogSrc.includes("CONTENT_INVENTORY.dictionaryWordsCount") &&
+      ogSrc.includes("Kelimelik Kök Sözlüğü") &&
+      ogSrc.includes("Ücretsiz • Reklamsız • Akıllı Tahta &amp; Mobil Uyumlu"),
+    "opengraph-image.tsx tüm v2.5 Bento Vitrin bölümlerini ve CONTENT_INVENTORY sabitlerini eksiksiz içermelidir"
+  );
+
+  // 3) layout.tsx içinde hem openGraph.images hem twitter.images için '/opengraph-image?v=2.5' önbellek kırıcı URL kontrolü
+  const cacheBustMatches = layoutSrc.match(/\/opengraph-image\?v=2\.5/gu) || [];
+  assert.equal(
+    cacheBustMatches.length,
+    2,
+    "layout.tsx içinde openGraph.images ve twitter.images adresleri '/opengraph-image?v=2.5' olarak güncellenmiş olmalıdır"
   );
 });
 

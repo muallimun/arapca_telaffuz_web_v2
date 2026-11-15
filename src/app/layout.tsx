@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/opengraph-image?v=2.5",
         width: 1200,
         height: 630,
         alt: `Muallimun Arapça — ${APP_SUBTITLE}`,
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `Muallimun Arapça — ${APP_SUBTITLE}`,
     description: APP_FULL_DESCRIPTION,
-    images: ["/opengraph-image"],
+    images: ["/opengraph-image?v=2.5"],
   },
   icons: {
     icon: [

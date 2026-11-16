@@ -8343,9 +8343,11 @@ test("70. Stüdyo TTS Öncesi 12 JSON Veri Tabanında Şedde+Hareke Sırası, La
   const { parsed: dlgGramer } = readDataJson("diyaloglar_gramer_hap_bilgi.json");
   const byDlgG = new Map(dlgGramer.map((g) => [g.bagli_id, g]));
   assert.equal(
-    byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.yanlis.includes(wrongLamKasraSeq),
+    byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.yanlis.includes(
+      "\u0627\u0644\u0652\u0627\u0650\u0632\u0652\u062F\u0650\u062D\u064E\u0627\u0645\u064F."
+    ),
     true,
-    "dlg_041 dikkat_sik_hata.yanlis içindeki kasıtlı yanlış örnek korunmalıdır"
+    "dlg_041 dikkat_sik_hata.yanlis içinde kasıtlı ötreli الْاِزْدِحَامُ. örneği vasl hemzesi düzeltilmiş şekilde korunmalıdır"
   );
   assert.equal(
     byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.dogru.includes(
@@ -9819,5 +9821,98 @@ test("83. 6 Seslendirme JSON Veri Tabanında Özel İsimler (Ankara, Bursa, Kony
   );
 });
 
+test("84. 3 Gramer Dosyasında (diyaloglar, metinler, ek) Sıfır Ters Hareke+Şedde, 8 Nokta Atışı Hareke Düzeltmesi ve %100 Ana Metin Uyumu", () => {
+  const reversedShaddaRegex = /[\u064B-\u0650]\u0651/;
 
+  for (const fileName of [
+    "diyaloglar_gramer_hap_bilgi.json",
+    "metinler_gramer_hap_bilgi.json",
+    "ek_gramer_hap_bilgi.json",
+  ]) {
+    const raw = fs.readFileSync(path.join(DATA_DIR, fileName), "utf8");
+    assert.equal(
+      reversedShaddaRegex.test(raw),
+      false,
+      `${fileName} içinde (yanlis alanları dahil) hiçbir ters hareke+şedde dizilimi kalmamalıdır`
+    );
+  }
 
+  const dlgGramer = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "diyaloglar_gramer_hap_bilgi.json"), "utf8")
+  );
+  const byDlgG = new Map(dlgGramer.map((x) => [x.bagli_id, x]));
+
+  assert.equal(
+    byDlgG.get("dlg_004")?.metinden_ornek?.arapca,
+    "اَلس\u0651\u064Eل\u064Eام\u064F عَلَيْكُمْ، هَلْ تُوجَدُ غُرْفَةٌ فَارِغَةٌ؟"
+  );
+  assert.equal(
+    byDlgG.get("dlg_062")?.metinden_ornek?.arapca,
+    "أَنَا مِنْ لَنْدَنَ، أَنَا بَرِيطَانِي\u0651\u064C."
+  );
+  assert.equal(
+    byDlgG.get("dlg_041")?.ayrintili_anlatim?.dikkat_sik_hata?.yanlis,
+    "تَأَخ\u0651\u064Eرْتُ بِسَبَبِ الْاِزْدِحَامُ."
+  );
+  assert.equal(
+    byDlgG.get("dlg_033")?.ek_ornekler?.[1]?.arapca,
+    "قَرَأْتُ أَرْبَعَ صَفَحَاتٍ."
+  );
+  assert.equal(
+    byDlgG.get("dlg_107")?.ek_ornekler?.[1]?.arapca,
+    "اِسْتَيْقَظْتُ وَأَذَانَ الْفَجْرِ."
+  );
+  assert.equal(
+    byDlgG.get("dlg_110")?.ek_ornekler?.[0]?.arapca,
+    "اِشْتَرَيْتُ لِتْراً حَلِيباً."
+  );
+
+  const metinGramer = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "metinler_gramer_hap_bilgi.json"), "utf8")
+  );
+  const byMetG = new Map(metinGramer.map((x) => [x.bagli_id, x]));
+
+  assert.ok(
+    byMetG.get("metin_47")?.metinden_ornek?.arapca.includes("الأَسَاسُ الص\u0651\u064Eحِيحُ") &&
+      byMetG
+        .get("metin_47")
+        ?.ayrintili_anlatim?.irab_tahlili?.some(
+          (i) => i.kelime === "الأَسَاسُ الص\u0651\u064Eحِيحُ"
+        ),
+    "metin_47 metinden_ornek ve irab_tahlili içinde الصَّحِيحُ şeddeli olmalıdır"
+  );
+  assert.ok(
+    byMetG
+      .get("metin_52")
+      ?.metinden_ornek?.arapca.includes("الت\u0651\u0650كْنُولُوجِي\u0651\u064Eةَ"),
+    "metin_52 metinden_ornek içinde التِّكْنُولُوجِيَّةَ şeddeli olmalıdır"
+  );
+
+  // 120 diyalog + 60 metin metinden_ornek %100 ana kaynak uyumu
+  const dlgs = new Map(
+    JSON.parse(fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8")).map(
+      (d) => [d.id, d]
+    )
+  );
+  const metins = new Map(
+    JSON.parse(fs.readFileSync(path.join(DATA_DIR, "tum_metinler_60.json"), "utf8")).map(
+      (m) => [m.id, m]
+    )
+  );
+  for (const item of dlgGramer) {
+    const src = dlgs.get(item.bagli_id);
+    const ex = item.metinden_ornek?.arapca || "";
+    assert.ok(
+      src.satirlar.some((s) => s.arapca.includes(ex) || ex.includes(s.arapca)),
+      `${item.bagli_id} metinden_ornek ana diyalog dosyasıyla %100 uyumlu olmalıdır`
+    );
+  }
+  for (const item of metinGramer) {
+    const src = metins.get(item.bagli_id);
+    const ex = item.metinden_ornek?.arapca || "";
+    assert.ok(
+      src.satirlar.some((s) => s.arapca.includes(ex) || ex.includes(s.arapca)),
+      `${item.bagli_id} metinden_ornek ana metin dosyasıyla %100 uyumlu olmalıdır`
+    );
+  }
+});

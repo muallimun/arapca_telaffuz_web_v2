@@ -235,7 +235,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أَسْتَيْقِظَ مِنَ النَّوْمِ (Edatsız fiili fethalamak).",
+        "yanlis": "أَسْتَيْقِظَ مِنَ النَّوْمِ (Edatsız fiili fethalamak).",
         "dogru": "أَسْتَيْقِظُ مِنَ النَّوْمِ.",
         "neden": "Muzâri fiiller başlarında nasb edatı (أَنْ, لَنْ vb.) bulunmadıkça fethalanmaz, merfû (ötreli) kalırlar."
       }
@@ -310,7 +310,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أَمَامُ السَّبُّورَةُ.",
+        "yanlis": "أَمَامُ السَّبُّورَةُ.",
         "dogru": "أَمَامَ السَّبُّورَةِ.",
         "neden": "Mekân zarfları fethalı ('أَمَامَ'), takip eden isim ise dâima mecrûr ('السَّبُّورَةِ') okunmalıdır."
       }
@@ -720,7 +720,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أُفَضِّلُ رُكُوبُ الْحَافِلَةُ.",
+        "yanlis": "أُفَضِّلُ رُكُوبُ الْحَافِلَةُ.",
         "dogru": "أُفَضِّلُ رُكُوبَ الْحَافِلَةِ.",
         "neden": "Masdar nesne fethalı ('رُكُوبَ'), tamlayan isim ise esreli ('الْحَافِلَةِ') okunmalıdır."
       }
@@ -883,7 +883,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "فَحَصِي الطَّبِيبُ (Nûn harfini koymamak).",
+        "yanlis": "فَحَصِي الطَّبِيبُ (Nûn harfini koymamak).",
         "dogru": "فَحَصَنِي الطَّبِيبُ.",
         "neden": "Fiillere mütekellim yâ'sı eklenirken koruyucu nûn harfi (nûnu'l-vikâye) mutlaka araya girmelidir."
       }
@@ -1125,7 +1125,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "اشْتَرَيْتُ تُفَّاحًا أَحْمَرٌ / مَوْزًا لَذِيذٌ.",
+        "yanlis": "اشْتَرَيْتُ تُفَّاحًا أَحْمَرٌ / مَوْزًا لَذِيذٌ.",
         "dogru": "اشْتَرَيْتُ تُفَّاحًا أَحْمَرَ وَمَوْزًا لَذِيذًا.",
         "neden": "Fethalı mansûb bir nesneyi niteleyen sıfat ötreli olamaz; fethalı mansûb olmak zorundadır."
       }
@@ -1204,7 +1204,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "الطُّيُورُ يُغَرِّدُونَ (Erkek çoğul fiili kullanmak).",
+        "yanlis": "الطُّيُورُ يُغَرِّدُونَ (Erkek çoğul fiili kullanmak).",
         "dogru": "الطُّيُورُ تُغَرِّدُ.",
         "neden": "Akılsız çoğullar erkek çoğul fiil eki ('◌ُونَ') almaz; dişil tekil fiil ('تَ') alırlar."
       }
@@ -1437,7 +1437,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "وَصَلْنَا إِلَى مَحَطَّةُ الْقِطَارِ.",
+        "yanlis": "وَصَلْنَا إِلَى مَحَطَّةُ الْقِطَارِ.",
         "dogru": "وَصَلْنَا إِلَى مَحَطَّةِ الْقِطَارِ.",
         "neden": "Harf-i cerden sonra gelen muzaf isim dâima esreli (mecrûr) okunmalıdır."
       }
@@ -1773,7 +1773,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "بَيْنَ الْفُصُولُ / فَوْقَ الطَّاوِلَةُ.",
+        "yanlis": "بَيْنَ الْفُصُولُ / فَوْقَ الطَّاوِلَةُ.",
         "dogru": "بَيْنَ الْفُصُولِ. / فَوْقَ الطَّاوِلَةِ.",
         "neden": "Mekân zarflarından sonra gelen isimler muzafun ileyh olduğu için ötreli değil esreli okunmalıdır."
       }
@@ -1857,7 +1857,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "نَسْتَيْقِظُ صَبَاحٌ مُبَكِّرٌ.",
+        "yanlis": "نَسْتَيْقِظُ صَبَاحٌ مُبَكِّرٌ.",
         "dogru": "نَسْتَيْقِظُ صَبَاحًا مُبَكِّرًا.",
         "neden": "Zaman zarfları cümlede mef'ûlün fih ögesi oldukları için fethalı mansûb okunmalıdır."
       }
@@ -1941,7 +1941,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "فَحَصَنِي الطَّبِيبَ.",
+        "yanlis": "فَحَصَنِي الطَّبِيبَ.",
         "dogru": "فَحَصَنِي الطَّبِيبُ.",
         "neden": "'-نِي' ekinden sonra gelen isim nesne değil eylemi yapan özne (fâil) olduğu için damma ile merfû okunur."
       }
@@ -2193,7 +2193,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "نَسْتَرِيحُ لِلتَّمَتُّعُ بِالهَوَاءِ.",
+        "yanlis": "نَسْتَرِيحُ لِلتَّمَتُّعُ بِالهَوَاءِ.",
         "dogru": "نَسْتَرِيحُ لِلتَّمَتُّعِ بِالهَوَاءِ.",
         "neden": "'لِ' amaç harf-i cerinden sonra gelen masdar ötreli değil esreli (mecrûr) okunmalıdır."
       }
@@ -2361,7 +2361,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "نَأْكُلُ السَّمَكَ المَشْوِيُّ.",
+        "yanlis": "نَأْكُلُ السَّمَكَ المَشْوِيُّ.",
         "dogru": "نَأْكُلُ السَّمَكَ المَشْوِيَّ.",
         "neden": "Fethalı mansûb nesnenin ism-i mef'ûl sıfatı ötreli olamaz; fethalı mansûb okunmalıdır."
       }
@@ -2445,7 +2445,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "سَافَرْنَا لِزِيَارَةُ جَدِّي.",
+        "yanlis": "سَافَرْنَا لِزِيَارَةُ جَدِّي.",
         "dogru": "سَافَرْنَا لِزِيَارَةِ جَدِّي.",
         "neden": "'لِ' harf-i cerinden sonra gelen amaç masdarı ötreli değil esreli mecrûr okunmalıdır."
       }
@@ -2529,7 +2529,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "زُرْنَا المَتْحَفَ الوَطَنِيُّ الكَبِيرُ.",
+        "yanlis": "زُرْنَا المَتْحَفَ الوَطَنِيُّ الكَبِيرُ.",
         "dogru": "زُرْنَا المَتْحَفَ الوَطَنِيَّ الكَبِيرَ.",
         "neden": "Mansûb bir nesneye bağlanan tüm sıfatlar fethalı (mansûb) okunmak zorundadır."
       }
@@ -2613,7 +2613,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يَشْرَبُ أَبِي القَهْوَةُ السَّاخِنَةُ.",
+        "yanlis": "يَشْرَبُ أَبِي القَهْوَةُ السَّاخِنَةُ.",
         "dogru": "يَشْرَبُ أَبِي القَهْوَةَ السَّاخِنَةَ.",
         "neden": "İçilen kahve nesne olduğu için fethalı mansûb, sıfatı da fethalı mansûb okunur."
       }
@@ -2781,7 +2781,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أَعَدَّ أُمِّي خَمْسَ أَطْبَاقً.",
+        "yanlis": "أَعَدَّ أُمِّي خَمْسَ أَطْبَاقً.",
         "dogru": "أَعَدَّتْ أُمِّي خَمْسَةَ أَطْبَاقٍ.",
         "neden": "Dişil özneye dişil fiil ('أَعَدَّتْ') getirilmeli; tekili eril olan 'طَبَق' için sayı dişil ('خَمْسَةَ') ve temyiz mecrûr ('أَطْبَاقٍ') okunmalıdır."
       }
@@ -2865,7 +2865,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "نَكْتُبُ الوَاجِبَاتَ المَدْرَسِيَّةِ.",
+        "yanlis": "نَكْتُبُ الوَاجِبَاتَ المَدْرَسِيَّةِ.",
         "dogru": "نَكْتُبُ الوَاجِبَاتِ المَدْرَسِيَّةَ.",
         "neden": "Cemi müennes salim nesneler fetha almaz, esre ile mansûb olurlar ('الوَاجِبَاتِ'); sıfatları ise normal fetha ile mansûbdur ('المَدْرَسِيَّةَ')."
       }
@@ -2949,7 +2949,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "قَضَيْنَا الأَيَّامَ الجَمِيلِينَ.",
+        "yanlis": "قَضَيْنَا الأَيَّامَ الجَمِيلِينَ.",
         "dogru": "قَضَيْنَا الأَيَّامَ الجَمِيلَةَ.",
         "neden": "Akılsız çoğulların sıfatları insan çoğulu yapılmaz; dişil tekil ('◌َة') olarak fethalanır."
       }
@@ -3033,7 +3033,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يُنَظِّفُ أُمِّي / تَغْسِلُ أَبِي.",
+        "yanlis": "يُنَظِّفُ أُمِّي / تَغْسِلُ أَبِي.",
         "dogru": "تُنَظِّفُ أُمِّي / يَغْسِلُ أَبِي.",
         "neden": "Özne dişil olduğunda muzâri fiil 'تَ' ile, eril olduğunda 'يَ' ile başlamak zorundadır."
       }
@@ -3285,7 +3285,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أَعَدَّ أُمِّي كَعْكَةٌ / أَحْضَرَتْ أَبِي.",
+        "yanlis": "أَعَدَّ أُمِّي كَعْكَةٌ / أَحْضَرَتْ أَبِي.",
         "dogru": "أَعَدَّتْ أُمِّي كَعْكَةً / أَحْضَرَ أَبِي.",
         "neden": "Özne dişilse fiile '-تْ' eklenir, erilse eklenmez; nesneler ise fethalı mansûb okunmalıdır."
       }
@@ -3453,7 +3453,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "تُعْرَضُ السَّجَّادَاتِ فِي المَعْرِضِ.",
+        "yanlis": "تُعْرَضُ السَّجَّادَاتِ فِي المَعْرِضِ.",
         "dogru": "تُعْرَضُ السَّجَّادَاتُ فِي المَعْرِضِ.",
         "neden": "Meçhul fiilden sonra gelen nâib-i fâil nesne gibi esreli veya fethalı değil, özne gibi ötreli (merfû) okunmalıdır."
       }
@@ -3800,7 +3800,7 @@
     "konu_basligi": "Manevî Te'kid ve İkil İfadeler (كِلَاهُمَا / Her İkisi)",
     "hap_kural": "İkil isimleri pekiştirmek için kullanılan 'كِلَاهُمَا' (her ikisi) manevî te'kid ögesidir. Kendisinden önceki ikil isim ötreli (elifli) ise 'كِلَاهُمَا', esreli veya üstünlü (yâ'lı) ise 'كِلَيْهِمَا' şeklinde okunur.",
     "metinden_ornek": {
-      "arapca": "الوِقَايَةُ وَالحَذَرُ الشَّدِيدُ كِلَاهُمَا الأَسَاسُ الصَحِيحُ لِلْحِفَاظِ عَلَى السَّلَامَةِ العَامَّةِ.",
+      "arapca": "الوِقَايَةُ وَالحَذَرُ الشَّدِيدُ كِلَاهُمَا الأَسَاسُ الصَّحِيحُ لِلْحِفَاظِ عَلَى السَّلَامَةِ العَامَّةِ.",
       "turkce": "Korunma ve aşırı dikkat ikisi de genel güvenliği korumanın doğru esasıdır.",
       "aciklama": "İki kavramı ('الوِقَايَةُ وَالحَذَرُ') pekiştiren 'كِلَاهُمَا' manevî te'kid / 2. mübteda olup mülhak bi'l-müsennâ olarak elifle merfûdur."
     },
@@ -3867,13 +3867,13 @@
           "hareke_nedeni": "Tesniyeye mülhak olduğu için elif (ا) ile merfûdur."
         },
         {
-          "kelime": "الأَسَاسُ الصَحِيحُ",
+          "kelime": "الأَسَاسُ الصَّحِيحُ",
           "gorevi": "Haber + Sıfat",
           "hareke_nedeni": "Her ikisi de damma ile merfûdur."
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "الصَّدِيقَانِ كِلَيْهِمَا مُجْتَهِدَانِ.",
+        "yanlis": "الصَّدِيقَانِ كِلَيْهِمَا مُجْتَهِدَانِ.",
         "dogru": "الصَّدِيقَانِ كِلَاهُمَا مُجْتَهِدَانِ.",
         "neden": "Pekiştirilen isim merfû (Elifli) olduğunda manevî te'kid 'كِلَيْهِمَا' (Yâ'lı) değil, 'كِلَاهُمَا' (Elifli) okunmalıdır."
       }
@@ -3957,7 +3957,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يَجْتَهِدُ الطَّالِبُ لِكَيْ يَنْجَحُ.",
+        "yanlis": "يَجْتَهِدُ الطَّالِبُ لِكَيْ يَنْجَحُ.",
         "dogru": "يَجْتَهِدُ الطَّالِبُ لِكَيْ يَنْجَحَ.",
         "neden": "'لِكَيْ' nasb edatından sonra gelen muzâri fiil ötreli değil fethalı (mansûb) okunmalıdır."
       }
@@ -4041,7 +4041,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "المَكْتَبَةُ الَّذِي تَقَعُ...",
+        "yanlis": "المَكْتَبَةُ الَّذِي تَقَعُ...",
         "dogru": "المَكْتَبَةُ الَّتِي تَقَعُ...",
         "neden": "Dişil isimler ve akılsız çoğullar için 'الَّذِي' değil, dişil mevsûl olan 'الَّتِي' kullanılmalıdır."
       }
@@ -4220,7 +4220,7 @@
     "konu_basligi": "Zorunluluk Yapısı (يَجِبُ أَنْ) ve Muzâri Fiil Nasbı",
     "hap_kural": "Zorunluluk bildirmek için kullanılan 'يَجِبُ أَنْ' (gerekir / zorunludur) yapısından sonra gelen muzâri fiil 'أَنْ' edatından dolayı fethalı (mansub) okunur ('أَنْ نُحَافِظَ').",
     "metinden_ornek": {
-      "arapca": "يَنْبَغِي لِلْمُتَعَلِّمِينَ اكْتِسَابُ المَعَارِفِ الحَدِيثَةِ لِكَيْ يُوَاكِبُوا التَّغَيُّرَاتِ التِكْنُولُوجِيَّةَ المُمْتَدَّةَ فِي المَسَارَاتِ المِهْنِيَّةِ.",
+      "arapca": "يَنْبَغِي لِلْمُتَعَلِّمِينَ اكْتِسَابُ المَعَارِفِ الحَدِيثَةِ لِكَيْ يُوَاكِبُوا التَّغَيُّرَاتِ التِّكْنُولُوجِيَّةَ المُمْتَدَّةَ فِي المَسَارَاتِ المِهْنِيَّةِ.",
       "turkce": "Öğrenicilerin mesleki kulvarlarda uzayıp giden teknolojik değişimlere ayak uydurabilmeleri için modern bilgileri edinmeleri gerekir.",
       "aciklama": "Gereklilik bildiren 'يَنْبَغِي' fiilinin fâili 'اكْتِسَابُ' masdarı olup, 'لِكَيْ' nasb edatı 'يُوَاكِبُوا' muzâri fiilini nûn'un hazfiyle mansûb yapmıştır."
     },
@@ -4293,7 +4293,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يَجِبُ أَنْ نُحَافِظُ عَلَى التُّرَاثِ.",
+        "yanlis": "يَجِبُ أَنْ نُحَافِظُ عَلَى التُّرَاثِ.",
         "dogru": "يَجِبُ أَنْ نُحَافِظَ عَلَى التُّرَاثِ.",
         "neden": "'أَنْ' edatından sonra gelen muzâri fiil ötreli değil fethalı (mansûb) okunmalıdır."
       }
@@ -4461,7 +4461,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "فِي مُؤَسَّسَاتً خَيْرِيَّةً.",
+        "yanlis": "فِي مُؤَسَّسَاتً خَيْرِيَّةً.",
         "dogru": "فِي مُؤَسَّسَاتٍ خَيْرِيَّةٍ.",
         "neden": "Harf-i cerden sonra gelen cemi müennes salim isimler fetha tenvini değil, esre tenvini ('◌ٍ') alırlar."
       }
@@ -4545,7 +4545,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "فِي مَنَاطِقٍ جَبَلِيَّةٍ / فِي مَنَاطِقِ.",
+        "yanlis": "فِي مَنَاطِقٍ جَبَلِيَّةٍ / فِي مَنَاطِقِ.",
         "dogru": "فِي مَنَاطِقَ جَبَلِيَّةٍ.",
         "neden": "'مَنَاطِقُ' gayri munsariftir; harf-i cer aldığında tenvin veya esre değil, tek fetha ('◌َ') ile mecrûr olur."
       }
@@ -4713,7 +4713,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يَزُورُ السُّيَّاحُ المَتَاحِفَ تَحْتَوِي (Marife isimden sonra sıfat cümlesi kurmak).",
+        "yanlis": "يَزُورُ السُّيَّاحُ المَتَاحِفَ تَحْتَوِي (Marife isimden sonra sıfat cümlesi kurmak).",
         "dogru": "يَزُورُ السُّيَّاحُ مَتَاحِفَ تَحْتَوِي...",
         "neden": "Fiil cümlesinin doğrudan sıfat olabilmesi için nitelediği ismin marife değil nekre (EL takısız) olması gerekir."
       }
@@ -4797,7 +4797,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعٌ / اتِّسَاعٍ.",
+        "yanlis": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعٌ / اتِّسَاعٍ.",
         "dogru": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعاً.",
         "neden": "İsm-i tafdîlden sonra gelen kapalılık giderici temyiz ögesi ötreli veya esreli değil, fetha tenvini ile mansûb okunur."
       }

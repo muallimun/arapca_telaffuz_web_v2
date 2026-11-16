@@ -81,7 +81,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "اَلْشَّمْسُ / اَلْكِتَابٌ / اَلْسَّلَامُ عَلَيْكُمْ.",
+        "yanlis": "اَلْشَّمْسُ / اَلْكِتَابٌ / اَلْسَّلَامُ عَلَيْكُمْ.",
         "dogru": "اَلشَّمْسُ / اَلْكِتَابُ / اَلسَّلَامُ عَلَيْكُمْ.",
         "neden": "Şemsî harflerde 'ل' cezimlenmez doğrudan sonraki harf şeddelenir; ayrıca 'الْ' takılı hiçbir kelimenin sonuna tenvin konulamaz."
       }
@@ -175,7 +175,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "مِنِ الْبَيْتِ / هَلَ الدَّرْسُ / قَالَتَ الْأُمُّ / لِالْمَدْرَسَةِ.",
+        "yanlis": "مِنِ الْبَيْتِ / هَلَ الدَّرْسُ / قَالَتَ الْأُمُّ / لِالْمَدْرَسَةِ.",
         "dogru": "مِنَ الْبَيْتِ / هَلِ الدَّرْسُ / قَالَتِ الْأُمُّ / لِلْمَدْرَسَةِ.",
         "neden": "'مِنْ' edatı kesra değil fetha ile geçer; fiil dişillik tâ'sı kesra ile geçer; 'لِ' harf-i cerinde ise elif tamamen düşürülür."
       }
@@ -275,7 +275,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "عَلَّمَي / إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ (hasr anlamında hatâ).",
+        "yanlis": "عَلَّمَي / إِيَّاكَ نَعْبُدُ وَنَسْتَعِينُكَ (hasr anlamında hatâ).",
         "dogru": "عَلَّمَنِي / إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ.",
         "neden": "Fiilin sonuna 'ي' tek başına eklenemez, araya nûn-u vikâye girmelidir; ayrıca tahsis ve hasr bildirmek istendiğinde muttasıl zamir değil 'إِيَّا' munfasıl nasb zamiri kullanılır."
       }
@@ -469,7 +469,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "مِئَةُ كُتُبٍ / أَلْفُ طُلَّابٍ / ثَلَاثَةُ مِئَةٍ.",
+        "yanlis": "مِئَةُ كُتُبٍ / أَلْفُ طُلَّابٍ / ثَلَاثَةُ مِئَةٍ.",
         "dogru": "مِئَةُ كِتَابٍ / أَلْفُ طَالِبٍ / ثَلَاثُمِئَةٍ.",
         "neden": "100 ve 1000'in sayılanı çoğul yapılmaz, daima tekil ve esreli gelir; ayrıca 300-900 arası sayılar tenvinsiz ve bitişik yazılır."
       }
@@ -563,7 +563,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "طَالِبٌ فِي الصَّفِّ / الْمِفْتَاحُ أَيْنَ؟",
+        "yanlis": "طَالِبٌ فِي الصَّفِّ / الْمِفْتَاحُ أَيْنَ؟",
         "dogru": "فِي الصَّفِّ طَالِبٌ / أَيْنَ الْمِفْتَاحُ؟",
         "neden": "Arapçada sıfatsız yalın nekre isimle söze başlanamaz, haber şibh-i cümle ise öne geçer; ayrıca soru isimleri cümlenin sonuna bırakılamaz."
       }
@@ -663,7 +663,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "اِوْقِ نَفْسَكَ! / اِطْوِي الثَّوْبَ!",
+        "yanlis": "اِوْقِ نَفْسَكَ! / اِطْوِي الثَّوْبَ!",
         "dogru": "قِ نَفْسَكَ! / اِطْوِ الثَّوْبَ!",
         "neden": "Lefîf-i mefrûkun emrinde başa hemze konulmaz, tek harf kalır ('قِ'); ayrıca emir fiillerinde son illet harfi mutlaka düşürülmelidir ('اِطْوِ')."
       }
@@ -857,7 +857,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "يَا الرَّجُلُ / يَا خَالِداً (özel isme tenvin vermek) / يَا طَالِبُ الْعِلْمِ.",
+        "yanlis": "يَا الرَّجُلُ / يَا خَالِداً (özel isme tenvin vermek) / يَا طَالِبُ الْعِلْمِ.",
         "dogru": "يَا أَيُّهَا الرَّجُلُ / يَا خَالِدُ / يَا طَالِبَ الْعِلْمِ.",
         "neden": "'ال' takılı isme doğrudan 'يَا' bitişemez, araya 'أَيُّهَا' girmelidir; müfred alem tenvin almaz tek damma ile mebnî olur; muzaf münâdâ ise ötreli değil fethalı mansûb okunur."
       }
@@ -957,7 +957,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "مَا رَأَيْتُهُ أَبَداً / لَنْ أَفْعَلَهُ قَطُّ / جَلَسْتُ حَيْثَ (fethalamak).",
+        "yanlis": "مَا رَأَيْتُهُ أَبَداً / لَنْ أَفْعَلَهُ قَطُّ / جَلَسْتُ حَيْثَ (fethalamak).",
         "dogru": "مَا رَأَيْتُهُ قَطُّ / لَنْ أَفْعَلَهُ أَبَداً / جَلَسْتُ حَيْثُ.",
         "neden": "Geçmiş zaman olumsuzunda 'أَبَداً' kullanılmaz 'قَطُّ' kullanılır; gelecek zaman olumsuzunda 'قَطُّ' kullanılmaz 'أَبَداً' kullanılır; 'حَيْثُ' zarfı ise fetha değil damma üzere mebnîdir."
       }
@@ -1145,7 +1145,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "تَالرَّحْمٰنِ / وَاللَّهِ أَنْصُرُ (olumlu gelecek muzâride te'kidi terk etmek) / تَاللَّهُ.",
+        "yanlis": "تَالرَّحْمٰنِ / وَاللَّهِ أَنْصُرُ (olumlu gelecek muzâride te'kidi terk etmek) / تَاللَّهُ.",
         "dogru": "تَاللَّهِ / وَاللَّهِ لَأَنْصُرَنَّ / تَاللَّهِ.",
         "neden": "'تَ' harfi Allah lafzı dışındaki isimlerin başına gelemez; kasemden sonraki isim mecrûrdur; olumlu gelecek muzârisi ise 'لَ' ve 'نَّ' ile pekiştirilmek zorundadır."
       }
@@ -1245,7 +1245,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "نَحْنُ الْمُعَلِّمُونَ نَبْنِي (ihtisâs kastedildiğinde) / إِيَّاكَ وَالْكَذِبُ.",
+        "yanlis": "نَحْنُ الْمُعَلِّمُونَ نَبْنِي (ihtisâs kastedildiğinde) / إِيَّاكَ وَالْكَذِبُ.",
         "dogru": "نَحْنُ الْمُعَلِّمِينَ نَبْنِي / إِيَّاكَ وَالْكَذِبَ.",
         "neden": "İhtisâs ismi haber değil gizli fiilin mef'ûlü olduğu için merfû değil mansûb okunur; tahzîrde sakındırılan kelime de damma değil fethalı mansûb olmalıdır."
       }
@@ -1351,7 +1351,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "هَيْهَاتُ النَّجَاحَ / هَيَّوْا إِلَى الْعَمَلِ (çoğul zamir bitirmeye çalışmak).",
+        "yanlis": "هَيْهَاتُ النَّجَاحَ / هَيَّوْا إِلَى الْعَمَلِ (çoğul zamir bitirmeye çalışmak).",
         "dogru": "هَيْهَاتَ النَّجَاحُ / هَيَّا إِلَى الْعَمَلِ.",
         "neden": "Fiil isimleri mebnîdir, sonları ötrelenmez ('هَيْهَاتَ'); ayrıca fiil isimleri tekil, ikil ve çoğul muhataplar için aynı kalır, çekim eki almazlar ('هَيَّا')."
       }
@@ -1445,7 +1445,7 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "إِنَّ الْمُعَلِّمُ / كَانَ الطَّالِبِينَ مُجْتَهِدُونَ / قَرَأْتُ كِتَابٍ.",
+        "yanlis": "إِنَّ الْمُعَلِّمُ / كَانَ الطَّالِبِينَ مُجْتَهِدُونَ / قَرَأْتُ كِتَابٍ.",
         "dogru": "إِنَّ الْمُعَلِّمَ / كَانَ الطَّالِبَانِ مُجْتَهِدَيْنِ / قَرَأْتُ كِتَاباً.",
         "neden": "İnne'nin ismi mansûbdur (fethalı); Kâne'nin ismi merfû (elifli), haberi mansûbdur (yâ'lı); fiilin mef'ûlü ise esreli değil fethalı mansûb olmak zorundadır."
       }

@@ -3,78 +3,96 @@ import assert from "node:assert/strict";
 import {
   SAFARI_DESKTOP_STAGE,
   SAFARI_PORTRAIT_STAGE,
+  SAFARI_GOLDEN_SPAWN_CHANCE,
+  SAFARI_GOLDEN_SCORE_MULTIPLIER,
+  SAFARI_GOLDEN_SPEED_MULTIPLIER,
   computeSafariLevelFromRound,
   computeSafariWavePlacements,
   computeWrappedBalloonX,
+  getSafariDifficultyBasePoints,
+  getSafariComboMultiplier,
+  computeSafariWordPopScore,
+  computeSafariGoldenBonusScore,
   resolveSafariAtmosphere,
   getNextSafariAtmosphereMode,
 } from "../src/lib/balloonSafariLayout";
 
-test("Desktop (1120x620) wave placements share uniform speedX, minY=165..maxY=415, and 235px horizontal spacing", () => {
+test("Desktop (1120x620) wave placements spawn off-screen right using STAGE_W + 85 + (index * horizontalSpacing) + ((index % 2) * 26)", () => {
   for (const count of [2, 3, 4, 5]) {
     const slots = computeSafariWavePlacements({
       isPortraitMobile: false,
       count,
-      baseSpeed: 80,
+      baseSpeed: 126,
       roundNum: count,
     });
     assert.equal(slots.length, count);
-    const firstSpeed = slots[0]!.speedX;
-    assert.equal(firstSpeed, 80);
+    const firstSpeedX = slots[0]!.speedX;
+    const firstSpeed = slots[0]!.speed;
+    assert.equal(firstSpeedX, 126);
+    assert.ok(Math.abs(firstSpeed - 126 / 60) < 1e-9);
 
-    for (let i = 0; i < slots.length; i++) {
-      const s = slots[i]!;
-      assert.equal(s.speedX, firstSpeed);
-      assert.ok(s.baseY >= SAFARI_DESKTOP_STAGE.minY && s.baseY <= SAFARI_DESKTOP_STAGE.maxY);
-      if (i > 0) {
-        assert.equal(s.x - slots[i - 1]!.x, 235);
-      }
-      // Every balloon whose left edge enters the 1120px stage at t=0 must fit 100% inside [0, 1120] without right-edge half-clipping
-      if (s.x - 92 < SAFARI_DESKTOP_STAGE.width) {
-        assert.ok(s.x - 92 >= 0 && s.x + 92 <= SAFARI_DESKTOP_STAGE.width);
-      }
+    for (let index = 0; index < slots.length; index++) {
+      const s = slots[index]!;
+      assert.equal(s.speedX, firstSpeedX);
+      assert.equal(s.speed, firstSpeed);
+      assert.ok(
+        s.baseY >= SAFARI_DESKTOP_STAGE.minY &&
+          s.baseY <= SAFARI_DESKTOP_STAGE.maxY
+      );
+      const expectedStartX =
+        SAFARI_DESKTOP_STAGE.width +
+        85 +
+        index * SAFARI_DESKTOP_STAGE.horizontalSpacing +
+        (index % 2) * 26;
+      assert.equal(s.x, expectedStartX);
+      // Every balloon starts strictly outside the right edge of the 1120px stage
+      assert.ok(s.x > SAFARI_DESKTOP_STAGE.width);
     }
   }
 });
 
-test("Portrait mobile (540x860) wave placements share uniform speedX, minY=185..maxY=610, >=200px vertical diff for 3 balloons, 210px horizontal spacing, and zero right-edge clipping at t=0", () => {
+test("Portrait mobile (540x860) wave placements spawn off-screen right using PORTRAIT_STAGE_W + 70 + (index * horizontalSpacing) and keep >=210px spacing", () => {
   const slots3 = computeSafariWavePlacements({
     isPortraitMobile: true,
     count: 3,
-    baseSpeed: 80,
+    baseSpeed: 120,
     roundNum: 4,
   });
   assert.equal(slots3.length, 3);
-  const firstSpeed = slots3[0]!.speedX;
-  for (let i = 0; i < slots3.length; i++) {
-    assert.equal(slots3[i]!.speedX, firstSpeed);
+  const firstSpeedX = slots3[0]!.speedX;
+  const firstSpeed = slots3[0]!.speed;
+
+  for (let index = 0; index < slots3.length; index++) {
+    assert.equal(slots3[index]!.speedX, firstSpeedX);
+    assert.equal(slots3[index]!.speed, firstSpeed);
     assert.ok(
-      slots3[i]!.baseY >= SAFARI_PORTRAIT_STAGE.minY &&
-        slots3[i]!.baseY <= SAFARI_PORTRAIT_STAGE.maxY
+      slots3[index]!.baseY >= SAFARI_PORTRAIT_STAGE.minY &&
+        slots3[index]!.baseY <= SAFARI_PORTRAIT_STAGE.maxY
     );
-    if (slots3[i]!.x - 92 < SAFARI_PORTRAIT_STAGE.width) {
+    const expectedStartX =
+      SAFARI_PORTRAIT_STAGE.width +
+      70 +
+      index * SAFARI_PORTRAIT_STAGE.horizontalSpacing;
+    assert.equal(slots3[index]!.x, expectedStartX);
+    assert.ok(slots3[index]!.x > SAFARI_PORTRAIT_STAGE.width);
+
+    if (index > 0) {
+      assert.equal(slots3[index]!.x - slots3[index - 1]!.x, 210);
       assert.ok(
-        slots3[i]!.x - 92 >= 0 &&
-          slots3[i]!.x + 92 <= SAFARI_PORTRAIT_STAGE.width,
-        `Portrait balloon ${i} at x=${slots3[i]!.x} must not be clipped at right edge (540)`
-      );
-    }
-    if (i > 0) {
-      assert.equal(slots3[i]!.x - slots3[i - 1]!.x, 210);
-      assert.ok(
-        Math.abs(slots3[i]!.baseY - slots3[i - 1]!.baseY) >= 200,
+        Math.abs(slots3[index]!.baseY - slots3[index - 1]!.baseY) >= 200,
         `Portrait 3-balloon adjacent vertical delta must be >= 200px, got ${Math.abs(
-          slots3[i]!.baseY - slots3[i - 1]!.baseY
+          slots3[index]!.baseY - slots3[index - 1]!.baseY
         )}`
       );
     }
   }
 
-  // Simulate 30 seconds of flight with wrap-around: no two balloons ever come closer than 210px horizontally
-  let active = slots3.map((s, idx) => ({ id: idx, x: s.x, speedX: s.speedX }));
+  // Simulate 30 seconds of flight using b.x -= b.speed * timeScale with wrap-around: no two balloons ever come closer than 210px horizontally
+  let active = slots3.map((s, idx) => ({ id: idx, x: s.x, speed: s.speed }));
   const dt = 0.05;
+  const timeScale = dt * 60;
   for (let step = 0; step < 600; step++) {
-    active = active.map((b) => ({ ...b, x: b.x - b.speedX * dt }));
+    active = active.map((b) => ({ ...b, x: b.x - b.speed * timeScale }));
     for (let i = 0; i < active.length; i++) {
       if (active[i]!.x < -125) {
         const others = active
@@ -95,6 +113,59 @@ test("Portrait mobile (540x860) wave placements share uniform speedX, minY=185..
       }
     }
   }
+});
+
+test("game.js scoring, combo (>=3 & >=10), difficulty points (hard: 15, normal: 12), and golden balloon (15%, 5x, fast flow) rules", () => {
+  assert.equal(getSafariDifficultyBasePoints("easy"), 12);
+  assert.equal(getSafariDifficultyBasePoints("medium"), 12);
+  assert.equal(getSafariDifficultyBasePoints("hard"), 15);
+
+  assert.equal(getSafariComboMultiplier(1), 1);
+  assert.equal(getSafariComboMultiplier(2), 1);
+  assert.equal(getSafariComboMultiplier(3), 1.5);
+  assert.equal(getSafariComboMultiplier(9), 1.5);
+  assert.equal(getSafariComboMultiplier(10), 2);
+  assert.equal(getSafariComboMultiplier(18), 2);
+
+  const medCombo1 = computeSafariWordPopScore({
+    difficultyMode: "medium",
+    level: 1,
+    combo: 1,
+  });
+  assert.equal(medCombo1.gainedPoints, 12);
+
+  const hardCombo1 = computeSafariWordPopScore({
+    difficultyMode: "hard",
+    level: 1,
+    combo: 1,
+  });
+  assert.equal(hardCombo1.gainedPoints, 15);
+
+  const medCombo4 = computeSafariWordPopScore({
+    difficultyMode: "medium",
+    level: 1,
+    combo: 4,
+  });
+  assert.equal(medCombo4.gainedPoints, 18);
+
+  const hardCombo10 = computeSafariWordPopScore({
+    difficultyMode: "hard",
+    level: 1,
+    combo: 10,
+  });
+  assert.equal(hardCombo10.gainedPoints, 30);
+
+  assert.equal(SAFARI_GOLDEN_SPAWN_CHANCE, 0.15);
+  assert.equal(SAFARI_GOLDEN_SCORE_MULTIPLIER, 5);
+  assert.ok(SAFARI_GOLDEN_SPEED_MULTIPLIER > 1.3);
+  assert.equal(
+    computeSafariGoldenBonusScore({ difficultyMode: "medium", level: 1 }),
+    60
+  );
+  assert.equal(
+    computeSafariGoldenBonusScore({ difficultyMode: "hard", level: 1 }),
+    75
+  );
 });
 
 test("3-atmosphere resolution and cycle order work across levels and dark theme", () => {

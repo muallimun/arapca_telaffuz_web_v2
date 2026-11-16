@@ -9916,3 +9916,98 @@ test("84. 3 Gramer Dosyasında (diyaloglar, metinler, ek) Sıfır Ters Hareke+Ş
     );
   }
 });
+
+test("85. BalloonSafariGame game.js Motoru Uyarlaması: Sağ Dışarıdan Akarak Giriş (STAGE_W+85 / PORTRAIT_STAGE_W+70), b.speed * timeScale, Zorluk Puanı (15/12), Kombo (>=3 & >=10) ve %15 Altın Balon (5x Hızlı Akış)", async () => {
+  const { pathToFileURL } = await import("node:url");
+  const {
+    SAFARI_DESKTOP_STAGE,
+    SAFARI_PORTRAIT_STAGE,
+    SAFARI_GOLDEN_SPAWN_CHANCE,
+    SAFARI_GOLDEN_SCORE_MULTIPLIER,
+    SAFARI_GOLDEN_SPEED_MULTIPLIER,
+    computeSafariWavePlacements,
+    computeSafariWordPopScore,
+    computeSafariGoldenBonusScore,
+  } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "balloonSafariLayout.ts")).href
+  );
+
+  const desktopWave = computeSafariWavePlacements({
+    isPortraitMobile: false,
+    count: 4,
+    baseSpeed: 126,
+    roundNum: 3,
+  });
+  desktopWave.forEach((slot, index) => {
+    const expectedX =
+      SAFARI_DESKTOP_STAGE.width +
+      85 +
+      index * SAFARI_DESKTOP_STAGE.horizontalSpacing +
+      (index % 2) * 26;
+    assert.equal(slot.x, expectedX);
+    assert.ok(slot.x > SAFARI_DESKTOP_STAGE.width);
+  });
+
+  const portraitWave = computeSafariWavePlacements({
+    isPortraitMobile: true,
+    count: 3,
+    baseSpeed: 126,
+    roundNum: 3,
+  });
+  portraitWave.forEach((slot, index) => {
+    const expectedX =
+      SAFARI_PORTRAIT_STAGE.width +
+      70 +
+      index * SAFARI_PORTRAIT_STAGE.horizontalSpacing;
+    assert.equal(slot.x, expectedX);
+    assert.ok(slot.x > SAFARI_PORTRAIT_STAGE.width);
+  });
+
+  assert.equal(SAFARI_GOLDEN_SPAWN_CHANCE, 0.15);
+  assert.equal(SAFARI_GOLDEN_SCORE_MULTIPLIER, 5);
+  assert.ok(SAFARI_GOLDEN_SPEED_MULTIPLIER > 1.3);
+  assert.equal(
+    computeSafariWordPopScore({ difficultyMode: "medium", level: 1, combo: 1 })
+      .gainedPoints,
+    12
+  );
+  assert.equal(
+    computeSafariWordPopScore({ difficultyMode: "hard", level: 1, combo: 1 })
+      .gainedPoints,
+    15
+  );
+  assert.equal(
+    computeSafariWordPopScore({ difficultyMode: "medium", level: 1, combo: 3 })
+      .gainedPoints,
+    18
+  );
+  assert.equal(
+    computeSafariWordPopScore({ difficultyMode: "hard", level: 1, combo: 10 })
+      .gainedPoints,
+    30
+  );
+  assert.equal(
+    computeSafariGoldenBonusScore({ difficultyMode: "hard", level: 1 }),
+    75
+  );
+
+  const balloonSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "exercises", "BalloonSafariGame.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    balloonSrc.includes(
+      "PORTRAIT_STAGE_W + 70 + index * horizontalSpacing"
+    ) &&
+      balloonSrc.includes(
+        "STAGE_W + 85 + index * horizontalSpacing + (index % 2) * 26"
+      ) &&
+      balloonSrc.includes("b.x - b.speed * timeScale") &&
+      balloonSrc.includes("SAFARI_GOLDEN_SPAWN_CHANCE") &&
+      balloonSrc.includes("SAFARI_GOLDEN_SPEED_MULTIPLIER") &&
+      balloonSrc.includes("computeSafariWordPopScore") &&
+      balloonSrc.includes("computeSafariGoldenBonusScore"),
+    "BalloonSafariGame sağ dışarıdan akış koordinatlarını, b.speed * timeScale fiziğini ve game.js puanlama/altın balon motorunu kullanmalıdır"
+  );
+});
+

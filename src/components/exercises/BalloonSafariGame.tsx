@@ -48,10 +48,14 @@ import { useEscapeKey } from "@/lib/modalStack";
 import {
   SAFARI_DESKTOP_STAGE,
   SAFARI_PORTRAIT_STAGE,
+  SAFARI_GOLDEN_SPAWN_CHANCE,
+  SAFARI_GOLDEN_SPEED_MULTIPLIER,
   computeSafariLevelFromRound,
   getSafariBalloonCountForLevel,
   computeSafariWavePlacements,
   computeWrappedBalloonX,
+  computeSafariWordPopScore,
+  computeSafariGoldenBonusScore,
   resolveSafariAtmosphere,
   getNextSafariAtmosphereMode,
   type SafariAtmosphereMode,
@@ -82,6 +86,7 @@ interface ActiveBalloon {
   x: number;
   y: number;
   baseY: number;
+  speed: number;
   speedX: number;
   wobblePhase: number;
   wobbleSpeed: number;
@@ -169,8 +174,8 @@ function getSpeedBase(
   level: SafariStageLevel
 ): number {
   const diffBase =
-    difficulty === "easy" ? 58 : difficulty === "medium" ? 80 : 106;
-  const levelBoost = (level - 1) * 11;
+    difficulty === "easy" ? 96 : difficulty === "medium" ? 126 : 162;
+  const levelBoost = (level - 1) * 14;
   return diffBase + levelBoost;
 }
 
@@ -383,12 +388,14 @@ export default function BalloonSafariGame({
           if (b.kind === "word") {
             const slot = placements[wordIdx] ?? placements[0];
             wordIdx += 1;
+            const nextSpeedX = slot ? slot.speedX : b.speedX;
             return {
               ...b,
               x: slot ? slot.x : stageCfg.width + stageCfg.firstSpawnOffset,
               baseY: slot ? slot.baseY : (stageCfg.minY + stageCfg.maxY) / 2,
               y: slot ? slot.baseY : (stageCfg.minY + stageCfg.maxY) / 2,
-              speedX: slot ? slot.speedX : b.speedX,
+              speed: slot ? slot.speed : nextSpeedX / 60,
+              speedX: nextSpeedX,
             };
           }
           const lastWordX =
@@ -398,12 +405,21 @@ export default function BalloonSafariGame({
           bonusIdx += 1;
           const bonusY =
             bonusIdx % 2 === 1 ? stageCfg.minY + 24 : stageCfg.maxY - 24;
+          const baseWaveSpeedX = placements[0]?.speedX ?? b.speedX;
+          const mappedSpeedX =
+            b.kind === "golden"
+              ? baseWaveSpeedX * SAFARI_GOLDEN_SPEED_MULTIPLIER
+              : baseWaveSpeedX;
           return {
             ...b,
-            x: lastWordX + bonusIdx * stageCfg.horizontalSpacing,
+            x:
+              b.kind === "golden"
+                ? stageCfg.width + stageCfg.firstSpawnOffset
+                : lastWordX + bonusIdx * stageCfg.horizontalSpacing,
             baseY: bonusY,
             y: bonusY,
-            speedX: placements[0]?.speedX ?? b.speedX,
+            speed: mappedSpeedX / 60,
+            speedX: mappedSpeedX,
           };
         });
         balloonsRef.current = remapped;
@@ -674,12 +690,14 @@ export default function BalloonSafariGame({
       const distractors = distractorCandidates.slice(0, Math.max(1, count - 1));
       const waveWords = shuffleArray([pickedTarget, ...distractors]);
 
-      // Dikey mobil (540x860: minY=185, maxY=610, spacing=210) ve masaüstü (1120x620: minY=165, maxY=415, spacing=235)
-      // için birebir aynı yatay hızda (speedX = baseSpeed * speedScale) ve kademeli zikzak düzende yerleştir
+      // game.js motoru uyarlaması: tüm yeni tur balonları sağ dışarıdan dizi halinde sahneye girer
+      // - Masaüstü (STAGE_W = 1120): startX = STAGE_W + 85 + (index * horizontalSpacing) + ((index % 2) * 26)
+      // - Dikey Mobil (PORTRAIT_STAGE_W = 540): startX = PORTRAIT_STAGE_W + 70 + (index * horizontalSpacing)
       const portraitNow = isPortraitMobileRef.current;
       const stageCfg = portraitNow
         ? SAFARI_PORTRAIT_STAGE
         : SAFARI_DESKTOP_STAGE;
+      const horizontalSpacing = stageCfg.horizontalSpacing;
       const placements = computeSafariWavePlacements({
         isPortraitMobile: portraitNow,
         count: waveWords.length,
@@ -688,36 +706,41 @@ export default function BalloonSafariGame({
       });
       const uniformSpeedX =
         placements[0]?.speedX ?? baseSpeed * (portraitNow ? 0.78 : 1);
+      const uniformFrameSpeed = placements[0]?.speed ?? uniformSpeedX / 60;
 
-      const created: ActiveBalloon[] = waveWords.map((w, idx) => {
-        const slot = placements[idx]!;
+      const created: ActiveBalloon[] = waveWords.map((w, index) => {
+        const slot = placements[index]!;
+        const startX = portraitNow
+          ? PORTRAIT_STAGE_W + 70 + index * horizontalSpacing
+          : STAGE_W + 85 + index * horizontalSpacing + (index % 2) * 26;
         return {
-          uid: `b_${nextRoundNum}_${idx}_${w.id}`,
+          uid: `b_${nextRoundNum}_${index}_${w.id}`,
           kind: "word",
           word: w,
           isTarget: w.id === pickedTarget.id,
-          x: slot.x,
+          x: startX,
           y: slot.baseY,
           baseY: slot.baseY,
+          speed: slot.speed,
           speedX: uniformSpeedX,
-          wobblePhase: idx * 1.15,
+          wobblePhase: index * 1.15,
           wobbleSpeed: 2.0,
           wobbleAmp: portraitNow ? 10 : 9,
-          paletteIndex: (nextRoundNum + idx) % HOT_AIR_PALETTES.length,
+          paletteIndex: (nextRoundNum + index) % HOT_AIR_PALETTES.length,
           popped: false,
         };
       });
 
       let trailingX =
-        placements.length > 0
-          ? placements[placements.length - 1]!.x
+        created.length > 0
+          ? created[created.length - 1]!.x
           : stageCfg.width + stageCfg.firstSpawnOffset;
 
-      // Güçlendirici ve Altın Balonları kelime dalgasının arkasına aynı hızla ekle ki hiçbir balon üst üste binmesin
+      // Güçlendirici balonlar (freeze / hint) kelime dalgasının arkasından sağ dışarıdan aynı hızla girer
       if (nextRoundNum % 3 === 0) {
         const powerKind: BalloonKind =
           nextRoundNum % 6 === 0 ? "freeze" : "hint";
-        trailingX += stageCfg.horizontalSpacing;
+        trailingX += horizontalSpacing;
         const pwrY = portraitNow ? stageCfg.minY + 30 : stageCfg.minY + 25;
         created.push({
           uid: `pwr_${nextRoundNum}_${powerKind}`,
@@ -726,6 +749,7 @@ export default function BalloonSafariGame({
           x: trailingX,
           y: pwrY,
           baseY: pwrY,
+          speed: uniformFrameSpeed,
           speedX: uniformSpeedX,
           wobblePhase: 0.7,
           wobbleSpeed: 2.2,
@@ -735,19 +759,35 @@ export default function BalloonSafariGame({
         });
       }
 
-      if (nextRoundNum % 4 === 0) {
-        trailingX += stageCfg.horizontalSpacing;
-        const goldY = portraitNow ? stageCfg.maxY - 30 : stageCfg.maxY - 20;
+      // Altın Balon (%15 şans, 5x puan, hızlı akış): ilk kelimenin zıt dikey şeridinden sağ dışarıdan hızlı süzülür
+      const shouldSpawnGolden = Math.random() < SAFARI_GOLDEN_SPAWN_CHANCE;
+      if (shouldSpawnGolden) {
+        const firstWordY =
+          created[0]?.baseY ?? (stageCfg.minY + stageCfg.maxY) / 2;
+        const midStageY = (stageCfg.minY + stageCfg.maxY) / 2;
+        const goldY =
+          firstWordY < midStageY
+            ? portraitNow
+              ? stageCfg.maxY - 24
+              : stageCfg.maxY - 16
+            : portraitNow
+            ? stageCfg.minY + 24
+            : stageCfg.minY + 16;
+        const goldStartX = portraitNow
+          ? PORTRAIT_STAGE_W + 70
+          : STAGE_W + 85;
+        const goldSpeedX = uniformSpeedX * SAFARI_GOLDEN_SPEED_MULTIPLIER;
         created.push({
           uid: `gold_${nextRoundNum}`,
           kind: "golden",
           isTarget: false,
-          x: trailingX,
+          x: goldStartX,
           y: goldY,
           baseY: goldY,
-          speedX: uniformSpeedX,
+          speed: uniformFrameSpeed * SAFARI_GOLDEN_SPEED_MULTIPLIER,
+          speedX: goldSpeedX,
           wobblePhase: 1.9,
-          wobbleSpeed: 2.4,
+          wobbleSpeed: 2.5,
           wobbleAmp: 11,
           paletteIndex: 1,
           popped: false,
@@ -808,16 +848,14 @@ export default function BalloonSafariGame({
         prev === quantizedFreeze ? prev : quantizedFreeze
       );
       const isFrozen = frozenLeft > 0;
+      const timeScale = isFrozen ? 0 : dt * 60;
 
       const portraitNow = isPortraitMobileRef.current;
       const scaleVal = portraitNow ? 1.06 : 1;
       const activeList = balloonsRef.current.filter((item) => !item.popped);
       const advancedXByUid = new Map<string, number>();
-      for (const item of activeList) {
-        advancedXByUid.set(
-          item.uid,
-          isFrozen ? item.x : item.x - item.speedX * dt
-        );
+      for (const b of activeList) {
+        advancedXByUid.set(b.uid, b.x - b.speed * timeScale);
       }
 
       const nextBalloons: ActiveBalloon[] = [];
@@ -983,6 +1021,42 @@ export default function BalloonSafariGame({
     [fullSafariPool, difficulty, spawnRoundWave]
   );
 
+  const autostartHandledRef = useRef(false);
+  const startNewSessionRef = useRef(startNewSession);
+  useEffect(() => {
+    startNewSessionRef.current = startNewSession;
+  }, [startNewSession]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || autostartHandledRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("autostart") === "1") {
+      autostartHandledRef.current = true;
+      startNewSessionRef.current(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || phase !== "menu") return;
+    const onMenuKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "BUTTON" ||
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT")
+      ) {
+        return;
+      }
+      e.preventDefault();
+      startNewSessionRef.current(null);
+    };
+    window.addEventListener("keydown", onMenuKeyDown);
+    return () => window.removeEventListener("keydown", onMenuKeyDown);
+  }, [phase]);
+
   const handleBalloonPop = useCallback(
     (rawBalloon: ActiveBalloon) => {
       const balloon =
@@ -1022,13 +1096,16 @@ export default function BalloonSafariGame({
         return;
       }
 
-      // 3. Altın Balon (جَائِزَة 5x)
+      // 3. Altın Balon (جَائِزَة 5x — %15 şans, 5x puan, hızlı akış)
       if (balloon.kind === "golden") {
         balloonsRef.current = balloonsRef.current.filter(
           (b) => b.uid !== balloon.uid
         );
         setBalloons(balloonsRef.current);
-        const bonusPts = 500;
+        const bonusPts = computeSafariGoldenBonusScore({
+          difficultyMode: difficulty,
+          level: currentLevel,
+        });
         const updatedScore = scoreRef.current + bonusPts;
         scoreRef.current = updatedScore;
         setScore(updatedScore);
@@ -1063,9 +1140,12 @@ export default function BalloonSafariGame({
         setMaxCombo((prev) => Math.max(prev, nextCombo));
         setCorrectPops((prev) => prev + 1);
 
-        const basePts = 100 + (currentLevel - 1) * 25;
-        const comboBonus = Math.min(150, (nextCombo - 1) * 15);
-        const gained = basePts + comboBonus;
+        const { comboMultiplier, gainedPoints: gained } =
+          computeSafariWordPopScore({
+            difficultyMode: difficulty,
+            level: currentLevel,
+            combo: nextCombo,
+          });
         const updatedScore = scoreRef.current + gained;
         scoreRef.current = updatedScore;
         setScore(updatedScore);
@@ -1078,24 +1158,25 @@ export default function BalloonSafariGame({
           recordItemAttempt(canonicalId, "word", true);
         }
 
+        const comboTag = comboMultiplier > 1 ? ` 🔥${nextCombo}x` : "";
         if (gameMode === "time") {
           setTimeLeft((prev) => prev + 2);
           pushFloatingBadge(
             balloon.x,
             balloon.y - 45,
-            `+${gained} • +2s ⏳`,
+            `+${gained}${comboTag} • +2s ⏳`,
             "emerald"
           );
         } else {
           pushFloatingBadge(
             balloon.x,
             balloon.y - 45,
-            `+${gained}`,
+            `+${gained}${comboTag}`,
             "emerald"
           );
         }
 
-        if (nextCombo > 0 && nextCombo % 10 === 0) {
+        if (nextCombo >= 10 && nextCombo % 10 === 0) {
           if (gameMode === "normal") {
             setLives((prev) => Math.min(6, prev + 1));
             setComboMilestoneBanner(`🔥 ${nextCombo} سِلْسِلَة! +1 💚 إِضَافِيّ`);
@@ -1107,6 +1188,12 @@ export default function BalloonSafariGame({
             void playFanfare(95);
           }
           setTimeout(() => setComboMilestoneBanner(null), 2600);
+        } else if (nextCombo === 3) {
+          setComboMilestoneBanner(`🔥 3 سِلْسِلَة! 1.5x نِقَاط`);
+          if (!isMutedRef.current) {
+            void playCorrect({ streak: nextCombo });
+          }
+          setTimeout(() => setComboMilestoneBanner(null), 2000);
         } else if (!isMutedRef.current) {
           void playCorrect({ streak: nextCombo });
         }
@@ -1117,7 +1204,7 @@ export default function BalloonSafariGame({
             : fullSafariPool;
         setTimeout(() => {
           spawnRoundWave(roundNumber + 1, difficulty, activePool);
-        }, 460);
+        }, 200);
       } else {
         // YANLIŞ BALON PATLATILDI
         balloonsRef.current = balloonsRef.current.filter(

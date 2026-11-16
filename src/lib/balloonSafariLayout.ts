@@ -1,6 +1,7 @@
 export type SafariAtmosphereMode = "auto" | "day" | "sunset" | "night";
 export type ResolvedSafariAtmosphere = "day" | "sunset" | "night";
 export type SafariStageLevel = 1 | 2 | 3 | 4 | 5;
+export type SafariScoreDifficulty = "easy" | "medium" | "hard";
 
 export const SAFARI_DESKTOP_STAGE = {
   width: 1120,
@@ -8,7 +9,7 @@ export const SAFARI_DESKTOP_STAGE = {
   minY: 165,
   maxY: 415,
   horizontalSpacing: 235,
-  firstSpawnOffset: 105,
+  firstSpawnOffset: 85,
 } as const;
 
 export const SAFARI_PORTRAIT_STAGE = {
@@ -17,8 +18,12 @@ export const SAFARI_PORTRAIT_STAGE = {
   minY: 185,
   maxY: 610,
   horizontalSpacing: 210,
-  firstSpawnOffset: 96,
+  firstSpawnOffset: 70,
 } as const;
+
+export const SAFARI_GOLDEN_SPAWN_CHANCE = 0.15;
+export const SAFARI_GOLDEN_SCORE_MULTIPLIER = 5;
+export const SAFARI_GOLDEN_SPEED_MULTIPLIER = 1.42;
 
 export function computeSafariLevelFromRound(roundNum: number): SafariStageLevel {
   if (roundNum <= 3) return 1;
@@ -33,6 +38,55 @@ export function getSafariBalloonCountForLevel(level: SafariStageLevel): number {
   if (level === 2) return 3;
   if (level === 3) return 4;
   return 5;
+}
+
+/**
+ * game.js motoru puanlama ve seri (combo) çarpanı hesabı:
+ * - Zorluk taban puanı: difficultyMode === 'hard' ? 15 : 12
+ * - Seviye katkısı: (level - 1) * 3
+ * - Seri çarpanı: combo >= 10 -> 2x, combo >= 3 -> 1.5x, aksi halde 1x
+ */
+export function getSafariDifficultyBasePoints(
+  difficultyMode: SafariScoreDifficulty
+): number {
+  return difficultyMode === "hard" ? 15 : 12;
+}
+
+export function getSafariComboMultiplier(combo: number): number {
+  if (combo >= 10) return 2;
+  if (combo >= 3) return 1.5;
+  return 1;
+}
+
+export function computeSafariWordPopScore(params: {
+  difficultyMode: SafariScoreDifficulty;
+  level: SafariStageLevel;
+  combo: number;
+}): {
+  basePoints: number;
+  comboMultiplier: number;
+  gainedPoints: number;
+} {
+  const basePoints =
+    getSafariDifficultyBasePoints(params.difficultyMode) +
+    (params.level - 1) * 3;
+  const comboMultiplier = getSafariComboMultiplier(params.combo);
+  const gainedPoints = Math.round(basePoints * comboMultiplier);
+  return {
+    basePoints,
+    comboMultiplier,
+    gainedPoints,
+  };
+}
+
+export function computeSafariGoldenBonusScore(params: {
+  difficultyMode: SafariScoreDifficulty;
+  level: SafariStageLevel;
+}): number {
+  const basePoints =
+    getSafariDifficultyBasePoints(params.difficultyMode) +
+    (params.level - 1) * 3;
+  return basePoints * SAFARI_GOLDEN_SCORE_MULTIPLIER;
 }
 
 export function resolveSafariAtmosphere(params: {
@@ -86,6 +140,7 @@ export interface WaveSlotPlacement {
   x: number;
   baseY: number;
   speedX: number;
+  speed: number;
 }
 
 export interface WaveLayoutConfig {
@@ -96,8 +151,9 @@ export interface WaveLayoutConfig {
 }
 
 /**
- * Aynı dalgadaki tüm kelime balonlarına birebir aynı yatay hızı (speedX) verir
- * ve hem masaüstü (1120x620) hem dikey mobilde (540x860) çakışmasız zikzak koordinatlar üretir.
+ * game.js motoruna uygun olarak balonları ekranın sağ dışarısından dizi halinde başlatır:
+ * - Masaüstü (1120x620): startX = STAGE_W + 85 + (index * horizontalSpacing) + ((index % 2) * 26)
+ * - Dikey Mobil (540x860): startX = PORTRAIT_STAGE_W + 70 + (index * horizontalSpacing)
  */
 export function computeSafariWavePlacements(
   config: WaveLayoutConfig
@@ -108,6 +164,7 @@ export function computeSafariWavePlacements(
   const stage = isPortraitMobile ? SAFARI_PORTRAIT_STAGE : SAFARI_DESKTOP_STAGE;
   const speedScale = isPortraitMobile ? 0.78 : 1;
   const uniformSpeedX = baseSpeed * speedScale;
+  const uniformFrameSpeed = uniformSpeedX / 60;
 
   // 2 balon varken şeritleri biraz içeriden al, 3+ balon varken tam [minY, maxY] aralığını kullan
   const effectiveMinY =
@@ -124,22 +181,20 @@ export function computeSafariWavePlacements(
 
   const zigzagIndices = buildStaggeredLaneOrder(count, roundNum % 2 === 0);
 
-  const initialStartX = isPortraitMobile
-    ? 215
-    : count <= 2
-    ? 560
-    : count === 3
-    ? 430
-    : 285;
-
-  return Array.from({ length: count }, (_, idx) => {
-    const laneIdx = zigzagIndices[idx] ?? idx;
+  return Array.from({ length: count }, (_, index) => {
+    const laneIdx = zigzagIndices[index] ?? index;
     const baseY = Math.round(evenlySpacedLanes[laneIdx] ?? stage.minY);
-    const x = initialStartX + idx * stage.horizontalSpacing;
+    const startX = isPortraitMobile
+      ? stage.width + 70 + index * stage.horizontalSpacing
+      : stage.width +
+        85 +
+        index * stage.horizontalSpacing +
+        (index % 2) * 26;
     return {
-      x,
+      x: startX,
       baseY,
       speedX: uniformSpeedX,
+      speed: uniformFrameSpeed,
     };
   });
 }

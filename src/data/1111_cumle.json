@@ -4482,7 +4482,7 @@
     "seviye": "A2",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İsim Cümlesi + Zaman Zarfı ve Sıra Sayısı Haber",
-    "arapca": "اَلِامْتِحَانُ يَوْمَ الْاِثْنَيْنِ فِي السَّاعَةِ الثَّانِيَةِ تَمَامًا.",
+    "arapca": "الْاِمْتِحَانُ يَوْمَ الْاِثْنَيْنِ فِي السَّاعَةِ الثَّانِيَةِ تَمَامًا.",
     "turkce": "İmtihan pazartesi günü saat tam ikidedir.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0408.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0408.mp3"
@@ -5703,7 +5703,7 @@
     "seviye": "B1",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Rubâî Mücerred (زَحْزَحَ) + Harf-i Cer (عَنْ)",
-    "arapca": "اَلِاجْتِهَادُ الدَّائِمُ زَحْزَحَ الطَّالِبَ عَنِ الْفَشَلِ.",
+    "arapca": "الْاِجْتِهَادُ الدَّائِمُ زَحْزَحَ الطَّالِبَ عَنِ الْفَشَلِ.",
     "turkce": "Daimi çalışmak, öğrenciyi başarısızlıktan uzaklaştırdı.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0519.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0519.mp3"
@@ -10037,7 +10037,7 @@
     "seviye": "B2",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İğrâ Sanatı (Tekrarlı İğrâ Mansub)",
-    "arapca": "اَلِاجْتِهَادَ الْاِجْتِهَادَ!",
+    "arapca": "الْاِجْتِهَادَ الْاِجْتِهَادَ!",
     "turkce": "Çalışmaya dikkat edin! Çalışmaya dikkat edin!",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0913.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0913.mp3"
@@ -10653,7 +10653,7 @@
     "seviye": "B2",
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Cezmetmeyen Şart Edatı (لَوْ + Mâzî + Lâmlı Cevap)",
-    "arapca": "لَوْ اِحْتَرَمْتَ النَّاسَ لَاحْتَرَمُوكَ.",
+    "arapca": "لَوِ احْتَرَمْتَ النَّاسَ لَاحْتَرَمُوكَ.",
     "turkce": "Eğer insanlara saygı gösterirsen onlar da sana saygı gösterirler.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0969.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0969.mp3"
@@ -11422,8 +11422,8 @@
     "sira": 1039,
     "seviye": "B1",
     "tema": "Okul_ve_Egitim",
-    "odak_kalip": "Mâzî (طَلَبَ مِنْ) + Mef'ûl İzafeti + Masdar Mecrûr (لِالتَّمَكُّنِ مِنْ)",
-    "arapca": "طَلَبَ مِنِّي الْمُعَلِّمُ بَعْضَ أَوْرَاقِ الْاِمْتِحَانِ لِالتَّمَكُّنِ مِنَ التَّقْيِيمِ الدَّقِيقِ.",
+    "odak_kalip": "Mâzî (طَلَبَ مِنْ) + Mef'ûl İzafeti + Masdar Mecrûr (لِلتَّمَكُّنِ مِنْ)",
+    "arapca": "طَلَبَ مِنِّي الْمُعَلِّمُ بَعْضَ أَوْرَاقِ الْاِمْتِحَانِ لِلتَّمَكُّنِ مِنَ التَّقْيِيمِ الدَّقِيقِ.",
     "turkce": "Öğretmen kesin değerlendirme yapabilmek için benden bazı sınav kağıtları istedi.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_1039.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_1039.mp3"

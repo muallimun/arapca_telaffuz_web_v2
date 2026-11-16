@@ -1236,7 +1236,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D bride wearing an elegant white wedding gown, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0054_02_gelin.webp",
-    "ornek_ar": "دَخَلَتْ العَرُوسُ إِلَى قَاعَةِ الفَرَحِ.",
+    "ornek_ar": "دَخَلَتِ العَرُوسُ إِلَى قَاعَةِ الفَرَحِ.",
     "gorsel_betimleme_en_eski": "A bride wearing an elegant white wedding gown",
     "ses_erkek": "/sesler/kelimeler/erkek/0054_02_gelin.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0054_02_gelin.mp3"
@@ -1558,7 +1558,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D open textbook resting on a wooden bookstand next to a glowing desk lamp and a blue pen, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0068_03_ders.webp",
-    "ornek_ar": "يَشْرَحُ المعَلِّمُ الدَّرْسَ الجَدِيدَ.",
+    "ornek_ar": "يَشْرَحُ المُعَلِّمُ الدَّرْسَ الجَدِيدَ.",
     "gorsel_betimleme_en_eski": "A classroom blackboard page covered in writing",
     "ses_erkek": "/sesler/kelimeler/erkek/0068_03_ders.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0068_03_ders.mp3"
@@ -1581,7 +1581,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A clean 3D dark green classroom chalkboard on a wooden easel stand with a tray holding white chalk sticks and an eraser, blank surface with no text, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0069_03_yazi_tahtasi.webp",
-    "ornek_ar": "كَتَبَ المعَلِّمُ الدَّرْسَ عَلَى السَّبُّورَةِ.",
+    "ornek_ar": "كَتَبَ المُعَلِّمُ الدَّرْسَ عَلَى السَّبُّورَةِ.",
     "gorsel_betimleme_en_eski": "A green or white classroom chalkboard",
     "ses_erkek": "/sesler/kelimeler/erkek/0069_03_yazi_tahtasi.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0069_03_yazi_tahtasi.mp3"
@@ -1719,7 +1719,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "Colorful sticks of classroom blackboard chalk, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0075_03_tebesir.webp",
-    "ornek_ar": "كَتَبَ المعَلِّمُ بِالطَّبَاشِيرِ عَلَى السَّبُّورَةِ.",
+    "ornek_ar": "كَتَبَ المُعَلِّمُ بِالطَّبَاشِيرِ عَلَى السَّبُّورَةِ.",
     "gorsel_betimleme_en_eski": "Colorful sticks of classroom blackboard chalk",
     "ses_erkek": "/sesler/kelimeler/erkek/0075_03_tebesir.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0075_03_tebesir.mp3"
@@ -1926,7 +1926,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A rectangular 3D natural wooden drawing board resting on an artist easel, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0084_03_tahta.webp",
-    "ornek_ar": "كَتَبَ المعلِّمُ عَلَى اللَّوْحِ.",
+    "ornek_ar": "كَتَبَ المُعَلِّمُ عَلَى اللَّوْحِ.",
     "gorsel_betimleme_en_eski": "A flat wooden slate writing board",
     "ses_erkek": "/sesler/kelimeler/erkek/0084_03_tahta.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0084_03_tahta.mp3"
@@ -2478,7 +2478,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D graphite lead pencil pointing straight, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0108_03_kursun.webp",
-    "ornek_ar": "كَتَبْتُ الواجِبَ بِقَلَمِ الرَّصَاصِ.",
+    "ornek_ar": "كَتَبْتُ الوَاجِبَ بِقَلَمِ الرَّصَاصِ.",
     "gorsel_betimleme_en_eski": "A graphite lead pencil pointing straight",
     "ses_erkek": "/sesler/kelimeler/erkek/0108_03_kursun.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0108_03_kursun.mp3"
@@ -2731,7 +2731,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D miniature architectural scale model of a white house resting on a wooden base, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0119_03_ornek.webp",
-    "ornek_ar": "مَلأْتُ النَّمُوذَجَ الخَاصَّ بِالتَّسْجِيلِ.",
+    "ornek_ar": "مَلَأْتُ النَّمُوذَجَ الخَاصَّ بِالتَّسْجِيلِ.",
     "gorsel_betimleme_en_eski": "Application template form paper",
     "ses_erkek": "/sesler/kelimeler/erkek/0119_03_ornek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0119_03_ornek.mp3"
@@ -2915,7 +2915,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A freestanding 3D seminar stage platform with three armchairs and microphones, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0127_03_seminer.webp",
-    "ornek_ar": "حَضَرْنَا نَدْوَةً عَنْ التِّكْنُولُوجِيَا.",
+    "ornek_ar": "حَضَرْنَا نَدْوَةً عَنِ التِّكْنُولُوجِيَا.",
     "gorsel_betimleme_en_eski": "Panel discussion seminar stage",
     "ses_erkek": "/sesler/kelimeler/erkek/0127_03_seminer.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0127_03_seminer.mp3"
@@ -3007,7 +3007,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D academic graduation gown with a golden-trimmed hood draped on a stand, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0131_03_yuksek_lisans.webp",
-    "ornek_ar": "حَصَلَ المعَلِّمُ عَلَى المَاجِسْتِيرِ.",
+    "ornek_ar": "حَصَلَ المُعَلِّمُ عَلَى المَاجِسْتِيرِ.",
     "gorsel_betimleme_en_eski": "Master degree achievement sash certificate",
     "ses_erkek": "/sesler/kelimeler/erkek/0131_03_yuksek_lisans.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0131_03_yuksek_lisans.mp3"
@@ -3053,7 +3053,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A freestanding 3D presenter podium stand next to a projection presentation screen on a tripod, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0133_03_ders.webp",
-    "ornek_ar": "استَمَعْنَا إِلَى المُحَاضَرَةِ.",
+    "ornek_ar": "اِسْتَمَعْنَا إِلَى المُحَاضَرَةِ.",
     "gorsel_betimleme_en_eski": "University lecture presentation slides hall",
     "ses_erkek": "/sesler/kelimeler/erkek/0133_03_ders.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0133_03_ders.mp3"
@@ -3575,7 +3575,7 @@
     "tur": "isim",
     "kok": "ص ب ن",
     "arapca": "صَابُونٌ",
-    "ikincil_form": "صَابُونِاتٌ",
+    "ikincil_form": "صَابُونَاتٌ",
     "ucuncul_form": "صَابُونَةٌ",
     "turkce": "Sabun",
     "soru_kalibi": "مَا هَذَا؟",
@@ -4272,7 +4272,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D spray bottle of household cleaning detergent, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0186_04_temizlik_maddesi.webp",
-    "ornek_ar": "استَخْدَمْتُ المُنَظِّفَ لِتَنْظِيفِ الزُّجَاجِ.",
+    "ornek_ar": "اِسْتَخْدَمْتُ المُنَظِّفَ لِتَنْظِيفِ الزُّجَاجِ.",
     "gorsel_betimleme_en_eski": "A spray bottle of household cleaning detergent",
     "ses_erkek": "/sesler/kelimeler/erkek/0186_04_temizlik_maddesi.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0186_04_temizlik_maddesi.mp3"
@@ -4893,7 +4893,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D close-up view of a human neck and chin in profile, smooth natural style, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0213_05_boyun.webp",
-    "ornek_ar": "لَبِسَتْ المَرْأَةُ عِقْدًا حَوْلَ رَقَبَتِهَا.",
+    "ornek_ar": "لَبِسَتِ المَرْأَةُ عِقْدًا حَوْلَ رَقَبَتِهَا.",
     "gorsel_betimleme_en_eski": "Close up diagram of a human neck",
     "ses_erkek": "/sesler/kelimeler/erkek/0213_05_boyun.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0213_05_boyun.mp3"
@@ -4939,7 +4939,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D head mannequin displaying long flowing glossy dark brown hair, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0215_05_sac.webp",
-    "ornek_ar": "مَشَطَتْ الفَتَاةُ شَعَرَهَا الطَّوِيلَ.",
+    "ornek_ar": "مَشَطَتِ الفَتَاةُ شَعَرَهَا الطَّوِيلَ.",
     "gorsel_betimleme_en_eski": "Close up illustration of shiny dark human hair",
     "ses_erkek": "/sesler/kelimeler/erkek/0215_05_sac.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0215_05_sac.mp3"
@@ -5422,7 +5422,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A cute 3D baby face with a bright rosy pink cheek being gently pinched, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0236_05_yanak.webp",
-    "ornek_ar": "قَبَّلَتْ الأُمُّ خَدَّ طِفْلِهَا.",
+    "ornek_ar": "قَبَّلَتِ الأُمُّ خَدَّ طِفْلِهَا.",
     "gorsel_betimleme_en_eski": "Close up of a cute rosy child cheek",
     "ses_erkek": "/sesler/kelimeler/erkek/0236_05_yanak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0236_05_yanak.mp3"
@@ -5468,7 +5468,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A clean 3D render of closed pink human lips, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0238_05_dudak.webp",
-    "ornek_ar": "ابْتَسَمَتْ الفَتَاةُ بِشِفَاهٍ جَمِيلَةٍ.",
+    "ornek_ar": "ابْتَسَمَتِ الفَتَاةُ بِشِفَاهٍ جَمِيلَةٍ.",
     "gorsel_betimleme_en_eski": "Close up diagram of human lips",
     "ses_erkek": "/sesler/kelimeler/erkek/0238_05_dudak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0238_05_dudak.mp3"
@@ -6365,7 +6365,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D pink pleated girl's skirt isolated upright, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0277_06_etek.webp",
-    "ornek_ar": "اشْتَرَتْ الفَتَاةُ تَنُّورَةً حَمْرَاءَ.",
+    "ornek_ar": "اشْتَرَتِ الفَتَاةُ تَنُّورَةً حَمْرَاءَ.",
     "gorsel_betimleme_en_eski": "A pleated women's skirt on display",
     "ses_erkek": "/sesler/kelimeler/erkek/0277_06_etek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0277_06_etek.mp3"
@@ -6480,7 +6480,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D shiny gold wedding ring inside a velvet box, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0282_06_yuzuk.webp",
-    "ornek_ar": "لَبِسَتْ المَرْأَةُ خَاتَمًا ذَهَبِيًّا.",
+    "ornek_ar": "لَبِسَتِ المَرْأَةُ خَاتَمًا ذَهَبِيًّا.",
     "gorsel_betimleme_en_eski": "A shiny gold wedding ring inside a velvet box",
     "ses_erkek": "/sesler/kelimeler/erkek/0282_06_yuzuk.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0282_06_yuzuk.mp3"
@@ -6503,7 +6503,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D shiny pure gold bullion bars stacked, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0283_06_altin.webp",
-    "ornek_ar": "اشتَرَتْ المَرْأَةُ سِوارًا مِنَ الذَّهَبِ.",
+    "ornek_ar": "اِشْتَرَتِ المَرْأَةُ سِوَارًا مِنَ الذَّهَبِ.",
     "gorsel_betimleme_en_eski": "Shiny pure gold bullion bars stacked",
     "ses_erkek": "/sesler/kelimeler/erkek/0283_06_altin.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0283_06_altin.mp3"
@@ -6779,7 +6779,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D pink polka-dot girl's t-shirt with ruffled sleeves, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0295_06_pembe.webp",
-    "ornek_ar": "لَبِسَتْ الفَتَاةُ ثَوْبًا وَرْدِيًّا.",
+    "ornek_ar": "لَبِسَتِ الفَتَاةُ ثَوْبًا وَرْدِيًّا.",
     "gorsel_betimleme_en_eski": "A pink flower or dress",
     "ses_erkek": "/sesler/kelimeler/erkek/0295_06_pembe.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0295_06_pembe.mp3"
@@ -6802,7 +6802,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "An elegant 3D black flowing abaya gown with subtle golden embroidery on the sleeves, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0296_06_abaye.webp",
-    "ornek_ar": "لَبِسَتْ المَرْأَةُ العَبَاءَةَ.",
+    "ornek_ar": "لَبِسَتِ المَرْأَةُ العَبَاءَةَ.",
     "gorsel_betimleme_en_eski": "A traditional black flowing abaya garment",
     "ses_erkek": "/sesler/kelimeler/erkek/0296_06_abaye.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0296_06_abaye.mp3"
@@ -6825,7 +6825,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D soft silk pastel turquoise headscarf draped neatly on a mannequin stand, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0297_06_basortusu.webp",
-    "ornek_ar": "لَبِسَتْ الفَتَاةُ الحِجَابَ الجَمِيلَ.",
+    "ornek_ar": "لَبِسَتِ الفَتَاةُ الحِجَابَ الجَمِيلَ.",
     "gorsel_betimleme_en_eski": "A modest traditional headscarf hijab",
     "ses_erkek": "/sesler/kelimeler/erkek/0297_06_basortusu.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0297_06_basortusu.mp3"
@@ -6848,7 +6848,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D pearl necklace jewelry piece, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0298_06_kolye.webp",
-    "ornek_ar": "لَبِسَتْ المَرْأَةُ عِقْدًا مِنَ اللُّؤْلُؤِ.",
+    "ornek_ar": "لَبِسَتِ المَرْأَةُ عِقْدًا مِنَ اللُّؤْلُؤِ.",
     "gorsel_betimleme_en_eski": "A pearl necklace jewelry piece",
     "ses_erkek": "/sesler/kelimeler/erkek/0298_06_kolye.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0298_06_kolye.mp3"
@@ -6963,7 +6963,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A charming 3D long yellow summer dress with a waist bow, clean 3D studio product render, crisp fabric texture, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0303_06_elbise.webp",
-    "ornek_ar": "لَبِسَتْ الفَتَاةُ فُسْتَانًا جَمِيلًا.",
+    "ornek_ar": "لَبِسَتِ الفَتَاةُ فُسْتَانًا جَمِيلًا.",
     "gorsel_betimleme_en_eski": "An elegant long women dress",
     "ses_erkek": "/sesler/kelimeler/erkek/0303_06_elbise.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0303_06_elbise.mp3"
@@ -8021,7 +8021,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D dining table set with food dishes, glossy fresh 3D textbook food illustration, vibrant natural colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0349_07_sofra.webp",
-    "ornek_ar": "جَلَسَتْ العَائِلَةُ حَوْلَ المَائِدَةِ.",
+    "ornek_ar": "جَلَسَتِ العَائِلَةُ حَوْلَ المَائِدَةِ.",
     "gorsel_betimleme_en_eski": "A dining table set with food dishes",
     "ses_erkek": "/sesler/kelimeler/erkek/0349_07_sofra.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0349_07_sofra.mp3"
@@ -8527,7 +8527,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D sweet yellow melon fruit slice, glossy fresh 3D textbook food illustration, vibrant natural colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0371_07_kavun.webp",
-    "ornek_ar": "اشتَرَيْتُ الشَّمَّامَ مِنَ السُّوقِ.",
+    "ornek_ar": "اِشْتَرَيْتُ الشَّمَّامَ مِنَ السُّوقِ.",
     "gorsel_betimleme_en_eski": "A sweet yellow melon fruit slice",
     "ses_erkek": "/sesler/kelimeler/erkek/0371_07_kavun.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0371_07_kavun.mp3"
@@ -9033,7 +9033,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D vibrant pink blooming flower with green stem, cute 3D Pixar-style textbook render, expressive friendly details, full subject clearly visible, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0393_08_cicek.webp",
-    "ornek_ar": "قَطَفَتْ البِنْتُ زَهْرَةً جَمِيلَةً.",
+    "ornek_ar": "قَطَفَتِ البِنْتُ زَهْرَةً جَمِيلَةً.",
     "gorsel_betimleme_en_eski": "A vibrant pink blooming flower with green stem",
     "ses_erkek": "/sesler/kelimeler/erkek/0393_08_cicek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0393_08_cicek.mp3"
@@ -10298,7 +10298,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D octopus with eight tentacles, cute 3D Pixar-style textbook render, expressive friendly details, full subject clearly visible, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0448_08_ahtapot.webp",
-    "ornek_ar": "لِلإِخْطَبُوطِ ثَمَانِي أذرُعٍ.",
+    "ornek_ar": "لِلإِخْطَبُوطِ ثَمَانِي أَذْرُعٍ.",
     "gorsel_betimleme_en_eski": "An octopus with eight tentacles",
     "ses_erkek": "/sesler/kelimeler/erkek/0448_08_ahtapot.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0448_08_ahtapot.mp3"
@@ -10735,7 +10735,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D greengrocer selling fruit at stall, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0467_09_manav.webp",
-    "ornek_ar": "اشْتَرَيْتُ التفَّاحَ مِنَ الفَاكِهَانِيِّ.",
+    "ornek_ar": "اشْتَرَيْتُ التُّفَّاحَ مِنَ الفَاكِهَانِيِّ.",
     "gorsel_betimleme_en_eski": "A greengrocer selling fruit at stall",
     "ses_erkek": "/sesler/kelimeler/erkek/0467_09_manav.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0467_09_manav.mp3"
@@ -10804,7 +10804,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D person reading a book attentively, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0470_09_okuyucu.webp",
-    "ornek_ar": "استَمَعْنَا إِلَى القَارِئِ الكَرِيمِ.",
+    "ornek_ar": "اِسْتَمَعْنَا إِلَى القَارِئِ الكَرِيمِ.",
     "gorsel_betimleme_en_eski": "A person reading a book attentively",
     "ses_erkek": "/sesler/kelimeler/erkek/0470_09_okuyucu.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0470_09_okuyucu.mp3"
@@ -10965,7 +10965,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D queen wearing tiara royal gown, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0477_09_kralice.webp",
-    "ornek_ar": "حَضَرَتْ المَلِكَةُ فِي الحَفْلِ.",
+    "ornek_ar": "حَضَرَتِ المَلِكَةُ فِي الحَفْلِ.",
     "gorsel_betimleme_en_eski": "A queen wearing tiara royal gown",
     "ses_erkek": "/sesler/kelimeler/erkek/0477_09_kralice.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0477_09_kralice.mp3"
@@ -11770,7 +11770,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D large cruise ship sailing on ocean waves, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0512_10_gemi.webp",
-    "ornek_ar": "أَبْحَرَتْ السَّفِينَةُ فِي البَحْرِ.",
+    "ornek_ar": "أَبْحَرَتِ السَّفِينَةُ فِي البَحْرِ.",
     "gorsel_betimleme_en_eski": "A large cruise ship sailing on ocean waves",
     "ses_erkek": "/sesler/kelimeler/erkek/0512_10_gemi.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0512_10_gemi.mp3"
@@ -12253,7 +12253,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D large cargo transport truck, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0533_10_kamyon.webp",
-    "ornek_ar": "تَنقُلُ الشَّاحِنَةُ البَضَائِعَ.",
+    "ornek_ar": "تَنْقُلُ الشَّاحِنَةُ البَضَائِعَ.",
     "gorsel_betimleme_en_eski": "A large cargo transport truck",
     "ses_erkek": "/sesler/kelimeler/erkek/0533_10_kamyon.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0533_10_kamyon.mp3"
@@ -12575,7 +12575,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D suspension bridge over a river connecting city sides, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0547_10_kopru.webp",
-    "ornek_ar": "عَبَرَتْ السَّيَّارَةُ الجِسْرَ الكَبِيرَ.",
+    "ornek_ar": "عَبَرَتِ السَّيَّارَةُ الجِسْرَ الكَبِيرَ.",
     "gorsel_betimleme_en_eski": "Suspension bridge over a river connecting city sides",
     "ses_erkek": "/sesler/kelimeler/erkek/0547_10_kopru.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0547_10_kopru.mp3"
@@ -13196,7 +13196,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A traditional 3D two-pan brass balance scale with metal weights on one side and red apples on the other, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0574_11_kilo.webp",
-    "ornek_ar": "اشْتَرَيْتُ كَيْلُو غَرَامٍ مِنَ التفَّاحِ.",
+    "ornek_ar": "اشْتَرَيْتُ كَيْلُو غَرَامٍ مِنَ التُّفَّاحِ.",
     "gorsel_betimleme_en_eski": "Weight metric scale measurement unit",
     "ses_erkek": "/sesler/kelimeler/erkek/0574_11_kilo.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0574_11_kilo.mp3"
@@ -13587,7 +13587,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D warehouse merchandise goods stacked, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0591_11_mal.webp",
-    "ornek_ar": "وَصَلَتْ البِضَاعَةُ الجَدِيدَةُ.",
+    "ornek_ar": "وَصَلَتِ البِضَاعَةُ الجَدِيدَةُ.",
     "gorsel_betimleme_en_eski": "Warehouse merchandise goods stacked",
     "ses_erkek": "/sesler/kelimeler/erkek/0591_11_mal.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0591_11_mal.mp3"
@@ -13610,7 +13610,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D wrapped cardboard postal parcel, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0592_11_koli.webp",
-    "ornek_ar": "استَلَمْتُ الطَّرْدَ البَرِيدِيَّ.",
+    "ornek_ar": "اِسْتَلَمْتُ الطَّرْدَ البَرِيدِيَّ.",
     "gorsel_betimleme_en_eski": "Wrapped cardboard postal parcel",
     "ses_erkek": "/sesler/kelimeler/erkek/0592_11_koli.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0592_11_koli.mp3"
@@ -13863,7 +13863,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D freight cargo pallet container, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0603_11_yuk.webp",
-    "ornek_ar": "نُقِلَتْ الشِّحْنَةُ بِالسَّفِينَةِ.",
+    "ornek_ar": "نُقِلَتِ الشِّحْنَةُ بِالسَّفِينَةِ.",
     "gorsel_betimleme_en_eski": "Freight cargo pallet container",
     "ses_erkek": "/sesler/kelimeler/erkek/0603_11_yuk.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0603_11_yuk.mp3"
@@ -13886,7 +13886,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D customs inspection border post, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0604_11_gumruk.webp",
-    "ornek_ar": "فُحِصَتْ البَضَائِعُ فِي الجُمْرُكِ.",
+    "ornek_ar": "فُحِصَتِ البَضَائِعُ فِي الجُمْرُكِ.",
     "gorsel_betimleme_en_eski": "Customs inspection border post",
     "ses_erkek": "/sesler/kelimeler/erkek/0604_11_gumruk.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0604_11_gumruk.mp3"
@@ -14024,7 +14024,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person carrying colourful shopping bags at a mall, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0610_11_alisveris_yapmak.webp",
-    "ornek_ar": "تَسَوَّقَتْ العَائِلَةُ فِي المَرْكَزِ التِّجَارِيِّ.",
+    "ornek_ar": "تَسَوَّقَتِ العَائِلَةُ فِي المَرْكَزِ التِّجَارِيِّ.",
     "gorsel_betimleme_en_eski": "A person carrying colourful shopping bags at a mall",
     "ses_erkek": "/sesler/kelimeler/erkek/0610_11_alisveris_yapmak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0610_11_alisveris_yapmak.mp3"
@@ -14898,7 +14898,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A bright orange 3D fruit cut cleanly in half showing two equal halves, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0648_12_yarim.webp",
-    "ornek_ar": "أَكَلْتُ نِصْفَ التفَّاحَةِ.",
+    "ornek_ar": "أَكَلْتُ نِصْفَ التُّفَّاحَةِ.",
     "gorsel_betimleme_en_eski": "An apple cut cleanly into two half pieces",
     "ses_erkek": "/sesler/kelimeler/erkek/0648_12_yarim.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0648_12_yarim.mp3"
@@ -15726,7 +15726,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "Two runners racing side by side to finish line, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0684_13_rekabet.webp",
-    "ornek_ar": "جَرَتْ المُنَافَسَةُ بَيْنَ الفَرِيقَيْنِ.",
+    "ornek_ar": "جَرَتِ المُنَافَسَةُ بَيْنَ الفَرِيقَيْنِ.",
     "gorsel_betimleme_en_eski": "Two runners racing side by side to finish line",
     "ses_erkek": "/sesler/kelimeler/erkek/0684_13_rekabet.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0684_13_rekabet.mp3"
@@ -16255,7 +16255,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D tour guide explaining history to a group, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0707_14_turist_rehberi.webp",
-    "ornek_ar": "راَفَقَنَا الدَّلِيلُ السِّيَاحِيُّ فِي الجَوْلَةِ.",
+    "ornek_ar": "رَافَقَنَا الدَّلِيلُ السِّيَاحِيُّ فِي الجَوْلَةِ.",
     "gorsel_betimleme_en_eski": "A tour guide explaining history to a group",
     "ses_erkek": "/sesler/kelimeler/erkek/0707_14_turist_rehberi.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0707_14_turist_rehberi.mp3"
@@ -17244,7 +17244,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D gentle smiling polite person, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0750_16_hos.webp",
-    "ornek_ar": "هَذَا المعَلِّمُ لَطِيفٌ مَعَ الطُّلَّابِ.",
+    "ornek_ar": "هَذَا المُعَلِّمُ لَطِيفٌ مَعَ الطُّلَّابِ.",
     "gorsel_betimleme_en_eski": "A gentle smiling polite person",
     "ses_erkek": "/sesler/kelimeler/erkek/0750_16_hos.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0750_16_hos.mp3"
@@ -17313,7 +17313,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D wrapped gift surprise box with ribbon, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0753_16_surpriz.webp",
-    "ornek_ar": "أَعَدَّتْ العَائِلَةُ مُفَاجَأَةً لِلأَبِ.",
+    "ornek_ar": "أَعَدَّتِ العَائِلَةُ مُفَاجَأَةً لِلأَبِ.",
     "gorsel_betimleme_en_eski": "A wrapped gift surprise box with ribbon",
     "ses_erkek": "/sesler/kelimeler/erkek/0753_16_surpriz.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0753_16_surpriz.mp3"
@@ -17543,7 +17543,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D student giving flower thanking teacher, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0763_16_tesekkur_etmek.webp",
-    "ornek_ar": "شَكَرَ الطَّالِبُ المعلِّمَ عَلَى المُسَاعَدَةِ.",
+    "ornek_ar": "شَكَرَ الطَّالِبُ المُعَلِّمَ عَلَى المُسَاعَدَةِ.",
     "gorsel_betimleme_en_eski": "A student giving flower thanking teacher",
     "ses_erkek": "/sesler/kelimeler/erkek/0763_16_tesekkur_etmek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0763_16_tesekkur_etmek.mp3"
@@ -17635,7 +17635,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D lazy person sleeping at work desk, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0767_16_tembel.webp",
-    "ornek_ar": "هَذَا الطَّالِبُ كَسْلَانُ لَا يَفْعَلُ الواجِبَ.",
+    "ornek_ar": "هَذَا الطَّالِبُ كَسْلَانُ لَا يَفْعَلُ الوَاجِبَ.",
     "gorsel_betimleme_en_eski": "A lazy person sleeping at work desk",
     "ses_erkek": "/sesler/kelimeler/erkek/0767_16_tembel.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0767_16_tembel.mp3"
@@ -18348,7 +18348,7 @@
     "gorsel_tipi": "3_Sembolik_Sahne",
     "gorsel_betimleme_en": "A polite 3D boy bowing slightly and offering a white dove and a rose, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0798_16_mazeret.webp",
-    "ornek_ar": "قَبِلَ المعَلِّمُ عُذْرَ الطَّالِبِ الغَائِبِ.",
+    "ornek_ar": "قَبِلَ المُعَلِّمُ عُذْرَ الطَّالِبِ الغَائِبِ.",
     "gorsel_betimleme_en_eski": "Apology note with respectful gesture",
     "ses_erkek": "/sesler/kelimeler/erkek/0798_16_mazeret.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0798_16_mazeret.mp3"
@@ -18969,7 +18969,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D ancient architectural civilization ruins, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0826_17_medeniyet.webp",
-    "ornek_ar": "تَمَيَّزَتْ الحَضَارَةُ الإِسْلَامِيَّةُ.",
+    "ornek_ar": "تَمَيَّزَتِ الحَضَارَةُ الإِسْلَامِيَّةُ.",
     "gorsel_betimleme_en_eski": "Ancient architectural civilization ruins",
     "ses_erkek": "/sesler/kelimeler/erkek/0826_17_medeniyet.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0826_17_medeniyet.mp3"
@@ -19337,7 +19337,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D smooth rounded grey stone river rock, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0842_18_tas.webp",
-    "ornek_ar": "رمَى الوَلَدُ الحَجَرَ فِي المَاءِ.",
+    "ornek_ar": "رَمَى الوَلَدُ الحَجَرَ فِي المَاءِ.",
     "gorsel_betimleme_en_eski": "Smooth rounded grey stone river rock",
     "ses_erkek": "/sesler/kelimeler/erkek/0842_18_tas.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0842_18_tas.mp3"
@@ -20372,7 +20372,7 @@
     "gorsel_tipi": "1_Somut_Nesne",
     "gorsel_betimleme_en": "A 3D gas station fuel nozzle pump handle, high-detail 3D educational textbook studio render, vibrant clean colors, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0887_18_yakit.webp",
-    "ornek_ar": "مَلأْتُ السَّيَّارَةَ بِالوَقُودِ.",
+    "ornek_ar": "مَلَأْتُ السَّيَّارَةَ بِالوَقُودِ.",
     "gorsel_betimleme_en_eski": "Gas station fuel nozzle pump handle",
     "ses_erkek": "/sesler/kelimeler/erkek/0887_18_yakit.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0887_18_yakit.mp3"
@@ -20809,7 +20809,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person arriving opening the door, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0906_19_gelmek.webp",
-    "ornek_ar": "جَاءَ المعَلِّمُ إِلَى الفَصْلِ مُبَكِّرًا.",
+    "ornek_ar": "جَاءَ المُعَلِّمُ إِلَى الفَصْلِ مُبَكِّرًا.",
     "gorsel_betimleme_en_eski": "A person arriving at home opening the door",
     "ses_erkek": "/sesler/kelimeler/erkek/0906_19_gelmek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0906_19_gelmek.mp3"
@@ -20901,7 +20901,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D student entering through classroom doorway, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0910_19_girmek.webp",
-    "ornek_ar": "دَخَلَ المعلِّمُ إِلَى الفَصْلِ بَابِتِسَامَةٍ.",
+    "ornek_ar": "دَخَلَ المُعَلِّمُ إِلَى الفَصْلِ بِابْتِسَامَةٍ.",
     "gorsel_betimleme_en_eski": "A student entering through classroom doorway",
     "ses_erkek": "/sesler/kelimeler/erkek/0910_19_girmek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0910_19_girmek.mp3"
@@ -21039,7 +21039,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D leaf or fruit falling down from a tree, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0916_19_dusmek.webp",
-    "ornek_ar": "سَقَطَتْ التُّفَّاحَةُ مِنَ الشَّجَرَةِ.",
+    "ornek_ar": "سَقَطَتِ التُّفَّاحَةُ مِنَ الشَّجَرَةِ.",
     "gorsel_betimleme_en_eski": "A leaf or fruit falling down from a tree",
     "ses_erkek": "/sesler/kelimeler/erkek/0916_19_dusmek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0916_19_dusmek.mp3"
@@ -21269,7 +21269,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person standing up from chair posture, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0926_19_kalkmak.webp",
-    "ornek_ar": "قَامَ الطَّالِبُ عِنْدَمَا دَخَلَ المعَلِّمُ.",
+    "ornek_ar": "قَامَ الطَّالِبُ عِنْدَمَا دَخَلَ المُعَلِّمُ.",
     "gorsel_betimleme_en_eski": "A person standing up from chair posture",
     "ses_erkek": "/sesler/kelimeler/erkek/0926_19_kalkmak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0926_19_kalkmak.mp3"
@@ -21476,7 +21476,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person speaking holding a speech bubble, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0935_19_soylemek.webp",
-    "ornek_ar": "قَالَ المعَلِّمُ كَلَامًا طَيِّبًا.",
+    "ornek_ar": "قَالَ المُعَلِّمُ كَلَامًا طَيِّبًا.",
     "gorsel_betimleme_en_eski": "A person speaking holding a speech bubble",
     "ses_erkek": "/sesler/kelimeler/erkek/0935_19_soylemek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0935_19_soylemek.mp3"
@@ -21545,7 +21545,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D student raising hand asking teacher question, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0938_19_sormak.webp",
-    "ornek_ar": "سَأَلَ الطَّالِبُ المعَلِّمَ عَنِ المَسْأَلَةِ.",
+    "ornek_ar": "سَأَلَ الطَّالِبُ المُعَلِّمَ عَنِ المَسْأَلَةِ.",
     "gorsel_betimleme_en_eski": "A student raising hand asking teacher question",
     "ses_erkek": "/sesler/kelimeler/erkek/0938_19_sormak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0938_19_sormak.mp3"
@@ -21706,7 +21706,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D speaking into a microphone, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0945_19_konusmak.webp",
-    "ornek_ar": "تَكَلَّمَ المعَلِّمُ مَعَ الطُّلَّابِ.",
+    "ornek_ar": "تَكَلَّمَ المُعَلِّمُ مَعَ الطُّلَّابِ.",
     "gorsel_betimleme_en_eski": "Speaking into a microphone",
     "ses_erkek": "/sesler/kelimeler/erkek/0945_19_konusmak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0945_19_konusmak.mp3"
@@ -21821,7 +21821,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D one person giving a present box to another, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0950_19_vermek.webp",
-    "ornek_ar": "أَعْطَى المعَلِّمُ الهَدِيَّةَ لِلطَّالِبِ المُمَتَازِ.",
+    "ornek_ar": "أَعْطَى المُعَلِّمُ الهَدِيَّةَ لِلطَّالِبِ المُمْتَازِ.",
     "gorsel_betimleme_en_eski": "One person giving a present box to another",
     "ses_erkek": "/sesler/kelimeler/erkek/0950_19_vermek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0950_19_vermek.mp3"
@@ -21913,7 +21913,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D gentle smile on a child's face, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0954_19_gulumsemek.webp",
-    "ornek_ar": "تَبَسَّمَ المعَلِّمُ فِي وَجْهِ الطُّلَّابِ.",
+    "ornek_ar": "تَبَسَّمَ المُعَلِّمُ فِي وَجْهِ الطُّلَّابِ.",
     "gorsel_betimleme_en_eski": "Gentle smile on a child's face",
     "ses_erkek": "/sesler/kelimeler/erkek/0954_19_gulumsemek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0954_19_gulumsemek.mp3"
@@ -22074,7 +22074,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person answering the phone call politely, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0961_19_cevap_vermek.webp",
-    "ornek_ar": "رَدَّ الطَّالِبُ عَلَى سُؤَالِ المعَلِّمِ.",
+    "ornek_ar": "رَدَّ الطَّالِبُ عَلَى سُؤَالِ المُعَلِّمِ.",
     "gorsel_betimleme_en_eski": "A person answering the phone call politely",
     "ses_erkek": "/sesler/kelimeler/erkek/0961_19_cevap_vermek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0961_19_cevap_vermek.mp3"
@@ -22235,7 +22235,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D person choosing path at a signpost, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0968_19_karar_vermek.webp",
-    "ornek_ar": "قَرَّرَتْ العَائِلَةُ السَّفَرَ فِي الصَّيْفِ.",
+    "ornek_ar": "قَرَّرَتِ العَائِلَةُ السَّفَرَ فِي الصَّيْفِ.",
     "gorsel_betimleme_en_eski": "A person choosing path at a signpost",
     "ses_erkek": "/sesler/kelimeler/erkek/0968_19_karar_vermek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0968_19_karar_vermek.mp3"
@@ -22258,7 +22258,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D cutting a cake into equal slices, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0969_19_bolmek.webp",
-    "ornek_ar": "قَسَمَ الأَبُ التفَّاحَةَ بَيْنَ الوَلَدَيْنِ.",
+    "ornek_ar": "قَسَمَ الأَبُ التُّفَّاحَةَ بَيْنَ الوَلَدَيْنِ.",
     "gorsel_betimleme_en_eski": "Cutting a cake into equal slices",
     "ses_erkek": "/sesler/kelimeler/erkek/0969_19_bolmek.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0969_19_bolmek.mp3"
@@ -22626,7 +22626,7 @@
     "gorsel_tipi": "2_Net_Eylem",
     "gorsel_betimleme_en": "A 3D group of business people meeting around a conference table, charming 3D Pixar-style textbook character render, clear facial expression and body action, isolated on a pure solid white background (#FFFFFF) with a soft contact shadow underneath",
     "gorsel": "/gorseller/kelimeler/0985_19_toplanmak.webp",
-    "ornek_ar": "اِجْتَمَعَ المعَلِّمُونَ فِي غُرْفَةِ الاِجْتِمَاعَاتِ.",
+    "ornek_ar": "اِجْتَمَعَ المُعَلِّمُونَ فِي غُرْفَةِ الاِجْتِمَاعَاتِ.",
     "gorsel_betimleme_en_eski": "A group of business people meeting around a conference table",
     "ses_erkek": "/sesler/kelimeler/erkek/0985_19_toplanmak.mp3",
     "ses_kadin": "/sesler/kelimeler/kadin/0985_19_toplanmak.mp3"

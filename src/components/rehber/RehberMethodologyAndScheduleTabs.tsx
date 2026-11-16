@@ -428,13 +428,13 @@ export function RehberScheduleTab({ role }: MethodProps) {
     return (
       <div className="space-y-6">
         {/* Günlük 30 Dakikalık İdeal Çalışma Rutini Tablosu */}
-        <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4">
+        <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)] pb-3">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-9 h-9 rounded-xl bg-[#087F5B] text-white flex items-center justify-center shrink-0">
                 <Clock size={18} />
               </span>
-              <div>
+              <div className="min-w-0">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#087F5B] dark:text-emerald-300">
                   Günlük Plan • Her Gün 30 Dakika
                 </span>
@@ -453,8 +453,8 @@ export function RehberScheduleTab({ role }: MethodProps) {
             </Link>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <div className="w-full max-w-full overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+            <table className="w-full min-w-[540px] text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr className="bg-[#F7EFE1] dark:bg-[var(--background)] text-[var(--foreground)] border-b border-[#E6D7BE] dark:border-[var(--border)]">
                   <th className="py-2.5 px-3 font-extrabold whitespace-nowrap">
@@ -752,8 +752,8 @@ export function RehberScheduleTab({ role }: MethodProps) {
   return (
     <div className="space-y-6">
       {/* Üst Senaryo Görünüm Seçici */}
-      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="space-y-0.5">
+      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
+        <div className="space-y-0.5 min-w-0">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#6741D9] dark:text-purple-300">
             Kurumsal Müfredat Matrisi • İki Ayrı Kurum Senaryosu
           </span>
@@ -762,7 +762,7 @@ export function RehberScheduleTab({ role }: MethodProps) {
           </h2>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             { id: "both" as const, label: "Yan Yana Karşılaştır" },
             { id: "meb" as const, label: "1. Okul / MEB (2–4 Saat)" },
@@ -775,7 +775,7 @@ export function RehberScheduleTab({ role }: MethodProps) {
                 playClick();
                 setTeacherScenarioView(opt.id);
               }}
-              className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-normal sm:whitespace-nowrap text-left sm:text-center cursor-pointer transition-colors ${
                 teacherScenarioView === opt.id
                   ? "bg-[#6741D9] text-white"
                   : "bg-white dark:bg-[var(--background)] text-[var(--foreground)] border border-[#E6D7BE] dark:border-[var(--border)]"
@@ -794,11 +794,11 @@ export function RehberScheduleTab({ role }: MethodProps) {
       >
         {/* TABLO 1: OKUL / MEB SINIF SENARYOSU */}
         {(teacherScenarioView === "both" || teacherScenarioView === "meb") && (
-          <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4 min-w-0">
             <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)] pb-3">
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#087F5B] text-white text-[11px] font-extrabold">
-                  <School size={13} />
+                  <School size={13} className="shrink-0" />
                   <span>Tablo 1 • Okul / MEB Sınıf Senaryosu</span>
                 </div>
                 <h3 className="text-base font-black text-[var(--foreground)]">
@@ -811,8 +811,8 @@ export function RehberScheduleTab({ role }: MethodProps) {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="w-full max-w-full overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+              <table className="w-full min-w-[540px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#F7EFE1] dark:bg-[var(--background)] text-[var(--foreground)] border-b border-[#E6D7BE] dark:border-[var(--border)]">
                     <th className="py-2.5 px-2.5 font-extrabold whitespace-nowrap">
@@ -981,11 +981,11 @@ export function RehberScheduleTab({ role }: MethodProps) {
         {/* TABLO 2: GENEL DİL KURSU & YOĞUN HAZIRLIK SENARYOSU */}
         {(teacherScenarioView === "both" ||
           teacherScenarioView === "intensive") && (
-          <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#6741D9] p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#6741D9] p-4 sm:p-5 space-y-4 min-w-0">
             <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)] pb-3">
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#6741D9] text-white text-[11px] font-extrabold">
-                  <Flame size={13} />
+                  <Flame size={13} className="shrink-0" />
                   <span>Tablo 2 • Dil Kursu &amp; Yoğun Hazırlık Senaryosu</span>
                 </div>
                 <h3 className="text-base font-black text-[var(--foreground)]">
@@ -998,8 +998,8 @@ export function RehberScheduleTab({ role }: MethodProps) {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="w-full max-w-full overflow-x-auto rounded-xl border border-[#E6D7BE] dark:border-[var(--border)]">
+              <table className="w-full min-w-[540px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#F7EFE1] dark:bg-[var(--background)] text-[var(--foreground)] border-b border-[#E6D7BE] dark:border-[var(--border)]">
                     <th className="py-2.5 px-2.5 font-extrabold whitespace-nowrap">

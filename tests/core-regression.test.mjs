@@ -10088,8 +10088,10 @@ test("86. Kapsamlı Kullanım Rehberi & 24 Haftalık Çalışma Programı Merkez
       rehberPageSrc.includes("REHBER_ROLE_STORAGE_KEY") &&
       rehberPageSrc.includes("Bireysel Öğrenen Modu") &&
       rehberPageSrc.includes("Sınıf &amp; Kurs Öğretmeni Modu") &&
-      rehberPageSrc.includes("window.print()"),
-    "/rehber sayfası CONTENT_INVENTORY, rol seçici ve A4 yazdırma tetikleyicisini içermelidir"
+      rehberPageSrc.includes("window.print()") &&
+      rehberPageSrc.includes("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full") &&
+      rehberPageSrc.includes("w-full lg:w-auto min-h-[44px]"),
+    "/rehber sayfası CONTENT_INVENTORY, rol seçici, taşmayan 4 sütunlu sekme ızgarası ve mobil tam genişlik A4 yazdırma tetikleyicisini içermelidir"
   );
 
   assert.ok(
@@ -10107,8 +10109,9 @@ test("86. Kapsamlı Kullanım Rehberi & 24 Haftalık Çalışma Programı Merkez
       rehberMethodSrc.includes("40 Dakikalık Standart Akıllı Tahta") &&
       rehberMethodSrc.includes("Tablo 1 • Okul / MEB Sınıf Senaryosu") &&
       rehberMethodSrc.includes("Tablo 2 • Dil Kursu &amp; Yoğun Hazırlık Senaryosu") &&
-      rehberMethodSrc.includes("Maarif Rubriği"),
-    "RehberMethodologyAndScheduleTabs hem bireysel 5+1+1 planını hem öğretmenin 2 ayrı kurum tablosunu içermelidir"
+      rehberMethodSrc.includes("Maarif Rubriği") &&
+      rehberMethodSrc.includes("w-full max-w-full overflow-x-auto"),
+    "RehberMethodologyAndScheduleTabs hem bireysel 5+1+1 planını, hem öğretmenin 2 ayrı kurum tablosunu hem de mobil w-full overflow-x-auto korumasını içermelidir"
   );
 
   assert.ok(

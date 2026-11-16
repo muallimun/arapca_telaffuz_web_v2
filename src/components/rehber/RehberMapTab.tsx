@@ -328,8 +328,8 @@ export default function RehberMapTab({ role }: RehberMapTabProps) {
   return (
     <div className="space-y-6">
       {/* ROL DUYARLI HIZLI PUSULA ŞERİDİ */}
-      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="space-y-1">
+      <div className="rounded-2xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
+        <div className="space-y-1 min-w-0">
           <div className="inline-flex items-center gap-2 text-xs font-extrabold text-[#087F5B] dark:text-emerald-300">
             <Compass size={15} className="shrink-0" />
             <span>
@@ -345,7 +345,7 @@ export default function RehberMapTab({ role }: RehberMapTabProps) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -354,7 +354,7 @@ export default function RehberMapTab({ role }: RehberMapTabProps) {
             }}
             className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9] text-xs font-extrabold text-[#6741D9] dark:text-purple-300 inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
-            <HelpCircle size={14} />
+            <HelpCircle size={14} className="shrink-0" />
             <span>İkon &amp; Renk Sözlüğü</span>
           </button>
           <Link
@@ -363,7 +363,7 @@ export default function RehberMapTab({ role }: RehberMapTabProps) {
             className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             <span>Örnek Stüdyoyu Aç (Diyalog 1)</span>
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={14} className="shrink-0" />
           </Link>
         </div>
       </div>

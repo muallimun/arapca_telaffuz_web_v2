@@ -1,8 +1,8 @@
 {
-  "dateKey": "2026-11-16",
-  "totalUsers": 1503,
-  "todayUsers": 13,
-  "totalSessions": 3943,
+  "dateKey": "2026-11-17",
+  "totalUsers": 1504,
+  "todayUsers": 2,
+  "totalSessions": 3944,
   "knownVisitorIds": [
     "85e2cc77-bf54-45bb-b42c-1e26e7f901cc",
     "93efee71-f2e9-4d61-a510-446307d93fee",
@@ -26,21 +26,11 @@
     "88fba386-92f3-40e8-9a16-43fbc72cd2ac",
     "5989cde0-e250-4b76-90c6-998b83c1a6a2",
     "78b778c0-c25d-46b7-a697-ad341f5eef0a",
-    "1ddf07d5-c8db-498f-b1d1-c033b128b245"
+    "1ddf07d5-c8db-498f-b1d1-c033b128b245",
+    "fd6f93a2-3999-4a9f-8d55-36a1f7a8024f"
   ],
   "todayVisitorIds": [
-    "eb9036d9-d304-4e3c-bbe8-38cd19b2274d",
-    "6395ab18-bea4-4015-a955-351bddf11350",
-    "c3745919-1b32-4261-9b5b-256f93c8adb2",
-    "44c83374-b39a-42a7-b595-6f2933f86491",
-    "2dda0054-3e9e-4fab-95a3-02fc63c19c96",
-    "09d83279-b3d5-43ec-bb7b-65b874335724",
-    "562a2f12-e6a9-48bb-a6a7-1e687cbde23f",
-    "6157e84f-1afc-481e-99b8-a0a1ced5917e",
-    "88fba386-92f3-40e8-9a16-43fbc72cd2ac",
-    "5989cde0-e250-4b76-90c6-998b83c1a6a2",
-    "78b778c0-c25d-46b7-a697-ad341f5eef0a",
-    "1ddf07d5-c8db-498f-b1d1-c033b128b245"
+    "fd6f93a2-3999-4a9f-8d55-36a1f7a8024f"
   ],
   "visitorLastSeen": {
     "85e2cc77-bf54-45bb-b42c-1e26e7f901cc": {
@@ -134,6 +124,10 @@
     "1ddf07d5-c8db-498f-b1d1-c033b128b245": {
       "lastSessionId": "s_mwjprnwv_3e793m",
       "lastTimestamp": 1794860798664
+    },
+    "fd6f93a2-3999-4a9f-8d55-36a1f7a8024f": {
+      "lastSessionId": "s_mwjrfr26_gw67k6",
+      "lastTimestamp": 1794863601827
     }
   }
 }

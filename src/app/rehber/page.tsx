@@ -155,20 +155,20 @@ function RehberPageInner() {
       {/* EKRAN GÖRÜNÜMÜ (YAZDIRIRKEN GİZLENİR) */}
       <div className="space-y-5 print:hidden">
         {/* ÜST HERO & A4 YAZDIRMA ÇUBUĞU */}
-        <section className="rounded-3xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
-            <div className="space-y-1.5">
+        <section className="rounded-3xl bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 p-4 sm:p-6 space-y-4 min-w-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 min-w-0">
+            <div className="space-y-1.5 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href="/"
                   onClick={() => playClick()}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--muted)] hover:text-[var(--foreground)]"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] text-xs font-bold text-[var(--muted)] hover:text-[var(--foreground)] shrink-0"
                 >
-                  <ArrowLeft size={13} />
+                  <ArrowLeft size={13} className="shrink-0" />
                   <span>Ana Sayfa</span>
                 </Link>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-xs font-extrabold">
-                  <BookOpen size={13} />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#087F5B] text-white text-[11px] sm:text-xs font-extrabold leading-snug">
+                  <BookOpen size={13} className="shrink-0" />
                   <span>Kullanım Rehberi &amp; Çalışma Programı Merkezi</span>
                 </span>
               </div>
@@ -186,7 +186,7 @@ function RehberPageInner() {
             <button
               type="button"
               onClick={handlePrint}
-              className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#064E3B] text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-2 shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+              className="w-full lg:w-auto min-h-[44px] px-3.5 sm:px-4 py-2.5 rounded-2xl bg-[#087F5B] hover:bg-[#065F46] text-white border-b-3 border-[#064E3B] text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-2 text-center whitespace-normal sm:whitespace-nowrap lg:shrink-0 cursor-pointer transition-colors leading-snug"
             >
               <span>🖨️ Bu Rehberi &amp; Takip Çizelgesini Yazdır (A4 PDF)</span>
             </button>
@@ -198,7 +198,7 @@ function RehberPageInner() {
               type="button"
               aria-pressed={role === "learner"}
               onClick={() => handleSelectRole("learner")}
-              className={`text-left rounded-2xl p-3.5 sm:p-4 border-2 transition-all cursor-pointer flex items-start gap-3 ${
+              className={`w-full min-w-0 text-left rounded-2xl p-3.5 sm:p-4 border-2 transition-all cursor-pointer flex items-start gap-3 ${
                 role === "learner"
                   ? "bg-[#ECFDF5] dark:bg-emerald-950/40 border-[#087F5B] shadow-2xs"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#087F5B]/60"
@@ -214,8 +214,8 @@ function RehberPageInner() {
                 <GraduationCap size={20} />
               </span>
               <div className="min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-black text-[var(--foreground)]">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs sm:text-sm font-black text-[var(--foreground)] leading-snug">
                     🎓 Bireysel Öğrenen Modu
                   </span>
                   {role === "learner" && (
@@ -224,7 +224,7 @@ function RehberPageInner() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-medium text-[var(--muted)]">
+                <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
                   Öğretmensiz kendi başına çalışanlar için günlük 30 dk rutin, 5
                   adımlı diyalog özümseme ve 5+1+1 haftalık çalışma planı.
                 </p>
@@ -235,7 +235,7 @@ function RehberPageInner() {
               type="button"
               aria-pressed={role === "teacher"}
               onClick={() => handleSelectRole("teacher")}
-              className={`text-left rounded-2xl p-3.5 sm:p-4 border-2 transition-all cursor-pointer flex items-start gap-3 ${
+              className={`w-full min-w-0 text-left rounded-2xl p-3.5 sm:p-4 border-2 transition-all cursor-pointer flex items-start gap-3 ${
                 role === "teacher"
                   ? "bg-[#F3F0FF] dark:bg-purple-950/40 border-[#6741D9] shadow-2xs"
                   : "bg-white dark:bg-[var(--background)] border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]/60"
@@ -251,8 +251,8 @@ function RehberPageInner() {
                 <Users size={20} />
               </span>
               <div className="min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-black text-[var(--foreground)]">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs sm:text-sm font-black text-[var(--foreground)] leading-snug">
                     👨‍🏫 Sınıf &amp; Kurs Öğretmeni Modu
                   </span>
                   {role === "teacher" && (
@@ -261,7 +261,7 @@ function RehberPageInner() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-medium text-[var(--muted)]">
+                <p className="text-xs font-medium text-[var(--muted)] leading-relaxed">
                   Akıllı tahta 40 dk ders akışı, A/B ikili kartlar, karekod ödev,
                   MEB 36 hafta &amp; yoğun dil kursu müfredat matrisi.
                 </p>
@@ -270,7 +270,7 @@ function RehberPageInner() {
           </div>
 
           {/* DİNAMİK PLATFORM ENVANTER ŞERİDİ */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-xs font-extrabold text-[var(--foreground)] tabular-nums">
+          <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-xs font-extrabold text-[var(--foreground)] tabular-nums">
             <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] whitespace-nowrap shrink-0">
               📖 {CONTENT_INVENTORY.dialoguesCount} Diyalog
             </span>
@@ -298,10 +298,10 @@ function RehberPageInner() {
           </div>
         </section>
 
-        {/* 4 ANA SEKME ÇUBUĞU (MOBİLDE YATAY KAYDIRILABİLİR, MASAÜSTÜNDE TAM SIĞAN TEK SATIR) */}
+        {/* 4 ANA SEKME ÇUBUĞU (MOBİLDE 1 SÜTUN, TABLETTE 2x2, MASAÜSTÜNDE 4 EŞİT SÜTUN — SIFIR TAŞMA) */}
         <nav
           aria-label="Kullanım rehberi bölümleri"
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full"
         >
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -309,21 +309,21 @@ function RehberPageInner() {
               <button
                 key={tab.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => {
                   playClick();
                   setActiveTab(tab.id);
                 }}
-                className={`min-h-[42px] px-3 py-2 rounded-2xl text-xs xl:text-[12.5px] font-extrabold whitespace-nowrap shrink-0 xl:shrink xl:flex-1 cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                className={`w-full min-w-0 min-h-[48px] px-3 py-2.5 rounded-2xl text-center text-xs sm:text-sm lg:text-xs xl:text-[13px] font-extrabold whitespace-normal leading-snug cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
                   active
                     ? "bg-[#6741D9] text-white border-b-3 border-[#4C28B5]"
                     : "bg-[#FDFBF7] dark:bg-[var(--surface)] text-[var(--foreground)] border-2 border-[#E6D7BE] dark:border-[var(--border)] hover:border-[#6741D9]"
                 }`}
               >
-                <span className="lg:hidden">{tab.shortLabel}</span>
-                <span className="hidden lg:inline">{tab.label}</span>
+                <span className="min-w-0 break-words">{tab.label}</span>
                 {tab.id === "curriculum" && (
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[11px] font-black tabular-nums ${
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-black tabular-nums shrink-0 ${
                       active
                         ? "bg-white/20 text-white"
                         : "bg-[#087F5B]/15 text-[#087F5B] dark:text-emerald-300"

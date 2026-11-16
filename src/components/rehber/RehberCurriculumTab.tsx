@@ -89,9 +89,9 @@ export default function RehberCurriculumTab({
   return (
     <div className="space-y-5">
       {/* ÜST CANLI İLERLEME ÖZETİ */}
-      <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)] pb-3.5">
-          <div className="space-y-1">
+      <section className="rounded-2xl bg-[#FDFBF7] dark:bg-[var(--surface)] border-2 border-[#087F5B] p-4 sm:p-5 space-y-4 min-w-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-dashed border-[#E6D7BE] dark:border-[var(--border)] pb-3.5 min-w-0">
+          <div className="space-y-1 min-w-0">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#087F5B] dark:text-emerald-300">
               Canlı Müfredat Takibi • A1&apos;den B2&apos;ye 24 Hafta (Her Kur 6 Hafta)
             </span>
@@ -105,19 +105,19 @@ export default function RehberCurriculumTab({
             </p>
           </div>
 
-          <div className="rounded-xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] px-4 py-2.5 flex items-center gap-4 shrink-0">
-            <div>
+          <div className="rounded-xl bg-[#F7EFE1] dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] px-3.5 sm:px-4 py-2.5 flex items-center justify-between gap-3 w-full lg:w-auto lg:shrink-0 min-w-0">
+            <div className="min-w-0">
               <div className="text-[11px] font-bold text-[var(--muted)]">
                 Toplam Ders İlerlemesi
               </div>
-              <div className="text-sm sm:text-base font-black text-[var(--foreground)] tabular-nums">
+              <div className="text-xs sm:text-base font-black text-[var(--foreground)] tabular-nums leading-snug">
                 {progress.completedUnitsTotal} / {progress.totalUnitsTotal} Ders (
                 {progress.completedDialoguesTotal}/{progress.totalDialoguesTotal}{" "}
                 Diyalog • {progress.completedReadingsTotal}/
                 {progress.totalReadingsTotal} Metin)
               </div>
             </div>
-            <div className="px-3 py-1.5 rounded-xl bg-[#087F5B] text-white text-base sm:text-lg font-black tabular-nums">
+            <div className="px-3 py-1.5 rounded-xl bg-[#087F5B] text-white text-base sm:text-lg font-black tabular-nums shrink-0">
               %{progress.overallPercent}
             </div>
           </div>
@@ -173,8 +173,8 @@ export default function RehberCurriculumTab({
         </div>
 
         {/* FİLTRE ÇUBUĞU */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 min-w-0">
+          <div className="w-full sm:w-auto max-w-full flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             <span className="inline-flex items-center gap-1 text-xs font-extrabold text-[var(--muted)] pr-1 shrink-0">
               <Filter size={13} />
               <span>Kur:</span>
@@ -198,7 +198,7 @@ export default function RehberCurriculumTab({
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <div className="w-full sm:w-auto max-w-full flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             {[
               { id: "all" as const, label: "Tümü" },
               { id: "remaining" as const, label: "Devam Eden Haftalar" },
@@ -251,16 +251,16 @@ export default function RehberCurriculumTab({
             return (
               <article
                 key={week.weekNumber}
-                className={`rounded-2xl p-4 sm:p-5 border-2 flex flex-col justify-between gap-3.5 transition-colors ${
+                className={`w-full min-w-0 rounded-2xl p-4 sm:p-5 border-2 flex flex-col justify-between gap-3.5 transition-colors ${
                   isDone
                     ? "bg-[#ECFDF5]/70 dark:bg-emerald-950/25 border-[#087F5B]"
                     : "bg-[#FDFBF7] dark:bg-[var(--surface)] border-[#E6D7BE] dark:border-[var(--border)]"
                 }`}
               >
-                <div className="space-y-3">
+                <div className="space-y-3 min-w-0">
                   {/* Hafta Üst Başlık */}
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-2.5 min-w-0">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="px-2.5 py-0.5 rounded-md bg-[#087F5B] text-white text-xs font-extrabold tabular-nums">
                           {week.weekNumber}. Hafta
@@ -413,16 +413,16 @@ export default function RehberCurriculumTab({
                   </div>
 
                   {week.kttTopics.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       {week.kttTopics.map((ktt) => (
                         <Link
                           key={ktt.ustKonu}
                           href={ktt.href}
                           onClick={() => playClick()}
-                          className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[#F3F0FF] dark:bg-purple-950/40 border border-[#6741D9]/40 hover:border-[#6741D9] text-[11px] font-extrabold text-[#4C28B5] dark:text-purple-200 inline-flex items-center gap-1"
+                          className="max-w-full min-w-0 min-h-[30px] px-2.5 py-1 rounded-lg bg-[#F3F0FF] dark:bg-purple-950/40 border border-[#6741D9]/40 hover:border-[#6741D9] text-[11px] font-extrabold text-[#4C28B5] dark:text-purple-200 inline-flex items-center gap-1"
                         >
                           <GraduationCap size={12} className="shrink-0" />
-                          <span className="truncate max-w-[230px]">
+                          <span className="truncate max-w-[210px] sm:max-w-[260px]">
                             KTT: {ktt.ustKonu}
                           </span>
                           <ArrowUpRight size={11} className="shrink-0" />
@@ -435,11 +435,11 @@ export default function RehberCurriculumTab({
                     <Link
                       href={week.milestoneExam.href}
                       onClick={() => playClick()}
-                      className="w-full min-h-[36px] px-3 py-1.5 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-extrabold inline-flex items-center justify-between gap-2"
+                      className="w-full min-w-0 min-h-[36px] px-3 py-1.5 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-extrabold inline-flex items-center justify-between gap-2"
                     >
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
                         <Award size={15} className="shrink-0" />
-                        <span>{week.milestoneExam.labelTr}</span>
+                        <span className="leading-snug">{week.milestoneExam.labelTr}</span>
                       </span>
                       <ArrowUpRight size={14} className="shrink-0" />
                     </Link>

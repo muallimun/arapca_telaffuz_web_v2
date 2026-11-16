@@ -802,6 +802,14 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Link
+              href="/rehber"
+              onClick={() => playClick()}
+              className="flex-1 sm:flex-initial min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[var(--background)] border-2 border-[#087F5B]/60 hover:border-[#087F5B] text-xs font-extrabold text-[#087F5B] dark:text-emerald-300 transition-colors whitespace-nowrap"
+            >
+              <span>📘 Nasıl Çalışılır? (Rehber)</span>
+            </Link>
+
             <button
               type="button"
               onClick={() => {

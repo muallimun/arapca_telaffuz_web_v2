@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { CONTENT_INVENTORY } from "@/lib/contentInventory";
 import {
   X,
@@ -151,6 +152,24 @@ export default function GuideAndInfoModalBody({
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* TAM KAPSAMLI /rehber GEÇİŞ ŞERİDİ */}
+        <div className="bg-[#ECFDF5] dark:bg-emerald-950/40 px-4 sm:px-6 py-2.5 border-b border-[#087F5B]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+          <span className="text-xs font-bold text-[#065F46] dark:text-emerald-200">
+            Bireysel öğrenen &amp; öğretmen çalışma planları ile canlı kur takibi tek merkezde:
+          </span>
+          <Link
+            href="/rehber"
+            onClick={() => {
+              playClick();
+              onClose();
+            }}
+            className="min-h-[34px] px-3 py-1.5 rounded-xl bg-[#087F5B] hover:bg-[#065F46] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
+          >
+            <span>📘 Tam Kapsamlı Çalışma Rehberi &amp; 24 Haftalık Program (/rehber)</span>
+            <ExternalLink size={13} className="shrink-0" />
+          </Link>
         </div>
 
         {/* 5 SEKME SEÇİCİ */}

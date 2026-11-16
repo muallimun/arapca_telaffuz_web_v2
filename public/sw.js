@@ -11,6 +11,7 @@ const PRECACHE_ASSETS = [
   "/alistirmalar",
   "/sozluk",
   "/seviye-tespit",
+  "/rehber",
   "/ayarlar",
   "/fonts/Arakom.ttf",
   "/manifest.webmanifest",

@@ -810,6 +810,7 @@ function syncBrowserLastExerciseSummary(
 interface UserState {
   favoriteDialogues: string[];
   completedDialogues: string[];
+  completedReadings: string[];
   rewardedDialogues: string[];
   rewardedWords: string[];
   favoriteWords: DictionaryItem[];
@@ -838,6 +839,7 @@ interface UserState {
 
   toggleFavoriteDialogue: (id: string) => void;
   toggleCompletedDialogue: (id: string) => void;
+  toggleCompletedReading: (id: string) => void;
   toggleWatchedVideo: (id: string) => void;
   togglePlaylistEpisodeWatched: (itemId: string, episodeNum: number) => void;
   setPlaylistLastEpisode: (itemId: string, episodeNum: number) => void;
@@ -885,8 +887,9 @@ interface UserState {
   restoreLastAutoBackup: () => boolean;
   resetProgress: () => void;
 
-  isDialogueFavorite: (id: string) => boolean;
+      isDialogueFavorite: (id: string) => boolean;
   isDialogueCompleted: (id: string) => boolean;
+  isReadingCompleted: (id: string) => boolean;
   isVideoWatched: (id: string) => boolean;
   isWordFavorite: (id: string) => boolean;
   isWordLearned: (id: string) => boolean;
@@ -897,6 +900,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       favoriteDialogues: [],
       completedDialogues: [],
+      completedReadings: [],
       rewardedDialogues: [],
       rewardedWords: [],
       favoriteWords: [],
@@ -1044,10 +1048,19 @@ export const useUserStore = create<UserState>()(
                 lastStudyDate: state.lastStudyDate,
               };
 
+          const nextCompletedDialogues = isCompleted
+            ? state.completedDialogues.filter((d) => d !== id)
+            : [...state.completedDialogues, id];
+          const currentReadings = state.completedReadings || [];
+          const nextCompletedReadings = id.startsWith("metin_")
+            ? isCompleted
+              ? currentReadings.filter((r) => r !== id)
+              : Array.from(new Set([...currentReadings, id]))
+            : currentReadings;
+
           return {
-            completedDialogues: isCompleted
-              ? state.completedDialogues.filter((d) => d !== id)
-              : [...state.completedDialogues, id],
+            completedDialogues: nextCompletedDialogues,
+            completedReadings: nextCompletedReadings,
             rewardedDialogues:
               !isCompleted && !alreadyRewarded
                 ? [...rewardedList, id]
@@ -1059,6 +1072,8 @@ export const useUserStore = create<UserState>()(
             ...streakUpdate,
           };
         }),
+
+      toggleCompletedReading: (id) => get().toggleCompletedDialogue(id),
 
       toggleFavoriteWord: (word) =>
         set((state) => {
@@ -1747,6 +1762,7 @@ export const useUserStore = create<UserState>()(
           const knownKeys = [
             "favoriteDialogues",
             "completedDialogues",
+            "completedReadings",
             "rewardedDialogues",
             "rewardedWords",
             "favoriteWords",
@@ -1864,9 +1880,19 @@ export const useUserStore = create<UserState>()(
           const importedFavoriteDialogues = sanitizeStringArray(
             data.favoriteDialogues
           );
-          const importedCompletedDialogues = sanitizeStringArray(
-            data.completedDialogues
+          const rawImportedReadings = sanitizeStringArray(
+            data.completedReadings
           );
+          const importedCompletedDialogues = sanitizeStringArray([
+            ...sanitizeStringArray(data.completedDialogues),
+            ...rawImportedReadings,
+          ]);
+          const importedCompletedReadings = sanitizeStringArray([
+            ...rawImportedReadings,
+            ...importedCompletedDialogues.filter((id) =>
+              id.startsWith("metin_")
+            ),
+          ]);
           const importedRewardedDialogues = Array.isArray(
             data.rewardedDialogues
           )
@@ -2000,6 +2026,7 @@ export const useUserStore = create<UserState>()(
             set({
               favoriteDialogues: importedFavoriteDialogues,
               completedDialogues: importedCompletedDialogues,
+              completedReadings: importedCompletedReadings,
               rewardedDialogues: importedRewardedDialogues,
               rewardedWords: importedRewardedWords,
               favoriteWords: importedFavoriteWords,
@@ -2155,6 +2182,13 @@ export const useUserStore = create<UserState>()(
             completedDialogues: sanitizeStringArray([
               ...current.completedDialogues,
               ...importedCompletedDialogues,
+            ]),
+            completedReadings: sanitizeStringArray([
+              ...(current.completedReadings || []),
+              ...importedCompletedReadings,
+              ...current.completedDialogues.filter((id) =>
+                id.startsWith("metin_")
+              ),
             ]),
             rewardedDialogues: sanitizeStringArray([
               ...(current.rewardedDialogues || []),
@@ -2350,6 +2384,7 @@ export const useUserStore = create<UserState>()(
         set({
           favoriteDialogues: [],
           completedDialogues: [],
+          completedReadings: [],
           rewardedDialogues: [],
           rewardedWords: [],
           favoriteWords: [],
@@ -2380,6 +2415,9 @@ export const useUserStore = create<UserState>()(
 
       isDialogueFavorite: (id) => get().favoriteDialogues.includes(id),
       isDialogueCompleted: (id) => get().completedDialogues.includes(id),
+      isReadingCompleted: (id) =>
+        (get().completedReadings || []).includes(id) ||
+        get().completedDialogues.includes(id),
       isVideoWatched: (id) => (get().watchedVideos || []).includes(id),
       isWordFavorite: (id) => get().favoriteWords.some((w) => w.id === id),
       isWordLearned: (id) => get().learnedWords.includes(id),
@@ -2422,7 +2460,16 @@ export const useUserStore = create<UserState>()(
         return {
           ...currentState,
           favoriteDialogues: sanitizeStringArray(raw.favoriteDialogues),
-          completedDialogues: sanitizeStringArray(raw.completedDialogues),
+          completedDialogues: sanitizeStringArray([
+            ...sanitizeStringArray(raw.completedDialogues),
+            ...sanitizeStringArray(raw.completedReadings),
+          ]),
+          completedReadings: sanitizeStringArray([
+            ...sanitizeStringArray(raw.completedReadings),
+            ...sanitizeStringArray(raw.completedDialogues).filter((id) =>
+              id.startsWith("metin_")
+            ),
+          ]),
           rewardedDialogues: sanitizeStringArray(raw.rewardedDialogues),
           rewardedWords: sanitizeStringArray(raw.rewardedWords),
           favoriteWords: sanitizeDictionaryItems(raw.favoriteWords),

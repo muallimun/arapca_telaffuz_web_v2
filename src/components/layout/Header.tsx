@@ -1111,8 +1111,19 @@ export default function Header() {
                     </div>
                   </div>
 
-                  {/* 7. Uygulama Rehberi (?) + Ayarlar + PWA Kurulum */}
+                  {/* 7. Uygulama Rehberi (?) + Tam Kapsamlı /rehber + Ayarlar + PWA Kurulum */}
                   <div className="pt-1.5 border-t border-[#E6D7BE]/80 dark:border-slate-800 space-y-1.5">
+                    <Link
+                      href="/rehber"
+                      onClick={() => {
+                        playClick();
+                        setMoreMenuOpen(false);
+                      }}
+                      className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[#ECFDF5] dark:bg-emerald-950/50 border border-[#087F5B]/60 hover:border-[#087F5B] text-xs font-extrabold text-[#065F46] dark:text-emerald-300 flex items-center justify-center gap-1.5"
+                    >
+                      <span>📘 Tam Kapsamlı Çalışma Rehberi &amp; 24 Haftalık Program</span>
+                    </Link>
+
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
@@ -1124,7 +1135,7 @@ export default function Header() {
                         className="min-h-[38px] px-2.5 py-1.5 rounded-xl bg-[#F3F0FF] dark:bg-purple-950/50 border border-[#6741D9]/50 text-xs font-bold text-[#6741D9] dark:text-purple-300 flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <HelpCircle size={14} className="shrink-0" />
-                        <span>Rehber (?)</span>
+                        <span>Hızlı Rehber (?)</span>
                       </button>
 
                       <Link

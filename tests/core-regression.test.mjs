@@ -10011,3 +10011,154 @@ test("85. BalloonSafariGame game.js Motoru Uyarlaması: Sağ Dışarıdan Akarak
   );
 });
 
+test("86. Kapsamlı Kullanım Rehberi & 24 Haftalık Çalışma Programı Merkezi (/rehber), Çift Rol Modu, Canlı Kur Takibi, A4 Yazdırma Başlığı ve Uygulama İçi Giriş Noktaları", async () => {
+  const {
+    REHBER_ROLE_STORAGE_KEY,
+    build24WeekCurriculum,
+    computeCurriculumProgress,
+    getDynamicKttTopicCount,
+  } = await import("../src/lib/rehberCurriculum.ts");
+  const { CONTENT_INVENTORY } = await import("../src/lib/contentInventory.ts");
+
+  assert.equal(REHBER_ROLE_STORAGE_KEY, "muallimun_rehber_role_v1");
+  assert.equal(getDynamicKttTopicCount(), 44);
+
+  const weeks = build24WeekCurriculum();
+  assert.equal(weeks.length, 24, "24 haftalık tam müfredat üretilmelidir");
+  assert.equal(
+    new Set(weeks.flatMap((w) => w.dialogues.map((d) => d.id))).size,
+    CONTENT_INVENTORY.dialoguesCount
+  );
+  assert.equal(
+    new Set(weeks.flatMap((w) => w.readings.map((r) => r.id))).size,
+    CONTENT_INVENTORY.readingsCount
+  );
+
+  const sampleProg = computeCurriculumProgress(
+    weeks,
+    weeks[0].dialogues.map((d) => d.id),
+    weeks[0].readings.map((r) => r.id),
+    ["A1"]
+  );
+  assert.equal(sampleProg.byWeek[1].isWeekCompleted, true);
+  assert.equal(sampleProg.byWeek[1].percent, 100);
+
+  // /rehber sayfa ve alt bileşen kaynak denetimi
+  const rehberPageSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "rehber", "page.tsx"),
+    "utf8"
+  );
+  const rehberMapSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "rehber", "RehberMapTab.tsx"),
+    "utf8"
+  );
+  const rehberMethodSrc = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "rehber",
+      "RehberMethodologyAndScheduleTabs.tsx"
+    ),
+    "utf8"
+  );
+  const rehberCurrSrc = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "rehber",
+      "RehberCurriculumTab.tsx"
+    ),
+    "utf8"
+  );
+  const rehberPrintSrc = fs.readFileSync(
+    path.join(
+      ROOT_DIR,
+      "src",
+      "components",
+      "rehber",
+      "RehberPrintBooklet.tsx"
+    ),
+    "utf8"
+  );
+
+  assert.ok(
+    rehberPageSrc.includes("CONTENT_INVENTORY") &&
+      rehberPageSrc.includes("REHBER_ROLE_STORAGE_KEY") &&
+      rehberPageSrc.includes("Bireysel Öğrenen Modu") &&
+      rehberPageSrc.includes("Sınıf &amp; Kurs Öğretmeni Modu") &&
+      rehberPageSrc.includes("window.print()"),
+    "/rehber sayfası CONTENT_INVENTORY, rol seçici ve A4 yazdırma tetikleyicisini içermelidir"
+  );
+
+  assert.ok(
+    rehberMapSrc.includes("exerciseModulesCount") &&
+      rehberMapSrc.includes("/alistirmalar?mode=classroom-battle") &&
+      rehberMapSrc.includes("/alistirmalar?mode=evidence-hunter") &&
+      rehberMapSrc.includes("/kutuphane?tab=es-zit") &&
+      rehberMapSrc.includes("/sozluk") &&
+      rehberMapSrc.includes("/ayarlar"),
+    "RehberMapTab tüm modüllere ve 18 alıştırma moduna derin bağlantı vermelidir"
+  );
+
+  assert.ok(
+    rehberMethodSrc.includes("5 + 1 + 1 Sistemi") &&
+      rehberMethodSrc.includes("40 Dakikalık Standart Akıllı Tahta") &&
+      rehberMethodSrc.includes("Tablo 1 • Okul / MEB Sınıf Senaryosu") &&
+      rehberMethodSrc.includes("Tablo 2 • Dil Kursu &amp; Yoğun Hazırlık Senaryosu") &&
+      rehberMethodSrc.includes("Maarif Rubriği"),
+    "RehberMethodologyAndScheduleTabs hem bireysel 5+1+1 planını hem öğretmenin 2 ayrı kurum tablosunu içermelidir"
+  );
+
+  assert.ok(
+    rehberPrintSrc.includes("Muallimun Arapça • app.muallimun.net"),
+    "Yazdırılabilir A4 kitapçık başlığı 'Muallimun Arapça • app.muallimun.net' ibaresini taşımalıdır"
+  );
+
+  for (const [label, src] of [
+    ["rehber/page.tsx", rehberPageSrc],
+    ["RehberMapTab.tsx", rehberMapSrc],
+    ["RehberMethodologyAndScheduleTabs.tsx", rehberMethodSrc],
+    ["RehberCurriculumTab.tsx", rehberCurrSrc],
+    ["RehberPrintBooklet.tsx", rehberPrintSrc],
+  ]) {
+    assert.equal(
+      src.includes("style={{"),
+      false,
+      `${label} içinde satır içi style={{ kullanılmamalıdır`
+    );
+  }
+
+  // Uygulama içi 3 giriş noktası denetimi
+  const headerSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "layout", "Header.tsx"),
+    "utf8"
+  );
+  const guideModalSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "GuideAndInfoModalBody.tsx"),
+    "utf8"
+  );
+  const homeSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "page.tsx"),
+    "utf8"
+  );
+
+  assert.ok(
+    headerSrc.includes('href="/rehber"') &&
+      headerSrc.includes("Tam Kapsamlı Çalışma Rehberi"),
+    "Header.tsx ⋯ menüsünde /rehber bağlantısı bulunmalıdır"
+  );
+  assert.ok(
+    guideModalSrc.includes('href="/rehber"') &&
+      guideModalSrc.includes("(/rehber)"),
+    "GuideAndInfoModalBody.tsx üst şeridinde /rehber bağlantısı bulunmalıdır"
+  );
+  assert.ok(
+    homeSrc.includes('href="/rehber"') &&
+      homeSrc.includes("Nasıl Çalışılır? (Rehber)"),
+    "Ana sayfa 30 dakikalık çalışma rotası başlığında /rehber kısayolu bulunmalıdır"
+  );
+});
+
+

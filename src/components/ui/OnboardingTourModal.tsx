@@ -576,7 +576,8 @@ export default function OnboardingTourModal() {
     let raf: number | null = null;
     try {
       const done = localStorage.getItem(ONBOARDING_STORAGE_KEY);
-      if (!done) {
+      const isRehberRoute = window.location.pathname.startsWith("/rehber");
+      if (!done && !isRehberRoute) {
         raf = requestAnimationFrame(() => {
           setIsOpen(true);
           setStep(0);

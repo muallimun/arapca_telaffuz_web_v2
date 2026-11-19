@@ -1088,7 +1088,7 @@
     "ek_ornekler": [
       {
         "arapca": "هُمَا طَالِبَانِ مُجْتَهِدَانِ.",
-        "turkce": "O ikisi çalışkan öğrencidir."
+        "turkce": "İkisi çalışkan öğrencidir."
       },
       {
         "arapca": "أَنْتُمَا مُعَلِّمَتَانِ مَاهِرَتَانِ.",
@@ -2557,11 +2557,11 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "أَهْلاً عُمَرُ، نَعَمْ أُعْلِنَتْ أَمْسِ.",
+        "arapca": "أَهْلًا عُمَرُ، نَعَمْ أُعْلِنَتْ أَمْسِ.",
         "turkce": "Merhaba Ömer, evet dün açıklandı."
       },
       {
-        "arapca": "سَأُبَلِّغُهُ الرِّسَالَةَ، شُكْراً أُسْتَاذِي.",
+        "arapca": "سَأُبَلِّغُهُ الرِّسَالَةَ، شُكْرًا أُسْتَاذِي.",
         "turkce": "Mesajı ona ileteceğim, teşekkürler öğretmenim."
       }
     ],
@@ -5962,7 +5962,7 @@
     "ek_ornekler": [
       {
         "arapca": "رَأَيْتُ الْمُعَلِّمِينَ فِي الْمَدْرَسَةِ.",
-        "turkce": "Okulda erkek öğretmenleri gördüm."
+        "turkce": "Okulda öğretmenleri gördüm. (müzekker)"
       },
       {
         "arapca": "رَأَيْتُ الْمُعَلِّمَاتِ فِي الصَّفِّ.",
@@ -6288,7 +6288,7 @@
     "hap_kural": "Arapçada iki kişiyi gösteren özne için fiile ikil elifi (أَلِفُ الاِثْنَيْنِ) eklenir ('حَضَرَا' / 'يَلْعَبَانِ'); çoğul erkek özne için ise cemaat vaw'ı (وَاوُ الْجَمَاعَةِ) getirilir ('تَدَرَّبُوا' / 'يَسْتَعِدُّونَ').",
     "metinden_ornek": {
       "arapca": "هُمَا يَلْعَبَانِ كُرَةَ السَّلَّةِ بِنَشَاطٍ كَبِيرٍ.",
-      "turkce": "O ikisi büyük bir canlılıkla basketbol oynuyorlar.",
+      "turkce": "İkisi büyük bir canlılıkla basketbol oynuyorlar.",
       "aciklama": "'يَلْعَبَانِ' muzâri fiili iki kişiyi gösteren ikil elifi ve nun harfi ile çekimlenmiştir."
     },
     "ek_ornekler": [

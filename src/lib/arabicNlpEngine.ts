@@ -748,9 +748,19 @@ export function extractArabicRoot(word: string): string {
   }
 
   // Yaygın sonekleri (zamirler, çoğul ekleri, tâ-i merbûta/ه, tenvin elifi) soy
+  // DİKKAT: [أإ]ن (يَقْرَأْنَ) asla "ان" diye, [أإآ] sonu asla "ا" diye soyulmaz!
   const suffixes = ["كما", "هما", "كم", "هم", "نا", "ها", "وا", "ات", "ون", "ين", "ان", "ه", "ك", "ي", "ا"];
   for (const suff of suffixes) {
     if (core.endsWith(suff) && core.length - suff.length >= 3) {
+      if (suff === "ان" && (/[أإ]ن$/.test(rawBare) || /\u0652ن\u064E?$/.test(word))) {
+        continue;
+      }
+      if (suff === "ات" && /[أإ]ت$/.test(rawBare)) {
+        continue;
+      }
+      if (suff === "ا" && /[أإآ]$/.test(rawBare)) {
+        continue;
+      }
       // 3 harfli ecvef/nâkıs fiillerde sondaki asli "ا / ي" harfini sonek sanıp soyma (örn: دعا، مشي)
       if ((suff === "ا" || suff === "ي") && core.length === 3) {
         continue;

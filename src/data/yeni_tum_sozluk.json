@@ -3,7 +3,7 @@
     "id": "kelime_1511",
     "tur": "isim",
     "kok": "-",
-    "anlam_tr": "Siz, sizler (erkekler)",
+    "anlam_tr": "Siz, sizler (müzekker)",
     "cefr": "A1",
     "mufret": "أَنْتُمْ",
     "cemi": "-"
@@ -8376,7 +8376,7 @@
     "id": "kelime_2409",
     "tur": "isim",
     "kok": "ز م ل",
-    "anlam_tr": "Bayan arkadaş, meslektaş",
+    "anlam_tr": "Arkadaş, meslektaş (müennes)",
     "cefr": "A1",
     "mufret": "زَمِيلَةٌ",
     "cemi": "زَمِيلَاتٌ"
@@ -8730,7 +8730,7 @@
     "id": "kelime_2447",
     "tur": "isim",
     "kok": "-",
-    "anlam_tr": "Sekreter (bayan)",
+    "anlam_tr": "Sekreter (müennes)",
     "cefr": "A1",
     "mufret": "سَكْرَتِيرَةٌ",
     "cemi": "سَكْرَتِيرَاتٌ"
@@ -11887,11 +11887,11 @@
   {
     "id": "kelime_2793",
     "tur": "isim",
-    "kok": "-",
-    "anlam_tr": "Mutfak, küzin (yabancı kökenli)",
+    "kok": "ط ب خ",
+    "anlam_tr": "Mutfak",
     "cefr": "A1",
-    "mufret": "كُوزِينْ",
-    "cemi": "-"
+    "mufret": "مَطْبَخٌ",
+    "cemi": "مَطَابِخُ"
   },
   {
     "id": "kelime_2794",
@@ -13112,7 +13112,7 @@
     "id": "kelime_2928",
     "tur": "isim",
     "kok": "ح م ي",
-    "anlam_tr": "Avukat (bayan), savunman",
+    "anlam_tr": "Avukat, savunman",
     "cefr": "A2",
     "mufret": "مُحَامٍ / مُحَامِيَةٌ",
     "cemi": "مُحَامُونَ / مُحَامِيَاتٌ"

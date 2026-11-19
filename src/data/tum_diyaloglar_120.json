@@ -5374,7 +5374,7 @@
         "cinsiyet": "E",
         "odak_kalip": "Tesniye İle Onaylama (نَعَمْ، هُمَا طَالِبَانِ)",
         "arapca": "نَعَمْ يَا حَسَنُ، هُمَا طَالِبَانِ جَدِيدَانِ فِي ثَانَوِيَّتِنَا.",
-        "turkce": "Evet Hasan, o ikisi lisemizde yeni öğrencilerdir.",
+        "turkce": "Evet Hasan, ikisi lisemizde yeni öğrencilerdir.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_073/satir_02_E.mp3"
       },
       {
@@ -5394,7 +5394,7 @@
         "cinsiyet": "E",
         "odak_kalip": "Tesniye Zamiri (هُمَا أُخْتَانِ مَاهِرَتَانِ)",
         "arapca": "هُمَا أُخْتَانِ مَاهِرَتَانِ وَتَدْرُسَانِ فِي صَفِّنَا.",
-        "turkce": "O ikisi marifetli iki kız kardeştir ve sınıfımızda okuyorlar.",
+        "turkce": "İkisi marifetli iki kız kardeştir ve sınıfımızda okuyorlar.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_073/satir_04_E.mp3"
       },
       {
@@ -5487,7 +5487,7 @@
         "cinsiyet": "E",
         "odak_kalip": "Cemi Müzekker Soru (هَلْ جَاءَ الْمُعَلِّمُونَ؟)",
         "arapca": "هَلْ وَصَلَ الْمُعَلِّمُونَ الْجُدُدُ إِلَى الْمَدْرَسَةِ؟",
-        "turkce": "Yeni erkek öğretmenler okula ulaştı mı?",
+        "turkce": "Yeni öğretmenler okula ulaştı mı? (müzekker)",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_074/satir_01_E.mp3"
       },
       {
@@ -5497,7 +5497,7 @@
         "cinsiyet": "E",
         "odak_kalip": "Cemi Müzekker Salim (نَعَمْ، الْمُعَلِّمُونَ قَادِمُونَ)",
         "arapca": "نَعَمْ، فَالْمُعَلِّمُونَ قَادِمُونَ وَمُجْتَهِدُونَ فِي عَمَلِهِمْ.",
-        "turkce": "Evet, erkek öğretmenler geliyorlar ve işlerinde çalışkanlar.",
+        "turkce": "Evet, öğretmenler geliyorlar ve işlerinde çalışkanlar. (müzekker)",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_074/satir_02_E.mp3"
       },
       {
@@ -6009,7 +6009,7 @@
         "cinsiyet": "E",
         "odak_kalip": "Muzari Tesniye Çekimi (يَلْعَبَانِ كُرَةَ السَّلَّةِ)",
         "arapca": "هُمَا يَلْعَبَانِ كُرَةَ السَّلَّةِ بِنَشَاطٍ كَبِيرٍ.",
-        "turkce": "O ikisi büyük bir canlılıkla basketbol oynuyorlar.",
+        "turkce": "İkisi büyük bir canlılıkla basketbol oynuyorlar.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_078/satir_04_E.mp3"
       },
       {

@@ -9201,7 +9201,7 @@ test("77. [Denetim 6/6] PWA Service Worker (public/sw.js v2.2 + offlineManager u
   );
 });
 
-test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter), Sözlük/Video Envanter Tutarlılığı (1895 vs 3225, 60=20+40) ve Ters Karma Aralık (start > end) Koruması", async () => {
+test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter), Sözlük/Video Envanter Tutarlılığı (1895 vs 3263, 60=20+40) ve Ters Karma Aralık (start > end) Koruması", async () => {
   const { pathToFileURL } = await import("node:url");
 
   // 1) IrabColorPainter ve ReadingEvidenceHunter 360px dar ekran kontrolleri
@@ -9238,7 +9238,7 @@ test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
   );
   assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1895);
-  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3224);
+  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3263);
   assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   assert.equal(CONTENT_INVENTORY.youtubeSingleVideosCount, 20);
   assert.equal(CONTENT_INVENTORY.youtubePlaylistsCount, 40);
@@ -11845,6 +11845,132 @@ test("117. 1111_cumle.json Aşama 6 (cumle_1001–cumle_1111) Final Sarf-Nahiv, 
     assert.ok(!/فَقَطِ|قُرِأَ|خُرْبِطَ|لِلِدِّرَاسَةِ|بِالْقَوْرَبِ/.test(c.arapca), `${c.id} içinde hatalı imla/kök kalmamalıdır`);
   }
 });
+
+test("118. Kapsamlı Morfoloji/Kök Çözümleme (يَقْرَأْنَ, قُرِئَ, بُدِئَ, اِبْدَأْ, أَرَدْتُ, نَحُلُّ, جِدَارِ vb.) ve 12 Sabit JSON Veri Seti Bütünlük Denetimi", async () => {
+  const { pathToFileURL } = await import("node:url");
+  const { analyzeAndMatchWord, unifiedDictionary } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "dict.ts")).href
+  );
+  const { extractArabicRoot } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicNlpEngine.ts")).href
+  );
+  const { CONTENT_INVENTORY } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
+  );
+
+  assert.equal(
+    unifiedDictionary.length,
+    CONTENT_INVENTORY.dictionaryWordsCount,
+    "unifiedDictionary.length ile CONTENT_INVENTORY.dictionaryWordsCount birebir eşit olmalıdır"
+  );
+
+  // 1) Kritik örnek (#33 • A1): يَقْرَأْنَ asla قَرَّرَ (ق ر ر) + انِ (tesniye) olmamalı
+  const yaqrana = analyzeAndMatchWord("يَقْرَأْنَ");
+  assert.equal(yaqrana?.item?.kok, "ق ر أ");
+  assert.equal(yaqrana?.item?.mazi, "قَرَأَ");
+  assert.ok(!yaqrana?.morphologyNote?.includes("انِ"), "يَقْرَأْنَ çözümlemesinde tesniye انِ eki olmamalıdır");
+  assert.ok(yaqrana?.morphologyNote?.includes("نَ"), "يَقْرَأْنَ çözümlemesinde cemî müennes نَ eki yer almalıdır");
+  assert.equal(extractArabicRoot("يَقْرَأْنَ"), "قرأ");
+
+  // 2) Mehmûz, Muzaaf, Ecvef İf'âl, Meçhul, Emir ve İsim/Fiil ayrım matrisi
+  const expectedMatches = [
+    ["تَقْرَأْنَ", "ق ر أ", "قرأ"],
+    ["قَرَأْتُهَا", "ق ر أ", "قرأ"],
+    ["قُرِئَ", "ق ر أ", "قرأ"],
+    ["يَقْرَؤُونَ", "ق ر أ", "قرأ"],
+    ["تَقْرَئِينَ", "ق ر أ", "قرأ"],
+    ["اِقْرَأْ", "ق ر أ", "قرأ"],
+    ["اِقْرَؤُوا", "ق ر أ", "قرأ"],
+    ["اِقْرَئِي", "ق ر أ", "قرأ"],
+    ["يَقْرَآنِ", "ق ر أ", "قرأ"],
+    ["أَقَرَأْتَ", "ق ر أ", "قرأ"],
+    ["قَرَأْنَ", "ق ر أ", "قرأ"],
+    ["قَرَأْنَا", "ق ر أ", "قرأ"],
+    ["نَحُلُّ", "ح ل ل", "حلل"],
+    ["اِبْدَأْ", "ب د أ", "بدأ"],
+    ["بُدِئَ", "ب د أ", "بدأ"],
+    ["سَتَأْتِينَ", "أ ت ي", "أتي"],
+    ["لَكَانَ", "ك و ن", "كون"],
+    ["نَادَانَا", "ن د و", "ندو"],
+    ["وَالْأَمَانَ", "أ م ن", "أمن"],
+    ["الْخَطَأِ", "خ ط أ", "خطأ"],
+    ["سَافَرْتُ", "س ف ر", "سفر"],
+    ["نَصَحَكَ", "ن ص ح", "نصح"],
+    ["أَرَدْتُ", "ر و د", "رود"],
+    ["أَرَدْتَ", "ر و د", "رود"],
+    ["فَرَكِبَا", "ر ك ب", "ركب"],
+    ["يَؤُمُّ", "أ م م", "أمم"],
+    ["أَقْرَانُكَ", "ق ر ن", "قرن"],
+    ["الْعُدْوَانَ", "ع د و", "عدو"],
+    ["أَيَّانَ", "أ ي ن", "أين"],
+    ["الْمُهِمُّ", "ه م م", "همم"],
+    ["الْمِئَةِ", "م أ ي", "مأي"],
+    ["الْمِهَنِ", "م هـ ن", "مهن"],
+    ["سَاخِنٌ", "س خ ن", "سخن"],
+    ["سَاعَةٌ", "س و ع", "سوع"],
+    ["سَيَّارَةُ", "س ي ر", "سير"],
+    ["الطَّعَامِ", "ط ع م", "طعم"],
+    ["أَطَعْتُنَّ", "ط و ع", "طوع"],
+    ["أَعْدَدْنَ", "ع د د", "عدد"],
+    ["يُحْبِبْنَ", "ح ب ب", "حبب"],
+    ["الْأُمُّ", "أ م م", "أمم"],
+    ["آلَامٌ", "أ ل م", "ألم"],
+    ["جِدَارِ", "ج د ر", "جدر"],
+  ];
+
+  for (const [word, expectedKok, expectedExtRoot] of expectedMatches) {
+    const res = analyzeAndMatchWord(word);
+    assert.ok(res?.item, `${word} sözlükte eşleşmelidir`);
+    assert.equal(res.item.kok, expectedKok, `${word} için beklenen kök ${expectedKok}, gelen ${res.item.kok}`);
+    assert.equal(extractArabicRoot(word), expectedExtRoot, `extractArabicRoot(${word}) beklenen ${expectedExtRoot}`);
+  }
+
+  // Özel ek/etiket doğrulamaları
+  assert.ok(analyzeAndMatchWord("أَقَرَأْتَ")?.morphologyNote?.includes("soru edatı"));
+  assert.ok(!analyzeAndMatchWord("نَادَانَا")?.suffixLabel?.includes("اً"));
+  assert.equal(analyzeAndMatchWord("أَنْتُمْ")?.item?.id, "kelime_1511");
+  assert.equal(analyzeAndMatchWord("أَنَا")?.item?.id, "supp_ana_edat");
+  assert.equal(analyzeAndMatchWord("فَمَا")?.item?.tur, "edat");
+
+  // 3) 5 güncellenen sabit JSON dosyasında kayıt sayısı, kök ve doğal Türkçe bütünlüğü
+  const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
+  assert.equal(sozluk.length, 1895);
+  const sozlukById = new Map(sozluk.map((w) => [w.id, w]));
+  assert.equal(sozlukById.get("kelime_2793")?.mufret, "مَطْبَخٌ");
+  assert.equal(sozlukById.get("kelime_2793")?.kok, "ط ب خ");
+  assert.ok(!JSON.stringify(sozluk).includes("كُوزِين"), "yeni_tum_sozluk.json içinde yabancı 'كُوزِين' kalmamalıdır");
+  assert.equal(sozlukById.get("kelime_1511")?.anlam_tr, "Siz, sizler (müzekker)");
+  assert.equal(sozlukById.get("kelime_2409")?.anlam_tr, "Arkadaş, meslektaş (müennes)");
+  assert.equal(sozlukById.get("kelime_2447")?.anlam_tr, "Sekreter (müennes)");
+  assert.equal(sozlukById.get("kelime_2928")?.anlam_tr, "Avukat, savunman");
+
+  const gorsel = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "gorselKelimeler_guncel.json"), "utf8"));
+  assert.equal(gorsel.length, 998);
+  const gorselById = new Map(gorsel.map((w) => [w.id, w]));
+  assert.equal(gorselById.get("0126_03_bilimsel_kongre")?.kok, "أ م ر");
+  assert.equal(gorselById.get("0479_09_erkek_hemsire")?.turkce, "Hemşire (müzekker)");
+
+  const cumleler = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8"));
+  assert.equal(cumleler.length, 1111);
+  const cumleById = new Map(cumleler.map((c) => [c.id, c]));
+  assert.equal(cumleById.get("cumle_0223")?.turkce, "İkisi sana ikram ederler.");
+  assert.equal(cumleById.get("cumle_0437")?.turkce, "Şüphesiz ikisi tıp fakültesinin öğrencileridir.");
+
+  const diyaloglar = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8"));
+  assert.equal(diyaloglar.length, 120);
+  const dlgById = new Map(diyaloglar.map((d) => [d.id, d]));
+  assert.ok(!JSON.stringify(dlgById.get("dlg_073")).includes("O ikisi"));
+  assert.ok(!JSON.stringify(dlgById.get("dlg_074")).includes("o ikisi"));
+  assert.ok(!JSON.stringify(dlgById.get("dlg_078")).includes("erkek öğretmenler"));
+
+  const dlgGramer = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "diyaloglar_gramer_hap_bilgi.json"), "utf8"));
+  assert.equal(dlgGramer.length, 120);
+  assert.ok(!JSON.stringify(dlgGramer[13]).includes("O ikisi"));
+  assert.ok(!JSON.stringify(dlgGramer[77]).includes("erkek öğretmen"));
+  assert.ok(dlgGramer[31].ek_ornekler[0].arapca.includes("أَهْلًا"));
+  assert.ok(dlgGramer[31].ek_ornekler[1].arapca.includes("شُكْرًا"));
+});
+
 
 
 

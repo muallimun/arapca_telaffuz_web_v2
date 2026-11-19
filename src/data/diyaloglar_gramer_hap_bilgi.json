@@ -2376,9 +2376,9 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "هَذَا أَرْخَصٌ مِنْ ذَلِكَ.",
-        "dogru": "هَذَا أَرْخَصُ مِنْ ذَلِكَ.",
-        "neden": "'أَفْعَلُ' kalıbındaki kıyaslama sıfatları gayri munsarif olduğu için sonlarına tenvin (çift ötre) verilemez."
+        "yanlis": "هَذَا أَرْخَصٌ مِنْ ذَلِكَ. ('أَرْخَصٌ' kelimesinin sonunu tenvinli / çift ötreli '◌ٌ' okumak)",
+        "dogru": "هَذَا أَرْخَصُ مِنْ ذَلِكَ. ('أَرْخَصُ' kelimesini tenvinsiz tek ötreli '◌ُ' okumak)",
+        "neden": "'أَفْعَلُ' veznindeki ism-i tafdîl sıfatları gayri munsarif olduğundan tenvin (çift ötre '◌ٌ') kabul etmez; merfû hâlde son harfleri mutlaka tek ötre ('◌ُ' -> 'أَرْخَصُ') ile harekelenir."
       }
     }
   },
@@ -2805,7 +2805,7 @@
         "turkce": "Kapı açıktır."
       },
       {
-        "arapca": "الطَّعَامُ مَطْبُوعٌ / مَأْكُولٌ.",
+        "arapca": "الطَّعَامُ مَأْكُولٌ.",
         "turkce": "Yemek yenilmiştir."
       }
     ],
@@ -8146,9 +8146,9 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "تَبَادِلُ الخِبْرَاتِ / تَقَدِّمٌ مَلْحُوظٌ.",
-        "dogru": "تَبَادُلُ الخِبْرَاتِ / تَقَدُّمٌ مَلْحُوظٌ.",
-        "neden": "'تَفَعَّلَ' ve 'تَفَاعَلَ' bablarının masdarlarında sondan bir önceki harf esreli değil, ötreli okunur."
+        "yanlis": "تَبَادِلُ الخِبْرَاتِ / تَقَدِّمٌ مَلْحُوظٌ. (Masdarın sondan bir önceki harfini esreli 'دِ / دِّ' okumak)",
+        "dogru": "تَبَادُلُ الخِبْرَاتِ / تَقَدُّمٌ مَلْحُوظٌ. (Masdarın sondan bir önceki harfini ötreli 'دُ / دُّ' okumak)",
+        "neden": "'تَفَاعَلَ' (تَبَادَلَ -> تَبَادُلٌ) ve 'تَفَعَّلَ' (تَقَدَّمَ -> تَقَدُّمٌ) bablarının masdarlarında sondan bir önceki harf esre ('◌ِ') değil, mutlaka ötre ('◌ُ') ile harekelenir; esreli hâl ('تَبَادِلُ / تَقَدِّمٌ') masdar vezni açısından hatalıdır."
       }
     }
   },
@@ -9236,7 +9236,7 @@
       "dikkat_sik_hata": {
         "yanlis": "حَضَرَ الوَزِيرُ نَفْسَهُ (Te'kid harekesini müekkedden farklı yapmak).",
         "dogru": "حَضَرَ الوَزِيرُ نَفْسُهُ.",
-        "neden": "Te'kid ögesi pekiştirdiği özenin (müekked) irab harekesini aynen takip etmelidir."
+        "neden": "Te'kid ögesi pekiştirdiği öznenin (müekked) irab harekesini aynen takip etmelidir."
       }
     }
   },
@@ -9824,9 +9824,9 @@
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "رَغْمَ أَنَّ الطَّقْسُ بَارِدٌ (أَنَّ'den sonraki ismi ötreli yapmak).",
-        "dogru": "رَغْمَ أَنَّ الطَّقْسَ بَارِدٌ.",
-        "neden": "'أَنَّ' edatı İnne ve kardeşlerinden olduğu için kendisinden sonra gelen ismi fethalı mansûb yapmak zorundadır."
+        "yanlis": "رَغْمَ أَنَّ الطَّقْسُ بَارِدٌ. ('أَنَّ' ismini 'الطَّقْسُ' şeklinde ötreli/merfû okumak)",
+        "dogru": "رَغْمَ أَنَّ الطَّقْسَ بَارِدٌ. ('أَنَّ' ismini 'الطَّقْسَ' şeklinde fethalı/mansûb, haberini 'بَارِدٌ' şeklinde ötreli/merfû okumak)",
+        "neden": "'رَغْمَ أَنَّ' kalıbındaki 'أَنَّ' edatı İnne ve kardeşlerinden olduğu için ismini ('الطَّقْسَ') fetha ile mansûb, haberini ('بَارِدٌ') ise damma ile merfû yapar."
       }
     }
   }

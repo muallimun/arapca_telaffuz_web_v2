@@ -10369,3 +10369,73 @@ test("90. atasozleri.json Arapça Çekim ve Türkçe Yazım/Arap Harfi Sızınt�
       !byId.get("ata_0431")?.kullanim_baglami.includes("itibar zedeleyeceğini")
   );
 });
+
+test("91. es_zit_anlamlilar, gorselKelimeler_guncel ve diyaloglar_gramer_hap_bilgi Nokta Atışı Düzeltmeleri (8 Kayıt)", () => {
+  // 1. es_zit_anlamlilar.json -> ez_179
+  const esZit = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "es_zit_anlamlilar.json"), "utf8")
+  );
+  assert.equal(esZit.length, 400);
+  const ez179 = esZit.find((x) => x.id === "ez_179");
+  assert.ok(ez179);
+  assert.ok(
+    ez179.es_anlamlilar.some((x) => x.ar === "أَبَدًا"),
+    "ez_179 es_anlamlilar içinde أَبَدًا korunmalıdır"
+  );
+  assert.ok(
+    !ez179.zit_anlamlilar.some((x) => x.ar === "أَبَدًا"),
+    "ez_179 zit_anlamlilar içinden أَبَدًا çıkarılmalıdır"
+  );
+  assert.ok(
+    ez179.zit_anlamlilar.some((x) => x.ar === "نَادِرًا"),
+    "ez_179 zit_anlamlilar içinde نَادِرًا yer almalıdır"
+  );
+
+  // 2. gorselKelimeler_guncel.json -> 0032_02_omur & 0088_03_kutuphane (998 korunur)
+  const gorsel = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "gorselKelimeler_guncel.json"), "utf8")
+  );
+  assert.equal(gorsel.length, 998);
+  const omur = gorsel.find((x) => x.id === "0032_02_omur");
+  assert.ok(
+    omur?.gorsel_betimleme_en.includes("and three lit glowing wax candles") &&
+      !omur?.gorsel_betimleme_en.includes("andthree")
+  );
+  const kutuphane = gorsel.find((x) => x.id === "0088_03_kutuphane");
+  assert.ok(
+    kutuphane?.gorsel_betimleme_en.includes("miniature wooden bookcase") &&
+      !kutuphane?.gorsel_betimleme_en.includes("miniaturewooden")
+  );
+
+  // 3. diyaloglar_gramer_hap_bilgi.json -> dlg_029, dlg_035, dlg_100, dlg_113, dlg_120
+  const dlgGramer = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "diyaloglar_gramer_hap_bilgi.json"), "utf8")
+  );
+  assert.equal(dlgGramer.length, 120);
+  const byBagliId = new Map(dlgGramer.map((x) => [x.bagli_id, x]));
+
+  const d029 = byBagliId.get("dlg_029")?.ayrintili_anlatim?.dikkat_sik_hata;
+  assert.ok(d029?.yanlis.includes("أَرْخَصٌ") && d029?.yanlis.includes("tenvin"));
+  assert.ok(d029?.dogru.includes("أَرْخَصُ") && d029?.dogru.includes("tek ötre"));
+
+  const d035 = byBagliId.get("dlg_035");
+  assert.ok(
+    d035?.ek_ornekler.some((o) => o.arapca === "الط\u0651\u064Eعَامُ مَأْكُولٌ.") &&
+      !d035?.ek_ornekler.some((o) => o.arapca.includes("مَطْبُوعٌ"))
+  );
+
+  const d100 = byBagliId.get("dlg_100")?.ayrintili_anlatim?.dikkat_sik_hata;
+  assert.ok(d100?.yanlis.includes("تَبَادِلُ") && d100?.yanlis.includes("esreli"));
+  assert.ok(d100?.dogru.includes("تَبَادُلُ") && d100?.dogru.includes("ötreli"));
+
+  const d113 = byBagliId.get("dlg_113")?.ayrintili_anlatim?.dikkat_sik_hata;
+  assert.ok(
+    d113?.neden.includes("pekiştirdiği öznenin") &&
+      !d113?.neden.includes("pekiştirdiği özenin")
+  );
+
+  const d120 = byBagliId.get("dlg_120")?.ayrintili_anlatim?.dikkat_sik_hata;
+  assert.ok(d120?.yanlis.includes("الط\u0651\u064Eقْسُ") && d120?.yanlis.includes("merfû"));
+  assert.ok(d120?.dogru.includes("الط\u0651\u064Eقْسَ") && d120?.dogru.includes("mansûb"));
+});
+

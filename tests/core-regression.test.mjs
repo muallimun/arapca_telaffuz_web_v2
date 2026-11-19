@@ -10579,6 +10579,13 @@ test("94. tum_diyaloglar_120.json Emir Vasl Hemzesi (اُخْرُجْ/اُنْظ
   assert.equal(line("dlg_042", 3)?.turkce, "Adı Halid, yüz iki numaralı odada.");
   assert.equal(line("dlg_043", 9)?.turkce, "Memnuniyetle, sabah saat beşte çıkacağız.");
   assert.equal(line("dlg_049", 11)?.turkce, "İşte dört yüz beş numaralı odanın anahtarı.");
+
+  // 5. كَمْ / كَمِ kuralı (harekeli kelime önünde كَمْ, iltikâ-i sâkineyn'de كَمِ korunur)
+  assert.equal(line("dlg_026", 3)?.arapca, "كَمْ دَرَجَةُ الحَرَارَةِ الْآنَ؟");
+  assert.ok(line("dlg_011", 9)?.arapca.startsWith("كَمِ الْحِسَابُ"));
+  assert.ok(line("dlg_039", 7)?.arapca.startsWith("كَمِ الإِيجَارُ"));
+  assert.ok(line("dlg_046", 7)?.arapca.startsWith("كَمِ الت\u0651\u064Eكْلِفَةُ"));
 });
+
 
 

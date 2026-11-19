@@ -8,7 +8,7 @@ export interface ContentInventory {
   standaloneGrammarNotesCount: number;
   /** Ana sözlük havuzu kayıt sayısı: 1.895 */
   coreDictionaryWordsCount: number;
-  /** Birleşik Sözlük (1.895 ana sözlük + 998 görsel kelime + ek sözlük) toplam tekil kayıt sayısı: 3.224 */
+  /** Birleşik Sözlük (1.895 ana sözlük + 998 görsel kelime + ek sözlük) toplam tekil kayıt sayısı: 3.225 */
   dictionaryWordsCount: number;
   youtubeVideosCount: number;
   youtubeSingleVideosCount: number;
@@ -27,7 +27,7 @@ export const CONTENT_INVENTORY: ContentInventory = {
   grammarNotesCount: 195,
   standaloneGrammarNotesCount: 15,
   coreDictionaryWordsCount: 1895,
-  dictionaryWordsCount: 3224,
+  dictionaryWordsCount: 3225,
   youtubeVideosCount: 60,
   youtubeSingleVideosCount: 20,
   youtubePlaylistsCount: 40,

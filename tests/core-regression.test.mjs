@@ -11495,7 +11495,92 @@ test("110. seviye_tespit_sorulari.json Aşama 7 (481–550: ktt_grm_009_01–ktt
   }
 });
 
+test("111. Kütüphane #19 الْأُمُّ vs أَلَمٌ/آلَامٌ Sözlük-Kök Çakışma Kalkanı ve Çeviri Kutusu Sol Kenar Düzeltmesi", async () => {
+  const { analyzeAndMatchWord, getWordCategory } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "dict.ts")).href
+  );
+  const { extractArabicRoot } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "arabicNlpEngine.ts")).href
+  );
 
+  // 1. الْأُمُّ ve türevleri (bağlamlı & bağlamsız) -> أُمٌّ (Anne, أ م م, أُمَّهَاتٌ, isim)
+  for (const [word, ctx, prev] of [
+    ["الْأُمُّ", "Anne seviniyor.", "تَفْرَحُ"],
+    ["الْأُمُّ", undefined, undefined],
+    ["الأم", "Anne seviniyor.", undefined],
+    ["الأم", undefined, undefined],
+    ["أُمٌّ", undefined, undefined],
+    ["وَالْأُمُّ", "Anne ve baba.", undefined],
+    ["بِالْأُمِّ", undefined, undefined],
+    ["لِلْأُمِّ", undefined, undefined],
+    ["الْأُمَّهَاتُ", undefined, undefined],
+  ]) {
+    const res = analyzeAndMatchWord(word, ctx, prev);
+    assert.ok(res, `${word} sözlükte eşleşmelidir`);
+    assert.equal(res.item.kok, "أ م م", `${word} kökü أ م م olmalıdır (gelen: ${res.item.kok})`);
+    assert.equal(getWordCategory(res.item), "isim", `${word} kelime türü isim olmalıdır`);
+    assert.ok(/anne/i.test(res.item.anlam_tr), `${word} anlamı Anne içermelidir`);
+    assert.ok(res.item.cemi?.includes("أُمَّهَات"), `${word} çoğulu أُمَّهَاتٌ olmalıdır`);
+    assert.ok(res.item.ornek_ar?.includes("تُحَضِّرُ"), `${word} örnek cümlesi doğru harekeli olmalıdır`);
+  }
 
+  // 2. أَمْ edatı hâlâ edat (yoksa) olarak eşleşmelidir
+  const amParticle = analyzeAndMatchWord("أَمْ", "Çay mı yoksa kahve mi?");
+  assert.ok(amParticle);
+  assert.equal(getWordCategory(amParticle.item), "edat");
+  assert.ok(/yoksa/i.test(amParticle.item.anlam_tr));
 
+  // 3. أَلَمٌ ve آلَامٌ formları hâlâ أَلَمٌ (Ağrı, أ ل م) ile eşleşmelidir
+  for (const painWord of ["أَلَمٌ", "الْأَلَمُ", "بِأَلَمٍ", "آلَامٌ", "الْآلَامُ", "بِآلَامٍ"]) {
+    const res = analyzeAndMatchWord(painWord);
+    assert.ok(res, `${painWord} sözlükte eşleşmelidir`);
+    assert.equal(res.item.kok, "أ ل م", `${painWord} kökü أ ل م olmalıdır`);
+    assert.ok(/ağrı|acı/i.test(res.item.anlam_tr), `${painWord} anlamı ağrı/acı içermelidir`);
+    assert.equal(extractArabicRoot(painWord), "ألم", `${painWord} NLP kökü ألم olmalıdır`);
+  }
 
+  // 4. Diğer ال vs [آأإ]ل çakışmaları: الْبَابَ (Kapı) vs أَلْبَابٌ, السَّنَةِ (Yıl) vs أَلْسِنَةٌ, النَّاسُ
+  const babRes = analyzeAndMatchWord("الْبَابَ", "İşçi kapıyı açıyor.");
+  assert.ok(babRes && /kapı/i.test(babRes.item.anlam_tr), "الْبَابَ Kapı olmalıdır");
+  const albabRes = analyzeAndMatchWord("أَلْبَابٌ");
+  assert.ok(albabRes && /akıllı|zeki/i.test(albabRes.item.anlam_tr), "أَلْبَابٌ Akıllı/zeki olmalıdır");
+
+  const sanaRes = analyzeAndMatchWord("السَّنَةِ", "Gelecek senenin sınavı zordur.");
+  assert.ok(sanaRes && /yıl|sene/i.test(sanaRes.item.anlam_tr), "السَّنَةِ Yıl/sene olmalıdır");
+  const alsinaRes = analyzeAndMatchWord("أَلْسِنَةٌ");
+  assert.ok(alsinaRes && /dil/i.test(alsinaRes.item.anlam_tr), "أَلْسِنَةٌ Dil olmalıdır");
+
+  const nasRes = analyzeAndMatchWord("النَّاسُ", "İnsanlar evlere döndüler.");
+  assert.ok(nasRes && /insan/i.test(nasRes.item.anlam_tr), "النَّاسُ İnsanlar olmalıdır");
+
+  // 5. Kısa / muzaaf belirli isimlerde extractArabicRoot doğruluğu
+  assert.equal(extractArabicRoot("الْأُمُّ"), "أمم");
+  assert.equal(extractArabicRoot("أُمٌّ"), "أمم");
+  assert.equal(extractArabicRoot("الْأُمَّهَاتُ"), "أمم");
+  assert.equal(extractArabicRoot("الْأَبُ"), "أبو");
+  assert.equal(extractArabicRoot("الْأَخُ"), "أخو");
+  assert.equal(extractArabicRoot("الْعَمُّ"), "عمم");
+  assert.equal(extractArabicRoot("الْيَدُ"), "يدي");
+  assert.equal(extractArabicRoot("الْفَمُ"), "فمو");
+  assert.equal(extractArabicRoot("الدَّمُ"), "دمو");
+  assert.equal(extractArabicRoot("الْبَابَ"), "بوب");
+  assert.equal(extractArabicRoot("السَّنَةِ"), "سنو");
+
+  // 6. Kütüphane cümle kartı çeviri kutusu çakışan border-l-4 + border + rounded-r-xl sınıflarından arındırılmış olmalıdır
+  const kutuphaneSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "app", "kutuphane", "page.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    !kutuphaneSrc.includes(
+      'border-l-4 border-[#087F5B] bg-white/75 dark:bg-[var(--background)] rounded-r-xl px-3 py-2 border border-[#E6D7BE]'
+    ),
+    "Çeviri kutusunda çakışan border-l-4 + border + rounded-r-xl sınıfları kalmamalıdır"
+  );
+  assert.ok(
+    kutuphaneSrc.includes(
+      'relative overflow-hidden rounded-xl bg-white/75 dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-[var(--border)] pl-4 pr-3 py-2 flex items-center justify-between gap-2'
+    ),
+    "Çeviri kutusu taşmasız rounded-xl ve iç sol vurgu şeridi kullanmalıdır"
+  );
+});

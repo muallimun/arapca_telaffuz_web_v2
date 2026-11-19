@@ -703,10 +703,13 @@ const HOLLOW_PARTICIPLE_ROOTS: Record<string, string> = {
  * ve Nâkıs (دَعَا -> دعو / مَشَى -> مشي) illetli kökleri koruyarak Arapça kelimenin 3 harfli kökünü çıkarır.
  */
 export function extractArabicRoot(word: string): string {
+  const rawBare = (word || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "")
+    .replace(/[^\u0600-\u06FF]/g, "");
   let core = normalizeForComparison(word).replace(/[^\u0600-\u06FF]/g, "");
-  if (core.length <= 2) return core;
+  if (core.length < 2) return core;
 
-  // 0-A. Sözlük tabanlı doğrulanmış kök çözücü (varsa doğrudan sözlükteki kökü döndür)
+  // 0-A. Sözlük tabanlı doğrulanmış kök çözücü (2 harfli muzaaf/kısa isimler dahil: أُمٌّ -> أمم، أَبٌ -> أبو، عَمٌّ -> عمم)
   if (externalDictionaryRootResolver) {
     const dictResolved = externalDictionaryRootResolver(core, word);
     if (dictResolved && dictResolved.length >= 3) {
@@ -714,14 +717,33 @@ export function extractArabicRoot(word: string): string {
     }
   }
 
+  if (core.length <= 2) return core;
+
   // Çok harfli önekleri (وبال، وال، فال، بال، كال، ولل، لل، ال) önce soy
+  // DİKKAT: [آأإ]ل ile başlayan hemzeli/medli kelimelerden (آلَامٌ، أَلْبَابٌ، أَلْسِنَةٌ، أَلْغَازٌ) "ال" soyma!
   const multiPrefixes = ["وبال", "وال", "فال", "بال", "كال", "ولل", "لل", "ال"];
   let strippedArticle = false;
   for (const pref of multiPrefixes) {
-    if (core.startsWith(pref) && core.length - pref.length >= 3) {
+    if (!core.startsWith(pref)) continue;
+    if (pref.endsWith("ال")) {
+      const alifIdx = pref.length - 2;
+      if (alifIdx >= 0 && alifIdx < rawBare.length && /[آأإ]/.test(rawBare[alifIdx])) {
+        continue;
+      }
+    }
+    const remLen = core.length - pref.length;
+    if (remLen >= 3) {
       core = core.slice(pref.length);
       strippedArticle = true;
       break;
+    }
+    // 2 harfli muzaaf/kısa belirli isimler (الْأُمُّ، الْأَبُ، الْأَخُ، الْعَمُّ، الْيَدُ، الْفَمُ، الدَّمُ)
+    if (remLen === 2 && externalDictionaryRootResolver) {
+      const candidateStem = core.slice(pref.length);
+      const dictResolvedShort = externalDictionaryRootResolver(candidateStem, word);
+      if (dictResolvedShort && dictResolvedShort.length >= 3) {
+        return dictResolvedShort;
+      }
     }
   }
 

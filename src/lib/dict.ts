@@ -235,7 +235,18 @@ export function getWordCategory(item: DictionaryItem): WordCategory {
     return "fiil";
   }
 
-  // 3. Edat / Zarf / Konuşma Kalıbı kontrolü:
+  // 3. Açıkça "isim" olarak tanımlanmış ve çoğulu, görseli veya _isim kimliği olan gerçek isimleri
+  // (örn: أُمٌّ / أُمَّهَاتٌ، أُذُنٌ / آذَانٌ، كُمٌّ / أَكْمَامٌ، إِذْن) eş yazılımlı edatlara (أَمْ، إِذَنْ، كَمْ) kurban etme!
+  if (
+    rawTur === "isim" &&
+    ((item.cemi && item.cemi !== "-") ||
+      item.id.endsWith("_isim") ||
+      Boolean(item.gorsel))
+  ) {
+    return "isim";
+  }
+
+  // 3b. Edat / Zarf / Konuşma Kalıbı kontrolü:
   if (ARABIC_PARTICLES_SET.has(primaryArClean)) {
     return "edat";
   }
@@ -630,8 +641,14 @@ function indexDictionaryItem(item: DictionaryItem) {
       const wordsInVariant = norm.split(/\s+/).filter(Boolean);
       if (wordsInVariant.length === 1) {
         addCandidateToMultiIndex(norm, cleanedItem, v, isMasdar);
-        // Eğer varyant "ال" ile başlıyorsa, "ال"siz halini de aday listesine ekle (örn: الْبَأْسُ -> باس, الْأَحَدُ -> احد)
-        if (norm.startsWith("ال") && norm.length >= 4) {
+        // Yalnızca gerçek belirlilik takısı "ال" (düz elif ا/ٱ + ل) ile başlayan varyantların
+        // "ال"siz halini de aday listesine ekle (örn: الْبَأْسُ -> باس, الْأَحَدُ -> احد).
+        // Hemzeli/medli "آلَامٌ", "أَلْبَابٌ", "أَلْسِنَةٌ" gibi kelimeler kesinlikle "ال" soyularak indekslenmez!
+        if (
+          norm.startsWith("ال") &&
+          norm.length >= 4 &&
+          /^[اٱ][\u064B-\u065F\u0670]*ل/.test(v)
+        ) {
           addCandidateToMultiIndex(norm.slice(2), cleanedItem, v, isMasdar);
         }
       } else {
@@ -1490,15 +1507,106 @@ function isPersonalNameDisallowedByGrammarOrContext(
  * 4) Hareke / Sükun Uyumu
  * kriterlerine göre en doğru adayı seçer.
  */
+/**
+ * Ham (hemzeleri korunmuş) Arapça kelimenin gerçek belirlilik takısı "ال" (düz elif ا veya vasl elifi ٱ + ل)
+ * ile başlayıp başlamadığını kontrol eder (آلَامٌ، أَلْبَابٌ، أَلْسِنَةٌ gibi hemzeli/medli formlar false döner).
+ */
+function startsWithPlainDefiniteAl(raw: string): boolean {
+  return /^[اٱ][\u064B-\u065F\u0670]*ل/.test(raw);
+}
+
+/**
+ * Bir sözlük formunun belirlilik takısı değil, kök/çoğul başı hemze veya medli elif ([آأإ] + ل)
+ * ile başlayıp başlamadığını kontrol eder (örn: آلَامٌ، أَلْبَابٌ، أَلْسِنَةٌ، أَلْحَادٌ، أَلْحَانٌ، أَلْطَافٌ، آلَافٌ).
+ */
+function startsWithHamzaInitialAl(raw: string): boolean {
+  return /^[آأإ][\u064B-\u065F\u0670]*ل/.test(raw);
+}
+
+/**
+ * Tıklanan kelime düz belirlilik takılı "ال" (الْأُمُّ، الأم، الْبَابَ، السَّنَةِ، الْأُمَّهَاتُ) ile başlıyorsa,
+ * aynı normalize anahtara ("الام"، "الباب"، "السنه") düşen ama yalnızca hemzeli/medli ([آأإ]ل: آلَامٌ، أَلْبَابٌ، أَلْسِنَةٌ)
+ * formlardan oluşan sözlük adaylarını erken aşamada eler; böylece Kademe 2b "ال" takısını soyup
+ * gerçek gövdeyle (أُمٌّ، بَابٌ، سَنَةٌ، أُمَّهَاتٌ) eşleştirir.
+ */
+function isCandidateBlockedByDefiniteAlConflict(
+  cand: IndexedCandidate,
+  normKey: string,
+  cleanedRaw: string,
+  contextSentenceTr?: string,
+  hasStrippedPrefix = false
+): boolean {
+  if (hasStrippedPrefix) return false;
+  if (!normKey.startsWith("ال") || normKey.length < 4) return false;
+  if (!startsWithPlainDefiniteAl(cleanedRaw)) return false;
+
+  const matchingForms = cand.rawForms.filter(
+    (rf) => cleanArabicText(rf) === normKey
+  );
+  const formsToInspect =
+    matchingForms.length > 0 ? matchingForms : cand.rawForms;
+  if (formsToInspect.length === 0) return false;
+
+  // Adayın bu anahtar altındaki formlarının tamamı [آأإ]ل (hemze/medli) ile başlıyorsa,
+  // düz "ال" (ا/ٱ + ل) ile başlayan belirli bir isimle çakışıyor demektir.
+  const isOnlyHamzaInitialAl = formsToInspect.every((rf) =>
+    startsWithHamzaInitialAl(rf.trim())
+  );
+  if (!isOnlyHamzaInitialAl) return false;
+
+  // 1) Açık belirlilik göstergeleri: ال + hemze (الْأُمُّ، الأم، الْأُمَّهَاتُ), الْ (sükunlu lam: الْبَابَ),
+  //    veya şemsî şedde (السَّنَةِ، التَّقِيُّ) -> %100 belirlilik takılı isimdir, asla آلَامٌ/أَلْبَابٌ/أَلْسِنَةٌ olamaz!
+  const hasExplicitDefiniteCue =
+    /^[اٱ][\u064B-\u065F\u0670]*ل\u0652?[أإآ]/.test(cleanedRaw) ||
+    /^[اٱ]ل\u0652/.test(cleanedRaw) ||
+    /^[اٱ]ل[\u0621-\u064A]\u0651/.test(cleanedRaw);
+  if (hasExplicitDefiniteCue) {
+    return true;
+  }
+
+  // 2) Harekeli/hemzesiz yazılmış olsa bile (örn: "الباب"، "السنة"، "الام"),
+  //    "ال" sonrası gövde sözlükte varsa ve Türkçe bağlam özellikle hemzeli adayı desteklemiyorsa,
+  //    belirlilik takısı soyma aşamasına öncelik ver.
+  const stemAfterAl = normKey.slice(2);
+  if (dictMultiIndex.has(stemAfterAl) || dictIndex.has(stemAfterAl)) {
+    const directContextScore = computeTurkishContextScore(
+      cand.item,
+      contextSentenceTr
+    );
+    if (directContextScore <= 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * NOMINAL_PREFIX_RULES içindeki "ال" içeren öneklerin (ال، وال، فال، بال، كال، وبال، فبال)
+ * gerçekten düz elifli belirlilik takısı (ا/ٱ + ل) üzerinde çalışmasını sağlar;
+ * hemzeli/medli "آلَامٌ", "بِآلَامٍ", "أَلْغَازٌ", "وَأَلْبَابٌ" gibi kelimelerden yanlışlıkla "ال" soyulmasını engeller.
+ */
+function canStripDefiniteAlNominalPrefix(
+  prefRaw: string,
+  cleanedRaw: string
+): boolean {
+  if (!prefRaw.endsWith("ال")) return true;
+  const bare = stripHarakat(cleanedRaw);
+  const alifIndex = prefRaw.length - 2;
+  if (alifIndex < 0 || alifIndex >= bare.length) return true;
+  return !/[آأإ]/.test(bare[alifIndex]);
+}
+
 function pickBestCandidateForKey(
   normKey: string,
   cleanedRaw: string,
   contextSentenceTr?: string,
   isDefinitelyNoun?: boolean,
-  isDefinitelyVerb?: boolean
+  isDefinitelyVerb?: boolean,
+  hasStrippedPrefix = false
 ): DictionaryItem | null {
-  const candidates = dictMultiIndex.get(normKey);
-  if (!candidates || candidates.length === 0) {
+  const rawCandidates = dictMultiIndex.get(normKey);
+  if (!rawCandidates || rawCandidates.length === 0) {
     const single = dictIndex.get(normKey) || null;
     if (single && isDefinitelyVerb && getWordCategory(single) !== "fiil") {
       return null;
@@ -1513,6 +1621,21 @@ function pickBestCandidateForKey(
     }
     return single;
   }
+
+  const candidates = rawCandidates.filter(
+    (cand) =>
+      !isCandidateBlockedByDefiniteAlConflict(
+        cand,
+        normKey,
+        cleanedRaw,
+        contextSentenceTr,
+        hasStrippedPrefix
+      )
+  );
+  if (candidates.length === 0) {
+    return null;
+  }
+
   if (candidates.length === 1) {
     const only = candidates[0].item;
     const isMasdar =
@@ -1536,11 +1659,14 @@ function pickBestCandidateForKey(
     let score = -cand.order * 0.01; // İndeks sırası (tamamlayıcı sözlük önceliği)
 
     // 1. Gramer Kalkanı: Kesin isim alameti varsa fiilleri ele (ancak masdar formları isim-fiil olduğu için koru!)
+    //    Edatlar (أَمْ، كَمْ، إِذَنْ) belirlilik takılı isimlerle (الْأُمُّ، الْكُمُّ، الْأُذُنُ) yarıştığında isimlere öncelik ver!
     if (isDefinitelyNoun) {
       if (cat === "fiil" && !isMasdar) {
         score -= 1000;
       } else if (cat === "fiil" && isMasdar) {
         score += 180;
+      } else if (cat === "edat") {
+        score -= 150;
       } else {
         score += 250;
       }
@@ -2139,7 +2265,8 @@ function matchNominalOrExactStem(
   isDefinitelyNoun?: boolean,
   isDefinitelyVerb?: boolean,
   hasStrippedPronoun = false,
-  hasStrippedFeminineDual = false
+  hasStrippedFeminineDual = false,
+  hasStrippedPrefix = false
 ): {
   item: DictionaryItem;
   stage: "exact" | "ta-marbuta";
@@ -2159,7 +2286,8 @@ function matchNominalOrExactStem(
       cleanedRaw,
       contextSentenceTr,
       isDefinitelyNoun || isElativeStem,
-      isDefinitelyVerb
+      isDefinitelyVerb,
+      hasStrippedPrefix
     );
     if (best) {
       const isElative =
@@ -2268,7 +2396,9 @@ function matchNominalOrExactStem(
         withoutTaMarbuta,
         cleanedRaw,
         contextSentenceTr,
-        true
+        true,
+        false,
+        hasStrippedPrefix
       );
       if (best && isNonVerbOrMasdar(best, withoutTaMarbuta)) {
         return {
@@ -4366,7 +4496,8 @@ function analyzeAndMatchWordCore(
   for (const pref of NOMINAL_PREFIX_RULES) {
     if (
       normalized.startsWith(pref.raw) &&
-      normalized.length - pref.raw.length >= 2
+      normalized.length - pref.raw.length >= 2 &&
+      canStripDefiniteAlNominalPrefix(pref.raw, cleanedRaw)
     ) {
       const stem = normalized.slice(pref.raw.length);
       const effectiveNounGuard =
@@ -4375,7 +4506,11 @@ function analyzeAndMatchWordCore(
         stem,
         cleanedRaw,
         contextSentenceTr,
-        effectiveNounGuard
+        effectiveNounGuard,
+        false,
+        false,
+        false,
+        true
       );
       if (matchedNom) {
         return {
@@ -4399,7 +4534,10 @@ function analyzeAndMatchWordCore(
   // Kademe 2c: Hem Ön Ek (NOMINAL_PREFIX_RULES) Hem Son Ek Soyarak İsim/Tam Eşleşme
   if (!endsWithTaMarbuta) {
     for (const pref of NOMINAL_PREFIX_RULES) {
-      if (normalized.startsWith(pref.raw)) {
+      if (
+        normalized.startsWith(pref.raw) &&
+        canStripDefiniteAlNominalPrefix(pref.raw, cleanedRaw)
+      ) {
         const afterPref = normalized.slice(pref.raw.length);
         const effectiveNounGuard =
           isDefinitelyNoun || Boolean(pref.makesDefiniteNoun);
@@ -4473,7 +4611,8 @@ function analyzeAndMatchWordCore(
               effectiveNounGuard,
               Boolean(suff.verbOnly),
               Boolean(suff.isPronoun),
-              Boolean(suff.isFeminineDual)
+              Boolean(suff.isFeminineDual),
+              true
             );
             if (
               matchedNom &&
@@ -4898,17 +5037,65 @@ function analyzeAndMatchWordCore(
 
 // arabicNlpEngine kök çıkarıcısını doğrulanmış sözlük kökleriyle (kok) besle (döngüsel bağımlılık olmadan)
 registerDictionaryRootResolver((normalizedCore: string, rawWord: string) => {
-  const cleanKey = cleanArabicText(rawWord || normalizedCore);
-  const cands =
-    dictMultiIndex.get(cleanKey) ||
-    dictMultiIndex.get(normalizedCore) ||
-    [];
-  for (const c of cands) {
-    const rawKok = (c.item.kok || "").replace(/\s+/g, "").replace(/هـ/g, "ه").trim();
-    if (rawKok && rawKok !== "-" && rawKok.length >= 3) {
-      return rawKok;
+  const cleanedRaw = (rawWord || normalizedCore)
+    .replace(/[.,!?؟،;؛:"'()\[\]{}\-\u200F\u200E\u0640\d]/g, "")
+    .trim();
+  const cleanKey = cleanArabicText(cleanedRaw);
+  const extractKok = (item: DictionaryItem | null): string | null => {
+    if (!item || !item.kok || item.kok === "-") return null;
+    const rawKok = item.kok.replace(/\s+/g, "").replace(/هـ/g, "ه").trim();
+    return rawKok && rawKok !== "-" && rawKok.length >= 3 ? rawKok : null;
+  };
+
+  // Eğer arabicNlpEngine zaten ekleri soyup daha kısa bir gövde (normalizedCore) gönderdiyse, önce onu dene
+  if (normalizedCore && normalizedCore !== cleanKey) {
+    const strippedMatch = pickBestCandidateForKey(
+      normalizedCore,
+      cleanedRaw,
+      undefined,
+      hasDefiniteNounMarker(cleanedRaw),
+      false,
+      true
+    );
+    const strippedKok = extractKok(strippedMatch);
+    if (strippedKok) return strippedKok;
+  }
+
+  // Doğrudan eşleşme (ال vs [آأإ]ل kalkanı aktif!)
+  if (cleanKey) {
+    const directMatch = pickBestCandidateForKey(
+      cleanKey,
+      cleanedRaw,
+      undefined,
+      hasDefiniteNounMarker(cleanedRaw),
+      false,
+      false
+    );
+    const directKok = extractKok(directMatch);
+    if (directKok) return directKok;
+
+    // Kısa/muzaaf belirli isimler (الْأُمُّ، الْأَبُ، الْأَخُ، الْعَمُّ، الْيَدُ، الْفَمُ، الدَّمُ، وَالْأُمُّ، بِالْأُمِّ، لِلْأُمِّ)
+    for (const pref of NOMINAL_PREFIX_RULES) {
+      if (
+        cleanKey.startsWith(pref.raw) &&
+        cleanKey.length - pref.raw.length >= 2 &&
+        canStripDefiniteAlNominalPrefix(pref.raw, cleanedRaw)
+      ) {
+        const stem = cleanKey.slice(pref.raw.length);
+        const prefMatch = pickBestCandidateForKey(
+          stem,
+          cleanedRaw,
+          undefined,
+          hasDefiniteNounMarker(cleanedRaw) || Boolean(pref.makesDefiniteNoun),
+          false,
+          true
+        );
+        const prefKok = extractKok(prefMatch);
+        if (prefKok) return prefKok;
+      }
     }
   }
+
   return null;
 });
 

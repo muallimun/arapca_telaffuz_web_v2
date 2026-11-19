@@ -5602,9 +5602,10 @@ export const SUPPLEMENT_DICTIONARY: DictionaryItem[] = [
     id: "supp_204",
     tur: "isim",
     kok: "أ م م",
-    mufret: "أُمّ",
-    cemi: "أُمَّهَات",
+    mufret: "أُمٌّ",
+    cemi: "أُمَّهَاتٌ",
     anlam_tr: "anne, valide (يَا أُمِّي: anneciğim)",
+    ornek_ar: "أُمِّي تُحَضِّرُ الطَّعَامَ اللَّذِيذَ كُلَّ يَوْمٍ.",
   },
   {
     id: "supp_205",

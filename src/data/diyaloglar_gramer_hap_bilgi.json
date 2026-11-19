@@ -3439,7 +3439,7 @@
     "konu_basligi": "Amaç Bildiren Harf-i Cer (لِ / Mef'ûlün Lieclih)",
     "hap_kural": "Eylemin yapılma amacını ve gerekçesini bildiren masdarların başına sebep bildiren 'لِ' (için / amacıyla) harf-i ceri getirilir ve masdar mecrur (esreli) okunur.",
     "metinden_ornek": {
-      "arapca": "أُرِيدُ الذَّهَابَ إِلَى الْغَابَةِ لِصَيْدِ الطَّيُورِ.",
+      "arapca": "أُرِيدُ الذَّهَابَ إِلَى الْغَابَةِ لِصَيْدِ الطُّيُورِ.",
       "turkce": "Kuş avlamak için ormana gitmek istiyorum.",
       "aciklama": "'لِصَيْدِ' kelimesindeki 'لِ' harf-i ceri eylemin amacını ('avlamak için') bildirmiş ve 'صَيْدِ' masdarını esrelemiştir."
     },
@@ -3455,7 +3455,7 @@
     ],
     "ipucu": "Eyleme 'Niçin / Ne amaçla?' sorusu sorulduğunda verilen cevap genellikle 'لِ' harf-i cerli masdar ile ifade edilir.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Fiil (أُرِيدُ الذَّهَابَ)] + [Harf-i Cer (لِ)] + [Mecrûr Masdar Muzaf (صَيْدِ - ◌ِ)] + [Muzafun İleyh (الطَّيُورِ - ◌ِ)]",
+      "formul_sema": "[Fiil (أُرِيدُ الذَّهَابَ)] + [Harf-i Cer (لِ)] + [Mecrûr Masdar Muzaf (صَيْدِ - ◌ِ)] + [Muzafun İleyh (الطُّيُورِ - ◌ِ)]",
       "adim_adim_anlatim": [
         "1. Eylem Amacının İfadesi: Bir eylemin yapılma gerekçesini bildirmek için masdarın başına 'لِ' (-mek için / amacıyla) edatı getirilir.",
         "2. Harf-i Cer İrabı: 'لِ' harf-i ceri eylem ismi olan masdarı esreli (mecrûr) yapar ('لِصَيْدِ', 'لِلدِّرَاسَةِ').",
@@ -3473,7 +3473,7 @@
           [
             "أُرِيدُ الذَّهَابَ",
             "لِصَيْدِ",
-            "الطَّيُورِ",
+            "الطُّيُورِ",
             "Kuş avlamak için gitmek istiyorum."
           ],
           [
@@ -3497,14 +3497,14 @@
           "hareke_nedeni": "'لِ' sebep harf-i ceri, 'صَيْدِ' esre ile mecrûr muzaf masdardır."
         },
         {
-          "kelime": "الطَّيُورِ",
+          "kelime": "الطُّيُورِ",
           "gorevi": "Muzafun İleyh",
           "hareke_nedeni": "Amaç masdarının tamlayanı olduğu için esre (kesra) ile mecrûrdur."
         }
       ],
       "dikkat_sik_hata": {
-        "yanlis": "أُرِيدُ الذَّهَابَ لِصَيْدَ الطَّيُورِ.",
-        "dogru": "أُرِيدُ الذَّهَابَ لِصَيْدِ الطَّيُورِ.",
+        "yanlis": "أُرِيدُ الذَّهَابَ لِصَيْدَ الطُّيُورِ.",
+        "dogru": "أُرِيدُ الذَّهَابَ لِصَيْدِ الطُّيُورِ.",
         "neden": "'لِ' harf-i cerinden sonra gelen amaç masdarı üstünlü değil, dâima mecrûr (esreli) okunmalıdır."
       }
     }

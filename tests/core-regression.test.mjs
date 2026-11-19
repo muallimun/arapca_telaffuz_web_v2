@@ -10524,7 +10524,7 @@ test("93. tum_diyaloglar_120.json ve tum_metinler_60.json Latin Rakam (102/405) 
   const byDlg = new Map(dlgs.map((d) => [d.id, d]));
   assert.equal(
     byDlg.get("dlg_042")?.satirlar.find((s) => s.sira === 3)?.arapca,
-    "اسْمُهُ خَالِدٌ فِي الْغُرْفَةِ رَقْمِ مِئَةٍ وَاثْنَيْنِ."
+    "اِسْمُهُ خَالِدٌ فِي الْغُرْفَةِ رَقْمِ مِئَةٍ وَاثْنَيْنِ."
   );
   assert.equal(
     byDlg.get("dlg_049")?.satirlar.find((s) => s.sira === 11)?.arapca,
@@ -10538,4 +10538,47 @@ test("93. tum_diyaloglar_120.json ve tum_metinler_60.json Latin Rakam (102/405) 
     byDlg.get("dlg_103")?.satirlar.find((s) => s.sira === 6)?.arapca.startsWith("لِذَلِكَ ")
   );
 });
+
+test("94. tum_diyaloglar_120.json Emir Vasl Hemzesi (اُخْرُجْ/اُنْظُرْ), Hatalı Hareke/Şedde (الطُّيُورِ/بُنْدُقِيَّةَ/مِكْنَسَةُ/اللَّذِيذَ/اللَّيْلَةَ/تَنُّورَةٌ), Cinsiyet (dlg_093) ve Türkçe Sayı Uyumu", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8");
+  assert.ok(!/\u0670/.test(raw), "tum_diyaloglar_120.json genelinde (odak_kalip/odak_gramer dahil) kısa elif kalmamalıdır");
+
+  const dlgs = JSON.parse(raw);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const line = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // 1. Sülasi Emir مضموم العين (اُ) & cümle başı vasıl hemzesi
+  assert.ok(line("dlg_071", 5)?.arapca.startsWith("اُخْرُجْ "));
+  assert.ok(line("dlg_051", 4)?.arapca.startsWith("اُنْظُرِي "));
+  assert.ok(line("dlg_057", 9)?.arapca.startsWith("اُنْظُرِي،"));
+  assert.ok(line("dlg_059", 1)?.arapca.startsWith("اُنْظُرْ "));
+  assert.ok(line("dlg_059", 3)?.arapca.startsWith("اُنْظُرْ "));
+
+  // 2. Hatalı hareke, eksik hareke ve şedde
+  assert.ok(line("dlg_043", 3)?.arapca.includes("الط\u0651\u064Fيُورِ."));
+  assert.ok(line("dlg_043", 4)?.arapca.includes("بُنْدُقِي\u0651\u064Eةَ"));
+  assert.ok(line("dlg_043", 5)?.arapca.includes("الْبُنْدُقِي\u0651\u064Eةَ"));
+  assert.ok(line("dlg_057", 5)?.arapca.includes("مِكْنَسَةُ"));
+  assert.ok(line("dlg_090", 7)?.arapca.includes("الل\u0651\u064Eذِيذَ"));
+  assert.ok(line("dlg_105", 7)?.arapca.includes("الل\u0651\u064Eيْلَةَ؟"));
+  assert.ok(line("dlg_066", 6)?.odak_kalip.includes("تَن\u0651\u064Fورَةٌ"));
+
+  // 3. Konuşmacı cinsiyeti uyumu (dlg_093 Said [E] & Tarık [E])
+  assert.equal(
+    line("dlg_093", 8)?.arapca,
+    "وَهَلْ أَنْتَ تَعْرِفُ كَيْفَ تُقَد\u0651\u0650مُ الإِسْعَافَاتِ الأَو\u0651\u064Eلِي\u0651\u064Eةَ لِلْمَجْرُوحِينَ؟"
+  );
+  assert.equal(
+    line("dlg_093", 9)?.arapca,
+    "نَعَمْ، وَلَنْ أَتَأَخ\u0651\u064Eرَ عَنْ مُسَاعَدَةِ المَجْرُوحِينَ فِي الش\u0651\u064Eارِعِ."
+  );
+
+  // 4. Türkçe-Arapça sayı/saat uyumu
+  assert.equal(line("dlg_011", 10)?.turkce, "Hesap sadece yirmi liradır.");
+  assert.equal(line("dlg_026", 4)?.turkce, "Sıcaklık yirmi derecedir.");
+  assert.equal(line("dlg_042", 3)?.turkce, "Adı Halid, yüz iki numaralı odada.");
+  assert.equal(line("dlg_043", 9)?.turkce, "Memnuniyetle, sabah saat beşte çıkacağız.");
+  assert.equal(line("dlg_049", 11)?.turkce, "İşte dört yüz beş numaralı odanın anahtarı.");
+});
+
 

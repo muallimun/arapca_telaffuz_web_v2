@@ -228,10 +228,10 @@ export function build24WeekCurriculum(): CurriculumWeekPlan[] {
       const dialogueChips: CurriculumLessonChip[] = weekDialoguesRaw.map(
         (d, idx) => {
           const gNote = getDialogueGrammarNote(d.id);
-          const num = parseInt(d.id.replace(/\D+/g, ""), 10) || idx + 1;
+          const curriculumIndex = globalWeekIdx * 5 + idx + 1;
           return {
             id: d.id,
-            codeLabel: `Diyalog ${num}`,
+            codeLabel: `Diyalog ${curriculumIndex}`,
             baslikTr: d.baslik_tr,
             baslikAr: d.baslik_ar,
             seviye: d.seviye,

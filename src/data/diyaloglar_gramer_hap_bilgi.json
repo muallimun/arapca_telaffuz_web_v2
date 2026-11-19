@@ -9081,9 +9081,9 @@
     "konu_basligi": "Kasr ve İleri Atıf Kalıpları (لَيْسَ... فَحَسْبُ بَلْ... / إِمَّا... وَإِمَّا)",
     "hap_kural": "Sınırlama ve pekiştirme için 'لَيْسَ... فَحَسْبُ بَلْ...' (sadece ... değil aynı zamanda ...), seçenek sunmak için 'إِمَّا... وَإِمَّا...' (ya ... ya da ...) ileri atıf edatları kullanılır.",
     "metinden_ornek": {
-      "arapca": "لَا أَحْتَاجُ الشَّهَادَةَ فَحَسْبُ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِيَّةِ.",
+      "arapca": "لَا أَحْتَاجُ الشَّهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِيَّةِ.",
       "turkce": "Sadece diplomaya ihtiyaç duymuyorum aksine pratik tecrübeyi arıyorum.",
-      "aciklama": "'لَا... فَحَسْبُ بَلْ...' kalıbı hükmü ilk ögeyle sınırlamayı reddedip ikinci ögeyi de güçlü biçimde kapsama dahil eden kasr/atıf yapısıdır."
+      "aciklama": "'لَا... فَقَطْ بَلْ...' kalıbı hükmü ilk ögeyle sınırlamayı reddedip ikinci ögeyi de güçlü biçimde kapsama dahil eden kasr/atıf yapısıdır."
     },
     "ek_ornekler": [
       {
@@ -9139,9 +9139,9 @@
           "hareke_nedeni": "'أَحْتَاجُ' merfû muzâri, 'الشَّهَادَةَ' mansûb nesnedir."
         },
         {
-          "kelime": "فَحَسْبُ",
+          "kelime": "فَقَطْ",
           "gorevi": "İktifâ / Sınırlama İfadesi",
-          "hareke_nedeni": "Damma üzere mebni 'yeter/sadece' anlamlı yapıdır."
+          "hareke_nedeni": "Sükûn üzere mebni 'sadece/yalnızca' anlamlı sınırlama ifadesidir."
         },
         {
           "kelime": "بَلْ أَبْحَثُ",

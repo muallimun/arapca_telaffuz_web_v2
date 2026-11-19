@@ -1132,7 +1132,7 @@
       },
       {
         "sira": 5,
-        "arapca": "أُقَضِّي وَقْتًا نَشِيطًا فِي كُلِّ أُسْبُوعٍ.",
+        "arapca": "أَقْضِي وَقْتًا نَشِيطًا فِي كُلِّ أُسْبُوعٍ.",
         "turkce": "Her hafta zinde bir vakit geçiririm.",
         "ses_dosyasi": "/sesler/metinler/metin_19/satir_05.mp3"
       },
@@ -1512,7 +1512,7 @@
       {
         "sira": 2,
         "arapca": "دَخَلْتُ المَكْتَبَةَ مَعَ زُمَلَائِي فِي اسْتِرَاحَةِ الظُّهْرِ بِشَوْقٍ كَبِيرٍ.",
-        "turkce": "Öğle arasında büyük bir özlemle arkadaşımla kütüphaneye girdim.",
+        "turkce": "Öğle arasında büyük bir özlemle arkadaşlarımla kütüphaneye girdim.",
         "ses_dosyasi": "/sesler/metinler/metin_25/satir_02.mp3"
       },
       {
@@ -1701,7 +1701,7 @@
     "seviye": "A2",
     "tema": "Seyahat_ve_Ulasim",
     "odak_gramer": "Meçhul Fiil Kalıbı (تُعْتَبَرُ) ve Zorunluluk Yapısı (يَجِبُ أَنْ)",
-    "baslik_ar": "قَوَاعِدُ المُرُورِ وَمَمَرُّ المَشَاةِ",
+    "baslik_ar": "قَوَاعِدُ المُرُورِ وَمَمَرُّ الْمُشَاةِ",
     "baslik_tr": "Trafik Kuralları ve Yaya Geçidi",
     "satirlar": [
       {
@@ -1718,7 +1718,7 @@
       },
       {
         "sira": 3,
-        "arapca": "نَعْبُرُ الشَّارِعَ الكَبِيرَ مِنْ مَمَرِّ المَشَاةِ المُنَظَّمِ فَقَطْ.",
+        "arapca": "نَعْبُرُ الشَّارِعَ الكَبِيرَ مِنْ مَمَرِّ الْمُشَاةِ المُنَظَّمِ فَقَطْ.",
         "turkce": "Büyük sokağı sadece düzenli yaya geçidinden geçeriz.",
         "ses_dosyasi": "/sesler/metinler/metin_28/satir_03.mp3"
       },
@@ -2182,7 +2182,7 @@
       {
         "sira": 2,
         "arapca": "قَرَأْتُ الدُّرُوسَ وَالمَفَاهِيمَ الصَّعْبَةَ مَعَ زُمَلَائِي فِي المَكْتَبَةِ هَادِئاً.",
-        "turkce": "Dersleri ve zor kavramları arkadaşımla kütüphanede sakince okudum.",
+        "turkce": "Dersleri ve zor kavramları arkadaşlarımla kütüphanede sakince okudum.",
         "ses_dosyasi": "/sesler/metinler/metin_35/satir_02.mp3"
       },
       {
@@ -2954,7 +2954,7 @@
       },
       {
         "sira": 3,
-        "arapca": "إِذَا عَمِلَ المَوْظَّفُ بِإِتْقَانٍ وَأَمَانَةٍ فَسَوْفَ يَنَالُ احْتِرَامَ الجَمِيعِ فِي الشَّرِكَةِ.",
+        "arapca": "إِذَا عَمِلَ الْمُوَظَّفُ بِإِتْقَانٍ وَأَمَانَةٍ فَسَوْفَ يَنَالُ احْتِرَامَ الجَمِيعِ فِي الشَّرِكَةِ.",
         "turkce": "Eğer çalışan sağlamlık ve dürüstlükle çalışırsa şirkette herkesin saygısını kazanır.",
         "ses_dosyasi": "/sesler/metinler/metin_46/satir_03.mp3"
       },
@@ -3313,7 +3313,7 @@
       },
       {
         "sira": 2,
-        "arapca": "تَتَزَايَدُ دَرَجَاتُ الحَرَارَةِ بِشَكْلٍ مَلْحُوظٍ جِدًّا رَغْمَ أَنَّ الدُّوَلَ الصَّنَاعِيَّةَ تُعْلِنُ التِزَامَهَا الدَّائِمَ بِالْمُعَاهَدَاتِ الدَّوْلِيَّةِ المُخْتَلِفَةِ.",
+        "arapca": "تَتَزَايَدُ دَرَجَاتُ الحَرَارَةِ بِشَكْلٍ مَلْحُوظٍ جِدًّا رَغْمَ أَنَّ الدُّوَلَ الصَّنَاعِيَّةَ تُعْلِنُ الْتِزَامَهَا الدَّائِمَ بِالْمُعَاهَدَاتِ الدَّوْلِيَّةِ المُخْتَلِفَةِ.",
         "turkce": "Sanayi ülkeleri çeşitli uluslararası antlaşmalara daimi bağlılıklarını ilan etmelerine rağmen sıcaklıklar çok belirgin bir şekilde artmaya devam etmektedir.",
         "ses_dosyasi": "/sesler/metinler/metin_51/satir_02.mp3"
       },
@@ -3592,7 +3592,7 @@
       },
       {
         "sira": 6,
-        "arapca": "تُفَرَضُ العُقُوبَاتُ الصَّارِمَةُ عَلَى المُنْتَهِكِينَ لِلْقَوَانِينِ لِكَيْ يُنْصَرَ المَظْلُومُونَ فِي المَحَاكِمِ العَادِلَةِ دَائِماً.",
+        "arapca": "تُفْرَضُ الْعُقُوبَاتُ الصَّارِمَةُ عَلَى المُنْتَهِكِينَ لِلْقَوَانِينِ لِكَيْ يُنْصَرَ المَظْلُومُونَ فِي المَحَاكِمِ العَادِلَةِ دَائِماً.",
         "turkce": "Adil mahkemelerde daima mazlumlara yardım edilsin diye kanunları ihlal edenlere sert cezalar verilir.",
         "ses_dosyasi": "/sesler/metinler/metin_54/satir_06.mp3"
       },
@@ -3616,7 +3616,7 @@
       },
       {
         "sira": 10,
-        "arapca": "إِنَّ بِنَاءَ مُسْتَقْبَلٍ عَادِلٍ يَتَطَلَّبُ التِزَاماً حَقِيقِيّاً بِالْقِيَمِ الإِنْسَانِيَّةِ النَّبِيلَةِ فِي كُلِّ حِينٍ.",
+        "arapca": "إِنَّ بِنَاءَ مُسْتَقْبَلٍ عَادِلٍ يَتَطَلَّبُ الْتِزَاماً حَقِيقِيّاً بِالْقِيَمِ الإِنْسَانِيَّةِ النَّبِيلَةِ فِي كُلِّ حِينٍ.",
         "turkce": "Adil bir geleceğin inşası, her an soylu insani değerlere hakiki bir bağlılığı gerektirir.",
         "ses_dosyasi": "/sesler/metinler/metin_54/satir_10.mp3"
       }
@@ -3629,7 +3629,7 @@
         "cevap_tr": "Sosyal adalettir."
       },
       {
-        "soru_ar": "لِمَاذَا تُفَرَضُ العُقُوبَاتُ عَلَى المُنْتَهِكِينَ؟",
+        "soru_ar": "لِمَاذَا تُفْرَضُ الْعُقُوبَاتُ عَلَى المُنْتَهِكِينَ؟",
         "soru_tr": "İhlal edenlere cezalar niçin verilir?",
         "cevap_ar": "لِكَيْ يُنْصَرَ المَظْلُومُونَ.",
         "cevap_tr": "Mazlumlara yardım edilsin diye."
@@ -3677,7 +3677,7 @@
       },
       {
         "sira": 6,
-        "arapca": "تُسْتَخْدَمُ التِّكْنُولُوجِيَا الحَدِيثَةُ لِتَخْزِينِ الطَّاقَةِ المَوْلَدَةِ لِكَيْ تُسْتَهْلَكَ فِي الأَوْقَاتِ المَظْلِمَةِ فِي المَدِينَةِ.",
+        "arapca": "تُسْتَخْدَمُ التِّكْنُولُوجِيَا الحَدِيثَةُ لِتَخْزِينِ الطَّاقَةِ الْمُوَلَّدَةِ لِكَيْ تُسْتَهْلَكَ فِي الأَوْقَاتِ المَظْلِمَةِ فِي المَدِينَةِ.",
         "turkce": "Şehirde karanlık vakitlerde tüketilsin diye üretilen enerjiyi depolamak için modern teknoloji kullanılır.",
         "ses_dosyasi": "/sesler/metinler/metin_55/satir_06.mp3"
       },
@@ -3835,13 +3835,13 @@
       },
       {
         "sira": 4,
-        "arapca": "تُنَفَّقُ الأَمْوَالُ المَوْقُوفَةُ فِي سُبُلِ الخَيْرِ رَغْمَ التَّغَيُّرَاتِ الاِقْتِصَادِيَّةِ الصَّعْبَةِ فِي العَالَمِ.",
+        "arapca": "تُنْفَقُ الْأَمْوَالُ المَوْقُوفَةُ فِي سُبُلِ الخَيْرِ رَغْمَ التَّغَيُّرَاتِ الاِقْتِصَادِيَّةِ الصَّعْبَةِ فِي العَالَمِ.",
         "turkce": "Dünyadaki zor ekonomik değişimlere rağmen vakfedilen paralar hayır yollarında harcanır.",
         "ses_dosyasi": "/sesler/metinler/metin_57/satir_04.mp3"
       },
       {
         "sira": 5,
-        "arapca": "فَمَا أَعْظَمَ رُوحَ الْعَطَاءِ الَّتِي تَدْفَعُ الأَغْنِيَاءَ إِلَى مُسَاعَدَةِ الِفُقَرَاءِ بِإِخْلَاصٍ وَمَحَبَّةٍ!",
+        "arapca": "فَمَا أَعْظَمَ رُوحَ الْعَطَاءِ الَّتِي تَدْفَعُ الأَغْنِيَاءَ إِلَى مُسَاعَدَةِ الْفُقَرَاءِ بِإِخْلَاصٍ وَمَحَبَّةٍ!",
         "turkce": "Zenginleri fakirlere ihlas ve sevgiyle yardım etmeye sevk eden verme ruhu ne kadar da büyüktür!",
         "ses_dosyasi": "/sesler/metinler/metin_57/satir_05.mp3"
       },
@@ -3886,7 +3886,7 @@
       {
         "soru_ar": "كَيْفَ تُسَاهِمُ الأَوْقَافُ فِي التَّعْلِيمِ؟",
         "soru_tr": "Vakıflar eğitime nasıl katkıda bulunur?",
-        "cevap_ar": "بِتَوْفِيرِ المَنَاحِ الدِّرَاسِيَّةِ لِلطُّلَّابِ.",
+        "cevap_ar": "بِتَوْفِيرِ الْمِنَحِ الدِّرَاسِيَّةِ لِلطُّلَّابِ.",
         "cevap_tr": "Öğrencilere eğitim bursları sağlayarak."
       }
     ]
@@ -4090,7 +4090,7 @@
       },
       {
         "sira": 4,
-        "arapca": "تُوَقَّعُ مُعَاهَدَاتُ السَّلَامِ الدَّائِمَةِ بَيْدَ أَنَّ التِزَامَ الأَطْرَافِ يَحْتَاجُ إِلَى نِيَّةٍ صَادِقَةٍ.",
+        "arapca": "تُوَقَّعُ مُعَاهَدَاتُ السَّلَامِ الدَّائِمَةِ بَيْدَ أَنَّ الْتِزَامَ الأَطْرَافِ يَحْتَاجُ إِلَى نِيَّةٍ صَادِقَةٍ.",
         "turkce": "Kalıcı barış antlaşmaları imzalanır, ne var ki tarafların bağlılığı dürüst bir niyete ihtiyaç duymaktadır.",
         "ses_dosyasi": "/sesler/metinler/metin_60/satir_04.mp3"
       },

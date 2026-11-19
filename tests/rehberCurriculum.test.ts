@@ -32,11 +32,14 @@ test("24 Haftalık Müfredat (build24WeekCurriculum) 120 Diyalog ve 60 Okuma Met
       `${w.weekNumber}. haftada 1–4 okuma metni yer almalıdır`
     );
 
-    for (const d of w.dialogues) {
+    w.dialogues.forEach((d, idx) => {
+      const expectedSeq = (w.weekNumber - 1) * 5 + idx + 1;
       assert.equal(d.seviye, w.level);
-      assert.ok(d.href.startsWith("/diyalog/dlg_"));
+      assert.equal(d.codeLabel, `Diyalog ${expectedSeq}`);
+      assert.equal(d.href, `/diyalog/${d.id}`);
+      assert.ok(d.id.startsWith("dlg_"));
       dialogueIds.add(d.id);
-    }
+    });
     for (const r of w.readings) {
       assert.equal(r.seviye, w.level);
       assert.ok(r.href.startsWith("/metin/metin_"));

@@ -10025,10 +10025,19 @@ test("86. Kapsamlı Kullanım Rehberi & 24 Haftalık Çalışma Programı Merkez
 
   const weeks = build24WeekCurriculum();
   assert.equal(weeks.length, 24, "24 haftalık tam müfredat üretilmelidir");
+  const allDialogueChips = weeks.flatMap((w) => w.dialogues);
   assert.equal(
-    new Set(weeks.flatMap((w) => w.dialogues.map((d) => d.id))).size,
+    new Set(allDialogueChips.map((d) => d.id)).size,
     CONTENT_INVENTORY.dialoguesCount
   );
+  allDialogueChips.forEach((d, i) => {
+    assert.equal(
+      d.codeLabel,
+      `Diyalog ${i + 1}`,
+      `24 haftalık çizelgede diyalog sırası kesintisiz Diyalog 1..120 olmalıdır (beklenen Diyalog ${i + 1}, gelen ${d.codeLabel})`
+    );
+    assert.equal(d.href, `/diyalog/${d.id}`);
+  });
   assert.equal(
     new Set(weeks.flatMap((w) => w.readings.map((r) => r.id))).size,
     CONTENT_INVENTORY.readingsCount
@@ -10207,7 +10216,25 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
     getLine("dlg_113", 6)?.arapca.includes("عَلَى الْإِخْلَاصِ الْإِخْلَاصِ")
   );
 
-  // dlg_025 gramer örneği senkronizasyonu
+  // 3. İfade ve Gramer Doğallığı Düzeltmeleri (dlg_051, dlg_105, dlg_112)
+  assert.equal(
+    getLine("dlg_051", 6)?.arapca,
+    "نَعَمْ، قُمَاشُهَا صُوفِي\u0651\u064C خَالِصٌ مِئَةً فِي الْمِئَةِ."
+  );
+  assert.equal(
+    getLine("dlg_105", 4)?.arapca,
+    "نَعَمْ، وَنَسْتَخْدِمُ آلَةَ الت\u0651\u064Eصْوِيرِ الر\u0651\u064Eقَمِي\u0651\u064Eةَ لِتَصْوِيرِ الأَحْدَاثِ بِدِق\u0651\u064Eةٍ."
+  );
+  assert.equal(
+    getLine("dlg_112", 2)?.arapca,
+    "لَيْسَ هَذَا وَحَسْبُ بَلْ أُفَك\u0651\u0650رُ فِي الذ\u0651\u064Eكَاءِ الص\u0651\u0650نَاعِي\u0651\u0650 أَيْضاً."
+  );
+  assert.equal(
+    getLine("dlg_112", 6)?.arapca,
+    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِي\u0651\u064Eةِ."
+  );
+
+  // dlg_025 ve dlg_112 gramer örneği senkronizasyonu
   const gramer = JSON.parse(
     fs.readFileSync(path.join(DATA_DIR, "diyaloglar_gramer_hap_bilgi.json"), "utf8")
   );
@@ -10215,4 +10242,52 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
     gramer.find((x) => x.bagli_id === "dlg_025")?.metinden_ornek?.arapca,
     "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِيناً."
   );
+  assert.equal(
+    gramer.find((x) => x.bagli_id === "dlg_112")?.metinden_ornek?.arapca,
+    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِي\u0651\u064Eةِ."
+  );
 });
+
+test("88. tum_metinler_60.json Sarf, Hareke, İmla ve Türkçe Çoğul Uyumu Düzeltmeleri (14 Kayıt)", () => {
+  const metins = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "tum_metinler_60.json"), "utf8")
+  );
+  assert.equal(metins.length, 60);
+  const byId = new Map(metins.map((m) => [m.id, m]));
+  const getLine = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // 1. Sarf, Hareke ve İmla
+  assert.equal(
+    getLine("metin_19", 5)?.arapca,
+    "أَقْضِي وَقْتًا نَشِيطًا فِي كُل\u0651\u0650 أُسْبُوعٍ."
+  );
+  assert.ok(byId.get("metin_28")?.baslik_ar.includes("مَمَر\u0651\u064F الْمُشَاةِ"));
+  assert.ok(getLine("metin_28", 3)?.arapca.includes("مَمَر\u0651\u0650 الْمُشَاةِ"));
+  assert.ok(getLine("metin_46", 3)?.arapca.includes("إِذَا عَمِلَ الْمُوَظ\u0651\u064Eفُ"));
+  assert.ok(getLine("metin_51", 2)?.arapca.includes("الْتِزَامَهَا"));
+  assert.ok(getLine("metin_54", 6)?.arapca.includes("تُفْرَضُ الْعُقُوبَاتُ"));
+  assert.ok(getLine("metin_54", 10)?.arapca.includes("الْتِزَاماً"));
+  assert.ok(
+    byId.get("metin_54")?.sorular?.[1]?.soru_ar.includes("لِمَاذَا تُفْرَضُ الْعُقُوبَاتُ")
+  );
+  assert.ok(getLine("metin_55", 6)?.arapca.includes("الط\u0651\u064Eاقَةِ الْمُوَل\u0651\u064Eدَةِ"));
+  assert.ok(getLine("metin_57", 4)?.arapca.includes("تُنْفَقُ الْأَمْوَالُ"));
+  assert.ok(getLine("metin_57", 5)?.arapca.includes("الْفُقَرَاءِ"));
+  assert.ok(
+    byId
+      .get("metin_57")
+      ?.sorular?.[1]?.cevap_ar.includes("بِتَوْفِيرِ الْمِنَحِ الد\u0651\u0650رَاسِي\u0651\u064Eةِ")
+  );
+  assert.ok(getLine("metin_60", 4)?.arapca.includes("الْتِزَامَ"));
+
+  // 2. Türkçe Çeviri Çoğul Uyumu
+  assert.ok(
+    getLine("metin_25", 2)?.turkce.includes("arkadaşlarımla") &&
+      !getLine("metin_25", 2)?.turkce.includes("arkadaşımla")
+  );
+  assert.ok(
+    getLine("metin_35", 2)?.turkce.includes("arkadaşlarımla") &&
+      !getLine("metin_35", 2)?.turkce.includes("arkadaşımla")
+  );
+});
+

@@ -11931,7 +11931,7 @@
         "konusmaci_ar": "الْبَائِعُ",
         "cinsiyet": "E",
         "odak_kalip": "Kumaş Bilgisi (قُمَاشُهَا صُوفِيٌّ خَالِصٌ)",
-        "arapca": "نَعَمْ، قُمَاشُهَا صُوفِيٌّ خَالِصٌ مِئَةً.",
+        "arapca": "نَعَمْ، قُمَاشُهَا صُوفِيٌّ خَالِصٌ مِئَةً فِي الْمِئَةِ.",
         "turkce": "Evet, kumaşı yüzde yüz saf yündür.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_051/satir_06_E.mp3"
       },
@@ -13257,8 +13257,8 @@
         "konusmaci": "Mustafa",
         "konusmaci_ar": "مُصْطَفَى",
         "cinsiyet": "E",
-        "odak_kalip": "İsm-i Alet (المِصْوَارَةُ وَالمِجْهَرُ)",
-        "arapca": "نَعَمْ، وَنَسْتَخْدِمُ المِصْوَارَةَ الرَّقَمِيَّةَ لِتَصْوِيرِ الأَحْدَاثِ بِدِقَّةٍ.",
+        "odak_kalip": "İsm-i Alet (آلَةُ التَّصْوِيرِ وَالمِجْهَرُ)",
+        "arapca": "نَعَمْ، وَنَسْتَخْدِمُ آلَةَ التَّصْوِيرِ الرَّقَمِيَّةَ لِتَصْوِيرِ الأَحْدَاثِ بِدِقَّةٍ.",
         "turkce": "Evet, ve olayları hassasiyetle fotoğraflamak için dijital kamerayı kullanıyoruz.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_105/satir_04_E.mp3"
       },
@@ -14238,8 +14238,8 @@
         "konusmaci": "Halid",
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
-        "odak_kalip": "Kasr ve Atıf (لَيْسَ... فَحَسْبُ بَلْ...)",
-        "arapca": "لَيْسَ هَذَا فَحَسْبُ بَلْ أُفَكِّرُ فِي الذَّكَاءِ الصِّنَاعِيِّ أَيْضاً.",
+        "odak_kalip": "Kasr ve Atıf (لَيْسَ... وَحَسْبُ بَلْ...)",
+        "arapca": "لَيْسَ هَذَا وَحَسْبُ بَلْ أُفَكِّرُ فِي الذَّكَاءِ الصِّنَاعِيِّ أَيْضاً.",
         "turkce": "Sadece bu değil, aksine yapay zekayı da düşünüyorum.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_112/satir_02_E.mp3"
       },
@@ -14279,7 +14279,7 @@
         "konusmaci_ar": "خَالِدٌ",
         "cinsiyet": "E",
         "odak_kalip": "Atıf (لَا الشَّهَادَةَ بَلِ الخِبْرَةَ)",
-        "arapca": "لَا أَحْتَاجُ الشَّهَادَةَ فَحَسْبُ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِيَّةِ.",
+        "arapca": "لَا أَحْتَاجُ الشَّهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِيَّةِ.",
         "turkce": "Sadece diplomaya ihtiyaç duymuyorum aksine pratik tecrübeyi arıyorum.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_112/satir_06_E.mp3"
       },

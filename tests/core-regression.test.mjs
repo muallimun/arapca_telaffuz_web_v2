@@ -10439,3 +10439,58 @@ test("91. es_zit_anlamlilar, gorselKelimeler_guncel ve diyaloglar_gramer_hap_bil
   assert.ok(d120?.dogru.includes("الط\u0651\u064Eقْسَ") && d120?.dogru.includes("mansûb"));
 });
 
+test("92. 6 Eğitim JSON Dosyası TTS Hijyen, Karakter Sızıntısı (ata_0093) ve Ses Yolu Tutarlılığı Doğrulaması", () => {
+  const targetFiles = [
+    "1111_cumle.json",
+    "atasozleri.json",
+    "diyaloglar_gramer_hap_bilgi.json",
+    "ek_gramer_hap_bilgi.json",
+    "es_zit_anlamlilar.json",
+    "gorselKelimeler_guncel.json",
+  ];
+
+  for (const fname of targetFiles) {
+    const raw = fs.readFileSync(path.join(DATA_DIR, fname), "utf8");
+    const data = JSON.parse(raw);
+    assert.ok(Array.isArray(data) && data.length > 0, `${fname} geçerli ve dolu dizi olmalıdır`);
+    assert.ok(
+      !/[\u064B-\u0650]\u0651/.test(raw),
+      `${fname} içinde ters hareke+şedde bulunmamalıdır`
+    );
+
+    const walk = (node, recId) => {
+      if (Array.isArray(node)) {
+        node.forEach((v) => walk(v, recId));
+      } else if (node && typeof node === "object") {
+        for (const [k, v] of Object.entries(node)) {
+          if (typeof v === "string") {
+            assert.equal(v, v.trim(), `${fname} ${recId}.${k} baş/son boşluk içermemelidir`);
+            assert.ok(!/ {2,}/.test(v), `${fname} ${recId}.${k} çift boşluk içermemelidir`);
+            assert.ok(
+              !/[\x00-\x1F\x7F\u00A0\u200B-\u200F\u202A-\u202E\uFEFF]/.test(v),
+              `${fname} ${recId}.${k} kontrol veya sıfır genişlikli karakter içermemelidir`
+            );
+            assert.ok(
+              !/[A-Za-zÇĞİÖŞÜçğıöşü][\u0600-\u06FF]|[\u0600-\u06FF][A-Za-zÇĞİÖŞÜçğıöşü]/.test(v),
+              `${fname} ${recId}.${k} içinde bitişik Latin-Arap harf sızıntısı olmamalıdır`
+            );
+          } else {
+            walk(v, recId);
+          }
+        }
+      }
+    };
+
+    data.forEach((rec, i) => walk(rec, rec.id || rec.bagli_id || `idx_${i}`));
+  }
+
+  // ata_0093 canان -> canan
+  const atasozleri = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "atasozleri.json"), "utf8")
+  );
+  const ata0093 = atasozleri.find((x) => x.id === "ata_0093");
+  assert.equal(
+    ata0093?.turkce,
+    "Önce can sonra canan (İyiliğe önce yakınlar layıktır)."
+  );
+});

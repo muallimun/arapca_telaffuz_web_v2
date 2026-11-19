@@ -10184,7 +10184,7 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
   // 1. Emir Fiil ve Cinsiyet Uyumu
   assert.equal(
     getLine("dlg_025", 4)?.arapca,
-    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِيناً."
+    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِينًا."
   );
   assert.equal(
     getLine("dlg_044", 7)?.arapca,
@@ -10194,8 +10194,8 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
   // 2. İmla, Hareke, İltikâü's-Sâkineyn ve İ'rab
   assert.ok(getLine("dlg_045", 11)?.arapca.includes("لِلِابْتِدَاءِ!"));
   assert.ok(
-    getLine("dlg_088", 5)?.arapca.endsWith("وَمُرَاجَعَةٍ دَائِماً.") &&
-      !getLine("dlg_088", 5)?.arapca.includes("دَائِمَةٍ دَائِماً.")
+    getLine("dlg_088", 5)?.arapca.endsWith("وَمُرَاجَعَةٍ دَائِمًا.") &&
+      !getLine("dlg_088", 5)?.arapca.includes("دَائِمَةٍ دَائِمًا.")
   );
   assert.ok(getLine("dlg_094", 3)?.arapca.includes("وَلَوِ اسْتَعْدَدْنَا"));
   assert.ok(getLine("dlg_102", 3)?.arapca.includes("الْوَقْفِي\u0651\u064Eةِ؟"));
@@ -10223,15 +10223,15 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
   );
   assert.equal(
     getLine("dlg_105", 4)?.arapca,
-    "نَعَمْ، وَنَسْتَخْدِمُ آلَةَ الت\u0651\u064Eصْوِيرِ الر\u0651\u064Eقَمِي\u0651\u064Eةَ لِتَصْوِيرِ الأَحْدَاثِ بِدِق\u0651\u064Eةٍ."
+    "نَعَمْ، وَنَسْتَخْدِمُ آلَةَ الت\u0651\u064Eصْوِيرِ الر\u0651\u064Eقَمِي\u0651\u064Eةَ لِتَصْوِيرِ الْأَحْدَاثِ بِدِق\u0651\u064Eةٍ."
   );
   assert.equal(
     getLine("dlg_112", 2)?.arapca,
-    "لَيْسَ هَذَا وَحَسْبُ بَلْ أُفَك\u0651\u0650رُ فِي الذ\u0651\u064Eكَاءِ الص\u0651\u0650نَاعِي\u0651\u0650 أَيْضاً."
+    "لَيْسَ هَذَا وَحَسْبُ بَلْ أُفَك\u0651\u0650رُ فِي الذ\u0651\u064Eكَاءِ الص\u0651\u0650نَاعِي\u0651\u0650 أَيْضًا."
   );
   assert.equal(
     getLine("dlg_112", 6)?.arapca,
-    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِي\u0651\u064Eةِ."
+    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الْخِبْرَةِ الْعَمَلِي\u0651\u064Eةِ."
   );
 
   // dlg_025 ve dlg_112 gramer örneği senkronizasyonu
@@ -10240,11 +10240,11 @@ test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkin
   );
   assert.equal(
     gramer.find((x) => x.bagli_id === "dlg_025")?.metinden_ornek?.arapca,
-    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِيناً."
+    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِينًا."
   );
   assert.equal(
     gramer.find((x) => x.bagli_id === "dlg_112")?.metinden_ornek?.arapca,
-    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الخِبْرَةِ العَمَلِي\u0651\u064Eةِ."
+    "لَا أَحْتَاجُ الش\u0651\u064Eهَادَةَ فَقَطْ بَلْ أَبْحَثُ عَنِ الْخِبْرَةِ الْعَمَلِي\u0651\u064Eةِ."
   );
 });
 
@@ -10532,7 +10532,7 @@ test("93. tum_diyaloglar_120.json ve tum_metinler_60.json Latin Rakam (102/405) 
   );
   assert.equal(
     byDlg.get("dlg_075")?.satirlar.find((s) => s.sira === 3)?.arapca,
-    "أُرِيدُ شِرَاءَهَا، لَكِن\u0651\u064Eهَا غَالِيَةُ الث\u0651\u064Eمَنِ قَلِيلاً."
+    "أُرِيدُ شِرَاءَهَا، لَكِن\u0651\u064Eهَا غَالِيَةُ الث\u0651\u064Eمَنِ قَلِيلًا."
   );
   assert.ok(
     byDlg.get("dlg_103")?.satirlar.find((s) => s.sira === 6)?.arapca.startsWith("لِذَلِكَ ")
@@ -10566,11 +10566,11 @@ test("94. tum_diyaloglar_120.json Emir Vasl Hemzesi (اُخْرُجْ/اُنْظ
   // 3. Konuşmacı cinsiyeti uyumu (dlg_093 Said [E] & Tarık [E])
   assert.equal(
     line("dlg_093", 8)?.arapca,
-    "وَهَلْ أَنْتَ تَعْرِفُ كَيْفَ تُقَد\u0651\u0650مُ الإِسْعَافَاتِ الأَو\u0651\u064Eلِي\u0651\u064Eةَ لِلْمَجْرُوحِينَ؟"
+    "وَهَلْ أَنْتَ تَعْرِفُ كَيْفَ تُقَد\u0651\u0650مُ الْإِسْعَافَاتِ الْأَو\u0651\u064Eلِي\u0651\u064Eةَ لِلْمَجْرُوحِينَ؟"
   );
   assert.equal(
     line("dlg_093", 9)?.arapca,
-    "نَعَمْ، وَلَنْ أَتَأَخ\u0651\u064Eرَ عَنْ مُسَاعَدَةِ المَجْرُوحِينَ فِي الش\u0651\u064Eارِعِ."
+    "نَعَمْ، وَلَنْ أَتَأَخ\u0651\u064Eرَ عَنْ مُسَاعَدَةِ الْمَجْرُوحِينَ فِي الش\u0651\u064Eارِعِ."
   );
 
   // 4. Türkçe-Arapça sayı/saat uyumu
@@ -10581,9 +10581,9 @@ test("94. tum_diyaloglar_120.json Emir Vasl Hemzesi (اُخْرُجْ/اُنْظ
   assert.equal(line("dlg_049", 11)?.turkce, "İşte dört yüz beş numaralı odanın anahtarı.");
 
   // 5. كَمْ / كَمِ kuralı (harekeli kelime önünde كَمْ, iltikâ-i sâkineyn'de كَمِ korunur)
-  assert.equal(line("dlg_026", 3)?.arapca, "كَمْ دَرَجَةُ الحَرَارَةِ الْآنَ؟");
+  assert.equal(line("dlg_026", 3)?.arapca, "كَمْ دَرَجَةُ الْحَرَارَةِ الْآنَ؟");
   assert.ok(line("dlg_011", 9)?.arapca.startsWith("كَمِ الْحِسَابُ"));
-  assert.ok(line("dlg_039", 7)?.arapca.startsWith("كَمِ الإِيجَارُ"));
+  assert.ok(line("dlg_039", 7)?.arapca.startsWith("كَمِ الْإِيجَارُ"));
   assert.ok(line("dlg_046", 7)?.arapca.startsWith("كَمِ الت\u0651\u064Eكْلِفَةُ"));
 });
 
@@ -10842,6 +10842,227 @@ test("99. tum_metinler_60.json Aşama 3 (metin_41–metin_60) ve 60 Metin Tam B�
     assert.ok(!/\u0627\u064B/.test(str), `${m.id} içinde اً yerine ًا kullanılmalıdır`);
   }
 });
+
+test("100. tum_diyaloglar_120.json Aşama 1 (dlg_001–dlg_030) Sayı-Temyiz, Cinsiyet Uyumu, Sarf, İltikâ-i Sâkineyn, Tenvin ve Türkçe Doğallaştırma", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8");
+  const dlgs = JSON.parse(raw);
+  assert.equal(dlgs.length, 120);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const line = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // Kritik kontroller: sayı-temyiz (لِكَمْ شَخْصٍ), sarf (تَنْصَحُنِي), iltikâ-i sâkineyn, cinsiyet uyumu ve Türkçe doğallık
+  assert.equal(line("dlg_004", 2)?.arapca, "وَعَلَيْكُمُ الس\u0651\u064Eلَامُ، نَعَمْ، لِكَمْ شَخْصٍ؟");
+  assert.ok(line("dlg_004", 6)?.odak_kalip.includes("تَفَض\u0651\u064Eلِ الْمِفْتَاحَ"));
+  assert.equal(line("dlg_008", 7)?.turkce, "Allah onları senin için daima korusun.");
+  assert.ok(line("dlg_009", 8)?.odak_kalip.includes("تَفَض\u0651\u064Eلِ الت\u0651\u064Eذْكِرَةَ"));
+  assert.equal(line("dlg_013", 3)?.turkce, "Bugün elinde ne tür balıklar var?");
+  assert.ok(line("dlg_013", 5)?.arapca.includes("تَنْصَحُنِي") && line("dlg_013", 5)?.odak_kalip.includes("تَنْصَحُنِي"));
+  assert.ok(line("dlg_018", 5)?.odak_kalip.includes("صُوَرًا؟"));
+  assert.ok(line("dlg_022", 6)?.odak_kalip.includes("(لَا، الْقَص\u0651\u064E فَقَطْ)"));
+  assert.ok(line("dlg_022", 7)?.arapca.includes("لِنَغْسِلِ الش\u0651\u064Eعْرَ أَو\u0651\u064Eلًا"));
+  assert.equal(line("dlg_023", 4)?.arapca, "تَفَض\u0651\u064Eلِ الْعَصِيرَ الْبَارِدَ يَا سَي\u0651\u0650دِي.");
+  assert.ok(line("dlg_003", 10)?.odak_kalip.includes("لَكِ)"));
+  assert.ok(line("dlg_023", 5)?.odak_kalip.includes("لَكِ)"));
+  assert.ok(line("dlg_025", 5)?.odak_kalip.includes("سَي\u0651\u064Eارَةِ أُجْرَةٍ"));
+  assert.ok(line("dlg_028", 8)?.odak_kalip.includes("لَكِ)"));
+  assert.ok(line("dlg_030", 12)?.odak_kalip.includes("لَكِ)"));
+
+  // dlg_001–dlg_030 aralığında ters şedde, الِا, اً ve sükûnsuz kamerî ال/لِل kalmamış olmalıdır
+  for (let n = 1; n <= 30; n++) {
+    const id = "dlg_" + String(n).padStart(3, "0");
+    const str = JSON.stringify(byId.get(id));
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(
+      !/(?:^|[\s"(\/\u064E-\u0650])(?:ال|لِل)[أإآءئؤابجحخعغفقكمهوي]/.test(str),
+      `${id} içinde sükûnsuz kamerî ال/لِل kalmamalıdır`
+    );
+  }
+});
+
+test("101. tum_diyaloglar_120.json Aşama 2 (dlg_031–dlg_060) Çift Med, Fasih Kelime (كُوزِينْ), Sarf/Nahiv, İltikâ-i Sâkineyn, Tenvin ve Türkçe Doğallaştırma", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8");
+  const dlgs = JSON.parse(raw);
+  assert.equal(dlgs.length, 120);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const line = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // Kritik kontroller
+  assert.equal(line("dlg_031", 13)?.turkce, "Teşekkürler, işte sana düğün davetiyem!");
+  assert.ok(
+    line("dlg_034", 14)?.arapca.includes("آمِينَ") &&
+      !line("dlg_034", 14)?.arapca.includes("\u0622\u064E")
+  );
+  assert.equal(line("dlg_035", 8)?.arapca, "الْفَن\u0651\u064F الْحَقِيقِي\u0651\u064F لَا يُقَد\u0651\u064Eرُ بِثَمَنٍ.");
+  assert.ok(line("dlg_040", 2)?.arapca.includes("أُصِبْتُ بِبَرْدٍ"));
+  assert.ok(line("dlg_040", 7)?.arapca.includes("إِذَنْ، اِذْهَبِي"));
+  assert.equal(line("dlg_041", 13)?.turkce, "Her derdin ilacı var, peki benim ilacım ihtiyarlık mı?");
+  assert.equal(
+    line("dlg_042", 8)?.odak_kalip,
+    "Yönlendirme (تَفَض\u0651\u064Eلْ إِلَى الط\u0651\u064Eابِقِ الْأَو\u0651\u064Eلِ)"
+  );
+  assert.ok(
+    line("dlg_043", 4)?.odak_kalip.includes("الْبُنْدُقِي\u0651\u064Eةَ") &&
+      line("dlg_043", 5)?.odak_kalip.includes("الْبُنْدُقِي\u0651\u064Eةَ")
+  );
+  assert.ok(line("dlg_044", 8)?.arapca.endsWith("هَذَا الص\u0651\u064Eبَاحَ؟"));
+  assert.equal(line("dlg_045", 6)?.turkce, "Kaleyi ve halk pazarını ziyaret edeceğiz.");
+  assert.equal(line("dlg_045", 12)?.odak_kalip, "Başlama (هَي\u0651\u064Eا بِنَا نَبْدَأْ)");
+  assert.ok(line("dlg_046", 4)?.arapca.includes("لِمُد\u0651\u064Eةِ أَرْبَعَةِ أَي\u0651\u064Eامٍ."));
+  assert.ok(
+    line("dlg_047", 7)?.arapca.includes("سَأُسَافِرُ") &&
+      line("dlg_047", 7)?.odak_kalip.includes("سَأُسَافِرُ")
+  );
+  assert.equal(line("dlg_049", 4)?.arapca, "ثَلَاثَ لَيَالٍ مُمْتِعَةٍ.");
+  assert.equal(
+    line("dlg_051", 5)?.odak_kalip,
+    "Ürün Sorma (تِلْكَ الت\u0651\u064Eن\u0651\u064Fورَةُ ذَاتُ الْمُرَب\u0651\u064Eعَاتِ)"
+  );
+  assert.ok(
+    line("dlg_052", 1)?.arapca.includes("بَعْدَ أَي\u0651\u064Eامٍ") &&
+      line("dlg_052", 1)?.odak_kalip.includes("بَعْدَ أَي\u0651\u064Eامٍ")
+  );
+  assert.ok(line("dlg_054", 5)?.arapca.startsWith("أُف\u0651\u064D،"));
+  assert.equal(line("dlg_054", 10)?.arapca, "فَهِمْتُ، مِثْلَ ابْنِ عَم\u0651\u0650ي وَابْنِ خَالِي.");
+  assert.ok(!JSON.stringify(byId.get("dlg_054")).includes("كُوزِين"));
+  assert.ok(line("dlg_057", 5)?.odak_kalip.includes("مِكْنَسَةُ"));
+  assert.ok(line("dlg_057", 9)?.arapca.includes("تُوجَدُ بَاقَاتُ"));
+  assert.ok(line("dlg_057", 14)?.arapca.includes("نَخْتَرِ الْبَاقَةَ"));
+  assert.equal(line("dlg_060", 7)?.turkce, "Eski korkularınıza ve kaygılarınıza ne oldu?");
+
+  // dlg_031–dlg_060 aralığında ters şedde, çift med, الِا, اً ve sükûnsuz kamerî ال/لِل kalmamış olmalıdır
+  for (let n = 31; n <= 60; n++) {
+    const id = "dlg_" + String(n).padStart(3, "0");
+    const str = JSON.stringify(byId.get(id));
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(
+      !/(?:^|[\s"(\/\u064E-\u0650])(?:ال|لِل)[أإآءئؤابجحخعغفقكمهوي]/.test(str),
+      `${id} içinde sükûnsuz kamerî ال/لِل kalmamalıdır`
+    );
+  }
+});
+
+test("102. tum_diyaloglar_120.json Aşama 3 (dlg_061–dlg_090) Sayı-Temyiz (لِكَمْ يَوْمٍ / خَمْسَ عَشْرَةَ), فَهَلْ Çevirisi (dlg_078), Sarf/Hareke ve İltikâ-i Sâkineyn", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8");
+  const dlgs = JSON.parse(raw);
+  assert.equal(dlgs.length, 120);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const line = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // Kritik kontroller
+  assert.ok(line("dlg_064", 2)?.arapca.startsWith("تُوجَدُ أَرِيكَةٌ"));
+  assert.equal(line("dlg_065", 7)?.arapca, "ثَمَنُهُ خَمْسَ عَشْرَةَ لِيرَةً فَقَطْ.");
+  assert.ok(
+    line("dlg_065", 8)?.arapca.startsWith("تَفَض\u0651\u064Eلِ الن\u0651\u064Fقُودَ") &&
+      line("dlg_065", 8)?.odak_kalip.includes("تَفَض\u0651\u064Eلِ الن\u0651\u064Fقُودَ")
+  );
+  assert.ok(line("dlg_069", 7)?.arapca.startsWith("إِذَنْ، اِقْرَئِي"));
+  assert.ok(line("dlg_071", 5)?.odak_kalip.includes("(اُخْرُجْ"));
+  assert.ok(line("dlg_076", 2)?.arapca.includes("مُشْرِقَةً") && line("dlg_076", 2)?.odak_kalip.includes("مُشْرِقَةً"));
+  assert.ok(line("dlg_077", 3)?.arapca.includes("خَمْسٌ وَثَلَاثُونَ رِوَايَةً"));
+  assert.ok(line("dlg_077", 5)?.arapca.startsWith("لِكَمْ يَوْمٍ "));
+  assert.equal(line("dlg_078", 7)?.turkce, "Peki bu ay yapılacak yarışmaya hazırlanıyorlar mı?");
+  assert.ok(line("dlg_078", 10)?.odak_kalip.includes("نَبْدَأْ)"));
+  assert.ok(line("dlg_079", 9)?.odak_kalip.includes("لَا تَتَأَخ\u0651\u064Eرْ"));
+  assert.ok(line("dlg_080", 9)?.odak_kalip.includes("اُعْبُرْ"));
+  assert.ok(line("dlg_081", 7)?.arapca.startsWith("تَفَض\u0651\u064Eلِ الن\u0651\u064Fقُودَ"));
+  assert.ok(line("dlg_081", 8)?.odak_kalip.includes("تَفَض\u0651\u064Eلِ الت\u0651\u064Eذْكِرَةَ"));
+  assert.ok(!line("dlg_081", 9)?.turkce.includes("çünkü"));
+  assert.ok(line("dlg_082", 8)?.odak_kalip.includes("تَفَض\u0651\u064Eلِ الد\u0651\u064Eوَاءَ"));
+  assert.ok(line("dlg_084", 1)?.odak_kalip.startsWith("Meçhul Muzari"));
+  assert.ok(line("dlg_084", 4)?.odak_kalip.startsWith("Meçhul Mazi"));
+  assert.ok(line("dlg_084", 9)?.odak_kalip.includes("يُقَد\u0651\u064Eمُ"));
+  assert.ok(line("dlg_086", 1)?.odak_kalip.startsWith("Qad/Lakad"));
+  assert.ok(line("dlg_086", 6)?.arapca.endsWith("بِخُشُوعٍ."));
+  assert.ok(line("dlg_086", 9)?.turkce.includes("Harem-i Şerif"));
+  assert.ok(line("dlg_087", 1)?.arapca.includes("لِبِنَاءِ"));
+  assert.ok(line("dlg_087", 6)?.arapca.includes("مُنَظ\u0651\u064Eمُونَ"));
+  assert.ok(line("dlg_087", 7)?.turkce.includes("kârları"));
+  assert.ok(line("dlg_089", 8)?.arapca.includes("وَمُشْرِقَةً"));
+  assert.ok(line("dlg_089", 9)?.turkce.includes("hâlâ") && !line("dlg_089", 9)?.turkce.includes("Çünkü"));
+  assert.ok(line("dlg_090", 11)?.turkce.includes("gözetmen"));
+
+  // dlg_061–dlg_090 aralığında ters şedde, çift med, الِا, اً ve sükûnsuz kamerî ال/لِل kalmamış olmalıdır
+  for (let n = 61; n <= 90; n++) {
+    const id = "dlg_" + String(n).padStart(3, "0");
+    const str = JSON.stringify(byId.get(id));
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(
+      !/(?:^|[\s"(\/\u064E-\u0650])(?:ال|لِل)[أإآءئؤابجحخعغفقكمهوي]/.test(str),
+      `${id} içinde sükûnsuz kamerî ال/لِل kalmamalıdır`
+    );
+  }
+});
+
+test("103. tum_diyaloglar_120.json Aşama 4 (dlg_091–dlg_120) ve Tüm 120 Diyalog Bütünlük, Fasih Kullanım (الْوَفْدُ), Transliterasyon (dlg_098), Doğal Çeviri (dlg_107) ve İmla Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8");
+  const dlgs = JSON.parse(raw);
+  assert.equal(dlgs.length, 120);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const line = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
+
+  // Kritik kontroller
+  assert.ok(line("dlg_091", 8)?.odak_kalip.includes("الْأَمِينُ)"));
+  assert.ok(line("dlg_092", 2)?.odak_kalip.includes("يَنْجَحْ)"));
+  assert.ok(line("dlg_092", 4)?.arapca.includes("الْبِلَاسْتِيكِ"));
+  assert.ok(!line("dlg_092", 5)?.turkce.includes("işte yardımlaşırsan"));
+  assert.ok(line("dlg_093", 4)?.odak_kalip.startsWith("Ef'al-i Hamse Nasp"));
+  assert.ok(line("dlg_094", 2)?.arapca.includes("بِهُدُوءٍ"));
+  assert.ok(line("dlg_096", 2)?.arapca.includes("بِكَم\u0651\u0650ي\u0651\u064Eةٍ"));
+  assert.ok(byId.get("dlg_097")?.odak_gramer.includes("الْاِسْتِمْرَارُ"));
+  assert.equal(line("dlg_098", 9)?.turkce, "İstahrace gibi; zira onun kökü harace'dir, başkası değil.");
+  assert.ok(!JSON.stringify(byId.get("dlg_099")).includes("وِفَادَة"));
+  assert.equal(
+    line("dlg_099", 1)?.arapca,
+    "حَق\u0651\u064Eقَ الْوَفْدُ الد\u0651\u0650بْلُومَاسِي\u0651\u064F تَقَد\u0651\u064Fمًا كَبِيرًا فِي مُفَاوَضَاتِ الس\u0651\u064Eلَامِ الْيَوْمَ."
+  );
+  assert.ok(line("dlg_100", 8)?.odak_kalip.includes("تَأَقْلُمٌ وَتَكَي\u0651\u064Fفٌ"));
+  assert.ok(line("dlg_101", 8)?.arapca.includes("أَبْدَوُا اسْتِعْدَادًا"));
+  assert.ok(line("dlg_103", 4)?.arapca.includes("مِنْ ذَوَبَانِ"));
+  assert.ok(line("dlg_104", 4)?.arapca.includes("مُوَاطِنٍ"));
+  assert.ok(line("dlg_106", 3)?.odak_kalip.includes("الْمُخَي\u0651\u064Eمُ الْكَبِيرَةُ خِيَامُهُ"));
+  assert.ok(line("dlg_106", 7)?.odak_kalip.includes("الْمُسْتَشْفَى الْوَاسِعَةُ غُرَفُهُ"));
+  assert.equal(line("dlg_107", 4)?.turkce, "İstenen belgeleri hazırlamak için kütüphaneyi iki kez ziyaret ettin mi?");
+  assert.equal(line("dlg_107", 10)?.turkce, "Havalimanının zili iki kez çaldı, öyleyse şimdi yolculuğa hazırlanalım.");
+  assert.ok(line("dlg_108", 7)?.arapca.includes("عَم\u0651\u064Eا قَرِيبٍ"));
+  assert.ok(line("dlg_110", 7)?.arapca.includes("مِنْ هَذَا الْفَحْمِ الْمُلَو\u0651\u0650ثِ؟"));
+  assert.ok(line("dlg_110", 10)?.arapca.includes("فِي بِنَاءِ"));
+  assert.ok(line("dlg_111", 4)?.odak_kalip.includes("مُطْمَئِن\u0651\u064C"));
+  assert.ok(line("dlg_112", 3)?.arapca.includes("لِبِنَاءِ"));
+  assert.ok(line("dlg_112", 8)?.arapca.includes("فِي الْمِنَحِ"));
+  assert.ok(line("dlg_112", 12)?.odak_kalip.includes("وَف\u0651\u064Eقَكَ"));
+  assert.ok(line("dlg_113", 11)?.odak_kalip.includes("الْإِتْقَانُ الْإِتْقَانُ"));
+  assert.ok(line("dlg_115", 4)?.odak_kalip.startsWith("Habbeza"));
+  assert.ok(line("dlg_117", 11)?.odak_kalip.includes("أَعْلَى مَرْتَبَةً"));
+  assert.ok(line("dlg_119", 3)?.arapca.includes("عَقْلًا ذَكِي\u0651\u064Bا"));
+  assert.ok(line("dlg_120", 6)?.arapca.includes("الْعِبْءَ"));
+  assert.ok(line("dlg_120", 8)?.odak_kalip.includes("بِحَيْثُ يُلَب\u0651\u0650ي"));
+  assert.ok(line("dlg_120", 12)?.arapca.endsWith("الْمُشْرِقَ."));
+
+  // Tüm 120 diyalogun tamamında ters şedde, çift med, الِا, اً, kısa elif ve sükûnsuz kamerî ال/لِل kalmamış olmalıdır
+  for (const d of dlgs) {
+    const str = JSON.stringify(d);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${d.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${d.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${d.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${d.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${d.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(
+      !/(?:^|[\s"(\/\u064E-\u0650])(?:ال|لِل)[أإآءئؤابجحخعغفقكمهوي]/.test(str),
+      `${d.id} içinde sükûnsuz kamerî ال/لِل kalmamalıdır`
+    );
+  }
+});
+
+
+
 
 
 

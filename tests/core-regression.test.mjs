@@ -10301,7 +10301,7 @@ test("89. 1111_cumle.json Arapça Yazım/Hareke ve Türkçe Çeviri Düzeltmeler
   // 1. Arapça Yazım ve Hareke
   assert.equal(
     byId.get("cumle_0234")?.arapca,
-    "اَلط\u0651\u064Eالِبَاتُ أَعْدَدْنَا الْغَدَاءَ."
+    "اَلط\u0651\u064Eالِبَاتُ أَعْدَدْنَ الْغَدَاءَ."
   );
   assert.ok(byId.get("cumle_0743")?.arapca.includes("يَنْسَحِبُونَ"));
   assert.ok(byId.get("cumle_0813")?.arapca.includes("يُطْمِئِنُنِي"));
@@ -11584,3 +11584,270 @@ test("111. Kütüphane #19 الْأُمُّ vs أَلَمٌ/آلَامٌ Sözlü
     "Çeviri kutusu taşmasız rounded-xl ve iç sol vurgu şeridi kullanmalıdır"
   );
 });
+
+test("112. 1111_cumle.json Aşama 1 (cumle_0001–cumle_0200) Sarf-Nahiv, Hareke, odak_kalip ve Doğal Türkçe Çeviri Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage1 = cumleler.slice(0, 200);
+  assert.equal(stage1[0].id, "cumle_0001");
+  assert.equal(stage1[199].id, "cumle_0200");
+  const byId = new Map(stage1.map((c) => [c.id, c]));
+
+  // Arapça hareke, sarf, iltikâ-i sâkineyn ve fasih kullanım
+  assert.equal(byId.get("cumle_0069")?.arapca, "اتَّصَلْتُ بِالطَّبِيبِ هَاتِفِيًّا.");
+  assert.equal(byId.get("cumle_0069")?.odak_kalip, "Fiil + Harf-i Cer (اتَّصَلَ بِ) + Hâl / Nâib-i Mef'ûl Mutlak");
+  assert.equal(byId.get("cumle_0082")?.odak_kalip, "Soru Hemzesi (أَ) + Muâdele Edatı (أَمْ)");
+  assert.equal(byId.get("cumle_0088")?.arapca, "أَتُحِبُّ قِرَاءَةَ الْكُتُبِ أَمِ الْمَجَلَّاتِ؟");
+  assert.equal(byId.get("cumle_0093")?.arapca, "أَيْنَ دَرَسْتَ اللُّغَةَ الْإِنْجِلِيزِيَّةَ؟");
+  assert.equal(byId.get("cumle_0094")?.arapca, "مَنْ زُرْتَ فِي الْقَرْيَةِ؟");
+  assert.equal(byId.get("cumle_0096")?.arapca, "مَاذَا تُفَضِّلُ مِنَ الْأَطْعِمَةِ؟");
+  assert.equal(byId.get("cumle_0114")?.arapca, "اَلسَّاعَةُ الْمَكْسُورَةُ فِي الْغُرْفَةِ الصَّغِيرَةِ.");
+  assert.equal(byId.get("cumle_0144")?.arapca, "بَابَا الْمَكْتَبَةِ الْكَبِيرَانِ مُغْلَقَانِ.");
+  assert.equal(byId.get("cumle_0145")?.turkce, "İki güzel gül açıldı.");
+  assert.equal(byId.get("cumle_0165")?.odak_kalip, "Mâzî Fiil + Cemi Mükesser Fâil + Zarf");
+  assert.equal(byId.get("cumle_0190")?.odak_kalip, "Mâzî Fiil (سَاهَمَ فِي) + Fâil ve Ma'tûf");
+  assert.equal(byId.get("cumle_0194")?.arapca, "أَعْلَنَتِ الْإِدَارَةُ عُطْلَةً رَسْمِيَّةً فِي بَعْضِ الْمَدَارِسِ.");
+  assert.equal(byId.get("cumle_0032")?.odak_kalip, "Muzâri Fiil + Cemi Müzekker Muhatab (ونَ)");
+
+  // Doğal Türkçe çeviri denetimi (ilk 200 kayıtta yapay "bayan ..." / "Kız mühendis" kalmamalı)
+  for (const c of stage1) {
+    assert.ok(!/\bbayan\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/kız mühendis/i.test(c.turkce), `${c.id} içinde 'kız mühendis' kalmamalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+  }
+});
+
+test("113. 1111_cumle.json Aşama 2 (cumle_0201–cumle_0400) Sayı-Ma'dûd, Sarf-Nahiv, Hareke, odak_kalip ve Doğal Türkçe Çeviri Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage2 = cumleler.slice(200, 400);
+  assert.equal(stage2[0].id, "cumle_0201");
+  assert.equal(stage2[199].id, "cumle_0400");
+  const byId = new Map(stage2.map((c) => [c.id, c]));
+
+  // Arapça sarf, nahiv, sayı-ma'dûd, hareke ve med düzeltmeleri
+  assert.equal(byId.get("cumle_0234")?.arapca, "اَلطَّالِبَاتُ أَعْدَدْنَ الْغَدَاءَ.");
+  assert.equal(byId.get("cumle_0310")?.arapca, "فَسَدَ مَا فِي الْحَقِيبَةِ بِسَبَبِ تَبَلُّلِهَا.");
+  assert.equal(byId.get("cumle_0311")?.arapca, "قَطَفْتُ الْأَزْهَارَ الَّتِي تَفَتَّحَتْ.");
+  assert.equal(byId.get("cumle_0322")?.arapca, "قَرَأْتُ قِصَّتَيْنِ اثْنَتَيْنِ فَقَطْ الْيَوْمَ.");
+  assert.equal(byId.get("cumle_0335")?.arapca, "يَشْتَمِلُ هَذَا الْمَنْهَجُ عَلَى ثَلَاثَةَ عَشَرَ دَرْسًا.");
+  assert.equal(byId.get("cumle_0352")?.arapca, "انْضَمَّ إِلَى مُؤْتَمَرِ الطِّبِّ أَرْبَعُونَ طَبِيبًا مِنْ مُخْتَلِفِ الْمُدُنِ.");
+  assert.ok(byId.get("cumle_0368")?.arapca.includes("فِي الْمُظَاهَرَةِ"));
+  assert.equal(
+    byId.get("cumle_0387")?.arapca,
+    "أُسِّسَتْ مَدْرَسَتُنَا سَنَةَ أَلْفٍ وَتِسْعِمِائَةٍ وَاثْنَتَيْنِ وَسِتِّينَ."
+  );
+  assert.equal(
+    byId.get("cumle_0390")?.arapca,
+    "يُشَاهِدُ الْبَرْنَامَجَ آلَافُ الْأَشْخَاصِ كُلَّ أُسْبُوعٍ."
+  );
+
+  // odak_kalip bilimsel doğruluk denetimi
+  assert.equal(byId.get("cumle_0206")?.odak_kalip, "İsim Cümlesi + Harf-i Cer (قَرِيبٌ مِنْ)");
+  assert.equal(byId.get("cumle_0233")?.odak_kalip, "Cemi Mükesser Mübteda + Muzâri Fiil + İzafet Mecrûr");
+  assert.equal(byId.get("cumle_0307")?.odak_kalip, "İsm-i Mevsûl (اللَّوَاتِي) Cemi Müennes");
+  assert.equal(byId.get("cumle_0324")?.odak_kalip, "3-10 Sayı Kuralı: Müennes Sayı (أَرْبَعَةَ) + Müzekker Çoğul Mecrûr");
+  assert.equal(byId.get("cumle_0329")?.odak_kalip, "3-10 Sayı Kuralı: Müzekker Sayı (تِسْعُ) + Müennes Çoğul");
+  assert.equal(byId.get("cumle_0374")?.odak_kalip, "900 Sayısı (تِسْعُمِائَةِ) Nâib-i Fâil İzafeti");
+  assert.equal(byId.get("cumle_0392")?.odak_kalip, "İsim Cümlesi Mübteda + Fiil Cümlesi Haber");
+  assert.equal(byId.get("cumle_0400")?.odak_kalip, "İsim Cümlesi Mübteda + İsim Cümlesi Haber");
+
+  // Doğal Türkçe çeviri ve hijyen denetimi (201–400)
+  for (const c of stage2) {
+    assert.ok(!/\bbayan\w*\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0622\u064E/.test(c.arapca), `${c.id} içinde çift med (آَ) kalmamalıdır`);
+    assert.ok(!/فَقَطِ/.test(c.arapca), `${c.id} içinde فَقَطِ yerine فَقَطْ kullanılmalıdır`);
+  }
+});
+
+test("114. 1111_cumle.json Aşama 3 (cumle_0401–cumle_0600) Sarf-Nahiv, Hemze, Lâm-ı Cer, Fasih Kök, odak_kalip ve Doğal Türkçe Çeviri Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage3 = cumleler.slice(400, 600);
+  assert.equal(stage3[0].id, "cumle_0401");
+  assert.equal(stage3[199].id, "cumle_0600");
+  const byId = new Map(stage3.map((c) => [c.id, c]));
+
+  // Arapça kritik sarf, nahiv, hemze, lâm-ı cer ve fasih kök düzeltmeleri
+  assert.equal(byId.get("cumle_0436")?.arapca, "أَعْلَمُ أَنَّكَ قَادِمٌ لِلدِّرَاسَةِ.");
+  assert.equal(byId.get("cumle_0451")?.arapca, "هَذَا الطَّالِبُ لَيْسَ كَسْلَانَ.");
+  assert.equal(byId.get("cumle_0522")?.arapca, "قُرِئَ كِتَابُ هَذَا الْعَالِمِ فِي الْمَدِينَةِ بِإِعْجَابٍ.");
+  assert.equal(byId.get("cumle_0539")?.arapca, "يُتَبَسَّمُ فِي وَجْهِ الصَّدِيقِ عِنْدَ لِقَائِهِ.");
+  assert.equal(byId.get("cumle_0543")?.arapca, "طُمْئِنَتِ الْأُمُّ عَلَى طِفْلِهَا.");
+  assert.equal(byId.get("cumle_0547")?.arapca, "اِرْتَبَكَ الْعَامِلُ فِي مَشْرُوعِهِ.");
+  assert.equal(byId.get("cumle_0570")?.arapca, "أَعْطَتِ الْإِدَارَةُ الطُّلَّابَ حَقَّ الدُّخُولِ إِلَى الْمَكْتَبَةِ.");
+  assert.equal(
+    byId.get("cumle_0576")?.arapca,
+    "أَعْلَنَتِ الْإِذَاعَةُ الْمُسْتَمِعِينَ الطَّقْسَ بَارِدًا فِي الْعَاصِمَةِ الْيَوْمَ."
+  );
+  assert.equal(
+    byId.get("cumle_0586")?.arapca,
+    "تَخَرَّجْتُ فِي كُلِّيَّةِ الْهَنْدَسَةِ قَبْلَ ثَلَاثِ سَنَوَاتٍ ثُمَّ بَدَأْتُ أَعْمَلُ مُهَنْدِسًا فِي نَفْسِ الشَّرِكَةِ."
+  );
+  assert.equal(byId.get("cumle_0596")?.arapca, "اِهْتَمَّ بِالْعِلْمِ طُولَ حَيَاتِهِ لَا بِالْمَالِ.");
+
+  // odak_kalip doğruluk kontrolleri
+  assert.equal(byId.get("cumle_0412")?.odak_kalip, "Cemi Mübteda + Amel Eden İsm-i Fâil Haber");
+  assert.equal(byId.get("cumle_0417")?.odak_kalip, "İsim Cümlesi Mübteda + Sıfat-ı Müşebbehe (مَلِيءٌ بِ) Haber");
+  assert.equal(byId.get("cumle_0496")?.odak_kalip, "Tefâ'ul Babı Mâzî + İnfi'âl Babı Mâzî");
+  assert.equal(byId.get("cumle_0500")?.odak_kalip, "İf'ilâl Babı Mâzî + عِنْدَمَا + İfti'âl Babı");
+  assert.equal(byId.get("cumle_0535")?.odak_kalip, "Meçhul Tefe''ul Mâzî + Şibh-i Cümle Naib-i Fâil");
+  assert.equal(byId.get("cumle_0550")?.odak_kalip, "Rubâî Mezîd İf'illâl + Zarf (لَمَّا)");
+  assert.equal(byId.get("cumle_0588")?.odak_kalip, "Soru Hemzesi (أَ) + Muâdele Atfı (أَمْ)");
+
+  // Doğal Türkçe çeviri ve hijyen denetimi (401–600)
+  for (const c of stage3) {
+    assert.ok(!/\bbayan\w*\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/قُرِأَ|خُرْبِطَ|لِلِدِّرَاسَةِ/.test(c.arapca), `${c.id} içinde hatalı imla/kök kalmamalıdır`);
+  }
+});
+
+test("115. 1111_cumle.json Aşama 4 (cumle_0601–cumle_0800) Temyiz, Gayr-i Munsarıf, Sarf-Nahiv, Med/Hemze, odak_kalip ve Doğal Türkçe Çeviri Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage4 = cumleler.slice(600, 800);
+  assert.equal(stage4[0].id, "cumle_0601");
+  assert.equal(stage4[199].id, "cumle_0800");
+  const byId = new Map(stage4.map((c) => [c.id, c]));
+
+  // Arapça kritik sarf, nahiv, temyiz, gayr-i munsarıf ve med düzeltmeleri
+  assert.equal(byId.get("cumle_0668")?.arapca, "يُقَالُ: «لَا يُؤْكَلُ السَّمَكُ وَاللَّبَنَ». لَا أَصْلَ لَهُ.");
+  assert.equal(byId.get("cumle_0671")?.arapca, "أَشْرَبُ كُلَّ لَيْلَةٍ قَبْلَ النَّوْمِ كَأْسًا مِنَ الْمَاءِ.");
+  assert.equal(byId.get("cumle_0672")?.arapca, "مَا عِنْدِي مِثْقَالٌ فِضَّةً.");
+  assert.equal(byId.get("cumle_0676")?.arapca, "احْتَرَقَ هِكْتَارٌ شَجَرًا فِي الْحَرِيقِ الْأَخِيرِ.");
+  assert.ok(byId.get("cumle_0697")?.arapca.endsWith("فَرِحِينَ وَمُفْتَخِرِينَ."));
+  assert.equal(byId.get("cumle_0707")?.arapca, "أَكَلَ الْأَطْفَالُ الْفَوَاكِهَ وَلَمَّا تُونِعْ.");
+  assert.equal(byId.get("cumle_0732")?.arapca, "كَانَ اللَّاعِبُ أَوْشَكَ أَنْ يُحْرِزَ نُقْطَةً.");
+  assert.ok(byId.get("cumle_0746")?.arapca.endsWith("بِسَبَبِ الْأَزْمَةِ."));
+  assert.ok(byId.get("cumle_0750")?.arapca.includes("الْآرَاءَ"));
+  assert.equal(byId.get("cumle_0761")?.arapca, "مَا هَذَا الطَّالِبُ كَسْلَانَ.");
+  assert.equal(byId.get("cumle_0776")?.arapca, "لَا طَالِبَ عِلْمٍ كَسْلَانُ.");
+  assert.ok(byId.get("cumle_0785")?.arapca.includes("الْإِنْجِلِيزِيَّةَ"));
+  assert.ok(byId.get("cumle_0788")?.arapca.includes("تُدْرِكُ الْاِجْتِمَاعَ"));
+
+  // odak_kalip doğruluk kontrolleri ("Nefer" -> "Nekre", vb.)
+  assert.equal(byId.get("cumle_0601")?.odak_kalip, "İsm-i Mevsûl / Mübteda-Haber Mankûs İsim");
+  assert.equal(byId.get("cumle_0672")?.odak_kalip, "Mübteda Temyizi (Ağırlık)");
+  assert.equal(byId.get("cumle_0676")?.odak_kalip, "Fâil Temyizi (Alan Ölçüsü)");
+  assert.equal(byId.get("cumle_0720")?.odak_kalip, "Nekre Fâilden Sonra Şibh-i Cümle Sıfatı");
+  assert.equal(byId.get("cumle_0794")?.odak_kalip, "Cemi Müennes Mübteda + Muzâri Fiil + İstidrak (وَلَكِنَّ)");
+
+  // Doğal Türkçe çeviri ve hijyen denetimi (601–800)
+  for (const c of stage4) {
+    assert.ok(!/\bbayan\w*\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/\bNefer\b/.test(c.odak_kalip), `${c.id} odak_kalip içinde 'Nefer' yerine 'Nekre' kullanılmalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0622\u064E/.test(c.arapca), `${c.id} içinde çift med (آَ) kalmamalıdır`);
+  }
+});
+
+test("116. 1111_cumle.json Aşama 5 (cumle_0801–cumle_1000) Sarf-Nahiv, İltikâ-i Sâkineyn, Kamerî Sükûn, odak_kalip ve Doğal Türkçe Çeviri Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage5 = cumleler.slice(800, 1000);
+  assert.equal(stage5[0].id, "cumle_0801");
+  assert.equal(stage5[199].id, "cumle_1000");
+  const byId = new Map(stage5.map((c) => [c.id, c]));
+
+  // Arapça kritik sarf, nahiv, iltikâ-i sâkineyn ve kamerî sükûn düzeltmeleri
+  assert.equal(byId.get("cumle_0812")?.arapca, "أَلَا يُسْعِدُكُمْ أَيْضًا أَنَّ الْمَدَارِسَ نَظِيفَةٌ؟");
+  assert.equal(byId.get("cumle_0859")?.arapca, "يَغْفِرُ اللَّهُ الذُّنُوبَ كُلَّهَا مَا خَلَا الْكُفْرَ بِهِ.");
+  assert.equal(byId.get("cumle_0952")?.arapca, "لَمْ يَلْبَثِ الشَّارِعُ أَنْ مُلِئَ بِالسَّيَّارَاتِ حَتَّى بَدَأَ الْاِزْدِحَامُ.");
+  assert.equal(byId.get("cumle_0957")?.arapca, "إِنْ تُحْسِنْ إِلَى الْجِيرَانِ تَنَلِ اِحْتِرَامَهُمْ.");
+  assert.equal(byId.get("cumle_0961")?.arapca, "مَهْمَا يَشْرَبِ الْإِنْسَانُ قَبْلَ النَّوْمِ يُضِرَّ بِهِ.");
+  assert.equal(byId.get("cumle_0963")?.arapca, "أَيَّانَ تَعْبُدُوا اللَّهَ مُخْلِصِينَ تَنْجُوا مِنْ ذُنُوبِكُمْ.");
+  assert.equal(byId.get("cumle_0970")?.arapca, "لَوْلَا الْعَقْلُ لَكَانَ الْإِنْسَانُ كَالْحَيَوَانِ.");
+  assert.equal(byId.get("cumle_0972")?.arapca, "لَمَّا مَاتَ الْأَبُ بَقِيَتِ الْأُسْرَةُ دُونَ رَأْسٍ.");
+
+  // odak_kalip bilimsel doğruluk kontrolleri
+  assert.equal(byId.get("cumle_0807")?.odak_kalip, "Şart Edatı (إِذَا) + Mâzî + Mâzî Cevap");
+  assert.equal(byId.get("cumle_0831")?.odak_kalip, "Nida / Nekre-i Gayr-i Maksûde Münâda (يَا سَامِعًا)");
+  assert.equal(byId.get("cumle_0865")?.odak_kalip, "Sebebî Sıfat (Müennes Men'ût + Müzekker Sıfat ve Fâil)");
+  assert.equal(byId.get("cumle_0866")?.odak_kalip, "Sebebî Sıfat Mansub (كَبِيرَةً غُرَفُهَا)");
+  assert.equal(byId.get("cumle_0870")?.odak_kalip, "Sebebî Sıfat (النَّاقِصُ وَاجِبُهُمَا)");
+  assert.equal(byId.get("cumle_0897")?.odak_kalip, "Bedel-i Ba'z min Küll (أَبْرَاجُهَا)");
+  assert.equal(byId.get("cumle_0900")?.odak_kalip, "Bedel / Açıklama (عِلْمُ الْفِيزْيَاءِ)");
+  assert.equal(byId.get("cumle_0903")?.odak_kalip, "Medih Fiili (حَبَّذَا) + Merfû Mahsûs (Mübteda)");
+  assert.equal(byId.get("cumle_0933")?.odak_kalip, "Şibh-i Cümle Haber + أَنْ Muhaffefe + لَيْسَ");
+  assert.equal(byId.get("cumle_0968")?.odak_kalip, "Şart İsimleri (أَيَّ خَيْرٍ + Meczum Muzâri)");
+  assert.equal(byId.get("cumle_0994")?.odak_kalip, "Muzâri Fiil Cümlesi + Harf-i Cer (فِي)");
+  assert.equal(byId.get("cumle_0996")?.odak_kalip, "Soru (هَلْ يَجِبُ عَلَيَّ) + Sarîh Masdar Fâil");
+
+  // Kritik çeviri ve hijyen denetimi (801–1000)
+  assert.equal(byId.get("cumle_0820")?.turkce, "Korkumuz havanın yağmurlu olmasıdır.");
+  assert.equal(byId.get("cumle_0837")?.turkce, "Amcamın oğlu! Sözümü niçin dinlemiyorsun?");
+  assert.equal(byId.get("cumle_0920")?.turkce, "İhanetten sakının! (müennes)");
+  assert.equal(byId.get("cumle_0958")?.turkce, "İlme tutunursanız hayatta kurtuluşa erersiniz.");
+  assert.equal(byId.get("cumle_0972")?.turkce, "Baba öldüğünde aile başsız kaldı.");
+
+  for (const c of stage5) {
+    assert.ok(!/\bbayan\w*\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/\bMufeffefe\b|\bNakire-i Maqsûde\b|\bSabebi\b|\bAmal\b/.test(c.odak_kalip), `${c.id} odak_kalip yazımı standart olmalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0622\u064E/.test(c.arapca), `${c.id} içinde çift med (آَ) kalmamalıdır`);
+  }
+});
+
+test("117. 1111_cumle.json Aşama 6 (cumle_1001–cumle_1111) Final Sarf-Nahiv, İmla, odak_kalip, Doğal Türkçe ve Tam Veri Seti Hijyen Denetimi", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const stage6 = cumleler.slice(1000, 1111);
+  assert.equal(stage6[0].id, "cumle_1001");
+  assert.equal(stage6[110].id, "cumle_1111");
+  const byId = new Map(stage6.map((c) => [c.id, c]));
+
+  // Arapça kritik imla, hareke ve kelime düzeltmeleri
+  assert.equal(byId.get("cumle_1027")?.arapca, "سَلَّمْتُ بِطَاقَةَ الْغُرْفَةِ إِلَى مُوَظَّفِ الْفُنْدُقِ قَبْلَ مُغَادَرَةِ الْمَكَانِ.");
+  assert.equal(byId.get("cumle_1028")?.arapca, "شَاهَدْنَا الْأَسْمَاكَ الْمُلَوَّنَةَ أَثْنَاءَ عُبُورِ الْبُحَيْرَةِ بِالْقَارِبِ فِي الصَّبَاحِ الْبَاكِرِ.");
+  assert.equal(byId.get("cumle_1046")?.arapca, "إِنَّ التَّغْذِيَةَ الصِّحِّيَّةَ وَتَنَاوُلَ الْفَوَاكِهِ الطَّازَجَةِ يَقِي مِنَ الْأَمْرَاضِ الشَّدِيدَةِ.");
+  assert.equal(byId.get("cumle_1078")?.arapca, "اَلْمَكْتَبَاتُ هِيَ رِئَةُ الْعِلْمِ، وَحِمَايَتُهَا مِنَ الْإِهْمَالِ وَاجِبٌ عَلَيْنَا جَمِيعًا.");
+
+  // odak_kalip bilimsel doğruluk kontrolleri
+  assert.equal(byId.get("cumle_1010")?.odak_kalip, "Muzâri (يَنْبَغِي) + Fâil Masdar İzafeti");
+  assert.equal(byId.get("cumle_1020")?.odak_kalip, "Tefe''ul Mâzî (تَأَجَّلَتْ) + Sebebiyye (بِسَبَبِ)");
+  assert.equal(byId.get("cumle_1081")?.odak_kalip, "Muzâri (يَنْبَغِي) + Fâil Masdar İzafeti");
+  assert.equal(byId.get("cumle_1088")?.odak_kalip, "Muzâri (يَجِبُ) + Fâil Masdar İzafeti");
+  assert.equal(byId.get("cumle_1098")?.odak_kalip, "Meçhul Mâzî (مُنِحَ) + Nâib-i Fâil + İkinci Mef'ûl + (مِنْ قِبَلِ)");
+  assert.equal(byId.get("cumle_1110")?.odak_kalip, "Muzâri (يَتَطَلَّبُ) + Sıfatlı Fâil + Masdar Mef'ûl + Tesniye İzafeti");
+  assert.equal(byId.get("cumle_1111")?.odak_kalip, "Cemi Müzekker Sıfatlı Mübteda + Zamir-i Fasl + İsm-i Mevsûl Haber");
+
+  // Türkçe çeviri ve TDK yazım kontrolleri
+  assert.equal(byId.get("cumle_1027")?.turkce, "Mekândan ayrılmadan önce oda kartını otel görevlisine teslim ettim.");
+  assert.equal(byId.get("cumle_1060")?.turkce, "Danışman resmî kâğıtları idareye göndermeden önce imzaladı.");
+  assert.equal(byId.get("cumle_1095")?.turkce, "Marangoz, atölyesinde ahşap masanın parçalarını büyük bir ustalıkla birleştirdi.");
+  assert.equal(byId.get("cumle_1110")?.turkce, "Klasik Arapça metinleri doğru anlamak için nahiv ve belagat inceliklerine vâkıf olmak gerekir.");
+
+  // Tüm 1111 kayıtta tam hijyen doğrulaması (cumle_0001–cumle_1111)
+  for (const c of cumleler) {
+    assert.ok(!/\bbayan\w*\b/i.test(c.turkce), `${c.id} içinde yapay 'bayan' çevirisi kalmamalıdır`);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(c.arapca), `${c.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(c.arapca), `${c.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0622\u064E/.test(c.arapca), `${c.id} içinde çift med (آَ) kalmamalıdır`);
+    assert.ok(!/فَقَطِ|قُرِأَ|خُرْبِطَ|لِلِدِّرَاسَةِ|بِالْقَوْرَبِ/.test(c.arapca), `${c.id} içinde hatalı imla/kök kalmamalıdır`);
+  }
+});
+
+
+
+
+
+

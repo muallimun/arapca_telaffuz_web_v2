@@ -10494,3 +10494,48 @@ test("92. 6 Eğitim JSON Dosyası TTS Hijyen, Karakter Sızıntısı (ata_0093) 
     "Önce can sonra canan (İyiliğe önce yakınlar layıktır)."
   );
 });
+
+test("93. tum_diyaloglar_120.json ve tum_metinler_60.json Latin Rakam (102/405) ve Kısa Elif (\\u0670) Normalizasyonu", () => {
+  const dlgs = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8")
+  );
+  const metins = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "tum_metinler_60.json"), "utf8")
+  );
+
+  for (const [label, list] of [
+    ["tum_diyaloglar_120.json", dlgs],
+    ["tum_metinler_60.json", metins],
+  ]) {
+    for (const item of list) {
+      for (const row of item.satirlar || []) {
+        assert.ok(
+          !/[0-9\u0660-\u0669]/.test(row.arapca),
+          `${label} ${item.id} satır ${row.sira} arapca alanında rakam kalmamalıdır`
+        );
+        assert.ok(
+          !/\u0670/.test(row.arapca),
+          `${label} ${item.id} satır ${row.sira} arapca alanında kısa elif (\\u0670) kalmamalıdır`
+        );
+      }
+    }
+  }
+
+  const byDlg = new Map(dlgs.map((d) => [d.id, d]));
+  assert.equal(
+    byDlg.get("dlg_042")?.satirlar.find((s) => s.sira === 3)?.arapca,
+    "اسْمُهُ خَالِدٌ فِي الْغُرْفَةِ رَقْمِ مِئَةٍ وَاثْنَيْنِ."
+  );
+  assert.equal(
+    byDlg.get("dlg_049")?.satirlar.find((s) => s.sira === 11)?.arapca,
+    "هَذَا هُوَ مِفْتَاحُ الْغُرْفَةِ رَقْمِ أَرْبَعِمِئَةٍ وَخَمْسَةٍ."
+  );
+  assert.equal(
+    byDlg.get("dlg_075")?.satirlar.find((s) => s.sira === 3)?.arapca,
+    "أُرِيدُ شِرَاءَهَا، لَكِن\u0651\u064Eهَا غَالِيَةُ الث\u0651\u064Eمَنِ قَلِيلاً."
+  );
+  assert.ok(
+    byDlg.get("dlg_103")?.satirlar.find((s) => s.sira === 6)?.arapca.startsWith("لِذَلِكَ ")
+  );
+});
+

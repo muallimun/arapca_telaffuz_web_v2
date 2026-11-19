@@ -11455,6 +11455,47 @@ test("109. seviye_tespit_sorulari.json Aşama 6 (401–480: ktt_grm_001_01–ktt
   }
 });
 
+test("110. seviye_tespit_sorulari.json Aşama 7 (481–550: ktt_grm_009_01–ktt_grm_015_10) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const sorular = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8"));
+  const stage7 = sorular.slice(480, 550);
+  assert.equal(sorular.length, 550);
+  assert.equal(stage7.length, 70);
+  assert.equal(stage7[0].id, "ktt_grm_009_01");
+  assert.equal(stage7[69].id, "ktt_grm_015_10");
+
+  const byId = new Map(stage7.map((q) => [q.id, q]));
+
+  assert.ok(byId.get("ktt_grm_009_03")?.cozum_detayi.odak_kural.includes("doğrudan"));
+  assert.ok(!byId.get("ktt_grm_009_03")?.cozum_detayi.odak_kural.includes("közvetlen"));
+  assert.ok(!byId.get("ktt_grm_009_06")?.soru_yonergesi_tr.includes("âmâ"));
+  assert.ok(byId.get("ktt_grm_009_10")?.cozum_detayi.celdirici_analizi.A.includes("hazfi üzere mebnîdir"));
+  assert.ok(byId.get("ktt_grm_010_05")?.cozum_detayi.celdirici_analizi.C.includes("daima fetha üzere mebnî kalır"));
+  assert.ok(byId.get("ktt_grm_010_08")?.soru_yonergesi_tr.includes("muzâfun ileyhi"));
+  assert.ok(byId.get("ktt_grm_011_05")?.soru_metni_ar.includes("الْمُتَفَوِّقَ"));
+  assert.ok(byId.get("ktt_grm_011_07")?.cozum_detayi.celdirici_analizi.C.includes("munsarıftır"));
+  assert.ok(byId.get("ktt_grm_012_09")?.soru_metni_ar.includes("غَدًا"));
+  assert.ok(!byId.get("ktt_grm_012_09")?.soru_metni_ar.includes("الْآنَ"));
+  assert.ok(byId.get("ktt_grm_013_04")?.cozum_detayi.odak_kural.includes("'اِلْزَمْ'"));
+  assert.ok(byId.get("ktt_grm_013_08")?.soru_metni_ar.includes("وَحْدَهُ"));
+  assert.ok(byId.get("ktt_grm_014_10")?.cozum_detayi.celdirici_analizi.D.includes("النُّقَاطَ kelimesinin"));
+  assert.ok(byId.get("ktt_grm_015_05")?.cozum_detayi.soru_cevirisi_tr.includes("tarihî"));
+  assert.equal(
+    byId.get("ktt_grm_015_08")?.cozum_detayi.soru_cevirisi_tr,
+    "İki arkadaş yardımlaşıyordu; şüphesiz ikisinin yardımlaşması son derece verimlidir."
+  );
+
+  for (const q of stage7) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
+
+
 
 
 

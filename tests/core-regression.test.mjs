@@ -11061,10 +11061,340 @@ test("103. tum_diyaloglar_120.json Aşama 4 (dlg_091–dlg_120) ve Tüm 120 Diya
   }
 });
 
+test("104. seviye_tespit_sorulari.json Aşama 1 (1–80: ktt_a_001–yeni_a1_042) Sarf-Nahiv, Hareke ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage1 = questions.slice(0, 80);
+  assert.equal(stage1[0].id, "ktt_a_001");
+  assert.equal(stage1[79].id, "yeni_a1_042");
+  const byId = new Map(stage1.map((q) => [q.id, q]));
 
+  // Kritik sarf-nahiv, hareke ve çeviri kontrolleri
+  assert.ok(byId.get("ktt_a_004")?.cozum_detayi.celdirici_analizi.D.startsWith("الط\u0651\u064Eالِبِ kelimesi,"));
+  assert.equal(
+    byId.get("sts_a1_p1_001")?.cozum_detayi.soru_cevirisi_tr,
+    "Öğretmen: Hoş geldin kızım, adın ne? — Öğrenci: Benim adım Fatma."
+  );
+  assert.ok(byId.get("sts_a1_p1_005")?.cozum_detayi.celdirici_analizi.A.includes("ism-i fâil (şifa arayan)"));
+  assert.ok(byId.get("sts_a1_p1_006")?.cozum_detayi.odak_kural.includes("fetha ile mansûb olurlar"));
+  assert.ok(byId.get("sts_a1_p1_008")?.cozum_detayi.dogru_cevap_gerekcesi.startsWith("الْأُم\u0651\u064F"));
+  assert.ok(!byId.get("sts_a1_p1_008")?.cozum_detayi.dogru_cevap_gerekcesi.includes("اَلْأُم\u0651\u064F"));
+  assert.ok(byId.get("sts_a1_p1_012")?.cozum_detayi.soru_cevirisi_tr.includes("Affedersiniz"));
+  assert.equal(
+    byId.get("sts_a1_p1_013")?.cozum_detayi.soru_cevirisi_tr,
+    "Uçak hızlıdır, eski tren ise yavaştır."
+  );
+  assert.ok(byId.get("sts_a1_p2_007")?.cozum_detayi.odak_kural.includes("lâm-ı ta'lîl"));
+  assert.equal(
+    byId.get("yeni_a1_006")?.cozum_detayi.soru_cevirisi_tr,
+    "Zeynep, İstanbul Üniversitesinde okuyan Türk bir öğrencidir."
+  );
+  assert.ok(byId.get("yeni_a1_010")?.cozum_detayi.celdirici_analizi.D.includes("çoğul ve mansûb/mecrûr"));
+  assert.equal(
+    byId.get("yeni_a1_014")?.cozum_detayi.soru_cevirisi_tr,
+    "Meryem, sen matematik alanında yetenekli bir öğretmensin."
+  );
+  assert.equal(
+    byId.get("yeni_a1_016")?.cozum_detayi.soru_cevirisi_tr,
+    "Ali, dün kendisiyle yazı yazdığın bu kalem senin mi?"
+  );
+  assert.equal(
+    byId.get("yeni_a1_017")?.cozum_detayi.soru_cevirisi_tr,
+    "Fatma, satın aldığın yeni çantan nerede?"
+  );
+  assert.ok(byId.get("yeni_a1_033")?.cozum_detayi.odak_kural.includes("تُ (ötreli muzâraat tâ'sı)"));
+  assert.equal(
+    byId.get("yeni_a1_038")?.cozum_detayi.soru_cevirisi_tr,
+    "Öğrenci, öğretmenin çantasını sınıfa taşıdı."
+  );
+  assert.ok(byId.get("yeni_a1_038")?.cozum_detayi.celdirici_analizi.D.includes("muzâfun ileyhidir"));
 
+  // İlk 80 soruda ters şedde, çift med, الِا, اً, kısa elif ve tatvil kalmamış olmalıdır
+  for (const q of stage1) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
 
+test("105. seviye_tespit_sorulari.json Aşama 2 (81–160: yeni_a1_043–sts_a2_p2_001) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage2 = questions.slice(80, 160);
+  assert.equal(stage2[0].id, "yeni_a1_043");
+  assert.equal(stage2[79].id, "sts_a2_p2_001");
+  const byId = new Map(stage2.map((q) => [q.id, q]));
 
+  assert.equal(
+    byId.get("yeni_a1_043")?.cozum_detayi.soru_cevirisi_tr,
+    "Yolcu, istasyon peronunda durup treni bekledi."
+  );
+  assert.ok(byId.get("yeni_a1_053")?.cozum_detayi.celdirici_analizi.D.startsWith("الْمَدِينَةِ kelimesi,"));
+  assert.ok(byId.get("yeni_a1_060")?.cozum_detayi.celdirici_analizi.D.startsWith("الْمَدْرَسَةِ kelimesi,"));
+  assert.ok(byId.get("yeni_a1_061")?.cozum_detayi.celdirici_analizi.C.includes("başında harf-i cer bulunmayan"));
+  assert.equal(
+    byId.get("yeni_a1_067")?.cozum_detayi.soru_cevirisi_tr,
+    "Meryem, şu an yeni hikâyeyi okuyor musun?"
+  );
+  assert.equal(
+    byId.get("yeni_a1_068")?.cozum_detayi.soru_cevirisi_tr,
+    "Ayşe, hava girsin diye odanın penceresini aç."
+  );
+  assert.equal(
+    byId.get("yeni_a1_073")?.cozum_detayi.soru_cevirisi_tr,
+    "Öğretmen: Tarık, kalk ve bu cümleyi tahtaya yaz. — Tarık: Baş üstüne öğretmenim."
+  );
+  assert.ok(byId.get("yeni_a1_074")?.cozum_detayi.celdirici_analizi.D.includes("muzâfun ileyhidir"));
+  assert.ok(byId.get("yeni_a1_075")?.cozum_detayi.celdirici_analizi.D.startsWith("الص\u0651\u064Eبَاحِ kelimesi,"));
+  assert.equal(
+    byId.get("yeni_a1_076")?.cozum_detayi.soru_cevirisi_tr,
+    "Kütüphanede çok faydalı tek bir dergi okudum."
+  );
+  assert.ok(byId.get("yeni_a1_083")?.cozum_detayi.dogru_cevap_gerekcesi.endsWith("وَالر\u0651\u064Fبْعِ ifadesidir."));
+  assert.ok(byId.get("yeni_a1_084")?.cozum_detayi.celdirici_analizi.D.includes("hem harf-i tarif (ال) hem de tenvin"));
+  assert.equal(
+    byId.get("yeni_a1_090")?.cozum_detayi.soru_cevirisi_tr,
+    "Kız çocuğu halk parkında küçük çantasını kaybetti."
+  );
+  assert.ok(byId.get("ktt_a_010")?.cozum_detayi.celdirici_analizi.D.startsWith("يَنْتَهِيَ fiili,"));
+  assert.ok(byId.get("ktt_b_001")?.cozum_detayi.celdirici_analizi.C.includes("cins lâm-ı tarifiyle marife"));
+  assert.equal(
+    byId.get("ktt_c_004")?.cozum_detayi.soru_cevirisi_tr,
+    "Onlar iki çalışkan öğrencidir ve yarışmayı kazananlardır."
+  );
+  assert.equal(
+    byId.get("ktt_c_010")?.cozum_detayi.soru_cevirisi_tr,
+    "Hastanede hastayı tedavi eden doktor geldi."
+  );
+  assert.ok(byId.get("sts_a2_p1_005")?.cozum_detayi.celdirici_analizi.D.startsWith("الْمَعْرِضِ kelimesi,"));
+  assert.ok(byId.get("sts_a2_p1_009")?.cozum_detayi.celdirici_analizi.A.includes("tekrarsız ve dua anlamı taşımayan"));
+  assert.equal(
+    byId.get("sts_a2_p1_015")?.cozum_detayi.soru_cevirisi_tr,
+    "Kasiyer: Hesap yirmi lira efendim. — Müşteri: Buyurun, işte para; teşekkür ederim."
+  );
+  assert.equal(
+    byId.get("sts_a2_p2_001")?.cozum_detayi.soru_cevirisi_tr,
+    "Öğrenci ödevleri deftere özenle yazdı."
+  );
+
+  for (const q of stage2) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
+
+test("106. seviye_tespit_sorulari.json Aşama 3 (161–240: sts_a2_p2_002–yeni_a2_066) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage3 = questions.slice(160, 240);
+  assert.equal(stage3[0].id, "sts_a2_p2_002");
+  assert.equal(stage3[79].id, "yeni_a2_066");
+  const byId = new Map(stage3.map((q) => [q.id, q]));
+
+  assert.ok(byId.get("sts_a2_p2_002")?.cozum_detayi.celdirici_analizi.D.includes("ayrılma ve kaynak bildirir"));
+  assert.ok(byId.get("sts_a2_p2_004")?.cozum_detayi.celdirici_analizi.B.includes("تَنْسَيْ"));
+  assert.equal(
+    byId.get("sts_a2_p2_009")?.cozum_detayi.soru_cevirisi_tr,
+    "Kız, geziden sonra şiddetli bir yorgunluk hissetti."
+  );
+  assert.equal(byId.get("yeni_a2_001")?.secenekler[1].metin, "طَالِبًا");
+  assert.equal(
+    byId.get("yeni_a2_003")?.cozum_detayi.soru_cevirisi_tr,
+    "Bu ikisi, hastanede çalışan iki maharetli doktordur."
+  );
+  assert.ok(byId.get("yeni_a2_005")?.cozum_detayi.celdirici_analizi.B.includes("tesniye nûnu korunamaz"));
+  assert.equal(
+    byId.get("yeni_a2_006")?.cozum_detayi.soru_cevirisi_tr,
+    "Halid ve Ömer, siz ikiniz bu projede ihlasla çalışıyorsunuz."
+  );
+  assert.ok(byId.get("yeni_a2_009")?.cozum_detayi.celdirici_analizi.C.startsWith("الْمُبَارَاةِ kelimesi,"));
+  assert.ok(byId.get("yeni_a2_010")?.cozum_detayi.odak_kural.includes("بَابَيِ الْمَدْرَسَةِ"));
+  assert.equal(byId.get("yeni_a2_011")?.secenekler[2].metin, "الْمُهَنْدِسَيْنِ");
+  assert.equal(
+    byId.get("yeni_a2_013")?.cozum_detayi.soru_cevirisi_tr,
+    "Müdür, işlerinde ihlaslı olan öğretmenlere teşekkür etti."
+  );
+  assert.equal(
+    byId.get("yeni_a2_014")?.cozum_detayi.soru_cevirisi_tr,
+    "Sabahleyin okul bahçesinde öğrencileri gördüm."
+  );
+  assert.ok(byId.get("yeni_a2_014")?.cozum_detayi.celdirici_analizi.D.includes("muzâfun ileyhidir"));
+  assert.equal(
+    byId.get("yeni_a2_019")?.cozum_detayi.soru_cevirisi_tr,
+    "Öğrenciler kitap ödünç almak için kütüphaneye gittiler."
+  );
+  assert.equal(
+    byId.get("yeni_a2_020")?.cozum_detayi.soru_cevirisi_tr,
+    "Dün kendimi hasta hissettim; hastanede doktor beni muayene etti."
+  );
+  assert.ok(byId.get("yeni_a2_027")?.cozum_detayi.celdirici_analizi.C.startsWith("الْمَدْرَسَةِ kelimesi,"));
+  assert.ok(byId.get("yeni_a2_028")?.cozum_detayi.celdirici_analizi.C.startsWith("الْوَاجِبِ kelimesi,"));
+  assert.ok(byId.get("yeni_a2_029")?.cozum_detayi.dogru_cevap_gerekcesi.includes("fâili"));
+  assert.equal(
+    byId.get("yeni_a2_032")?.cozum_detayi.soru_cevirisi_tr,
+    "Fatma, misafirlerin önünde konuşurken yalan söyleme."
+  );
+  assert.equal(
+    byId.get("yeni_a2_035")?.cozum_detayi.soru_cevirisi_tr,
+    "Acele edin kardeşlerim, çünkü uçak havalimanına ulaştı bile."
+  );
+  assert.ok(byId.get("yeni_a2_035")?.cozum_detayi.celdirici_analizi.D.includes("لَمَّا الْحِينِيَّة"));
+  assert.ok(byId.get("yeni_a2_035")?.cozum_detayi.celdirici_analizi.D.includes("zaman zarfıdır"));
+  assert.ok(byId.get("yeni_a2_038")?.cozum_detayi.celdirici_analizi.D.startsWith("الْمَلْعَبِ kelimesi,"));
+  assert.equal(
+    byId.get("yeni_a2_040")?.cozum_detayi.soru_cevirisi_tr,
+    "Kardeşim Arapça sınavını üstün başarıyla geçti."
+  );
+  assert.equal(
+    byId.get("yeni_a2_042")?.cozum_detayi.soru_cevirisi_tr,
+    "Yusuf: Köyde dedeni ziyaret ettin mi Ali? — Ali: Evet, oradaki bütün akrabalarıma da selam verdim."
+  );
+  assert.ok(byId.get("yeni_a2_052")?.soru_metni_ar.startsWith("الْبَائِعُ:"));
+  assert.ok(byId.get("yeni_a2_052")?.cozum_detayi.soru_cevirisi_tr.startsWith("Satıcı:"));
+  assert.ok(byId.get("yeni_a2_055")?.soru_metni_ar.includes("الْقِصَصِ الْمُفِيدَةِ"));
+  assert.ok(byId.get("yeni_a2_055")?.cozum_detayi.dogru_cevap_gerekcesi.includes("الْقِصَصِ"));
+  assert.equal(
+    byId.get("yeni_a2_058")?.cozum_detayi.soru_cevirisi_tr,
+    "Meryem, bu zor problemi çözebilir misin?"
+  );
+  assert.ok(byId.get("yeni_a2_063")?.cozum_detayi.celdirici_analizi.A.includes("dedem sebebiyle"));
+  assert.ok(byId.get("yeni_a2_064")?.cozum_detayi.celdirici_analizi.D.startsWith("قَوْلِهِ kelimesi,"));
+
+  for (const q of stage3) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
+
+test("107. seviye_tespit_sorulari.json Aşama 4 (241–320: yeni_a2_067–yeni_b1_020) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage4 = questions.slice(240, 320);
+  assert.equal(stage4.length, 80);
+  assert.equal(stage4[0].id, "yeni_a2_067");
+  assert.equal(stage4[79].id, "yeni_b1_020");
+  const byId = new Map(stage4.map((q) => [q.id, q]));
+
+  assert.equal(
+    byId.get("yeni_a2_068")?.cozum_detayi.soru_cevirisi_tr,
+    "Bu sınıfta gayretle öğrenim gören yirmi beş öğrenci vardır."
+  );
+  assert.ok(byId.get("yeni_a2_068")?.cozum_detayi.odak_kural.includes("birler basamağındaki 3-9 rakamları"));
+  assert.ok(byId.get("ktt_a_013")?.cozum_detayi.celdirici_analizi.D.includes("ihtemme (اهْتَمَّ)"));
+  assert.equal(
+    byId.get("ktt_b_006")?.cozum_detayi.soru_cevirisi_tr,
+    "Yolcular, uçağın vaktinin biraz geciktiğini öğrendiler."
+  );
+  assert.equal(byId.get("ktt_b_008")?.secenekler[1].metin, "Harika bir sanat tablosuna");
+  assert.equal(
+    byId.get("ktt_b_011")?.cozum_detayi.soru_cevirisi_tr,
+    "İki arkadaş sürekli ilişkilerinde samimi oldular."
+  );
+  assert.equal(byId.get("ktt_b_013")?.secenekler[2].metin, "يُنْهُونَ");
+  assert.ok(byId.get("ktt_b_013")?.cozum_detayi.celdirici_analizi.C.startsWith("يُنْهُونَ"));
+  assert.ok(byId.get("ktt_c_006")?.cozum_detayi.celdirici_analizi.B.includes("cer edilip kesra alamaz"));
+  assert.ok(byId.get("ktt_c_012")?.cozum_detayi.celdirici_analizi.B.includes("çoğul eril (cem-i müzekker) ism-i mevsûldür"));
+  assert.equal(
+    byId.get("ktt_c_015")?.cozum_detayi.soru_cevirisi_tr,
+    "Nesillerin yetiştirilmesinde ihlasla çalışan öğretmenlere saygı duydum."
+  );
+  assert.equal(
+    byId.get("ktt_d_003")?.cozum_detayi.soru_cevirisi_tr,
+    "Deney için laboratuvara on beş öğrenci geldi."
+  );
+  assert.ok(byId.get("sts_b1_p1_006")?.cozum_detayi.odak_kural.includes("(الْجُمَلُ بَعْدَ النَّكِرَاتِ صِفَاتٌ)"));
+  assert.equal(byId.get("sts_b1_p2_008")?.bagli_konu, "İfti'âl Babı ve Toplantı Mekânı (اجْتَمَعَ)");
+  assert.ok(byId.get("sts_b1_p2_010")?.cozum_detayi.celdirici_analizi.D.includes("müennes çoğul mecrûr temyiz ister"));
+  assert.ok(byId.get("yeni_b1_008")?.cozum_detayi.dogru_cevap_gerekcesi.includes("لَنْ edatından sonra"));
+  assert.ok(byId.get("yeni_b1_009")?.cozum_detayi.celdirici_analizi.C.includes("تَزُرْ"));
+  assert.equal(byId.get("yeni_b1_010")?.alt_grup, "Emir Lâmı (Lâmü'l-Emr)");
+  assert.ok(byId.get("yeni_b1_012")?.cozum_detayi.celdirici_analizi.C.includes("أَسْتَعْدِدْ"));
+  assert.ok(byId.get("yeni_b1_013")?.cozum_detayi.celdirici_analizi.D.includes("zaman zarfı olur"));
+  assert.equal(
+    byId.get("yeni_b1_016")?.cozum_detayi.soru_cevirisi_tr,
+    "Çalışkan öğrenciler bugün derse asla geç kalmayacaklardır."
+  );
+  assert.ok(byId.get("yeni_b1_017")?.cozum_detayi.odak_kural.includes("kesret-i isti'mâl"));
+  assert.ok(byId.get("yeni_b1_017")?.cozum_detayi.celdirici_analizi.A.includes("teorik/kıyâsî asıl biçimdir"));
+  assert.ok(byId.get("yeni_b1_018")?.cozum_detayi.odak_kural.includes("نَا، نَ"));
+  assert.ok(byId.get("yeni_b1_019")?.cozum_detayi.odak_kural.includes("يَفْعِلُ (yef'ilü)"));
+  assert.ok(byId.get("yeni_b1_019")?.cozum_detayi.odak_kural.includes("يَعِلُ (ye'ilü)"));
+
+  for (const q of stage4) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
+
+test("108. seviye_tespit_sorulari.json Aşama 5 (321–400: yeni_b1_021–sts_b2_p2_015) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage5 = questions.slice(320, 400);
+  assert.equal(stage5.length, 80);
+  assert.equal(stage5[0].id, "yeni_b1_021");
+  assert.equal(stage5[79].id, "sts_b2_p2_015");
+  const byId = new Map(stage5.map((q) => [q.id, q]));
+
+  assert.ok(byId.get("yeni_b1_021")?.cozum_detayi.odak_kural.includes("(حَذْفُ حَرْفِ الْعِلَّةِ)"));
+  assert.ok(byId.get("yeni_b1_023")?.cozum_detayi.celdirici_analizi.C.includes("يَنْسَى fiilinin"));
+  assert.ok(byId.get("yeni_b1_024")?.cozum_detayi.celdirici_analizi.D.includes("4. bab ecvef fiillerde (خِفْتُ)"));
+  assert.ok(byId.get("yeni_b1_025")?.cozum_detayi.soru_cevirisi_tr.includes("Baş üstüne"));
+  assert.equal(
+    byId.get("yeni_b1_027")?.cozum_detayi.soru_cevirisi_tr,
+    "Arkadaşım, insanları iyiliğe ve doğruluğa (salâha) davet et."
+  );
+  assert.ok(byId.get("yeni_b1_028")?.cozum_detayi.odak_kural.includes("(الْجُمَلُ بَعْدَ النَّكِرَاتِ صِفَاتٌ)"));
+  assert.ok(byId.get("yeni_b1_035")?.cozum_detayi.celdirici_analizi.B.includes("meçhuldür"));
+  assert.equal(byId.get("yeni_b1_046")?.secenekler[1].metin, "تَخَرُّجِهِ");
+  assert.equal(byId.get("yeni_b1_050")?.secenekler[2].metin, "الْاِسْتِفَادَةِ");
+  assert.equal(byId.get("ktt_d_014")?.secenekler[1].metin, "Pasaportunu kaybeden yolcunun");
+  assert.equal(
+    byId.get("sts_b2_p1_003")?.cozum_detayi.soru_cevirisi_tr,
+    "Hoca: Şayet araştırmanın yazımını bugün bitirirsen onu bana gönder. — Araştırmacı: Bunu mutlaka yapacağım."
+  );
+  assert.ok(byId.get("sts_b2_p1_005")?.soru_metni_ar.includes("الْمَدْعُوُّونَ"));
+  assert.equal(byId.get("sts_b2_p1_005")?.secenekler[1].metin, "الْمَدْعُوُّونَ");
+  assert.ok(byId.get("sts_b2_p1_009")?.cozum_detayi.dogru_cevap_gerekcesi.includes("kişiyle birlikte uyanmaz"));
+  assert.equal(byId.get("sts_b2_p1_014")?.secenekler[3].metin, "فُضَلَاءُ");
+  assert.ok(byId.get("sts_b2_p2_006")?.cozum_detayi.soru_cevirisi_tr.includes("adil bir hâkim"));
+  assert.ok(byId.get("sts_b2_p2_009")?.cozum_detayi.soru_cevirisi_tr.includes("yaklaşımını (tutumunu)"));
+  assert.ok(byId.get("sts_b2_p2_013")?.cozum_detayi.soru_cevirisi_tr.includes("Eve henüz varmıştık ki"));
+  assert.ok(byId.get("sts_b2_p2_014")?.cozum_detayi.odak_kural.includes("tâm fiil olup masdar-ı müevvel onun fâili"));
+
+  for (const q of stage5) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
 
 
 

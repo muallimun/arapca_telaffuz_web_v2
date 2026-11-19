@@ -4199,8 +4199,8 @@
         "konusmaci": "Ahmet",
         "konusmaci_ar": "أَحْمَدُ",
         "cinsiyet": "E",
-        "odak_kalip": "Tarif (اِمْشِي لِلأَمَامِ ثُمَّ يَمِيناً)",
-        "arapca": "اِمْشِي لِلأَمَامِ ثُمَّ اتَّجِهْ يَمِيناً.",
+        "odak_kalip": "Tarif (اِمْشِ لِلْأَمَامِ ثُمَّ يَمِيناً)",
+        "arapca": "اِمْشِ لِلْأَمَامِ ثُمَّ اتَّجِهْ يَمِيناً.",
         "turkce": "İleriye doğru yürü sonra sağa dön.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_025/satir_04_E.mp3"
       },
@@ -8122,8 +8122,8 @@
         "konusmaci": "Anne",
         "konusmaci_ar": "الْأُمُّ",
         "cinsiyet": "K",
-        "odak_kalip": "Talimat (اغْسِلْ وَجْهَكَ)",
-        "arapca": "اغْسِلْ وَجْهَكَ وَتَعَالَ إِلَى الْفَطُورِ.",
+        "odak_kalip": "Talimat (اِغْسِلْ وَجْهَكَ)",
+        "arapca": "اِغْسِلْ وَجْهَكَ وَتَعَالَ إِلَى الْفَطُورِ.",
         "turkce": "Yüzünü yıka ve kahvaltıya gel.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_044/satir_07_K.mp3"
       },
@@ -8306,7 +8306,7 @@
         "konusmaci_ar": "السَّائِحُ",
         "cinsiyet": "E",
         "odak_kalip": "Hazır Olma (نَحْنُ مُسْتَعِدُّونَ)",
-        "arapca": "مُمْتَازٌ، نَحْنُ مُسْتَعِدُّونَ لِلابْتِدَاءِ!",
+        "arapca": "مُمْتَازٌ، نَحْنُ مُسْتَعِدُّونَ لِلِابْتِدَاءِ!",
         "turkce": "Mükemmel, başlamak için hazırız!",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_045/satir_11_E.mp3"
       },
@@ -9533,7 +9533,7 @@
         "konusmaci_ar": "عَلِيٌّ",
         "cinsiyet": "E",
         "odak_kalip": "Lakinna İstisna (لٰكِنَّ الحِفْظَ يَحْتَاجُ)",
-        "arapca": "لٰكِنَّ الحِفْظَ يَحْتَاجُ إِلَى صَبْرٍ وَمُرَاجَعَةٍ دَائِمَةٍ دَائِماً.",
+        "arapca": "لٰكِنَّ الحِفْظَ يَحْتَاجُ إِلَى صَبْرٍ وَمُرَاجَعَةٍ دَائِماً.",
         "turkce": "Fakat ezber, daima sabra ve daimi tekrara ihtiyaç duyar.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_088/satir_05_E.mp3"
       },
@@ -10370,8 +10370,8 @@
         "konusmaci": "Ömer",
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
-        "odak_kalip": "Lau Şart Edatı (لَوْ اسْتَعَدَدْنَا جَيِّداً)",
-        "arapca": "وَلَوْ اسْتَعَدَدْنَا جَيِّداً لَقَلَّتِ الأَضْرَارُ الكَبِيرَةُ كَثِيراً هُنَا.",
+        "odak_kalip": "Lau Şart Edatı (لَوِ اسْتَعْدَدْنَا جَيِّداً)",
+        "arapca": "وَلَوِ اسْتَعْدَدْنَا جَيِّداً لَقَلَّتِ الأَضْرَارُ الكَبِيرَةُ كَثِيراً هُنَا.",
         "turkce": "Peki iyi hazırlansaydık burada büyük zararlar çok azalırdı.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_094/satir_03_E.mp3"
       },
@@ -12819,7 +12819,7 @@
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
         "odak_kalip": "Meçhul Muzari + Şibh-i Cümle (يُحْتَفَلُ فِي)",
-        "arapca": "وَهَلْ يُحْتَفَلُ فِي المَدِينَةِ بِإِحْيَاءِ هَذِهِ الآثَارِ الَوَقْفِيَّةِ؟",
+        "arapca": "وَهَلْ يُحْتَفَلُ فِي المَدِينَةِ بِإِحْيَاءِ هَذِهِ الآثَارِ الْوَقْفِيَّةِ؟",
         "turkce": "Peki şehirde bu vakıf eserlerinin ihyası kutlanır mı?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_102/satir_03_E.mp3"
       },
@@ -13041,8 +13041,8 @@
         "konusmaci": "Tarık",
         "konusmaci_ar": "طَارِقٌ",
         "cinsiyet": "E",
-        "odak_kalip": "Reca Fiili (عَسَى المستقبلُ أَنْ)",
-        "arapca": "إِذَنْ عَسَى المُسْتَقْبَلُ أَنْ يَكُونَ أَفْضَلَ لِلْأَجْيَالِ القَادِمَةِ.",
+        "odak_kalip": "Reca Fiili (عَسَى الْمُسْتَقْبَلُ أَنْ)",
+        "arapca": "إِذَنْ عَسَى الْمُسْتَقْبَلُ أَنْ يَكُونَ أَفْضَلَ لِلْأَجْيَالِ القَادِمَةِ.",
         "turkce": "Öyleyse umulur ki gelecek, gelecek nesiller için daha iyi olur.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_103/satir_11_E.mp3"
       },
@@ -13963,7 +13963,7 @@
         "konusmaci_ar": "يُوسُفُ",
         "cinsiyet": "E",
         "odak_kalip": "Temyiz-i Müfred Miktar (عِشْرُونَ كِيلُووَاطاً)",
-        "arapca": "وَهَلْ اشْتَرَتِ الشَّرِكَةُ عِشْرِينَ كِيلُووَاطاً مِنَ الطَّاقَةِ النَّظِيفَةِ اليَوْمَ؟",
+        "arapca": "وَهَلِ اشْتَرَتِ الشَّرِكَةُ عِشْرِينَ كِيلُووَاطاً مِنَ الطَّاقَةِ النَّظِيفَةِ اليَوْمَ؟",
         "turkce": "Peki şirket bugün temiz enerjiden yirmi kilovat satın aldı mı?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_110/satir_03_E.mp3"
       },
@@ -14175,7 +14175,7 @@
         "konusmaci": "Selim",
         "konusmaci_ar": "سَلِيمٌ",
         "cinsiyet": "E",
-        "odak_kalip": "Müfred Hal (متَّفِقِينَ عَمَلاً)",
+        "odak_kalip": "Müfred Hal (مُتَّفِقِينَ حَالًا)",
         "arapca": "دَخَلُوا مُتَّفِقِينَ عَلَى تَطْوِيرِ التِّجَارَةِ الشَّرِيفَةِ فِي المَدِينَةِ دَائِماً.",
         "turkce": "Şehirde şerefli ticareti daima geliştirmede anlaşmış hallerde girdiler.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_111/satir_10_E.mp3"
@@ -14411,8 +14411,8 @@
         "konusmaci": "Hasan",
         "konusmaci_ar": "حَسَنٌ",
         "cinsiyet": "E",
-        "odak_kalip": "Lafzi Tekid (العَمَلَ العَمَلَ)",
-        "arapca": "فَهَلْ يَنُصُّ القَانُونُ عَلَى العَمَلَ العَمَلَ الصَّالِحَ دَائِماً؟",
+        "odak_kalip": "Lafzi Tekid (الْعَمَلِ الْعَمَلِ)",
+        "arapca": "فَهَلْ يَنُصُّ القَانُونُ عَلَى الْعَمَلِ الْعَمَلِ الصَّالِحِ دَائِماً؟",
         "turkce": "Peki kanun daima çalışmayı, salih çalışmayı mı şart koşuyor?",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_113/satir_05_E.mp3"
       },
@@ -14421,8 +14421,8 @@
         "konusmaci": "Ömer",
         "konusmaci_ar": "عُمَرُ",
         "cinsiyet": "E",
-        "odak_kalip": "Lafzi Tekid (الإِخْلَاصَ الإِخْلَاصَ)",
-        "arapca": "نَعَمْ، يَحُثُّ القَانُونُ عَلَى الإِخْلَاصَ الإِخْلَاصَ فِي كُلِّ مَهَمَّةٍ.",
+        "odak_kalip": "Lafzi Tekid (الْإِخْلَاصِ الْإِخْلَاصِ)",
+        "arapca": "نَعَمْ، يَحُثُّ القَانُونُ عَلَى الْإِخْلَاصِ الْإِخْلَاصِ فِي كُلِّ مَهَمَّةٍ.",
         "turkce": "Evet, kanun her görevde ihlasa, ihlasa teşvik ediyor.",
         "ses_dosyasi": "/sesler/diyaloglar/dlg_113/satir_06_E.mp3"
       },

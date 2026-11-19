@@ -10164,4 +10164,55 @@ test("86. Kapsamlı Kullanım Rehberi & 24 Haftalık Çalışma Programı Merkez
   );
 });
 
+test("87. tum_diyaloglar_120.json Emir Fiil, Cinsiyet Uyumu, İltikâü's-Sâkineyn, Hareke ve İ'rab Nokta Atışı Düzeltmeleri (11 Kayıt)", () => {
+  const dlgs = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "tum_diyaloglar_120.json"), "utf8")
+  );
+  assert.equal(dlgs.length, 120);
+  const byId = new Map(dlgs.map((d) => [d.id, d]));
+  const getLine = (id, sira) => byId.get(id)?.satirlar?.find((s) => s.sira === sira);
 
+  // 1. Emir Fiil ve Cinsiyet Uyumu
+  assert.equal(
+    getLine("dlg_025", 4)?.arapca,
+    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِيناً."
+  );
+  assert.equal(
+    getLine("dlg_044", 7)?.arapca,
+    "اِغْسِلْ وَجْهَكَ وَتَعَالَ إِلَى الْفَطُورِ."
+  );
+
+  // 2. İmla, Hareke, İltikâü's-Sâkineyn ve İ'rab
+  assert.ok(getLine("dlg_045", 11)?.arapca.includes("لِلِابْتِدَاءِ!"));
+  assert.ok(
+    getLine("dlg_088", 5)?.arapca.endsWith("وَمُرَاجَعَةٍ دَائِماً.") &&
+      !getLine("dlg_088", 5)?.arapca.includes("دَائِمَةٍ دَائِماً.")
+  );
+  assert.ok(getLine("dlg_094", 3)?.arapca.includes("وَلَوِ اسْتَعْدَدْنَا"));
+  assert.ok(getLine("dlg_102", 3)?.arapca.includes("الْوَقْفِي\u0651\u064Eةِ؟"));
+  assert.ok(
+    getLine("dlg_103", 11)?.odak_kalip.includes("الْمُسْتَقْبَلُ") &&
+      getLine("dlg_103", 11)?.arapca.includes("الْمُسْتَقْبَلُ")
+  );
+  assert.ok(getLine("dlg_110", 3)?.arapca.includes("وَهَلِ اشْتَرَتِ"));
+  assert.ok(
+    getLine("dlg_111", 10)?.odak_kalip.includes("مُت\u0651\u064Eفِقِينَ حَالًا")
+  );
+  assert.ok(
+    getLine("dlg_113", 5)?.arapca.includes(
+      "عَلَى الْعَمَلِ الْعَمَلِ الص\u0651\u064Eالِحِ"
+    )
+  );
+  assert.ok(
+    getLine("dlg_113", 6)?.arapca.includes("عَلَى الْإِخْلَاصِ الْإِخْلَاصِ")
+  );
+
+  // dlg_025 gramer örneği senkronizasyonu
+  const gramer = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "diyaloglar_gramer_hap_bilgi.json"), "utf8")
+  );
+  assert.equal(
+    gramer.find((x) => x.bagli_id === "dlg_025")?.metinden_ornek?.arapca,
+    "اِمْشِ لِلْأَمَامِ ثُم\u0651\u064E ات\u0651\u064Eجِهْ يَمِيناً."
+  );
+});

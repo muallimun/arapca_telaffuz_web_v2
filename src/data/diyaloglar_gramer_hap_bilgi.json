@@ -1986,7 +1986,7 @@
     "konu_basligi": "Mekan Sorma ve Adres Tarifi (Emir Fiil ve Yön Zarfı)",
     "hap_kural": "Arapçada emir fiilleri muhatab erkeğe sükun üzere 'اتَّجِهْ' şeklinde gelir. Yön belirten durum zarfları ise genellikle fethalı (mansub) tenvin alır.",
     "metinden_ornek": {
-      "arapca": "اِمْشِي لِلأَمَامِ ثُمَّ اتَّجِهْ يَمِيناً.",
+      "arapca": "اِمْشِ لِلْأَمَامِ ثُمَّ اتَّجِهْ يَمِيناً.",
       "turkce": "İleriye doğru yürü sonra sağa dön.",
       "aciklama": "'اتَّجِهْ' sülasi emir fiili olup sonu sükunla bitmiş, 'يَمِيناً' ise yön belirten fethalı durum zarfıdır."
     },

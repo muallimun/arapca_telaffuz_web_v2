@@ -17633,7 +17633,7 @@
     ],
     "dogru_secenek": "B",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Sabah erkenden güneş doğdu ve alemi aydınlattı.",
+      "soru_cevirisi_tr": "Sabah erkenden güneş doğdu ve âlemi aydınlattı.",
       "odak_kural": "Şın (ش) harfi 14 şemsî harften biridir; başına Elif-Lâm takısı geldiğinde lâm okunmaz, şın harfi şeddeli telaffuz edilir.",
       "dogru_cevap_gerekcesi": "الشَّمْسُ kelimesinin başındaki şın harfi şemsî olduğundan lâm idgam edilir (الشَّمْسُ okunur) ve cümlenin anlamına tam uyar.",
       "celdirici_analizi": {
@@ -17721,7 +17721,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Öğrenci kütüphanede faydalı kitabı okudu.",
+      "soru_cevirisi_tr": "Aşağıdaki cümlelerden imla ve nahiv bakımından doğru olan cümleyi seçiniz: (Doğru cümle: Öğrenci kütüphanede faydalı kitabı okudu.)",
       "odak_kural": "Bir isim Elif-Lâm (ال) takısı aldığında sonundaki tenvin mutlaka düşer; tenvin ile Elif-Lâm asla bir arada bulunmaz.",
       "dogru_cevap_gerekcesi": "A şıkkında الْكِتَابَ kelimesi Elif-Lâm takısı almış ve nesne (mef'ûlün bih) olarak tenvinsiz tek fetha ile doğru harekelenmiştir.",
       "celdirici_analizi": {
@@ -17853,7 +17853,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Bekçi arabaların önünde caddenin kapısını açtı.",
+      "soru_cevirisi_tr": "Bekçi arabaların önünde cadde kapısını (sokak kapısını) açtı.",
       "odak_kural": "Şemsî harflerin başında Elif-Lâm geldiğinde lâm harfine cezim konulmaz, şemsî harf şeddeli yazılır; muzâfun ileyh olduğunda kesra ile mecrûr olur.",
       "dogru_cevap_gerekcesi": "الشَّارِعِ kelimesinde şın harfi şeddeli, lâm harekesiz ve kelime muzâfun ileyh olarak kesralı doğru yazılmıştır.",
       "celdirici_analizi": {
@@ -17898,7 +17898,7 @@
     "dogru_secenek": "C",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Ali: Anahtarı nereye koydun Ahmed? — Ahmed: Onu oturma odasındaki dolabın üzerine koydum.",
-      "odak_kural": "Hâ (خ) harfi kamerî harftir; Elif-Lâm takısı aldığında lâm cezimli olarak telaffuz edilir.",
+      "odak_kural": "Hı (خ) harfi kamerî harftir; Elif-Lâm takısı aldığında lâm cezimli olarak telaffuz edilir.",
       "dogru_cevap_gerekcesi": "الْخِزَانَةِ (dolap) kelimesinin ilk harfi olan خ kamerî olduğundan lâm açıkça okunur.",
       "celdirici_analizi": {
         "A": "الطَّاوِلَةِ kelimesinin başındaki tı (ط) harfi şemsîdir; lâm idgam edilir.",
@@ -17942,12 +17942,12 @@
     "dogru_secenek": "A",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Aşağıdaki kelimelerden hangisi şemsî lâm kuralına göre doğru yazılmıştır?",
-      "odak_kural": "Lâm (ل) ile başlayan kelimelere Elif-Lâm (ال) takısı geldiğinde, takının lâm'ı kelimenin ilk harfi olan lâm'a idgam edilir ve iki lâm tek şeddeli lâm (لّ) olarak yazılır.",
-      "dogru_cevap_gerekcesi": "اللُّغَةُ kelimesinde takının lâm'ı şeddeli lâm olarak doğru idgam edilmiş ve tenvinsiz yazılmıştır.",
+      "odak_kural": "Lâm (ل) ile başlayan kelimelere Elif-Lâm (ال) takısı geldiğinde her iki lâm da yazıda korunur; takının lâm'ı harekesiz bırakılıp kelimenin ilk harfi olan ikinci lâm'a idgam edilir ve ikinci lâm şeddeli yazılır (اللُّغَةُ).",
+      "dogru_cevap_gerekcesi": "اللُّغَةُ kelimesinde takının lâm'ı harekesiz bırakılıp ikinci lâm'a idgam edilerek şeddeli (اللُّ) ve tenvinsiz biçimde doğru yazılmıştır.",
       "celdirici_analizi": {
         "B": "الْلُغَةُ yazımında lâm harfi cezimli gösterilip idgam terk edilmiştir; bu hatalı bir imladır.",
         "C": "اللُّغَةٌ kelimesinde hem Elif-Lâm takısı hem de tenvin bir arada kullanılmıştır.",
-        "D": "اَلْلُّغَةُ yazımında hem cezim hem şedde gereksizce yan yana getirilerek imla kuralı bozulmuştur."
+        "D": "اَلْلُّغَةُ yazımında hem takının lâm'ına cezim konulmuş hem de ikinci lâm şeddelenerek şemsî idgam kuralı bozulmuştur."
       }
     }
   },
@@ -17991,7 +17991,7 @@
       "celdirici_analizi": {
         "A": "أَشْرَقَتِ dişil mâzî fiildir, sonraki kelimeye geçişi kesra iledir ve doğrudur.",
         "C": "النُّورُ kelimesinde nûn şemsîdir ve lâm harekesiz bırakılıp nûn şeddelenerek doğru yazılmıştır.",
-        "D": "مَكَانٍ كُلِّ kelimesinden sonra gelen tenvinli mecrûr isimdir, hatasızdır."
+        "D": "مَكَانٍ kelimesi, كُلِّ kelimesinden sonra gelen tenvinli mecrûr muzâfun ileyhtir, hatasızdır."
       }
     }
   },
@@ -18078,7 +18078,7 @@
       "dogru_cevap_gerekcesi": "مِنْ edatı Elif-Lâm'a fetha ile geçiş yapar; doğru telaffuz ve hareke مِنَ şeklindedir.",
       "celdirici_analizi": {
         "A": "مِنِ kesralı geçiş hatalıdır; genel geçiş kuralı kesra olsa da مِنْ edatı istisna olarak sadece fetha alır.",
-        "C": "مِنُ ötreli geçiş yanlıştır; ötre geçişi çoğul mîmlerine mahsustur.",
+        "C": "مِنُ ötreli geçiş yanlıştır; ötre geçişi çoğul mîmi (-كُمْ، هُمْ) gibi yapılara mahsustur.",
         "D": "مِنْ sükûn ile duruştur; Elif-Lâm takısına geçerken iki sâkin harf yan yana gelemeyeceği için sükûn ile geçilemez."
       }
     }
@@ -18118,11 +18118,11 @@
     "dogru_secenek": "C",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Müminler, Allah Teâlâ'nın rızasını kazananların ta kendileridir.",
-      "odak_kural": "Çoğul zamirlerinin sonundaki sâkin mîm harfi (مِيمُ الْجَمْعِ) Elif-Lâm takısına bağlanırken dâima DAMME (ötre) ile harekelenir (هُمُ الْكِتَابُ / عَلَيْكُمُ الصِّيَامُ).",
+      "odak_kural": "Çoğul zamirlerinin sonundaki sâkin mîm harfi (مِيمُ الْجَمْعِ) Elif-Lâm takısına bağlanırken dâima DAMME (ötre) ile harekelenir (هُمُ الْمُفْلِحُونَ / عَلَيْكُمُ الصِّيَامُ).",
       "dogru_cevap_gerekcesi": "هُمْ zamirinin çoğul mîmi Elif-Lâm'a damme ile bağlanır: هُمُ الْفَائِزُونَ.",
       "celdirici_analizi": {
         "A": "هُمِ kesralı geçiş yanlıştır; çoğul mîmleri asla kesra ile geçiş yapmaz.",
-        "B": "هُمَ fethalı geçiş hatalıdır; fetha geçişi مِنْ harf-i cerine özeldir.",
+        "B": "هُمَ fethalı geçiş hatalıdır; fetha geçişi مِنْ gibi istisnai yapılarda görülür, çoğul mîminde kullanılmaz.",
         "D": "هُمْ sükûn ile bırakılmıştır; sâkin lâm ile iki sükûn yan yana gelerek telaffuzu imkânsız kılar."
       }
     }
@@ -18166,7 +18166,7 @@
       "dogru_cevap_gerekcesi": "قَالَتْ fiilinin sâkin tâ'sı Elif-Lâm takısına kesra ile geçer: قَالَتِ الْمُعَلِّمَةُ.",
       "celdirici_analizi": {
         "B": "قَالَتَ fetha ile geçiş hatalıdır; dişillik tâ'sı fetha almaz.",
-        "C": "قَالَتُ ötre ile geçiş hatalıdır; fâil zamiri olan tü (تُ) ile karışır.",
+        "C": "قَالَتُ ötre ile geçiş hatalıdır; dişillik tâ'sı ötre değil kesra ile geçiş yapar.",
         "D": "قَالَتْ sükûn ile duruştur; geçiş anında iki sâkin birleşemez."
       }
     }
@@ -18293,7 +18293,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Baba: Oğulcuğum, Peygamberimizin bize emrettiği gibi suyu oturarak iç. — Oğul: Başüstüne babacığım, şimdi öyle yapıyorum.",
+      "soru_cevirisi_tr": "Baba: Oğulcuğum, Peygamberimizin bize emrettiği gibi suyu oturarak iç. — Oğul: Baş üstüne babacığım, şimdi öyle yapacağım.",
       "odak_kural": "Sâkin ile biten sülâsî emir fiillerden Elif-Lâm takısına geçilirken son harf kesra ile harekelenir (اشْرَبِ الْمَاءَ).",
       "dogru_cevap_gerekcesi": "اشْرَبْ fiili Elif-Lâm takılı الْمَاءَ kelimesine bağlanırken bâ harfi kesralanarak اشْرَبِ olur.",
       "celdirici_analizi": {
@@ -18313,7 +18313,7 @@
     "soru_tipi": "sarf_nahiv",
     "kaynak_tipi": "uygulama_ici",
     "bagli_konu": "Hemze-i Vasıl ile Hemze-i Kat' Ayrımı",
-    "soru_yonergesi_tr": "Aşağıdaki kelimelerin hangisinde bulunan hemze, hem başta hem de kelime ortasında (geçiş halinde) daima yazılan ve okunan bir 'hemze-i kat'tır'?",
+    "soru_yonergesi_tr": "Aşağıdaki kelimelerin hangisinde bulunan hemze, hem başta hem de kelime ortasında (geçiş halinde) daima yazılan ve okunan bir hemze-i kat'tır?",
     "soru_baglam_tr": null,
     "soru_metni_ar": "أَيُّ كَلِمَةٍ مِمَّا يَلِي تَبْدَأُ بِهَمْزَةِ قَطْعٍ تَثْبُتُ فِي الْوَصْلِ وَالْبَدْءِ؟",
     "secenek_dili": "ar",
@@ -18381,13 +18381,13 @@
     ],
     "dogru_secenek": "D",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "(كَتَبَ - يَكْتُبُ) emir fiilinde hemze-i vasıl ile başlandığında nasıl başlarız?",
-      "odak_kural": "Sülâsî mücerred fiillerin emr-i hâzırında, muzârideki aynü'l-fiil dammeli (ötreli) ise (يَكْتُبُ), baştaki hemze-i vasıl da dâima damme (ötre) ile okunur (اُكْتُبْ).",
+      "soru_cevirisi_tr": "(كَتَبَ - يَكْتُبُ) fiilinin emrinde hemze-i vasıl ile başlarken şöyle deriz:",
+      "odak_kural": "Sülâsî mücerred fiillerin emr-i hâzırında, muzârideki aynü'l-fiil aslî dammeli (ötreli) ise (يَكْتُبُ), baştaki hemze-i vasıl da dâima damme (ötre) ile okunur (اُكْتُبْ).",
       "dogru_cevap_gerekcesi": "Orta harf olan tâ dammeli olduğu için hemze-i vasıl damme ile اُكْتُبْ şeklinde okunur.",
       "celdirici_analizi": {
         "A": "اِكْتُبْ kesralı başlangıç hatalıdır; kesra sadece aynü'l-fiil fethalı veya kesralı olduğunda gelir (örn: اِجْلِسْ، اِفْتَحْ).",
         "B": "اَكْتُبْ fethalı vasıl hemzesiyle başlamak caiz değildir; fiillerde fethalı vasıl hemzesi bulunmaz (sadece Elif-Lâm takısında fethadır).",
-        "C": "أَكْتُبْ birinci tekil şahıs muzâri fiildir (ben yazıyorum); emir kipi değildir ve kat' hemzesi almaz."
+        "C": "أَكْتُبْ kat' hemzesi ve fetha ile yazılmıştır; sülâsî emir fiiller kat' hemzesi değil vasıl hemzesi alır (fethalı kat' hemzesi أَكْتُبُ şeklinde 1. tekil şahıs muzâri fiilde bulunur)."
       }
     }
   },
@@ -18475,7 +18475,7 @@
       "celdirici_analizi": {
         "A": "جَائِزَةً fetha tenvinli mansûb mef'ûldür, yazımı doğrudur.",
         "B": "الْمُدِيرُ merfû fâildir, kamerî lâm cezimli doğru yazılmıştır.",
-        "C": "الْمُسَابَقَةِ فِي harf-i cerinden sonra gelen kesralı mecrûr isimdir, hatasızdır."
+        "C": "الْمُسَابَقَةِ kelimesi, فِي harf-i cerinden sonra gelen kesralı mecrûr isimdir, hatasızdır."
       }
     }
   },
@@ -18733,7 +18733,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Halid ve Ömer ihlaslı iki arkadaştırlar ve o ikisi aynı sınıfta okuyorlar.",
+      "soru_cevirisi_tr": "Halid ve Ömer samimi iki arkadaştır ve ikisi aynı sınıfta okuyor.",
       "odak_kural": "Üçüncü şahıs tesniye (ikil) varlıklar için hem müzekker hem müenneste munfasıl ref zamiri هُمَا kullanılır.",
       "dogru_cevap_gerekcesi": "خَالِدٌ وَعُمَرُ iki kişidir ve üçüncü şahıstır; peşinden gelen يَدْرُسَانِ fiiline de uygun zamir هُمَا lafzıdır.",
       "celdirici_analizi": {
@@ -18909,7 +18909,7 @@
     ],
     "dogru_secenek": "D",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Ey Âişe, ödevinizi yazmayı bitirdin mi?",
+      "soru_cevirisi_tr": "Âişe, ev ödevini yazmayı bitirdin mi?",
       "odak_kural": "Tek bir kadına hitap edilirken (muhataba) ikinci tekil şahıs dişil zamiri olan kesralı kâf (-كِ) kullanılmalıdır.",
       "dogru_cevap_gerekcesi": "Âişe tekil bir kadındır; peşinden gelen fiil أَنْهَيْتِ tekil dişil olduğu halde ödev kelimesine çoğul erkek zamiri bitişerek وَاجِبِكُمْ yazılması kural hatasıdır; doğrusu وَاجِبِكِ olmalıdır.",
       "celdirici_analizi": {
@@ -19267,7 +19267,7 @@
       "celdirici_analizi": {
         "A": "اشْتَرَيْتُ mâzî fiil ve fâil zamiridir, kullanımı doğrudur.",
         "C": "الْأَقْلَامَ fetha ile mansûb bedel/müşârun ileyhtir, yazımı doğrudur.",
-        "D": "الْمَكْتَبَةِ مِنْ harf-i cerinden sonra gelen kesralı mecrûr isimdir, hatasızdır."
+        "D": "الْمَكْتَبَةِ kelimesi, مِنْ harf-i cerinden sonra gelen kesralı mecrûr isimdir, hatasızdır."
       }
     }
   },
@@ -19311,7 +19311,7 @@
       "celdirici_analizi": {
         "A": "مَرَرْتُ mâzî fiil ve fâil zamiridir, kullanımı doğrudur.",
         "C": "الطَّالِبَيْنِ yâ ile mecrûr bedeldir, yazımı doğrudur.",
-        "D": "الْمَدْرَسَةِ فِنَاءِ kelimesinin kesralı mecrûr muzâfun ileyhidir, hatasızdır."
+        "D": "الْمَدْرَسَةِ kelimesi, فِنَاءِ kelimesinin kesralı mecrûr muzâfun ileyhidir, hatasızdır."
       }
     }
   },
@@ -19393,7 +19393,7 @@
     ],
     "dogru_secenek": "B",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Tüccar yeni dükkanını süslemek için yüz kalem satın aldı.",
+      "soru_cevirisi_tr": "Tüccar yeni dükkânını süslemek için yüz kalem satın aldı.",
       "odak_kural": "مِئَةٌ (yüz) ve أَلْفٌ (bin) sayılarının temyizi (sayılanı) dâima tekil (müfred) ve mecrûr (kesralı) olarak gelir.",
       "dogru_cevap_gerekcesi": "مِئَةَ sayısından sonra gelen sayılan isim tekil ve kesralı olarak قَلَمٍ şeklinde olmalıdır.",
       "celdirici_analizi": {
@@ -19500,7 +19500,7 @@
     "beceri_alani": "sarf_nahiv",
     "soru_tipi": "sarf_nahiv",
     "kaynak_tipi": "genel_arapca",
-    "bagli_konu": "300-900 Sayılarında Birler Basamağının Müennesliği ve Mi'eh ile Birleşmesi",
+    "bagli_konu": "300-900 Sayılarında Birler Basamağının Müzekkerliği ve Mi'eh ile Birleşmesi",
     "soru_yonergesi_tr": "Cümledeki boşluğa dil bilgisine uygun doğru sayıyı seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "حَضَرَ الْمُؤْتَمَرَ الدَّوْلِيَّ ______ طَالِبٍ مِنْ مُخْتَلِفِ الدُّوَلِ.",
@@ -19530,7 +19530,7 @@
       "dogru_cevap_gerekcesi": "حَضَرَ fiilinin fâili konumunda merfû olan ve طَالِبٍ kelimesine muzâf kılınan doğru form ثَلَاثُمِئَةِ şeklindedir.",
       "celdirici_analizi": {
         "B": "ثَلَاثَةُ مِئَةٍ tâ ile yazılmıştır; مِئَة müennes olduğu için başındaki sayı tâ'sız (müzekker) olmalıdır.",
-        "C": "ثَلَاثَمِئَةٍ fethalı (mansûb) formdur; cümlenin fâili merfû (dammeli) olmak zorundadır.",
+        "C": "ثَلَاثَمِئَةٍ hem fethalı (mansûb) hem de tenvinlidir; cümlenin fâili merfû (dammeli) ve طَالِبٍ kelimesine muzâf olduğundan tenvinsiz olmalıdır.",
         "D": "ثَلَاثَةِ آلَافٍ hem mecrûrdur hem de üç bin anlamına gelir; üç yüz yapısını karşılamaz."
       }
     }
@@ -19764,7 +19764,7 @@
     "beceri_alani": "hata_bulma",
     "soru_tipi": "hata_bulma",
     "kaynak_tipi": "uygulama_ici",
-    "bagli_konu": "Mî'eh Sayısının Temyizinin Çoğul veya Mansûb Yapılması Hatası",
+    "bagli_konu": "Mi'eh Sayısının Temyizinin Çoğul veya Mansûb Yapılması Hatası",
     "soru_yonergesi_tr": "Cümledeki dil bilgisi ve sayı temyizi hatasını içeren kelimeyi seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "اشْتَرَتِ الْمَدْرَسَةُ مِئَةَ كُتُبٍ لِتَوْزِيعِهَا عَلَى الطُّلَّابِ.",
@@ -19834,7 +19834,7 @@
     "dogru_secenek": "B",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Yeni sınıfta hocanın anlatımını dinleyen bir öğrenci vardır.",
-      "odak_kural": "Haber şibh-i cümle (harf-i cer + mecrûr) ve mübtedâ nekre olduğunda haberin öne geçmesi, mübtedânın sona kalması zorunludur (vâciptir); mübtedâ merfûdur.",
+      "odak_kural": "Haber şibh-i cümle (harf-i cer + mecrûr) ve mübtedâ nekra (özellikle sıfat/izafetle tahsis edilmemiş nekra-i mahza) olduğunda haberin öne geçmesi vâciptir; öne geçmiş şibh-i cümle haberden sonra gelen mübtedâ-i müahhar dâima merfûdur.",
       "dogru_cevap_gerekcesi": "فِي الصَّفِّ öne geçmiş şibh-i cümle haberdir; boşluğa gelecek mübtedâ-i müahhar tenvinli ötre ile merfû olan طَالِبٌ kelimesidir.",
       "celdirici_analizi": {
         "A": "طَالِبًا fetha ile mansûbdur; mübtedâ mansûb olamaz.",
@@ -19923,10 +19923,10 @@
     "cozum_detayi": {
       "soru_cevirisi_tr": "Her başarılı okulun, onun şanını yücelten ihlaslı öğretmenleri vardır.",
       "odak_kural": "Mübtedâda habere dönen bir zamir bulunduğunda zamirin lafzen ve rütbeten sonrakine dönmesini önlemek için haberin öne geçmesi vâciptir; cem-i müzekker sâlim mübtedâ vâv ile merfû olur ve izafetle nûnu düşer.",
-      "dogru_cevap_gerekcesi": "لِكُلِّ مَدْرَسَةٍ şibh-i cümle mukaddem haberdir; müahhar mübtedâ merfû çoğul olarak vâv alan ve nûnu düşüp ha zamirine muzâf olan مُعَلِّمُوهَا lafzıdır.",
+      "dogru_cevap_gerekcesi": "لِكُلِّ مَدْرَسَةٍ şibh-i cümle mukaddem haberdir; müahhar mübtedâ merfû çoğul olarak vâv alan ve nûnu düşüp هَا zamirine muzâf olan مُعَلِّمُوهَا lafzıdır.",
       "celdirici_analizi": {
         "B": "مُعَلِّمِيهَا yâ ile mansûb/mecrûrdur; mübtedâ merfû olmak zorundadır.",
-        "C": "مُعَلِّمُوهُمْ müzekker çoğul zamiri هُمْ almıştır; dişil olan maderese kelimesine uymaz.",
+        "C": "مُعَلِّمُوهُمْ müzekker çoğul zamiri هُمْ almıştır; dişil olan مَدْرَسَةٍ kelimesine uymaz.",
         "D": "مُعَلِّمُونَهَا izafet halinde cem-i müzekker nûnu düşürülmemiştir; nûn mutlaka düşmelidir."
       }
     }
@@ -19986,7 +19986,7 @@
     "kaynak_tipi": "uygulama_ici",
     "bagli_konu": "Diyalogda Eyne (أَيْنَ) ile Mukaddem Haber Kalıbı",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa cümlenin mukaddem haberi olan soru ismini seçiniz.",
-    "soru_baglam_tr": "Havalimanında biletini bulamayan yolcu görevliye danışıyor:",
+    "soru_baglam_tr": "Havalimanında bagajını arayan yolcu görevliye danışıyor:",
     "soru_metni_ar": "الْمُسَافِرُ: مَعْذِرَةً، ______ مَكْتَبُ اسْتِلَامِ حَقَائِبِ السَّفَرِ؟\nالْمُوَظَّفُ: هُوَ فِي نِهَايَةِ هَذَا الْمَمَرِّ عَلَى الْيَمِينِ.",
     "secenek_dili": "ar",
     "secenekler": [
@@ -20024,7 +20024,7 @@
     "seviye": "B1",
     "zorluk_basamagi": 3,
     "ust_konu": "Haberin Mübtedadan Öne Geçmesi (Takdîmü'l-Haber)",
-    "alt_grup": "Hasr Kasr ile Vücûben Takdîm",
+    "alt_grup": "Hasr (Kasr) ile Vücûben Takdîm",
     "beceri_alani": "sarf_nahiv",
     "soru_tipi": "sarf_nahiv",
     "kaynak_tipi": "genel_arapca",
@@ -20054,7 +20054,7 @@
     "dogru_secenek": "D",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Kalpte olan şey ancak ve ancak değişmeyen gerçek ihlastır.",
-      "odak_kural": "إِنَّمَا ile hasr yapıldığında haber öne geçebilir (فِي الْقَلْبِ); sonraya kalan mübtedâ ise merfûluk alâmetini korur.",
+      "odak_kural": "إِنَّمَا ile yapılan hasr (tahsis) üslubunda haber öne geçer (فِي الْقَلْبِ), tahsis edilen (maksûr) mübtedâ ise sona kalır ve merfûluk alametini korur (الْإِخْلَاصُ).",
       "dogru_cevap_gerekcesi": "فِي الْقَلْبِ mukaddem haberdir; müahhar mübtedâ damme ile merfû olan الْإِخْلَاصُ kelimesidir.",
       "celdirici_analizi": {
         "A": "الْإِخْلَاصَ fetha ile mansûbdur; إِنَّمَا amel etmez (mâ-i kâffe inne'yi iptal etmiştir), bu sebeple isim mansûb olamaz.",
@@ -20191,7 +20191,7 @@
       "celdirici_analizi": {
         "A": "عَلَى harf-i cerdir, kullanımı doğrudur.",
         "C": "الْمَكْتَبِ harf-i cerden sonra gelen kesralı mecrûr isimdir, doğrudur.",
-        "D": "الْكَاتِبُ yestahdimu fiilinin merfû fâilidir, yazımı hatasızdır."
+        "D": "الْكَاتِبُ يَسْتَخْدِمُ fiilinin merfû fâilidir, yazımı hatasızdır."
       }
     }
   },
@@ -20235,7 +20235,7 @@
       "celdirici_analizi": {
         "A": "فِي harf-i cerdir, kullanımı doğrudur.",
         "B": "الْمُسْتَشْفَى takdîrî mecrûr maksûr isimdir, doğrudur.",
-        "D": "الْمَرْضَى عَلَى harf-i cerinden sonra gelen mecrûr isimdir, hatasızdır."
+        "D": "الْمَرْضَى kelimesi, عَلَى harf-i cerinden sonra gelen mecrûr isimdir, hatasızdır."
       }
     }
   },
@@ -20273,11 +20273,11 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Yüce Allah şöyle buyurur: {Ey iman edenler! Kendinizi ve ailenizi yakıtı insanlar ve taşlar olan ateşten koruyun.}",
+      "soru_cevirisi_tr": "Yüce Allah şöyle buyurur: {Ey iman edenler! Kendinizi ve ailenizi ateşten koruyun.}",
       "odak_kural": "وَقَى lefîf-i mefrûk fiilinin sülâsî emr-i hâzırı tekil için قِ! (koru), çoğul erkekler için ise vâv-ı cemâat ile قُوا! (koruyunuz) şeklinde gelir.",
       "dogru_cevap_gerekcesi": "Ayet-i kerimede geçen sülâsî lefîf-i mefrûk çoğul emri قُوا lafzıdır; baştaki vâv muzâride, sondaki yâ ise emirde hazfedilmiştir.",
       "celdirici_analizi": {
-        "B": "اِتَّقُوا iftiâl bâbı emridir (sakınınız); sülâsî mücerred emr-i hâzır kalıbı değildir.",
+        "B": "اِتَّقُوا ifti'âl bâbı emridir (sakınınız); sülâsî mücerred emr-i hâzır kalıbı değildir.",
         "C": "أَوْقُوا kural dışı ve türetilmemiş bozuk bir kalıptır; lefîf emrinde baştaki illet harfi geri dönmez.",
         "D": "قِفُوا وَقَفَ (durdu) misâl fiilinin çoğul emridir (durunuz); korumak manasına gelmez."
       }
@@ -20293,7 +20293,7 @@
     "soru_tipi": "sarf_nahiv",
     "kaynak_tipi": "genel_arapca",
     "bagli_konu": "Vefâ (وَفَى) Fiilinin Emr-i Hâzır Yapısı (فِ)",
-    "soru_yonergesi_tr": "Cümledeki boşluğa 'Sözünü yerine getir / ahdine vefa göster' anlamında doğru emr-i hâzır formunu seçiniz.",
+    "soru_yonergesi_tr": "Cümledeki boşluğa sülâsî وَفَى ('sözünü yerine getirmek / vefa göstermek') lefîf-i mefrûk fiilinin doğru emr-i hâzır formunu seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "يَا صَدِيقِي، ______ بِعَهْدِكَ إِذَا عَاهَدْتَ وَلَا تُخْلِفْ وَعْدَكَ.",
     "secenek_dili": "ar",
@@ -20317,7 +20317,7 @@
     ],
     "dogru_secenek": "D",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Ey arkadaşım, söz verdiğinde ahdine vefa göster ve sözünden dönme.",
+      "soru_cevirisi_tr": "Arkadaşım, söz verdiğinde ahdine vefa göster ve sözünden dönme.",
       "odak_kural": "وَفَى lefîf-i mefrûk bir fiildir; emr-i hâzırında baştaki vâv ve sondaki illet harfi düşer, geriye tek harf olarak kesralı فِ kalır.",
       "dogru_cevap_gerekcesi": "Sülâsî وَفَى fiilinin tekil erkek için emr-i hâzırı tek kesralı harf olan فِ lafzıdır.",
       "celdirici_analizi": {
@@ -20337,7 +20337,7 @@
     "soru_tipi": "kelime_baglam",
     "kaynak_tipi": "uygulama_ici",
     "bagli_konu": "Ve'â (وَعَى) Fiilinin Emr-i Hâzır Yapısı (عِ)",
-    "soru_yonergesi_tr": "Cümledeki boşluğa 'Dersi iyi kavra / belle' anlamında en uygun lefîf-i mefrûk emir fiilini seçiniz.",
+    "soru_yonergesi_tr": "Cümledeki boşluğa 'iyi kavra / belle' anlamında sülâsî lefîf-i mefrûk emir fiilini seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "يَا بُنَيَّ، ______ كَلَامَ أُسْتَاذِكَ جَيِّدًا لِتَنْتَفِعَ بِهِ فِي حَيَاتِكَ.",
     "secenek_dili": "ar",
@@ -20425,7 +20425,7 @@
     "soru_tipi": "diyalog_iletisim",
     "kaynak_tipi": "uygulama_ici",
     "bagli_konu": "Ravâ (رَوَى) Fiilinin Emr-i Hâzır Yapısı (اِرْوِ)",
-    "soru_yonergesi_tr": "Diyalogdaki boşluğa dil bilgisine uygun doğru emir fiilini seçiniz.",
+    "soru_yonergesi_tr": "Diyalogdaki boşluğa anlamca ve dil bilgisine uygun doğru lefîf-i makrûn emir fiilini seçiniz.",
     "soru_baglam_tr": "Torun dedesinden bir hatıra anlatmasını istiyor:",
     "soru_metni_ar": "الْحَفِيدُ: يَا جَدِّي الْعَزِيزَ، ______ لَنَا قِصَّةً عَنْ طُفُولَتِكَ فِي الْقَرْيَةِ.\nالْجَدُّ: بِكُلِّ سُرُورٍ يَا بُنَيَّ، اسْتَمِعْ إِلَيَّ.",
     "secenek_dili": "ar",
@@ -20494,10 +20494,10 @@
     "dogru_secenek": "A",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Ben Allah Teâlâ'ya yakınlaşmak için yarın oruca niyet ettim.",
-      "odak_kural": "نَوَى lefîf-i makrûn fiilinde birinci tekil şahıs mâzî zamiri (تُ) bitiştiğinde lamel-fiil aslına (yâ) döner ve fethalı vâv korunarak نَوَيْتُ şeklinde çekilir.",
+      "odak_kural": "نَوَى lefîf-i makrûn fiilinde birinci tekil şahıs mâzî zamiri (تُ) bitiştiğinde lâmü'l-fiil aslına (yâ) döner ve fethalı vâv korunarak نَوَيْتُ şeklinde çekilir.",
       "dogru_cevap_gerekcesi": "Özne أَنَا olduğunda نَوَى fiilinin kurallı mâzî çekimi نَوَيْتُ şeklindedir.",
       "celdirici_analizi": {
-        "B": "نَوْتُ lamel-fiil olan yâ harfinin düşürüldüğü hatalı ve kural dışı bir formdur.",
+        "B": "نَوْتُ lâmü'l-fiil olan yâ harfinin düşürüldüğü hatalı ve kural dışı bir formdur.",
         "C": "نَوِيتُ vâv harfi kesralanmış hatalı bir söyleyiştir; fiilin aynü'l-fiili fethalıdır (نَوَى).",
         "D": "نَوَاْتُ elif ve sükûnlu tâ'nın yan yana getirilmesiyle imlası bozulmuş bir şekildir."
       }
@@ -20538,7 +20538,7 @@
     "dogru_secenek": "B",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Münafık adam kendi kendine verdiği sözü yerine getirmedi (sözünde durmadı).",
-      "odak_kural": "وَفَى fiilinin muzârisi يَفِي şeklindedir. Başına لَمْ cezm edatı geldiğinde sonundaki illet harfi hazfedilir (حذف حرف العلة) ve لَمْ يَفِ olur.",
+      "odak_kural": "وَفَى fiilinin muzârisi يَفِي şeklindedir. Başına لَمْ cezm edatı geldiğinde sonundaki illet harfi hazfedilir (حَذْفُ حَرْفِ الْعِلَّةِ) ve لَمْ يَفِ olur.",
       "dogru_cevap_gerekcesi": "لَمْ edatından sonra nâkıs ve lefîf fiillerin illet harfi düşer; geriye kesralı فِ kalarak يَفِ doğru cevap olur.",
       "celdirici_analizi": {
         "A": "يَفِي illet harfi düşürülmemiştir; cezm alameti terk edilmiştir.",
@@ -20581,7 +20581,7 @@
     ],
     "dogru_secenek": "C",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Ey Said, kendini şüpheli şeylere düşmekten koru.",
+      "soru_cevirisi_tr": "Said, kendini şüpheli işlere düşmekten koru.",
       "odak_kural": "وَقَى fiilinin tekil erkek için emr-i hâzırı tek kesralı harf olan قِ lafzıdır; sonuna yâ eklenerek قِي yazılması açık bir kural hatasıdır.",
       "dogru_cevap_gerekcesi": "قِي kelimesinde illet harfi hazfedilmemiştir; tekil erkek muhataba emr-i hâzır قِ şeklinde olmalıdır (قِي sadece müennes muhataba içindir).",
       "celdirici_analizi": {
@@ -20631,7 +20631,7 @@
       "celdirici_analizi": {
         "A": "الْمُؤْمِنُ cümlenin merfû mübtedâsıdır, kullanımı doğrudur.",
         "C": "جَارَهُ fetha ile mansûb mef'ûlün bihtir, doğrudur.",
-        "D": "أَذًى كُلِّ kelimesinden sonra gelen takdîren mecrûr maksûr isimdir, hatasızdır."
+        "D": "أَذًى kelimesi, كُلِّ kelimesinden sonra gelen takdîren mecrûr maksûr isimdir, hatasızdır."
       }
     }
   },
@@ -20688,7 +20688,7 @@
     "beceri_alani": "sarf_nahiv",
     "soru_tipi": "sarf_nahiv",
     "kaynak_tipi": "uygulama_ici",
-    "bagli_konu": "Üç Harfli İsimlerin Fuayl (فُعَيْلٌ) Tasgîr Vezni",
+    "bagli_konu": "Üçüncü Harfi Med Olan Dört Harfli İsimlerin Tasgîri (كِتَابٌ -> كُتَيِّبٌ)",
     "soru_yonergesi_tr": "كِتَابٌ (kitap) kelimesinin Arapça tasgîr (küçültme) kuralına göre 'küçük kitapçık' anlamındaki formu hangisidir?",
     "soru_baglam_tr": null,
     "soru_metni_ar": "مَا هُوَ اسْمُ التَّصْغِيرِ الصَّحِيحُ لِكَلِمَةِ (كِتَابٌ) فِي اللُّغَةِ الْعَرَبِيَّةِ؟",
@@ -20714,12 +20714,12 @@
     "dogru_secenek": "A",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Arapçada (كِتَابٌ) kelimesinin doğru ism-i tasgîri (küçültme ismi) nedir?",
-      "odak_kural": "Üçüncü harfi med harfi olan veya dört harfli isimlerde tasgîr yapılırken med harfi yâ'ya dönüşür ve tasgîr yâ'sı ile idgam edilerek فُعَيْلٌ / فُعَيِّلٌ (كُتَيِّبٌ) veznine girer.",
+      "odak_kural": "Üçüncü harfi med harfi olan dört harfli isimlerde tasgîr yapılırken med harfi yâ'ya dönüşür ve tasgîr yâ'sı ile idgam edilerek فُعَيِّلٌ (كُتَيِّبٌ) kalıbına girer.",
       "dogru_cevap_gerekcesi": "كِتَابٌ kelimesinin tasgîri şeddeli yâ ile كُتَيِّبٌ (kitapçık) şeklindedir.",
       "celdirici_analizi": {
         "B": "كُتَيْبٌ şeddesiz yazılmış eksik bir şekildir; elif yâ'ya dönüştüğü için tasgîr yâ'sı ile şeddelenmelidir.",
         "C": "كُتَيْبِبٌ Arapça tasgîr vezinlerinde bulunmayan kural dışı bir türetmedir.",
-        "D": "كُتَيْبِيلٌ beş harfli isimlerin tasgîr veznidir; كِتَاب kelimesine uymaz."
+        "D": "كُتَيْبِيلٌ beş harfli isimlere mahsus فُعَيْعِيلٌ veznine benzetilmiş uydurma bir şekildir; كِتَابٌ kelimesine uymaz."
       }
     }
   },
@@ -20748,7 +20748,7 @@
       },
       {
         "harf": "C",
-        "metin": "تَحَيْتَ"
+        "metin": "تُحَيْتَ"
       },
       {
         "harf": "D",
@@ -20763,7 +20763,7 @@
       "celdirici_analizi": {
         "A": "بُعَيْدَ بَعْدَ zarfının tasgîridir (az sonra); ezandan öncesini değil sonrasını anlatır.",
         "B": "فُوَيْقَ mekân tasgîridir (azıcık üstünde); zaman ifadesi değildir.",
-        "C": "تَحَيْتَ mekân tasgîridir (azıcık altında); zaman bildiren ezan öncesine uymaz."
+        "C": "تُحَيْتَ mekân tasgîridir (azıcık altında); zaman bildiren ezan öncesine uymaz."
       }
     }
   },
@@ -20801,7 +20801,7 @@
     ],
     "dogru_secenek": "C",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Hikmet sahibi baba dedi ki: Yavrucuğum (oğulcuğum), namazı dosdoğru kıl, iyiliği emret ve kötülükten sakındır. — Oğul: Başüstüne babacığım, nasihatine uyacağım.",
+      "soru_cevirisi_tr": "Hikmet sahibi baba dedi ki: Yavrucuğum (oğulcuğum), namazı dosdoğru kıl, iyiliği emret ve kötülükten sakındır. — Oğul: Baş üstüne babacığım, nasihatine uyacağım.",
       "odak_kural": "ابْنٌ isminin şefkat ve muhabbet bildiren tasgîri mütekellim zamiriyle birleştiğinde بُنَيَّ (yavrucuğum/oğulcuğum) şeklinde gelir.",
       "dogru_cevap_gerekcesi": "Tasgîr yoluyla sevgi ve şefkat bildiren fasih Kur'ânî hitap kalıbı بُنَيَّ lafzıdır.",
       "celdirici_analizi": {
@@ -20849,7 +20849,7 @@
       "odak_kural": "Dört harfli isimlerin tasgîri فُعَيْعِلٌ vezninde yapılır: ilk harf damme, ikinci harf fetha, üçüncü harf sâkin yâ, dördüncü harf kesra alır (دِرْهَمٌ -> دُرَيْهِمٌ).",
       "dogru_cevap_gerekcesi": "Dört harfli dirhem kelimesinin kurallı tasgîri دُرَيْهِمٌ lafzıdır.",
       "celdirici_analizi": {
-        "A": "دُرَيْهَامٌ son harften önce med harfi almış فُعَيْعِيلٌ veznidir; beş harfliler içindir.",
+        "A": "دُرَيْهَامٌ dördüncü harften sonra kural dışı med elifi eklenmiş hatalı bir biçimdir; tasgîrde med elifi bulunmaz (beş harflilerde dahi فُعَيْعِيلٌ vezninde med yâ'sı gelir).",
         "C": "دُرَيْهِمَاتٌ tasgîrin çoğuludur; tekil küçültme vezni değildir.",
         "D": "دِرْهَيْمٌ ilk harfi kesralı bırakılmış hatalı bir vezindir; tasgîr dâima damme ile başlar."
       }
@@ -20960,30 +20960,30 @@
     "secenekler": [
       {
         "harf": "A",
-        "metin": "أَطْعِمَةِ"
+        "metin": "الْأَطْعِمَةِ"
       },
       {
         "harf": "B",
-        "metin": "مَطَاعِمِ"
+        "metin": "الْمَطَاعِمِ"
       },
       {
         "harf": "C",
-        "metin": "طُعُومِ"
+        "metin": "الطُّعُومِ"
       },
       {
         "harf": "D",
-        "metin": "طَعَامَاتِ"
+        "metin": "الطَّعَامَاتِ"
       }
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
       "soru_cevirisi_tr": "Restoran misafirlere meşhur halk yemeklerinin en lezzetlilerini sundu.",
       "odak_kural": "طَعَامٌ kelimesinin cem-i kıllet veznindeki kırık çoğulu أَفْعِلَةٌ vezninde أَطْعِمَةٌ şeklinde gelir.",
-      "dogru_cevap_gerekcesi": "أَطْعِمَةِ kelimesi doğrudan أَفْعِلَةٌ vezninde bir cem-i kıllettir ve cümlenin anlamına tam uyar.",
+      "dogru_cevap_gerekcesi": "الْأَطْعِمَةِ kelimesi doğrudan أَفْعِلَةٌ vezninde bir cem-i kıllettir; أَلَذَّ kelimesinin marife muzâfun ileyhi olarak kendisinden sonraki marife sıfatlara (الشَّعْبِيَّةِ الْمَعْرُوفَةِ) tam uyar.",
       "celdirici_analizi": {
-        "B": "مَطَاعِمِ مَفَاعِلُ vezninde mekân çoğuludur (restoranlar); yemekler demek değildir.",
-        "C": "طُعُومِ فُعُول vezninde tatlar/lezzetler demektir; yemek çeşitlerini ifade etmez.",
-        "D": "طَعَامَاتِ kural dışı türetilmiş bir cem-i müennes sâlimdir; kurallı fasih çoğul أَطْعِمَة'dir."
+        "B": "الْمَطَاعِمِ مَفَاعِلُ vezninde mekân çoğuludur (restoranlar); yemekler demek değildir.",
+        "C": "الطُّعُومِ فُعُولٌ vezninde tatlar/lezzetler demektir; yemek çeşitlerini ifade etmez.",
+        "D": "الطَّعَامَاتِ kural dışı türetilmiş bir cem-i müennes sâlimdir; kurallı fasih çoğul أَطْعِمَةٌ'dir."
       }
     }
   },
@@ -20997,7 +20997,7 @@
     "soru_tipi": "kelime_baglam",
     "kaynak_tipi": "genel_arapca",
     "bagli_konu": "Mefâ'il (مَفَاعِلُ) Cem-i Kesret Vezni (مَسْجِدٌ -> مَسَاجِدُ)",
-    "soru_yonergesi_tr": "Cümledeki boşluğa 'مَفَاعِلُ' vezninde ve gayr-i munsarif olan kırık çoğul kelimeyi seçiniz.",
+    "soru_yonergesi_tr": "Cümledeki boşluğa 'مَفَاعِلُ' vezninde ve gayr-i munsarıf olan kırık çoğul kelimeyi seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "تَشْتَهِرُ الْمَدِينَةُ التَّارِيخِيَّةُ بِكَثْرَةِ ______ الْأَثَرِيَّةِ الْقَدِيمَةِ.",
     "secenek_dili": "ar",
@@ -21021,7 +21021,7 @@
     ],
     "dogru_secenek": "C",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Tarihi şehir, eski tarihi mescitlerinin çokluğu ile meşhurdur.",
+      "soru_cevirisi_tr": "Tarihî şehir, eski tarihî mescitlerinin çokluğuyla meşhurdur.",
       "odak_kural": "مَسْجِدٌ kelimesinin cem-i kesret (müntehe'l-cümû') vezni مَفَاعِلُ vezninde مَسَاجِدُ şeklinde gelir; Elif-Lâm aldığında kesra ile mecrûr olur.",
       "dogru_cevap_gerekcesi": "Şehirdeki mescitlerin çokluğunu ifade eden مَفَاعِلُ veznindeki çoğul isim الْمَسَاجِدِ kelimesidir.",
       "celdirici_analizi": {
@@ -21084,8 +21084,8 @@
     "beceri_alani": "hata_bulma",
     "soru_tipi": "hata_bulma",
     "kaynak_tipi": "genel_arapca",
-    "bagli_konu": "Cem-i Kıllet Kalıbı Olarak Fıtyeh (فِتْيَةٌ) Vezni ve Yanlış Çoğul Kullanımı Hatası",
-    "soru_yonergesi_tr": "Cümledeki kırık çoğul imla ve hareke hatasını içeren kelimeyi seçiniz.",
+    "bagli_konu": "Cem-i Kıllet Kalıbı Olarak Fityeh (فِتْيَةٌ) Vezni ve Yanlış Çoğul Kullanımı Hatası",
+    "soru_yonergesi_tr": "Cümledeki çoğul ve cinsiyet uyumu hatasını içeren kelimeyi seçiniz.",
     "soru_baglam_tr": null,
     "soru_metni_ar": "كَانَ فِي الْقَرْيَةِ فَتَيَاتٌ صَالِحُونَ يُسَاعِدُونَ الْفُقَرَاءَ.",
     "secenek_dili": "ar",

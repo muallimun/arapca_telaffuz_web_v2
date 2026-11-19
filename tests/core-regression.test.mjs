@@ -11396,5 +11396,65 @@ test("108. seviye_tespit_sorulari.json Aşama 5 (321–400: yeni_b1_021–sts_b2
   }
 });
 
+test("109. seviye_tespit_sorulari.json Aşama 6 (401–480: ktt_grm_001_01–ktt_grm_008_10) Sarf-Nahiv, İmla ve Doğal Türkçe Çeviri Denetimi", () => {
+  const raw = fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8");
+  const questions = JSON.parse(raw);
+  assert.equal(questions.length, 550);
+  const stage6 = questions.slice(400, 480);
+  assert.equal(stage6.length, 80);
+  assert.equal(stage6[0].id, "ktt_grm_001_01");
+  assert.equal(stage6[79].id, "ktt_grm_008_10");
+  const byId = new Map(stage6.map((q) => [q.id, q]));
+
+  assert.ok(byId.get("ktt_grm_001_01")?.cozum_detayi.soru_cevirisi_tr.includes("âlemi"));
+  assert.equal(
+    byId.get("ktt_grm_001_03")?.cozum_detayi.soru_cevirisi_tr,
+    "Aşağıdaki cümlelerden imla ve nahiv bakımından doğru olan cümleyi seçiniz: (Doğru cümle: Öğrenci kütüphanede faydalı kitabı okudu.)"
+  );
+  assert.ok(byId.get("ktt_grm_001_07")?.cozum_detayi.odak_kural.startsWith("Hı (خ)"));
+  assert.ok(byId.get("ktt_grm_001_08")?.cozum_detayi.odak_kural.includes("her iki lâm da yazıda korunur"));
+  assert.ok(byId.get("ktt_grm_001_09")?.soru_metni_ar.includes("الْشَّمْسُ"));
+  assert.ok(byId.get("ktt_grm_002_02")?.cozum_detayi.odak_kural.includes("هُمُ الْمُفْلِحُونَ"));
+  assert.ok(byId.get("ktt_grm_002_06")?.cozum_detayi.soru_cevirisi_tr.includes("Baş üstüne"));
+  assert.ok(byId.get("ktt_grm_002_06")?.cozum_detayi.soru_cevirisi_tr.includes("yapacağım"));
+  assert.ok(byId.get("ktt_grm_002_08")?.cozum_detayi.odak_kural.includes("aslî dammeli"));
+  assert.ok(byId.get("ktt_grm_002_08")?.cozum_detayi.celdirici_analizi.C.includes("vasıl hemzesi alır"));
+  assert.equal(
+    byId.get("ktt_grm_003_10")?.cozum_detayi.soru_cevirisi_tr,
+    "Âişe, ev ödevini yazmayı bitirdin mi?"
+  );
+  assert.ok(byId.get("ktt_grm_005_04")?.bagli_konu.includes("Müzekkerliği"));
+  assert.ok(byId.get("ktt_grm_005_04")?.cozum_detayi.celdirici_analizi.C.includes("tenvinlidir"));
+  assert.ok(byId.get("ktt_grm_006_03")?.cozum_detayi.celdirici_analizi.C.includes("مَدْرَسَةٍ"));
+  assert.ok(byId.get("ktt_grm_006_05")?.soru_baglam_tr?.includes("bagajını arayan"));
+  assert.equal(
+    byId.get("ktt_grm_007_01")?.cozum_detayi.soru_cevirisi_tr,
+    "Yüce Allah şöyle buyurur: {Ey iman edenler! Kendinizi ve ailenizi ateşten koruyun.}"
+  );
+  assert.ok(byId.get("ktt_grm_007_02")?.soru_yonergesi_tr.includes("sülâsî وَفَى"));
+  assert.ok(byId.get("ktt_grm_007_06")?.cozum_detayi.odak_kural.includes("lâmü'l-fiil"));
+  assert.ok(byId.get("ktt_grm_007_07")?.cozum_detayi.odak_kural.includes("(حَذْفُ حَرْفِ الْعِلَّةِ)"));
+  assert.ok(byId.get("ktt_grm_008_01")?.bagli_konu.includes("Dört Harfli"));
+  assert.equal(byId.get("ktt_grm_008_02")?.secenekler[2].metin, "تُحَيْتَ");
+  assert.ok(byId.get("ktt_grm_008_02")?.cozum_detayi.celdirici_analizi.C.startsWith("تُحَيْتَ"));
+  assert.ok(byId.get("ktt_grm_008_04")?.cozum_detayi.celdirici_analizi.A.includes("med elifi"));
+  assert.deepEqual(
+    byId.get("ktt_grm_008_07")?.secenekler.map((s) => s.metin),
+    ["الْأَطْعِمَةِ", "الْمَطَاعِمِ", "الطُّعُومِ", "الطَّعَامَاتِ"]
+  );
+  assert.ok(byId.get("ktt_grm_008_10")?.bagli_konu.includes("Fityeh"));
+
+  for (const q of stage6) {
+    const str = JSON.stringify(q);
+    assert.ok(!/[\u064B-\u0650]\u0651/.test(str), `${q.id} içinde ters şedde+hareke olmamalıdır`);
+    assert.ok(!/\u0622\u064E/.test(str), `${q.id} içinde çift med (آَ) olmamalıdır`);
+    assert.ok(!str.includes("الِا"), `${q.id} içinde الِا bulunmamalıdır`);
+    assert.ok(!/\u0627\u064B/.test(str), `${q.id} içinde اً yerine ًا kullanılmalıdır`);
+    assert.ok(!/\u0670/.test(str), `${q.id} içinde kısa elif kalmamalıdır`);
+    assert.ok(!str.includes("\u0640"), `${q.id} içinde tatvil kalmamalıdır`);
+  }
+});
+
+
 
 

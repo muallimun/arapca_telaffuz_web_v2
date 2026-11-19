@@ -1799,7 +1799,7 @@
     "tema": "Saglik_ve_Spor",
     "odak_kalip": "Mâzî Fiil + Cemi Müzekker Fâil + Mef'ûl",
     "arapca": "تَرَكَ اللَّاعِبُونَ الْمَلْعَبَ بَعْدَ التَّدْرِيبِ.",
-    "turkce": "Oyuncular antremandan sonra sahayı terk ettiler.",
+    "turkce": "Oyuncular antrenmandan sonra sahayı terk ettiler.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0164.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0164.mp3"
   },
@@ -2568,7 +2568,7 @@
     "seviye": "A1",
     "tema": "Alisveris_ve_Yemek",
     "odak_kalip": "Cemi Müennes Mübteda + Mâzî Fiil (أَعَدَّ - نَ) + Mef'ûl",
-    "arapca": "اَلطَّالِبَاتُ أَعْدَدْنَالْغَدَاءَ.",
+    "arapca": "اَلطَّالِبَاتُ أَعْدَدْنَا الْغَدَاءَ.",
     "turkce": "Kız öğrenciler öğle yemeğini hazırladılar.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0234.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0234.mp3"
@@ -2943,7 +2943,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Mâzî Fiil (دَعَا لِ) + Zarf İzafeti",
     "arapca": "دَعَوْتُ لَكُمْ بَعْدَ الدَّرْسِ.",
-    "turkce": "Dersden sonra sizin için dua ettim.",
+    "turkce": "Dersten sonra sizin için dua ettim.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0268.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0268.mp3"
   },
@@ -6034,7 +6034,7 @@
     "tema": "Saglik_ve_Spor",
     "odak_kalip": "Rubâî Mezîd İf'inlâl Mâzî",
     "arapca": "اِفْرَنْقَعَتِ الْأَصَابِعُ بَعْدَ الْعَمَلِ.",
-    "turkce": "Çalışmadan sonra parmaklar kütledi.",
+    "turkce": "Çalışmadan sonra parmaklar kütürdedi.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0549.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0549.mp3"
   },
@@ -8167,7 +8167,7 @@
     "seviye": "B1",
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "Şurû Fiilleri / أَخَذَ + Muzâri",
-    "arapca": "بَعْدَ مَعْرَكَةٍ شَدِيدَةٍ أَخَذَ الْجُنُودُ يَنَسَحِبُونَ مِنَ الْمَيْدَانِ خَوْفًا مِنَ الْخَسَائِرِ.",
+    "arapca": "بَعْدَ مَعْرَكَةٍ شَدِيدَةٍ أَخَذَ الْجُنُودُ يَنْسَحِبُونَ مِنَ الْمَيْدَانِ خَوْفًا مِنَ الْخَسَائِرِ.",
     "turkce": "Şiddetli bir savaştan sonra askerler kayıptan korktukları için meydandan çekilmeye başladılar.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0743.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0743.mp3"
@@ -8936,8 +8936,8 @@
     "sira": 813,
     "seviye": "B2",
     "tema": "Duygu_ve_Dusunce",
-    "odak_kalip": "Muzâri (يُطْمَئِنُنِي) + Masdar Harfi (أَنَّ) Fâil",
-    "arapca": "يُطْمَئِنُنِي أَنَّ صَدِيقِي صَادِقٌ.",
+    "odak_kalip": "Muzâri (يُطْمِئِنُنِي) + Masdar Harfi (أَنَّ) Fâil",
+    "arapca": "يُطْمِئِنُنِي أَنَّ صَدِيقِي صَادِقٌ.",
     "turkce": "Arkadaşımın doğru sözlü olması bana rahatlık veriyor.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0813.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0813.mp3"
@@ -10323,7 +10323,7 @@
     "seviye": "B2",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Terahhi Atfı (ثُمَّ) Mâzî Fiiller Arası",
-    "arapca": "أَكْمِلَ الطَّالِبُ وَاجِبَهُ ثُمَّ نَامَ.",
+    "arapca": "أَكْمَلَ الطَّالِبُ وَاجِبَهُ ثُمَّ نَامَ.",
     "turkce": "Öğrenci ödevini tamamladı, sonra uyudu.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0939.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0939.mp3"
@@ -10928,7 +10928,7 @@
     "seviye": "A2",
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Harf-i Cer Mecrûr (عَلَى) + Muzâri Fiil Cümlesi",
-    "arapca": "يَسَاعِدُ الشَّبَابُ كِبَارَ السِّنِّ فِي عُبُورِ الشَّارِعِ بِأَمَانٍ.",
+    "arapca": "يُسَاعِدُ الشَّبَابُ كِبَارَ السِّنِّ فِي عُبُورِ الشَّارِعِ بِأَمَانٍ.",
     "turkce": "Gençler yaşlılara caddeden güvenle geçmelerinde yardım ediyor.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0994.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0994.mp3"

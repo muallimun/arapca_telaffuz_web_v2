@@ -124,7 +124,7 @@
     "tema": "Tedbir_ve_Tevekkul",
     "arapca": "اِحْتَرِسْ مِنَ الْأَفْعَى فِي الْمَرْعَى.",
     "turkce": "Otun ve çayırın içindeki yılandan sakın.",
-    "lafzi_ceviri": "Otlaktaki yılandان korun ve sakın.",
+    "lafzi_ceviri": "Otlaktaki yılandan korun ve sakın.",
     "kullanim_baglami": "Gizli tehlikelere, sinsi insanlara ve dost görünen düşmanlara karşı daima uyanık olunması gerektiğini belirtmek için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0010.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0010.wav"
@@ -813,7 +813,7 @@
     "tema": "Tedbir_ve_Tevekkul",
     "arapca": "أَسْوَأُ عَجَلَاتِ الْعَرَبَةِ أَكْثَرُهَا ضَجِيجًا.",
     "turkce": "Boş teneke çok ses çıkarır (Arabanın en kötü tekerleği gürültü yapar).",
-    "lafzi_ceviri": "Arabanın en kötü tekerlekleri en çok gürültü çıkاراتıdır.",
+    "lafzi_ceviri": "Arabanın en kötü tekerlekleri en çok gürültü çıkaranıdır.",
     "kullanim_baglami": "Yeteneksiz ve bir işe yaramayan kimselerin kendilerini öne çıkarmak için çok gürültü yapacaklarını anlatmak için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0063.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0063.wav"
@@ -1334,7 +1334,7 @@
     "arapca": "إِنَّ اللَّبِيبَ مِنَ الْإِشَارَةِ يَفْهَمُ.",
     "turkce": "Anlayana sivrisinek saz, anlamayana davul zurna az.",
     "lafzi_ceviri": "Şüphesiz akıllı kişi imadan ve işaretten anlar.",
-    "kullanim_baglami": "Firasat sahibi insanların uzun açıklamalara gerek duymadan durumu hemen kavrayacağını anlatmak için söylenir.",
+    "kullanim_baglami": "Firaset sahibi insanların uzun açıklamalara gerek duymadan durumu hemen kavrayacağını anlatmak için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0103.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0103.wav"
   },
@@ -1710,7 +1710,7 @@
     "tema": "Aile_ve_Toplum",
     "arapca": "بَيْتُ السَّبُعِ لَا يَخْلُو مِنَ الْعِظَامِ.",
     "turkce": "Aslanın yatağı kemiksiz kalmaz.",
-    "lafzi_ceviri": "Yr tıcı hayvanın evi kemiklerden yoksun olmaz.",
+    "lafzi_ceviri": "Yırtıcı hayvanın evi kemiklerden yoksun olmaz.",
     "kullanim_baglami": "Büyük ve cömert insanların evinde veya ocağında ikramın eksik olmayacağını anlatmak için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0132.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0132.wav"
@@ -2789,7 +2789,7 @@
     "tema": "Dil_ve_Sukut",
     "arapca": "رُبَّ سُكُوتٍ أَبْلَغُ مِنْ كَلَامٍ.",
     "turkce": "Öyle suskunluk vardır ki çok sözden daha etkilidir.",
-    "lafzi_ceviri": "Nice sükut vardır ki kelamdan daha belatlidir.",
+    "lafzi_ceviri": "Nice sükut vardır ki kelamdan daha belagatlıdır.",
     "kullanim_baglami": "Bazen susmanın en güçlü mesaj ve tepki olduğunu ifade etmek için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0215.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0215.wav"
@@ -3427,7 +3427,7 @@
     "arapca": "عَدَاوَةُ الْأَقَارِبِ أَوْجَعُ مِنْ لَسْعِ الْعَقَارِبِ.",
     "turkce": "Akraba düşmanlığı akrep sokmasından daha acıdır.",
     "lafzi_ceviri": "Akrabaların düşmanlığı akreplerin sokmasından daha elem vericidir.",
-    "kullanim_baglami": "Yakın çevreden gelen ihanet me düşmanlığın insanı içten yıktığını anlatmak için söylenir.",
+    "kullanim_baglami": "Yakın çevreden gelen ihanet ve düşmanlığın insanı içten yıktığını anlatmak için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0264.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0264.wav"
   },
@@ -3895,7 +3895,7 @@
     "arapca": "قَلِيلٌ مِنَ الدَّنَسِ يُفْسِدُ الْكِثِيرَ مِنَ النَّقَاءِ.",
     "turkce": "Bir kaşık zift bir fıçı balı bozar.",
     "lafzi_ceviri": "Azıcık pislik çokça saflığı ve temizliği bozar.",
-    "kullanim_baglami": "Küçük bir kötülüğün veya şüphenin büyük başarıları ve temiz itibar zedeleyeceğini belirtmek için söylenir.",
+    "kullanim_baglami": "Küçük bir kötülüğün veya şüphenin büyük başarıları ve temiz itibarı zedeleyeceğini belirtmek için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0300.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0300.wav"
   },
@@ -4178,7 +4178,7 @@
     "cefr": "B1",
     "tur": "Atasozu",
     "tema": "Ahlak_ve_Dogruluk",
-    "arapca": "كِلَابٌ تَعُوَّ وَالْقَافِلَةُ تَسِيرُ.",
+    "arapca": "كِلَابٌ تَعْوِي وَالْقَافِلَةُ تَسِيرُ.",
     "turkce": "İt ürür kervan yürür.",
     "lafzi_ceviri": "Köpekler havlar kervan ise yürür.",
     "kullanim_baglami": "Kötü niyetli kişilerin dedikodularına aldırmadan doğru yolda ilerlemek gerektiğini belirtmek için söylenir.",
@@ -4636,7 +4636,7 @@
     "arapca": "لَا يَنَفَعُ الْحَذَرُ مِنَ الْقَدَرِ.",
     "turkce": "Takdire tedbir kar etmez.",
     "lafzi_ceviri": "Kaderden sakınmak fayda vermez.",
-    "kullanim_baglami": "İlahi takdir gerçekleşeceği zaman kulun aldığı tedbirlerin hükmsüz kalacağını belirtmek için söylenir.",
+    "kullanim_baglami": "İlahi takdir gerçekleşeceği zaman kulun aldığı tedbirlerin hükümsüz kalacağını belirtmek için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0357.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0357.wav"
   },
@@ -4792,7 +4792,7 @@
     "arapca": "لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ.",
     "turkce": "Pehlivan bileğini büken değil öfkesini yenendir.",
     "lafzi_ceviri": "Güçlü olan güreşte yenen değildir, güçlü olan ancak öfke anında nefsine hakim olandır.",
-    "kullanim_baglami": "Gerçek gücün bilek kuvvetinde değil, duygui kontrolünde olduğunu belirtmek için söylenir.",
+    "kullanim_baglami": "Gerçek gücün bilek kuvvetinde değil, duygu kontrolünde olduğunu belirtmek için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0369.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0369.wav"
   },
@@ -5598,7 +5598,7 @@
     "arapca": "مَنْ كَثُرَتْ ذُنُوبُهُ قَلَّتْ هَيْبَتُهُ.",
     "turkce": "Hata ve günahı çok olanın saygınlığı azalır.",
     "lafzi_ceviri": "Günahları çoğalan kimsenin saygınlığı azalmıştır.",
-    "kullanim_baglami": "Ahlaki zaafların itibar zedeleyeceğini vurgulamak için söylenir.",
+    "kullanim_baglami": "Ahlaki zaafların itibarı zedeleyeceğini vurgulamak için söylenir.",
     "ses_erkek": "/sesler/atasozleri/erkek/ata_0431.wav",
     "ses_kadin": "/sesler/atasozleri/kadin/ata_0431.wav"
   },

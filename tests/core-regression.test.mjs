@@ -10291,3 +10291,81 @@ test("88. tum_metinler_60.json Sarf, Hareke, İmla ve Türkçe Çoğul Uyumu Dü
   );
 });
 
+test("89. 1111_cumle.json Arapça Yazım/Hareke ve Türkçe Çeviri Düzeltmeleri (8 Kayıt)", () => {
+  const cumleler = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8")
+  );
+  assert.equal(cumleler.length, 1111);
+  const byId = new Map(cumleler.map((c) => [c.id, c]));
+
+  // 1. Arapça Yazım ve Hareke
+  assert.equal(
+    byId.get("cumle_0234")?.arapca,
+    "اَلط\u0651\u064Eالِبَاتُ أَعْدَدْنَا الْغَدَاءَ."
+  );
+  assert.ok(byId.get("cumle_0743")?.arapca.includes("يَنْسَحِبُونَ"));
+  assert.ok(byId.get("cumle_0813")?.arapca.includes("يُطْمِئِنُنِي"));
+  assert.ok(byId.get("cumle_0939")?.arapca.includes("أَكْمَلَ الط\u0651\u064Eالِبُ"));
+  assert.ok(byId.get("cumle_0994")?.arapca.includes("يُسَاعِدُ الش\u0651\u064Eبَابُ"));
+
+  // 2. Türkçe Çeviri Yazım
+  assert.ok(byId.get("cumle_0164")?.turkce.includes("antrenmandan"));
+  assert.ok(byId.get("cumle_0268")?.turkce.includes("Dersten"));
+  assert.ok(byId.get("cumle_0549")?.turkce.includes("kütürdedi"));
+});
+
+test("90. atasozleri.json Arapça Çekim ve Türkçe Yazım/Arap Harfi Sızıntısı Düzeltmeleri (11 Kayıt)", () => {
+  const atasozleri = JSON.parse(
+    fs.readFileSync(path.join(DATA_DIR, "atasozleri.json"), "utf8")
+  );
+  assert.equal(atasozleri.length, 508);
+  const byId = new Map(atasozleri.map((a) => [a.id, a]));
+
+  // 1. Arapça Düzeltmesi
+  assert.equal(
+    byId.get("ata_0322")?.arapca,
+    "كِلَابٌ تَعْوِي وَالْقَافِلَةُ تَسِيرُ."
+  );
+
+  // 2. Türkçe Alanlardaki Yazım ve Arap Harfi Sızıntısı Düzeltmeleri
+  assert.ok(
+    byId.get("ata_0010")?.lafzi_ceviri.includes("yılandan") &&
+      !byId.get("ata_0010")?.lafzi_ceviri.includes("yılandان")
+  );
+  assert.ok(
+    byId.get("ata_0063")?.lafzi_ceviri.includes("çıkaranıdır") &&
+      !byId.get("ata_0063")?.lafzi_ceviri.includes("çıkاراتıdır")
+  );
+  assert.ok(
+    byId.get("ata_0103")?.kullanim_baglami.includes("Firaset") &&
+      !byId.get("ata_0103")?.kullanim_baglami.includes("Firasat")
+  );
+  assert.ok(
+    byId.get("ata_0132")?.lafzi_ceviri.includes("Yırtıcı") &&
+      !byId.get("ata_0132")?.lafzi_ceviri.includes("Yr tıcı")
+  );
+  assert.ok(
+    byId.get("ata_0215")?.lafzi_ceviri.includes("belagatlıdır") &&
+      !byId.get("ata_0215")?.lafzi_ceviri.includes("belatlidir")
+  );
+  assert.ok(
+    byId.get("ata_0264")?.kullanim_baglami.includes("ve düşmanlığın") &&
+      !byId.get("ata_0264")?.kullanim_baglami.includes("me düşmanlığın")
+  );
+  assert.ok(
+    byId.get("ata_0300")?.kullanim_baglami.includes("itibarı zedeleyeceğini") &&
+      !byId.get("ata_0300")?.kullanim_baglami.includes("itibar zedeleyeceğini")
+  );
+  assert.ok(
+    byId.get("ata_0357")?.kullanim_baglami.includes("hükümsüz") &&
+      !byId.get("ata_0357")?.kullanim_baglami.includes("hükmsüz")
+  );
+  assert.ok(
+    byId.get("ata_0369")?.kullanim_baglami.includes("duygu") &&
+      !byId.get("ata_0369")?.kullanim_baglami.includes("duygui")
+  );
+  assert.ok(
+    byId.get("ata_0431")?.kullanim_baglami.includes("itibarı zedeleyeceğini") &&
+      !byId.get("ata_0431")?.kullanim_baglami.includes("itibar zedeleyeceğini")
+  );
+});

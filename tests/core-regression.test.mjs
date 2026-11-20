@@ -9864,7 +9864,7 @@ test("84. 3 Gramer Dosyasında (diyaloglar, metinler, ek) Sıfır Ters Hareke+Ş
   );
   assert.equal(
     byDlgG.get("dlg_110")?.ek_ornekler?.[0]?.arapca,
-    "اِشْتَرَيْتُ لِتْراً حَلِيباً."
+    "اِشْتَرَيْتُ لِتْرًا حَلِيبًا."
   );
 
   const metinGramer = JSON.parse(
@@ -12020,6 +12020,45 @@ test("119. yeni_tum_sozluk.json (kelime_1774, kelime_1784, kelime_1790 + 59 Teme
   assert.ok(!/\u0627\u064B/.test(gorselStr), "gorselKelimeler_guncel.json içinde اً yerine ًا kullanılmalıdır");
   assert.ok(!/\u0622\u064E/.test(gorselStr), "gorselKelimeler_guncel.json içinde çift med (آَ) olmamalıdır");
 });
+
+test("120. 3 Gramer Hap Bilgi Dosyasında Tenvin Elifi (اً -> ًا) Standartlaştırması ve 1111_cumle.json Yapay Cinsiyet Çevirisi Doğallaştırma Denetimi", () => {
+  for (const [file, expectedCount] of [
+    ["diyaloglar_gramer_hap_bilgi.json", 120],
+    ["ek_gramer_hap_bilgi.json", 15],
+    ["metinler_gramer_hap_bilgi.json", 60],
+  ]) {
+    const raw = fs.readFileSync(path.join(DATA_DIR, file), "utf8");
+    const parsed = JSON.parse(raw);
+    assert.equal(parsed.length, expectedCount, `${file} kayıt sayısı ${expectedCount} olmalıdır`);
+    assert.ok(!/\u0627\u064B/.test(raw), `${file} içinde اً yerine ًا kullanılmalıdır`);
+  }
+
+  const cumleler = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8"));
+  assert.equal(cumleler.length, 1111);
+  const byId = new Map(cumleler.map((c) => [c.id, c]));
+
+  assert.equal(byId.get("cumle_0015")?.turkce, "Çocuk uyudu. (müennes)");
+  assert.equal(byId.get("cumle_0026")?.turkce, "Kardeş öğle yemeğini pişiriyor. (müennes)");
+  assert.equal(byId.get("cumle_0111")?.turkce, "Çalışkan bir öğrenci gördüm. (müennes)");
+  assert.equal(byId.get("cumle_0172")?.turkce, "Öğrenciler çalışkandır. (müennes)");
+  assert.equal(byId.get("cumle_0234")?.turkce, "Öğrenciler öğle yemeğini hazırladılar. (müennes)");
+  assert.equal(byId.get("cumle_0235")?.turkce, "İki öğrenci dersi dinliyor. (müennes)");
+  assert.equal(byId.get("cumle_0237")?.turkce, "Ramazan Bayramı'nda arkadaşları ziyaret edecek misin? (müennes)");
+  assert.equal(byId.get("cumle_0274")?.turkce, "Anneler oğullarını ve kızlarını severler.");
+  assert.equal(byId.get("cumle_0307")?.turkce, "Polis güçleri iki mağazayı soyan hırsızları yakaladı. (müennes)");
+  assert.equal(byId.get("cumle_0329")?.turkce, "Genel sınavlarda dokuz öğrenci başarılı oldu. (müennes)");
+  assert.equal(byId.get("cumle_0331")?.turkce, "İlk sınavda 12 öğrenci başarılı oldu. (müzekker)");
+  assert.equal(byId.get("cumle_0339")?.turkce, "Şirket müdürü 19 görevliden özür diledi. (müennes)");
+  assert.equal(byId.get("cumle_0467")?.turkce, "Öğrenciler gün boyu fakülte kütüphanesinde ders çalıştılar. (müennes)");
+  assert.equal(byId.get("cumle_0502")?.turkce, "Kardeş, çocuğu uyuttu. (müennes)");
+  assert.equal(byId.get("cumle_0698")?.turkce, "Göçmenler eşyalarıyla kaçarak sınıra ulaştılar. (müennes)");
+  assert.equal(byId.get("cumle_0882")?.turkce, "Öğrencinin bizzat kendisini gördüm. (müennes)");
+
+  for (const c of cumleler) {
+    assert.ok(!/\b(kız çocuk|kadın hırsız|kadın görevli|kadın göçmen)\b/i.test(c.turkce), `${c.id} içinde yapay cinsiyet ifadesi kalmamalıdır`);
+  }
+});
+
 
 
 

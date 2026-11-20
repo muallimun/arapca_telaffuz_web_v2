@@ -1142,11 +1142,11 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "السَّيَّارَاتُ تَجْرِي سَرِيعاً فِي الشَّارِعِ.",
+        "arapca": "السَّيَّارَاتُ تَجْرِي سَرِيعًا فِي الشَّارِعِ.",
         "turkce": "Arabalar caddede hızlıca gidiyor."
       },
       {
-        "arapca": "الْأَيَّامُ تَمُرُّ سَرِيعاً.",
+        "arapca": "الْأَيَّامُ تَمُرُّ سَرِيعًا.",
         "turkce": "Günler hızlıca geçiyor."
       }
     ],
@@ -1179,14 +1179,14 @@
             "السَّيَّارَاتُ (Arabalar)",
             "Dişil Tekil",
             "تَجْرِي",
-            "السَّيَّارَاتُ تَجْرِي سَرِيعاً.",
+            "السَّيَّارَاتُ تَجْرِي سَرِيعًا.",
             "Arabalar hızlıca gidiyor."
           ],
           [
             "الْأَيَّامُ (Günler)",
             "Dişil Tekil",
             "تَمُرُّ",
-            "الْأَيَّامُ تَمُرُّ سَرِيعاً.",
+            "الْأَيَّامُ تَمُرُّ سَرِيعًا.",
             "Günler hızlıca geçiyor."
           ]
         ]
@@ -1798,11 +1798,11 @@
         "turkce": "Bayram namazından önce vardık."
       }
     ],
-    "ipucu": "'صَبَاحًا' (sabahleyin), 'مَسَاءً' (akşamleyin), 'لَيْلاً' (geceleyin) kelimeleri fetha tenvinli zaman zarflarıdır.",
+    "ipucu": "'صَبَاحًا' (sabahleyin), 'مَسَاءً' (akşamleyin), 'لَيْلًا' (geceleyin) kelimeleri fetha tenvinli zaman zarflarıdır.",
     "ayrintili_anlatim": {
       "formul_sema": "[Muzâri Fiil (نَسْتَيْقِظُ)] + [Mef'ûlün Fih Zaman Zarfı (صَبَاحًا - Mansûb ◌ً)] + [Sıfat (مُبَكِّرًا)] + [Şibh-i Cümle]",
       "adim_adim_anlatim": [
-        "1. Zaman Zarfı (Mef'ûlün Fih): Eylemin vakti belirten 'صَبَاحًا' (sabahleyin), 'مَسَاءً' (akşamleyin), 'لَيْلاً' (geceleyin) kelimeleri mansûbdur.",
+        "1. Zaman Zarfı (Mef'ûlün Fih): Eylemin vakti belirten 'صَبَاحًا' (sabahleyin), 'مَسَاءً' (akşamleyin), 'لَيْلًا' (geceleyin) kelimeleri mansûbdur.",
         "2. Yalın Zarf İrabı: Bir isme muzaf olmayan yalın zaman zarfları fetha tenvini ('◌ً') alarak mansûb okunurlar ('صَبَاحًا').",
         "3. Tamlamalı Zaman Zarfı: Zaman zarfı muzaf olduğunda tenvinsiz tek fetha alır ve sonraki ismi esreler ('بَعْدَ الظُّهْرِ')."
       ],
@@ -1874,7 +1874,7 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "أَعْطَانِي الْمُعَلِّمُ كِتَاباً.",
+        "arapca": "أَعْطَانِي الْمُعَلِّمُ كِتَابًا.",
         "turkce": "Öğretmen bana bir kitap verdi."
       },
       {
@@ -1911,7 +1911,7 @@
             "أَعْطَى",
             "نِي (Bana)",
             "الْمُعَلِّمُ (Ötreli)",
-            "أَعْطَانِي الْمُعَلِّمُ كِتَاباً.",
+            "أَعْطَانِي الْمُعَلِّمُ كِتَابًا.",
             "Öğretmen bana bir kitap verdi."
           ],
           [
@@ -2046,7 +2046,7 @@
         "turkce": "İstanbul Türkiye'deki şehirlerin en büyüğüdür."
       },
       {
-        "arapca": "عَلِيٌّ أَكْثَرُ الطُّلَّابِ نَشَاطاً.",
+        "arapca": "عَلِيٌّ أَكْثَرُ الطُّلَّابِ نَشَاطًا.",
         "turkce": "Ali öğrencilerin en canlısıdır."
       }
     ],
@@ -2086,16 +2086,16 @@
             "أَكْثَرُ",
             "الطُّلَّابِ",
             "Haber (Merfû ◌ُ)",
-            "عَلِيٌّ أَكْثَرُ الطُّلَّابِ نَشَاطاً.",
+            "عَلِيٌّ أَكْثَرُ الطُّلَّابِ نَشَاطًا.",
             "Ali öğrencilerin en canlısıdır."
           ]
         ]
       },
       "irab_tahlili": [
         {
-          "kelime": "أُفَكِّرُ كَثِيراً",
+          "kelime": "أُفَكِّرُ كَثِيرًا",
           "gorevi": "Muzâri Fiil + Mef'ûl-i Mutlak Nâibi",
-          "hareke_nedeni": "'أُفَكِّرُ' damma ile merfû, 'كَثِيراً' fetha ile mansûbdur."
+          "hareke_nedeni": "'أُفَكِّرُ' damma ile merfû, 'كَثِيرًا' fetha ile mansûbdur."
         },
         {
           "kelime": "فِي مِهْنَتِي المُنَاسِبَةِ",
@@ -2206,11 +2206,11 @@
     "metinden_ornek": {
       "arapca": "تُعْتَبَرُ قَوَاعِدُ الْمُرُورِ مَوْضُوعًا مُهِمًّا لِسَلَامَةِ الْجَمِيعِ فِي الشَّارِعِ.",
       "turkce": "Trafik kuralları sokakta herkesin güvenliği için önemli bir konu kabul edilir.",
-      "aciklama": "'تُعْتَبَرُ' meçhul muzâri fiil olup birinci nesnesi 'قَوَاعِدُ المُرُورِ' merfû nâib-i fâil, ikinci nesnesi 'مَوْضُوعاً' ise mansûb olmuştur."
+      "aciklama": "'تُعْتَبَرُ' meçhul muzâri fiil olup birinci nesnesi 'قَوَاعِدُ المُرُورِ' merfû nâib-i fâil, ikinci nesnesi 'مَوْضُوعًا' ise mansûb olmuştur."
     },
     "ek_ornekler": [
       {
-        "arapca": "يَجِبُ أَنْ أَدْرُسَ جَيِّداً لِلِامْتِحَانِ.",
+        "arapca": "يَجِبُ أَنْ أَدْرُسَ جَيِّدًا لِلِامْتِحَانِ.",
         "turkce": "Sınav için iyi çalışmam gerekir."
       },
       {
@@ -2254,7 +2254,7 @@
             "Zorunluluk Yapısı",
             "يَجِبُ أَنْ",
             "أَدْرُسَ (Mansûb Muzâri)",
-            "يَجِبُ أَنْ أَدْرُسَ جَيِّداً.",
+            "يَجِبُ أَنْ أَدْرُسَ جَيِّدًا.",
             "İyi çalışmam gerekir."
           ]
         ]
@@ -2271,7 +2271,7 @@
           "hareke_nedeni": "'قَوَاعِدُ' damma ile merfû sözde öznedir."
         },
         {
-          "kelime": "مَوْضُوعاً مُهِمّاً",
+          "kelime": "مَوْضُوعًا مُهِمًّا",
           "gorevi": "2. Mef'ûlün Bih + Sıfat",
           "hareke_nedeni": "Her ikisi de fetha tenvini ile mansûbdur."
         }
@@ -2794,7 +2794,7 @@
     "metinden_ornek": {
       "arapca": "قَرَأْتُ الدُّرُوسَ وَالْمَفَاهِيمَ الصَّعْبَةَ مَعَ زُمَلَائِي فِي الْمَكْتَبَةِ هَادِئًا.",
       "turkce": "Dersleri ve zor kavramları arkadaşlarımla kütüphanede sakince okudum.",
-      "aciklama": "'قَرَأْتُ' 1. tekil mâzî fiil, 'الدُّرُوسَ وَالمَفَاهِيمَ الصَّعْبَةَ' mansûb nesne grubu, 'هَادِئاً' ise mansûb müfred hâldir."
+      "aciklama": "'قَرَأْتُ' 1. tekil mâzî fiil, 'الدُّرُوسَ وَالمَفَاهِيمَ الصَّعْبَةَ' mansûb nesne grubu, 'هَادِئًا' ise mansûb müfred hâldir."
     },
     "ek_ornekler": [
       {
@@ -2859,7 +2859,7 @@
           "hareke_nedeni": "Üçü de fetha ile mansûbdur."
         },
         {
-          "kelime": "هَادِئاً",
+          "kelime": "هَادِئًا",
           "gorevi": "Hâl",
           "hareke_nedeni": "Fâilin durumunu bildirdiği için fetha tenvini ile mansûbdur."
         }
@@ -3466,7 +3466,7 @@
     "metinden_ornek": {
       "arapca": "مَنْ يَصُمْ رَمَضَانَ إِيمَانًا وَاحْتِسَابًا يَغْفِرِ اللَّهُ لَهُ الذُّنُوبَ الْمَاضِيَةَ.",
       "turkce": "Ramazan'ı inanarak ve karşılığını Allah'tan umarak kim oruçla geçirirse Allah onun geçmiş günahlarını bağışlar.",
-      "aciklama": "Cezmeden şart edatı 'مَنْ', şart fiili 'يَصُمْ' ve cevap fiili 'يَغْفِرْ'i cezmetmiş; 'إِيمَاناً وَاحْتِسَاباً' mef'ûlün li-eclih olmuştur."
+      "aciklama": "Cezmeden şart edatı 'مَنْ', şart fiili 'يَصُمْ' ve cevap fiili 'يَغْفِرْ'i cezmetmiş; 'إِيمَانًا وَاحْتِسَابًا' mef'ûlün li-eclih olmuştur."
     },
     "ek_ornekler": [
       {
@@ -3526,7 +3526,7 @@
           "hareke_nedeni": "'يَصُمْ' sükûn ile meczûmdur; ecvef و harfi düşmüştür."
         },
         {
-          "kelime": "إِيمَاناً وَاحْتِسَاباً",
+          "kelime": "إِيمَانًا وَاحْتِسَابًا",
           "gorevi": "Mef'ûlün Li-Eclih + Matuf",
           "hareke_nedeni": "Fetha tenvini ile mansûb gerekçe masdarlarıdır."
         },
@@ -4562,21 +4562,21 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "نَدْرُسُ حِرْصاً عَلَى النَّجَاحِ.",
+        "arapca": "نَدْرُسُ حِرْصًا عَلَى النَّجَاحِ.",
         "turkce": "Başarı arzusuyla çalışırız."
       },
       {
-        "arapca": "قُمْنَا إِجْلَالاً لِلْمُعَلِّمِ.",
+        "arapca": "قُمْنَا إِجْلَالًا لِلْمُعَلِّمِ.",
         "turkce": "Öğretmene saygı amacıyla ayağa kalktık."
       }
     ],
-    "ipucu": "'رَغْبَةً' (arzusuyla), 'أَمَلاً' (umuduyla), 'حِرْصاً' (hırsıyla) fethalı masdarları en yaygın mef'ûlün li-eclih kelimeleridir.",
+    "ipucu": "'رَغْبَةً' (arzusuyla), 'أَمَلًا' (umuduyla), 'حِرْصًا' (hırsıyla) fethalı masdarları en yaygın mef'ûlün li-eclih kelimeleridir.",
     "ayrintili_anlatim": {
       "formul_sema": "[Muzâri Fiil (نَسْعَى)] + [Mef'ûlün Li-Eclih Masdar (رَغْبَةً - Mansûb ◌ً)] + [Câr-Mecrûr (فِي حِمَايَةِ...)]",
       "adim_adim_anlatim": [
         "1. Mef'ûlün Li-Eclih Tanımı: Eylemin yapılma nedenini ve içsel gerekçesini doğrudan açıklayan fetha tenvinli yalın masdardır.",
         "2. Fethalı Tenvin İrabı: Harf-i cersiz gelen mef'ûlün li-eclih kelimeleri fetha tenvini ('◌ً') ile mansûb olurlar ('رَغْبَةً' = isteğiyle/arzusuyla).",
-        "3. Yaygın Örnekler: 'رَغْبَةً' (arzusuyla), 'حِرْصاً' (özeniyle), 'تَشْجِيعاً' (teşvik amacıyla), 'إِجْلَالاً' (saygısıyla)."
+        "3. Yaygın Örnekler: 'رَغْبَةً' (arzusuyla), 'حِرْصًا' (özeniyle), 'تَشْجِيعًا' (teşvik amacıyla), 'إِجْلَالًا' (saygısıyla)."
       ],
       "ozet_tablo": {
         "tablo_basligi": "Mef'ûlün Li-Eclih (Gerekçe Masdarı) Yapısı",
@@ -4597,16 +4597,16 @@
           ],
           [
             "نَدْرُسُ",
-            "حِرْصاً (Mansûb ◌ً)",
+            "حِرْصًا (Mansûb ◌ً)",
             "عَلَى النَّجَاحِ",
-            "نَدْرُسُ حِرْصاً عَلَى النَّجَاحِ.",
+            "نَدْرُسُ حِرْصًا عَلَى النَّجَاحِ.",
             "Başarı arzusuyla çalışırız."
           ],
           [
             "قُمْنَا",
-            "إِجْلَالاً (Mansûb ◌ً)",
+            "إِجْلَالًا (Mansûb ◌ً)",
             "لِلْمُعَلِّمِ",
-            "قُمْنَا إِجْلَالاً لِلْمُعَلِّمِ.",
+            "قُمْنَا إِجْلَالًا لِلْمُعَلِّمِ.",
             "Öğretmene saygı amacıyla ayağa kalktık."
           ]
         ]
@@ -4642,15 +4642,15 @@
     "metinden_ornek": {
       "arapca": "إِنَّ ثَقَافَةَ الْوَقْفِ تُمَثِّلُ نَمُوذَجًا رَائِعًا لِلْعَدَالَةِ الْاِجْتِمَاعِيَّةِ الَّتِي تَبْنِي الْمُجْتَمَعَاتِ الْقَوِيَّةَ.",
       "turkce": "Vakıf kültürü, güçlü toplumları inşa eden sosyal adalet için harika bir modeli temsil eder.",
-      "aciklama": "'إِنَّ' te'kid edatı 'ثَقَافَةَ الوَقْفِ' ismini nasb etmiş, 'تُمَثِّلُ نَمُوذَجاً...' fiil cümlesi ise mahallen merfû haberi olmuştur."
+      "aciklama": "'إِنَّ' te'kid edatı 'ثَقَافَةَ الوَقْفِ' ismini nasb etmiş, 'تُمَثِّلُ نَمُوذَجًا...' fiil cümlesi ise mahallen merfû haberi olmuştur."
     },
     "ek_ornekler": [
       {
-        "arapca": "قَرَأْتُ كِتَاباً يَتَكَلَّمُ عَنِ التَّارِيخِ.",
+        "arapca": "قَرَأْتُ كِتَابًا يَتَكَلَّمُ عَنِ التَّارِيخِ.",
         "turkce": "Tarihten bahseden bir kitap okudum."
       },
       {
-        "arapca": "رَأَيْتُ طَالِباً يَدْرُسُ بِاجْتِهَادٍ.",
+        "arapca": "رَأَيْتُ طَالِبًا يَدْرُسُ بِاجْتِهَادٍ.",
         "turkce": "Azimle çalışan bir öğrenci gördüm."
       }
     ],
@@ -4683,14 +4683,14 @@
             "كِتَابًا (Mansûb)",
             "يَتَكَلَّمُ عَنِ التَّارِيخِ",
             "Mahallen Mansûb Sıfat",
-            "قَرَأْتُ كِتَاباً يَتَكَلَّمُ عَنِ التَّارِيخِ.",
+            "قَرَأْتُ كِتَابًا يَتَكَلَّمُ عَنِ التَّارِيخِ.",
             "Tarihten bahseden bir kitap okudum."
           ],
           [
             "طَالِبًا (Mansûb)",
             "يَدْرُسُ بِاجْتِهَادٍ",
             "Mahallen Mansûb Sıfat",
-            "رَأَيْتُ طَالِباً يَدْرُسُ بِاجْتِهَادٍ.",
+            "رَأَيْتُ طَالِبًا يَدْرُسُ بِاجْتِهَادٍ.",
             "Azimle çalışan bir öğrenci gördüm."
           ]
         ]
@@ -4702,7 +4702,7 @@
           "hareke_nedeni": "'ثَقَافَةَ' fetha ile mansûb إِنَّ'nin ismidir."
         },
         {
-          "kelime": "تُمَثِّلُ نَمُوذَجاً رَائِعاً",
+          "kelime": "تُمَثِّلُ نَمُوذَجًا رَائِعًا",
           "gorevi": "Fiil + Mef'ûl + Sıfat (İnne Haberi)",
           "hareke_nedeni": "Fiil cümlesi mahallen merfû إِنَّ haberidir."
         },
@@ -4730,20 +4730,20 @@
     },
     "ek_ornekler": [
       {
-        "arapca": "عَلِيٌّ أَكْثَرُ مِنْكَ عِلْماً.",
+        "arapca": "عَلِيٌّ أَكْثَرُ مِنْكَ عِلْمًا.",
         "turkce": "Ali ilim bakımından senden daha çoktur."
       },
       {
-        "arapca": "أَحْمَدُ أَكْبَرُ مِنْ حَسَنٍ سِنّاً.",
+        "arapca": "أَحْمَدُ أَكْبَرُ مِنْ حَسَنٍ سِنًّا.",
         "turkce": "Ahmet yaş bakımından Hasan'dan daha büyüktür."
       }
     ],
     "ipucu": "'أَكْثَرُ' veya 'أَجْمَلُ' gibi üstünlük sözcüklerinden sonra gelen fethalı nekre isimler Temyizdir.",
     "ayrintili_anlatim": {
-      "formul_sema": "[Nâib-i Fâil] + [İsm-i Tafdîl Haber (أَكْثَرُ - Merfû ◌ُ)] + [Nisbet Temyizi (اتِّسَاعاً - Fetha Tenvini Mansûb ◌ً)]",
+      "formul_sema": "[Nâib-i Fâil] + [İsm-i Tafdîl Haber (أَكْثَرُ - Merfû ◌ُ)] + [Nisbet Temyizi (اتِّسَاعًا - Fetha Tenvini Mansûb ◌ً)]",
       "adim_adim_anlatim": [
         "1. İsm-i Tafdîl 'أَكْثَرُ': Üstünlük ve miktar kıyaslaması bildiren 'أَفْعَلُ' kalıbında bir ism-i tafdîldir.",
-        "2. Nisbet Temyizi: İsm-i tafdîldeki kapalılığı giderip derecelendirmenin hangi bakımdan olduğunu açıklayan nekre fethalı isimdir ('اتِّسَاعاً' = genişlik bakımından).",
+        "2. Nisbet Temyizi: İsm-i tafdîldeki kapalılığı giderip derecelendirmenin hangi bakımdan olduğunu açıklayan nekre fethalı isimdir ('اتِّسَاعًا' = genişlik bakımından).",
         "3. Fethalı Tenvin İrabı: Temyiz ögesi dâima mansûbtur; tekil nekre isimlerde fetha tenvini ('◌ً') alır."
       ],
       "ozet_tablo": {
@@ -4758,23 +4758,23 @@
         "satirlar": [
           [
             "أَكْثَرُ",
-            "اتِّسَاعاً",
+            "اتِّسَاعًا",
             "Fetha Tenvini (Mansûb ◌ً)",
-            "المَجَرَّاتُ أَكْثَرُ اتِّسَاعاً فِي الفَضَاءِ.",
+            "المَجَرَّاتُ أَكْثَرُ اتِّسَاعًا فِي الفَضَاءِ.",
             "Galaksiler genişlik bakımından en çok olanıdır."
           ],
           [
             "أَكْثَرُ",
-            "عِلْماً",
+            "عِلْمًا",
             "Fetha Tenvini (Mansûb ◌ً)",
-            "عَلِيٌّ أَكْثَرُ مِنْكَ عِلْماً.",
+            "عَلِيٌّ أَكْثَرُ مِنْكَ عِلْمًا.",
             "Ali ilim bakımından senden daha çoktur."
           ],
           [
             "أَكْبَرُ",
-            "سِنّاً",
+            "سِنًّا",
             "Fetha Tenvini (Mansûb ◌ً)",
-            "أَحْمَدُ أَكْبَرُ مِنْ حَسَنٍ سِنّاً.",
+            "أَحْمَدُ أَكْبَرُ مِنْ حَسَنٍ سِنًّا.",
             "Ahmet yaş bakımından Hasan'dan büyüktür."
           ]
         ]
@@ -4798,7 +4798,7 @@
       ],
       "dikkat_sik_hata": {
         "yanlis": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعٌ / اتِّسَاعٍ.",
-        "dogru": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعاً.",
+        "dogru": "المَجَرَّاتُ أَكْثَرُ اتِّسَاعًا.",
         "neden": "İsm-i tafdîlden sonra gelen kapalılık giderici temyiz ögesi ötreli veya esreli değil, fetha tenvini ile mansûb okunur."
       }
     }

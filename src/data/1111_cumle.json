@@ -160,7 +160,7 @@
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Fiil Cümlesi / Mâzî Fiil (Müennes)",
     "arapca": "نَامَتِ الطِّفْلَةُ.",
-    "turkce": "Kız çocuk uyudu.",
+    "turkce": "Çocuk uyudu. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0015.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0015.mp3"
   },
@@ -281,7 +281,7 @@
     "tema": "Alisveris_ve_Yemek",
     "odak_kalip": "Muzâri Fiil + Mef'ûlün Bih",
     "arapca": "تَطْبُخُ الْأُخْتُ الْغَدَاءَ.",
-    "turkce": "Kız kardeş öğle yemeğini pişiriyor.",
+    "turkce": "Kardeş öğle yemeğini pişiriyor. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0026.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0026.mp3"
   },
@@ -1216,7 +1216,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Sıfat Tamlaması (Mef'ûlün Bih)",
     "arapca": "رَأَيْتُ طَالِبَةً مُجْتَهِدَةً.",
-    "turkce": "Çalışkan bir kız öğrenci gördüm.",
+    "turkce": "Çalışkan bir öğrenci gördüm. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0111.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0111.mp3"
   },
@@ -1887,7 +1887,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Cemi Müennes Sâlim Mübteda ve Haber",
     "arapca": "اَلتِّلْمِيذَاتُ مُجْتَهِدَاتٌ.",
-    "turkce": "Kız öğrenciler çalışkandır.",
+    "turkce": "Öğrenciler çalışkandır. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0172.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0172.mp3"
   },
@@ -1920,7 +1920,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İzafet Mübteda (Cemi Müennes Mecrûr) + Haber",
     "arapca": "حَالَةُ الطَّالِبَاتِ مُمْتَازَةٌ.",
-    "turkce": "Kız öğrencilerin durumu mükemmeldir.",
+    "turkce": "Öğrencilerin durumu mükemmeldir. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0175.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0175.mp3"
   },
@@ -2052,7 +2052,7 @@
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "Mâzî Fiil + Cemi Müennes Fâil + İzafet Mef'ûl",
     "arapca": "زَارَتِ الطَّالِبَاتُ الْأَجْنَبِيَّاتُ مَتْحَفَ الْمَدِينَةِ.",
-    "turkce": "Yabancı kız öğrenciler şehir müzesini ziyaret etti.",
+    "turkce": "Yabancı öğrenciler şehir müzesini ziyaret etti. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0187.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0187.mp3"
   },
@@ -2063,7 +2063,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İsim Cümlesi + Cemi Müennes Fiil (نَ) + Mef'ûl",
     "arapca": "اَلْمُعَلِّمَاتُ الْمَاهِرَاتُ يُسَاعِدْنَ طَالِبَاتِهِنَّ الضَّعِيفَاتِ.",
-    "turkce": "Becerikli öğretmenler, zayıf kız öğrencilerine yardım ederler. (müennes)",
+    "turkce": "Becerikli öğretmenler, zayıf öğrencilerine yardım ederler. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0188.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0188.mp3"
   },
@@ -2569,7 +2569,7 @@
     "tema": "Alisveris_ve_Yemek",
     "odak_kalip": "Cemi Müennes Mübteda + Mâzî Fiil (أَعَدَّ - نَ) + Mef'ûl",
     "arapca": "اَلطَّالِبَاتُ أَعْدَدْنَ الْغَدَاءَ.",
-    "turkce": "Kız öğrenciler öğle yemeğini hazırladılar.",
+    "turkce": "Öğrenciler öğle yemeğini hazırladılar. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0234.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0234.mp3"
   },
@@ -2580,7 +2580,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Tesniye Müennes Mübteda + Muzâri Fiil (اسْتَمَعَ إِلَى)",
     "arapca": "اَلطَّالِبَتَانِ تَسْتَمِعَانِ إِلَى الدَّرْسِ.",
-    "turkce": "İki kız öğrenci dersi dinliyorlar.",
+    "turkce": "İki öğrenci dersi dinliyor. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0235.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0235.mp3"
   },
@@ -2602,7 +2602,7 @@
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Soru (هَلْ) + Muzâri Gelecek Muhataba (سَتَزُورِينَ)",
     "arapca": "هَلْ سَتَزُورِينَ الصَّدِيقَاتِ فِي عِيدِ الْفِطْرِ؟",
-    "turkce": "Ramazan Bayramı'nda kız arkadaşları ziyaret edecek misin? (müennes)",
+    "turkce": "Ramazan Bayramı'nda arkadaşları ziyaret edecek misin? (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0237.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0237.mp3"
   },
@@ -3009,7 +3009,7 @@
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Cemi Müennes Mübteda + Muzâri Fiil (نَ) + Matuf Zamirli Mef'ûl",
     "arapca": "اَلْأُمَّهَاتُ يُحْبِبْنَ أَبْنَاءَهُنَّ وَبَنَاتِهِنَّ.",
-    "turkce": "Anneler erkek ve kız çocuklarını severler.",
+    "turkce": "Anneler oğullarını ve kızlarını severler.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0274.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0274.mp3"
   },
@@ -3141,7 +3141,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Mâzî Fiil + Tesniye Müennes İşaret İsmi Fâil (هَاتَانِ) + Mef'ûl-i Mutlak Sıfatı",
     "arapca": "اجْتَهَدَتْ هَاتَانِ الطَّالِبَتَانِ اجْتِهَادًا كَبِيرًا.",
-    "turkce": "Bu iki kız öğrenci çok çalıştılar.",
+    "turkce": "Bu iki öğrenci çok çalıştı. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0286.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0286.mp3"
   },
@@ -3163,7 +3163,7 @@
     "tema": "Seyahat_ve_Ulasim",
     "odak_kalip": "Çoğul İşaret İsmi Mübteda + Cemi Müennes Fiil Cümlesi Haber (نَ)",
     "arapca": "هَؤُلَاءِ الطَّالِبَاتُ حَضَرْنَ مِنَ الْمَغْرِبِ.",
-    "turkce": "Bu kız öğrenciler, Fas'tan geldiler.",
+    "turkce": "Bu öğrenciler Fas'tan geldiler. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0288.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0288.mp3"
   },
@@ -3174,7 +3174,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İşaret İsmi Mübteda + Haber + Sıfat Cümlesi Muzâri (نَ) + Hal/Zarf",
     "arapca": "هَؤُلَاءِ طَالِبَاتٌ يَكْتُبْنَ وَاجِبَاتِهِنَّ جَيِّدًا.",
-    "turkce": "Bunlar, ödevlerini iyi yazan kız öğrencilerdir.",
+    "turkce": "Bunlar, ödevlerini iyi yazan öğrencilerdir. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0289.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0289.mp3"
   },
@@ -3372,7 +3372,7 @@
     "tema": "Gunluk_Hayat",
     "odak_kalip": "İsm-i Mevsûl (اللَّوَاتِي) Cemi Müennes",
     "arapca": "قَبَضَتْ قُوَّاتُ الشُّرْطَةِ عَلَى السَّارِقَاتِ اللَّوَاتِي سَرَقْنَ الْمَتْجَرَيْنِ.",
-    "turkce": "Polis güçleri iki mağazayı soyan kadın hırsızları yakaladı.",
+    "turkce": "Polis güçleri iki mağazayı soyan hırsızları yakaladı. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0307.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0307.mp3"
   },
@@ -3614,7 +3614,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "3-10 Sayı Kuralı: Müzekker Sayı (تِسْعُ) + Müennes Çoğul",
     "arapca": "نَجَحَتْ فِي الْاِمْتِحَانَاتِ الْعَامَّةِ تِسْعُ طَالِبَاتٍ.",
-    "turkce": "Genel sınavlarda dokuz kız öğrenci başarılı oldu.",
+    "turkce": "Genel sınavlarda dokuz öğrenci başarılı oldu. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0329.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0329.mp3"
   },
@@ -3636,7 +3636,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "12 Mürekkep Sayı (اثْنَا عَشَرَ) Marfu Fâil",
     "arapca": "نَجَحَ فِي الْاِمْتِحَانِ الْأَوَّلِ اثْنَا عَشَرَ طَالِبًا.",
-    "turkce": "İlk sınavda 12 erkek öğrenci başarılı oldu.",
+    "turkce": "İlk sınavda 12 öğrenci başarılı oldu. (müzekker)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0331.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0331.mp3"
   },
@@ -3724,7 +3724,7 @@
     "tema": "Is_ve_Meslekler",
     "odak_kalip": "19 Mürekkep Sayı (تِسْعَ عَشْرَةَ) Müennes Mecrûr",
     "arapca": "اِعْتَذَرَ مُدِيرُ الشَّرِكَةِ مِنْ تِسْعَ عَشْرَةَ مُوَظَّفَةً.",
-    "turkce": "Şirket müdürü 19 kadın görevliden özür diledi.",
+    "turkce": "Şirket müdürü 19 görevliden özür diledi. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0339.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0339.mp3"
   },
@@ -5132,7 +5132,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Kâne ve Kardeşleri (ظَلَّتْ Cemi Müennes + Muzâri Haber)",
     "arapca": "ظَلَّتِ الطَّالِبَاتُ يَدْرُسْنَ فِي مَكْتَبَةِ الْكُلِّيَّةِ.",
-    "turkce": "Kız öğrenciler gün boyu fakülte kütüphanesinde ders çalıştılar.",
+    "turkce": "Öğrenciler gün boyu fakülte kütüphanesinde ders çalıştılar. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0467.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0467.mp3"
   },
@@ -5231,7 +5231,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Muzâri Fiil Cezmi (لَمْ + Nâkıs Muzâri Meczum)",
     "arapca": "لَمْ تَنْتَهِ الطَّالِبَةُ مِنْ دُرُوسِهَا.",
-    "turkce": "Kız öğrenci derslerini bitirmedi.",
+    "turkce": "Öğrenci derslerini bitirmedi. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0476.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0476.mp3"
   },
@@ -5517,7 +5517,7 @@
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Tef'îl Babı Mâzî (Geçişli Fiil)",
     "arapca": "نَوَّمَتِ الْأُخْتُ الطِّفْلَةَ.",
-    "turkce": "Kız kardeş, kız çocuğu uyuttu.",
+    "turkce": "Kardeş, çocuğu uyuttu. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0502.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0502.mp3"
   },
@@ -6727,7 +6727,7 @@
     "tema": "Is_ve_Meslekler",
     "odak_kalip": "Esmâ-i Hamse Marfu (أَخُو)",
     "arapca": "يَشْتَغِلُ أَخُو الطَّالِبَةِ فِي التِّجَارَةِ.",
-    "turkce": "Kız öğrencinin erkek kardeşi ticaretle uğraşmaktadır.",
+    "turkce": "Öğrencinin kardeşi ticaretle uğraşmaktadır.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0612.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0612.mp3"
   },
@@ -6793,7 +6793,7 @@
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "Esmâ-i Hamse Mecrûr (أَخِيكَ)",
     "arapca": "أَرْسَلْتُ رِسَالَةً إِلَى أَخِيكَ.",
-    "turkce": "Senin erkek kardeşine bir mektup gönderdim.",
+    "turkce": "Kardeşine bir mektup gönderdim. (müzekker)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0618.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0618.mp3"
   },
@@ -7673,7 +7673,7 @@
     "tema": "Seyahat_ve_Ulasim",
     "odak_kalip": "Cemi Müennes Hal İsm-i Fâil (هَارِبَاتٍ)",
     "arapca": "وَصَلَتِ الْمُهَاجِرَاتُ إِلَى الْحُدُودِ هَارِبَاتٍ مَعَ أَمْتِعَتِهِنَّ.",
-    "turkce": "Kadın göçmenler eşyalarıyla kaçarak sınıra ulaştılar.",
+    "turkce": "Göçmenler eşyalarıyla kaçarak sınıra ulaştılar. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0698.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0698.mp3"
   },
@@ -7882,7 +7882,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Nekre Fâilden Sonra Mâzî Cümlesi Sıfatı",
     "arapca": "عَادَتْ إِلَى بِلَادِهِنَّ طَالِبَاتٌ دَرَسْنَ فِي أُورُوبَّا.",
-    "turkce": "Avrupa'da okuyan kız öğrenciler ülkelerine döndüler.",
+    "turkce": "Avrupa'da okuyan öğrenciler ülkelerine döndüler. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0717.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0717.mp3"
   },
@@ -9411,7 +9411,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "İstisnâ (سِوَى + Tesniye Mecrûr)",
     "arapca": "حَفِظَتِ الطَّالِبَاتُ كُلُّهُنَّ الدَّرْسَ سِوَى طَالِبَتَيْنِ.",
-    "turkce": "İkisi dışında kız öğrencilerin hepsi dersi ezberledi.",
+    "turkce": "İkisi dışında öğrencilerin hepsi dersi ezberledi. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0856.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0856.mp3"
   },
@@ -9697,7 +9697,7 @@
     "tema": "Aile_ve_Sosyal",
     "odak_kalip": "Te'kîd-i Ma'nevî (عَيْنَهَا Mansub)",
     "arapca": "رَأَيْتُ الطَّالِبَةَ عَيْنَهَا.",
-    "turkce": "Kız öğrencinin bizzat kendisini gördüm.",
+    "turkce": "Öğrencinin bizzat kendisini gördüm. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0882.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0882.mp3"
   },

@@ -73,7 +73,7 @@ test("1. Tüm 8 JSON dosyası hatasız parse edilir, 0 tatweel (\\u0640) içerir
 
 test("2. Sözlük, Diyalog, Metin, 1111 Cümle, Atasözü ve Görsel Kelime dosyalarında mükerrer ID yoktur", () => {
   const expectedCounts = [
-    ["yeni_tum_sozluk.json", 1895],
+    ["yeni_tum_sozluk.json", 1954],
     ["tum_diyaloglar_120.json", 120],
     ["tum_metinler_60.json", 60],
     ["1111_cumle.json", 1111],
@@ -8761,7 +8761,7 @@ test("72. [Denetim 1/6] UTF-8 Bütünlük Testi: src/ ve src/data/ altındaki t�
   );
 });
 
-test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 diyalog, 60 metin, 1111 cümle, 508 atasözü, 998 görsel kelime, 400 eş-zıt, 1895 sözlük, 550 sınav sorusu, 195 gramer notu, 60 YouTube)", () => {
+test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 diyalog, 60 metin, 1111 cümle, 508 atasözü, 998 görsel kelime, 400 eş-zıt, 1954 sözlük, 550 sınav sorusu, 195 gramer notu, 60 YouTube)", () => {
   const expectedDatasets = [
     { file: "tum_diyaloglar_120.json", count: 120, idKey: "id" },
     { file: "tum_metinler_60.json", count: 60, idKey: "id" },
@@ -8769,7 +8769,7 @@ test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 d
     { file: "atasozleri.json", count: 508, idKey: "id" },
     { file: "gorselKelimeler_guncel.json", count: 998, idKey: "id" },
     { file: "es_zit_anlamlilar.json", count: 400, idKey: "id" },
-    { file: "yeni_tum_sozluk.json", count: 1895, idKey: "id" },
+    { file: "yeni_tum_sozluk.json", count: 1954, idKey: "id" },
     { file: "seviye_tespit_sorulari.json", count: 550, idKey: "id" },
     { file: "diyaloglar_gramer_hap_bilgi.json", count: 120, idKey: "bagli_id" },
     { file: "metinler_gramer_hap_bilgi.json", count: 60, idKey: "bagli_id" },
@@ -9201,7 +9201,7 @@ test("77. [Denetim 6/6] PWA Service Worker (public/sw.js v2.2 + offlineManager u
   );
 });
 
-test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter), Sözlük/Video Envanter Tutarlılığı (1895 vs 3263, 60=20+40) ve Ters Karma Aralık (start > end) Koruması", async () => {
+test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter), Sözlük/Video Envanter Tutarlılığı (1954 vs 3276, 60=20+40) ve Ters Karma Aralık (start > end) Koruması", async () => {
   const { pathToFileURL } = await import("node:url");
 
   // 1) IrabColorPainter ve ReadingEvidenceHunter 360px dar ekran kontrolleri
@@ -9237,8 +9237,8 @@ test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter
   const { CONTENT_INVENTORY } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
   );
-  assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1895);
-  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3263);
+  assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1954);
+  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3276);
   assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   assert.equal(CONTENT_INVENTORY.youtubeSingleVideosCount, 20);
   assert.equal(CONTENT_INVENTORY.youtubePlaylistsCount, 40);
@@ -11934,7 +11934,7 @@ test("118. Kapsamlı Morfoloji/Kök Çözümleme (يَقْرَأْنَ, قُرِ
 
   // 3) 5 güncellenen sabit JSON dosyasında kayıt sayısı, kök ve doğal Türkçe bütünlüğü
   const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
-  assert.equal(sozluk.length, 1895);
+  assert.equal(sozluk.length, 1954);
   const sozlukById = new Map(sozluk.map((w) => [w.id, w]));
   assert.equal(sozlukById.get("kelime_2793")?.mufret, "مَطْبَخٌ");
   assert.equal(sozlukById.get("kelime_2793")?.kok, "ط ب خ");
@@ -11970,6 +11970,57 @@ test("118. Kapsamlı Morfoloji/Kök Çözümleme (يَقْرَأْنَ, قُرِ
   assert.ok(dlgGramer[31].ek_ornekler[0].arapca.includes("أَهْلًا"));
   assert.ok(dlgGramer[31].ek_ornekler[1].arapca.includes("شُكْرًا"));
 });
+
+test("119. yeni_tum_sozluk.json (kelime_1774, kelime_1784, kelime_1790 + 59 Temel Kök/Kelime) ve gorselKelimeler_guncel.json Uyumluluk Denetimi", () => {
+  const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
+  assert.equal(sozluk.length, 1954);
+  const byId = new Map(sozluk.map((w) => [w.id, w]));
+  assert.equal(byId.size, 1954, "yeni_tum_sozluk.json içinde mükerrer ID olmamalıdır");
+
+  // 1) Düzeltilen 3 kayıt
+  assert.equal(byId.get("kelime_1774")?.mazi, "مَكَرَ");
+  assert.equal(byId.get("kelime_1774")?.muzari, "يَمْكُرُ");
+  assert.equal(byId.get("kelime_1774")?.masdar, "مَكْرٌ");
+  assert.equal(byId.get("kelime_1774")?.kok, "م ك ر");
+  assert.equal(byId.get("kelime_1784")?.masdar, "اِنْتِظَارٌ");
+  assert.equal(byId.get("kelime_1790")?.mufret, "الْأَنْدَلُسُ");
+
+  // 2) Kritik yeni temel kayıtlar (أُمٌّ, قَرَأَ ve sık geçen temel mehmûz/muzaaf/isim/fiiller)
+  assert.equal(byId.get("kelime_3406")?.mufret, "أُمٌّ");
+  assert.equal(byId.get("kelime_3406")?.cemi, "أُمَّهَاتٌ");
+  assert.equal(byId.get("kelime_3406")?.kok, "أ م م");
+  assert.equal(byId.get("kelime_3406")?.anlam_tr, "Anne");
+  assert.equal(byId.get("kelime_3407")?.mazi, "قَرَأَ");
+  assert.equal(byId.get("kelime_3407")?.muzari, "يَقْرَأُ");
+  assert.equal(byId.get("kelime_3407")?.masdar, "قِرَاءَةٌ");
+  assert.equal(byId.get("kelime_3407")?.kok, "ق ر أ");
+  assert.equal(byId.get("kelime_3409")?.mazi, "بَدَأَ");
+  assert.equal(byId.get("kelime_3409")?.kok, "ب د أ");
+  assert.equal(byId.get("kelime_3417")?.mufret, "مَرْءٌ");
+  assert.equal(byId.get("kelime_3424")?.mufret, "شَكٌّ");
+  assert.equal(byId.get("kelime_3441")?.mazi, "دَامَ");
+  assert.equal(byId.get("kelime_3454")?.mufret, "وَفْدٌ");
+  assert.equal(byId.get("kelime_3455")?.mufret, "طَاقَةٌ");
+  assert.equal(byId.get("kelime_3456")?.mufret, "مُسْتَقْبَلٌ");
+  assert.equal(byId.get("kelime_3464")?.mufret, "أُخْتٌ");
+
+  // 3) İmla/hareke temizliği (yeni_tum_sozluk.json ve gorselKelimeler_guncel.json)
+  const sozlukStr = JSON.stringify(sozluk);
+  assert.ok(!sozlukStr.includes("أَنَاسَ"), "Bozuk أَنَاسَ kaydı temizlenmiş olmalıdır");
+  assert.ok(!sozlukStr.includes("اِذْتِظَارٌ"), "Hatalı اِذْتِظَارٌ masdarı düzeltilmiş olmalıdır");
+  assert.ok(!/\u0627\u064B/.test(sozlukStr), "yeni_tum_sozluk.json içinde اً yerine ًا kullanılmalıdır");
+  assert.ok(!/\u0622\u064E/.test(sozlukStr), "yeni_tum_sozluk.json içinde çift med (آَ) olmamalıdır");
+
+  const gorsel = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "gorselKelimeler_guncel.json"), "utf8"));
+  const gById = new Map(gorsel.map((w) => [w.id, w]));
+  assert.equal(gById.get("0055_02_garip")?.ornek_ar, "رَأَيْتُ رَجُلًا غَرِيبًا فِي الشَّارِعِ.");
+  assert.equal(gById.get("0792_16_fikir")?.ikincil_form, "آرَاءٌ");
+  assert.equal(gById.get("0891_18_ufuk")?.ikincil_form, "آفَاقٌ");
+  const gorselStr = JSON.stringify(gorsel);
+  assert.ok(!/\u0627\u064B/.test(gorselStr), "gorselKelimeler_guncel.json içinde اً yerine ًا kullanılmalıdır");
+  assert.ok(!/\u0622\u064E/.test(gorselStr), "gorselKelimeler_guncel.json içinde çift med (آَ) olmamalıdır");
+});
+
 
 
 

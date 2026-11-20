@@ -115,7 +115,7 @@ const STUDIO_TABS: DatasetMeta[] = [
   },
   {
     key: "sozluk",
-    label: "📚 1895 Sözlük",
+    label: "📚 1954 Sözlük",
     shortLabel: "Sözlük",
     icon: "📚",
     fileName: "yeni_tum_sozluk.json",

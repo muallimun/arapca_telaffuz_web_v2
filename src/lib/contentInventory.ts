@@ -6,9 +6,9 @@ export interface ContentInventory {
   visualWordsCount: number;
   grammarNotesCount: number;
   standaloneGrammarNotesCount: number;
-  /** Ana sözlük havuzu kayıt sayısı: 1.895 */
+  /** Ana sözlük havuzu kayıt sayısı: 1.954 */
   coreDictionaryWordsCount: number;
-  /** Birleşik Sözlük (1.895 ana sözlük + 998 görsel kelime + ek sözlük) toplam tekil kayıt sayısı: 3.263 */
+  /** Birleşik Sözlük (1.954 ana sözlük + 998 görsel kelime + ek sözlük) toplam tekil kayıt sayısı: 3.276 */
   dictionaryWordsCount: number;
   youtubeVideosCount: number;
   youtubeSingleVideosCount: number;
@@ -26,8 +26,8 @@ export const CONTENT_INVENTORY: ContentInventory = {
   visualWordsCount: 998,
   grammarNotesCount: 195,
   standaloneGrammarNotesCount: 15,
-  coreDictionaryWordsCount: 1895,
-  dictionaryWordsCount: 3263,
+  coreDictionaryWordsCount: 1954,
+  dictionaryWordsCount: 3276,
   youtubeVideosCount: 60,
   youtubeSingleVideosCount: 20,
   youtubePlaylistsCount: 40,

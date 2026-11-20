@@ -389,7 +389,7 @@
     "hap_kural": "Yüz (مِئَةٌ), bin (أَلْفٌ), milyon (مِلْيُونٌ) ve katlarının sayılan ismi (temyizi) daima tekil ve esreli (mecrûr muzafun ileyh) olur. Yıllar ve tarihler zikredilirken 'عَامَ' (eril) veya 'سَنَةَ' (dişil) kelimeleri zaman zarfı olarak mansûb okunur ve ardından gelen sayılar muzafun ileyh olarak esrelenir.",
     "metinden_ornek": {
       "arapca": "تَخَرَّجَ أَلْفُ طَالِبٍ وَمِئَةُ طَالِبَةٍ فِي عَامِ أَلْفَيْنِ وَأَرْبَعَةٍ وَعِشْرِينَ.",
-      "turkce": "İki bin yirmi dört yılında bin erkek öğrenci ve yüz kız öğrenci mezun oldu.",
+      "turkce": "İki bin yirmi dört yılında bin öğrenci (müzekker) ve yüz öğrenci (müennes) mezun oldu.",
       "aciklama": "'أَلْفُ طَالِبٍ' ve 'مِئَةُ طَالِبَةٍ' terkiplerinde sayılan isimler tekil ve esreli muzafun ileyhtir; 'عَامِ' kelimesinden sonraki tarih sayıları da zincirleme esreli mecrûr okunmuştur."
     },
     "ek_ornekler": [
@@ -781,7 +781,7 @@
       },
       {
         "arapca": "يَا أَيَّتُهَا الطَّالِبَةُ الْمُجْتَهِدَةُ، أَبْشِرِي بِالنَّجَاحِ.",
-        "turkce": "Ey çalışkan kız öğrenci, başarıyla müjdelen."
+        "turkce": "Ey çalışkan öğrenci, başarıyla müjdelen. (müennes)"
       }
     ],
     "ipucu": "Seslenilen kelime bir tamlamanın ilk kelimesiyse (muzâfsa) üstünlü (fethalı) yap: 'يَا عَبْدَ اللَّهِ'; tek kelimelik özel isim veya belirlenmiş şahıssa tek ötre ver: 'يَا مُحَمَّدُ'، 'يَا رَجُلُ'.",

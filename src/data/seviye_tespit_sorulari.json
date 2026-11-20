@@ -362,7 +362,7 @@
     "kaynak_tipi": "uygulama_ici",
     "bagli_konu": "Muttasıl Zamirlerde Muhatap/Muhataba Uyumu",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa uygun soruyu seçiniz.",
-    "soru_baglam_tr": "Öğretmen yeni gelen kız öğrenciye adını soruyor:",
+    "soru_baglam_tr": "Öğretmen yeni gelen öğrenciye (müennes) adını soruyor:",
     "soru_metni_ar": "الْمُعَلِّمُ: أَهْلًا يَا بُنَيَّتِي، ______؟\nالطَّالِبَةُ: اسْمِي فَاطِمَةُ.",
     "secenek_dili": "ar",
     "secenekler": [
@@ -957,7 +957,7 @@
     ],
     "dogru_secenek": "B",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Küçük kız bir hikâye okuyor.",
+      "soru_cevirisi_tr": "Küçük çocuk bir hikâye okuyor. (müennes)",
       "odak_kural": "Sıfat tamlamasında sıfat, mevsûfuna cinsiyet (erillik-dişillik) bakımından uymak zorundadır.",
       "dogru_cevap_gerekcesi": "الْبِنْتُ kelimesi hakiki müennes (dişil) bir isimdir; onun sıfatı olan kelimenin eril الصَّغِيرُ değil, müennes الصَّغِيرَةُ olması gerekir.",
       "celdirici_analizi": {
@@ -2562,7 +2562,7 @@
     "kaynak_tipi": "genel_arapca",
     "bagli_konu": "Okul Eşyalarında İyelik İletişimi",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa uygun ifadeyi seçiniz.",
-    "soru_baglam_tr": "Sınıfta sıranın üzerindeki kitabı arayan iki kız öğrenci konuşuyor:",
+    "soru_baglam_tr": "Sınıfta sıranın üzerindeki kitabı arayan iki öğrenci (müennes) konuşuyor:",
     "soru_metni_ar": "مَرْيَمُ: هَلْ هَذَا كِتَابُكِ يَا زَيْنَبُ؟\nزَيْنَبُ: نَعَمْ، هَذَا ______، شُكْرًا لَكِ.",
     "secenek_dili": "ar",
     "secenekler": [
@@ -3597,7 +3597,7 @@
     ],
     "dogru_secenek": "B",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Mustafa: Masanın üzerindeki bu güzel saat kime aittir? — Ahmed: O, kız kardeşim Fatma'nındır.",
+      "soru_cevirisi_tr": "Mustafa: Masanın üzerindeki bu güzel saat kime aittir? — Ahmed: O, kardeşim Fatma'nındır.",
       "odak_kural": "السَّاعَةُ kelimesi marife, müennes ve merfûdur; onun sıfatı da Elif-Lâmlı, müennes ve merfû olan الْجَمِيلَةُ şeklinde gelmelidir.",
       "dogru_cevap_gerekcesi": "السَّاعَةُ ismine sıfat olan kelimenin marifelik, cinsiyet ve ref harekesinde uyarak الْجَمِيلَةُ olması zorunludur.",
       "celdirici_analizi": {
@@ -4850,7 +4850,7 @@
     "kaynak_tipi": "genel_arapca",
     "bagli_konu": "Sınıf İçi Emir ve Yanıt Diyaloğu",
     "soru_yonergesi_tr": "Diyalogdaki boşluğa dil bilgisine uygun emir fiilini seçiniz.",
-    "soru_baglam_tr": "Öğretmen tahtaya kaldırdığı erkek öğrenciden yazı yazmasını istiyor:",
+    "soru_baglam_tr": "Öğretmen tahtaya kaldırdığı öğrenciden (müzekker) yazı yazmasını istiyor:",
     "soru_metni_ar": "الْمُعَلِّمُ: يَا طَارِقُ، قُمْ وَ______ هَذِهِ الْجُمْلَةَ عَلَى السَّبُّورَةِ.\nطَارِقٌ: حَاضِرٌ يَا أُسْتَاذِي.",
     "secenek_dili": "ar",
     "secenekler": [
@@ -5621,7 +5621,7 @@
     ],
     "dogru_secenek": "D",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Kız çocuğu halk parkında küçük çantasını kaybetti.",
+      "soru_cevirisi_tr": "Çocuk halk parkında küçük çantasını kaybetti. (müennes)",
       "odak_kural": "İyelik zamiri bitişen isim marifedir; onun sıfatı da harf-i tarif (ال) alarak marife olmak zorundadır.",
       "dogru_cevap_gerekcesi": "حَقِيبَتَهَا ismi zamirle marifeleşmiş mansûb bir mef'ûldür; sıfatının Elif-Lâmlı olarak الصَّغِيرَةَ gelmesi gerekirken nekra صَغِيرَةً yazılması dil bilgisi hatasıdır.",
       "celdirici_analizi": {
@@ -18161,7 +18161,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Öğretmen kız öğrencilere: Derslerinizde gayret gösterin, dedi.",
+      "soru_cevirisi_tr": "Öğretmen öğrencilere: Derslerinizde gayret gösterin, dedi. (müennes)",
       "odak_kural": "Mâzî fiilin sonundaki sâkin dişillik tâ'sı (تَاءُ التَّأْنِيثِ السَّاكِنَةُ) bir sonraki sâkin harfe (Elif-Lâm) bağlanırken kural olarak KESRA ile harekelenir.",
       "dogru_cevap_gerekcesi": "قَالَتْ fiilinin sâkin tâ'sı Elif-Lâm takısına kesra ile geçer: قَالَتِ الْمُعَلِّمَةُ.",
       "celdirici_analizi": {
@@ -18513,7 +18513,7 @@
     ],
     "dogru_secenek": "B",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Kadın öğretmenler okulda çalışkandırlar ve onlar kız öğrencileri çok severler.",
+      "soru_cevirisi_tr": "Öğretmenler okulda çalışkandırlar ve öğrencileri çok severler. (müennes)",
       "odak_kural": "Çoğul dişil üçüncü şahıs (cem-i müennes gâibe) için kullanılan munfasıl ref zamiri هُنَّ lafzıdır.",
       "dogru_cevap_gerekcesi": "الْمُعَلِّمَاتُ çoğul dişil ve üçüncü şahıstır; ardından gelen يُحْبِبْنَ fiili de nûn-u nisve almıştır. Bu özneyi karşılayan munfasıl zamir هُنَّ lafzıdır.",
       "celdirici_analizi": {
@@ -19173,7 +19173,7 @@
     ],
     "dogru_secenek": "A",
     "cozum_detayi": {
-      "soru_cevirisi_tr": "Bu iki kız öğrenci yarışmada birincilik derecesini kazandı.",
+      "soru_cevirisi_tr": "Bu iki öğrenci yarışmada birincilik derecesini kazandı. (müennes)",
       "odak_kural": "İki dişil varlığa işaret eden tesniye müennes işaret ismi mübtedâ (ref) konumunda elif ile هَاتَانِ şeklinde gelir.",
       "dogru_cevap_gerekcesi": "الطَّالِبَتَانِ iki dişil öğrencidir ve cümlenin merfû mübtedâsıdır; uygun işaret ismi elif ile هَاتَانِ kelimesidir.",
       "celdirici_analizi": {

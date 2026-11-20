@@ -11,7 +11,7 @@
     "ek_ornekler": [
       {
         "arapca": "أَنَا طَالِبَةٌ مُجْتَهِدَةٌ فِي الْجَامِعَةِ.",
-        "turkce": "Ben üniversitede çalışkan bir kız öğrenciyim."
+        "turkce": "Ben üniversitede çalışkan bir öğrenciyim. (müennes)"
       },
       {
         "arapca": "نَحْنُ مُعَلِّمُونَ فِي هَذِهِ الْمَدْرَسَةِ.",
@@ -579,7 +579,7 @@
       },
       {
         "arapca": "فِي الْمَدِينَةِ بَنَاتٌ صَغِيرَاتٌ وَبُيُوتٌ كَبِيرَةٌ.",
-        "turkce": "Şehirde küçük kızlar ve büyük evler var."
+        "turkce": "Şehirde küçük çocuklar (müennes) ve büyük evler var."
       }
     ],
     "ipucu": "İnsan dışındaki tüm çoğullar (ağaçlar, evler, hayvanlar) gramer gözünde 'tek bir kadın' gibidir.",
@@ -984,7 +984,7 @@
       },
       {
         "arapca": "عَائِشَةُ طَالِبَةٌ صَادِقَةٌ.",
-        "turkce": "Ayşe dürüst bir kız öğrencidir."
+        "turkce": "Ayşe dürüst bir öğrencidir."
       }
     ],
     "ipucu": "Üç harfli fiilin ilk harfinden sonra elif (ا) ekleyerek yapan kişiyi bulursunuz: 'تَجَرَ' (ticaret yaptı) -> 'تَاجِرٌ' (tüccar).",
@@ -1024,7 +1024,7 @@
             "صَادِقَةٌ (Dişil)",
             "طَالِبَةٌ صَادِقَةٌ",
             "عَائِشَةُ طَالِبَةٌ صَادِقَةٌ.",
-            "Ayşe dürüst bir kız öğrencidir."
+            "Ayşe dürüst bir öğrencidir."
           ]
         ]
       },
@@ -2715,11 +2715,11 @@
     "ek_ornekler": [
       {
         "arapca": "أَحْضَرَتْ أُخْتِي ثَلَاثَ سَلَطَاتٍ.",
-        "turkce": "Kız kardeşim üç salata getirdi."
+        "turkce": "Kardeşim üç salata getirdi. (müennes)"
       },
       {
         "arapca": "كَتَبَتِ الطَّالِبَةُ أَرْبَعَةَ دُرُوسٍ.",
-        "turkce": "Kız öğrenci dört ders yazdı."
+        "turkce": "Öğrenci dört ders yazdı. (müennes)"
       }
     ],
     "ipucu": "Kadın öznenin fiiline '-تْ' eklenir; 3-10 arası sayılan isim daima çoğul ve esreli okunur.",
@@ -2752,14 +2752,14 @@
             "أُخْتِي",
             "ثَلَاثَ (Eril)",
             "سَلَطَاتٍ (Dişil Tekilli)",
-            "Kız kardeşim üç salata getirdi."
+            "Kardeşim üç salata getirdi. (müennes)"
           ],
           [
             "كَتَبَتْ",
             "الطَّالِبَةُ",
             "أَرْبَعَةَ (Dişil)",
             "دُرُوسٍ (Eril Tekilli)",
-            "Kız öğrenci dört ders yazdı."
+            "Öğrenci dört ders yazdı. (müennes)"
           ]
         ]
       },
@@ -2967,11 +2967,11 @@
     "ek_ornekler": [
       {
         "arapca": "تَكْتُبُ الطَّالِبَةُ الدَّرْسَ فِي الْغُرْفَةِ.",
-        "turkce": "Kız öğrenci odada ders yazıyor."
+        "turkce": "Öğrenci odada ders yazıyor. (müennes)"
       },
       {
         "arapca": "يَقْرَأُ الطَّالِبُ الْكِتَابَ فِي الْمَكْتَبَةِ.",
-        "turkce": "Erkek öğrenci kütüphanede kitap okuyor."
+        "turkce": "Öğrenci kütüphanede kitap okuyor. (müzekker)"
       }
     ],
     "ipucu": "3. şahıs muzâri fiillerde erkekler için 'يَ' (ye), kadınlar için 'تَ' (te) harfi başlangıç göstergesidir.",
@@ -3011,7 +3011,7 @@
             "تَ (تَكْتُبُ)",
             "الطَّالِبَةُ",
             "الدَّرْسَ",
-            "Kız öğrenci dersi yazar."
+            "Öğrenci dersi yazar. (müennes)"
           ]
         ]
       },
@@ -3223,7 +3223,7 @@
       },
       {
         "arapca": "أَكَلَتْ أُخْتِي الْكَعْكَةَ اللَّذِيذَةَ.",
-        "turkce": "Kız kardeşim lezzetli pastayı yedi."
+        "turkce": "Kardeşim lezzetli pastayı yedi. (müennes)"
       }
     ],
     "ipucu": "Cümlede nesne olan kelimeler (elma, pasta, hediye) fethalı (üstünlü) hareke alırlar.",
@@ -3263,7 +3263,7 @@
             "أُخْتِي",
             "الْكَعْكَةَ (Mansûb ◌َ)",
             "أَكَلَتْ أُخْتِي الْكَعْكَةَ.",
-            "Kız kardeşim pastayı yedi."
+            "Kardeşim pastayı yedi. (müennes)"
           ]
         ]
       },
@@ -3811,7 +3811,7 @@
       },
       {
         "arapca": "المُعَلِّمَتَانِ كِلْتَاهُمَا مَاهِرَتَانِ.",
-        "turkce": "İki kadın öğretmenin her ikisi de beceriklidir."
+        "turkce": "İki öğretmenin her ikisi de beceriklidir. (müennes)"
       }
     ],
     "ipucu": "İkil ismin sonunda Elif-Nun (انِ) varsa pekiştirme kelimesi 'كِلَاهُمَا' (elifli) olur.",
@@ -3851,7 +3851,7 @@
             "كِلْتَاهُمَا (Dişil Alif)",
             "مَاهِرَتَانِ",
             "المُعَلِّمَتَانِ كِلْتَاهُمَا مَاهِرَتَانِ.",
-            "İki kadın öğretmenin her ikisi de beceriklidir."
+            "İki öğretmenin her ikisi de beceriklidir. (müennes)"
           ]
         ]
       },
@@ -4395,7 +4395,7 @@
     "ek_ornekler": [
       {
         "arapca": "تَجْتَهِدُ الطَّالِبَاتُ فِي الدَّرْسِ.",
-        "turkce": "Kız öğrenciler derste çabalar."
+        "turkce": "Öğrenciler derste çabalar. (müennes)"
       },
       {
         "arapca": "نَعْمَلُ فِي شَرِكَاتٍ كَبِيرَةٍ.",
@@ -4439,7 +4439,7 @@
             "Fâil (Özne)",
             "Açık Damma (◌ُ)",
             "تَجْتَهِدُ الطَّالِبَاتُ فِي الدَّرْسِ.",
-            "Kız öğrenciler derste çabalar."
+            "Öğrenciler derste çabalar. (müennes)"
           ]
         ]
       },

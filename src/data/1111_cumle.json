@@ -182,7 +182,7 @@
     "tema": "Duygu_ve_Dusunce",
     "odak_kalip": "Fiil Cümlesi / Mâzî Fiil (Müennes)",
     "arapca": "بَكَتِ الْبِنْتُ.",
-    "turkce": "Kız ağladı.",
+    "turkce": "Çocuk ağladı. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0017.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0017.mp3"
   },
@@ -314,7 +314,7 @@
     "tema": "Gunluk_Hayat",
     "odak_kalip": "Mâzî Fiil + Mef'ûlün Bih",
     "arapca": "كَسَرَتِ الْبِنْتُ الصَّحْنَ.",
-    "turkce": "Kız tabağı kırdı.",
+    "turkce": "Çocuk tabağı kırdı. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0029.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0029.mp3"
   },
@@ -1909,7 +1909,7 @@
     "tema": "Is_ve_Meslekler",
     "odak_kalip": "Muzâri Fiil + Cemi Müennes Mansub Mef'ûl (ٍ)",
     "arapca": "تُنَظِّمُ الشَّرِكَةُ دَوْرَاتٍ جَدِيدَةً لِلْمُوَظَّفِينَ وَالْمُوَظَّفَاتِ.",
-    "turkce": "Şirket, erkek ve kadın çalışanları için yeni kurslar düzenliyor.",
+    "turkce": "Şirket, tüm çalışanları için yeni kurslar düzenliyor. (müzekker ve müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0174.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0174.mp3"
   },
@@ -1953,7 +1953,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Muzâri Fiil + Cemi Müennes Fâil + عَنْ",
     "arapca": "تُدَافِعُ الْمُعَلِّمَاتُ عَنِ الطَّالِبَاتِ وَالطُّلَّابِ.",
-    "turkce": "Öğretmenler kız ve erkek öğrencileri savunurlar. (müennes)",
+    "turkce": "Öğretmenler bütün öğrencileri savunurlar. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0178.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0178.mp3"
   },
@@ -3603,7 +3603,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "3-10 Sayı Müzekker ve Müennes Zıtlık",
     "arapca": "يَجْلِسُ فِي الْمَكْتَبَةِ سِتَّةُ طُلَّابٍ وَسِتُّ طَالِبَاتٍ.",
-    "turkce": "Kütüphanede altı erkek ve altı kız öğrenci oturuyor.",
+    "turkce": "Kütüphanede altı öğrenci (müzekker) ve altı öğrenci (müennes) oturuyor.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0328.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0328.mp3"
   },
@@ -6408,7 +6408,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Atıf Harfi Takip (فَ) + Matuf",
     "arapca": "دَخَلَ الْمُدِيرُ فِي الْقَاعَةِ فَالْمُعَلِّمُونَ وَالْمُعَلِّمَاتُ.",
-    "turkce": "Müdür salona girdi ve peşinden erkek ve kadın öğretmenler girdi.",
+    "turkce": "Müdür salona girdi ve peşinden tüm öğretmenler girdi. (müzekker ve müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0583.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0583.mp3"
   },
@@ -7035,7 +7035,7 @@
     "tema": "Gunluk_Hayat",
     "odak_kalip": "Mâzî Fiil + Mef'ûl İzafeti",
     "arapca": "رَتَّبَتْ أُخْتِي أَقْلَامَ الْمَكْتَبِ.",
-    "turkce": "Kız kardeşim çalışma masasının kalemlerini düzenledi.",
+    "turkce": "Kardeşim çalışma masasının kalemlerini düzenledi. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0640.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0640.mp3"
   },
@@ -7211,7 +7211,7 @@
     "tema": "Kultur_ve_Teknoloji",
     "odak_kalip": "Mef'ûlün Fîh / Mekân ve Zaman Zarfı",
     "arapca": "تَقْضِي الْبَنَاتُ أَمَامَ الْحَاسُوبِ أَوْقَاتًا طَوِيلَةً.",
-    "turkce": "Kızlar bilgisayarın önünde uzun zaman geçirirler.",
+    "turkce": "Gençler bilgisayarın önünde uzun zaman geçirirler. (müennes)",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0656.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0656.mp3"
   },
@@ -8729,7 +8729,7 @@
     "tema": "Okul_ve_Egitim",
     "odak_kalip": "Cemi Müennes Mübteda + Muzâri Fiil + İstidrak (وَلَكِنَّ)",
     "arapca": "اَلْمُعَلِّمَاتُ يَجْتَهِدْنَ فِي الْمَكْتَبَةِ وَلَكِنَّ الْمُعَلِّمِينَ انْصَرَفُوا.",
-    "turkce": "Kadın öğretmenler kütüphanede çalışıyorlar fakat erkek öğretmenler ayrıldılar.",
+    "turkce": "Öğretmenler (müennes) kütüphanede çalışıyorlar fakat diğer öğretmenler (müzekker) ayrıldılar.",
     "ses_erkek": "/sesler/cumleler/erkek/cumle_0794.mp3",
     "ses_kadin": "/sesler/cumleler/kadin/cumle_0794.mp3"
   },

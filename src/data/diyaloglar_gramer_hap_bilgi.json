@@ -524,7 +524,7 @@
         "turkce": "Dersi yaz Ali."
       }
     ],
-    "ipucu": "Kadına veya kız çocuğuna emrederken fiilin sonuna mutlaka dişil yâ'sı ('ي') eklenir (اِفْتَحِي).",
+    "ipucu": "Müennes muhatabaya emrederken fiilin sonuna mutlaka dişil yâ'sı ('ي') eklenir (اِفْتَحِي).",
     "ayrintili_anlatim": {
       "formul_sema": "[Sülâsî Emir Fiil (اِفْتَحْ / اِفْتَحِي)] + [Mef'ûlün Bih + Zamir (كِتَابَكَ / كِتَابَكِ)] + [Câr-Mecrûr + Sıra Sayısı (عَلَى الصَّفْحَةِ الْعَاشِرَةِ)]",
       "adim_adim_anlatim": [
@@ -1042,7 +1042,7 @@
             "كُلُّ",
             "الطَّالِبَاتِ",
             "نَاجِحَاتٌ.",
-            "Bütün kız öğrenciler başarılıdır."
+            "Bütün öğrenciler başarılıdır. (müennes)"
           ],
           [
             "كُلُّ",
@@ -2675,7 +2675,7 @@
             "ثَلَاثُ (Eril)",
             "طَالِبَاتٍ",
             "ثَلَاثُ طَالِبَاتٍ",
-            "Üç kız öğrenci"
+            "Üç öğrenci (müennes)"
           ],
           [
             "يَوْمٌ (Eril)",
@@ -5878,7 +5878,7 @@
     "ek_ornekler": [
       {
         "arapca": "هَاتَانِ طَالِبَتَانِ مُجْتَهِدَتَانِ.",
-        "turkce": "Bu ikisi çalışkan kız öğrencidir."
+        "turkce": "Bu ikisi çalışkan öğrencidir. (müennes)"
       },
       {
         "arapca": "أَنْتُمَا مُعَلِّمَانِ مَاهِرَانِ.",
@@ -5915,7 +5915,7 @@
             "هَاتَانِ",
             "طَالِبَتَانِ",
             "هُمَا",
-            "Bu ikisi kız öğrencidir."
+            "Bu ikisi öğrencidir. (müennes)"
           ],
           [
             "Hitap (Ortak)",
@@ -5956,7 +5956,7 @@
     "hap_kural": "Erkek düzenli çoğullar özne iken '-ûne' (ونَ), nesne/mecrur iken '-îne' (ينَ) takısı alır. Kadın düzenli çoğullar ise sonlarına '-âtun' (اتٌ) alırlar ve asla fetha almazlar, nesne iken esrelenirler (اتٍ).",
     "metinden_ornek": {
       "arapca": "ثُمَّ شَكَرْتُ الْمُدَرِّسَاتِ الْمُخْلِصَاتِ عَلَى جُهُودِهِنَّ.",
-      "turkce": "Sonra samimi kadın öğretmenlere çabaları için teşekkür ettim.",
+      "turkce": "Sonra samimi öğretmenlere çabaları için teşekkür ettim. (müennes)",
       "aciklama": "Cemi müennes sâlim olan 'الْمُدَرِّسَاتِ' ve sıfatı 'الْمُخْلِصَاتِ' nesne konumunda fetha yerine kesra (esre) ile mansûb olmuştur."
     },
     "ek_ornekler": [
@@ -5966,7 +5966,7 @@
       },
       {
         "arapca": "رَأَيْتُ الْمُعَلِّمَاتِ فِي الصَّفِّ.",
-        "turkce": "Sınıfta kadın öğretmenleri gördüm."
+        "turkce": "Sınıfta öğretmenleri gördüm. (müennes)"
       }
     ],
     "ipucu": "Düzenli dişil çoğullara (ات) üstün verilmesi imkansızdır; üstün gelmesi gereken nesne konumunda esre (اتٍ) alırlar.",
@@ -6217,7 +6217,7 @@
       },
       {
         "arapca": "فِي الصَّفِّ خَمْسَةٌ وَعِشْرُونَ طَالِبًا.",
-        "turkce": "Sınıfta yirmi beş erkek öğrenci var."
+        "turkce": "Sınıfta yirmi beş öğrenci var. (müzekker)"
       }
     ],
     "ipucu": "11 ile 99 arasındaki tüm sayıların sayılanı (temyizi) mutlaka tekil ve üstünlü (fethalı tenvin) gelir.",
@@ -6253,13 +6253,13 @@
             "Matuf Sayı",
             "خَمْسَةٌ وَعِشْرُونَ",
             "طَالِبًا",
-            "Yirmi beş erkek öğrenci"
+            "Yirmi beş öğrenci (müzekker)"
           ],
           [
             "Matuf Dişil",
             "خَمْسٌ وَعِشْرُونَ",
             "طَالِبَةً",
-            "Yirmi beş kız öğrenci"
+            "Yirmi beş öğrenci (müennes)"
           ]
         ]
       },
@@ -8625,7 +8625,7 @@
             "الْحَسَنُ",
             "خُلُقُهَا",
             "Önündekine irabca, sonrakine cinsiyetçe",
-            "Ahlakı güzel kadın öğrenci"
+            "Ahlakı güzel öğrenci (müennes)"
           ]
         ]
       },

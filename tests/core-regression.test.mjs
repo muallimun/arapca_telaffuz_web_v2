@@ -11160,7 +11160,7 @@ test("105. seviye_tespit_sorulari.json Aşama 2 (81–160: yeni_a1_043–sts_a2_
   assert.ok(byId.get("yeni_a1_084")?.cozum_detayi.celdirici_analizi.D.includes("hem harf-i tarif (ال) hem de tenvin"));
   assert.equal(
     byId.get("yeni_a1_090")?.cozum_detayi.soru_cevirisi_tr,
-    "Kız çocuğu halk parkında küçük çantasını kaybetti."
+    "Çocuk halk parkında küçük çantasını kaybetti. (müennes)"
   );
   assert.ok(byId.get("ktt_a_010")?.cozum_detayi.celdirici_analizi.D.startsWith("يَنْتَهِيَ fiili,"));
   assert.ok(byId.get("ktt_b_001")?.cozum_detayi.celdirici_analizi.C.includes("cins lâm-ı tarifiyle marife"));
@@ -12058,6 +12058,38 @@ test("120. 3 Gramer Hap Bilgi Dosyasında Tenvin Elifi (اً -> ًا) Standartla
     assert.ok(!/\b(kız çocuk|kadın hırsız|kadın görevli|kadın göçmen)\b/i.test(c.turkce), `${c.id} içinde yapay cinsiyet ifadesi kalmamalıdır`);
   }
 });
+
+test("121. 7 JSON Veri Dosyasında Ek Yapay Cinsiyet Temizliği ve Atasözleri (ata_0307, ata_0445) Tutarsızlık Düzeltmesi", () => {
+  const cumleler = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "1111_cumle.json"), "utf8"));
+  assert.equal(cumleler.length, 1111);
+  const cById = new Map(cumleler.map((x) => [x.id, x]));
+  assert.equal(cById.get("cumle_0017")?.turkce, "Çocuk ağladı. (müennes)");
+  assert.equal(cById.get("cumle_0029")?.turkce, "Çocuk tabağı kırdı. (müennes)");
+  assert.equal(cById.get("cumle_0178")?.turkce, "Öğretmenler bütün öğrencileri savunurlar. (müennes)");
+  assert.equal(cById.get("cumle_0328")?.turkce, "Kütüphanede altı öğrenci (müzekker) ve altı öğrenci (müennes) oturuyor.");
+  assert.equal(cById.get("cumle_0640")?.turkce, "Kardeşim çalışma masasının kalemlerini düzenledi. (müennes)");
+  assert.equal(cById.get("cumle_0656")?.turkce, "Gençler bilgisayarın önünde uzun zaman geçirirler. (müennes)");
+
+  const gorsel = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "gorselKelimeler_guncel.json"), "utf8"));
+  assert.equal(gorsel.length, 998);
+  assert.equal(gorsel.find((x) => x.id === "0042_02_kiz")?.turkce, "Kız");
+
+  const sts = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "seviye_tespit_sorulari.json"), "utf8"));
+  assert.equal(sts.length, 550);
+  const stsById = new Map(sts.map((x) => [x.id, x]));
+  assert.equal(stsById.get("sts_a1_p1_001")?.soru_baglam_tr, "Öğretmen yeni gelen öğrenciye (müennes) adını soruyor:");
+  assert.equal(stsById.get("sts_a1_p1_014")?.cozum_detayi?.soru_cevirisi_tr, "Küçük çocuk bir hikâye okuyor. (müennes)");
+  assert.equal(stsById.get("ktt_grm_003_01")?.cozum_detayi?.soru_cevirisi_tr, "Öğretmenler okulda çalışkandırlar ve öğrencileri çok severler. (müennes)");
+
+  const atalar = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "atasozleri.json"), "utf8"));
+  assert.equal(atalar.length, 508);
+  const aById = new Map(atalar.map((x) => [x.id, x]));
+  assert.equal(aById.get("ata_0307")?.turkce, "Allah yolunda sade bir içim suyla yetinmek, zillete katlanmaktan evladır.");
+  assert.equal(aById.get("ata_0307")?.lafzi_ceviri, "Allah yolunda bir içim su olsun, zillet yudumu olmasın.");
+  assert.equal(aById.get("ata_0445")?.lafzi_ceviri, "Katranın sürüleceği yer, uyuz yarasının olduğu yerdir.");
+  assert.equal(aById.get("ata_0318")?.turkce, "Kız çocuğu babasına hayrandır.");
+});
+
 
 
 

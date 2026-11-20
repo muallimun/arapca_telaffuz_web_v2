@@ -1551,14 +1551,7 @@ export default function ShadowingModal({
     result.words.forEach((w) => {
       if (w.status !== "correct" && w.targetWord && w.targetWord.length > 1) {
         const morphMatch = analyzeAndMatchWord(w.targetWord);
-        const dictWord =
-          morphMatch?.item ||
-          sozluk.find(
-            (s) =>
-              s.mufret?.includes(w.targetWord) ||
-              s.mazi?.includes(w.targetWord) ||
-              w.targetWord.includes(s.mufret || "___")
-          );
+        const dictWord = morphMatch?.item;
         if (dictWord) {
           addWeakWord(dictWord);
           if (result.overallScore < 70) {

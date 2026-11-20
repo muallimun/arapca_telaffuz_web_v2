@@ -518,7 +518,7 @@ export default function WordTooltip({
           }
 
           const match = word.match(
-            /^([.,!?؟،؛:"'()\[\]{}]*)([\u0600-\u06FF\u0670]+)([.,!?؟،؛:"'()\[\]{}]*)$/
+            /^([.,!?؟،؛:"'«»“”‘’()\[\]{}]*)([\u0600-\u06FF\u0670]+)([.,!?؟،؛:"'«»“”‘’()\[\]{}]*)$/
           );
 
           if (!match) {
@@ -548,22 +548,157 @@ export default function WordTooltip({
           );
 
           if (!analysis) {
+            const bareCoreLen = coreWord.replace(/[\u064B-\u065F\u0670\u0640]/g, "").length;
+            if (bareCoreLen < 2) {
+              return (
+                <span
+                  key={index}
+                  {...hoverHandlers}
+                  {...tapRevealHandlers}
+                  className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${karaokeHighlightClass}`}
+                >
+                  {trackingArrowIndicator}
+                  {formatWordInLine(word, index)}
+                  {bottomProgressLine}
+                </span>
+              );
+            }
+
+            const isFallbackOpen = activeIndex === index;
+            const handleFallbackClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+              e.stopPropagation();
+              playClick();
+              if (isFallbackOpen) {
+                setActiveIndex(null);
+                activeWordElRef.current = null;
+                return;
+              }
+              activeWordElRef.current = e.currentTarget;
+              computePosition(e.currentTarget);
+              setActiveIndex(index);
+            };
+
+            const handleFallbackSpeak = async (e: React.MouseEvent) => {
+              e.stopPropagation();
+              playClick();
+              useAudioStore.getState().stop();
+              setIsSpeaking(true);
+              try {
+                await speakHybrid({
+                  text: coreWord,
+                  rate: speechRate,
+                  voice: preferredVoiceGender,
+                });
+              } finally {
+                setIsSpeaking(false);
+              }
+            };
+
             return (
               <span
                 key={index}
-                {...hoverHandlers}
-                {...tapRevealHandlers}
-                className={`inline-block align-baseline leading-normal py-0.5 px-1 rounded relative transition-colors duration-150 ${
-                  effectiveHarekeMode === "none" && hoveredWordIndex === index
-                    ? "bg-amber-500/15 text-[#065F46] dark:text-emerald-300 cursor-pointer"
-                    : effectiveHarekeMode === "none"
-                    ? "cursor-pointer"
-                    : ""
-                } ${karaokeHighlightClass}`}
+                className={`relative inline-block align-baseline leading-normal ${
+                  inlineFlow ? "mx-0.5" : ""
+                }`}
               >
                 {trackingArrowIndicator}
-                {formatWordInLine(word, index)}
-                {bottomProgressLine}
+                {prefix}
+                <button
+                  type="button"
+                  onClick={handleFallbackClick}
+                  {...hoverHandlers}
+                  className={`relative inline-block align-baseline leading-normal py-0.5 px-1 rounded cursor-pointer transition-colors duration-150 border-b border-dotted ${
+                    isWordSpeaking && showHighlight
+                      ? "bg-emerald-500/20 dark:bg-emerald-400/25 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/40 border-emerald-500"
+                      : isFallbackOpen
+                      ? "bg-stone-200/80 dark:bg-slate-800 text-[var(--foreground)] border-stone-500"
+                      : "border-stone-400/60 dark:border-slate-600/70 hover:bg-stone-200/40 dark:hover:bg-slate-800/50"
+                  }`}
+                >
+                  {formatWordInLine(coreWord, index)}
+                  {bottomProgressLine}
+                </button>
+                {suffix}
+
+                {mounted &&
+                  isFallbackOpen &&
+                  typeof document !== "undefined" &&
+                  createPortal(
+                    <div
+                      ref={popoverRef}
+                      dir="ltr"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      style={{
+                        fontFamily:
+                          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        top:
+                          tooltipPos.top !== undefined
+                            ? `${tooltipPos.top}px`
+                            : undefined,
+                        bottom:
+                          tooltipPos.bottom !== undefined
+                            ? `${tooltipPos.bottom}px`
+                            : undefined,
+                        left: `${tooltipPos.left}px`,
+                        width: `${tooltipPos.width}px`,
+                      }}
+                      className={`fixed ${
+                        isClassroomMode ? "p-4" : "p-3.5"
+                      } flex flex-col bg-[#F7EFE1] dark:bg-[var(--surface)] border-2 border-[#E6D7BE] dark:border-[var(--border)] border-b-4 border-l-4 border-l-stone-400 rounded-2xl shadow-2xl text-left font-sans z-[9999]`}
+                    >
+                      <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-dashed border-[#E2D3B8] dark:border-[var(--border-dashed)]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="whitespace-nowrap px-2 py-0.5 rounded-md border text-[10px] font-sans font-extrabold bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-300 dark:border-slate-700">
+                            Kayıt Bulunamadı
+                          </span>
+                          <span className="whitespace-nowrap px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800 border border-[#E6D7BE] dark:border-slate-700 text-xs font-sans font-semibold text-[var(--muted)]">
+                            KÖK: Doğrulanamadı
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="Kapat"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveIndex(null);
+                          }}
+                          className="shrink-0 w-7 h-7 rounded-lg bg-white dark:bg-[var(--background)] border border-[#E6D7BE] flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] cursor-pointer"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="text-xs sm:text-sm font-sans font-semibold text-[var(--foreground)] leading-snug">
+                          Kayıt bulunamadı / kök doğrulanamadı
+                        </div>
+                        <bdi
+                          dir="rtl"
+                          className="arabic font-arabic text-xl font-bold text-[var(--foreground)] shrink-0"
+                        >
+                          {coreWord}
+                        </bdi>
+                      </div>
+
+                      <p className="text-[11px] font-sans text-[var(--muted)] leading-relaxed mb-3">
+                        Bu sözcük için sözlükte doğrulanmış bir kök veya çekim eşleşmesi bulunamadı. Yanlış eşleşmeyi önlemek amacıyla tahmini sonuç gösterilmemektedir.
+                      </p>
+
+                      <div className="flex items-center justify-end">
+                        <button
+                          type="button"
+                          onClick={handleFallbackSpeak}
+                          disabled={isSpeaking}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[var(--background)] border border-[#E6D7BE] dark:border-slate-700 text-xs font-sans font-bold text-[var(--foreground)] hover:bg-stone-100 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+                        >
+                          <Volume2 size={14} />
+                          <span>Dinle</span>
+                        </button>
+                      </div>
+                    </div>,
+                    document.body
+                  )}
               </span>
             );
           }

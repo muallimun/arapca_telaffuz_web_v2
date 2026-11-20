@@ -73,7 +73,7 @@ test("1. Tüm 8 JSON dosyası hatasız parse edilir, 0 tatweel (\\u0640) içerir
 
 test("2. Sözlük, Diyalog, Metin, 1111 Cümle, Atasözü ve Görsel Kelime dosyalarında mükerrer ID yoktur", () => {
   const expectedCounts = [
-    ["yeni_tum_sozluk.json", 1954],
+    ["yeni_tum_sozluk.json", 2087],
     ["tum_diyaloglar_120.json", 120],
     ["tum_metinler_60.json", 60],
     ["1111_cumle.json", 1111],
@@ -8761,7 +8761,7 @@ test("72. [Denetim 1/6] UTF-8 Bütünlük Testi: src/ ve src/data/ altındaki t�
   );
 });
 
-test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 diyalog, 60 metin, 1111 cümle, 508 atasözü, 998 görsel kelime, 400 eş-zıt, 1954 sözlük, 550 sınav sorusu, 195 gramer notu, 60 YouTube)", () => {
+test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 diyalog, 60 metin, 1111 cümle, 508 atasözü, 998 görsel kelime, 400 eş-zıt, 2087 sözlük, 550 sınav sorusu, 195 gramer notu, 60 YouTube)", () => {
   const expectedDatasets = [
     { file: "tum_diyaloglar_120.json", count: 120, idKey: "id" },
     { file: "tum_metinler_60.json", count: 60, idKey: "id" },
@@ -8769,7 +8769,7 @@ test("73. [Denetim 2/6] 12 JSON Veri Tabanı Sayım ve Benzersiz ID Testi (120 d
     { file: "atasozleri.json", count: 508, idKey: "id" },
     { file: "gorselKelimeler_guncel.json", count: 998, idKey: "id" },
     { file: "es_zit_anlamlilar.json", count: 400, idKey: "id" },
-    { file: "yeni_tum_sozluk.json", count: 1954, idKey: "id" },
+    { file: "yeni_tum_sozluk.json", count: 2087, idKey: "id" },
     { file: "seviye_tespit_sorulari.json", count: 550, idKey: "id" },
     { file: "diyaloglar_gramer_hap_bilgi.json", count: 120, idKey: "bagli_id" },
     { file: "metinler_gramer_hap_bilgi.json", count: 60, idKey: "bagli_id" },
@@ -9237,8 +9237,8 @@ test("78. 360px Mobil Ekran Ergonomisi (IrabColorPainter & ReadingEvidenceHunter
   const { CONTENT_INVENTORY } = await import(
     pathToFileURL(path.join(ROOT_DIR, "src", "lib", "contentInventory.ts")).href
   );
-  assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 1954);
-  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3276);
+  assert.equal(CONTENT_INVENTORY.coreDictionaryWordsCount, 2087);
+  assert.equal(CONTENT_INVENTORY.dictionaryWordsCount, 3406);
   assert.equal(CONTENT_INVENTORY.youtubeVideosCount, 60);
   assert.equal(CONTENT_INVENTORY.youtubeSingleVideosCount, 20);
   assert.equal(CONTENT_INVENTORY.youtubePlaylistsCount, 40);
@@ -11934,7 +11934,7 @@ test("118. Kapsamlı Morfoloji/Kök Çözümleme (يَقْرَأْنَ, قُرِ
 
   // 3) 5 güncellenen sabit JSON dosyasında kayıt sayısı, kök ve doğal Türkçe bütünlüğü
   const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
-  assert.equal(sozluk.length, 1954);
+  assert.equal(sozluk.length, 2087);
   const sozlukById = new Map(sozluk.map((w) => [w.id, w]));
   assert.equal(sozlukById.get("kelime_2793")?.mufret, "مَطْبَخٌ");
   assert.equal(sozlukById.get("kelime_2793")?.kok, "ط ب خ");
@@ -11973,9 +11973,9 @@ test("118. Kapsamlı Morfoloji/Kök Çözümleme (يَقْرَأْنَ, قُرِ
 
 test("119. yeni_tum_sozluk.json (kelime_1774, kelime_1784, kelime_1790 + 59 Temel Kök/Kelime) ve gorselKelimeler_guncel.json Uyumluluk Denetimi", () => {
   const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
-  assert.equal(sozluk.length, 1954);
+  assert.equal(sozluk.length, 2087);
   const byId = new Map(sozluk.map((w) => [w.id, w]));
-  assert.equal(byId.size, 1954, "yeni_tum_sozluk.json içinde mükerrer ID olmamalıdır");
+  assert.equal(byId.size, 2087, "yeni_tum_sozluk.json içinde mükerrer ID olmamalıdır");
 
   // 1) Düzeltilen 3 kayıt
   assert.equal(byId.get("kelime_1774")?.mazi, "مَكَرَ");
@@ -12090,12 +12090,127 @@ test("121. 7 JSON Veri Dosyasında Ek Yapay Cinsiyet Temizliği ve Atasözleri (
   assert.equal(aById.get("ata_0318")?.turkce, "Kız çocuğu babasına hayrandır.");
 });
 
+test("122. Morfolojik Eşleştirme Sağlamlaştırma, Alakasız Kök Fallback Kaldırılması, Tutarlılık Doğrulayıcı ve Güvenli Bulunamadı Durumu", async () => {
+  const { pathToFileURL } = await import("node:url");
+  const { analyzeAndMatchWord, getWordCategory } = await import(
+    pathToFileURL(path.join(ROOT_DIR, "src", "lib", "dict.ts")).href
+  );
 
+  // 1) Sözlükte bulunmayan / uydurma kelimeler ASLA alakasız bir köke düşmez; güvenli null döner
+  for (const unknownWord of ["زَخْرَفَطٌ", "قَرْمَشَ", "فَزْلَكَةٌ", "تَخَرْبُقٌ"]) {
+    const res = analyzeAndMatchWord(unknownWord);
+    assert.equal(res, null, `${unknownWord} için alakasız kök fallback yapılmamalıdır`);
+  }
 
+  // 2) Kritik çekim ekleri ve kök tutarlılığı
+  const yaqrana = analyzeAndMatchWord("يَقْرَأْنَ", "Onlar mektubu okuyorlar.", undefined, "الرِّسَالَةَ.");
+  assert.ok(yaqrana, "يَقْرَأْنَ doğrulanmış eşleşme bulmalıdır");
+  assert.equal(yaqrana.item.kok, "ق ر أ");
+  assert.notEqual(yaqrana.matchStage, "root");
+  assert.ok(yaqrana.suffixLabel?.includes("cem-i müennes"), "يَقْرَأْنَ sondaki نَ cem-i müennes nûnu olarak etiketlenmelidir");
+  assert.ok(!yaqrana.suffixLabel?.includes("انِ"), "يَقْرَأْنَ tesniye انِ eki sanılmamalıdır");
 
+  const umm = analyzeAndMatchWord("الْأُمُّ", "Anne yemeği pişiriyor.");
+  assert.ok(umm);
+  assert.equal(umm.item.kok, "أ م م");
 
+  const katabna = analyzeAndMatchWord("كَتَبْنَا", "Dersi yazdık.");
+  assert.ok(katabna);
+  assert.equal(getWordCategory(katabna.item), "fiil");
+  assert.equal(katabna.item.kok, "ك ت ب");
+  assert.ok(katabna.suffixLabel?.includes("1. çoğul mazi"));
 
+  const qaratunna = analyzeAndMatchWord("قَرَأْتُنَّ", "Kitabı okudunuz.");
+  assert.ok(qaratunna);
+  assert.equal(qaratunna.item.kok, "ق ر أ");
+  assert.ok(qaratunna.suffixLabel?.includes("تُنَّ"));
 
+  const nazaltu = analyzeAndMatchWord("نَزَلْتُ", "Otobüsten indim.");
+  assert.ok(nazaltu);
+  assert.equal(getWordCategory(nazaltu.item), "fiil");
+  assert.equal(nazaltu.item.kok, "ن ز ل");
 
+  const ishtu = analyzeAndMatchWord("عِشْتُ", "Burada yaşadım.");
+  assert.ok(ishtu);
+  assert.equal(getWordCategory(ishtu.item), "fiil");
+  assert.equal(ishtu.item.kok, "ع ي ش");
 
+  const jitu = analyzeAndMatchWord("جِئْتُ", "Eve geldim.");
+  assert.ok(jitu);
+  assert.equal(jitu.item.kok, "ج ي أ");
 
+  const bakati = analyzeAndMatchWord("بَكَتِ", "Çocuk ağladı.");
+  assert.ok(bakati);
+  assert.equal(getWordCategory(bakati.item), "fiil");
+  assert.equal(bakati.item.kok, "ب ك ي");
+
+  const iltaqayna = analyzeAndMatchWord("اِلْتَقَيْنَا", "Parkta buluştuk.");
+  assert.ok(iltaqayna);
+  assert.equal(getWordCategory(iltaqayna.item), "fiil");
+  assert.ok(!iltaqayna.morphologyNote.includes("Emir Fiil"), "اِلْتَقَيْنَا mazi fiildir, Emir Fiil etiketlenmemelidir");
+
+  const idarati = analyzeAndMatchWord("إِدَارَةِ", "Yönetim ofisi");
+  assert.ok(idarati);
+  assert.ok(!idarati.morphologyNote.includes("Emir Fiil"), "إِدَارَةِ masdardır, Emir Fiil etiketlenmemelidir");
+
+  const anaAfterLa = analyzeAndMatchWord("أَنَا", "Hayır, ben öğrenciyim.", "لَا،");
+  assert.ok(anaAfterLa, "لَا، sonrası أَنَا fiil sanılıp null dönmemelidir");
+  assert.equal(anaAfterLa.item.id, "supp_ana_edat");
+
+  const qamaAfterMan = analyzeAndMatchWord("قَامَ", "Ayağa kalkan kimse", "مَنْ");
+  assert.ok(qamaAfterMan, "مَنْ (fethalı) sonrası قَامَ harf-i cer engeline takılmamalıdır");
+  assert.equal(getWordCategory(qamaAfterMan.item), "fiil");
+
+  const anta = analyzeAndMatchWord("أَنْتَ", "Sen öğrencisin.");
+  assert.ok(anta);
+  assert.equal(anta.item.id, "kelime_3580");
+
+  const akhaka = analyzeAndMatchWord("أَخَاكَ", "Kardeşini gördüm.");
+  assert.ok(akhaka);
+  assert.equal(akhaka.item.kok, "أ خ و");
+
+  const walakinnana = analyzeAndMatchWord("وَلَكِنَّنَا", "Fakat biz geldik.");
+  assert.ok(walakinnana);
+  assert.equal(getWordCategory(walakinnana.item), "edat");
+
+  const laytani = analyzeAndMatchWord("لَيْتَنِي", "Keşke bilseydim.");
+  assert.ok(laytani);
+  assert.equal(laytani.item.id, "kelime_2845");
+
+  const ikhtari = analyzeAndMatchWord("اِخْتَرِ", "Doğru cevabı seç.");
+  assert.ok(ikhtari);
+  assert.equal(ikhtari.item.kok, "خ ي ر");
+
+  const alHumma = analyzeAndMatchWord("الْحُمَّى", "Ateşi yükseldi.");
+  assert.ok(alHumma);
+  assert.ok(!alHumma.suffixLabel?.includes("iyelik zamiri"), "ال belirlilik takılı kelime iyelik zamiri almamalıdır");
+
+  // 3) gorselKelimeler_guncel.json 0217_05_eczane kök düzeltmesi + yeni_tum_sozluk.json yeni çekirdek kayıtları
+  const gorsel = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "gorselKelimeler_guncel.json"), "utf8"));
+  assert.equal(gorsel.find((w) => w.id === "0217_05_eczane")?.kok, "ص ي د ل");
+
+  const sozluk = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "yeni_tum_sozluk.json"), "utf8"));
+  assert.equal(sozluk.length, 2087);
+  const sozlukStr = JSON.stringify(sozluk);
+  assert.ok(!/\u0627\u064B/.test(sozlukStr), "yeni_tum_sozluk.json içinde اً yerine ًا kullanılmalıdır");
+  assert.ok(!/\u0622\u064E/.test(sozlukStr), "yeni_tum_sozluk.json içinde çift med (آَ) olmamalıdır");
+
+  // 4) WordTooltip güvenli bulunamadı durumu ve ShadowingModal gevşek includes fallback kaldırılması
+  const tooltipSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "WordTooltip.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    tooltipSrc.includes("Kayıt bulunamadı / kök doğrulanamadı") &&
+      tooltipSrc.includes("KÖK: Doğrulanamadı"),
+    "WordTooltip eşleşmeyen kelimeler için güvenli 'Kayıt bulunamadı / kök doğrulanamadı' kartı göstermelidir"
+  );
+  const shadowingSrc = fs.readFileSync(
+    path.join(ROOT_DIR, "src", "components", "ui", "ShadowingModal.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    !shadowingSrc.includes('w.targetWord.includes(s.mufret || "___")'),
+    "ShadowingModal içindeki gevşek substring (.includes) fallback kaldırılmış olmalıdır"
+  );
+});
